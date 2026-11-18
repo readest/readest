@@ -57,6 +57,8 @@ export interface BookshelfDefinition {
   skeuomorphicCovers?: boolean;
   /** Badges each book cover with its page count (#6909). */
   showPageCount?: boolean;
+  /** Books without art get the neutral title panel instead of a colored cover (#7549). */
+  plainPlaceholderCovers?: boolean;
   filters: BookshelfFilterGroup;
   /** Missing on older definitions; inherit the View menu's grouping by default. */
   useGlobalGrouping?: boolean;

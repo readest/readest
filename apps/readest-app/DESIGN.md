@@ -857,7 +857,9 @@ palette keyed by the book's file hash, so sorting, metadata edits, syncing and
 theme changes do not change the color. These colors are cover art, rather than
 UI surface or brand colors; cream text has at least 4.5:1 contrast on every color.
 E-ink replaces the color with theme paper and ink, opaque rules and a 1px border.
-The explicit Hide Covers setting retains its neutral title panels.
+The explicit Hide Covers setting retains its neutral title panels. A shelf's Plain
+placeholder covers option uses those same panels for books without art and keeps
+real covers.
 
 #### iOS
 

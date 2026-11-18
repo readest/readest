@@ -11,6 +11,7 @@ import { getBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import {
   createLibrarySearchSession,
   resolveSearchResultCfis,
@@ -32,6 +33,11 @@ const SEARCH_HISTORY_KEY = 'search-history';
 const LEGACY_SEARCH_CACHE_DIR = 'search';
 let legacySearchCacheCleared = false;
 const MAX_SEARCH_HISTORY = 10;
+// Each publish re-renders the reader and the results list, and those redo
+// work over every result so far. Publishing per chapter made a search in a
+// long book cost chapters × results (#7584), so a running search publishes
+// its progress and results at most this often.
+const PUBLISH_INTERVAL_MS = 250;
 
 interface SearchBarProps {
   isVisible: boolean;
@@ -140,6 +146,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       };
       if (!appService?.isMobile) {
         inputRef.current.focus();
+        // Select any existing term so typing replaces it right away.
+        inputRef.current.select();
       }
     }
     if (isVisible && searchTerm) {
@@ -156,13 +164,47 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         } else {
           onHideSearchBar();
         }
+      } else if (isVisible && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        // Ctrl/Cmd+F again while the search bar is up: select the current term
+        // so typing replaces it without clearing first. Only this Find chord: a
+        // rebound Search in Book key may be a character typed into the field,
+        // and the shortcut layer handles it everywhere else. The bar stays
+        // mounted while hidden, so guard on visibility to leave Find alone.
+        if (!appService?.isMobile) {
+          e.preventDefault();
+          inputRef.current?.focus();
+          inputRef.current?.select();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onHideSearchBar]);
+  }, [onHideSearchBar, appService, isVisible]);
+
+  // Ctrl+F issued while focus is elsewhere (book iframe, sidebar buttons)
+  // reaches the shortcut layer, which re-opens the search bar via a
+  // 'search-term' event with a null term. Select the current term so typing
+  // replaces it without clearing first.
+  useEffect(() => {
+    const onSelectRequest = (event: CustomEvent) => {
+      const { term } = (event.detail ?? {}) as { term?: string | null };
+      if (term === null && !appService?.isMobile) {
+        const input = inputRef.current;
+        // When the input already holds focus the keydown handler above has
+        // selected the term already; re-selecting here (SideBar emits this
+        // event 100 ms later) would swallow whatever was typed meanwhile.
+        if (!input || document.activeElement === input) return;
+        input.focus();
+        input.select();
+      }
+    };
+    eventDispatcher.on('search-term', onSelectRequest);
+    return () => {
+      eventDispatcher.off('search-term', onSelectRequest);
+    };
+  }, [appService]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -220,6 +262,32 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         controller.signal.aborted ||
         getSearchStatus(bookKey) === 'terminated' ||
         queuedSearchTerm.current !== term;
+      let progress = 0;
+      let progressChanged = false;
+      let resultsChanged = false;
+      let publishedAt = -Infinity;
+      let flushTimer: ReturnType<typeof setTimeout> | undefined;
+      const flush = () => {
+        clearTimeout(flushTimer);
+        flushTimer = undefined;
+        if (stopped()) return;
+        if (progressChanged) setSearchProgress(bookKey, progress);
+        if (resultsChanged) setSearchResults(bookKey, [...results]);
+        progressChanged = resultsChanged = false;
+        publishedAt = performance.now();
+      };
+      // Inside the interval, flush when it ends rather than at the next event:
+      // the next chapter can take seconds to search.
+      const publish = async () => {
+        if (!progressChanged && !resultsChanged) return;
+        const wait = PUBLISH_INTERVAL_MS - (performance.now() - publishedAt);
+        if (wait > 0) {
+          flushTimer ??= setTimeout(flush, wait);
+          return;
+        }
+        flush();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      };
 
       try {
         for await (const event of searchLibraryBooks(appService, [book], term, {
@@ -234,7 +302,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         })) {
           if (stopped()) return;
           if (event.type === 'progress') {
-            setSearchProgress(bookKey, event.bookProgress);
+            progress = event.bookProgress;
+            progressChanged = true;
           } else if (event.type === 'result') {
             // Results carry text-offset locators; resolve them to CFIs section
             // by section so the list and in-page highlights can address the DOM.
@@ -256,7 +325,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
             });
             if (subitems.length) {
               results.push({ index: event.result.index, label: event.result.label, subitems });
-              setSearchResults(bookKey, [...results]);
+              resultsChanged = true;
             }
           } else if (event.type === 'book-error' || event.type === 'book-skipped') {
             const code = event.type === 'book-error' ? event.code : undefined;
@@ -280,12 +349,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
             setSearchStatus(bookKey, 'completed');
             setSearchResults(bookKey, [...results]);
             setSearchProgress(bookKey, 1);
+            progressChanged = resultsChanged = false;
             if (results.length > 0) {
               addToHistory(term);
             }
             console.log('search done');
           }
-          await new Promise((resolve) => setTimeout(resolve, 0));
+          await publish();
         }
 
         // Replay the resolved matches through the view so every CFI gets its
@@ -304,6 +374,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         setSearchResults(bookKey, []);
         setSearchStatus(bookKey, 'completed');
         setSearchProgress(bookKey, 1);
+      } finally {
+        // A flush left over from an ended search must not write over its
+        // final or error state.
+        clearTimeout(flushTimer);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -322,7 +396,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
 
   const resetSearch = useCallback(() => {
     searchControllerRef.current?.abort();
-    setSearchResults(bookKey, []);
+    // null, not []: no search ran, so the sidebar keeps the table of contents
+    // instead of reading an empty array as "No results found".
+    setSearchResults(bookKey, null);
     view?.clearSearch();
   }, [bookKey, view, setSearchResults]);
 

@@ -35,7 +35,7 @@ const SideBar = ({}) => {
     useSidebarStore();
   const { isSearchBarVisible, setSearchBarVisible } = useSidebarStore();
   const searchNavState = sideBarBookKey ? getSearchNavState(sideBarBookKey) : null;
-  const { searchResults = null } = searchNavState || {};
+  const { searchResults = null, searchTerm = '' } = searchNavState || {};
   const { getView, getViewSettings } = useReaderStore();
   const isMobile = window.innerWidth < 640;
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(isMobile);
@@ -128,6 +128,15 @@ const SideBar = ({}) => {
     setTimeout(() => {
       setSideBarVisible(true);
       setSearchBarVisible(true);
+      // The iframe-forwarded keydown path is consumed by the first listener
+      // whose action returns anything other than false, so the book-level
+      // shortcut's own null-term 'search-term' dispatch may never run. Emit
+      // it here as well: the event is idempotent, and SearchBar depends on it
+      // to focus and select the existing term on a repeated Ctrl+F.
+      eventDispatcher.dispatch('search-term', {
+        term: null,
+        bookKey: useSidebarStore.getState().sideBarBookKey,
+      });
     }, 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -285,7 +294,7 @@ const SideBar = ({}) => {
             <BookCard book={book} />
           </div>
         </div>
-        {isSearchBarVisible && !isAnnotationsTab && searchResults ? (
+        {isSearchBarVisible && !isAnnotationsTab && searchResults && searchTerm ? (
           <SearchResults
             bookKey={sideBarBookKey!}
             results={searchResults}

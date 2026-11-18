@@ -21,7 +21,10 @@ vi.mock('next/image', () => ({
   },
 }));
 
-import BookCover, { HideBookCoversContext } from '@/components/BookCover';
+import BookCover, {
+  HideBookCoversContext,
+  PlainPlaceholderCoversContext,
+} from '@/components/BookCover';
 import { useBookCoverViewer } from '@/components/BookCoverViewer';
 import { useDefaultBookshelfCovers } from '@/hooks/useDefaultBookshelfCovers';
 import { readDefaultBookshelfCovers } from '@/services/bookshelves/state';
@@ -98,7 +101,19 @@ describe('readDefaultBookshelfCovers', () => {
         { libraryHideCovers: true, librarySkeuomorphicCovers: false, libraryCoverFit: 'crop' },
       ),
     );
-    expect(covers).toEqual({ hideCovers: false, skeuomorphicCovers: true, coverFit: 'fit' });
+    expect(covers).toEqual({
+      hideCovers: false,
+      skeuomorphicCovers: true,
+      coverFit: 'fit',
+      plainPlaceholderCovers: false,
+    });
+  });
+
+  it('reads the plain placeholder choice from the Default shelf (#7549)', () => {
+    expect(
+      readDefaultBookshelfCovers(withDefaultShelf({ plainPlaceholderCovers: true }))
+        .plainPlaceholderCovers,
+    ).toBe(true);
   });
 
   it('falls back to the legacy preferences when the shelf has no saved row', () => {
@@ -150,6 +165,26 @@ describe('BookCover outside a shelf', () => {
     });
     const { container } = render(<BookCover book={makeBook()} coverFit='crop' />);
     expect(container.querySelector('img.cover-image')).toBeNull();
+  });
+
+  it('uses the plain placeholder when the Default shelf asks for it (#7549)', () => {
+    useSettingsStore.setState({ settings: withDefaultShelf({ plainPlaceholderCovers: true }) });
+    const { container } = render(<BookCover book={makeBook({ coverImageUrl: null })} />);
+    const fallback = container.querySelector<HTMLElement>('.fallback-cover')!;
+    expect(fallback.style.backgroundColor).toBe('');
+    expect(fallback.classList.contains('bg-base-100')).toBe(true);
+  });
+
+  it('keeps a shelf without the plain option colored inside that shelf (#7549)', () => {
+    useSettingsStore.setState({ settings: withDefaultShelf({ plainPlaceholderCovers: true }) });
+    const { container } = render(
+      <PlainPlaceholderCoversContext.Provider value={false}>
+        <BookCover book={makeBook({ coverImageUrl: null })} />
+      </PlainPlaceholderCoversContext.Provider>,
+    );
+    expect(container.querySelector<HTMLElement>('.fallback-cover')!.style.backgroundColor).not.toBe(
+      '',
+    );
   });
 
   it('keeps the shelf context winning inside a shelf', () => {

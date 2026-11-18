@@ -110,6 +110,7 @@ export interface BookshelfCoverSettings {
   hideCovers: boolean;
   coverFit: LibraryCoverFitType;
   skeuomorphicCovers: boolean;
+  plainPlaceholderCovers: boolean;
 }
 let coverCache: { inputs: unknown[]; covers: BookshelfCoverSettings } | null = null;
 /**
@@ -137,6 +138,7 @@ export const readDefaultBookshelfCovers = (
     hideCovers: shelf?.hideCovers ?? settings.libraryHideCovers ?? false,
     coverFit: shelf?.coverFit ?? settings.libraryCoverFit ?? 'crop',
     skeuomorphicCovers: shelf?.skeuomorphicCovers ?? settings.librarySkeuomorphicCovers ?? false,
+    plainPlaceholderCovers: !!shelf?.plainPlaceholderCovers,
   };
   coverCache = { inputs, covers };
   return covers;

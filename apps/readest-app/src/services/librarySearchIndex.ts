@@ -24,14 +24,17 @@ const FOLD_OPTIONS = { matchCase: false, matchDiacritics: false };
 type IndexAppService = Pick<AppService, 'openDatabase'>;
 
 export interface SearchIndexMeta {
-  updatedAt: number;
+  // Size of the book file the index was built from, kept in the `updated_at`
+  // column, which held book.updatedAt until every progress save made it stale
+  // (#7584).
+  fileSize: number;
   version: number;
   totalSections: number;
   complete: boolean;
   // Hash of the TOC the node tree was built from. The TOC can change without
   // the book file changing (nav.json enrichment via hydrateBookNav, future
   // manual TOC edits), so node freshness is tracked separately from
-  // (updatedAt, version).
+  // (fileSize, version).
   navHash: string;
 }
 
@@ -68,7 +71,7 @@ export const readSearchIndexMeta = async (db: DatabaseService): Promise<SearchIn
   const row = rows[0];
   if (!row) return null;
   return {
-    updatedAt: row.updated_at,
+    fileSize: row.updated_at,
     version: row.version,
     totalSections: row.total_sections,
     complete: row.complete === 1,
@@ -76,15 +79,23 @@ export const readSearchIndexMeta = async (db: DatabaseService): Promise<SearchIn
   };
 };
 
-export const isSearchIndexFresh = (meta: SearchIndexMeta | null, book: Book): boolean =>
+// Not keyed on book.updatedAt: every progress save restamps it (#7584). The
+// book directory is named by the file's content hash, but a book imported in
+// place is read from the user's own file, which can be edited without a new
+// hash, so the file size must still match. With no local file to compare
+// (`fileSize` null), the index is all there is.
+export const isSearchIndexFresh = (
+  meta: SearchIndexMeta | null,
+  fileSize: number | null,
+): boolean =>
   !!meta &&
   meta.complete &&
   meta.version === SEARCH_INDEX_VERSION &&
-  meta.updatedAt === book.updatedAt;
+  (fileSize == null || meta.fileSize === fileSize);
 
 export const beginSearchIndex = async (
   db: DatabaseService,
-  book: Book,
+  fileSize: number,
   totalSections: number,
   navHash: string,
 ): Promise<void> => {
@@ -93,7 +104,7 @@ export const beginSearchIndex = async (
   await db.execute('DELETE FROM search_meta');
   await db.execute(
     'INSERT INTO search_meta (id, updated_at, version, total_sections, complete, nav_hash) VALUES (1, ?, ?, ?, 0, ?)',
-    [book.updatedAt, SEARCH_INDEX_VERSION, totalSections, navHash],
+    [fileSize, SEARCH_INDEX_VERSION, totalSections, navHash],
   );
 };
 

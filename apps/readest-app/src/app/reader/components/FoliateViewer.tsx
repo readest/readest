@@ -296,6 +296,8 @@ const FoliateViewer: React.FC<{
   // by the browser's normal vsync loop, and doesn't accumulate when
   // the page is busy — which is the behaviour we want here.
   const pendingRelocateRef = useRef<CustomEvent | null>(null);
+  // A linked book's move an Auto Scroll wipe held back (see docRelocateHandler).
+  const heldParallelRelocateRef = useRef<{ index: number; fraction: number } | null>(null);
   const relocateRafRef = useRef<number | null>(null);
   const relocateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSampledSpineRef = useRef<number | null>(null);
@@ -444,6 +446,9 @@ const FoliateViewer: React.FC<{
       }
       cancelRelocateScheduled();
       pendingRelocateRef.current = null;
+      // A wipe ending after close must not move linked books to the page it
+      // held back, which was never reached.
+      heldParallelRelocateRef.current = null;
       // The sampled screen counts describe one open's layout; a reopen starts
       // a fresh map so settings or viewport changes can never leak stale
       // weights across sessions.
@@ -873,7 +878,6 @@ const FoliateViewer: React.FC<{
     syncParallelViews(detail);
   };
 
-  const heldParallelRelocateRef = useRef<{ index: number; fraction: number } | null>(null);
   const syncParallelViews = (detail: { index: number; fraction: number }) => {
     const parallelViews = getParallels(bookKey);
     if (parallelViews && parallelViews.size > 0) {

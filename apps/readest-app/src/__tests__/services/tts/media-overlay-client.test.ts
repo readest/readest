@@ -906,6 +906,229 @@ describe('MediaOverlayClient playback', () => {
   });
 });
 
+// #7621: narration moved from ch1 to ch2 (a skip, a chapter change) while ch1
+// was still loading, and ch2's load finished first.
+describe('MediaOverlayClient superseded loads', () => {
+  const TWO_FILE_SMIL =
+    par('w1', 0, 1) + par('w2', 1, 2) + par('w3', 2, 3) + par('p2', 0, 4, 'ch2.mp3');
+
+  const held = <T>() => {
+    let release!: (value: T) => void;
+    const promise = new Promise<T>((resolve) => {
+      release = resolve;
+    });
+    return { promise, release };
+  };
+
+  // What the controller does on a skip: abort the block, stop for the
+  // handover, speak the next block.
+  const skipToBlock1 = async (skipped: AbortController) => {
+    skipped.abort();
+    await client.stop(true);
+    const next = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    expect((await next.next()).value).toMatchObject({ code: 'boundary', mark: '3' });
+    return audio();
+  };
+
+  test('a slower blob of the file narration left does not take over the clock', async () => {
+    await setup(TWO_FILE_SMIL);
+    const ch1 = held<Blob>();
+    (book.loadBlob as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ch1.promise);
+
+    const skipped = new AbortController();
+    const left = client.speak(section.ssmlForBlock(0)!, skipped.signal).next();
+    await vi.waitFor(() => expect(book.loadBlob).toHaveBeenCalledTimes(1));
+    const playing = await skipToBlock1(skipped);
+
+    ch1.release(new Blob([new Uint8Array(8)]));
+    await left;
+
+    await client.pause();
+    expect(playing.paused).toBe(true);
+    expect(FakeAudio.instances).toHaveLength(1);
+  });
+
+  test('a slower resolve of the file narration left does not release the clock', async () => {
+    await setup(TWO_FILE_SMIL);
+    const ch1 = held<string | null>();
+    const resolveUrl = vi.fn((href: string) =>
+      href.endsWith('ch1.mp3') ? ch1.promise : Promise.resolve(null),
+    );
+    client.attachSource({ loadBlob: book.loadBlob!, resolveUrl });
+
+    const skipped = new AbortController();
+    const left = client.speak(section.ssmlForBlock(0)!, skipped.signal).next();
+    await vi.waitFor(() => expect(resolveUrl).toHaveBeenCalledTimes(1));
+    const playing = await skipToBlock1(skipped);
+
+    ch1.release(null);
+    await left;
+
+    expect(playing.paused).toBe(false);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    expect(FakeAudio.instances).toHaveLength(1);
+  });
+
+  // The controller preloads the next blocks once the current one is slow to
+  // become audible; in a book with a file per page they name another file.
+  test('a preload of another file never replaces the clock playback is loading', async () => {
+    await setup(TWO_FILE_SMIL);
+    const ch1 = held<Blob>();
+    const ch2 = held<Blob>();
+    (book.loadBlob as ReturnType<typeof vi.fn>).mockImplementation((href: string) =>
+      href.endsWith('ch1.mp3') ? ch1.promise : ch2.promise,
+    );
+
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    const first = iter.next();
+    await vi.waitFor(() => expect(book.loadBlob).toHaveBeenCalledTimes(1));
+    const preload = (async () => {
+      for await (const _ of client.speak(
+        section.ssmlForBlock(1)!,
+        new AbortController().signal,
+        true,
+      ));
+    })();
+
+    ch1.release(new Blob([new Uint8Array(8)]));
+    expect((await first).value).toMatchObject({ code: 'boundary', mark: '0' });
+    const playing = audio();
+    ch2.release(new Blob([new Uint8Array(8)]));
+    await preload;
+
+    expect(playing.paused).toBe(false);
+    await client.pause();
+    expect(playing.paused).toBe(true);
+  });
+
+  test('a load of the file narration skipped past does not release the clock it came back to', async () => {
+    await setup(TWO_FILE_SMIL);
+    const ch2 = held<string | null>();
+    const resolveUrl = vi.fn((href: string) =>
+      href.endsWith('ch2.mp3') ? ch2.promise : Promise.resolve(null),
+    );
+    client.attachSource({ loadBlob: book.loadBlob!, resolveUrl });
+
+    const first = new AbortController();
+    expect((await client.speak(section.ssmlForBlock(0)!, first.signal).next()).value).toMatchObject(
+      { code: 'boundary', mark: '0' },
+    );
+    const playing = audio();
+    // Forward to block 1 (ch2 still resolving), then straight back to block 0.
+    first.abort();
+    await client.stop(true);
+    const skipped = new AbortController();
+    const left = client.speak(section.ssmlForBlock(1)!, skipped.signal).next();
+    await vi.waitFor(() => expect(resolveUrl).toHaveBeenCalledTimes(2));
+    skipped.abort();
+    await client.stop(true);
+    const back = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    expect((await back.next()).value).toMatchObject({ code: 'boundary', mark: '0' });
+
+    ch2.release(null);
+    await left;
+
+    expect(playing.paused).toBe(false);
+    expect(FakeAudio.instances).toHaveLength(1);
+  });
+
+  test('a load still running when playback is reset does not restore a clock', async () => {
+    await setup(TWO_FILE_SMIL);
+    const ch1 = held<Blob>();
+    (book.loadBlob as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ch1.promise);
+
+    const left = client.speak(section.ssmlForBlock(0)!, new AbortController().signal).next();
+    await vi.waitFor(() => expect(book.loadBlob).toHaveBeenCalledTimes(1));
+    client.invalidatePlayback();
+    ch1.release(new Blob([new Uint8Array(8)]));
+    await left;
+
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(FakeAudio.instances).toHaveLength(0);
+  });
+
+  // Linux decodes an .m4a natively but plays an .mp3 in the web view.
+  test('a Linux decoder still opening the file narration left does not take over', async () => {
+    [section, book] = await makeSection(
+      par('w1', 0, 1, 'ch1.m4a') + par('w2', 1, 2, 'ch1.m4a') + par('p2', 0, 4, 'ch2.mp3'),
+    );
+    nativeInvoke.mockClear();
+    client = new MediaOverlayClient(
+      { dispatchSpeakMark: vi.fn() } as unknown as TTSController,
+      { isLinuxApp: true } as AppService,
+    );
+    await client.init();
+    const ch1 = held<string>();
+    client.attachSource({
+      loadBlob: async () => new Blob([new Uint8Array(8)]),
+      resolvePath: (href) => (href.endsWith('ch1.m4a') ? ch1.promise : Promise.resolve(null)),
+    });
+    client.setSection(section);
+
+    const skipped = new AbortController();
+    const left = client.speak(section.ssmlForBlock(0)!, skipped.signal).next();
+    skipped.abort();
+    await client.stop(true);
+    const next = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    expect((await next.next()).value).toMatchObject({ code: 'boundary', mark: '2' });
+    const playing = audio();
+
+    ch1.release('/books/ch1.m4a');
+    await left;
+
+    expect(playing.paused).toBe(false);
+    const nativeLoads = nativeInvoke.mock.calls.filter(
+      ([, args]) => (args as { payload?: { action?: string } })?.payload?.action === 'load',
+    );
+    expect(nativeLoads).toEqual([]);
+    await client.shutdown();
+  });
+
+  test('a Linux decoder that already opened the file narration left is silenced', async () => {
+    [section, book] = await makeSection(
+      par('w1', 0, 1, 'ch1.m4a') + par('w2', 1, 2, 'ch1.m4a') + par('p2', 0, 4, 'ch2.mp3'),
+    );
+    const opened = held<{ session: number }>();
+    const actions: string[] = [];
+    nativeInvoke.mockImplementation(async (_cmd: unknown, args: unknown) => {
+      const action = (args as { payload?: { action?: string } })?.payload?.action;
+      if (action) actions.push(action);
+      return action === 'load' ? opened.promise : { session: 7 };
+    });
+    client = new MediaOverlayClient(
+      { dispatchSpeakMark: vi.fn() } as unknown as TTSController,
+      { isLinuxApp: true } as AppService,
+    );
+    await client.init();
+    client.attachSource({
+      loadBlob: async () => new Blob([new Uint8Array(8)]),
+      resolvePath: async (href) => (href.endsWith('ch1.m4a') ? '/books/ch1.m4a' : null),
+    });
+    client.setSection(section);
+
+    try {
+      const skipped = new AbortController();
+      const left = client.speak(section.ssmlForBlock(0)!, skipped.signal).next();
+      await vi.waitFor(() => expect(actions).toContain('load'));
+      skipped.abort();
+      await client.stop(true);
+      const next = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+      expect((await next.next()).value).toMatchObject({ code: 'boundary', mark: '2' });
+      const playing = audio();
+
+      actions.length = 0;
+      opened.release({ session: 7 });
+      await left;
+
+      expect(playing.paused).toBe(false);
+      expect(actions).toContain('pause');
+      await client.shutdown();
+    } finally {
+      nativeInvoke.mockImplementation(async () => ({ session: 7 }));
+    }
+  });
+});
+
 describe('MediaOverlayClient transport', () => {
   test('reports the position inside the audible par, clamped to its length', async () => {
     await setup();
