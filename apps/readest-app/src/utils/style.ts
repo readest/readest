@@ -424,6 +424,16 @@ const getColorStyles = (
     }
     a:any-link {
       ${overrideColor ? `color: ${primary} !important;` : isDarkMode ? `color: lightblue;` : ''}
+    }${
+      overrideColor
+        ? `
+    /* the text color above must not reach a link's own text, such as a
+       footnote marker wrapped in a span (#7573) */
+    a:any-link :is(section, aside, blockquote, article, nav, header, footer, main, figure,
+    div, p, font, h1, h2, h3, h4, h5, h6, li, span) {
+      color: inherit !important;
+    }`
+        : ''
     }
     /* left off hovered links, so a book's own a:hover style applies (#6859) */
     a:any-link:where(:not(:hover)) {
