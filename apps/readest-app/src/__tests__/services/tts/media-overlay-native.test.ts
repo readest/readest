@@ -232,9 +232,11 @@ describe('MediaOverlayClient on Linux Tauri', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  test('streams audio the Linux decoder declines through the media proxy', async () => {
-    await setup(WINDOW, linux);
+  // The native load rejects as the Linux decoder does for Opus, once `gate`
+  // opens; the media proxy and each fallback element are recorded.
+  const declineNativeLoad = (gate: Promise<void> = Promise.resolve()) => {
     const elements: Array<{ src: string }> = [];
+    const proxyArgs: unknown[] = [];
     vi.stubGlobal(
       'Audio',
       class {
@@ -259,15 +261,66 @@ describe('MediaOverlayClient on Linux Tauri', () => {
     const control = vi.mocked(invoke).getMockImplementation()!;
     vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
       const payload = (args as { payload?: Record<string, unknown> })?.payload;
-      if (payload?.['action'] === 'load') throw 'Native tts error: no supported audio track';
-      if (cmd === 'get_media_file_url') return 'http://127.0.0.1:4321/file/ch1.mp4' as unknown;
+      if (payload?.['action'] === 'load') {
+        controlCalls.push(payload);
+        await gate;
+        throw 'Native tts error: no supported audio track';
+      }
+      if (cmd === 'get_media_file_url') {
+        proxyArgs.push(args);
+        return 'http://127.0.0.1:4321/file/ch1.mp4' as unknown;
+      }
       return control(cmd, args as Parameters<typeof invoke>[1]);
     });
+    return { elements, proxyArgs };
+  };
+
+  test('streams audio the Linux decoder declines through the media proxy', async () => {
+    await setup(WINDOW, linux);
+    const { elements, proxyArgs } = declineNativeLoad();
     const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
 
     expect((await iter.next()).value?.code).toBe('boundary');
     expect(elements.map((element) => element.src)).toEqual(['http://127.0.0.1:4321/file/ch1.mp4']);
+    expect(proxyArgs).toEqual([
+      expect.objectContaining({ path: WINDOW.path, start: WINDOW.start, end: WINDOW.end }),
+    ]);
     expect(book.loadBlob).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['native load', WINDOW],
+    ['entry extraction', entry],
+  ] as const)('a stop during the %s of a declined file builds no fallback element', async (step, media) => {
+    await setup(media as BookMediaSource, linux);
+    let finish!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const { elements } = declineNativeLoad(step === 'native load' ? gate : undefined);
+    const loadBlob = vi.mocked(book.loadBlob!);
+    loadBlob.mockImplementation(async () => {
+      await gate;
+      return new Blob([new Uint8Array(8)]);
+    });
+    const createObjectURL = URL.createObjectURL;
+    URL.createObjectURL = () => 'blob:narration';
+    try {
+      const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+      const pending = iter.next();
+      const reached = () =>
+        step === 'native load'
+          ? controlCalls.some((call) => call['action'] === 'load')
+          : loadBlob.mock.calls.length > 0;
+      await vi.waitFor(() => expect(reached()).toBe(true));
+      await client.stop();
+      finish();
+
+      expect(await pending).toEqual({ done: true, value: undefined });
+      expect(elements).toEqual([]);
+    } finally {
+      URL.createObjectURL = createObjectURL;
+    }
   });
 
   test('plays a paired local recording from its original path', async () => {
