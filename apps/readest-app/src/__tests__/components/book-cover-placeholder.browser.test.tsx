@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
-import BookCover from '@/components/BookCover';
+import BookCover, { PlainPlaceholderCoversContext } from '@/components/BookCover';
 import type { Book } from '@/types/book';
 
 await import('@/styles/globals.css');
@@ -112,4 +112,27 @@ describe('Classic placeholder covers', () => {
     expect(getComputedStyle(cover).visibility).toBe('visible');
     expect(getComputedStyle(cover).backgroundColor).toBe('rgb(161, 85, 67)');
   });
+});
+
+describe('plain placeholder covers (#7549)', () => {
+  for (const mode of ['grid', 'list', 'preview'] as const) {
+    it(`wraps a long unbroken title inside the cover in ${mode}`, () => {
+      const width = mode === 'grid' ? 150 : 72;
+      const { container } = render(
+        <PlainPlaceholderCoversContext.Provider value={true}>
+          <div style={{ width, height: (width * 41) / 28, fontSize: 20 }}>
+            <BookCover
+              book={{ ...book, title: 'Averylongfilenamethatkeepsgoingwithoutspaces.txt' }}
+              mode={mode === 'list' ? 'list' : 'grid'}
+              isPreview={mode === 'preview'}
+            />
+          </div>
+        </PlainPlaceholderCoversContext.Provider>,
+      );
+      const cover = container.querySelector<HTMLElement>('.fallback-cover')!;
+      const title = cover.querySelector<HTMLElement>('span')!;
+      expect(cover.style.backgroundColor).toBe('');
+      expect(title.scrollWidth).toBeLessThanOrEqual(title.clientWidth + 1);
+    });
+  }
 });

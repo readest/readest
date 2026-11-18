@@ -225,6 +225,7 @@ const BookCover: React.FC<BookCoverProps> = memo<BookCoverProps>(
               <div className='flex h-1/2 items-center justify-center'>
                 <span
                   className={clsx(
+                    'w-full min-w-0 [overflow-wrap:anywhere]',
                     isPreview ? 'line-clamp-2' : mode === 'grid' ? 'line-clamp-3' : 'line-clamp-2',
                     isPreview ? 'text-[0.5em]' : mode === 'grid' ? 'text-lg' : 'text-sm',
                   )}
