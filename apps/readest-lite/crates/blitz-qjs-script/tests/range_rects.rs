@@ -232,3 +232,34 @@ fn measuring_part_of_a_long_chapter_does_not_walk_the_rest() {
     );
     assert_eq!(logs, ["true,true true,true"]);
 }
+
+#[test]
+fn placing_a_range_does_not_step_through_the_children_it_skips() {
+    // a reopened book's saved range is a page of a section whose parent holds hundreds of
+    // paragraphs and the white space between them: stepping through each one outside the range
+    // (a native call and a node object for each) cost a Kindle ~100 ms of opening the book
+    let paragraphs = "<p style='margin:0'>•• <b>◦◦</b></p>\n".repeat(400);
+    let logs = run(
+        &paragraphs,
+        "",
+        &format!(
+            "{SELECTION_ORACLE}
+            const p = document.body.children;
+            const shapes = [
+                range(document.body, 400, 403),
+                range(p[100].firstChild, 1, 1, p[102].lastChild.firstChild),
+            ];
+            let steps = 0;
+            const counted = (name) => {{
+                const f = __n[name];
+                __n[name] = (...a) => {{ steps++; return f(...a); }};
+                return () => {{ __n[name] = f; }};
+            }};
+            const undo = ['sibling', 'first'].map(counted);
+            const few = shapes.map((r) => {{ steps = 0; r.getClientRects(); return steps <= 40 || steps; }});
+            undo.forEach((u) => u());
+            console.log(few.join(','), shapes.map(same).join(','));"
+        ),
+    );
+    assert_eq!(logs, ["true,true true,true"]);
+}

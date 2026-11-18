@@ -2146,34 +2146,40 @@
       // the way are walked partly. Whether one of their children is selected follows from where
       // it sits against the boundary point or the child on the way to it: comparing positions
       // counts siblings, and foliate-js measures a page's range in sections of hundreds of
-      // paragraphs (and a whole body's when it sizes one).
-      const toward = (node) => {
+      // paragraphs (and a whole body's when it sizes one). The walk is over native ids: a node
+      // object for each child it passes (the white space between paragraphs too) cost a Kindle
+      // ~100 ms of opening a book at a saved page.
+      const toward = (id) => {
         const m = new Map();
-        for (let c = node, p = c.parentNode; p; c = p, p = p.parentNode) m.set(p, c);
+        for (let c = id, p = n.parent(c); p != null; c = p, p = n.parent(p)) m.set(p, c);
         return m;
       };
-      const toStart = toward(sc),
-        toEnd = toward(ec);
+      const [sid, eid] = [sc._id, ec._id];
+      const toStart = toward(sid),
+        toEnd = toward(eid);
       const visit = (parent, parentSelected) => {
         const s = toStart.get(parent),
           e = toEnd.get(parent);
-        let afterStart = !s,
+        let afterStart = s == null,
           beforeEnd = true;
         let i = 0;
-        for (let x = parent.firstChild; x; x = x.nextSibling, i++) {
-          if (parent === sc) afterStart = i >= so;
-          if (parent === ec) beforeEnd = i < eo;
+        for (const x of n.children(parent)) {
+          if (shadowIds.has(x)) continue; // a host's shadow root is not one of its children
+          if (parent === sid) afterStart = i >= so;
+          if (parent === eid) beforeEnd = i < eo;
           else if (x === e) beforeEnd = false;
           const selected = parentSelected || (afterStart && beforeEnd);
-          if (selected && x !== sc && x !== ec) {
-            if (x.nodeType === 3) out.push(...n.textRects(x._id, 0, x.length));
-            else if (x.nodeType === 1 && !parentSelected) out.push(...n.rects(x._id));
+          if (selected && x !== sid && x !== eid) {
+            const kind = n.kind(x);
+            if (kind === 3) out.push(...n.textRects(x, 0, Infinity));
+            else if (kind === 1 && !parentSelected) out.push(...n.rects(x));
           }
-          if (x.firstChild && (selected || x === s || x === e)) visit(x, selected);
+          if ((selected || x === s || x === e) && n.first(x) != null) visit(x, selected);
           if (x === s) afterStart = true;
+          i++;
         }
       };
-      visit(this.commonAncestorContainer, false);
+      visit(this.commonAncestorContainer._id, false);
       if (ec.nodeType === 3) out.push(...n.textRects(ec._id, 0, eo));
       return rectList(out);
     }
