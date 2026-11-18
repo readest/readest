@@ -2200,7 +2200,55 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                          }
                          _ => {}
                      }
-@@ -972,3 +994,25 @@
+@@ -846,13 +868,45 @@
+     }
+ }
+ 
++/// `layout` with every length times `k`.
++fn scale_layout(layout: &Layout, k: f32) -> Layout {
++    let rect = |r: taffy::Rect<f32>| taffy::Rect {
++        left: r.left * k,
++        right: r.right * k,
++        top: r.top * k,
++        bottom: r.bottom * k,
++    };
++    let overflow = layout.scrollable_overflow_rect;
++    Layout {
++        location: taffy::Point {
++            x: layout.location.x * k,
++            y: layout.location.y * k,
++        },
++        size: layout.size.map(|v| v * k),
++        scrollable_overflow_rect: taffy::ScrollableOverflow::new(
++            rect(overflow.rect()),
++            overflow.is_reversed(),
++        ),
++        scrollbar_size: layout.scrollbar_size.map(|v| v * k),
++        border: rect(layout.border),
++        padding: rect(layout.padding),
++        margin: rect(layout.margin),
++        ..*layout
++    }
++}
++
++/// `taffy::round_layout` rounds to device pixels, not CSS pixels: it is handed layouts in device
++/// pixels and its results are taken back to CSS pixels. At a scale of 2 a box may start or end on a
++/// half CSS pixel, as in Chromium, which lays out in device pixels.
+ impl RoundTree for LayoutPassState<'_> {
+     fn get_unrounded_layout(&self, node_id: NodeId) -> Layout {
+-        *self.node_from_id(node_id).unrounded_layout()
++        let scale = self.viewport.scale();
++        scale_layout(self.node_from_id(node_id).unrounded_layout(), scale)
+     }
+ 
+     fn set_final_layout(&mut self, node_id: NodeId, layout: &Layout) {
+-        *self.node_from_id_mut(node_id).final_layout_mut() = *layout;
++        let scale = self.viewport.scale();
++        *self.node_from_id_mut(node_id).final_layout_mut() = scale_layout(layout, 1.0 / scale);
+     }
+ 
+     fn is_out_of_flow(&self, node_id: NodeId) -> bool {
+@@ -972,3 +1026,25 @@
          })
      }
  }
