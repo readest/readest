@@ -5,7 +5,11 @@ import { addPluginListener, invoke, type PluginListener } from '@tauri-apps/api/
 import type { Book } from '@/types/book';
 import { useAppLockStore } from '@/store/appLockStore';
 import { useLibraryStore } from '@/store/libraryStore';
-import { getInitializedAppService, isTauriAppPlatform } from '@/services/environment';
+import { useReaderStore } from '@/store/readerStore';
+import environmentConfig, {
+  getInitializedAppService,
+  isTauriAppPlatform,
+} from '@/services/environment';
 import { getOSPlatform } from '@/utils/misc';
 import { isAudiobook } from '@/utils/audiobook';
 import { eventDispatcher } from '@/utils/event';
@@ -249,6 +253,36 @@ const CarMediaLibraryPublisher = () => {
       cancelled = true;
       void listener?.unregister();
     };
+  }, []);
+
+  // CarPlay starts a book in Swift while the phone is locked, because iOS
+  // suspends this WebView then (#7566). Back on screen, the reader takes over:
+  // the native player stops, having saved its position to the book's config,
+  // so an open copy of the book reloads from disk and reads on if it played.
+  useEffect(() => {
+    if (!isMainAppWindow() || !isTauriAppPlatform() || getOSPlatform() !== 'ios') return;
+
+    const takeOver = async () => {
+      if (document.visibilityState !== 'visible') return;
+      const { bookHash, playing } = await invoke<{ bookHash: string | null; playing: boolean }>(
+        'plugin:native-tts|take_cold_playback',
+      );
+      if (!bookHash) return;
+      const { viewStates, recreateViewer } = useReaderStore.getState();
+      for (const key of Object.keys(viewStates)) {
+        if (key.startsWith(`${bookHash}-`)) recreateViewer(environmentConfig, key);
+      }
+      if (playing) {
+        const url = `readest://book/${encodeURIComponent(bookHash)}?autoplay=tts`;
+        eventDispatcher.dispatch('app-incoming-url', { urls: [url] });
+      }
+    };
+    const onVisibilityChange = () => {
+      takeOver().catch((error) => console.warn('Failed to take over CarPlay Read Aloud:', error));
+    };
+    onVisibilityChange();
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, []);
 
   return null;

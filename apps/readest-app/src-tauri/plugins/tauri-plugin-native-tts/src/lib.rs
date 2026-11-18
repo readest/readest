@@ -59,6 +59,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::update_media_session_metadata,
             commands::update_media_library,
             commands::update_carplay_state,
+            commands::take_cold_playback,
             commands::playout_enqueue,
             commands::playout_position $(, $extra)*]
         };

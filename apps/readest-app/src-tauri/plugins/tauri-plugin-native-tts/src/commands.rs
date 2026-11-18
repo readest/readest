@@ -136,6 +136,13 @@ pub(crate) async fn update_carplay_state<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn take_cold_playback<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<TakeColdPlaybackResponse> {
+    app.native_tts().take_cold_playback()
+}
+
+#[command]
 pub(crate) async fn playout_enqueue<R: Runtime>(
     app: AppHandle<R>,
     payload: PlayoutEnqueueRequest,
