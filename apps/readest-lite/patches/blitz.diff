@@ -183,7 +183,19 @@ diff -ruN blitz/Cargo.toml blitz/Cargo.toml
 diff -ruN blitz/packages/blitz-dom/assets/default.css blitz/packages/blitz-dom/assets/default.css
 --- blitz/packages/blitz-dom/assets/default.css
 +++ blitz/packages/blitz-dom/assets/default.css
-@@ -65,6 +65,15 @@
+@@ -59,12 +59,27 @@
+     display: none !important;
+ }
+ 
++/* Chromium's html.css: native controls, unless a page sets `appearance: none`. */
++input[type="checkbox" i],
++input[type="radio" i] {
++    appearance: auto;
++}
++
+ input[type="checkbox"] {
+     width: 14px;
+     height: 14px;
      margin: 3px 3px 3px 4px;
  }
  
@@ -1344,7 +1356,39 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
      let child_ids = node.children.iter().copied().chain(pseudo_ids);
      for child_id in child_ids {
          let child = &doc.nodes[child_id];
-@@ -795,6 +804,177 @@
+@@ -421,7 +430,20 @@
+ 
+     flush_pseudo_elements(doc, container_node_id);
+ 
+-    if let Some(el) = doc.nodes[container_node_id].data.downcast_element() {
++    let checkbox_or_radio = doc.nodes[container_node_id]
++        .data
++        .downcast_element()
++        .is_some_and(|el| {
++            el.name.local == local_name!("input")
++                && matches!(el.attr(local_name!("type")), Some("checkbox" | "radio"))
++        });
++    if checkbox_or_radio {
++        create_checkbox_input(doc, container_node_id);
++        // With `appearance: none`, an ordinary box: on to its pseudo-elements, below.
++        if !doc.nodes[container_node_id].has_no_native_appearance() {
++            return;
++        }
++    } else if let Some(el) = doc.nodes[container_node_id].data.downcast_element() {
+         // Handle text inputs
+         let tag_name = el.name.local.as_ref();
+         if matches!(tag_name, "input" | "textarea") {
+@@ -438,9 +460,6 @@
+             ) {
+                 create_text_editor(doc, container_node_id, false);
+                 return;
+-            } else if matches!(type_attr, Some("checkbox" | "radio")) {
+-                create_checkbox_input(doc, container_node_id);
+-                return;
+             }
+         }
+ 
+@@ -795,6 +814,177 @@
              }
          }
      }
@@ -1522,7 +1566,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
  }
  
  /// Handles the cases where there are text nodes or inline nodes that need to be wrapped in an anonymous block node
-@@ -875,6 +1055,10 @@
+@@ -875,6 +1065,10 @@
      } else {
          node.attr(local_name!("value")).unwrap_or("").to_string()
      };
@@ -1533,7 +1577,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/construct.rs blitz/packages/blitz-
      let is_focussed = node.is_focussed();
      let element = &mut node.data.downcast_element_mut().unwrap();
      if !matches!(element.special_data, SpecialElementData::TextInput(_)) {
-@@ -894,33 +1078,54 @@
+@@ -894,33 +1088,54 @@
          unreachable!();
      };
  
@@ -2039,7 +2083,15 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
          }
          output
      }
-@@ -317,11 +329,13 @@
+@@ -240,6 +252,7 @@
+         });
+         let font_size = font_styles.map(|s| s.0);
+         let resolved_line_height = font_styles.map(|s| s.1);
++        let native_appearance = !node.has_no_native_appearance();
+ 
+         match &mut node.data {
+             NodeData::Text(data) => {
+@@ -317,11 +330,13 @@
                              .downcast_element_mut()
                              .and_then(|el| el.text_input_data_mut())
                          {
@@ -2057,6 +2109,15 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                          }
                      }
                      return output;
+@@ -333,7 +348,7 @@
+                         Some("hidden") => {
+                             return taffy::LayoutOutput::HIDDEN;
+                         }
+-                        Some("checkbox") => {
++                        Some("checkbox") if native_appearance => {
+                             return compute_leaf_layout(
+                                 inputs,
+                                 &node.layout_style(),
 diff -ruN blitz/packages/blitz-dom/src/layout/paint_tree.rs blitz/packages/blitz-dom/src/layout/paint_tree.rs
 --- blitz/packages/blitz-dom/src/layout/paint_tree.rs
 +++ blitz/packages/blitz-dom/src/layout/paint_tree.rs
@@ -2534,7 +2595,21 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
  }
  
  impl Node {
-@@ -1175,9 +1181,6 @@
+@@ -489,6 +495,13 @@
+         )
+     }
+ 
++    /// `appearance: none` on a checkbox or radio input: an ordinary box (its `::before` and
++    /// `::after` are its children), not a native control. daisyUI's toggles are drawn this way.
++    pub fn has_no_native_appearance(&self) -> bool {
++        self.primary_styles()
++            .is_some_and(|s| s.get_box().appearance == style::values::computed::Appearance::None)
++    }
++
+     pub fn is_or_contains_block(&self) -> bool {
+         let style = self.primary_styles();
+         let style = style.as_ref();
+@@ -1175,9 +1188,6 @@
              if el.is_button_input() {
                  flags |= stylo_taffy::StyleFlags::IS_BUTTON_INPUT;
              }
@@ -2544,7 +2619,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          }
  
          #[cfg(feature = "writing-mode")]
-@@ -1421,6 +1424,66 @@
+@@ -1421,6 +1431,66 @@
          self.hit_inner(x, y, scale, &mut None)
      }
  
@@ -2611,7 +2686,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// [`hit`](Self::hit), also resolving the innermost overlay scrollbar
      /// thumb under the point into `scrollbar` during the same descent (so
      /// thumb hit-testing shares the exact coordinate handling — transforms
-@@ -1460,6 +1523,19 @@
+@@ -1460,6 +1530,19 @@
              y = (p.y / scale) as f32;
          }
  
@@ -2631,7 +2706,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          let size = self.final_layout().size;
          let matches_self = !(x < self.scroll_offset().x as f32
              || x > size.width + self.scroll_offset().x as f32
-@@ -1787,103 +1863,24 @@
+@@ -1787,103 +1870,24 @@
      ///
      /// Returns `None` for nodes that have their own layout box.
      pub fn inline_fragment_boxes(&self) -> Option<impl Iterator<Item = taffy::Rect<f32>> + '_> {
@@ -2745,7 +2820,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`: the offset of this node's border box from the
-@@ -1962,6 +1959,15 @@
+@@ -1962,6 +1966,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -2761,7 +2836,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          if self.primary_styles().is_none() {
              return taffy::Size {
                  width: self.client_width() + layout.scroll_width(),
-@@ -2211,3 +2217,97 @@
+@@ -2211,3 +2224,97 @@
          );
      }
  }
@@ -4595,6 +4670,18 @@ diff -ruN blitz/packages/blitz-paint/src/render/clip_path.rs blitz/packages/blit
                  }
  
                  // TODO: Support border-radius on inset()
+diff -ruN blitz/packages/blitz-paint/src/render/form_controls.rs blitz/packages/blitz-paint/src/render/form_controls.rs
+--- blitz/packages/blitz-paint/src/render/form_controls.rs
++++ blitz/packages/blitz-paint/src/render/form_controls.rs
+@@ -9,7 +9,7 @@
+ 
+ impl ElementCx<'_, '_> {
+     pub(super) fn draw_input(&self, scene: &mut impl PaintScene) {
+-        if self.node.local_name() != "input" {
++        if self.node.local_name() != "input" || self.node.has_no_native_appearance() {
+             return;
+         }
+         let Some(checked) = self.element.checkbox_input_checked() else {
 diff -ruN blitz/packages/blitz-paint/src/render/mask.rs blitz/packages/blitz-paint/src/render/mask.rs
 --- blitz/packages/blitz-paint/src/render/mask.rs
 +++ blitz/packages/blitz-paint/src/render/mask.rs
