@@ -239,6 +239,13 @@
   empty `src` shows no image, a new `src` replaces the request the element was waiting on, and an
   `<img>` out of the document loads its `src` (`new Image()`); inserting one that has or awaits its
   image doesn't load it again.
+- `stylo_taffy` wrapper, `blitz-dom` layout, node; `blitz-paint` render: a block fieldset's first
+  `<legend>` (not floated or out of flow) sits on the top border, as in Chromium: as wide as its
+  content up to the fieldset's content box, at that box's inline start, centred on the border
+  when the border is thicker, else at the top, with the fieldset's content below it (Taffy lays
+  the fieldset out without the legend and with that much more top padding). The fieldset's
+  background and border start at the legend's middle, and the border has a gap under the
+  legend's border box.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
