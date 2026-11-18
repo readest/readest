@@ -26,7 +26,7 @@ struct PcmQueue {
 impl PcmQueue {
     fn new(channels: usize, sample_rate: u32, position: f64, rate: f64) -> Self {
         Self {
-            samples: VecDeque::with_capacity(sample_rate as usize * channels / 4),
+            samples: VecDeque::with_capacity(sample_rate as usize / 4 * channels),
             channels,
             sample_rate,
             rate,
@@ -107,8 +107,12 @@ impl PcmQueue {
             media_end: self.submitted,
         });
     }
+    /// A quarter second, in whole frames: the queue only grows by frames.
     fn capacity(&self) -> usize {
-        self.sample_rate as usize * self.channels / 4
+        self.sample_rate as usize / 4 * self.channels
+    }
+    fn needs_samples(&self) -> bool {
+        self.samples.len() < self.capacity()
     }
 }
 
@@ -281,8 +285,7 @@ impl Output {
         }
     }
     pub(super) fn needs_samples(&self) -> bool {
-        let queue = self.queue.lock().unwrap();
-        queue.samples.len() < queue.capacity()
+        self.queue.lock().unwrap().needs_samples()
     }
     /// Accept a bounded prefix; the worker retains the rest of the codec packet.
     pub(super) fn push(&mut self, samples: &[f32]) -> usize {
@@ -485,6 +488,32 @@ mod tests {
         assert_eq!(cursor, input.len());
         assert!(total > 1_500_000);
         assert!(peak <= 24000);
+    }
+    #[test]
+    fn queue_stops_asking_for_samples_once_full_at_every_rate() {
+        // 22.05 kHz stereo once gave an odd capacity (11025 samples) that
+        // whole frames never reach, so the worker never idled and kept the
+        // device callback off the queue (#7560).
+        for rate in [8000, 11025, 22050, 24000, 44100, 48000] {
+            for channels in [1, 2] {
+                let mut processor = Processor::new(rate, channels, rate, channels, 1.);
+                let mut queue = PcmQueue::new(channels, rate, 0., 1.);
+                let input = vec![0.1; rate as usize * channels];
+                let mut cursor = 0;
+                for _ in 0..1000 {
+                    if !queue.needs_samples() {
+                        break;
+                    }
+                    cursor += processor.push(&input[cursor..], &mut queue);
+                }
+                assert!(
+                    !queue.needs_samples(),
+                    "{rate} Hz x{channels}: still asks for samples with {} of {} queued",
+                    queue.samples.len(),
+                    queue.capacity()
+                );
+            }
+        }
     }
     #[test]
     fn tempo_preserves_pitch_and_duration_at_different_device_sample_rates() {
