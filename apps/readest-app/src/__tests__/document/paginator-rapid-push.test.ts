@@ -137,6 +137,8 @@ const setupPaginator = async () => {
     },
     // Run the next animation frame (touchend defers its snap to one) and let
     // the turn's promise chain release the page-turn lock.
+    // Take the queued frames out to run later.
+    takeFrames: () => rafQueue.splice(0).map(({ cb }) => cb),
     frame: async () => {
       for (const { cb } of rafQueue.splice(0)) cb(performance.now());
       for (let i = 0; i < 5; i++) await Promise.resolve();
@@ -418,13 +420,42 @@ describe('push page-turn handover', () => {
       t.setClamp(100);
       t.p.dispatchEvent(touchEvent('touchstart', 300, 0));
       expect(t.scrollLeft()).toBe(100);
-      // The stale extent clamps the first move too.
-      t.p.dispatchEvent(touchEvent('touchmove', 280, 200));
-      expect(t.scrollLeft()).toBe(100);
+      // A 20px backward move, which the stale extent doesn't clamp.
+      t.p.dispatchEvent(touchEvent('touchmove', 320, 200));
+      expect(t.scrollLeft()).toBe(80);
       t.setClamp(Infinity);
       await t.frame();
-      // Back to where the views were on screen, not left at the clamp.
-      expect(t.scrollLeft()).toBe(150);
+      // Where the views were on screen (150), less the drag: not left at the
+      // clamp (80), and not snapped back without the drag (150).
+      expect(t.scrollLeft()).toBe(130);
+      t.p.destroy();
+    });
+
+    it('drops the clamp re-apply once another scroll moves the offset', async () => {
+      const t = await setupPaginator();
+      // A swipe's turn (100 -> 400), which holds no page-turn lock.
+      t.p.dispatchEvent(touchEvent('touchstart', 300, 0));
+      t.p.dispatchEvent(touchEvent('touchmove', 200, 200));
+      t.p.dispatchEvent(touchEvent('touchend', 200, 220));
+      await t.frame();
+      expect(t.view().style.transform).toBe('translateX(-300px)');
+      // A touch takes it over at 150 on screen; WebKit clamps that to 120.
+      t.setTx(-50);
+      t.setClamp(120);
+      t.p.dispatchEvent(touchEvent('touchstart', 300, 300));
+      expect(t.scrollLeft()).toBe(120);
+      t.setClamp(Infinity);
+      const reapply = t.takeFrames();
+      // A non-animated page turn lands on 400 before the re-apply frame runs;
+      // that frame must not shift it by the stale clamp (to 430).
+      t.p.removeAttribute('animated');
+      const turn = t.p.next();
+      for (let i = 0; i < 5; i++) await Promise.resolve();
+      expect(t.scrollLeft()).toBe(400);
+      for (const cb of reapply) cb(performance.now());
+      expect(t.scrollLeft()).toBe(400);
+      await vi.advanceTimersByTimeAsync(100);
+      await turn;
       t.p.destroy();
     });
 
@@ -445,7 +476,12 @@ describe('push page-turn handover', () => {
           changedTouches: [fingers[1]],
         }),
       );
-      t.p.dispatchEvent(touchEvent('touchcancel', 200));
+      t.p.dispatchEvent(
+        Object.assign(new Event('touchcancel', { bubbles: true }), {
+          touches: [],
+          changedTouches: fingers,
+        }),
+      );
       expect(t.view().style.transform).toBe('translateX(-300px)');
       await t.endTransition();
       expect(t.scrollLeft()).toBe(400);
