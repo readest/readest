@@ -326,6 +326,18 @@ describe("LibraryStore", function()
             assert.are.equal(1, rows[1].local_present)
         end)
 
+        it("explicit local_present=0 clears the flag; an omitted one keeps it (issue #7577)", function()
+            store:upsertBook(book({ hash = "h1", title = "X", cloud_present = 1,
+                local_present = 1, file_path = "/b/x.epub" }))
+            -- A cloud pull doesn't know about the device: local_present is left out.
+            store:upsertBook({ hash = "h1", title = "X", cloud_present = 1 })
+            assert.are.equal(1, store:_getRowRaw("h1").local_present)
+            -- lightScan's stale sweep / removeLocalFile: the file is gone.
+            store:upsertBook({ hash = "h1", title = "X", local_present = 0 })
+            assert.are.equal(0, store:_getRowRaw("h1").local_present)
+            assert.are.equal(1, store:_getRowRaw("h1").cloud_present)
+        end)
+
         it("explicit cloud_present=0 from a deleted_at sync update DOES set it to 0", function()
             store:upsertBook(book({ hash = "h1", title = "X", cloud_present = 1, local_present = 1 }))
             -- Tombstone update from sync: explicit cloud_present=0 + deleted_at set

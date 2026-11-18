@@ -233,11 +233,11 @@ end
 -- ---------------------------------------------------------------------------
 -- upsertBook
 -- ---------------------------------------------------------------------------
--- Merges a row by (user_id, hash). Flags `cloud_present` and `local_present`
--- are OR-merged with the existing row UNLESS the caller passes the
--- `_force_cloud_present` sentinel, in which case the supplied value is
--- written verbatim (used for cloud-tombstone updates that must clear the
--- flag).
+-- Merges a row by (user_id, hash). `cloud_present` is OR-merged with the
+-- existing row UNLESS the caller passes the `_force_cloud_present` sentinel,
+-- in which case the supplied value is written verbatim (used for
+-- cloud-tombstone updates that must clear the flag). `local_present` is
+-- written as given (0 = the file is gone) and kept when left out.
 --
 -- Sentinels:
 --   _force_cloud_present = true → caller's cloud_present overrides OR-merge.
@@ -268,10 +268,12 @@ function M:upsertBook(row)
         else
             merged.cloud_present = tonumber(row.cloud_present) or 0
         end
-        -- OR-merge local_present always (no use case for force-clearing yet)
-        merged.local_present = math.max(
-            tonumber(existing.local_present) or 0,
-            tonumber(merged.local_present) or 0)
+        -- local_present is the caller's when it gives one: every caller that
+        -- passes 0 has found the file gone (lightScan's stale sweep,
+        -- removeLocalFile), and the row must turn cloud-only again (#7577).
+        -- Callers that don't know, such as a cloud pull, leave it out.
+        merged.local_present = tonumber(row.local_present)
+            or tonumber(existing.local_present) or 0
         -- Preserve fields the caller didn't provide
         for k in pairs(BOOK_COL_INDEX) do
             if merged[k] == nil and existing[k] ~= nil then
