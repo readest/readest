@@ -718,6 +718,16 @@ export function BookshelvesEditor({
                 onChange={() => update({ skeuomorphicCovers: !selected.skeuomorphicCovers })}
               />
               <SettingsSwitchRow
+                label={_('Plain placeholder covers')}
+                checked={!!selected.plainPlaceholderCovers}
+                // Off clears the key: older app versions reject a definition carrying it.
+                onChange={() =>
+                  update({
+                    plainPlaceholderCovers: selected.plainPlaceholderCovers ? undefined : true,
+                  })
+                }
+              />
+              <SettingsSwitchRow
                 label={_('Show page count')}
                 checked={!!selected.showPageCount}
                 // Off clears the key: older app versions reject a definition carrying it.

@@ -483,6 +483,35 @@ describe('mixed bookshelf stream in Chromium', () => {
     );
     expect(container.querySelector('[data-shelf-layout="grid"] img')).toBeNull();
   });
+  it('gives each carousel and grid shelf its own placeholder cover style (#7549)', async () => {
+    const items = books(6).map((book) => ({ ...book, coverImageUrl: null }));
+    const { container } = render(
+      <div style={{ width: 900, height: 900 }}>
+        <BookshelfStream
+          autoColumns
+          fixedColumns={6}
+          sections={[
+            {
+              definition: {
+                ...createBookshelf('Carousel', 'carousel'),
+                plainPlaceholderCovers: true,
+              },
+              items,
+            },
+            { definition: { ...createBookshelf('Grid', 'grid'), layout: 'grid' }, items },
+          ]}
+          renderItem={(item) => (
+            <div style={{ height: 180 }}>{'hash' in item && <BookCover book={item} />}</div>
+          )}
+        />
+      </div>,
+    );
+    const background = (layout: string) =>
+      container.querySelector<HTMLElement>(`[data-shelf-layout="${layout}"] .fallback-cover`)?.style
+        .backgroundColor;
+    await waitFor(() => expect(background('grid')).toBeTruthy());
+    expect(background('carousel')).toBe('');
+  });
   for (const eink of [false, true]) {
     it(`uses ${eink ? 'page buttons' : 'scroll arrows'} for carousel navigation`, async () => {
       document.documentElement.setAttribute('data-eink', String(eink));

@@ -160,6 +160,7 @@ export const persistedBookshelfSchema: z.ZodType<BookshelfDefinition> = z
     coverFit: z.enum(['crop', 'fit']).optional(),
     skeuomorphicCovers: z.boolean().optional(),
     showPageCount: z.boolean().optional(),
+    plainPlaceholderCovers: z.boolean().optional(),
     filters: groupSchema(0),
     useGlobalGrouping: z.boolean().optional(),
     groupBy: z.enum(Object.values(LibraryGroupByType)).optional(),

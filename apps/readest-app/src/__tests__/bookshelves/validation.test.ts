@@ -59,6 +59,18 @@ describe('bookshelf validation boundaries', () => {
       true,
     );
   });
+  it('round-trips the plain placeholder covers choice through synced definitions (#7549)', () => {
+    const row = makeRow();
+    row.fields_jsonb['definition']!.v = {
+      ...createBookshelf('Plain', row.replica_id),
+      plainPlaceholderCovers: true,
+    };
+    const settings = { bookshelves: { rows: { [row.replica_id]: row } } };
+    expect(validateRow(row).ok).toBe(true);
+    expect(
+      readBookshelves(settings).find((s) => s.id === row.replica_id)?.plainPlaceholderCovers,
+    ).toBe(true);
+  });
   it('round-trips relative date filters through synced definitions', () => {
     const row = makeRow();
     const definition = createBookshelf('Recent additions', row.replica_id);
