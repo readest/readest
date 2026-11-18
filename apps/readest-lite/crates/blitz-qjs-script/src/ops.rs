@@ -506,10 +506,22 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         .flatten()
     });
     let d = docs.clone();
-    op!("children", move |h: f64| -> Vec<f64> {
+    // `elements`: only the element children (kind 1), as `children` lists them.
+    op!("children", move |h: f64, elements: Opt<bool>| -> Vec<f64> {
         d.with(h, |doc, n, tag| {
-            doc.get_node(n)
-                .map(|n| n.children.iter().map(|&c| d.enc(tag, c)).collect())
+            let is_element = |c: NodeId| {
+                matches!(
+                    doc.get_node(c).map(|c| &c.data),
+                    Some(NodeData::Element(_) | NodeData::AnonymousBlock(_))
+                )
+            };
+            doc.get_node(n).map(|n| {
+                n.children
+                    .iter()
+                    .filter(|&&c| elements.0 != Some(true) || is_element(c))
+                    .map(|&c| d.enc(tag, c))
+                    .collect()
+            })
         })
         .flatten()
         .unwrap_or_default()

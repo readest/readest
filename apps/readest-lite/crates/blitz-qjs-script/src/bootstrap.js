@@ -1045,8 +1045,12 @@
         },
       );
     }
+    // The element ids from one native call: asking each child its type is a call per child.
     get children() {
-      return withItem(this.childNodes.filter((c) => c.nodeType === 1));
+      const o = ownerOf(this);
+      const c = n.children(this._id, true);
+      if (this._shadow) c.shift();
+      return withItem(c.map((id) => wrapIn(id, o)));
     }
     get firstElementChild() {
       let c = this.firstChild;

@@ -284,6 +284,36 @@ fn last_element_child_does_not_list_the_children() {
     assert_eq!(doc.take_messages(), ["log: b 0 null null u"]);
 }
 
+#[test]
+fn children_asks_nothing_of_the_text_between_elements() {
+    // foliate-js resolves a CFI step from a parent's `children`: a chapter's parent of hundreds of
+    // paragraphs and the white space between them, where asking each child its type is a native
+    // call (a Kindle spent ~50 ms of opening a book at a saved page there)
+    let html = format!(
+        "<!DOCTYPE html><html><body><div id='d'>{}<b>x</b> text <!--c--></div></body></html>",
+        "<p>p</p>\n".repeat(400)
+    );
+    let mut doc = QjsDocument::from_html(&html, DocumentConfig::default());
+    doc.eval(
+        "const d = document.getElementById('d');
+        const els = (n) => [...n.childNodes].filter((c) => c.nodeType === 1);
+        const same = (n) => { const a = [...n.children], b = els(n); return a.length === b.length && a.every((c, i) => c === b[i]); };
+        d.children; // the paragraphs' objects made once
+        const kind = __n.kind;
+        let asked = 0;
+        __n.kind = (id) => { asked++; return kind(id); };
+        const c = d.children;
+        __n.kind = kind;
+        const host = document.createElement('div');
+        host.attachShadow({ mode: 'open' }).append(document.createElement('i'));
+        host.append(document.createElement('u'), 'text', document.createElement('s'));
+        console.log(c.length, c[400].localName, c.item(0).localName, asked, same(d), same(host), [...host.children].map((e) => e.localName).join());",
+        "test",
+    );
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(doc.take_messages(), ["log: 401 b p 0 true true u,s"]);
+}
+
 // Readest adds an alignment class to each paragraph of a chapter as it loads (keepTextAlignment),
 // a few hundred `classList.add`s on a Kindle's path to the page.
 #[test]
