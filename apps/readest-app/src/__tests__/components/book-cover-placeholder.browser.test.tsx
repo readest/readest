@@ -130,9 +130,18 @@ describe('plain placeholder covers (#7549)', () => {
         </PlainPlaceholderCoversContext.Provider>,
       );
       const cover = container.querySelector<HTMLElement>('.fallback-cover')!;
-      const title = cover.querySelector<HTMLElement>('span')!;
       expect(cover.style.backgroundColor).toBe('');
-      expect(title.scrollWidth).toBeLessThanOrEqual(title.clientWidth + 1);
+
+      const title = cover.querySelector<HTMLElement>('span')!;
+      const range = document.createRange();
+      range.selectNodeContents(title);
+      const lines = [...range.getClientRects()];
+      const coverBox = cover.getBoundingClientRect();
+      expect(new Set(lines.map((line) => Math.round(line.top))).size).toBeGreaterThan(1);
+      for (const line of lines) {
+        expect(line.left).toBeGreaterThanOrEqual(coverBox.left - 0.5);
+        expect(line.right).toBeLessThanOrEqual(coverBox.right + 0.5);
+      }
     });
   }
 });
