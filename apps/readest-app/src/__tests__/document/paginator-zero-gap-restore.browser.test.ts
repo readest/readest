@@ -45,17 +45,22 @@ const makeBook = () => ({
 
 type RelocateDetail = { reason: string; range: Range };
 
-const nextRelocate = (el: HTMLElement) =>
+// The next relocate a page turn reports; a scroll settling from an earlier
+// jump reports with another reason.
+const nextPageRelocate = (el: HTMLElement) =>
   new Promise<RelocateDetail>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('relocate timeout')), 5000);
-    el.addEventListener(
-      'relocate',
-      (e) => {
-        clearTimeout(timer);
-        resolve((e as CustomEvent<RelocateDetail>).detail);
-      },
-      { once: true },
-    );
+    const onRelocate = (e: Event) => {
+      const { detail } = e as CustomEvent<RelocateDetail>;
+      if (detail.reason !== 'page') return;
+      clearTimeout(timer);
+      el.removeEventListener('relocate', onRelocate);
+      resolve(detail);
+    };
+    const timer = setTimeout(() => {
+      el.removeEventListener('relocate', onRelocate);
+      reject(new Error('relocate timeout'));
+    }, 5000);
+    el.addEventListener('relocate', onRelocate);
   });
 
 describe('Paginator with zero side margins and gap', () => {
@@ -93,14 +98,17 @@ describe('Paginator with zero side margins and gap', () => {
     const pages: number[] = [];
     const restored: number[] = [];
     for (let i = 1; i < paginator.pages - 1; i++) {
-      const relocated = nextRelocate(paginator);
-      await paginator.next();
-      const { range } = await relocated;
+      const [{ range }] = await Promise.all([nextPageRelocate(paginator), paginator.next()]);
       pages.push(paginator.page);
-      // Reopening the book resolves the saved CFI to this range and goes there.
+      // Reopening the book starts elsewhere, resolves the saved CFI to this
+      // range and goes there.
+      await paginator.goTo({ index: 0, anchor: 0 });
+      expect(paginator.page).toBe(0);
       await paginator.goTo({ index: 0, anchor: () => range });
       restored.push(paginator.page);
     }
     expect(restored).toEqual(pages);
+    // Every turn reached the next page, so every page was checked.
+    expect(pages).toEqual(pages.map((_, i) => i + 1));
   }, 30000);
 });
