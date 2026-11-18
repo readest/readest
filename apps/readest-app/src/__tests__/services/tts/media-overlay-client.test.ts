@@ -906,6 +906,101 @@ describe('MediaOverlayClient playback', () => {
   });
 });
 
+// #7621: narration moved from ch1 to ch2 (a skip, a chapter change) while ch1
+// was still loading, and ch2's load finished first.
+describe('MediaOverlayClient superseded loads', () => {
+  const TWO_FILE_SMIL =
+    par('w1', 0, 1) + par('w2', 1, 2) + par('w3', 2, 3) + par('p2', 0, 4, 'ch2.mp3');
+
+  const held = <T>() => {
+    let release!: (value: T) => void;
+    const promise = new Promise<T>((resolve) => {
+      release = resolve;
+    });
+    return { promise, release };
+  };
+
+  // What the controller does on a skip: abort the block, stop for the
+  // handover, speak the next block.
+  const skipToBlock1 = async (skipped: AbortController) => {
+    skipped.abort();
+    await client.stop(true);
+    const next = client.speak(section.ssmlForBlock(1)!, new AbortController().signal);
+    expect((await next.next()).value).toMatchObject({ code: 'boundary', mark: '3' });
+    return audio();
+  };
+
+  test('a slower blob of the file narration left does not take over the clock', async () => {
+    await setup(TWO_FILE_SMIL);
+    const ch1 = held<Blob>();
+    (book.loadBlob as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ch1.promise);
+
+    const skipped = new AbortController();
+    const left = client.speak(section.ssmlForBlock(0)!, skipped.signal).next();
+    await vi.waitFor(() => expect(book.loadBlob).toHaveBeenCalledTimes(1));
+    const playing = await skipToBlock1(skipped);
+
+    ch1.release(new Blob([new Uint8Array(8)]));
+    await left;
+
+    await client.pause();
+    expect(playing.paused).toBe(true);
+    expect(FakeAudio.instances).toHaveLength(1);
+  });
+
+  test('a slower resolve of the file narration left does not release the clock', async () => {
+    await setup(TWO_FILE_SMIL);
+    const ch1 = held<string | null>();
+    const resolveUrl = vi.fn((href: string) =>
+      href.endsWith('ch1.mp3') ? ch1.promise : Promise.resolve(null),
+    );
+    client.attachSource({ loadBlob: book.loadBlob!, resolveUrl });
+
+    const skipped = new AbortController();
+    const left = client.speak(section.ssmlForBlock(0)!, skipped.signal).next();
+    await vi.waitFor(() => expect(resolveUrl).toHaveBeenCalledTimes(1));
+    const playing = await skipToBlock1(skipped);
+
+    ch1.release(null);
+    await left;
+
+    expect(playing.paused).toBe(false);
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    expect(FakeAudio.instances).toHaveLength(1);
+  });
+
+  // The controller preloads the next blocks once the current one is slow to
+  // become audible; in a book with a file per page they name another file.
+  test('a preload of another file never replaces the clock playback is loading', async () => {
+    await setup(TWO_FILE_SMIL);
+    const ch1 = held<Blob>();
+    const ch2 = held<Blob>();
+    (book.loadBlob as ReturnType<typeof vi.fn>).mockImplementation((href: string) =>
+      href.endsWith('ch1.mp3') ? ch1.promise : ch2.promise,
+    );
+
+    const iter = client.speak(section.ssmlForBlock(0)!, new AbortController().signal);
+    const first = iter.next();
+    await vi.waitFor(() => expect(book.loadBlob).toHaveBeenCalledTimes(1));
+    const preload = (async () => {
+      for await (const _ of client.speak(
+        section.ssmlForBlock(1)!,
+        new AbortController().signal,
+        true,
+      ));
+    })();
+
+    ch1.release(new Blob([new Uint8Array(8)]));
+    expect((await first).value).toMatchObject({ code: 'boundary', mark: '0' });
+    const playing = audio();
+    ch2.release(new Blob([new Uint8Array(8)]));
+    await preload;
+
+    await client.pause();
+    expect(playing.paused).toBe(true);
+  });
+});
+
 describe('MediaOverlayClient transport', () => {
   test('reports the position inside the audible par, clamped to its length', async () => {
     await setup();

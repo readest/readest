@@ -172,6 +172,10 @@ export class MediaOverlayClient implements TTSClient {
   #audioHref: string | null = null;
   #objectUrl: string | null = null;
   #audioLoad: { href: string; promise: Promise<NarrationClock> } | null = null;
+  // Counts loads of a new file. A load that finds a later one started was left
+  // behind (narration moved to another file while it loaded), so it must not
+  // release or replace the clock of the file narration moved to (#7621).
+  #loadSeq = 0;
   #currentPar: NarrationPar | null = null;
   // Last par the recording actually rode, kept across the handover that ends
   // every block (unlike #currentPar) so speak() can tell a stalled cursor
@@ -299,7 +303,7 @@ export class MediaOverlayClient implements TTSClient {
     }
     if (this.#audioLoad?.href === href) return this.#audioLoad.promise;
 
-    const promise = this.#loadAudio(href);
+    const promise = this.#loadAudio(href, ++this.#loadSeq);
     this.#audioLoad = { href, promise };
     try {
       return await promise;
@@ -308,12 +312,16 @@ export class MediaOverlayClient implements TTSClient {
     }
   }
 
-  async #loadAudio(href: string): Promise<NarrationClock> {
+  async #loadAudio(href: string, seq: number): Promise<NarrationClock> {
     if (!this.#source) throw new Error('Book cannot load narration audio');
 
     const signal = this.#player?.cancelsPendingLoads ? this.#playback.signal : undefined;
+    const throwIfLeftBehind = () => {
+      if (seq !== this.#loadSeq) throw new DOMException('Narration moved on', 'AbortError');
+    };
     const tracks = await this.#source.resolveTracks?.(href).catch(() => null);
     signal?.throwIfAborted();
+    throwIfLeftBehind();
     if (tracks?.length) {
       let player: NarrationTrackPlayer;
       if (this.#native && this.#player?.supportsStreaming) {
@@ -374,6 +382,7 @@ export class MediaOverlayClient implements TTSClient {
     // A Stop while the native player was declining the file must not leave
     // this element playing in place of the session.
     signal?.throwIfAborted();
+    throwIfLeftBehind();
     this.#releaseAudio();
     let url = directUrl ?? mediaUrl;
     if (!url) {
@@ -382,6 +391,7 @@ export class MediaOverlayClient implements TTSClient {
           ? media.blob
           : audioBlobWithType(href, await this.#source.loadBlob(href));
       signal?.throwIfAborted();
+      throwIfLeftBehind();
       url = URL.createObjectURL(blob);
       this.#objectUrl = url;
     }
@@ -551,9 +561,12 @@ export class MediaOverlayClient implements TTSClient {
       // first play of a section from stalling on a large clip read out of the
       // container. Only when nothing is loaded yet: preloading runs CONCURRENTLY
       // with playback, and loading a different file swaps the element (and
-      // revokes its blob URL) out from under the clip being played.
+      // revokes its blob URL) out from under the clip being played. Nor while
+      // a load is running: starting another would leave playback's behind.
       const href = pars[0]?.audioHref;
-      if (href && !this.#audio) await this.#ensureAudio(href).catch(() => undefined);
+      if (href && !this.#audio && !this.#audioLoad) {
+        await this.#ensureAudio(href).catch(() => undefined);
+      }
       return;
     }
 
