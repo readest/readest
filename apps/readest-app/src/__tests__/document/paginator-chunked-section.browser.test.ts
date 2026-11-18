@@ -201,33 +201,44 @@ describe('Paginator chunked section (browser)', () => {
   });
 
   it('reports a position scrolled onto a chunk still loading once it renders', async () => {
-    // Hold the second chunk only: scrolled mode also loads the section before
+    open();
+    paginator.setAttribute('flow', 'scrolled');
+    // let the navigation settle: its fill loads the next chunk too
+    const settled = new Promise<void>((resolve) => {
+      let count = 0;
+      paginator.addEventListener('stabilized', () => ++count === 2 && resolve());
+    });
+    await paginator.goTo({ index: 1, anchor: 0.199 });
+    await settled;
+    await new Promise((r) => setTimeout(r, 100));
+
+    // Hold the chunk after it, which scrolling to its end preloads
     const srcdoc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'srcdoc')!;
     const held: (() => void)[] = [];
     Object.defineProperty(HTMLIFrameElement.prototype, 'srcdoc', {
       ...srcdoc,
       set(this: HTMLIFrameElement, value: string) {
-        if (value.includes('>2700. ')) held.push(() => srcdoc.set!.call(this, value));
+        if (value.includes('>4500. ')) held.push(() => srcdoc.set!.call(this, value));
         else srcdoc.set!.call(this, value);
       },
     });
+    const scroll = async (top: number) => {
+      container.scrollTop = top;
+      // past the scroll listener's debounce
+      await new Promise((r) => setTimeout(r, 500));
+    };
+    const container = paginator.shadowRoot!.getElementById('container')!;
     let turned: number;
     try {
-      open();
-      paginator.setAttribute('flow', 'scrolled');
-      const stabilized = waitFor(paginator, 'stabilized');
-      await paginator.goTo({ index: 1, anchor: 0.199 });
-      await stabilized;
+      await scroll(container.scrollHeight - container.clientHeight);
       await vi.waitFor(() => expect(held.length).toBe(1));
-      // scroll onto the next chunk's placeholder, the first chunk's last
-      // pixel still in view: it holds no text to report either
-      const container = paginator.shadowRoot!.getElementById('container')!;
+      // scroll onto its placeholder, the chunk before's last pixel still in
+      // view: it holds no text to report either
       const placeholder = Array.from(container.children).find(
         (el) => el.querySelector('iframe')?.contentDocument?.URL === 'about:blank',
       ) as HTMLElement;
       turned = relocations.length;
-      const { next } = paginator as unknown as { next: (distance: number) => Promise<void> };
-      await next.call(paginator, placeholder.offsetTop - 1 - container.scrollTop);
+      await scroll(placeholder.offsetTop - 1);
       expect(container.scrollTop).toBe(placeholder.offsetTop - 1);
       expect(relocations.slice(turned)).toEqual([]);
     } finally {
@@ -238,6 +249,7 @@ describe('Paginator chunked section (browser)', () => {
     await relocated;
 
     const end = relocations[turned]!;
+    expect(end.reason).toBe('scroll');
     expect(end.index).toBe(1);
     const primary = paginator.getContents().find((c) => c.index === paginator.primaryIndex);
     expect(end.range.startContainer.ownerDocument).toBe(primary!.doc);
