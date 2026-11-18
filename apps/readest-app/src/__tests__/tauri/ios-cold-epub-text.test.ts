@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { strToU8, Zip, ZipDeflate, zipSync } from 'fflate';
@@ -39,6 +39,7 @@ const hasSwiftc =
 interface Speech {
   startSection: number;
   language: string | null;
+  hasMediaOverlays: boolean;
   segments: { text: string; sectionIndex: number; cfi: string }[];
 }
 
@@ -52,18 +53,18 @@ let dir = '';
 let binary = '';
 let count = 0;
 
-const epubFiles = (firstText: string): Record<string, string> => ({
+const epubFiles = (firstText: string, opf = OPF): Record<string, string> => ({
   mimetype: 'application/epub+zip',
   'META-INF/container.xml': CONTAINER,
-  'OEBPS/content.opf': OPF,
+  'OEBPS/content.opf': opf,
   'OEBPS/one a.xhtml': sectionOne(firstText),
   'OEBPS/two.xhtml': SECTION_TWO,
 });
 
 // zipSync stores `mimetype` and deflates the rest, with sizes in the local
 // headers.
-const createEpub = (firstText = 'First section text.') => {
-  const files = epubFiles(firstText);
+const createEpub = (firstText = 'First section text.', opf = OPF) => {
+  const files = epubFiles(firstText, opf);
   const path = join(dir, `book-${count++}.epub`);
   writeFileSync(
     path,
@@ -96,6 +97,28 @@ const createStreamedEpub = () => {
   const path = join(dir, `book-${count++}.epub`);
   writeFileSync(path, Buffer.concat(chunks));
   return path;
+};
+
+// Rewrites the decoded size the central directory declares for `entry`.
+const declareSize = (epub: string, entry: string, size: (actual: number) => number) => {
+  const bytes = readFileSync(epub);
+  const name = Buffer.from(entry);
+  for (let i = bytes.length - 46; i >= 0; i--) {
+    if (
+      bytes.readUInt32LE(i) === 0x02014b50 &&
+      bytes.subarray(i + 46, i + 46 + name.length).equals(name)
+    ) {
+      bytes.writeUInt32LE(size(bytes.readUInt32LE(i + 24)), i + 24);
+      writeFileSync(epub, bytes);
+      return epub;
+    }
+  }
+  throw new Error(`${entry} not in ${epub}`);
+};
+
+const readError = (epub: string) => {
+  const run = spawnSync(binary, [epub], { encoding: 'utf-8' });
+  return run.status === 0 ? 'read without error' : run.stderr;
 };
 
 const read = (epub: string, cfi?: string): Speech => {
@@ -197,6 +220,34 @@ describe.skipIf(!hasSwiftc)('ColdEpubText.swift', () => {
     }
   });
 
+  it('splits a long run of words between words', () => {
+    const chunks = sectionText(createEpub('word '.repeat(1_000))).slice(1);
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const chunk of chunks) {
+      expect(chunk.text.length).toBeLessThanOrEqual(2_500);
+      expect(chunk.text).toMatch(/^word( word)*$/);
+    }
+  });
+
+  it('refuses an entry that declares more than it may decode', () => {
+    const epub = declareSize(createEpub(), 'OEBPS/one a.xhtml', () => 0x7fff_fff0);
+    expect(readError(epub)).toMatch(/too large/);
+  });
+
+  it('refuses an entry that decodes to more than it declares', () => {
+    const epub = declareSize(createEpub(), 'OEBPS/one a.xhtml', (actual) => actual - 10);
+    expect(readError(epub)).toMatch(/Corrupt zip entry/);
+  });
+
+  it('tells whether the book has recorded narration (Media Overlays)', () => {
+    expect(read(createEpub()).hasMediaOverlays).toBe(false);
+    const narrated = OPF.replace(
+      '<item id="one" href="one%20a.xhtml"',
+      '<item id="one" media-overlay="one-smil" href="one%20a.xhtml"',
+    );
+    expect(read(createEpub('First section text.', narrated)).hasMediaOverlays).toBe(true);
+  });
+
   it('resumes at offsets inside an unbroken text node', () => {
     const epub = createEpub('A'.repeat(2500) + 'B'.repeat(2500) + 'C'.repeat(100));
     const chunks = sectionText(epub).slice(1);
@@ -263,6 +314,7 @@ describe.skipIf(!hasSwiftc)('ColdEpubText.swift', () => {
             : location
           : location || ttsLocation;
       const run = spawnSync(binary, ['--resume', location, ttsLocation], { encoding: 'utf-8' });
+      expect(run.status, run.stderr).toBe(0);
       expect([location, ttsLocation, run.stdout.trim()]).toEqual([location, ttsLocation, expected]);
     }
   });

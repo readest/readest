@@ -259,8 +259,11 @@ const CarMediaLibraryPublisher = () => {
   // suspends this WebView then (#7566). Back on screen, the reader takes over:
   // the native player stops, having saved its position to the book's config,
   // so an open copy of the book reloads from disk and reads on if it played.
+  // Not behind App Lock: the native player keeps going until it opens.
   useEffect(() => {
-    if (!isMainAppWindow() || !isTauriAppPlatform() || getOSPlatform() !== 'ios') return;
+    if (locked || !isMainAppWindow() || !isTauriAppPlatform() || getOSPlatform() !== 'ios') {
+      return;
+    }
 
     const takeOver = async () => {
       if (document.visibilityState !== 'visible') return;
@@ -268,9 +271,12 @@ const CarMediaLibraryPublisher = () => {
         'plugin:native-tts|take_cold_playback',
       );
       if (!bookHash) return;
-      const { viewStates, recreateViewer } = useReaderStore.getState();
-      for (const key of Object.keys(viewStates)) {
-        if (key.startsWith(`${bookHash}-`)) recreateViewer(environmentConfig, key);
+      // recreateViewer, but each pane keeps whether it is the primary one.
+      const { viewStates, initViewState } = useReaderStore.getState();
+      for (const [key, viewState] of Object.entries(viewStates)) {
+        if (key.startsWith(`${bookHash}-`) && viewState.key === key) {
+          void initViewState(environmentConfig, bookHash, key, viewState.isPrimary, true);
+        }
       }
       if (playing) {
         const url = `readest://book/${encodeURIComponent(bookHash)}?autoplay=tts`;
@@ -283,7 +289,7 @@ const CarMediaLibraryPublisher = () => {
     onVisibilityChange();
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-  }, []);
+  }, [locked]);
 
   return null;
 };

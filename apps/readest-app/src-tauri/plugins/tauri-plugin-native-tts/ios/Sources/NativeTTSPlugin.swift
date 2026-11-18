@@ -1142,12 +1142,17 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
   // Posted by CarPlaySceneDelegate with an NSMutableDictionary; "handled"
   // tells it not to open the book in the reader as well.
   @objc private func carPlayPlayBook(_ note: Notification) {
-    guard let request = note.object as? NSMutableDictionary, let hash = request["hash"] as? String,
-      !webViewPlaying, !Self.phoneAppOnScreen,
+    guard let request = note.object as? NSMutableDictionary, let hash = request["hash"] as? String
+    else { return }
+    guard !(request["isAudiobook"] as? Bool ?? false), !webViewPlaying, !Self.phoneAppOnScreen,
       let cold = ColdReadAloud(
         bookHash: hash, title: request["title"] as? String ?? "",
         author: request["author"] as? String ?? "")
-    else { return }
+    else {
+      // The reader plays this pick; a book read here must not go on over it.
+      stopColdReadAloud(keepMediaSession: false)
+      return
+    }
     request["handled"] = true
     if coldReadAloud != nil {
       stopColdReadAloud(keepMediaSession: true)
@@ -1161,11 +1166,11 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       guard let self = self, let cold = cold, self.coldReadAloud === cold else { return }
       self.publishPlaybackState(playing: cold.isPlaying, position: nil, duration: nil)
     }
-    cold.onEnd = { [weak self, weak cold] failed in
+    cold.onEnd = { [weak self, weak cold] toReader in
       guard let self = self, let cold = cold, self.coldReadAloud === cold else { return }
       self.stopColdReadAloud(keepMediaSession: false)
-      // A book this can't read opens in the reader once it can run, as before.
-      guard failed, let url = URL(string: "readest://book/\(cold.bookHash)?autoplay=tts") else { return }
+      // A book left to the reader opens there once it can run, as before.
+      guard toReader, let url = URL(string: "readest://book/\(cold.bookHash)?autoplay=tts") else { return }
       _ = UIApplication.shared.delegate?.application?(UIApplication.shared, open: url, options: [:])
     }
     activateRemoteCommands()
@@ -1205,8 +1210,11 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         return
       }
       let playing = cold.isPlaying
-      // Playing on, the reader's Read Aloud keeps the session; paused, it ends.
+      // Playing on, the session is kept for the reader's Read Aloud, so other
+      // audio isn't handed the car for the moment in between; it shows paused,
+      // with the silent keep-alive stopped, until the reader plays. Paused, it ends.
       self.stopColdReadAloud(keepMediaSession: playing)
+      if playing { self.publishPlaybackState(playing: false, position: nil, duration: nil) }
       invoke.resolve(TakeColdPlaybackResponse(bookHash: cold.bookHash, playing: playing))
     }
   }

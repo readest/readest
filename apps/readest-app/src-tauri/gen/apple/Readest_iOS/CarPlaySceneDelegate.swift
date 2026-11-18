@@ -82,10 +82,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         // plugin reads the book itself when it can (#7566).
         let request = NSMutableDictionary(dictionary: [
           "hash": book.hash, "title": book.title, "author": book.author,
+          "isAudiobook": book.isAudiobook,
         ])
-        if !book.isAudiobook {
-          NotificationCenter.default.post(name: Self.playBook, object: request)
-        }
+        NotificationCenter.default.post(name: Self.playBook, object: request)
         if request["handled"] as? Bool == true {
           self?.showNowPlaying()
           completion()

@@ -11,6 +11,8 @@ struct ColdEpubSpeech: Encodable {
   let segments: [ColdEpubSegment]
   let startSection: Int
   let language: String?
+  // Recorded narration (EPUB 3 Media Overlays), which the reader prefers.
+  let hasMediaOverlays: Bool
 }
 
 struct ColdEpubError: Error {
@@ -47,7 +49,8 @@ enum ColdEpubText {
     let opf = try XNode.parse(opfData)
     let base = opfPath.range(of: "/", options: .backwards).map { String(opfPath[..<$0.lowerBound]) } ?? ""
     var manifest: [String: String] = [:]
-    for item in opf.descendants(named: "item") {
+    let items = opf.descendants(named: "item")
+    for item in items {
       if let id = item.attributes["id"], let href = item.attributes["href"] {
         manifest[id] = resolveZipPath(base, href)
       }
@@ -70,7 +73,8 @@ enum ColdEpubText {
     }
     return ColdEpubSpeech(
       segments: segments, startSection: startSection,
-      language: language?.isEmpty == false ? language : nil)
+      language: language?.isEmpty == false ? language : nil,
+      hasMediaOverlays: items.contains { $0.attributes["media-overlay"] != nil })
   }
 
   static func spineIndex(fromCfi cfi: String?) -> Int {
@@ -190,10 +194,20 @@ enum ColdEpubText {
         var chunkStart = sentence.lowerBound
         while chunkStart < sentence.upperBound {
           var chunkEnd = min(chunkStart + maxSegmentLength, sentence.upperBound)
-          // Never split a surrogate pair.
-          if chunkEnd < sentence.upperBound && UTF16.isLeadSurrogate(text[chunkEnd - 1]) { chunkEnd -= 1 }
+          var nextStart = chunkEnd
+          if chunkEnd < sentence.upperBound {
+            // Break at the last space that fits; a single longer word is cut,
+            // but never inside a surrogate pair.
+            if let space = text[chunkStart..<chunkEnd].lastIndex(of: 0x20), space > chunkStart {
+              chunkEnd = space
+              nextStart = space + 1
+            } else if UTF16.isLeadSurrogate(text[chunkEnd - 1]) {
+              chunkEnd -= 1
+              nextStart = chunkEnd
+            }
+          }
           chunks.append(chunkStart..<chunkEnd)
-          chunkStart = chunkEnd
+          chunkStart = nextStart
         }
       } else {
         pending = pending.map { $0.lowerBound..<sentence.upperBound } ?? sentence
@@ -518,6 +532,10 @@ private final class DOMBuilder: NSObject, XMLParserDelegate {
 /// Reads stored and deflated entries; sizes come from the central directory,
 /// so entries written with data descriptors read too. No ZIP64.
 private struct ZipArchive {
+  // The declared size is the archive's word: refuse to allocate more than any
+  // real chapter needs rather than let a bad book exhaust memory.
+  private static let maxEntrySize = 128 * 1024 * 1024
+
   private struct Entry {
     let method: Int
     let compressedSize: Int
@@ -567,17 +585,20 @@ private struct ZipArchive {
       return Data(raw)
     case 8:
       if entry.size == 0 { return Data() }
+      guard entry.size <= Self.maxEntrySize else { throw ColdEpubError("Zip entry \(name) is too large") }
       guard !raw.isEmpty else { throw ColdEpubError("Corrupt zip entry \(name)") }
-      var output = Data(count: entry.size)
+      // One byte of spare room: the decoder stops at the buffer's end, so a
+      // stream longer than declared fills it and is caught here.
+      var output = Data(count: entry.size + 1)
       let written = output.withUnsafeMutableBytes { out in
         raw.withUnsafeBytes { input in
           compression_decode_buffer(
-            out.bindMemory(to: UInt8.self).baseAddress!, entry.size,
+            out.bindMemory(to: UInt8.self).baseAddress!, entry.size + 1,
             input.bindMemory(to: UInt8.self).baseAddress!, raw.count, nil, COMPRESSION_ZLIB)
         }
       }
       guard written == entry.size else { throw ColdEpubError("Corrupt zip entry \(name)") }
-      return output
+      return output.prefix(entry.size)
     default:
       throw ColdEpubError("Unsupported zip compression in \(name)")
     }

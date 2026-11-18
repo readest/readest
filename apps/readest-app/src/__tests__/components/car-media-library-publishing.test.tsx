@@ -8,9 +8,14 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useReaderStore } from '@/store/readerStore';
 import { eventDispatcher } from '@/utils/event';
 
+const TAKE = 'plugin:native-tts|take_cold_playback';
+// Idle unless a test hands over a book CarPlay is reading.
+const idleInvoke = async (command: string) =>
+  command === TAKE ? { bookHash: null, playing: false } : undefined;
+
 const mocks = vi.hoisted(() => ({
   platform: 'ios',
-  invoke: vi.fn().mockResolvedValue(undefined),
+  invoke: vi.fn(),
   listen: vi.fn().mockResolvedValue({ unregister: vi.fn() }),
   resolveNativeBookFilePath: vi.fn().mockResolvedValue('/books/book.epub'),
   resolveFilePath: vi.fn().mockResolvedValue('/books/book.json'),
@@ -37,6 +42,7 @@ vi.mock('@/utils/window', () => ({ isMainAppWindow: () => true }));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.invoke.mockImplementation(idleInvoke);
   useAppLockStore.setState({ isInitialized: true, isUnlocked: true });
   useLibraryStore.setState({
     libraryLoaded: true,
@@ -102,7 +108,7 @@ describe('car library elsewhere', () => {
 // this WebView (#7566). Once the app is back on screen the reader takes over
 // from where the native player saved its position.
 describe('CarPlay Read Aloud takeover on iOS', () => {
-  const recreateViewer = vi.fn();
+  const initViewState = vi.fn().mockResolvedValue(undefined);
   let dispatch: ReturnType<typeof vi.spyOn>;
   let visibility: DocumentVisibilityState = 'visible';
 
@@ -112,52 +118,74 @@ describe('CarPlay Read Aloud takeover on iOS', () => {
     vi.spyOn(document, 'visibilityState', 'get').mockImplementation(() => visibility);
     dispatch = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue(undefined);
     useReaderStore.setState({
-      viewStates: { 'book-1': { key: 'book-1' }, 'other-2': { key: 'other-2' } } as never,
-      recreateViewer,
+      viewStates: {
+        'book-1': { key: 'book-1', isPrimary: true },
+        'other-2': { key: 'other-2', isPrimary: false },
+      } as never,
+      initViewState,
     });
   });
 
-  const takeCalls = () =>
-    mocks.invoke.mock.calls.filter(
-      ([command]) => command === 'plugin:native-tts|take_cold_playback',
+  const takeCalls = () => mocks.invoke.mock.calls.filter(([command]) => command === TAKE);
+  const takeReturns = (response: { bookHash: string | null; playing: boolean }) =>
+    mocks.invoke.mockImplementation(async (command: string) =>
+      command === TAKE ? response : undefined,
     );
 
   it('reopens the book from disk and reads on when the native player was playing', async () => {
-    mocks.invoke.mockImplementation(async (command: string) =>
-      command === 'plugin:native-tts|take_cold_playback'
-        ? { bookHash: 'book', playing: true }
-        : undefined,
-    );
+    takeReturns({ bookHash: 'book', playing: true });
     render(<CarMediaLibraryBridge />);
     await waitFor(() =>
       expect(dispatch).toHaveBeenCalledWith('app-incoming-url', {
         urls: ['readest://book/book?autoplay=tts'],
       }),
     );
-    expect(recreateViewer).toHaveBeenCalledTimes(1);
-    expect(recreateViewer).toHaveBeenCalledWith({ name: 'env' }, 'book-1');
-    expect(recreateViewer.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(initViewState).toHaveBeenCalledTimes(1);
+    expect(initViewState).toHaveBeenCalledWith({ name: 'env' }, 'book', 'book-1', true, true);
+    expect(initViewState.mock.invocationCallOrder[0]).toBeLessThan(
       dispatch.mock.invocationCallOrder[0]!,
     );
   });
 
   it('only reloads the open book when the native player was paused', async () => {
-    mocks.invoke.mockImplementation(async (command: string) =>
-      command === 'plugin:native-tts|take_cold_playback'
-        ? { bookHash: 'book', playing: false }
-        : undefined,
-    );
+    takeReturns({ bookHash: 'book', playing: false });
     render(<CarMediaLibraryBridge />);
-    await waitFor(() => expect(recreateViewer).toHaveBeenCalledWith({ name: 'env' }, 'book-1'));
+    await waitFor(() =>
+      expect(initViewState).toHaveBeenCalledWith({ name: 'env' }, 'book', 'book-1', true, true),
+    );
     expect(dispatch).not.toHaveBeenCalledWith('app-incoming-url', expect.anything());
   });
 
-  it('asks again each time the app comes back on screen, never while hidden', async () => {
-    mocks.invoke.mockImplementation(async (command: string) =>
-      command === 'plugin:native-tts|take_cold_playback'
-        ? { bookHash: null, playing: false }
-        : undefined,
+  it('keeps a second pane of the book secondary when it reloads', async () => {
+    useReaderStore.setState({
+      viewStates: {
+        'book-1': { key: 'book-1', isPrimary: true },
+        'book-3': { key: 'book-3', isPrimary: false },
+      } as never,
+    });
+    takeReturns({ bookHash: 'book', playing: false });
+    render(<CarMediaLibraryBridge />);
+    await waitFor(() => expect(initViewState).toHaveBeenCalledTimes(2));
+    expect(initViewState).toHaveBeenCalledWith({ name: 'env' }, 'book', 'book-1', true, true);
+    expect(initViewState).toHaveBeenCalledWith({ name: 'env' }, 'book', 'book-3', false, true);
+  });
+
+  it('waits for App Lock to open before taking over', async () => {
+    takeReturns({ bookHash: 'book', playing: true });
+    useAppLockStore.setState({ isUnlocked: false });
+    render(<CarMediaLibraryBridge />);
+    await act(async () => document.dispatchEvent(new Event('visibilitychange')));
+    expect(takeCalls()).toHaveLength(0);
+
+    act(() => useAppLockStore.setState({ isUnlocked: true }));
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith('app-incoming-url', {
+        urls: ['readest://book/book?autoplay=tts'],
+      }),
     );
+  });
+
+  it('asks again each time the app comes back on screen, never while hidden', async () => {
     visibility = 'hidden';
     render(<CarMediaLibraryBridge />);
     await act(async () => document.dispatchEvent(new Event('visibilitychange')));
@@ -166,7 +194,7 @@ describe('CarPlay Read Aloud takeover on iOS', () => {
     visibility = 'visible';
     await act(async () => document.dispatchEvent(new Event('visibilitychange')));
     await waitFor(() => expect(takeCalls()).toHaveLength(1));
-    expect(recreateViewer).not.toHaveBeenCalled();
+    expect(initViewState).not.toHaveBeenCalled();
     expect(dispatch).not.toHaveBeenCalledWith('app-incoming-url', expect.anything());
   });
 

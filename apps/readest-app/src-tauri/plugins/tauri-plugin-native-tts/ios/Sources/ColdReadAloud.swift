@@ -18,6 +18,7 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
   private let configURL: URL
   private let settingsURL: URL
   private let synthesizer = AVSpeechSynthesizer()
+  // Position writes, in order.
   private let io = DispatchQueue(label: "com.bilingify.readest.cold-read-aloud")
   private var segments: [ColdEpubSegment] = []
   private var index = 0
@@ -30,8 +31,9 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
 
   /// Playback started or paused.
   var onChange: (() -> Void)?
-  /// The book ended (false) or couldn't be read (true).
-  var onEnd: ((_ failed: Bool) -> Void)?
+  /// The book ended (false), or it is left to the reader (true): it couldn't
+  /// be read, or the reader would play its recorded narration instead.
+  var onEnd: ((_ toReader: Bool) -> Void)?
 
   /// Nil unless the book has a downloaded EPUB in the default library.
   init?(bookHash: String, title: String, author: String) {
@@ -62,26 +64,34 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
   func start() {
     isPlaying = true
     onChange?()
-    io.async {
-      let config = Self.readJSON(self.configURL)
-      let settings = Self.readJSON(self.settingsURL)
+    // Off `io`, so stop() waits only for position writes, never this read.
+    DispatchQueue.global(qos: .userInitiated).async {
+      let config = Self.readJSON(self.configURL) ?? [:]
+      let settings = Self.readJSON(self.settingsURL) ?? [:]
       let book = config["viewSettings"] as? [String: Any] ?? [:]
       let global = settings["globalViewSettings"] as? [String: Any] ?? [:]
       let resume = ColdEpubText.resumeCfi(
         location: config["location"] as? String, ttsLocation: book["ttsLocation"] as? String)
       let userRate = (book["ttsRate"] ?? global["ttsRate"]) as? Double ?? 1
       let voiceId = (book["ttsVoice"] ?? global["ttsVoice"]) as? String ?? ""
+      let useNarration = (book["ttsUseNarration"] ?? global["ttsUseNarration"]) as? Bool ?? true
       let speech: ColdEpubSpeech
       do {
         speech = try ColdEpubText.read(url: self.epubURL, resumeCfi: resume)
       } catch {
         coldLog.error("reading \(self.bookHash) failed: \(String(describing: error))")
-        DispatchQueue.main.async { self.end(failed: true) }
+        DispatchQueue.main.async { self.end(toReader: true) }
         return
       }
       DispatchQueue.main.async {
         guard !self.stopped else { return }
-        guard !speech.segments.isEmpty else { return self.end(failed: true) }
+        // The reader plays a book's recorded narration (Media Overlays or a
+        // paired audiobook) when it has one; don't synthesize over it.
+        if useNarration && (speech.hasMediaOverlays || config["audiobook"] != nil) {
+          coldLog.log("\(self.bookHash) has recorded narration; leaving it to the reader")
+          return self.end(toReader: true)
+        }
+        guard !speech.segments.isEmpty else { return self.end(toReader: true) }
         self.segments = speech.segments
         // NativeTTSPlugin.avRate's mapping of the reader's rate.
         self.rate = min(
@@ -108,12 +118,17 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
     onChange?()
   }
 
+  // As the reader's forward and backward: paused stays paused, at the new chunk.
   func skip(_ delta: Int) {
     guard !stopped, !segments.isEmpty else { return }
     index = min(max(index + delta, 0), segments.count - 1)
-    isPlaying = true
-    speakCurrent()
-    onChange?()
+    if isPlaying {
+      speakCurrent()
+    } else {
+      utterance = nil
+      synthesizer.stopSpeaking(at: .immediate)
+      save(segments[index].cfi)
+    }
   }
 
   /// Stops for good; the saved position is on disk when this returns.
@@ -122,6 +137,11 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
     isPlaying = false
     utterance = nil
     synthesizer.stopSpeaking(at: .immediate)
+    // Written once more, in case the last write failed.
+    if !segments.isEmpty {
+      savedCfi = nil
+      save(segments[index].cfi)
+    }
     io.sync {}
   }
 
@@ -136,10 +156,10 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
     synthesizer.speak(next)
   }
 
-  private func end(failed: Bool) {
+  private func end(toReader: Bool) {
     stopped = true
     isPlaying = false
-    onEnd?(failed)
+    onEnd?(toReader)
   }
 
   func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish finished: AVSpeechUtterance) {
@@ -148,7 +168,7 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
       index += 1
       if isPlaying { speakCurrent() }
     } else {
-      end(failed: false)
+      end(toReader: false)
     }
   }
 
@@ -159,23 +179,29 @@ final class ColdReadAloud: NSObject, AVSpeechSynthesizerDelegate {
     savedCfi = cfi
     let url = configURL
     io.async {
-      var config = Self.readJSON(url)
-      var book = config["viewSettings"] as? [String: Any] ?? [:]
-      book["ttsLocation"] = cfi
-      config["viewSettings"] = book
-      config["location"] = cfi
-      config["updatedAt"] = Int(Date().timeIntervalSince1970 * 1000)
       do {
+        // A config that exists but can't be read is left alone: rewriting it
+        // would drop its notes and settings.
+        guard var config = Self.readJSON(url) else { throw ColdEpubError("unreadable config") }
+        var book = config["viewSettings"] as? [String: Any] ?? [:]
+        book["ttsLocation"] = cfi
+        config["viewSettings"] = book
+        config["location"] = cfi
+        config["updatedAt"] = Int(Date().timeIntervalSince1970 * 1000)
         try JSONSerialization.data(withJSONObject: config).write(to: url, options: .atomic)
       } catch {
-        coldLog.error("saving the position failed: \(error.localizedDescription)")
+        coldLog.error("saving the position failed: \(String(describing: error))")
+        // Not saved: let the next save of this position try again.
+        DispatchQueue.main.async { if self.savedCfi == cfi { self.savedCfi = nil } }
       }
     }
   }
 
-  private static func readJSON(_ url: URL) -> [String: Any] {
-    guard let data = try? Data(contentsOf: url) else { return [:] }
-    return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+  // Empty when the file is absent, nil when it exists but isn't a JSON object.
+  private static func readJSON(_ url: URL) -> [String: Any]? {
+    guard FileManager.default.fileExists(atPath: url.path) else { return [:] }
+    guard let data = try? Data(contentsOf: url) else { return nil }
+    return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
   }
 
   // The reader's voice when it speaks the book's language, else that
