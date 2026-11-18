@@ -213,6 +213,25 @@
   its selected option's label, in an anonymous block it owns (a select is `inline-block`, as in
   Chromium), sized like text, which is what `field-sizing: content` gives. A change to an option
   rebuilds it, and an anonymous block frees the nodes it owns.
+- `stylo_taffy` wrapper, `blitz-dom` layout: a relatively positioned box's percentage `top` or
+  `bottom` is `auto` when its containing block's height isn't definite (CSS 2 §9.4.3; Taffy
+  resolves it against the final height). The flag is set where the layout parent has
+  `height: auto`, unless it is absolutely positioned with `top` and `bottom` set or is a flex or
+  grid item of a definite container. Readest's dropdowns are `relative` with `top: 100%` inside
+  an auto-height `<details>`, and opened at the bottom of the screen.
+- `blitz-dom` node/serialize: an inline SVG is serialized with the computed `fill` and `stroke`
+  as a style declaration where the page's CSS sets them (a value that differs from the inherited
+  one, or on the `<svg>` a non-initial inherited value without an attribute), so they beat the
+  attributes as in CSS. Readest colours icons with Tailwind's `fill-*` and `stroke-*`.
+- `blitz-dom` node: hit testing skips an element's children and inline text outside its padding
+  box when paint clips them (`overflow` not `visible`, or `contain: paint`). A tap below a
+  scrolling menu chose the menu items hidden there.
+- `blitz-dom` events/pointer, events/driver, node: a press with the main button focuses the
+  nearest focusable element (`Node::is_focusable_area`: a focusable one, or one with an integer
+  `tabindex`, -1 included), or clears focus, before the click, as HTML does on mousedown; a
+  sub-document's container isn't focused this way. With nothing focused, key events go to the
+  body, not the root element. Readest's dialogs and dropdown toggles stop the Escape aimed at
+  them; Lite sent every key to the root, where the window's handlers saw it too.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
