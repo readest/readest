@@ -4,17 +4,20 @@ Writes OUT/captures.jsonl (capture.js per step), OUT/timing.json (per step: hand
 latency of the first and last frame) and OUT/step-NNN.pgm (the frame shown when the step was
 captured). Runs under a scratch HOME in OUT/home and a private D-Bus session.
 """
-import json, os, shutil, signal, subprocess, sys, threading, time
+import json, os, re, shutil, signal, subprocess, sys, threading, time
 
 scenario, out, binary = json.load(open(sys.argv[1])), sys.argv[2], sys.argv[3]
 here = os.path.dirname(os.path.abspath(__file__))
 shutil.rmtree(out, ignore_errors=True)
 frames_dir, home = f'{out}/frames', f'{out}/home'
 os.makedirs(frames_dir); os.makedirs(home)
-steps = scenario['steps']
+# `text:Label` taps the element showing Label (text-steps.js tags it).
+texts = [s[5:] for s in scenario['steps'] if s.startswith('text:')]
+steps = [f'[data-parity-text="{s[5:]}"]' if s.startswith('text:') else s for s in scenario['steps']]
 input_steps = [s for s in steps if not s.startswith('wait:')]  # wait: steps are not captured
 delay = scenario.get('capture_ms', 2500)
-w, h = scenario.get('size', [1200, 800])
+w, h = scenario.get('size', [1200, 800])  # CSS px
+scale = scenario.get('scale', 1)  # device px per CSS px (the Kindle Voyage: 536x724 at 2)
 
 # Step 0 is captured at the first input, before its handlers run; step i 'delay' ms after input i.
 hooks = """
@@ -26,20 +29,41 @@ hooks = """
     const i = ++n;
     setTimeout(() => emit(i), %d);
   };
-  document.addEventListener('keydown', onInput, true);
-  document.addEventListener('pointerdown', onInput, true);
+  // A tap on the book reaches only its section's document: listen in every document the page
+  // shows (iframes, also inside shadow roots), each once.
+  const hooked = new WeakSet();
+  const hook = (doc) => {
+    if (hooked.has(doc)) return;
+    hooked.add(doc);
+    doc.addEventListener('keydown', onInput, true);
+    doc.addEventListener('pointerdown', onInput, true);
+  };
+  const scan = (root) => {
+    for (const el of root.querySelectorAll('*')) {
+      if (el.shadowRoot) scan(el.shadowRoot);
+      if (el.localName !== 'iframe') continue;
+      let doc = null;
+      try { doc = el.contentDocument; } catch {}
+      if (doc?.documentElement) { hook(doc); scan(doc); }
+    }
+  };
+  hook(document);
+  setInterval(() => scan(document), 300);
   if (%d === 0) setTimeout(() => emit(0), %d);
 })();
 """ % (delay, len(input_steps), scenario.get('settle_ms', 8000))
 init = f'{out}/init.js'
 probe = open(scenario['probe']).read() if scenario.get('probe') else ''
-open(init, 'w').write(open(f'{here}/capture.js').read() + probe + hooks)
+open(init, 'w').write(open(f'{here}/capture.js').read() + open(f'{here}/text-steps.js').read() + probe + hooks
+                     + f'\n__parityTexts({json.dumps(texts)});\n')
 
 env = {k: v for k, v in os.environ.items() if k != 'DBUS_SESSION_BUS_ADDRESS'
        and (not k.startswith('XDG_') or k in ('XDG_RUNTIME_DIR', 'XDG_SESSION_TYPE'))}
-env.update(HOME=home, BLITZ_TAURI_SIZE=f'{w}x{h}', BLITZ_TAURI_SCALE='1', BLITZ_TAURI_OUT=frames_dir,
+env.update(HOME=home, BLITZ_TAURI_SIZE=f'{w * scale}x{h * scale}', BLITZ_TAURI_SCALE=str(scale), BLITZ_TAURI_OUT=frames_dir,
            BLITZ_TAURI_INIT=init, BLITZ_TAURI_TAPS=';'.join(steps),
            BLITZ_TAURI_TAP_MS=str(scenario.get('step_ms', 3000)))
+if scenario.get('eink'):  # Readest's e-ink mode, as the Kindle launcher starts it
+    env['READEST_LITE_EINK'] = '1'
 if scenario.get('fonts'):  # the only fonts installed (run_cef.mjs gives Readest the same)
     env['BLITZ_FONTS'] = scenario['fonts']
 args = ['dbus-run-session', '--', binary] + ([scenario['book']] if scenario.get('book') else [])
@@ -63,7 +87,10 @@ try:
             if len(captures) == len(input_steps) + 1: break
         elif line.startswith('{'):
             try: e = json.loads(line)
-            except ValueError: continue
+            except ValueError:  # a tap line's target is not escaped: a selector's quotes break it
+                m = re.match(r'\{"label": "(tap|key)", "t_ms": ([\d.]+), .*"handler_ms": ([\d.]+)', line)
+                if not m: continue
+                e = dict(label=m[1], t_ms=float(m[2]), handler_ms=float(m[3]))
             if e.get('label') in ('key', 'tap'): inputs.append(e)
             elif e.get('label') == 'frame': frames.append(e)
 finally:
@@ -77,6 +104,7 @@ with open(f'{out}/captures.jsonl', 'w') as f:
     for c in captures: f.write(json.dumps(c) + '\n')
 timing = []
 for i in range(len(input_steps) + 1):
+    if i > len(inputs): break  # an input not sent (a selector not found stops the taps)
     start = inputs[i - 1]['t_ms'] if i else 0.0
     end = inputs[i]['t_ms'] if i < len(inputs) else float('inf')
     seg = [fr for fr in frames if start <= fr['t_ms'] < end]
