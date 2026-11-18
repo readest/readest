@@ -276,7 +276,18 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub(crate) image_cache: HashMap<String, ImageData>,
  
      /// Tracks in-flight image requests. When an image is being fetched, additional
-@@ -563,8 +574,10 @@
+@@ -418,6 +429,10 @@
+     /// Value is a list of (node_id, image_type) pairs waiting for the image.
+     pub(crate) pending_images: HashMap<String, Vec<(NodeId, ImageType)>>,
+ 
++    /// `<img>` elements whose image arrived (`true`) or failed (`false`) since the embedder last
++    /// took them (`take_image_loads`): their `load` and `error` events.
++    pub(crate) image_loads: Vec<(NodeId, bool)>,
++
+     /// Nodes whose `background-image`/`mask-image` layers need flushing to
+     /// dedicated storage on the node because their style changed (populated by
+     /// the style traversal and by pseudo-element box construction).
+@@ -563,8 +578,10 @@
              mousedown_node_id: None,
              has_active_animations: false,
              subdoc_is_animating: false,
@@ -287,7 +298,15 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              iframe_loads: HashMap::new(),
  
              #[cfg(feature = "custom-widget")]
-@@ -840,7 +853,8 @@
+@@ -576,6 +593,7 @@
+             deferred_construction_nodes: Vec::new(),
+             image_cache: HashMap::new(),
+             pending_images: HashMap::new(),
++            image_loads: Vec::new(),
+             pending_style_image_nodes: Vec::new(),
+             pending_critical_resources: HashSet::new(),
+             controls_to_form: HashMap::new(),
+@@ -840,7 +858,8 @@
          self.shell_provider.request_redraw();
      }
  
@@ -297,7 +316,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          let node = &mut self.nodes[node_id];
          let did_change = node.element_data_mut().unwrap().set_style_property(
              name,
-@@ -851,9 +865,11 @@
+@@ -851,9 +870,11 @@
          if did_change {
              node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
          }
@@ -310,7 +329,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          let node = &mut self.nodes[node_id];
          let did_change = node.element_data_mut().unwrap().remove_style_property(
              name,
-@@ -863,6 +879,7 @@
+@@ -863,6 +884,7 @@
          if did_change {
              node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
          }
@@ -318,7 +337,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      pub fn sub_document_node_ids(&self) -> Vec<NodeId> {
-@@ -1093,6 +1110,9 @@
+@@ -1093,6 +1115,9 @@
              if let Some(before) = node.before() {
                  self.drop_node_ignoring_parent_with(before, on_drop);
              }
@@ -328,7 +347,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              if let Some(after) = node.after() {
                  self.drop_node_ignoring_parent_with(after, on_drop);
              }
-@@ -1124,6 +1144,20 @@
+@@ -1124,6 +1149,20 @@
          for nested_id in nested {
              self.deallocate_anonymous_block(nested_id);
          }
@@ -349,7 +368,66 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          self.remove_node_from_tree(anon_id);
      }
-@@ -1684,6 +1718,62 @@
+@@ -1397,7 +1436,13 @@
+                         "Resource load failed"
+                     );
+                     #[cfg(not(feature = "tracing"))]
+-                    let _ = (waiting_nodes, err);
++                    let _ = err;
++                    // A broken `<img>` shows no image (not the one it had) and fires `error`.
++                    for (node_id, image_type) in waiting_nodes {
++                        if matches!(image_type, ImageType::Image) {
++                            self.image_failed(node_id);
++                        }
++                    }
+                 } else {
+                     #[cfg(feature = "tracing")]
+                     tracing::warn!(error = err.as_str(), "Resource load failed (no url)");
+@@ -1493,6 +1538,35 @@
+         }
+     }
+ 
++    /// The `<img>` elements whose image arrived (`true`) or failed (`false`) since the last call,
++    /// in that order: the embedder fires their `load` and `error` events.
++    pub fn take_image_loads(&mut self) -> Vec<(NodeId, bool)> {
++        std::mem::take(&mut self.image_loads)
++    }
++
++    /// Whether `<img>` `node_id` is waiting for its image (not `complete`).
++    pub fn image_loading(&self, node_id: NodeId) -> bool {
++        self.pending_images.values().any(|w| {
++            w.iter()
++                .any(|&(id, t)| id == node_id && matches!(t, ImageType::Image))
++        })
++    }
++
++    /// `<img>` `node_id` has no image: its load failed or its `src` is empty.
++    pub(crate) fn image_failed(&mut self, node_id: NodeId) {
++        let Some(node) = self.get_node_mut(node_id) else {
++            return;
++        };
++        if let Some(element) = node.element_data_mut()
++            && matches!(element.special_data, SpecialElementData::Image(_))
++        {
++            element.special_data = SpecialElementData::None;
++            node.clear_layout_cache();
++            node.insert_damage(ALL_DAMAGE);
++        }
++        self.image_loads.push((node_id, false));
++    }
++
+     /// Cache a loaded image and apply it to all nodes waiting on it
+     /// (`<img>` elements, `background-image` layers and `mask-image` layers).
+     fn apply_loaded_image(&mut self, url: &str, image: ImageData) {
+@@ -1526,6 +1600,7 @@
+                     // Clear layout cache
+                     node.clear_layout_cache();
+                     node.insert_damage(ALL_DAMAGE);
++                    self.image_loads.push((node_id, true));
+                 }
+                 ImageType::Background(idx) | ImageType::Mask(idx) => {
+                     let layer_image = node.element_data_mut().and_then(|el| {
+@@ -1684,6 +1759,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -412,7 +490,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2049,13 +2139,21 @@
+@@ -2049,13 +2180,21 @@
          }
  
          self.hover_node_id = hover_node_id;
@@ -437,7 +515,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn clear_hover(&mut self) -> bool {
          // The pointer is no longer over the document, so stop re-resolving
          // hover state against it.
-@@ -2073,9 +2171,7 @@
+@@ -2073,9 +2212,7 @@
  
          self.hover_node_id = None;
          self.hover_node_is_text = false;
@@ -448,7 +526,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          true
      }
-@@ -2333,6 +2429,56 @@
+@@ -2333,6 +2470,56 @@
          self.stylist.device()
      }
  
@@ -505,7 +583,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn get_cursor(&self) -> Option<CursorIcon> {
          // Prefer the precise hit node: `cursor` and `user-select` may be set on
          // a pseudo-element or resolved on an anonymous box, and text hits carry
-@@ -2440,6 +2586,40 @@
+@@ -2440,6 +2627,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -546,7 +624,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2627,27 @@
+@@ -2447,17 +2668,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -584,7 +662,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2718,7 @@
+@@ -2528,7 +2759,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -593,7 +671,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2733,329 @@
+@@ -2543,20 +2774,329 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -935,7 +1013,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3443,36 @@
+@@ -2944,6 +3484,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -972,7 +1050,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4037,58 @@
+@@ -3508,6 +4078,58 @@
  }
  
  #[cfg(test)]
@@ -1031,7 +1109,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4362,7 @@
+@@ -3781,3 +4403,7 @@
          );
      }
  }
@@ -2937,7 +3015,25 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          // If element is a CustomWidget, then Ccall attribute_changed on it
          #[cfg(feature = "custom-widget")]
          if let SpecialElementData::CustomWidget(widget_data) = &mut element.special_data {
-@@ -455,11 +475,19 @@
+@@ -422,12 +442,17 @@
+         // If node if not in the document, then don't apply any special behaviours
+         // and simply set the attribute value
+         if !node.flags.is_in_document() {
++            // and an image's `src`: a browser loads an <img> (`new Image()`) out of the document.
++            let image_src = (tag, attr) == tag_and_attr!("img", "src");
+             // Except checkedness, which is read back from the checkbox state once it exists
+             if (tag, attr) == tag_and_attr!("input", "checked")
+                 && element.checkbox_input_checked().is_some()
+             {
+                 set_input_checked_state(element, value.to_string());
+             }
++            if image_src {
++                self.load_image(node_id);
++            }
+             return;
+         }
+ 
+@@ -455,11 +480,19 @@
      }
  
      pub fn clear_attribute(&mut self, node_id: NodeId, name: QualName) {
@@ -2957,7 +3053,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          }
  
          if name.local == local_name!("id") && node_is_in_document {
-@@ -482,7 +510,11 @@
+@@ -482,7 +515,11 @@
          if !had_attr {
              return;
          }
@@ -2970,7 +3066,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          if node_is_in_document {
              devtools!(
                  self,
-@@ -563,14 +595,14 @@
+@@ -563,14 +600,14 @@
  
      pub fn set_style_property(&mut self, node_id: NodeId, name: &str, value: &str) {
          let node_is_in_document = self.doc.nodes[node_id].flags.is_in_document();
@@ -2989,7 +3085,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
      }
  
      pub fn set_sub_document(&mut self, node_id: NodeId, sub_document: Box<dyn Document>) {
-@@ -744,6 +776,7 @@
+@@ -744,6 +781,7 @@
          }
          // Mark ancestors dirty so the style traversal visits this subtree.
          node.mark_ancestors_dirty();
@@ -2997,7 +3093,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
      }
  
      /// Restyle an in-document element whose child list changed, `changed` being the position
-@@ -751,6 +784,8 @@
+@@ -751,6 +789,8 @@
      /// children are styled by the traversal regardless; the element and its other children
      /// only need restyling where its selector flags record a selector that depends on them.
      fn restyle_for_child_list_change(&mut self, parent_id: NodeId, changed: Range<usize>) {
@@ -3006,7 +3102,26 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          let parent = &self.doc.nodes[parent_id];
          let flags = parent.selector_flags().get();
          let mut hint = RestyleHint::empty();
-@@ -1338,10 +1373,37 @@
+@@ -1174,7 +1214,17 @@
+         let mut ops = mem::take(&mut self.eager_op_queue);
+         for op in ops.drain(0..) {
+             match op {
+-                SpecialOp::LoadImage(node_id) => self.load_image(node_id),
++                // An <img> inserted with its image, or waiting for it, keeps it: it loaded when
++                // its `src` was set.
++                SpecialOp::LoadImage(node_id) => {
++                    let node = &self.doc.nodes[node_id];
++                    let has_image = node
++                        .element_data()
++                        .is_some_and(|e| e.image_data().is_some());
++                    if !has_image && !self.doc.image_loading(node_id) {
++                        self.load_image(node_id);
++                    }
++                }
+                 SpecialOp::LoadIframe(node_id) => self.load_iframe(node_id),
+                 SpecialOp::LoadStylesheet(node_id) => self.load_linked_stylesheet(node_id),
+                 SpecialOp::UnloadStylesheet(node_id) => self.unload_stylesheet(node_id),
+@@ -1338,10 +1388,37 @@
              "style" => {
                  self.style_nodes.insert(node_id);
              }
@@ -3044,7 +3159,36 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
      fn load_linked_stylesheet(&mut self, target_id: NodeId) {
          let node = &self.doc.nodes[target_id];
  
-@@ -3084,3 +3146,14 @@
+@@ -1420,6 +1497,10 @@
+     }
+ 
+     fn load_image(&mut self, target_id: NodeId) {
++        // A new `src` replaces the image the element was waiting for.
++        for waiting in self.doc.pending_images.values_mut() {
++            waiting.retain(|&(id, t)| id != target_id || !matches!(t, ImageType::Image));
++        }
+         let node = &self.doc.nodes[target_id];
+         if let Some(raw_src) = node.attr(local_name!("src")) {
+             if !raw_src.is_empty()
+@@ -1436,6 +1517,7 @@
+                         SpecialElementData::Image(Box::new(cached_image.clone()));
+                     node.clear_layout_cache();
+                     node.insert_damage(ALL_DAMAGE);
++                    self.doc.image_loads.push((target_id, true));
+                     return;
+                 }
+ 
+@@ -1465,6 +1547,9 @@
+                         ImageHandler::new(ImageType::Image),
+                     ),
+                 );
++            } else {
++                // An empty or invalid `src`: no image, and `error`.
++                self.doc.image_failed(target_id);
+             }
+         }
+     }
+@@ -3084,3 +3169,14 @@
          );
      }
  }
@@ -3059,6 +3203,21 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
 +        || attr.starts_with("aria-")
 +        || attr.starts_with("data-")
 +}
+diff -ruN blitz/packages/blitz-dom/src/net.rs blitz/packages/blitz-dom/src/net.rs
+--- blitz/packages/blitz-dom/src/net.rs
++++ blitz/packages/blitz-dom/src/net.rs
+@@ -593,6 +593,11 @@
+ }
+ 
+ impl NetHandler for ResourceHandler<ImageHandler> {
++    // A failed fetch is reported, so a waiting `<img>` is broken (and fires `error`).
++    fn error(self: Box<Self>, url: String, error: String) {
++        self.respond(url, Err(error));
++    }
++
+     fn bytes(self: Box<Self>, resolved_url: String, bytes: Bytes) {
+         let result = self.data.parse(bytes);
+         self.respond(resolved_url, result)
 diff -ruN blitz/packages/blitz-dom/src/node/element.rs blitz/packages/blitz-dom/src/node/element.rs
 --- blitz/packages/blitz-dom/src/node/element.rs
 +++ blitz/packages/blitz-dom/src/node/element.rs
@@ -3123,6 +3282,25 @@ diff -ruN blitz/packages/blitz-dom/src/node/element.rs blitz/packages/blitz-dom/
          self.mutable_style_attribute(guard)
              .write_with(&mut guard.write())
              .extend(source_property_declaration.drain(), Importance::Normal);
+@@ -894,6 +918,18 @@
+     None,
+ }
+ 
++impl ImageData {
++    /// The image's own size in CSS px (an `<img>`'s `naturalWidth` and `naturalHeight`).
++    pub fn natural_size(&self) -> (f32, f32) {
++        match self {
++            ImageData::Raster(r) => (r.width as f32, r.height as f32),
++            #[cfg(feature = "svg")]
++            ImageData::Svg(s) => (s.tree.size().width(), s.tree.size().height()),
++            ImageData::None => (0.0, 0.0),
++        }
++    }
++}
++
+ #[derive(Debug, Clone, PartialEq)]
+ pub enum Status {
+     Ok,
 diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src/node/node.rs
 --- blitz/packages/blitz-dom/src/node/node.rs
 +++ blitz/packages/blitz-dom/src/node/node.rs

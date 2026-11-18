@@ -101,6 +101,27 @@ impl Docs {
         descend(&mut self.main.borrow_mut(), &path, |doc| f(doc, node, tag))
     }
 
+    /// `take_image_loads` of the page and of each iframe document JS has reached, as
+    /// [handle, ok, ...] for the elements JS holds.
+    fn image_loads(&self) -> Vec<f64> {
+        let mut out = Vec::new();
+        let mut push = |tag: u32, loads: Vec<(NodeId, bool)>| {
+            for (n, ok) in loads {
+                if let Some(h) = self.handle(tag, n) {
+                    out.extend([h, f64::from(u8::from(ok))]);
+                }
+            }
+        };
+        push(0, self.main.borrow_mut().take_image_loads());
+        let frames = self.frames.borrow().len() as u32;
+        for tag in 1..=frames {
+            let Some(path) = self.path(tag) else { continue };
+            let loads = descend(&mut self.main.borrow_mut(), &path, |d| d.take_image_loads());
+            push(tag, loads.unwrap_or_default());
+        }
+        out
+    }
+
     /// The (iframe, document id) steps from the page down to the document tagged `tag`.
     fn path(&self, mut tag: u32) -> Option<Vec<(NodeId, usize)>> {
         let frames = self.frames.borrow();
@@ -488,6 +509,23 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         d.with(h, |doc, n, _| doc.node_has_stylesheet(n))
             .unwrap_or(false)
     });
+    let d = docs.clone();
+    // An <img>'s [waiting for its image (not `complete`), naturalWidth, naturalHeight].
+    op!("image", move |h: f64| -> Vec<f64> {
+        d.with(h, |doc, n, _| {
+            let loading = doc.image_loading(n);
+            let image = doc.get_node(n).and_then(|n| n.element_data()?.image_data());
+            let (w, h) = image
+                .filter(|_| !loading)
+                .map_or((0.0, 0.0), |i| i.natural_size());
+            vec![f64::from(u8::from(loading)), w.into(), h.into()]
+        })
+        .unwrap_or_default()
+    });
+    let d = docs.clone();
+    // The <img>s whose image arrived (1) or failed (0) since the last call, as [handle, ok, ...]:
+    // the page's, and those of the iframe documents JS has reached.
+    op!("imageLoads", move || -> Vec<f64> { d.image_loads() });
     let d = docs.clone();
     op!("ns", move |h: f64| -> String {
         d.with(h, |doc, n, _| {

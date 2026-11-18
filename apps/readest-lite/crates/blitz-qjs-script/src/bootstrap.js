@@ -1473,8 +1473,58 @@
   reflect(HTMLButtonElement, ['type', 'name']);
   class HTMLAnchorElement extends HTMLElement {}
   reflect(HTMLAnchorElement, ['href', 'target', 'rel']);
-  class HTMLImageElement extends HTMLElement {}
+  // Blitz loads an <img>'s `src` when it is set; `load` or `error` fires once the image has
+  // arrived or failed (checkImages, after each layout). Until then the element is kept, as a
+  // browser keeps an image it is loading.
+  const loadingImages = new Set();
+  class HTMLImageElement extends HTMLElement {
+    setAttribute(k, v) {
+      super.setAttribute(k, v);
+      if (this._an(k) === 'src') loadingImages.add(this);
+    }
+    get complete() {
+      return !n.image(this._id)[0];
+    }
+    get naturalWidth() {
+      return n.image(this._id)[1];
+    }
+    get naturalHeight() {
+      return n.image(this._id)[2];
+    }
+    decode() {
+      return new Promise((resolve, reject) => {
+        const settle = () => {
+          this.removeEventListener('load', settle);
+          this.removeEventListener('error', settle);
+          if (this.naturalWidth) resolve();
+          else reject(domError('The source image cannot be decoded', 'EncodingError'));
+        };
+        if (this.complete) return void settle();
+        this.addEventListener('load', settle);
+        this.addEventListener('error', settle);
+      });
+    }
+  }
   reflect(HTMLImageElement, ['src', 'alt']);
+  function Image(width, height) {
+    const img = document.createElement('img');
+    if (width !== undefined) img.setAttribute('width', width);
+    if (height !== undefined) img.setAttribute('height', height);
+    return img;
+  }
+  Image.prototype = HTMLImageElement.prototype;
+  function checkImages() {
+    const loads = n.imageLoads();
+    let fired = 0;
+    for (let i = 0; i < loads.length; i += 2) {
+      const el = known(loads[i]);
+      if (!el) continue;
+      loadingImages.delete(el);
+      el.dispatchEvent(new Event(loads[i + 1] ? 'load' : 'error'));
+      fired++;
+    }
+    return fired;
+  }
   // contentDocument is the document Blitz loaded from src or srcdoc; `load` fires once it is
   // attached with its stylesheets loaded (checkFrames, after each layout).
   class HTMLIFrameElement extends HTMLElement {
@@ -3171,6 +3221,7 @@
       for (const h of n.goneHandles()) forget(h);
       let k = pendingSheets.size ? checkSheets() : 0;
       if (loadingFrames.size) k += checkFrames();
+      k += checkImages();
       for (const o of resizeObservers) k += o._check();
       return k;
     },
@@ -3229,6 +3280,7 @@
     HTMLButtonElement,
     HTMLAnchorElement,
     HTMLImageElement,
+    Image,
     HTMLIFrameElement,
     HTMLFormElement,
     HTMLDivElement,

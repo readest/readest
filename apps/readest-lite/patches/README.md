@@ -232,6 +232,13 @@
   sub-document's container isn't focused this way. With nothing focused, key events go to the
   body, not the root element. Readest's dialogs and dropdown toggles stop the Escape aimed at
   them; Lite sent every key to the root, where the window's handlers saw it too.
+- `blitz-dom` document, mutator, net, node/element: an `<img>` records whether its image arrived
+  or failed (`take_image_loads`, for its `load` and `error` events), reports whether it is still
+  loading (`image_loading`) and its natural size (`ImageData::natural_size`). A failed fetch is
+  reported (the image handler dropped errors, so the element waited forever), a broken image or an
+  empty `src` shows no image, a new `src` replaces the request the element was waiting on, and an
+  `<img>` out of the document loads its `src` (`new Image()`); inserting one that has or awaits its
+  image doesn't load it again.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
