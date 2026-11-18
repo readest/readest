@@ -1215,11 +1215,12 @@
         behavior,
       });
     }
+    // Blitz's focus: where key events go.
     focus() {
-      document._active = this;
+      n.focus(this._id, true);
     }
     blur() {
-      if (document._active === this) document._active = null;
+      n.focus(this._id, false);
     }
     click() {
       this.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
@@ -1616,7 +1617,8 @@
       return domImplementation;
     }
     get activeElement() {
-      return this._active || this.body;
+      const id = n.focused(this._id);
+      return id == null ? this.body : wrap(id);
     }
     get readyState() {
       return this._ready || 'loading';
