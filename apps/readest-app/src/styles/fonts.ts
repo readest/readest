@@ -134,7 +134,9 @@ const keepGoogleFontsCssOffline = (document: Document, link: HTMLLinkElement) =>
       const appService = await environmentConfig.getAppService();
       await appService.writeFile(googleFontsCssPath(link.href), 'Cache', css);
     } catch {
-      // Unreadable sheet or failed write: keep whatever copy is there.
+      // Unreadable sheet or failed write: keep whatever copy is there, and
+      // let a later load of this stylesheet try again.
+      keptFontCss.delete(link.href);
     }
   });
   link.addEventListener('error', async () => {
