@@ -645,11 +645,49 @@ describe('searchLibraryBooks', () => {
         expect((await search({ session })).at(-1)).toMatchObject({ matchCount: 2 });
         await new Promise((resolve) => setTimeout(resolve, 20));
 
+        expect(held.close).toHaveBeenCalledOnce();
         expect(rejections).toEqual([]);
         await session.close();
       } finally {
         process.off('unhandledRejection', onRejection);
       }
+    });
+
+    it('keeps a document another open replaced it with while it was checked', async () => {
+      const { book, files, service, session } = setup();
+      let finishLoad!: (content: BookContent) => void;
+      vi.mocked(service.loadBookContent).mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishLoad = resolve;
+        }),
+      );
+      void session.open(book);
+      const checking = session.refresh(book, makeFile(v2).size);
+      files.set('held', makeFile(v2));
+      const reopened = { ...book, updatedAt: book.updatedAt + 1 };
+      const replacement = await session.open(reopened);
+
+      finishLoad({ book, file: makeFile(v1) });
+      await checking;
+
+      expect(await session.open(reopened)).toBe(replacement);
+      expect(service.loadBookContent).toHaveBeenCalledTimes(2);
+      await session.close();
+    });
+
+    // open() replaces a document cached for an older updatedAt anyway.
+    it("doesn't wait for a document cached for an older updatedAt", async () => {
+      const { book, service, session } = setup();
+      vi.mocked(service.loadBookContent).mockReturnValueOnce(new Promise(() => {}));
+      void session.open(book);
+      const reopened = { ...book, updatedAt: book.updatedAt + 1 };
+
+      const checked = await Promise.race([
+        session.refresh(reopened, makeFile(v2).size).then(() => true),
+        new Promise((resolve) => setTimeout(() => resolve(false), 50)),
+      ]);
+
+      expect(checked).toBe(true);
     });
   });
 
