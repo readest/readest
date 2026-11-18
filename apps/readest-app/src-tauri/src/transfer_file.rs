@@ -987,6 +987,66 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_late_range_failure_discards_earlier_staged_parts() {
+        let dir = TestDir::new();
+        let path = dir.join("book.epub");
+        std::fs::write(&path, b"existing book").unwrap();
+        let written = std::sync::Arc::new(tokio::sync::Notify::new());
+        let notified = written.clone();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let mut tasks = Vec::new();
+            for _ in 0..3 {
+                let (mut stream, _) =
+                    tokio::time::timeout(std::time::Duration::from_secs(5), listener.accept())
+                        .await
+                        .unwrap()
+                        .unwrap();
+                let written = written.clone();
+                tasks.push(tokio::spawn(async move {
+                    let request = read_request(&mut stream).await;
+                    let (range, body) = if request.contains("range: bytes=0-0\r\n") {
+                        ("0-0", vec![b'a'])
+                    } else if request.contains("range: bytes=0-1048575\r\n") {
+                        ("0-1048575", vec![b'a'; 1024 * 1024])
+                    } else {
+                        tokio::time::timeout(std::time::Duration::from_secs(5), written.notified())
+                            .await.expect("first part must reach staging before the failure");
+                        ("1048576-1048579", b"ab".to_vec())
+                    };
+                    let header = format!("HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\nContent-Range: bytes {range}/1048580\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len());
+                    stream.write_all(header.as_bytes()).await.unwrap();
+                    stream.write_all(&body).await.unwrap();
+                }));
+            }
+            for task in tasks {
+                finish_fixture(task).await;
+            }
+        });
+        let result = download_to_path(
+            &format!("http://127.0.0.1:{port}/book"),
+            &path,
+            HashMap::new(),
+            None,
+            None,
+            None,
+            tauri::ipc::Channel::new(move |_| {
+                notified.notify_one();
+                Ok(())
+            }),
+        )
+        .await;
+        finish_fixture(server).await;
+        assert!(
+            result.is_err(),
+            "a late short part must fail the whole download"
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), b"existing book");
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1);
+    }
+
+    #[tokio::test]
     async fn failed_ranges_reject_and_preserve_an_existing_book() {
         for response in [
             "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
