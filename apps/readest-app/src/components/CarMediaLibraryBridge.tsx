@@ -279,7 +279,10 @@ const CarMediaLibraryPublisher = () => {
       for (const [key, viewState] of Object.entries(viewStates)) {
         if (key.startsWith(`${bookHash}-`) && viewState.key === key) {
           clearBookProgress(key);
-          void initViewState(environmentConfig, bookHash, key, viewState.isPrimary, true);
+          // A failed reload shows its error on the view; autoplay then stops.
+          initViewState(environmentConfig, bookHash, key, viewState.isPrimary, true).catch(
+            (error) => console.warn('Failed to reload the book for CarPlay Read Aloud:', error),
+          );
         }
       }
       if (playing) {

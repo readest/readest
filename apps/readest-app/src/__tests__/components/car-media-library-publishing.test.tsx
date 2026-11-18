@@ -163,6 +163,16 @@ describe('CarPlay Read Aloud takeover on iOS', () => {
     expect(progressAtReload ?? null).toBeNull();
   });
 
+  it('handles a reload that fails', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    initViewState.mockRejectedValueOnce(new Error('Book not found'));
+    takeReturns({ bookHash: 'book', playing: false });
+    render(<CarMediaLibraryBridge />);
+    await waitFor(() =>
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('reload'), expect.any(Error)),
+    );
+  });
+
   it('only reloads the open book when the native player was paused', async () => {
     takeReturns({ bookHash: 'book', playing: false });
     render(<CarMediaLibraryBridge />);

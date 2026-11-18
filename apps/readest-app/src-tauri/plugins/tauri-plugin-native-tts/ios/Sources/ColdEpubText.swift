@@ -591,25 +591,39 @@ private struct ZipArchive {
     case 0:
       return Data(raw)
     case 8:
-      // An empty entry may store no stream at all; any stream is decoded and
-      // checked, so text behind a declared size of 0 is caught too.
+      // An empty entry may store no stream at all.
       if entry.size == 0 && raw.isEmpty { return Data() }
-      guard !raw.isEmpty else { throw ColdEpubError("Corrupt zip entry \(name)") }
-      // One byte of spare room: the decoder stops at the buffer's end, so a
-      // stream longer than declared fills it and is caught here.
-      var output = Data(count: entry.size + 1)
-      let written = output.withUnsafeMutableBytes { out in
-        raw.withUnsafeBytes { input in
-          compression_decode_buffer(
-            out.bindMemory(to: UInt8.self).baseAddress!, entry.size + 1,
-            input.bindMemory(to: UInt8.self).baseAddress!, raw.count, nil, COMPRESSION_ZLIB)
-        }
+      guard let output = Self.inflate(raw, size: entry.size) else {
+        throw ColdEpubError("Corrupt zip entry \(name)")
       }
-      guard written == entry.size else { throw ColdEpubError("Corrupt zip entry \(name)") }
-      return output.prefix(entry.size)
+      return output
     default:
       throw ColdEpubError("Unsupported zip compression in \(name)")
     }
+  }
+
+  // Raw DEFLATE that must end exactly at `size` bytes: a stream that is
+  // corrupt, cut short or longer than declared returns nil. One spare byte
+  // lets a longer stream show itself; the decoder reports the stream's end.
+  private static func inflate(_ raw: Data, size: Int) -> Data? {
+    guard !raw.isEmpty else { return nil }
+    var output = Data(count: size + 1)
+    let stream = UnsafeMutablePointer<compression_stream>.allocate(capacity: 1)
+    defer { stream.deallocate() }
+    guard compression_stream_init(stream, COMPRESSION_STREAM_DECODE, COMPRESSION_ZLIB) == COMPRESSION_STATUS_OK
+    else { return nil }
+    defer { compression_stream_destroy(stream) }
+    let status = output.withUnsafeMutableBytes { out in
+      raw.withUnsafeBytes { input in
+        stream.pointee.dst_ptr = out.bindMemory(to: UInt8.self).baseAddress!
+        stream.pointee.dst_size = size + 1
+        stream.pointee.src_ptr = input.bindMemory(to: UInt8.self).baseAddress!
+        stream.pointee.src_size = raw.count
+        return compression_stream_process(stream, Int32(COMPRESSION_STREAM_FINALIZE.rawValue))
+      }
+    }
+    guard status == COMPRESSION_STATUS_END, stream.pointee.dst_size == 1 else { return nil }
+    return output.prefix(size)
   }
 
   private func uint16(at offset: Int) -> Int {

@@ -122,6 +122,23 @@ const declareSize = (
   throw new Error(`${entry} not in ${epub}`);
 };
 
+// Makes the entry's DEFLATE stream invalid: a first block of reserved type.
+const corruptStream = (epub: string, entry: string) => {
+  const bytes = readFileSync(epub);
+  const name = Buffer.from(entry);
+  for (let i = 0; i + 30 < bytes.length; i++) {
+    if (
+      bytes.readUInt32LE(i) === 0x04034b50 &&
+      bytes.subarray(i + 30, i + 30 + name.length).equals(name)
+    ) {
+      bytes[i + 30 + bytes.readUInt16LE(i + 26) + bytes.readUInt16LE(i + 28)] = 0x07;
+      writeFileSync(epub, bytes);
+      return epub;
+    }
+  }
+  throw new Error(`${entry} not in ${epub}`);
+};
+
 const readError = (epub: string) => {
   const run = spawnSync(binary, [epub], { encoding: 'utf-8' });
   return run.status === 0 ? 'read without error' : run.stderr;
@@ -251,6 +268,32 @@ describe.skipIf(!hasSwiftc)('ColdEpubText.swift', () => {
   it('refuses a chapter declared empty that has text', () => {
     const epub = declareSize(createEpub(), 'OEBPS/one a.xhtml', () => 0);
     expect(readError(epub)).toMatch(/Corrupt zip entry/);
+  });
+
+  it('refuses a corrupt stream declared empty', () => {
+    const epub = declareSize(createEpub(), 'OEBPS/one a.xhtml', () => 0);
+    expect(readError(corruptStream(epub, 'OEBPS/one a.xhtml'))).toMatch(/Corrupt zip entry/);
+  });
+
+  it('reads a chapter that is really empty', () => {
+    const files = epubFiles('', OPF.replace('one%20a.xhtml', 'empty.xhtml'));
+    files['OEBPS/empty.xhtml'] = '';
+    const empty = join(dir, `book-${count++}.epub`);
+    writeFileSync(
+      empty,
+      zipSync(
+        Object.fromEntries(
+          Object.entries(files).map(([name, text]) => [
+            name,
+            [strToU8(text), { level: name === 'mimetype' ? 0 : 6 }],
+          ]),
+        ),
+      ),
+    );
+    expect(read(empty).segments.map((s) => s.text)).toEqual([
+      'Chapter Two',
+      'Second section text.',
+    ]);
   });
 
   it('refuses an entry that decodes to more than it declares', () => {
