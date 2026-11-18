@@ -5990,7 +5990,7 @@ diff -ruN blitz/packages/blitz-paint/src/render/mask.rs blitz/packages/blitz-pai
 diff -ruN blitz/packages/blitz-paint/src/render/scrollbars.rs blitz/packages/blitz-paint/src/render/scrollbars.rs
 --- blitz/packages/blitz-paint/src/render/scrollbars.rs
 +++ blitz/packages/blitz-paint/src/render/scrollbars.rs
-@@ -0,0 +1,180 @@
+@@ -0,0 +1,198 @@
 +//! Classic scrollbars, drawn as Chromium on Linux draws them: in the gutter layout reserved
 +//! (`Layout::scrollbar_size`), a button at each end holding a triangle and a rounded thumb
 +//! between them, in `scrollbar-color`'s thumb colour on its track colour.
@@ -6002,11 +6002,13 @@ diff -ruN blitz/packages/blitz-paint/src/render/scrollbars.rs blitz/packages/bli
 +use kurbo::{BezPath, Rect, RoundedRect, Shape};
 +use peniko::Fill;
 +
-+/// Chromium's metrics for a gutter of 15px (`scrollbar-width: auto`) or 10px (`thin`), in CSS px:
-+/// the thumb's thickness, how far its track starts from each end, and where each arrow's tip and
-+/// base are from its end (up, down, left, right; negative from the far end).
++/// Chromium's metrics for a gutter of 15px (`scrollbar-width: auto`) or 10px (`thin`), in CSS px,
++/// as it draws them at a real device scale of 2: the thumb's thickness and shortest length, how
++/// far its track starts from each end, and where each arrow's tip and base are from its end (up,
++/// down, left, right; negative from the far end).
 +struct Metrics {
 +    thumb: f64,
++    min_thumb: f64,
 +    track_inset: f64,
 +    up: (f64, f64),
 +    down: (f64, f64),
@@ -6016,24 +6018,23 @@ diff -ruN blitz/packages/blitz-paint/src/render/scrollbars.rs blitz/packages/bli
 +
 +const AUTO: Metrics = Metrics {
 +    thumb: 9.0,
++    min_thumb: 17.0,
 +    track_inset: 18.0,
-+    up: (6.5, 11.0),
-+    down: (-7.5, -12.0),
++    up: (6.0, 10.5),
++    down: (-6.0, -10.5),
 +    left: (5.5, 10.0),
-+    right: (-6.5, -11.0),
++    right: (-5.5, -10.0),
 +};
 +
 +const THIN: Metrics = Metrics {
 +    thumb: 6.0,
++    min_thumb: 11.0,
 +    track_inset: 12.0,
-+    up: (3.5, 7.0),
-+    down: (-3.5, -7.0),
-+    left: (3.5, 7.0),
-+    right: (-3.5, -7.0),
++    up: (4.5, 7.5),
++    down: (-4.5, -7.5),
++    left: (4.0, 7.0),
++    right: (-4.0, -7.0),
 +};
-+
-+/// The shortest thumb, in CSS px.
-+const MIN_THUMB: f64 = 17.0;
 +
 +impl ElementCx<'_, '_> {
 +    pub(super) fn draw_classic_scrollbars(&self, scene: &mut impl PaintScene) {
@@ -6080,10 +6081,15 @@ diff -ruN blitz/packages/blitz-paint/src/render/scrollbars.rs blitz/packages/bli
 +            );
 +            let client = self.node.client_height() as f64;
 +            let scroll = self.node.scroll_height() as f64;
-+            if let Some((start, len)) = thumb_span(bar.y0, bar.y1, m, client, scroll, offset.y) {
++            if let Some((start, len)) = thumb_span(bar.y0, bar.y1, m, client, scroll, offset.y, s) {
 +                let inset = (bar_w - m.thumb) / 2.0;
-+                let r = Rect::new(bar.x0 + inset, start, bar.x1 - inset, start + len);
-+                let rounded = RoundedRect::from_rect(scaled(r), m.thumb / 2.0 * s);
++                let r = Rect::new(
++                    (bar.x0 + inset) * s,
++                    start,
++                    (bar.x1 - inset) * s,
++                    start + len,
++                );
++                let rounded = RoundedRect::from_rect(r, m.thumb / 2.0 * s);
 +                fill(thumb, rounded.to_path(0.1));
 +            }
 +        }
@@ -6104,10 +6110,15 @@ diff -ruN blitz/packages/blitz-paint/src/render/scrollbars.rs blitz/packages/bli
 +            );
 +            let client = self.node.client_width() as f64;
 +            let scroll = self.node.scroll_width() as f64;
-+            if let Some((start, len)) = thumb_span(bar.x0, bar.x1, m, client, scroll, offset.x) {
++            if let Some((start, len)) = thumb_span(bar.x0, bar.x1, m, client, scroll, offset.x, s) {
 +                let inset = (bar_h - m.thumb) / 2.0;
-+                let r = Rect::new(start, bar.y0 + inset, start + len, bar.y1 - inset);
-+                let rounded = RoundedRect::from_rect(scaled(r), m.thumb / 2.0 * s);
++                let r = Rect::new(
++                    start,
++                    (bar.y0 + inset) * s,
++                    start + len,
++                    (bar.y1 - inset) * s,
++                );
++                let rounded = RoundedRect::from_rect(r, m.thumb / 2.0 * s);
 +                fill(thumb, rounded.to_path(0.1));
 +            }
 +        }
@@ -6118,9 +6129,11 @@ diff -ruN blitz/packages/blitz-paint/src/render/scrollbars.rs blitz/packages/bli
 +    }
 +}
 +
-+/// Where the thumb starts and how long it is along a bar from `start` to `end` (CSS px), when
-+/// the content (`scroll` long, `client` of it shown, scrolled by `offset`) overflows: a share of
-+/// the track as long as the share of the content shown, at least `MIN_THUMB`, in whole pixels.
++/// Where the thumb starts and how long it is along a bar from `start` to `end` (CSS px), in
++/// device px at scale `s`, when the content (`scroll` long, `client` of it shown, scrolled by
++/// `offset`) overflows. As Chromium's `ScrollbarTheme`: the track's share as long as the share of
++/// the content shown, rounded and at least `min_thumb`, and the offset's share of the rest of the
++/// track, truncated (but at least 1 once scrolled). None when the thumb wouldn't fit the track.
 +fn thumb_span(
 +    start: f64,
 +    end: f64,
@@ -6128,17 +6141,22 @@ diff -ruN blitz/packages/blitz-paint/src/render/scrollbars.rs blitz/packages/bli
 +    client: f64,
 +    scroll: f64,
 +    offset: f64,
++    s: f64,
 +) -> Option<(f64, f64)> {
-+    let track = end - start - 2.0 * m.track_inset;
-+    if scroll <= client || track < MIN_THUMB {
++    let track = ((end - start - 2.0 * m.track_inset) * s).round();
++    let len = (track * client / scroll)
++        .round()
++        .max((m.min_thumb * s).round());
++    if scroll <= client || len > track {
 +        return None;
 +    }
-+    let len = (track * client / scroll).round().clamp(MIN_THUMB, track);
-+    let progress = (offset / (scroll - client)).clamp(0.0, 1.0);
-+    Some((
-+        start + m.track_inset + ((track - len) * progress).round(),
-+        len,
-+    ))
++    let pos = (track - len) * (offset / (scroll - client)).clamp(0.0, 1.0);
++    let pos = if pos > 0.0 && pos < 1.0 {
++        1.0
++    } else {
++        pos.trunc()
++    };
++    Some(((start + m.track_inset) * s + pos, len))
 +}
 +
 +/// A button's triangle, as Chromium rasters it: rows of whole device pixels from the tip, whose
