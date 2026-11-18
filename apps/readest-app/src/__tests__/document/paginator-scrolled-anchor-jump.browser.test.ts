@@ -44,9 +44,12 @@ const open = async (vertical: boolean, continuous: boolean) => {
 
 // Wait until the mounted set stops changing and the container is shown.
 const settle = async () => {
+  const owner = paginator;
   let last = '';
-  for (let stable = 0; stable < 5; ) {
+  for (let stable = 0, start = Date.now(); stable < 5; ) {
     await pause(100);
+    if (paginator !== owner) throw new Error('the paginator was replaced while settling');
+    if (Date.now() - start > 10000) throw new Error(`mounted sections never settled: ${last}`);
     const now = paginator
       .getContents()
       .map((c) => c.index)
@@ -67,13 +70,14 @@ const distanceFromViewportStart = (el: Element, vertical: boolean) => {
     : frame.top + rect.top - viewport.top;
 };
 
-const jump = async (index: number, target: 'head' | 'mid') => {
+// A TOC fragment resolves to the element, a bookmark's CFI to a range.
+const jump = async (index: number, target: 'head' | 'mid', as: 'element' | 'range' = 'element') => {
   await paginator.goTo({
     index,
     anchor: (doc: Document) => {
       const el = doc.getElementById(target)!;
-      if (target === 'head') return el; // a TOC fragment resolves to the element
-      const range = doc.createRange(); // a bookmark's CFI resolves to a range
+      if (as === 'element') return el;
+      const range = doc.createRange();
       range.selectNodeContents(el);
       return range;
     },
@@ -106,12 +110,25 @@ describe('scrolled-mode jumps to an element or range anchor', () => {
     expect(distance, 'chapter head distance from the viewport start').toBeLessThan(32);
   });
 
+  // A fragment far into the chapter, so landing on the chapter's start fails.
+  it.each([
+    ['vertical-rl, continuous scroll', true, true],
+    ['horizontal, continuous scroll', false, true],
+  ])('%s: a TOC jump to a fragment inside a chapter lands on it', async (_, vertical, continuous) => {
+    await open(vertical, continuous);
+    const line = await jump(4, 'mid');
+    expect(paginator.getContents().length > 1, 'neighbours mounted').toBe(continuous);
+    const distance = distanceFromViewportStart(line, vertical);
+    expect(distance, 'fragment distance from the viewport start').toBeGreaterThanOrEqual(0);
+    expect(distance, 'fragment distance from the viewport start').toBeLessThan(32);
+  });
+
   it.each([
     ['vertical-rl, continuous scroll', true, true],
     ['horizontal, continuous scroll', false, true],
   ])('%s: a bookmark jump lands at the bookmarked line', async (_, vertical, continuous) => {
     await open(vertical, continuous);
-    const line = await jump(4, 'mid');
+    const line = await jump(4, 'mid', 'range');
     expect(paginator.getContents().length > 1, 'neighbours mounted').toBe(continuous);
     const distance = distanceFromViewportStart(line, vertical);
     expect(distance, 'bookmarked line distance from the viewport start').toBeGreaterThanOrEqual(0);
@@ -120,11 +137,12 @@ describe('scrolled-mode jumps to an element or range anchor', () => {
 
   // The scroll relocate anchors to the section at the viewport centre, while
   // the primary section is the one at its start. A re-render (resize, margin
-  // change) re-anchors to that range, which is in a section after the primary.
+  // change) re-anchors to that range, which is in a section after the primary:
+  // the head of that section comes to the viewport start.
   it.each([
     ['vertical-rl', true],
     ['horizontal', false],
-  ])('%s: a re-render keeps a section head that sits below the viewport start', async (_, vertical) => {
+  ])('%s: a re-render anchors to a section head that sat below the viewport start', async (_, vertical) => {
     await open(vertical, true);
     const head = await jump(3, 'head');
     const { size } = paginator;
@@ -139,10 +157,14 @@ describe('scrolled-mode jumps to an element or range anchor', () => {
     await back(0.35 * size - distanceFromViewportStart(head, vertical));
     for (const nudge of [2, -2]) await back(nudge);
     expect(paginator.primaryIndex, 'section at the viewport start').toBe(2);
+    expect(
+      distanceFromViewportStart(head, vertical),
+      'section head before the re-render',
+    ).toBeGreaterThan(size / 4);
     (paginator as unknown as { render: () => void }).render();
     await settle();
     const distance = distanceFromViewportStart(head, vertical);
     expect(distance, 'section head distance from the viewport start').toBeGreaterThanOrEqual(0);
-    expect(distance, 'section head distance from the viewport start').toBeLessThan(size / 2);
+    expect(distance, 'section head distance from the viewport start').toBeLessThan(32);
   });
 });
