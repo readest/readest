@@ -415,7 +415,42 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          true
      }
-@@ -2440,6 +2522,40 @@
+@@ -2333,6 +2415,34 @@
+         self.stylist.device()
+     }
+ 
++    /// Whether the media query list `query` matches, as `matchMedia` answers: evaluated against
++    /// the document's device as its style sheets' `@media` rules are. A query that doesn't parse
++    /// is `not all`.
++    pub fn media_matches(&mut self, query: &str) -> bool {
++        use style::media_queries::MediaList;
++        use style::parser::ParserContext;
++        use style::stylesheets::{CssRuleType, CustomMediaEvaluator, Origin};
++        let url_data = self.url.url_extra_data();
++        let mut context = ParserContext::new(
++            Origin::Author,
++            &url_data,
++            Some(CssRuleType::Media),
++            style_traits::ParsingMode::DEFAULT,
++            QuirksMode::NoQuirks,
++            Default::default(),
++            None,
++            None,
++            Default::default(),
++        );
++        let list = MediaList::parse(&mut context, &mut cssparser::Parser::new(query));
++        let device = self.stylist_device();
++        list.evaluate(
++            device,
++            QuirksMode::NoQuirks,
++            &mut CustomMediaEvaluator::none(),
++        )
++    }
++
+     pub fn get_cursor(&self) -> Option<CursorIcon> {
+         // Prefer the precise hit node: `cursor` and `user-select` may be set on
+         // a pseudo-element or resolved on an anonymous box, and text hits carry
+@@ -2440,6 +2550,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -456,7 +491,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2563,27 @@
+@@ -2447,17 +2591,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -494,7 +529,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2654,7 @@
+@@ -2528,7 +2682,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -503,7 +538,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2669,329 @@
+@@ -2543,20 +2697,329 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -845,7 +880,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3379,36 @@
+@@ -2944,6 +3407,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -882,7 +917,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3781,3 +4246,7 @@
+@@ -3781,3 +4274,7 @@
          );
      }
  }

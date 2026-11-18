@@ -1009,6 +1009,12 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         })
         .unwrap_or(vec![0.0, 0.0, 1.0])
     });
+    let d = docs.clone();
+    // `matchMedia(q).matches`: the page's style engine evaluates `q`.
+    op!("mediaMatches", move |q: String| -> bool {
+        d.with(0.0, |doc, _, _| doc.media_matches(&q))
+            .unwrap_or(false)
+    });
     let sh = shared.clone();
     op!("now", move || sh.borrow().start.elapsed().as_secs_f64()
         * 1000.0);
