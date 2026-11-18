@@ -226,6 +226,16 @@ describe('SideBar search behavior', () => {
     expect(screen.queryByTestId('sidebar-content-panel')).toBeNull();
   });
 
+  // A completed search with no hits must still show the panel, otherwise the
+  // "No results found" message would be replaced by the TOC.
+  test('keeps the results panel for a completed search with no hits', () => {
+    h.searchNav = { searchTerm: 'alice', searchResults: [] };
+    render(<SideBar />);
+
+    expect(screen.getByTestId('search-results-panel')).toBeDefined();
+    expect(screen.queryByTestId('sidebar-content-panel')).toBeNull();
+  });
+
   test('keeps the TOC before any search has run at all', () => {
     h.searchNav = { searchTerm: '', searchResults: null };
     render(<SideBar />);

@@ -159,11 +159,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         } else {
           onHideSearchBar();
         }
-      } else if (e.key.toLowerCase() === 'f' && (e.ctrlKey || e.metaKey)) {
+      } else if (isVisible && e.key.toLowerCase() === 'f' && (e.ctrlKey || e.metaKey)) {
         // Ctrl+F again while the search bar is up: select the current term
-        // so typing replaces it without clearing first.
-        e.preventDefault();
+        // so typing replaces it without clearing first. The bar stays mounted
+        // while hidden, so guard on visibility to leave Find alone otherwise.
         if (!appService?.isMobile) {
+          e.preventDefault();
           inputRef.current?.focus();
           inputRef.current?.select();
         }
@@ -174,7 +175,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       window.removeEventListener('keydown', handleKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onHideSearchBar, appService]);
+  }, [onHideSearchBar, appService, isVisible]);
 
   // Ctrl+F issued while focus is elsewhere (book iframe, sidebar buttons)
   // reaches the shortcut layer, which re-opens the search bar via a
@@ -184,8 +185,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
     const onSelectRequest = (event: CustomEvent) => {
       const { term } = (event.detail ?? {}) as { term?: string | null };
       if (term === null && !appService?.isMobile) {
-        inputRef.current?.focus();
-        inputRef.current?.select();
+        const input = inputRef.current;
+        // When the input already holds focus the keydown handler above has
+        // selected the term already; re-selecting here (SideBar emits this
+        // event 100 ms later) would swallow whatever was typed meanwhile.
+        if (!input || document.activeElement === input) return;
+        input.focus();
+        input.select();
       }
     };
     eventDispatcher.on('search-term', onSelectRequest);
