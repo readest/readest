@@ -325,10 +325,11 @@ fn put(
     let band = ((conn.maximum_request_bytes() - 64) / part).max(1);
     for top in (y0..y1).step_by(band) {
         let bottom = (top + band).min(y1);
-        let data: Vec<u8> = (top..bottom)
-            .flat_map(|y| &rows[y * row + x0 * bytes..y * row + x1 * bytes])
-            .copied()
-            .collect();
+        // row by row: a byte-by-byte collect cost a Kindle ~1 ms per 30 KB sent
+        let mut data = Vec::with_capacity((bottom - top) * part);
+        for y in top..bottom {
+            data.extend_from_slice(&rows[y * row + x0 * bytes..y * row + x1 * bytes]);
+        }
         conn.put_image(
             ImageFormat::Z_PIXMAP,
             win,
