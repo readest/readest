@@ -315,10 +315,11 @@ export class NativeNarrationPlayer {
     const path = await source.resolvePath?.(href).catch(() => null);
     signal?.throwIfAborted();
     if (path && (this.supportsStreaming || path.startsWith('/'))) {
-      await (after !== null
-        ? this.queuePath(href, path, after)
-        : this.loadPath(href, path, 0, undefined, signal));
-      return true;
+      return await this.#placed(
+        after !== null
+          ? this.queuePath(href, path, after)
+          : this.loadPath(href, path, 0, undefined, signal),
+      );
     }
     const resolving = source.getMediaSource?.(href, contentType);
     // Direct-file backends must surface errors without extracting a recording.
@@ -333,10 +334,7 @@ export class NativeNarrationPlayer {
         after !== null
           ? this.queuePath(href, media.path, after, bytes)
           : this.loadPath(href, media.path, 0, bytes, signal);
-      if (!this.supportsStreaming) {
-        await placing;
-        return true;
-      }
+      if (!this.supportsStreaming) return await this.#placed(placing);
       if (
         await placing.then(
           () => true,
@@ -350,6 +348,21 @@ export class NativeNarrationPlayer {
     const blob = loaded.type ? loaded : new Blob([loaded], { type: contentType });
     await (after !== null ? this.queue(href, blob, after) : this.load(href, blob, 0));
     return true;
+  }
+
+  // The Linux decoder has no Opus, and an .mp4 or .m4a does not say which codec
+  // it holds (#7560). A file it refuses for that is declined, for the web view
+  // to play; any other failure still surfaces.
+  async #placed(placing: Promise<void>): Promise<boolean> {
+    try {
+      await placing;
+      return true;
+    } catch (error) {
+      if (!this.supportsStreaming && String(error).includes('no supported audio track')) {
+        return false;
+      }
+      throw error;
+    }
   }
 
   // Stage the chapter blob once per href, then load (or seek) on the native

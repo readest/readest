@@ -371,6 +371,9 @@ export class MediaOverlayClient implements TTSClient {
             .getMediaFileUrl(media.path, media.start, media.end, audioType(href))
             .catch(() => null)
         : null;
+    // A Stop while the native player was declining the file must not leave
+    // this element playing in place of the session.
+    signal?.throwIfAborted();
     this.#releaseAudio();
     let url = directUrl ?? mediaUrl;
     if (!url) {
@@ -378,6 +381,7 @@ export class MediaOverlayClient implements TTSClient {
         media && 'blob' in media
           ? media.blob
           : audioBlobWithType(href, await this.#source.loadBlob(href));
+      signal?.throwIfAborted();
       url = URL.createObjectURL(blob);
       this.#objectUrl = url;
     }
