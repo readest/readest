@@ -135,12 +135,18 @@ describe('plain placeholder covers (#7549)', () => {
       const title = cover.querySelector<HTMLElement>('span')!;
       const range = document.createRange();
       range.selectNodeContents(title);
-      const lines = [...range.getClientRects()];
+      // line-clamp hides lines past the title's own box; count only the ones it shows.
+      const titleBox = title.getBoundingClientRect();
+      const lines = [...range.getClientRects()].filter(
+        (line) => line.top >= titleBox.top - 0.5 && line.bottom <= titleBox.bottom + 0.5,
+      );
       const coverBox = cover.getBoundingClientRect();
       expect(new Set(lines.map((line) => Math.round(line.top))).size).toBeGreaterThan(1);
       for (const line of lines) {
         expect(line.left).toBeGreaterThanOrEqual(coverBox.left - 0.5);
         expect(line.right).toBeLessThanOrEqual(coverBox.right + 0.5);
+        expect(line.top).toBeGreaterThanOrEqual(coverBox.top - 0.5);
+        expect(line.bottom).toBeLessThanOrEqual(coverBox.bottom + 0.5);
       }
     });
   }
