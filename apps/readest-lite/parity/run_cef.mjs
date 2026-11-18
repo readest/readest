@@ -14,7 +14,8 @@ const here = path.dirname(new URL(import.meta.url).pathname);
 const require = createRequire(path.join(here, '../../readest-app/package.json'));
 const { chromium } = require('playwright');
 const scenario = JSON.parse(fs.readFileSync(scenarioPath, 'utf8'));
-const [w, h] = scenario.size ?? [1200, 800];
+const [w, h] = scenario.size ?? [1200, 800]; // CSS px
+const scale = scenario.scale ?? 1; // device px per CSS px, emulated (the Kindle Voyage: 536x724 at 2)
 const delay = scenario.capture_ms ?? 2500;
 const stepMs = scenario.step_ms ?? 3000;
 const port = scenario.cdp_port ?? 9333;
@@ -78,6 +79,27 @@ for (let i = 0; i < 120 && !page; i++) {
 }
 const cdp = await page.context().newCDPSession(page);
 await page.waitForLoadState('load');
+// The page as Readest Lite starts it: one window (books open in it) and, for `eink`, Readest's
+// e-ink mode (src-tauri/src/main.rs's initialization script); and the book, as Readest hands a
+// file it was started with to the page (OPEN_WITH_FILES): the restart below drops what it handed
+// the first start. (CEF serves the app's pages itself, so they can't be swapped for Readest Lite's
+// dist/: compare a Readest built from the same readest-app export.)
+await page.addInitScript({
+  content: `window.__READEST_SINGLE_WINDOW = true;${scenario.eink ? ' window.__READEST_IS_EINK = true;' : ''}` +
+    (scenario.book ? ` window.OPEN_WITH_FILES = ${JSON.stringify([path.resolve(scenario.book)])};` : ''),
+});
+if (scale !== 1) {
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: scale, mobile: false });
+}
+// The app's first start, before the flags above, saved its settings (e-ink mode off): start it
+// again on a blank profile.
+const startUrl = page.url();
+await page.goto('about:blank');
+await cdp.send('Storage.clearDataForOrigin', { origin: new URL(startUrl).origin, storageTypes: 'all' });
+for (const f of ['settings.json', 'settings.json.bak']) fs.rmSync(`${configDir}/${f}`, { force: true });
+fs.rmSync(`${out}/home/.local/share/com.bilingify.readest/Readest`, { recursive: true, force: true });
+await page.goto(startUrl);
+await page.waitForLoadState('load');
 // The app navigates while it starts (library, then the reader), which drops what an evaluation
 // was running: evaluations are retried across navigations.
 const evaluate = async (fn, arg) => {
@@ -95,17 +117,22 @@ const metrics = () => evaluate(() => [innerWidth, innerHeight, devicePixelRatio]
 console.error(`window at start: ${await metrics()}`);
 for (let k = 0; k < 20; k++) {
   const [iw, ih, dpr] = await metrics();
-  if (iw === w && ih === h && dpr === 1) break;
+  if (iw === w && ih === h && dpr === scale) break;
   await evaluate(([width, height]) => window.__TAURI_INTERNALS__.invoke('plugin:window|set_size',
     { label: 'main', value: { Logical: { width, height } } }), [w, h]).catch((e) => console.error(String(e)));
   await sleep(500);
 }
 const got = await metrics();
-if (got[0] !== w || got[1] !== h || got[2] !== 1) throw new Error(`window is ${got}, wanted ${w}x${h}@1`);
+if (got[0] !== w || got[1] !== h || got[2] !== scale) throw new Error(`window is ${got}, wanted ${w}x${h}@${scale}`);
 // The app navigates while it starts (library, then the reader): a navigation drops what was
 // evaluated in the page, so the capture script is put back whenever it is missing.
+// `text:Label` taps the element showing Label (text-steps.js tags it).
+const texts = scenario.steps.filter((s) => s.startsWith('text:')).map((s) => s.slice(5));
+const steps = scenario.steps.map((s) => (s.startsWith('text:') ? `[data-parity-text="${s.slice(5)}"]` : s));
 const scripts = fs.readFileSync(path.join(here, 'capture.js'), 'utf8') +
-  (scenario.probe ? fs.readFileSync(scenario.probe, 'utf8') : '');
+  fs.readFileSync(path.join(here, 'text-steps.js'), 'utf8') +
+  (scenario.probe ? fs.readFileSync(scenario.probe, 'utf8') : '') +
+  `\n__parityTexts(${JSON.stringify(texts)});\n`;
 const inject = async () => {
   if (!(await evaluate(() => typeof __parityCapture === 'function'))) await evaluate(scripts);
 };
@@ -151,20 +178,21 @@ const capture = async (i) => {
   // A clip at scale 1: CEF's own captures are at the display's device scale (1.59 here) and
   // cropped to the viewport's size, so they showed only its top-left part, enlarged.
   const { data } = await cdp.send('Page.captureScreenshot', {
-    format: 'png', clip: { x: 0, y: 0, width: w, height: h, scale: 1 },
+    format: 'png', clip: { x: 0, y: 0, width: w, height: h, scale: 1 }, // w*scale x h*scale px
   });
   fs.writeFileSync(`${out}/step-${String(i).padStart(3, '0')}.png`, Buffer.from(data, 'base64'));
 };
-const inputs = scenario.steps.filter((s) => !s.startsWith('wait:'));
+const inputs = steps.filter((s) => !s.startsWith('wait:'));
 let i = 0;
-for (const s of scenario.steps) {
+for (const s of steps) {
   if (s.startsWith('wait:')) { await sleep(Number(s.slice(5))); continue; }
   if (i === 0) await capture(0);
   i++;
   if (s.startsWith('key:')) await page.keyboard.press(s.slice(4));
   else if (/^\d+(\.\d+)?,\d+(\.\d+)?$/.test(s)) { const [x, y] = s.split(',').map(Number); await page.mouse.click(x, y); }
   else {
-    const box = await page.locator(s).first().boundingBox();
+    if (s.startsWith('[data-parity-text=')) await evaluate(() => globalThis.__parityTag?.());
+    const box = await page.locator(s).first().boundingBox({ timeout: 5000 }).catch(() => null);
     if (box) await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
     else console.error(`step ${i}: ${s} not found`);
   }

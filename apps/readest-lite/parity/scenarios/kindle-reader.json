@@ -1,0 +1,30 @@
+{
+  "name": "kindle-reader",
+  "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/novel.epub",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "steps": [
+    "wait:15000",
+    "key:ArrowRight",
+    "268,362",
+    "text:Font & Layout",
+    "268,362",
+    "268,362",
+    "text:Table of Contents",
+    "key:Escape",
+    "268,362",
+    "text:Reading Progress",
+    "268,362",
+    "268,362",
+    "text:Color",
+    "268,362",
+    "268,362",
+    "text:View Options",
+    "key:Escape",
+    "268,362",
+    "text:Notebook",
+    "key:Escape"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "kindle-library",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "steps": [
+    "wait:6000",
+    "[aria-label=\"View Menu\"]",
+    "key:Escape",
+    "[aria-label=\"Settings Menu\"]",
+    "text:Settings",
+    "[data-tab=\"Layout\"]",
+    "[data-tab=\"Theme\"]",
+    "[data-tab=\"Control\"]",
+    "[data-tab=\"Language\"]",
+    "[data-tab=\"Integrations\"]",
+    "[data-tab=\"TTS\"]",
+    "[data-tab=\"Custom\"]",
+    "key:Escape"
+  ]
+}
