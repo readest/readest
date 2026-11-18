@@ -6,6 +6,8 @@ import { useBookProgress } from '@/store/readerProgressStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { findNearestCfi } from '@/utils/cfi';
+import { loadShortcuts } from '@/helpers/shortcuts';
+import { matchesShortcut } from '@/utils/shortcutKeys';
 import useScrollToItem from '../../hooks/useScrollToItem';
 import clsx from 'clsx';
 
@@ -141,8 +143,9 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           onSelectResult(cfi);
-        } else if (!((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f')) {
-          // Ctrl/Cmd+F still reaches the reader so the search field selects its term.
+        } else if (!matchesShortcut(e, loadShortcuts().onShowSearchBar.keys)) {
+          // Search in Book (Ctrl/Cmd+F) still reaches the reader so the search
+          // field selects its term.
           e.stopPropagation();
         }
       }}

@@ -207,6 +207,16 @@ describe('SideBar search behavior', () => {
     expect(h.setSearchBarVisible).toHaveBeenCalledWith(true);
   });
 
+  // Clearing the field must show the TOC at once: the results are reset to
+  // null only after the 500 ms debounce and hold the last search's list until then.
+  test('keeps the TOC as soon as the term is emptied', () => {
+    h.searchNav = { searchTerm: '', searchResults: [] };
+    render(<SideBar />);
+
+    expect(screen.queryByTestId('search-results-panel')).toBeNull();
+    expect(screen.getByTestId('sidebar-content-panel')).toBeDefined();
+  });
+
   test('mounts the results panel once a term is set', () => {
     h.searchNav = { searchTerm: 'alice', searchResults: [{ label: 'Chapter' }] };
     render(<SideBar />);

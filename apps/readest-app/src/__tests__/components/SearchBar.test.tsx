@@ -222,4 +222,29 @@ describe('SearchBar', () => {
     expect(input.selectionStart).toBe(0);
     expect(input.selectionEnd).toBe(input.value.length);
   });
+
+  // The in-field re-select follows the configured Search in Book keys, like
+  // the paths that open the bar through the shortcut layer.
+  it('re-selects the term with a rebound Search in Book key instead of Ctrl+F', async () => {
+    localStorage.setItem('customShortcuts', JSON.stringify({ onShowSearchBar: ['ctrl+e'] }));
+    try {
+      await renderBar();
+      const input = document.querySelector('input.search-input') as HTMLInputElement;
+      input.focus();
+      const press = async (init: KeyboardEventInit) => {
+        input.setSelectionRange(input.value.length, input.value.length);
+        await act(async () => {
+          input.dispatchEvent(
+            new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init }),
+          );
+        });
+        return [input.selectionStart, input.selectionEnd];
+      };
+
+      expect(await press({ key: 'f', ctrlKey: true })).toEqual([5, 5]);
+      expect(await press({ key: 'e', ctrlKey: true })).toEqual([0, 5]);
+    } finally {
+      localStorage.removeItem('customShortcuts');
+    }
+  });
 });

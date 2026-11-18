@@ -122,4 +122,19 @@ describe('SearchResults keyboard', () => {
     window.removeEventListener('keydown', onWindowKeyDown);
     expect(onWindowKeyDown).toHaveBeenCalledTimes(reaches ? 1 : 0);
   });
+
+  it('lets a rebound Search in Book key through instead of Ctrl+F', () => {
+    localStorage.setItem('customShortcuts', JSON.stringify({ onShowSearchBar: ['ctrl+e'] }));
+    try {
+      renderResults();
+      const onWindowKeyDown = vi.fn();
+      window.addEventListener('keydown', onWindowKeyDown);
+      fireEvent.keyDown(resultItems()[0]!, { key: 'f', ctrlKey: true });
+      fireEvent.keyDown(resultItems()[0]!, { key: 'e', ctrlKey: true });
+      window.removeEventListener('keydown', onWindowKeyDown);
+      expect(onWindowKeyDown.mock.calls.map(([event]) => event.key)).toEqual(['e']);
+    } finally {
+      localStorage.removeItem('customShortcuts');
+    }
+  });
 });

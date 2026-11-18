@@ -35,7 +35,7 @@ const SideBar = ({}) => {
     useSidebarStore();
   const { isSearchBarVisible, setSearchBarVisible } = useSidebarStore();
   const searchNavState = sideBarBookKey ? getSearchNavState(sideBarBookKey) : null;
-  const { searchResults = null } = searchNavState || {};
+  const { searchResults = null, searchTerm = '' } = searchNavState || {};
   const { getView, getViewSettings } = useReaderStore();
   const isMobile = window.innerWidth < 640;
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(isMobile);
@@ -294,7 +294,7 @@ const SideBar = ({}) => {
             <BookCard book={book} />
           </div>
         </div>
-        {isSearchBarVisible && !isAnnotationsTab && searchResults ? (
+        {isSearchBarVisible && !isAnnotationsTab && searchResults && searchTerm ? (
           <SearchResults
             bookKey={sideBarBookKey!}
             results={searchResults}
