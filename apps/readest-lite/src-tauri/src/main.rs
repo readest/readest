@@ -50,6 +50,10 @@ fn plugins<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
         .plugin(picker::init())
 }
 
+#[cfg(target_env = "musl")]
+#[global_allocator]
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn main() {
     plugins(tauri::Builder::<tauri_runtime_blitz::BlitzRuntime>::new())
         .invoke_handler(tauri::generate_handler![

@@ -50,8 +50,11 @@ if [ ! -f "$SYSROOT/usr/lib/libpthread.a" ]; then
   echo 'void rust_eh_personality(void) { __builtin_trap(); }' |
     clang "${ARCH_FLAGS[@]}" -x c -c - -o "$SYSROOT/usr/lib/eh.o"
   llvm-ar rc "$SYSROOT/usr/lib/libgcc_eh.a" "$SYSROOT/usr/lib/eh.o"
-  for l in m rt crypt util xnet resolv dl pthread; do llvm-ar rc "$SYSROOT/usr/lib/lib$l.a"; done
 fi
+# libatomic too, which mimalloc asks for on 32-bit ARM (armv7 has the atomics it uses).
+for l in m rt crypt util xnet resolv dl pthread atomic; do
+  [ -f "$SYSROOT/usr/lib/lib$l.a" ] || llvm-ar rc "$SYSROOT/usr/lib/lib$l.a"
+done
 
 quote() { printf "'%s', " "$@"; }
 cat >"$WORK/cross.ini" <<EOF
