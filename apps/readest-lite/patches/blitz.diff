@@ -3158,7 +3158,77 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          let size = self.final_layout().size;
          let matches_self = !(x < self.scroll_offset().x as f32
              || x > size.width + self.scroll_offset().x as f32
-@@ -1787,103 +1870,24 @@
+@@ -1523,6 +1606,16 @@
+             return None;
+         }
+ 
++        // Paint clips its children and text to its padding box: they aren't hit outside it.
++        let clipped_out = self.clips_overflow() && {
++            let x = x - self.scroll_offset().x as f32;
++            let y = y - self.scroll_offset().y as f32;
++            x < layout.border.left
++                || x > size.width - layout.border.right
++                || y < layout.border.top
++                || y > size.height - layout.border.bottom
++        };
++
+         // Descendants overwrite, so the innermost scroll container's thumb
+         // wins. Thumb coords are border-box relative (unscrolled).
+         if matches_self
+@@ -1567,7 +1660,9 @@
+         }
+ 
+         // Call `.hit()` on each child in turn. If any return `Some` then return that value. Else return `Some(self.id).
+-        for child_id in self.paint_children.borrow().iter().flatten().rev() {
++        let paint_children = self.paint_children.borrow();
++        let children = paint_children.iter().flatten().filter(|_| !clipped_out);
++        for child_id in children.rev() {
+             let Some(child) = self.tree().get(*child_id) else {
+                 continue;
+             };
+@@ -1613,7 +1708,7 @@
+         }
+ 
+         // Inline children
+-        if self.flags.is_inline_root() {
++        if self.flags.is_inline_root() && !clipped_out {
+             let x = x - content_box_offset.x;
+             let y = y - content_box_offset.y;
+             let element_data = &self.element_data().unwrap();
+@@ -1655,6 +1750,32 @@
+         None
+     }
+ 
++    /// Whether paint clips this element's children and text to its padding box: `overflow` other
++    /// than `visible`, or `contain: paint`. Not the root element, whose overflow is the viewport's.
++    fn clips_overflow(&self) -> bool {
++        use style::computed_values::overflow_x::T as Overflow;
++        use style::values::computed::Contain;
++        use style::values::specified::box_::{DisplayInside, DisplayOutside};
++        let Some(style) = self.primary_styles() else {
++            return false;
++        };
++        let is_root = self
++            .parent
++            .and_then(|id| self.tree().get(id))
++            .is_some_and(|parent| matches!(parent.data, NodeData::Document(_)));
++        let box_style = style.get_box();
++        let contain_paint = box_style.slow_clone_contain().contains(Contain::PAINT) && {
++            let display = style.clone_display();
++            !display.is_inline_flow()
++                && !(display.outside() == DisplayOutside::InternalTable
++                    && display.inside() != DisplayInside::TableCell)
++        };
++        !is_root
++            && (contain_paint
++                || box_style.overflow_x != Overflow::Visible
++                || box_style.overflow_y != Overflow::Visible)
++    }
++
+     /// Find the inline root ancestor of this node (or self if this is an inline root).
+     /// Returns None if no inline root ancestor exists.
+     pub fn inline_root_ancestor(&self) -> Option<&Node> {
+@@ -1787,103 +1908,24 @@
      ///
      /// Returns `None` for nodes that have their own layout box.
      pub fn inline_fragment_boxes(&self) -> Option<impl Iterator<Item = taffy::Rect<f32>> + '_> {
@@ -3272,7 +3342,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`: the offset of this node's border box from the
-@@ -1962,6 +1966,15 @@
+@@ -1962,6 +2004,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -3288,7 +3358,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          if self.primary_styles().is_none() {
              return taffy::Size {
                  width: self.client_width() + layout.scroll_width(),
-@@ -2211,3 +2224,97 @@
+@@ -2211,3 +2262,97 @@
          );
      }
  }
