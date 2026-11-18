@@ -101,3 +101,58 @@ describe('SearchResults chapter sections', () => {
     expect(sticky.className).toContain('not-eink:bg-base-200');
   });
 });
+
+describe('SearchResults keyboard', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  // A focused result keeps plain keys to itself, but Ctrl/Cmd+F must reach the
+  // reader's window handlers so a repeated Ctrl+F selects the search term.
+  it.each([
+    ['Ctrl+F', true, { key: 'f', ctrlKey: true }],
+    ['Cmd+F', true, { key: 'f', metaKey: true }],
+    ['F', false, { key: 'f' }],
+    ['ArrowDown', false, { key: 'ArrowDown' }],
+  ])('%s from a focused result reaches the window: %s', (_name, reaches, init) => {
+    renderResults();
+    const onWindowKeyDown = vi.fn();
+    window.addEventListener('keydown', onWindowKeyDown);
+    fireEvent.keyDown(resultItems()[0]!, init);
+    window.removeEventListener('keydown', onWindowKeyDown);
+    expect(onWindowKeyDown).toHaveBeenCalledTimes(reaches ? 1 : 0);
+  });
+
+  it('lets Search in Book bound to Ctrl+Enter through without opening the result', () => {
+    localStorage.setItem('customShortcuts', JSON.stringify({ onShowSearchBar: ['ctrl+Enter'] }));
+    try {
+      const onSelectResult = vi.fn();
+      render(
+        <SearchResults bookKey='book-1' results={makeResults()} onSelectResult={onSelectResult} />,
+      );
+      const onWindowKeyDown = vi.fn();
+      window.addEventListener('keydown', onWindowKeyDown);
+      fireEvent.keyDown(resultItems()[0]!, { key: 'Enter', ctrlKey: true });
+      window.removeEventListener('keydown', onWindowKeyDown);
+      expect(onWindowKeyDown).toHaveBeenCalledTimes(1);
+      expect(onSelectResult).not.toHaveBeenCalled();
+    } finally {
+      localStorage.removeItem('customShortcuts');
+    }
+  });
+
+  it('lets a rebound Search in Book key through instead of Ctrl+F', () => {
+    localStorage.setItem('customShortcuts', JSON.stringify({ onShowSearchBar: ['ctrl+e'] }));
+    try {
+      renderResults();
+      const onWindowKeyDown = vi.fn();
+      window.addEventListener('keydown', onWindowKeyDown);
+      fireEvent.keyDown(resultItems()[0]!, { key: 'f', ctrlKey: true });
+      fireEvent.keyDown(resultItems()[0]!, { key: 'e', ctrlKey: true });
+      window.removeEventListener('keydown', onWindowKeyDown);
+      expect(onWindowKeyDown.mock.calls.map(([event]) => event.key)).toEqual(['e']);
+    } finally {
+      localStorage.removeItem('customShortcuts');
+    }
+  });
+});
