@@ -383,10 +383,11 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
 
   // Drops the book's open document when its file no longer has `fileSize`: a
   // book imported in place can be edited without a book.updatedAt change. A
-  // document another search has already reopened stays.
+  // document another search has already reopened stays, and one cached for
+  // another updatedAt is left to open(), which replaces it anyway.
   const refresh = async (book: Book, fileSize: number) => {
     const existing = documents.get(book.hash);
-    if (!existing) return;
+    if (existing?.updatedAt !== book.updatedAt) return;
     const cached = await existing.pending.catch(() => null);
     if (cached && cached.file.size !== fileSize && documents.get(book.hash) === existing) {
       documents.delete(book.hash);
