@@ -133,6 +133,7 @@ describe('plain placeholder covers (#7549)', () => {
       expect(cover.style.backgroundColor).toBe('');
 
       const title = cover.querySelector<HTMLElement>('span')!;
+      expect(getComputedStyle(title).visibility).toBe('visible');
       const range = document.createRange();
       range.selectNodeContents(title);
       // line-clamp hides lines past the title's own box; count only the ones it shows.
