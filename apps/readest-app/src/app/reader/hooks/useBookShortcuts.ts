@@ -498,9 +498,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const toggleAutoScroll = () => {
     if (!sideBarBookKey) return;
-    // Auto Scroll only exists in scrolled mode (#4998); the View menu item is
-    // disabled outside it, so the shortcut silently no-ops there too.
-    if (!getViewSettings(sideBarBookKey)?.scrolled) return;
+    // useAutoScroll no-ops where the View menu item is disabled: paginated
+    // vertical and fixed-layout books (#7575).
     eventDispatcher.dispatch('autoscroll-toggle', { bookKey: sideBarBookKey });
   };
 

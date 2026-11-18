@@ -27,10 +27,10 @@ vi.mock('@/store/readerStore', () => {
     getViewState: () => ({ inited: h.inited, previewMode: h.previewMode }),
     setAutoScrollEnabled: h.setAutoScrollEnabled,
   };
-  return {
-    useReaderStore: (selector?: (s: typeof state) => unknown) =>
-      selector ? selector(state) : state,
-  };
+  const useReaderStore = (selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state;
+  useReaderStore.getState = () => ({ hoveredBookKey: null });
+  return { useReaderStore };
 });
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
@@ -154,5 +154,138 @@ describe('useAutoScroll session persistence', () => {
     const { result } = setup();
 
     expect(result.current.active).toBe(false);
+  });
+});
+
+// #7575: in paginated mode the page stays still and a line wipes the next
+// page in from the top, at the same speed the scrolled mode scrolls.
+describe('useAutoScroll in paginated mode', () => {
+  const renderer = {
+    scrolled: false,
+    isConnected: true,
+    atEnd: false,
+    columnCount: 1,
+    next: vi.fn(async () => {}),
+    prev: vi.fn(async () => {}),
+    hasAttribute: () => false,
+    setAttribute: vi.fn(),
+    removeAttribute: vi.fn(),
+    getContents: () => [],
+  };
+  const paginatedRef = {
+    current: {
+      isFixedLayout: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      renderer,
+    },
+  } as unknown as React.RefObject<FoliateView | null>;
+
+  beforeEach(() => {
+    h.viewSettings = {
+      scrolled: false,
+      vertical: false,
+      autoScrollSpeed: 100,
+      autoScrollRunning: false,
+    };
+    h.inited = true;
+  });
+
+  test('starts a session on a paginated horizontal book', async () => {
+    const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+    await toggle();
+
+    expect(result.current.active).toBe(true);
+    expect(result.current.wipe).toBe(true);
+  });
+
+  test('does not start on a paginated vertical book', async () => {
+    h.viewSettings['vertical'] = true;
+    const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+    await toggle();
+
+    expect(result.current.active).toBe(false);
+  });
+
+  describe('with View Transitions', () => {
+    const skipTransition = vi.fn();
+    let cell: HTMLDivElement;
+
+    beforeEach(() => {
+      renderer.next.mockClear();
+      renderer.prev.mockClear();
+      skipTransition.mockClear();
+      vi.useFakeTimers({
+        toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'],
+      });
+      vi.stubGlobal('CSS', { supports: () => true });
+      Object.assign(document, {
+        startViewTransition: (update: () => Promise<void>) => {
+          const done = update();
+          return {
+            ready: done,
+            updateCallbackDone: done,
+            finished: new Promise(() => {}),
+            skipTransition,
+          };
+        },
+      });
+      document.documentElement.animate = vi.fn(
+        () => ({ pause: vi.fn(), effect: { setKeyframes: vi.fn() } }) as unknown as Animation,
+      );
+      cell = document.createElement('div');
+      cell.id = `gridcell-${BOOK_KEY}`;
+      Object.defineProperties(cell, {
+        clientWidth: { value: 600 },
+        clientHeight: { value: 800 },
+      });
+      document.body.append(cell);
+    });
+
+    afterEach(() => {
+      cell.remove();
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      Reflect.deleteProperty(document, 'startViewTransition');
+    });
+
+    // While the snapshot is up, the transition routes every press to <html>.
+    test('a press pauses and turns back under the snapshot of the page being read', async () => {
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await toggle();
+      await act(() => vi.advanceTimersByTimeAsync(200));
+      expect(renderer.next).toHaveBeenCalledOnce();
+
+      await act(async () => {
+        document.documentElement.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(result.current.paused).toBe(true);
+      expect(renderer.prev).toHaveBeenCalledOnce();
+      expect(skipTransition).toHaveBeenCalledOnce();
+    });
+
+    // On desktop the move before a click shows the controls, which starts
+    // putting the snapshot away; the click lands while it is still up.
+    test('a press pauses while the snapshot is being put away', async () => {
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await toggle();
+      await act(() => vi.advanceTimersByTimeAsync(200));
+      expect(renderer.next).toHaveBeenCalledOnce();
+
+      const controls = document.createElement('div');
+      controls.setAttribute('data-page-wipe-above', '');
+      controls.setAttribute('data-visible', '');
+      cell.append(controls);
+      renderer.prev.mockImplementationOnce(() => new Promise(() => {}));
+      await act(() => vi.advanceTimersByTimeAsync(100));
+      expect(renderer.prev).toHaveBeenCalledOnce();
+
+      act(() => {
+        document.documentElement.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      });
+      expect(result.current.paused).toBe(true);
+    });
   });
 });
