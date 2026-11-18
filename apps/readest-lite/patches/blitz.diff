@@ -2316,7 +2316,62 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
          }
          output
      }
-@@ -240,6 +252,7 @@
+@@ -213,8 +225,53 @@
+         }
+         #[cfg(not(feature = "writing-mode"))]
+         {
+-            node.layout_style()
++            let mut style = node.layout_style();
++            if self.in_indefinite_height(node) {
++                style.flags |= stylo_taffy::StyleFlags::INDEFINITE_CB_HEIGHT;
++            }
++            style
++        }
++    }
++
++    /// Whether `node` is `position: relative` with a percentage `top` or `bottom` and its
++    /// containing block (its layout parent) has an indefinite height, so those act as `auto`.
++    fn in_indefinite_height(&self, node: &Node) -> bool {
++        use style::computed_values::position::T as Position;
++        let Some(style) = node.primary_styles() else {
++            return false;
++        };
++        let inset = stylo_taffy::convert::inset_rect(&style);
++        style.clone_position() == Position::Relative
++            && (inset.top.into_raw().uses_percentage() || inset.bottom.into_raw().uses_percentage())
++            && node
++                .layout_parent
++                .get()
++                .is_some_and(|parent| !self.height_is_definite(&self.nodes[parent]))
++    }
++
++    /// Whether `node`'s height is definite, as Chromium resolves percentages against it: given by
++    /// `height` or by both of an absolutely positioned box's insets, or (approximately) made so
++    /// by a flex or grid container of definite height. Unknown cases count as definite, where
++    /// Taffy resolves percentages against the final height.
++    fn height_is_definite(&self, node: &Node) -> bool {
++        use style::computed_values::position::T as Position;
++        use style::values::specified::box_::DisplayInside;
++        let Some(style) = node.primary_styles() else {
++            return true;
++        };
++        let position = style.get_position();
++        if !position.height.is_auto() {
++            return true;
+         }
++        if matches!(style.clone_position(), Position::Absolute | Position::Fixed) {
++            return !position.top.is_auto() && !position.bottom.is_auto();
++        }
++        let Some(parent) = node.layout_parent.get().map(|id| &self.nodes[id]) else {
++            return false;
++        };
++        parent.primary_styles().is_some_and(|parent_style| {
++            matches!(parent_style.clone_display().inside(), DisplayInside::Flex | DisplayInside::Grid)
++        }) && self.height_is_definite(parent)
+     }
+ 
+     fn dispatch_child_layout(
+@@ -240,6 +297,7 @@
          });
          let font_size = font_styles.map(|s| s.0);
          let resolved_line_height = font_styles.map(|s| s.1);
@@ -2324,7 +2379,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
  
          match &mut node.data {
              NodeData::Text(data) => {
-@@ -309,20 +322,7 @@
+@@ -309,20 +367,7 @@
                                      .resolve_or_zero(inputs.parent_size.width, resolve_calc_value)
                          };
                          let content_width = (output.size.width - pb.horizontal_axis_sum()).max(0.0);
@@ -2346,7 +2401,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                      }
                      return output;
                  }
-@@ -333,7 +333,7 @@
+@@ -333,7 +378,7 @@
                          Some("hidden") => {
                              return taffy::LayoutOutput::HIDDEN;
                          }
@@ -2355,7 +2410,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                              return compute_leaf_layout(
                                  inputs,
                                  &node.layout_style(),
-@@ -357,7 +357,7 @@
+@@ -357,7 +402,7 @@
                              );
                          }
                          None | Some("text" | "password" | "email" | "tel" | "url" | "search") => {
@@ -2364,7 +2419,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                                  inputs,
                                  &node.layout_style(),
                                  resolve_calc_value,
-@@ -370,6 +370,28 @@
+@@ -370,6 +415,28 @@
                                      height: resolved_line_height.unwrap_or(16.0),
                                  },
                              );
@@ -2393,7 +2448,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
                          }
                          _ => {}
                      }
-@@ -846,13 +868,45 @@
+@@ -846,13 +913,45 @@
      }
  }
  
@@ -2441,7 +2496,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/mod.rs blitz/packages/blitz-dom/sr
      }
  
      fn is_out_of_flow(&self, node_id: NodeId) -> bool {
-@@ -972,3 +1026,25 @@
+@@ -972,3 +1071,25 @@
          })
      }
  }
@@ -5523,7 +5578,7 @@ diff -ruN blitz/packages/stylo_taffy/src/convert.rs blitz/packages/stylo_taffy/s
 diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/src/wrapper.rs
 --- blitz/packages/stylo_taffy/src/wrapper.rs
 +++ blitz/packages/stylo_taffy/src/wrapper.rs
-@@ -24,12 +24,6 @@
+@@ -24,16 +24,14 @@
      pub struct StyleFlags: u8 {
          /// Whether the node is a replaced element (e.g. an image or form control)
          const IS_REPLACED = 1 << 0;
@@ -5536,7 +5591,15 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
          /// Whether the node is a button element
          const IS_BUTTON = 1 << 3;
          /// Whether the node is a button-type input whose label always uses block layout
-@@ -236,10 +230,7 @@
+         const IS_BUTTON_INPUT = 1 << 4;
++        /// Whether the node is `position: relative` in a containing block whose height is
++        /// indefinite: its percentage `top`/`bottom` then act as `auto` (CSS 2 §9.4.3), where
++        /// Taffy would resolve them against the height the containing block ends up with.
++        const INDEFINITE_CB_HEIGHT = 1 << 5;
+     }
+ }
+ 
+@@ -236,15 +234,20 @@
  
      #[inline]
      fn is_containing_block(&self) -> taffy::ContainingBlockClaims {
@@ -5545,6 +5608,20 @@ diff -ruN blitz/packages/stylo_taffy/src/wrapper.rs blitz/packages/stylo_taffy/s
 -        claims.fixed |= self.flags.contains(StyleFlags::SPAN_FIXED_CB);
 -        claims
 +        convert::containing_block_claims(&self.style)
+     }
+ 
+     #[inline]
+     fn inset(&self) -> taffy::Rect<taffy::LengthPercentageAuto> {
+-        self.rect(convert::inset_rect(&self.style))
++        let mut inset = convert::inset_rect(&self.style);
++        if self.flags.contains(StyleFlags::INDEFINITE_CB_HEIGHT) {
++            for side in [&mut inset.top, &mut inset.bottom] {
++                if side.into_raw().uses_percentage() {
++                    *side = taffy::LengthPercentageAuto::auto();
++                }
++            }
++        }
++        self.rect(inset)
      }
  
      #[inline]
