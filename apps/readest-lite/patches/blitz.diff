@@ -3040,22 +3040,23 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          // While render-blocking resources (e.g. stylesheets linked from the `<head>`) are
          // still loading, don't resolve styles or layout (matching how browsers block
          // rendering). Resolving styles before the document's stylesheets have loaded would
-@@ -72,6 +100,14 @@
+@@ -72,6 +100,15 @@
                  .retain(|_, last| last.elapsed() < FADE_DELAY + FADE_DURATION);
          }
  
 +        // Nothing changed since the last resolve: its styles and layout stand. Only the iframes
 +        // may have changed on their own.
 +        if self.is_resolved() {
-+            self.damaged_since_taken =
-+                earlier || (subdocs && self.resolve_subdocs(current_time_for_animations));
++            // The iframes resolve whatever damage this document has yet to hand over.
++            let subdocs_damaged = subdocs && self.resolve_subdocs(current_time_for_animations);
++            self.damaged_since_taken = earlier || subdocs_damaged;
 +            return;
 +        }
 +
          let root_node_id = self.root_element().id;
          debug_timer!(timer, feature = "log-phase-times");
  
-@@ -92,7 +128,10 @@
+@@ -92,7 +129,10 @@
          }
  
          // Propagate damage flags (from mutation and restyles) up and down the tree
@@ -3067,7 +3068,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("damage");
  
          // Fix up tree for layout (insert anonymous blocks as necessary, etc)
-@@ -115,6 +154,10 @@
+@@ -115,6 +155,10 @@
  
          // Resolve transforms
          self.resolve_transforms(root_node_id);
@@ -3078,7 +3079,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("transform");
  
          // Build paint children / stacking contexts for damaged subtrees. Runs
-@@ -123,10 +166,18 @@
+@@ -123,10 +167,18 @@
          self.build_paint_tree(root_node_id);
          timer.record_time("paint_tree");
  
@@ -3097,7 +3098,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("c_damage");
  
          // Re-resolve the hover node from the pointer position against the fresh
-@@ -138,34 +189,81 @@
+@@ -138,34 +190,81 @@
          // if the hovered node actually changes.
          self.refresh_hover();
  
@@ -3199,7 +3200,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
      }
  
      fn resolve_transforms(&mut self, node_id: NodeId) -> Rect {
-@@ -222,7 +320,8 @@
+@@ -222,7 +321,8 @@
              overflow = overflow.union(child_rect_in_self);
          }
          *self.nodes[node_id].hoisted_children.borrow_mut() = hoisted_children;
@@ -3209,7 +3210,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
              let Some(pseudo) = pseudo else { continue };
              if self.nodes[pseudo].is_out_of_flow() {
                  continue;
-@@ -462,3 +561,70 @@
+@@ -462,3 +562,70 @@
          // taffy::print_tree(self, root_node_id)
      }
  }
