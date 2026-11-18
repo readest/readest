@@ -4,6 +4,7 @@ import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import SearchBar from '@/app/reader/components/sidebar/SearchBar';
+import { eventDispatcher } from '@/utils/event';
 
 const mocks = vi.hoisted(() => ({
   // getProgress returns null until the book emits its first relocate event.
@@ -164,5 +165,48 @@ describe('SearchBar', () => {
     await renderBar();
 
     expect(mocks.searchLibraryBooks.mock.calls[0]![3].maxResultsPerBook).toBe(Infinity);
+  });
+
+  // Repeated Ctrl+F must let typing replace the old term instead of
+  // appending to it, on every path that re-opens the search bar. Both tests
+  // park the caret at the end of the term first so the full-selection
+  // assertion can only pass through the re-select handlers.
+  it('re-selects the term when the bar is re-opened via a null-term search-term event', async () => {
+    await renderBar();
+    const input = document.querySelector('input.search-input') as HTMLInputElement;
+    expect(input.value).toBe('alice');
+    input.blur();
+    input.setSelectionRange(input.value.length, input.value.length);
+
+    await act(async () => {
+      eventDispatcher.dispatch('search-term', { term: null, bookKey: 'book-1' });
+    });
+
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe(input.value.length);
+  });
+
+  it('re-selects the term when Ctrl+F is pressed while the input is focused', async () => {
+    await renderBar();
+    const input = document.querySelector('input.search-input') as HTMLInputElement;
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+
+    await act(async () => {
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'f',
+          code: 'KeyF',
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe(input.value.length);
   });
 });
