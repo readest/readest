@@ -246,6 +246,16 @@
   the fieldset out without the legend and with that much more top padding). The fieldset's
   background and border start at the legend's middle, and the border has a gap under the
   legend's border box.
+- `stylo_taffy` wrapper, convert; `blitz-dom` layout, layout/inline, node, resolve; `blitz-paint`
+  render/scrollbars: scroll containers show classic scrollbars, as Chromium on Linux does (the
+  overlay `scrollbars` feature stays off). The gutter is 15px (10px for `scrollbar-width: thin`,
+  none for `none`) and comes out of the scrollport for `overflow: scroll`, and for `auto` once
+  the content overflows that axis: layout records which `auto` axes overflowed
+  (`Node::auto_scrollbars`), lays the box out again with those gutters, and then re-runs the
+  layout of its ancestors, which measured it without them. Inline content breaks its lines inside
+  the gutter. Paint draws a triangle at each end and a rounded thumb between them in
+  `scrollbar-color`'s thumb colour on its track colour, with Chromium's sizes. Readest's dialogs
+  and menus laid their content 15px wider than Readest does.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
