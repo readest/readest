@@ -135,6 +135,26 @@ fn a_read_lays_out_its_own_document_and_not_the_iframes() {
     assert_eq!(logs, ["log: 300 300", "log: 80"]);
 }
 
+// A read of the page's own layout resolves the page alone, so its damage waits for the next
+// paint; that paint skipped the iframes' documents while the damage it had not taken yet stood,
+// and showed a change made in an iframe after the read a frame late.
+#[test]
+fn paint_lays_out_an_iframe_changed_after_a_read_of_the_page() {
+    let mut doc = QjsDocument::from_html(PAGE, DocumentConfig::default());
+    doc.inner_mut().resolve(0.0);
+    doc.inner_mut().take_damage();
+    doc.eval(
+        "document.body.style.paddingTop = '1px';
+        console.log(document.body.offsetHeight > 0);
+        document.querySelector('iframe').contentDocument.getElementById('x').style.width = '80px';",
+        "test",
+    );
+    doc.inner_mut().resolve(0.0);
+    assert_eq!(laid_out_width(&doc), 80.0);
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(doc.take_messages(), ["log: true"]);
+}
+
 // foliate-js keeps a chapter's iframe `visibility: hidden` until it has put Readest's styles in.
 // Paint draws nothing of a hidden iframe, so laying its document out for paint was work thrown
 // away; a read in it, or showing it, lays it out.
