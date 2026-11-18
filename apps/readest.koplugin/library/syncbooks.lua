@@ -462,6 +462,20 @@ function M.pullBooks(opts, cb)
                     local parsed = LibraryStore.parseSyncRow(raw)
                     if parsed then
                         parsed.user_id = opts.settings.user_id
+                        -- A live cloud row brings back a book this device
+                        -- holds as deleted (deleted in an app, then pushed
+                        -- again, #7576). parseSyncRow leaves deleted_at out,
+                        -- which upsertBook reads as "keep the stored one", so
+                        -- clear it explicitly. A local deletion newer than
+                        -- the cloud row hasn't been pushed yet (pull runs
+                        -- before push) and stays.
+                        if not parsed.deleted_at then
+                            local existing = opts.store:_getRowRaw(parsed.hash)
+                            local deleted_at = existing and tonumber(existing.deleted_at)
+                            if deleted_at and (parsed.updated_at or 0) >= deleted_at then
+                                parsed._clear_fields = { "deleted_at" }
+                            end
+                        end
                         opts.store:upsertBook(parsed)
                         upserted = upserted + 1
                         local rc = row_pull_cursor(parsed)
