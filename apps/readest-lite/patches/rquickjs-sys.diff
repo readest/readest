@@ -1,7 +1,15 @@
 diff -ruN rquickjs-sys/build.rs rquickjs-sys/build.rs
 --- rquickjs-sys/build.rs
 +++ rquickjs-sys/build.rs
-@@ -123,28 +123,14 @@
+@@ -117,34 +117,22 @@
+         println!("cargo:rerun-if-env-changed={}", feature_to_cargo(feature));
+     }
+     println!("cargo:rerun-if-env-changed=CARGO_CFG_SANITIZE");
++    // the vendored QuickJS sources carry patches of their own (patches/rquickjs-sys.diff)
++    println!("cargo:rerun-if-changed=quickjs");
+ 
+     let src_dir = Path::new("quickjs");
+ 
      let out_dir = env::var("OUT_DIR").expect("No OUT_DIR env var is set by cargo");
      let out_dir = Path::new(&out_dir);
  
@@ -38,7 +46,7 @@ diff -ruN rquickjs-sys/build.rs rquickjs-sys/build.rs
  
      let mut defines: Vec<(String, Option<&str>)> = vec![("_GNU_SOURCE".into(), None)];
  
-@@ -206,7 +192,8 @@
+@@ -206,7 +194,8 @@
          defines.push(("FE_UPWARD".into(), Some("0")));
      }
  
@@ -48,6 +56,26 @@ diff -ruN rquickjs-sys/build.rs rquickjs-sys/build.rs
          fs::copy(src_dir.join(file), out_dir.join(file))
              .expect("Unable to copy source; try 'git submodule update --init'");
      }
+diff -ruN rquickjs-sys/quickjs/quickjs.c rquickjs-sys/quickjs/quickjs.c
+--- rquickjs-sys/quickjs/quickjs.c
++++ rquickjs-sys/quickjs/quickjs.c
+@@ -53489,7 +53489,15 @@
+         h = 0;
+         break;
+     }
+-    return h ^ ctx->hash_seed ^ hash32(tag);
++    h ^= ctx->hash_seed ^ hash32(tag);
++    /* The bucket is the hash's low bits, which the number and pointer hashes above leave zero for
++       small integers and aligned pointers: mix the high bits down (murmur3's finalizer). */
++    h ^= h >> 16;
++    h *= 0x85ebca6b;
++    h ^= h >> 13;
++    h *= 0xc2b2ae35;
++    h ^= h >> 16;
++    return h;
+ }
+ 
+ static JSMapRecord *map_find_record(JSContext *ctx, JSMapState *s,
 diff -ruN rquickjs-sys/src/inlines/ptr_64.rs rquickjs-sys/src/inlines/ptr_64.rs
 --- rquickjs-sys/src/inlines/ptr_64.rs
 +++ rquickjs-sys/src/inlines/ptr_64.rs

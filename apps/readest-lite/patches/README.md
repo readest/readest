@@ -227,8 +227,12 @@ one of each).
 cannot compile one of Readest's script chunks.
 
 - `build.rs`: compiles 0.18's file set (every header; there is no `cutils.c` any more).
-  Bindings come from bindgen (blitz-qjs-script enables the feature).
+  Bindings come from bindgen (blitz-qjs-script enables the feature). It reruns when
+  `quickjs/` changes, so a patched source is rebuilt.
 - `src/inlines/ptr_64.rs`: 0.18 keeps ints and bools in the low half of the `uint64` value.
+- `quickjs/quickjs.c` `map_hash_key`: the hash ends with murmur3's finalizer. A Map picks a
+  bucket by the hash's low bits, which the number hash left zero for small integers: the DOM
+  shim's wrapper tables, keyed by node id, kept most nodes in a few buckets.
 
 ## rquickjs-core.diff (crates.io 0.10.0)
 
