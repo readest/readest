@@ -71,7 +71,7 @@
     loose.delete(id);
     const regs = mutationTargets.get(id);
     if (!regs) return;
-    mutationTargets.delete(id);
+    untarget(id);
     for (const o of regs.keys()) o._targets.delete(id);
   }
   // Documents of their own by tag (WeakRefs) and live NodeIterators (WeakRefs); see below.
@@ -80,11 +80,17 @@
   // MutationObserver registrations: node id → Map(observer → options). Each change asks which
   // observers want it (none, cheaply, while nothing is observed) before building a record.
   const mutationTargets = new Map();
+  // How many of them are in a document of its own (negative ids: a book's section in an iframe):
+  // none while only the app's document is observed, so a change in a section asks no ancestors.
+  let foreignTargets = 0;
+  const untarget = (id) => {
+    if (mutationTargets.delete(id) && id < 0) foreignTargets--;
+  };
   const resolved = Promise.resolve(); // the native Promise, as queueMicrotask's below
   // The observers interested in a `type` change of node `id` (its attribute `name`), each mapped
   // to whether it wants the old value; null when there are none.
   function mutationObservers(id, type, name) {
-    if (!mutationTargets.size) return null;
+    if (!mutationTargets.size || (id < 0 && !foreignTargets)) return null;
     let found = null;
     for (let t = id, self = true; t != null; t = n.parent(t), self = false) {
       const regs = mutationTargets.get(t);
@@ -2846,7 +2852,10 @@
       const id = target._id;
       if (id === -1) return; // a DocumentFragment: never mutated through the native tree
       let regs = mutationTargets.get(id);
-      if (!regs) mutationTargets.set(id, (regs = new Map()));
+      if (!regs) {
+        mutationTargets.set(id, (regs = new Map()));
+        if (id < 0) foreignTargets++;
+      }
       regs.set(this, {
         childList: !!o.childList,
         attributes: !!attributes,
@@ -2862,7 +2871,7 @@
       for (const id of this._targets) {
         const regs = mutationTargets.get(id);
         regs?.delete(this);
-        if (regs && !regs.size) mutationTargets.delete(id);
+        if (regs && !regs.size) untarget(id);
       }
       this._targets.clear();
       this._records = [];

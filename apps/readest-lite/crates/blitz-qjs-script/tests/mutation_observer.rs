@@ -109,3 +109,35 @@ fn shadow_trees_are_not_in_the_host_subtree() {
     );
     assert_eq!(logs, ["childList h - - +u - null null"]);
 }
+
+#[test]
+fn a_change_in_a_document_nobody_observes_asks_no_ancestors() {
+    // a book's section is a document of its own; Readest's observers watch the app's document,
+    // and walking up from each changed node of the section to find none cost a Kindle ~30 ms of
+    // the alignment classes it sets while opening a book
+    let logs = run(
+        "<div id='d'></div>",
+        "new MutationObserver(log).observe(document.body, { attributes: true, subtree: true });
+        const doc = __blitzParseHTML('<html><body><div><div><p id=\"p\">x</p></div></div></body></html>');
+        const p = doc.getElementById('p');
+        const parent = __n.parent;
+        let ups = 0;
+        __n.parent = (id) => { ups++; return parent(id); };
+        for (let i = 0; i < 10; i++) p.classList.add('c' + i);
+        __n.parent = parent;
+        console.log('ups', ups);
+        // observed, the other document's changes are recorded, and not after a disconnect
+        const o = new MutationObserver((rs) => rs.forEach((r) => console.log('doc', show(r))));
+        o.observe(doc.body, { attributes: true, subtree: true });
+        p.setAttribute('title', 't');
+        Promise.resolve().then(() => { o.disconnect(); p.setAttribute('lang', 'en'); $('d').title = 'm'; });",
+    );
+    assert_eq!(
+        logs,
+        [
+            "ups 0",
+            "doc attributes p title - + - null null",
+            "attributes d title - + - null null"
+        ]
+    );
+}
