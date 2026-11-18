@@ -102,7 +102,7 @@ with tempfile.TemporaryDirectory(prefix="readest-lifecycle-") as temporary:
     #[macro_export] macro_rules! json { ($($tt:tt)*) => { () }; }
     mod serde_json { pub(crate) use crate::json; }
     #[derive(Default)] struct PlayoutControlRequest { action:String,path:Option<String>,start:Option<u64>,end:Option<u64>,entry:Option<String>,position_ms:Option<f64>,rate:Option<f64> }
-    struct PlayoutControlResponse {session:Option<i32>}
+    struct PlayoutControlResponse {session:Option<i32>,armed:Option<bool>}
     #[derive(Default)] struct PlayoutPositionResponse {session:i32,index:i32,position_ms:f64,playing:bool,ended_index:Option<i32>}
     mod now_playing {pub fn emit(_: &(),_: &str,_: ()) {}}
     type Listeners=();type Reply=mpsc::SyncSender<Result<PlayoutControlResponse,String>>;
