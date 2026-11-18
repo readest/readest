@@ -4,6 +4,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { clearBookProgress, setBookProgress, useBookProgress } from '@/store/readerProgressStore';
 import type { BookProgress } from '@/types/book';
+import { eventDispatcher } from '@/utils/event';
 import type { TextSelection } from '@/utils/sel';
 
 // A page turn writes the book's progress. Annotator draws the new page's highlights and the sync
@@ -287,6 +288,28 @@ describe('Annotator on a page turn', () => {
     expect(h.view.addAnnotation).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }));
     expect(h.followers).toBeGreaterThan(followers);
     expect(h.renders).toBe(renders);
+  });
+
+  // Marking a word Mastered removes its hint and the lines below move up, but the
+  // section keeps its size, so foliate never redraws the highlights drawn there.
+  test("redraws the page's highlights when its Word Lens hints change", async () => {
+    vi.useFakeTimers();
+    try {
+      turnTo('epubcfi(/6/4!/4,/2/1:0,/8/1:9)', 2);
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      h.view.addAnnotation.mockClear();
+
+      await act(async () => {
+        await eventDispatcher.dispatch('wordlens-glosses-changed', { bookKey: 'book-1' });
+        vi.advanceTimersByTime(150);
+      });
+
+      expect(h.view.addAnnotation).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('makes a quote card with the chapter of its passage, though the page turns meanwhile', async () => {

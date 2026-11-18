@@ -46,6 +46,12 @@ interface RefreshContext {
   onProgress?: ProgressHandler;
   /** The reader's Learning / Mastered words for the book's language. */
   vocabulary?: VocabularyMarks;
+  /**
+   * Called after hints are drawn or removed. They reflow the text under the
+   * highlights drawn on the page without resizing the section, so nothing else
+   * tells the reader to redraw them.
+   */
+  onGlossesChanged?: () => void;
 }
 
 const NO_PACK: GlossSource = { lookup: () => null };
@@ -79,7 +85,7 @@ export const refreshSectionGlosses = async (
     // With Word Lens on, join the text even without hints to clear: a word
     // split across adjacent text nodes (a translation's unwrapped tags leave
     // them) can't be hinted.
-    clearGlosses(doc, viewSettings.wordLensEnabled);
+    if (clearGlosses(doc, viewSettings.wordLensEnabled)) ctx.onGlossesChanged?.();
     if (!viewSettings.wordLensEnabled) return;
     const source = toWordLensSource(ctx.bookLang);
     if (!source || !canTokenizeSource(source)) return;
@@ -116,7 +122,10 @@ export const refreshSectionGlosses = async (
         canRender: model.canRender,
       });
       if (zhVariant) for (const o of occ) o.gloss = runSimpleCC(o.gloss, zhVariant);
-      if (occ.length) applyGlosses(doc, model, occ);
+      if (occ.length) {
+        applyGlosses(doc, model, occ);
+        ctx.onGlossesChanged?.();
+      }
     };
     // The reader may have selected text while the pack loaded.
     whenSelectionClears(doc, () => {

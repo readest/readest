@@ -795,6 +795,7 @@ const FoliateViewer: React.FC<{
       appLang: getLocale(),
       allowDownload,
       vocabulary: useVocabularyStore.getState().getLearningAndMastered(vocabularyLang(bookLang)),
+      onGlossesChanged: () => eventDispatcher.dispatch('wordlens-glosses-changed', { bookKey }),
       onProgress: () => {
         if (wordLensToastShownRef.current) return;
         wordLensToastShownRef.current = true;
