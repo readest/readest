@@ -3,7 +3,7 @@
 // Writes OUT/captures.jsonl (capture.js per step), OUT/timing.json and OUT/step-NNN.png (the
 // viewport when the step was captured). The app runs under a scratch HOME in OUT/home and a
 // private D-Bus session, with its DevTools endpoint on a local port, on its own Xvfb display at
-// 96 DPI (device scale 1, as Readest Lite runs here), its window sized to the scenario's size.
+// the scenario's device scale (GDK_SCALE), its window sized to the scenario's size.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,7 +15,7 @@ const require = createRequire(path.join(here, '../../readest-app/package.json'))
 const { chromium } = require('playwright');
 const scenario = JSON.parse(fs.readFileSync(scenarioPath, 'utf8'));
 const [w, h] = scenario.size ?? [1200, 800]; // CSS px
-const scale = scenario.scale ?? 1; // device px per CSS px, emulated (the Kindle Voyage: 536x724 at 2)
+const scale = scenario.scale ?? 1; // device px per CSS px (the Kindle Voyage: 536x724 at 2)
 const delay = scenario.capture_ms ?? 2500;
 const stepMs = scenario.step_ms ?? 3000;
 const port = scenario.cdp_port ?? 9333;
@@ -24,16 +24,20 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(`${out}/home`, { recursive: true });
 // The window opens at the scenario's size: the window-state plugin restores this saved state
-// (physical px, which are CSS px at device scale 1), so the book is never laid out at another size.
+// (physical px), so the book is never laid out at another size.
 const configDir = `${out}/home/.config/com.bilingify.readest`;
 fs.mkdirSync(configDir, { recursive: true });
 fs.writeFileSync(`${configDir}/.window-state.json`, JSON.stringify({
-  main: { width: w, height: h, x: 0, y: 0, prev_x: 0, prev_y: 0, maximized: false, visible: true, decorated: true, fullscreen: false },
+  main: { width: w * scale, height: h * scale, x: 0, y: 0, prev_x: 0, prev_y: 0, maximized: false, visible: true, decorated: true, fullscreen: false },
 }));
 const env = Object.fromEntries(Object.entries(process.env).filter(([k]) =>
   !k.startsWith('XDG_') || k === 'XDG_RUNTIME_DIR' || k === 'XDG_SESSION_TYPE'));
 delete env.DBUS_SESSION_BUS_ADDRESS;
 Object.assign(env, { HOME: path.resolve(`${out}/home`), READEST_CDP_PORT: String(port) });
+// A real device scale, as on the Kindle: Chromium lays out in device px at it and snaps boxes to
+// device px. (Emulation.setDeviceMetricsOverride's scale snaps them to CSS px instead.)
+env.GDK_SCALE = String(scale);
+delete env.GDK_DPI_SCALE;
 // Offline, as Readest Lite is (it fetches nothing over the network): every http(s) request goes
 // to a closed port, so web fonts fall back in both apps and the engines are compared alike.
 for (const k of ['http_proxy', 'https_proxy', 'all_proxy', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY']) {
@@ -88,9 +92,6 @@ await page.addInitScript({
   content: `window.__READEST_SINGLE_WINDOW = true;${scenario.eink ? ' window.__READEST_IS_EINK = true;' : ''}` +
     (scenario.book ? ` window.OPEN_WITH_FILES = ${JSON.stringify([path.resolve(scenario.book)])};` : ''),
 });
-if (scale !== 1) {
-  await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: scale, mobile: false });
-}
 // The app's first start, before the flags above, saved its settings (e-ink mode off): start it
 // again on a blank profile.
 const startUrl = page.url();
