@@ -215,10 +215,13 @@ describe('push page-turn handover', () => {
     });
 
     it('leaves the offset alone when aborted', async () => {
-      const { container, child, scrollPos } = setup(0);
+      const { container, child, scrollPos, setScrollPos } = setup(0);
       const anim = startCssAnimateScroll(container, 'scrollLeft', 0, 400, 300);
+      // Whoever aborts has already moved the offset; neither the start nor
+      // the target is written back over it.
+      setScrollPos(120);
       anim.interrupt('abort');
-      expect(scrollPos()).toBe(0);
+      expect(scrollPos()).toBe(120);
       expect(child.style.transform).toBe('');
       await expect(anim.promise).resolves.toBe(true);
     });
@@ -372,6 +375,30 @@ describe('push page-turn handover', () => {
       t.p.dispatchEvent(touchEvent('touchstart', 200));
       expect(t.scrollLeft()).toBe(100);
 
+      t.p.dispatchEvent(touchEvent('touchcancel', 200));
+      expect(t.view().style.transform).toBe('translateX(-300px)');
+      await t.endTransition();
+      expect(t.scrollLeft()).toBe(400);
+      t.p.destroy();
+    });
+
+    it('finishes the turn when a second finger joins and the touch is cancelled', async () => {
+      const t = await setupPaginator();
+      t.p.next();
+      await Promise.resolve();
+      t.setTx(-100);
+      t.p.dispatchEvent(touchEvent('touchstart', 200));
+      expect(t.scrollLeft()).toBe(100);
+
+      const fingers = [1, 2].map(
+        (identifier) => ({ identifier, screenX: 200, screenY: 200 }) as unknown as Touch,
+      );
+      t.p.dispatchEvent(
+        Object.assign(new Event('touchstart', { bubbles: true, cancelable: true }), {
+          touches: fingers,
+          changedTouches: [fingers[1]],
+        }),
+      );
       t.p.dispatchEvent(touchEvent('touchcancel', 200));
       expect(t.view().style.transform).toBe('translateX(-300px)');
       await t.endTransition();
