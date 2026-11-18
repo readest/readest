@@ -17,6 +17,11 @@ tauri-plugin-persisted-scope = "2"
 # The database Readest's reading statistics, library search, dictionaries and TTS cache use.
 tauri-plugin-turso = { path = "../../readest-app/src-tauri/plugins/tauri-plugin-turso" }
 
+# A static musl build (the Kindle) gets mimalloc for every allocation, Rust's and C's: musl's malloc
+# is slow, and QuickJS, Stylo and the text layout allocate on every frame.
+[target.'cfg(target_env = "musl")'.dependencies]
+mimalloc = { version = "=0.1.52", default-features = false, features = ["override", "v2"] }
+
 [build-dependencies]
 tauri-build = { path = "../vendor/tauri/crates/tauri-build" }
 
