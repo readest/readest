@@ -22,9 +22,12 @@ globalThis.__parityCapture = (step) => {
     const counts = {};
     // Readest Lite's Document and ShadowRoot have no `children`.
     const kids = parent.children ?? [...(parent.childNodes ?? [])].filter((n) => n.nodeType === 1);
+    // A closed <details> shows only its summary. Chromium still lays the rest out (its content is
+    // `content-visibility: hidden`) and reports boxes for it; Readest Lite reports none.
+    const closed = parent.localName === 'details' && !parent.hasAttribute('open');
     for (const el of kids) {
       const tag = el.localName;
-      if (SKIP.has(tag)) continue;
+      if (SKIP.has(tag) || (closed && tag !== 'summary')) continue;
       counts[tag] = (counts[tag] ?? 0) + 1;
       const p = `${path}/${tag}[${counts[tag]}]`;
       const r = el.getBoundingClientRect();
