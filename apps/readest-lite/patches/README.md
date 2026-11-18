@@ -9,8 +9,10 @@
 - `Cargo.toml`: the workspace cut to the six packages Lite builds (`blitz-dom`, `blitz-html`,
   `blitz-paint`, `blitz-traits`, `stylo_taffy`, `debug_timer`).
 - `<input placeholder>` is laid out and painted (`blitz-dom` layout/construct, damage, node/text;
-  `blitz-paint` render): a second text editor holds the placeholder, drawn at half alpha while
-  the input is empty. Readest's search box showed nothing without it.
+  `blitz-paint` render): a second text editor holds the placeholder, drawn while the input is
+  empty in the colour of the page's `::placeholder` rules (`blitz-dom` document
+  `placeholder_color`, computed when painted), or at half alpha when none applies. Readest's
+  search box showed nothing without it, and its e-ink mode makes placeholders solid ink.
 - `blitz-dom` node/serialize: `currentColor` in inline SVG is serialized as `rgba()`, so SVG
   icons take their CSS colour instead of black.
 - `blitz-paint` render/box_shadow: fully transparent inset shadows are skipped. daisyUI's
@@ -189,6 +191,28 @@
 - `blitz-dom` resolve, document: `resolve` drops the cached images no node shows any more (the
   cache held every image a document ever loaded, by URL). The library's decoded covers stayed
   in memory while a book was read.
+- `blitz-paint` render/box_shadow: a shadow's offsets are in its element's own space, applied
+  before the element's transform (daisyUI's menu chevron, `inset 2px 2px` on a box turned 45deg,
+  drew one stroke), and an inset shadow's offsets are scaled to device px. Without blur an inset
+  shadow is filled as the padding box less the hole, so no line shows where the hole crosses the
+  box's edge.
+- `blitz-dom` assets/default.css, layout/construct, layout, node; `blitz-paint` form_controls: a
+  checkbox or radio with `appearance: none` is an ordinary box (its own size, display and
+  pseudo-elements, no native control), as in Chromium, whose UA sheet gives them
+  `appearance: auto`. Readest's settings switches are daisyUI toggles built this way.
+- `blitz-dom` document: `media_matches` evaluates a media query list against the document's device
+  (Readest Lite's `matchMedia`).
+- `blitz-dom` layout, layout/construct: a single-line input's editor is as wide as its content box
+  and keeps its value on one line, so `text-align` places the value (Readest's right-aligned
+  stepper values).
+- `blitz-dom` layout: layout is rounded to device pixels, not CSS pixels (Taffy's `round_layout`
+  is handed device-px layouts), as Chromium lays out at a real device scale. At the Kindle's
+  scale of 2 a box can start or end on a half CSS pixel, and Readest's 0.5px search-box rule is
+  drawn.
+- `blitz-dom` assets/default.css, layout/construct, document, mutator: a drop-down select shows
+  its selected option's label, in an anonymous block it owns (a select is `inline-block`, as in
+  Chromium), sized like text, which is what `field-sizing: content` gives. A change to an option
+  rebuilds it, and an anonymous block frees the nodes it owns.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
