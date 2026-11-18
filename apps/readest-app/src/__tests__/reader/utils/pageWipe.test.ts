@@ -282,6 +282,18 @@ describe('PageWiper', () => {
     warn.mockRestore();
   });
 
+  // Until the page being read is back, the page turned to stays out of the
+  // reading position, also if the book closes meanwhile.
+  test('stays ahead until the turn back lands, then commits the page on screen', async () => {
+    const { wiper, host, state, advance } = createHarness();
+    await advance(40);
+
+    await wiper.suspend();
+    expect(state.aheadWhileTurning).toEqual([true, true]);
+    expect(wiper.ahead).toBe(false);
+    expect(host.onCommit).toHaveBeenCalledOnce();
+  });
+
   test('still runs a turn of the reader when turning back fails', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { wiper, state, advance } = createHarness();

@@ -56,6 +56,13 @@ export const useAutoScrollSpeedGesture = (autoScroll: AutoScrollState) => {
   const registerSpeedListeners = useCallback(
     (doc: Document, accept: (e: TouchEvent) => boolean = () => true) => {
       const opts = { capture: true, passive: false } as const;
+      // Use screenX/screenY in a book iframe, not clientX/clientY: in scrolled
+      // mode its document is many screens tall, and this listener runs in the
+      // parent realm, so screen coordinates match the app viewport. The app
+      // document's own client coordinates are that viewport already.
+      const own = doc === document;
+      const pointOf = (t: Touch) =>
+        own ? { x: t.clientX, y: t.clientY } : { x: t.screenX, y: t.screenY };
 
       const onTouchStart = (e: TouchEvent) => {
         resetGesture();
@@ -64,15 +71,13 @@ export const useAutoScrollSpeedGesture = (autoScroll: AutoScrollState) => {
         if (selection && !selection.isCollapsed) return; // don't hijack selection
         const t = e.touches[0];
         if (!t) return;
-        // Use screenX/screenY, not clientX/clientY: in scrolled mode the iframe
-        // document is many screens tall, and this listener runs in the parent
-        // realm, so screen coordinates match the app viewport.
+        const { x, y } = pointOf(t);
         const viewWidth = window.innerWidth;
         viewHeightRef.current = window.innerHeight;
-        startXRef.current = t.screenX;
-        startYRef.current = t.screenY;
+        startXRef.current = x;
+        startYRef.current = y;
         armedRef.current = isInRightEdge(
-          t.screenX,
+          x,
           viewWidth,
           AUTO_SCROLL_GESTURE_EDGE_RATIO,
           edgeInsetRef.current,
@@ -84,8 +89,9 @@ export const useAutoScrollSpeedGesture = (autoScroll: AutoScrollState) => {
         if (!armedRef.current) return;
         const t = e.touches[0];
         if (!t) return;
-        const dx = t.screenX - startXRef.current;
-        const dy = t.screenY - startYRef.current;
+        const { x, y } = pointOf(t);
+        const dx = x - startXRef.current;
+        const dy = y - startYRef.current;
         // Reserve the strip: stop the native (paced) scroll from the first move,
         // so there is no scroll-then-freeze jump once speed control activates.
         e.preventDefault();

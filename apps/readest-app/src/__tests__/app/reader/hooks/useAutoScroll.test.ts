@@ -289,10 +289,19 @@ describe('useAutoScroll in paginated mode', () => {
       expect(renderer.next).toHaveBeenCalledOnce();
     };
 
-    const press = (type: string, screenX: number, screenY: number) =>
+    // `screen` differs from the viewport point in a window away from the
+    // screen origin.
+    const press = (type: string, x: number, y: number, screen = { x, y }) =>
       act(() => {
         const event = new Event(type, { bubbles: true });
-        Object.assign(event, { pointerType: 'touch', pointerId: 1, screenX, screenY });
+        Object.assign(event, {
+          pointerType: 'touch',
+          pointerId: 1,
+          clientX: x,
+          clientY: y,
+          screenX: screen.x,
+          screenY: screen.y,
+        });
         document.documentElement.dispatchEvent(event);
       });
 
@@ -410,6 +419,15 @@ describe('useAutoScroll in paginated mode', () => {
       expect(result.current.paused).toBe(false);
     });
 
+    test('judges the right edge in the app viewport, not on the screen', async () => {
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+
+      // An interior touch in a window placed right of the screen origin.
+      press('pointerdown', 500, 300, { x: window.innerWidth + 400, y: 300 });
+      expect(result.current.paused).toBe(true);
+    });
+
     // iPhone Duo's status strip is a right inset the swipe's zone ends before.
     test('a swipe in the right-edge zone before an iPhone Duo inset does not pause', async () => {
       h.theme = { isIPhoneDuo: true, safeAreaInsets: { right: 300 } };
@@ -420,6 +438,125 @@ describe('useAutoScroll in paginated mode', () => {
       expect(result.current.paused).toBe(false);
       press('pointerup', 700, 420);
       expect(result.current.paused).toBe(false);
+    });
+
+    test('keeps the stopped wipe ahead of the reading position while a new one starts', async () => {
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+      let turnedBack = () => {};
+      renderer.prev.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            turnedBack = resolve;
+          }),
+      );
+      try {
+        act(() => result.current.stop());
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        await toggle();
+        expect(result.current.isWipeAhead()).toBe(true);
+
+        await act(async () => {
+          turnedBack();
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(result.current.isWipeAhead()).toBe(false);
+      } finally {
+        await act(async () => turnedBack());
+      }
+    });
+
+    test('routes page turns through the stopped wipe until the last queued one lands', async () => {
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+      let turnedBack = () => {};
+      renderer.prev.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            turnedBack = resolve;
+          }),
+      );
+      let landed = () => {};
+      viewNext.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            landed = resolve;
+          }),
+      );
+      try {
+        act(() => result.current.stop());
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        let turning: Promise<void> = Promise.resolve();
+        await act(async () => {
+          turning = paginatedRef.current!.next();
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        await act(async () => {
+          turnedBack();
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(viewNext).toHaveBeenCalledOnce();
+        expect(paginatedRef.current!.next).not.toBe(viewNext);
+
+        await act(async () => {
+          landed();
+          await turning;
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(paginatedRef.current!.next).toBe(viewNext);
+      } finally {
+        await act(async () => {
+          turnedBack();
+          landed();
+        });
+      }
+    });
+
+    test('starts a new session only once a page turn queued behind a stop lands', async () => {
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+      let turnedBack = () => {};
+      renderer.prev.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            turnedBack = resolve;
+          }),
+      );
+      let landed = () => {};
+      viewNext.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            landed = resolve;
+          }),
+      );
+      try {
+        act(() => result.current.stop());
+        await act(() => vi.advanceTimersByTimeAsync(0));
+        let turning: Promise<void> = Promise.resolve();
+        await act(async () => {
+          turning = paginatedRef.current!.next();
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        await act(async () => {
+          turnedBack();
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        await toggle();
+        await act(() => vi.advanceTimersByTimeAsync(200));
+        expect(renderer.next).toHaveBeenCalledOnce();
+
+        await act(async () => {
+          landed();
+          await turning;
+          await vi.advanceTimersByTimeAsync(200);
+        });
+        expect(renderer.next).toHaveBeenCalledTimes(2);
+      } finally {
+        await act(async () => {
+          turnedBack();
+          landed();
+        });
+      }
     });
 
     // Stopping turns back under the snapshot; until that lands, a page turn

@@ -312,7 +312,7 @@ export const useAutoScroll = (
 
   const startWipe = (view: FoliateView) => {
     // A stopped session may still be turning back: the new one waits for it.
-    const wiper = new PageWiper(wipeHostRef.current!, wiperRef.current?.idle);
+    const wiper = new PageWiper(wipeHostRef.current!, wiperRef.current ?? undefined);
     wiperRef.current = wiper;
     lastCfiRef.current = view.lastLocation?.cfi;
     // Navigating elsewhere (a key, a swipe, the TOC, a re-layout) starts the
@@ -337,7 +337,7 @@ export const useAutoScroll = (
     const onPointerDown = (event: PointerEvent) => {
       const scroller = scrollerRef.current!;
       if (event.target !== document.documentElement || !wiper.covering || scroller.paused) return;
-      const { pointerId: id, screenX: x, screenY: y } = event;
+      const { pointerId: id, clientX: x, clientY: y } = event;
       // The swipe's zone ends before iPhone Duo's status strip (#6307).
       const { isIPhoneDuo, safeAreaInsets } = useThemeStore.getState();
       const inset = isIPhoneDuo ? safeAreaInsets?.right || 0 : 0;
@@ -354,7 +354,7 @@ export const useAutoScroll = (
     const onPointerMove = (event: PointerEvent) => {
       const touch = edgeTouch;
       if (touch?.id !== event.pointerId) return;
-      touch.moved ||= shouldActivate(event.screenX - touch.x, event.screenY - touch.y);
+      touch.moved ||= shouldActivate(event.clientX - touch.x, event.clientY - touch.y);
     };
     const onPointerUp = (event: PointerEvent) => {
       const touch = edgeTouch;
@@ -382,11 +382,16 @@ export const useAutoScroll = (
     window.addEventListener('pointermove', onPointerMove, true);
     window.addEventListener('pointerup', onPointerUp, true);
     return () => {
-      // Page turns keep waiting behind the stop's turn back, unless a new
-      // session has taken the view over by then.
-      void wiper.idle.then(() => {
-        if (view.next === wipeNext) Object.assign(view, { next, prev });
-      });
+      // Page turns keep waiting behind the stop's turn back and any turn
+      // queued after it, unless a new session has taken the view over.
+      const restoreWhenIdle = () => {
+        const tail = wiper.idle;
+        void tail.then(() => {
+          if (wiper.idle !== tail) return restoreWhenIdle();
+          if (view.next === wipeNext) Object.assign(view, { next, prev });
+        });
+      };
+      restoreWhenIdle();
       view.removeEventListener('relocate', onRelocate);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('pointerdown', onPointerDown, true);

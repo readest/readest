@@ -96,13 +96,24 @@ export class PageWiper {
   #stopped = false;
   // Bumped when the reader navigates: a reveal begun before is stale.
   #generation = 0;
+  // A stopped session's wipe, until its queue settles.
+  #previous: PageWiper | null = null;
   #pending = 0;
   #queue: Promise<void> = Promise.resolve();
 
-  /** `after`: a previous session's wipe still turning back; this one waits for it. */
-  constructor(host: PageWiperHost, after?: Promise<void>) {
+  /**
+   * `previous`: a stopped session's wipe, which may still be turning back.
+   * This one waits for it, and is ahead while it is.
+   */
+  constructor(host: PageWiperHost, previous?: PageWiper) {
     this.#host = host;
-    if (after) void this.#enqueue(() => after);
+    if (previous) {
+      this.#previous = previous;
+      void this.#enqueue(async () => {
+        await previous.idle;
+        this.#previous = null;
+      });
+    }
   }
 
   /** Settles once every queued turn has. */
@@ -119,8 +130,8 @@ export class PageWiper {
    * The live view shows the next page, ahead of the page being read: from the
    * turn under the snapshot until the page is wiped in or turned back.
    */
-  get ahead() {
-    return this.#ahead;
+  get ahead(): boolean {
+    return this.#ahead || !!this.#previous?.ahead;
   }
 
   /** Move the line on by whole pixels. */
@@ -255,15 +266,18 @@ export class PageWiper {
     }
   }
 
+  // Stays ahead until the turn lands, so the page turned from never becomes
+  // the reading position meanwhile; then the page on screen is committed.
   async #turnBack() {
-    this.#ahead = false;
     try {
       await this.#host.turn(false);
     } catch (error) {
       // The next page stays: it is the page being read now, from the top.
       this.#progress = 0;
-      this.#host.onCommit();
       throw error;
+    } finally {
+      this.#ahead = false;
+      this.#host.onCommit();
     }
   }
 }
