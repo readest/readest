@@ -472,6 +472,17 @@ describe('mountAdditionalFonts', () => {
       expect(localStorage.length).toBe(0);
     });
 
+    it('writes the copy on a later load when an earlier write failed', async () => {
+      env.appService.writeFile.mockRejectedValueOnce(new Error('No space left on device'));
+      await loadOnline();
+      await vi.waitFor(() => expect(env.appService.writeFile).toHaveBeenCalledTimes(1));
+      await flush();
+
+      await loadOnline();
+
+      await vi.waitFor(() => expect(env.files.size, 'kept copies after the retry').toBe(1));
+    });
+
     it('mounts the kept copy when the stylesheet fails to load', async () => {
       await loadOnline();
       await vi.waitFor(() => expect(env.files.size).toBe(1));
