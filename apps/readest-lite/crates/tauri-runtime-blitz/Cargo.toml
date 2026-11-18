@@ -29,6 +29,8 @@ fontique = { version = "0.12", default-features = false, features = ["std"] }
 memmap2 = "0.9"
 rquickjs = { version = "0.10", default-features = false }
 url = "2.5.0"
+# `data:` URLs (readest-app's image viewer shows a book image as one).
+data-url = "0.3"
 http = "1"
 bytes = "1"
 # CompressionStream/DecompressionStream (zip.js reads EPUBs through them).

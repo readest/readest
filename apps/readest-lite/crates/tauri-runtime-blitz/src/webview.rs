@@ -110,15 +110,20 @@ fn url_parts(u: &Url) -> Vec<String> {
     .collect()
 }
 
-/// Calls a custom-scheme handler and waits for its answer. Tauri's asset handler answers inline;
-/// one that answers from the main thread would deadlock here, hence the timeout.
 /// `blob:` URLs (URL.createObjectURL in web.js) and their bytes.
 pub(crate) type Blobs = Arc<Mutex<HashMap<String, Vec<u8>>>>;
 
+/// Reads `file:`, `blob:` and `data:` URLs, or calls a custom-scheme handler and waits for its
+/// answer. Tauri's asset handler answers inline; one that answers from the main thread would
+/// deadlock here, hence the timeout.
 fn get_sync(protocols: &Protocols, blobs: &Blobs, label: &str, url: &Url) -> Option<Vec<u8>> {
     match url.scheme() {
         "file" => return std::fs::read(url.to_file_path().ok()?).ok(),
         "blob" => return blobs.lock().unwrap().get(url.as_str()).cloned(),
+        "data" => {
+            let data = data_url::DataUrl::process(url.as_str()).ok()?;
+            return data.decode_to_vec().ok().map(|(body, _)| body);
+        }
         _ => {}
     }
     let handler = protocols.get(url.scheme())?;
@@ -1220,6 +1225,26 @@ mod tests {
             .into_iter()
             .filter_map(|m| m.strip_prefix("log: ").map(str::to_owned))
             .collect()
+    }
+
+    /// readest-app's image viewer shows a book image as a `data:` URL.
+    #[test]
+    fn data_urls_load() {
+        let get = |url: &str| {
+            let protocols = Arc::new(HashMap::new());
+            get_sync(
+                &protocols,
+                &Blobs::default(),
+                "test",
+                &Url::parse(url).unwrap(),
+            )
+        };
+        assert_eq!(
+            get("data:image/png;base64,iVBORw0KGgo="),
+            Some(b"\x89PNG\r\n\x1a\n".to_vec())
+        );
+        assert_eq!(get("data:text/plain,a%20b"), Some(b"a b".to_vec()));
+        assert_eq!(get("data:;base64,%"), None);
     }
 
     #[test]

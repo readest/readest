@@ -5585,6 +5585,7 @@ dependencies = [
  "blitz-traits",
  "bytes",
  "cairo-rs 0.22.9",
+ "data-url",
  "flate2",
  "fontique",
  "gtk",
