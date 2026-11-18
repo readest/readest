@@ -309,10 +309,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
   const searchWorker = createLibrarySearchWorker();
 
   const dispose = ({ pending }: { pending: Promise<CachedSearchBook> }) => {
-    void pending.then(
-      ({ bookDoc, file }) => closeBook(bookDoc, file),
-      () => {},
-    );
+    void pending.then(({ bookDoc, file }) => closeBook(bookDoc, file)).catch(() => {});
   };
 
   const open = (book: Book) => {
@@ -384,11 +381,17 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
     return pending;
   };
 
-  const dropDocument = (book: Book) => {
+  // Drops the book's open document when its file no longer has `fileSize`: a
+  // book imported in place can be edited without a book.updatedAt change. A
+  // document another search has already reopened stays.
+  const refresh = async (book: Book, fileSize: number) => {
     const existing = documents.get(book.hash);
     if (!existing) return;
-    documents.delete(book.hash);
-    dispose(existing);
+    const cached = await existing.pending.catch(() => null);
+    if (cached && cached.file.size !== fileSize && documents.get(book.hash) === existing) {
+      documents.delete(book.hash);
+      dispose(existing);
+    }
   };
 
   const dropIndexDb = (book: Book) => {
@@ -400,7 +403,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
 
   return {
     open,
-    dropDocument,
+    refresh,
     getIndexDb,
     dropIndexDb,
     getNavHash,
@@ -656,6 +659,9 @@ export async function* searchLibraryBooks(
 
       if (indexDb && isSearchIndexFresh(meta, localSize) && nodesFresh) {
         // Indexed path: search cached text; the book file is never opened.
+        // Results resolve against the session's document, which another
+        // session's rebuild may have left behind the file.
+        if (options.session && localSize != null) await options.session.refresh(book, localSize);
         const usePrefilter = config.mode === 'contains' || config.mode === 'whole-words';
         let sections: SearchIndexSection[] = usePrefilter
           ? await loadSearchIndexCandidates(indexDb, query)
@@ -721,13 +727,8 @@ export async function* searchLibraryBooks(
         // Live path: extract text section by section, persist it to the
         // per-book index, and match the same extracted text.
         if (options.session) {
-          let cached = await options.session.open(book);
-          // A book imported in place can be edited without a book.updatedAt
-          // change, so the session may hold the document opened before it.
-          if (cached.file.size !== localSize) {
-            options.session.dropDocument(book);
-            cached = await options.session.open(book);
-          }
+          await options.session.refresh(book, localSize);
+          const cached = await options.session.open(book);
           file = cached.file;
           bookDoc = cached.bookDoc;
         } else {

@@ -562,6 +562,97 @@ describe('searchLibraryBooks', () => {
     await session.close();
   });
 
+  describe('a book edited in place while a session holds it open', () => {
+    const v1 = '# Chapter\na needle here';
+    const v2 = '# Chapter\na needle here, and an edited needle';
+    const setup = () => {
+      const book = makeBook('held', 'Held');
+      const files = new Map([['held', makeFile(v1)]]);
+      const service = makeService(files);
+      const session = createLibrarySearchSession(service);
+      const search = async (options: { session?: typeof session } = {}) => {
+        const events = [];
+        for await (const event of searchLibraryBooks(service, [book], 'needle', {
+          config,
+          ...options,
+        })) {
+          events.push(event);
+        }
+        return events;
+      };
+      return { book, files, service, session, search };
+    };
+
+    it('is reopened once when two searches find it stale together', async () => {
+      const { files, service, session, search } = setup();
+      await search({ session });
+      files.set('held', makeFile(v2));
+      // Both searches get the session's document before either goes on.
+      const open = session.open;
+      let arrived = 0;
+      let bothArrived!: () => void;
+      const together = new Promise<void>((resolve) => {
+        bothArrived = resolve;
+      });
+      vi.spyOn(session, 'open').mockImplementation(async (book) => {
+        const pending = open(book);
+        if (++arrived === 2) bothArrived();
+        if (arrived <= 2) await together;
+        return pending;
+      });
+
+      const [first, second] = await Promise.all([search({ session }), search({ session })]);
+
+      expect(first.at(-1)).toMatchObject({ type: 'completed', matchCount: 2 });
+      expect(second.at(-1)).toMatchObject({ type: 'completed', matchCount: 2 });
+      expect(service.loadBookContent).toHaveBeenCalledTimes(2);
+      await session.close();
+    });
+
+    // Another session rebuilt the index from the edited file, so this one
+    // takes the indexed path and never opens the book itself.
+    it('resolves results from a fresh index against the edited file', async () => {
+      const { book, files, service, session, search } = setup();
+      await search({ session });
+      files.set('held', makeFile(v2));
+      await search();
+
+      const locators = (await search({ session }))
+        .flatMap((event) => (event.type === 'result' ? event.result.subitems : []))
+        .map((match) => match.locator);
+      const fresh = createLibrarySearchSession(service);
+
+      expect(locators).toHaveLength(2);
+      expect(await resolveSearchResultCfis(session, book, locators)).toEqual(
+        await resolveSearchResultCfis(fresh, book, locators),
+      );
+      await Promise.all([session.close(), fresh.close()]);
+    });
+
+    it("doesn't leave a failed close unhandled when it is dropped", async () => {
+      const rejections: unknown[] = [];
+      const onRejection = (reason: unknown) => {
+        rejections.push(reason);
+      };
+      process.on('unhandledRejection', onRejection);
+      try {
+        const { book, files, session, search } = setup();
+        const held = files.get('held') as File & { close: ReturnType<typeof vi.fn> };
+        await session.open(book);
+        held.close.mockRejectedValue(new Error('close failed'));
+        files.set('held', makeFile(v2));
+
+        expect((await search({ session })).at(-1)).toMatchObject({ matchCount: 2 });
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        expect(rejections).toEqual([]);
+        await session.close();
+      } finally {
+        process.off('unhandledRejection', onRejection);
+      }
+    });
+  });
+
   it('stops worker-backed searches at the result limit', async () => {
     const book = makeBook('limit', 'Limit');
     const file = makeFile('# Chapter\ntext');
