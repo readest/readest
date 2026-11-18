@@ -237,7 +237,9 @@ const FoliateViewer: React.FC<{
   const [scrollMargins, setScrollMargins] = useState({ top: 0, bottom: 0 });
   const docLoaded = useRef(false);
 
-  const autoScroll = useAutoScroll(bookKey, viewRef);
+  // Commits the relocation an Auto Scroll wipe held back (see commitRelocate).
+  const wipeCommitRef = useRef<(() => void) | null>(null);
+  const autoScroll = useAutoScroll(bookKey, viewRef, wipeCommitRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
     useAutoScrollSpeedGesture(autoScroll);
 
@@ -308,8 +310,13 @@ const FoliateViewer: React.FC<{
     relocateRafRef.current = null;
     cancelAnimationFrame(id);
   }, []);
+  const { isWipeAhead } = autoScroll;
   const commitRelocate = useCallback(() => {
     cancelRelocateScheduled();
+    // An Auto Scroll wipe turns to the next page while the reader is still on
+    // the page above it (#7575). That page is held back, also on close, until
+    // the wipe brings it in, or is replaced when the wipe turns back.
+    if (isWipeAhead()) return;
     const event = pendingRelocateRef.current;
     pendingRelocateRef.current = null;
     if (!event) return;
@@ -395,7 +402,8 @@ const FoliateViewer: React.FC<{
       // mid-chapter, where they would break the one-page-per-turn cadence.
       snapshotChapterScreens(bookKey);
     }
-  }, [bookKey, setProgress, cancelRelocateScheduled]);
+  }, [bookKey, setProgress, cancelRelocateScheduled, isWipeAhead]);
+  wipeCommitRef.current = commitRelocate;
 
   const progressRelocateHandler = (event: Event) => {
     // Foliate can emit a late relocation after close() clears its progress

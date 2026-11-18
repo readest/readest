@@ -71,37 +71,62 @@ const LAYOUT: WipeLayout = { width: 400, height: 100, columns: 1, rtl: false };
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
+const deferred = () => {
+  let resolve = () => {};
+  const promise = new Promise<void>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+};
+
 const createHarness = ({ reveal = true, atEnd = false } = {}) => {
   const turns: boolean[] = [];
-  const reveals: (PageWipeReveal & { ended: boolean; clips: string[] })[] = [];
-  const state = { canReveal: true, atEnd };
+  const reveals: (PageWipeReveal & {
+    ended: boolean;
+    clips: string[];
+    finish: () => void;
+  })[] = [];
+  const state = {
+    canReveal: true,
+    atEnd,
+    // Hold the next turn, or the next snapshot, until released.
+    turnGate: null as Promise<void> | null,
+    revealGate: null as Promise<void> | null,
+    failTurnBack: false,
+    aheadWhileTurning: [] as boolean[],
+  };
   const host: PageWiperHost = {
     getLayout: () => LAYOUT,
     turn: async (forward) => {
       turns.push(forward);
+      state.aheadWhileTurning.push(wiper.ahead);
+      if (state.turnGate) await state.turnGate;
+      if (!forward && state.failTurnBack) throw new Error('turn failed');
     },
     atEnd: () => state.atEnd,
     canReveal: () => state.canReveal,
     reveal: async (turn) => {
-      if (!reveal) {
-        await turn();
-        return null;
-      }
       await turn();
+      if (!reveal) return null;
+      if (state.revealGate) await state.revealGate;
+      const done = deferred();
       const r = {
         ended: false,
         clips: [] as string[],
         clip: (path: string) => r.clips.push(path),
         end: () => {
           r.ended = true;
+          done.resolve();
         },
-        finished: new Promise<void>(() => {}),
+        finish: done.resolve,
+        finished: done.promise,
       };
       reveals.push(r);
       return r;
     },
     drawEdge: vi.fn(),
     onEnd: vi.fn(),
+    onCommit: vi.fn(),
   };
   const wiper = new PageWiper(host);
   const advance = async (px: number) => {
@@ -170,6 +195,91 @@ describe('PageWiper', () => {
     expect(turns).toEqual([]);
     await advance(1);
     expect(host.onEnd).toHaveBeenCalledOnce();
+  });
+
+  // #7575 review: the page turned to under the snapshot isn't the reading
+  // position until it is wiped in, so it isn't committed before that.
+  test('is ahead from the turn under the snapshot until the page is wiped in', async () => {
+    const { wiper, host, state, advance } = createHarness();
+
+    await advance(1);
+    expect(state.aheadWhileTurning).toEqual([true]);
+    expect(wiper.ahead).toBe(true);
+    await advance(98);
+    expect(host.onCommit).not.toHaveBeenCalled();
+
+    await advance(1);
+    expect(wiper.ahead).toBe(false);
+    expect(host.onCommit).toHaveBeenCalledOnce();
+  });
+
+  test('does not count the time a turn takes toward the next page', async () => {
+    const { wiper, host, turns, state, advance } = createHarness({ reveal: false });
+    await advance(1);
+    await advance(101);
+    expect(turns).toEqual([true, false, true]);
+
+    // The next chapter is still loading: the line waits at the bottom.
+    const gate = deferred();
+    state.turnGate = gate.promise;
+    await advance(100);
+    expect(turns).toEqual([true, false, true, true]);
+    await advance(60);
+    await advance(60);
+    state.turnGate = null;
+    gate.resolve();
+    await flush();
+
+    await advance(1);
+    expect(turns).toEqual([true, false, true, true]);
+    wiper.render();
+    expect(host.drawEdge).toHaveBeenLastCalledWith({ x: 0, y: 3, width: 400 });
+  });
+
+  test('leaves the reader where they went while the snapshot was being taken', async () => {
+    const { wiper, turns, reveals, state, advance } = createHarness();
+    const gate = deferred();
+    state.revealGate = gate.promise;
+    await advance(1);
+    expect(turns).toEqual([true]);
+
+    wiper.reset();
+    gate.resolve();
+    await flush();
+
+    expect(reveals[0]!.ended).toBe(true);
+    expect(wiper.covering).toBe(false);
+    expect(wiper.ahead).toBe(false);
+    await wiper.suspend();
+    expect(turns).toEqual([true]);
+  });
+
+  test('turns back when the snapshot ends on its own, and stays line-only', async () => {
+    const { wiper, turns, reveals, advance } = createHarness();
+    await advance(40);
+    expect(turns).toEqual([true]);
+
+    // A viewport resize skips the transition.
+    reveals[0]!.finish();
+    await flush();
+    await flush();
+    expect(turns).toEqual([true, false]);
+    expect(wiper.ahead).toBe(false);
+
+    await advance(1);
+    expect(reveals).toHaveLength(1);
+  });
+
+  test('drops the snapshot even when turning back fails', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { wiper, reveals, state, advance } = createHarness();
+    await advance(40);
+
+    state.failTurnBack = true;
+    await wiper.suspend();
+    expect(reveals[0]!.ended).toBe(true);
+    expect(wiper.covering).toBe(false);
+    warn.mockRestore();
   });
 
   test('starts over at the top of a page the reader navigated to', async () => {

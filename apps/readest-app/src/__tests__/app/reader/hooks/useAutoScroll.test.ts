@@ -37,6 +37,7 @@ vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => 
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: h.saveViewSettings }));
 
 import { useAutoScroll } from '@/app/reader/hooks/useAutoScroll';
+import { revealPageWipe } from '@/app/reader/utils/pageWipe';
 
 const viewRef = {
   current: {
@@ -172,11 +173,15 @@ describe('useAutoScroll in paginated mode', () => {
     removeAttribute: vi.fn(),
     getContents: () => [],
   };
+  // Manual page turns (keys, buttons) go through the view, not the renderer.
+  const viewNext = vi.fn(async () => {});
   const paginatedRef = {
     current: {
       isFixedLayout: false,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
+      next: viewNext,
+      prev: vi.fn(async () => {}),
       renderer,
     },
   } as unknown as React.RefObject<FoliateView | null>;
@@ -207,6 +212,17 @@ describe('useAutoScroll in paginated mode', () => {
     expect(result.current.active).toBe(false);
   });
 
+  // A book can switch writing axes between chapters.
+  test('stops when the book turns to a vertical chapter', async () => {
+    const { result, rerender } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+    await toggle();
+    expect(result.current.active).toBe(true);
+
+    h.viewSettings['vertical'] = true;
+    rerender();
+    expect(result.current.active).toBe(false);
+  });
+
   describe('with View Transitions', () => {
     const skipTransition = vi.fn();
     let cell: HTMLDivElement;
@@ -214,6 +230,7 @@ describe('useAutoScroll in paginated mode', () => {
     beforeEach(() => {
       renderer.next.mockClear();
       renderer.prev.mockClear();
+      viewNext.mockClear();
       skipTransition.mockClear();
       vi.useFakeTimers({
         toFake: ['requestAnimationFrame', 'cancelAnimationFrame', 'performance'],
@@ -222,16 +239,28 @@ describe('useAutoScroll in paginated mode', () => {
       Object.assign(document, {
         startViewTransition: (update: () => Promise<void>) => {
           const done = update();
+          let finish = () => {};
+          const finished = new Promise<void>((resolve) => {
+            finish = resolve;
+          });
           return {
             ready: done,
             updateCallbackDone: done,
-            finished: new Promise(() => {}),
-            skipTransition,
+            finished,
+            skipTransition: () => {
+              skipTransition();
+              finish();
+            },
           };
         },
       });
       document.documentElement.animate = vi.fn(
-        () => ({ pause: vi.fn(), effect: { setKeyframes: vi.fn() } }) as unknown as Animation,
+        () =>
+          ({
+            pause: vi.fn(),
+            cancel: vi.fn(),
+            effect: { setKeyframes: vi.fn() },
+          }) as unknown as Animation,
       );
       cell = document.createElement('div');
       cell.id = `gridcell-${BOOK_KEY}`;
@@ -243,18 +272,31 @@ describe('useAutoScroll in paginated mode', () => {
     });
 
     afterEach(() => {
+      cleanup();
       cell.remove();
       vi.useRealTimers();
       vi.unstubAllGlobals();
       Reflect.deleteProperty(document, 'startViewTransition');
+      Reflect.deleteProperty(document.documentElement, 'animate');
     });
+
+    const reveal = async () => {
+      await toggle();
+      await act(() => vi.advanceTimersByTimeAsync(200));
+      expect(renderer.next).toHaveBeenCalledOnce();
+    };
+
+    const press = (type: string, screenX: number, screenY: number) =>
+      act(() => {
+        const event = new Event(type, { bubbles: true });
+        Object.assign(event, { pointerType: 'touch', pointerId: 1, screenX, screenY });
+        document.documentElement.dispatchEvent(event);
+      });
 
     // While the snapshot is up, the transition routes every press to <html>.
     test('a press pauses and turns back under the snapshot of the page being read', async () => {
       const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
-      await toggle();
-      await act(() => vi.advanceTimersByTimeAsync(200));
-      expect(renderer.next).toHaveBeenCalledOnce();
+      await reveal();
 
       await act(async () => {
         document.documentElement.dispatchEvent(new Event('pointerdown', { bubbles: true }));
@@ -270,15 +312,19 @@ describe('useAutoScroll in paginated mode', () => {
     // putting the snapshot away; the click lands while it is still up.
     test('a press pauses while the snapshot is being put away', async () => {
       const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
-      await toggle();
-      await act(() => vi.advanceTimersByTimeAsync(200));
-      expect(renderer.next).toHaveBeenCalledOnce();
+      await reveal();
 
       const controls = document.createElement('div');
       controls.setAttribute('data-page-wipe-above', '');
       controls.setAttribute('data-visible', '');
       cell.append(controls);
-      renderer.prev.mockImplementationOnce(() => new Promise(() => {}));
+      let turnedBack = () => {};
+      renderer.prev.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            turnedBack = resolve;
+          }),
+      );
       await act(() => vi.advanceTimersByTimeAsync(100));
       expect(renderer.prev).toHaveBeenCalledOnce();
 
@@ -286,6 +332,99 @@ describe('useAutoScroll in paginated mode', () => {
         document.documentElement.dispatchEvent(new Event('pointerdown', { bubbles: true }));
       });
       expect(result.current.paused).toBe(true);
+      await act(async () => turnedBack());
+    });
+
+    // #7575 review: the live view is already on the next page under the
+    // snapshot, so a key or button turn would otherwise skip that page.
+    test('a page turn during a wipe moves one page from the page being read', async () => {
+      renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+
+      await act(async () => {
+        await paginatedRef.current!.next();
+      });
+
+      expect(renderer.prev).toHaveBeenCalledOnce();
+      expect(viewNext).toHaveBeenCalledOnce();
+      expect(renderer.prev.mock.invocationCallOrder[0]!).toBeLessThan(
+        viewNext.mock.invocationCallOrder[0]!,
+      );
+    });
+
+    // The paginator ignores a turn until the last one settles, so a wipe
+    // started meanwhile would think it turned when it did not.
+    test('holds the wipe until a page turn of the reader lands', async () => {
+      renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+      let landed = () => {};
+      viewNext.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            landed = resolve;
+          }),
+      );
+
+      let turning: Promise<void> = Promise.resolve();
+      await act(async () => {
+        turning = paginatedRef.current!.next();
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      expect(renderer.next).toHaveBeenCalledOnce();
+
+      await act(async () => {
+        landed();
+        await turning;
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      expect(renderer.next).toHaveBeenCalledTimes(2);
+    });
+
+    // The right-edge speed swipe starts on the book's iframe, which the
+    // snapshot keeps from getting touches.
+    test('a right-edge swipe does not pause, a right-edge tap does', async () => {
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await reveal();
+      const x = window.innerWidth - 5;
+
+      press('pointerdown', x, 300);
+      press('pointerup', x, 420);
+      expect(result.current.paused).toBe(false);
+
+      press('pointerdown', x, 300);
+      press('pointerup', x, 302);
+      expect(result.current.paused).toBe(true);
+    });
+
+    // The page turned to under the snapshot is committed as the reading
+    // position only once it is wiped in.
+    test('holds the page wiped in back from the reading position until it is wiped in', async () => {
+      const commit = { current: vi.fn() };
+      const { result } = renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef, commit));
+      await reveal();
+      expect(result.current.isWipeAhead()).toBe(true);
+      expect(commit.current).not.toHaveBeenCalled();
+
+      // 800px at 20px/s.
+      await act(() => vi.advanceTimersByTimeAsync(41_000));
+      expect(commit.current).toHaveBeenCalled();
+    });
+
+    // Two books side by side: a second transition would end the first.
+    test('leaves the snapshot to the book already showing one', async () => {
+      const other = document.createElement('div');
+      document.body.append(other);
+      const otherReveal = await revealPageWipe(other, async () => {}, 'white');
+
+      renderHook(() => useAutoScroll(BOOK_KEY, paginatedRef));
+      await toggle();
+      await act(() => vi.advanceTimersByTimeAsync(200));
+      expect(renderer.next).not.toHaveBeenCalled();
+
+      await act(async () => otherReveal!.end());
+      await act(() => vi.advanceTimersByTimeAsync(200));
+      expect(renderer.next).toHaveBeenCalledOnce();
+      other.remove();
     });
   });
 });

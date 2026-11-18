@@ -51,13 +51,15 @@ export const useAutoScrollSpeedGesture = (autoScroll: AutoScrollState) => {
     activeRef.current = false;
   }, []);
 
+  // `accept` filters the touches a document's listeners take; the returned
+  // function removes them.
   const registerSpeedListeners = useCallback(
-    (doc: Document) => {
+    (doc: Document, accept: (e: TouchEvent) => boolean = () => true) => {
       const opts = { capture: true, passive: false } as const;
 
       const onTouchStart = (e: TouchEvent) => {
         resetGesture();
-        if (!latestRef.current.active) return;
+        if (!latestRef.current.active || !accept(e)) return;
         const selection = doc.getSelection?.();
         if (selection && !selection.isCollapsed) return; // don't hijack selection
         const t = e.touches[0];
@@ -115,8 +117,21 @@ export const useAutoScrollSpeedGesture = (autoScroll: AutoScrollState) => {
       doc.addEventListener('touchmove', onTouchMove, opts);
       doc.addEventListener('touchend', onTouchEnd, opts);
       doc.addEventListener('touchcancel', onTouchEnd, opts);
+      return () => {
+        doc.removeEventListener('touchstart', onTouchStart, opts);
+        doc.removeEventListener('touchmove', onTouchMove, opts);
+        doc.removeEventListener('touchend', onTouchEnd, opts);
+        doc.removeEventListener('touchcancel', onTouchEnd, opts);
+      };
     },
     [resetGesture],
+  );
+
+  // While a page wipe's snapshot is up, touches meant for the book land on
+  // the app document's root instead (#7575).
+  useEffect(
+    () => registerSpeedListeners(document, (e) => e.target === document.documentElement),
+    [registerSpeedListeners],
   );
 
   useEffect(() => {
