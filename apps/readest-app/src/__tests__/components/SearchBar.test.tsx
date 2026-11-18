@@ -328,4 +328,29 @@ describe('SearchBar', () => {
       localStorage.removeItem('customShortcuts');
     }
   });
+
+  // Only the exact Find chord re-selects: a chord that adds Shift or Alt is
+  // another shortcut and must reach whatever handles it.
+  it.each<[string, KeyboardEventInit]>([
+    ['Ctrl+Shift+F', { ctrlKey: true, shiftKey: true }],
+    ['Cmd+Shift+F', { metaKey: true, shiftKey: true }],
+    ['Ctrl+Alt+F', { ctrlKey: true, altKey: true }],
+  ])('leaves %s alone in the field', async (_name, modifiers) => {
+    await renderBar();
+    const input = document.querySelector('input.search-input') as HTMLInputElement;
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+    const event = new KeyboardEvent('keydown', {
+      key: modifiers.shiftKey ? 'F' : 'f',
+      bubbles: true,
+      cancelable: true,
+      ...modifiers,
+    });
+    await act(async () => {
+      input.dispatchEvent(event);
+    });
+
+    expect([input.selectionStart, input.selectionEnd]).toEqual([5, 5]);
+    expect(event.defaultPrevented).toBe(false);
+  });
 });
