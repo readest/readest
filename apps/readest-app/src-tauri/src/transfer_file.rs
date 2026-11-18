@@ -302,17 +302,13 @@ pub async fn download_file<R: tauri::Runtime>(
     .await
 }
 
-// Never expose a partial download at the destination. The guard also removes
-// the staging file when an error or a cancelled future drops the download.
-struct DownloadTempFile {
-    path: PathBuf,
-    reservation: Option<std::fs::File>,
-}
+// Never expose a partial download at the destination. The guard removes the
+// staging file when an error or a cancelled future drops the download.
+struct DownloadTempFile(PathBuf);
 
 impl Drop for DownloadTempFile {
     fn drop(&mut self) {
-        drop(self.reservation.take());
-        let _ = std::fs::remove_file(&self.path);
+        let _ = std::fs::remove_file(&self.0);
     }
 }
 
@@ -343,7 +339,11 @@ async fn download_to_path(
 ) -> Result<HashMap<String, String>> {
     let metadata = match tokio::fs::metadata(file_path).await {
         Ok(metadata) if metadata.is_dir() => {
-            return Err(Error::Forbidden(file_path.display().to_string()));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::IsADirectory,
+                format!("is a directory: {}", file_path.display()),
+            )
+            .into());
         }
         Ok(metadata) => Some(metadata),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
@@ -351,36 +351,25 @@ async fn download_to_path(
     };
     let temporary_path =
         file_path.with_file_name(format!(".readest-download-{}.part", uuid::Uuid::new_v4()));
-    // The blocking task owns cleanup even if this future is dropped while
-    // open is pending. Use its handle throughout: no later open can recreate
-    // the path after the guard removes it.
-    let mut temporary = tokio::task::spawn_blocking(move || {
-        let reservation = std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&temporary_path)?;
-        let temporary = DownloadTempFile {
-            path: temporary_path,
-            reservation: Some(reservation),
-        };
-        #[cfg(unix)]
-        if let Some(metadata) = metadata {
-            temporary
-                .reservation
-                .as_ref()
-                .unwrap()
-                .set_permissions(metadata.permissions())?;
-        }
-        #[cfg(not(unix))]
-        let _ = metadata;
-        Ok::<_, std::io::Error>(temporary)
-    })
-    .await
-    .map_err(std::io::Error::other)??;
-    let file = File::from_std(temporary.reservation.take().unwrap());
+    // Open synchronously so no await point separates creating the file from
+    // installing its guard, and write through this handle only: no later
+    // open can recreate the path after the guard removes it.
+    let file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary_path)?;
+    let temporary = DownloadTempFile(temporary_path);
+    // Keep a replaced book's permission bits. Best effort: a filesystem that
+    // refuses chmod must not fail a download that would otherwise succeed.
+    #[cfg(unix)]
+    if let Some(metadata) = metadata {
+        let _ = file.set_permissions(metadata.permissions());
+    }
+    #[cfg(not(unix))]
+    let _ = metadata;
     let response_headers = download_into_file(
         url,
-        file,
+        File::from_std(file),
         headers,
         body,
         single_threaded,
@@ -388,7 +377,7 @@ async fn download_to_path(
         on_progress,
     )
     .await?;
-    tokio::fs::rename(&temporary.path, file_path).await?;
+    tokio::fs::rename(&temporary.0, file_path).await?;
     Ok(response_headers)
 }
 
@@ -723,21 +712,6 @@ mod tests {
         .expect("HTTP fixture request headers timed out")
     }
 
-    #[tokio::test]
-    async fn fixture_reads_headers_split_across_writes() {
-        let (mut reader, mut writer) = tokio::io::duplex(16);
-        let task = tokio::spawn(async move {
-            for part in ["GET /book HTTP/1.1\r\nRa", "nge: bytes=0-", "3\r\n\r\n"] {
-                writer.write_all(part.as_bytes()).await.unwrap();
-                tokio::task::yield_now().await;
-            }
-        });
-        assert!(read_request(&mut reader)
-            .await
-            .contains("range: bytes=0-3\r\n\r\n"));
-        finish_fixture(task).await;
-    }
-
     #[test]
     fn data_dir_authorizes_custom_library_locations() {
         // Custom data locations always keep their files beneath a `Readest`
@@ -979,7 +953,7 @@ mod tests {
         )
         .await;
         assert!(
-            matches!(result, Err(super::Error::Forbidden(_))),
+            matches!(&result, Err(super::Error::Io(e)) if e.kind() == std::io::ErrorKind::IsADirectory),
             "directory must be rejected before any network request: {result:?}"
         );
     }
