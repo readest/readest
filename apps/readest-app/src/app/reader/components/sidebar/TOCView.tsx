@@ -302,16 +302,20 @@ const TOCView: React.FC<{
   // fold and unfold; it starts on the current chapter.
   const treeId = useId();
   const [focusedRow, setFocusedRow] = useState<FocusedRow | null>(null);
+  const startIndex = useMemo(() => {
+    const idx = displayItems.findIndex((row) => 'item' in row && row.item.href === activeHref);
+    return idx !== -1 ? idx : displayItems.findIndex((row) => !isPageThumbnailsItem(row));
+  }, [displayItems, activeHref]);
   const focusIndex = useMemo(() => {
-    const find = (match: (row: TOCDisplayItem) => boolean) => displayItems.findIndex(match);
-    let idx = focusedRow ? find((row) => getFocusedRow(row) === focusedRow) : -1;
-    if (idx === -1) idx = find((row) => 'item' in row && row.item.href === activeHref);
-    if (idx === -1) idx = find((row) => !isPageThumbnailsItem(row));
-    return idx;
-  }, [displayItems, focusedRow, activeHref]);
+    const idx = focusedRow
+      ? displayItems.findIndex((row) => getFocusedRow(row) === focusedRow)
+      : -1;
+    return idx !== -1 ? idx : startIndex;
+  }, [displayItems, focusedRow, startIndex]);
+  // A PDF without an outline lists only thumbnails, buttons of their own.
+  const hasRows = focusIndex !== -1;
 
   const handleTreeKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    // A PDF without an outline lists only thumbnails, which have no row to focus.
     const row = displayItems[focusIndex];
     if (!row || event.target !== event.currentTarget || !TREE_KEYS.has(event.key)) return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
@@ -334,8 +338,18 @@ const TOCView: React.FC<{
     }
   };
 
+  // Only the keyboard focuses the list (see handleTreeMouseDown), so entering
+  // it starts on the current chapter and brings that row into view.
   const handleTreeFocus = (event: React.FocusEvent<HTMLElement>) => {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusedRow(null);
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+    setFocusedRow(null);
+    if (startIndex !== -1) virtuosoRef.current?.scrollIntoView({ index: startIndex });
+  };
+
+  // A click opens a chapter or folds a heading without taking keyboard focus,
+  // so the arrow keys keep turning the book's pages.
+  const handleTreeMouseDown = (event: React.MouseEvent<HTMLElement>) => {
+    if (event.button === 0) event.preventDefault();
   };
 
   useEffect(() => {
@@ -405,13 +419,14 @@ const TOCView: React.FC<{
         <Virtuoso
           ref={virtuosoRef}
           scrollerRef={handleScrollerRef}
-          role='tree'
-          aria-label={_('Table of Contents')}
-          aria-activedescendant={focusIndex === -1 ? undefined : `${treeId}-${focusIndex}`}
-          tabIndex={0}
+          role={hasRows ? 'tree' : undefined}
+          aria-label={hasRows ? _('Table of Contents') : undefined}
+          aria-activedescendant={hasRows ? `${treeId}-${focusIndex}` : undefined}
+          tabIndex={hasRows ? 0 : -1}
           className='group outline-none'
           onKeyDown={handleTreeKeyDown}
           onFocus={handleTreeFocus}
+          onMouseDown={handleTreeMouseDown}
           initialTopMostItemIndex={
             initialScrollTarget.index > 0
               ? { index: initialScrollTarget.index, align: 'center' }

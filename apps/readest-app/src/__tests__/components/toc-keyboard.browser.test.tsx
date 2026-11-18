@@ -50,14 +50,14 @@ await import('@/styles/globals.css');
 
 const bookDoc = { sections: [], rendition: {} } as unknown as BookDoc;
 
-// 3 parts x 10 chapters x 2 sections.
+// 3 parts x 40 chapters x 2 sections: long enough for Virtuoso to unmount rows.
 let nextId = 1;
 const toc: TOCItem[] = [1, 2, 3].map((p) => ({
   id: nextId++,
   label: `Part ${p}`,
   href: `p${p}.html`,
   index: 0,
-  subitems: Array.from({ length: 10 }, (_, i) => i + 1).map((c) => ({
+  subitems: Array.from({ length: 40 }, (_, i) => i + 1).map((c) => ({
     id: nextId++,
     label: `Chapter ${p}.${c}`,
     href: `p${p}c${c}.html`,
@@ -80,10 +80,10 @@ const readAt = (sectionHref: string) =>
   } as unknown as BookProgress);
 const readChapter2_3 = () => readAt('p2c3.html');
 
-const renderTOC = (dir: 'ltr' | 'rtl' = 'ltr') =>
+const renderTOC = (dir: 'ltr' | 'rtl' = 'ltr', items = toc) =>
   render(
     <div dir={dir} className='scroll-container' style={{ height: 400, width: 300 }}>
-      <TOCView bookKey='book1' bookDoc={bookDoc} toc={toc} />
+      <TOCView bookKey='book1' bookDoc={bookDoc} toc={items} />
     </div>,
   );
 
@@ -218,5 +218,47 @@ describe('TOC keyboard navigation (#7571)', () => {
     await press('ArrowDown', 'Current position');
     await userEvent.keyboard('{Enter}');
     expect(goTo).toHaveBeenCalledWith('epubcfi(/6/2!/4/1:0)');
+  });
+
+  it('brings the current chapter into view when Tab enters a list scrolled away from it', async () => {
+    readChapter2_3();
+    renderTOC();
+    await expect.poll(() => rowByLabel('Chapter 2.3')).toBeTruthy();
+    tree().scrollTop = tree().scrollHeight;
+    await expect.poll(() => rowByLabel('Chapter 2.3')).toBeNull();
+
+    await userEvent.tab();
+    expect(document.activeElement).toBe(tree());
+    await expect.poll(() => rowByLabel('Chapter 2.3')).toBeTruthy();
+    const row = rowByLabel('Chapter 2.3')!.getBoundingClientRect();
+    const list = tree().getBoundingClientRect();
+    expect(row.top).toBeGreaterThanOrEqual(list.top);
+    expect(row.bottom).toBeLessThanOrEqual(list.bottom);
+    expect(focusedLabel()).toBe('Chapter 2.3');
+  });
+
+  it('leaves the arrow keys to the reader after a mouse click', async () => {
+    readChapter2_3();
+    renderTOC();
+    await expect.poll(() => rowByLabel('Chapter 2.5')).toBeTruthy();
+
+    await userEvent.click(rowByLabel('Chapter 2.5')!);
+    expect(goTo).toHaveBeenCalledWith('p2c5.html');
+    await userEvent.click(document.querySelector('button[aria-label="Expand Chapter 2.4"]')!);
+    await expect.poll(() => rowByLabel('Chapter 2.4')?.getAttribute('aria-expanded')).toBe('true');
+    expect(tree().contains(document.activeElement)).toBe(false);
+
+    await userEvent.keyboard('{ArrowRight}');
+    expect(leakedKeys).toEqual(['ArrowRight']);
+  });
+
+  it('is no Tab stop when there is no heading to step through', async () => {
+    const { container } = renderTOC('ltr', []);
+    await expect.poll(() => container.querySelector('[data-virtuoso-scroller]')).toBeTruthy();
+    const tabbable = [
+      ...container.querySelectorAll<HTMLElement>('a, button, input, [tabindex]'),
+    ].filter((el) => el.tabIndex >= 0);
+    expect(tabbable).toEqual([]);
+    expect(container.querySelector('[role="tree"]')).toBeNull();
   });
 });
