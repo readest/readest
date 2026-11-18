@@ -32,7 +32,8 @@ vi.mock('@/utils/open', () => ({ openExternalUrl }));
 
 beforeEach(() => {
   vi.clearAllMocks();
-  openBrowser.mockResolvedValue({});
+  // The browser window stays open for a while, as in the app.
+  openBrowser.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 20, {})));
   appService.appPlatform = 'tauri';
   saveSettings.mockResolvedValue(undefined);
   useSettingsStore.setState({ settings: {} as SystemSettings, saveSettings });
@@ -44,6 +45,15 @@ const show = () =>
     <CoverSearchDialog title='雪 & Sea' author='An Author' onSelect={vi.fn()} onClose={vi.fn()} />,
   );
 
+// A launch keeps the dialog busy, with its buttons disabled, until the browser
+// window closes. Wait for that before the next click, or the click is ignored.
+const launch = async (name: string, calls: number) => {
+  const button = screen.getByRole('button', { name }) as HTMLButtonElement;
+  fireEvent.click(button);
+  await waitFor(() => expect(openBrowser).toHaveBeenCalledTimes(calls));
+  await waitFor(() => expect(button.disabled).toBe(false));
+};
+
 describe('cover search dialog', () => {
   it('launches each built-in image engine with the book title and author', async () => {
     show();
@@ -52,14 +62,11 @@ describe('cover search dialog', () => {
     for (const name of ['Google', 'Bing', 'DuckDuckGo', 'Add Search Engine']) {
       expect(screen.getByRole('button', { name }).querySelector('svg')).toBeTruthy();
     }
-    fireEvent.click(screen.getByRole('button', { name: 'Google' }));
-    await waitFor(() => expect(openBrowser).toHaveBeenCalled());
+    await launch('Google', 1);
     expect(new URL(openBrowser.mock.calls[0]![0]).searchParams.get('q')).toBe('雪 & Sea An Author');
-    fireEvent.click(screen.getByRole('button', { name: 'Bing' }));
-    await waitFor(() => expect(openBrowser).toHaveBeenCalledTimes(2));
+    await launch('Bing', 2);
     expect(new URL(openBrowser.mock.calls[1]![0]).hostname).toBe('www.bing.com');
-    fireEvent.click(screen.getByRole('button', { name: 'DuckDuckGo' }));
-    await waitFor(() => expect(openBrowser).toHaveBeenCalledTimes(3));
+    await launch('DuckDuckGo', 3);
     const duckduckgo = new URL(openBrowser.mock.calls[2]![0]);
     expect(duckduckgo.hostname).toBe('duckduckgo.com');
     expect(duckduckgo.searchParams.get('q')).toBe('雪 & Sea An Author');
@@ -84,8 +91,7 @@ describe('cover search dialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(saveSettings).toHaveBeenCalled());
     expect(useSettingsStore.getState().settings.coverSearchEngines?.[0]?.name).toBe('My Images');
-    fireEvent.click(screen.getByRole('button', { name: 'My Images' }));
-    await waitFor(() => expect(openBrowser).toHaveBeenCalled());
+    await launch('My Images', 1);
     expect(new URL(openBrowser.mock.calls[0]![0]).hostname).toBe('example.com');
     fireEvent.click(screen.getByRole('button', { name: 'Remove My Images' }));
     await waitFor(() =>
