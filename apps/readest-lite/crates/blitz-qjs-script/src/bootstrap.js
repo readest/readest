@@ -3097,8 +3097,12 @@
         },
       });
     },
+    // As the page's `@media` rules are evaluated, when read. The page's viewport doesn't change
+    // under it (no `resize`), so `change` listeners are never called.
     matchMedia: (q) => ({
-      matches: false,
+      get matches() {
+        return n.mediaMatches(String(q));
+      },
       media: q,
       addListener() {},
       removeListener() {},
