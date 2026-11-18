@@ -25,7 +25,13 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.readest"
         android:hardwareAccelerated="true"
+        android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
+
+        <!-- requestLegacyExternalStorage: Android 10 has no All Files Access,
+             so without it scoped storage hides shared-storage files from the
+             path reads that folder import and read-in-place use (#7542).
+             Android 11+ ignores it for apps targeting API 30+. -->
 
         <!-- Android Auto opt-in. Play's Auto review rejected version code
              11020 ("Audio inconsistently plays on the Android Auto
