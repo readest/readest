@@ -28,6 +28,10 @@ const NOTES_BODY = `
   <span id="id13"><div class="title1">
   <p class="p">56</p>
   </div><p class="p1">Следующее примечание.</p></span>
+  <span class="wrap"><span id="id11"><div class="title1">
+  <p class="p">57</p>
+  </div><p class="p1">Вложенное примечание.</p></span></span>
+  <span id="id9"><div class="title1"><p class="p">58</p></div><p class="p1">Примечание без пробелов.</p></span>
   <div id="ch5"><h2>5. Глава</h2><p>Абзац.</p><p>Абзац.</p><p>Абзац.</p></div>
 `;
 
@@ -37,6 +41,8 @@ const TEXT_BODY = `
   <p class="p1">Длинное примечание<a href="ch2.xhtml#id15" class="a">[55]</a>.</p>
   <p class="p1">Неверный номер<a href="ch2.xhtml#id13" class="a">[9]</a>.</p>
   <p class="p1">См. главу<a href="ch2.xhtml#ch5" class="a">[5]</a>.</p>
+  <p class="p1">Вложенное<a href="ch2.xhtml#id11" class="a">[57]</a>.</p>
+  <p class="p1">Без пробелов<a href="ch2.xhtml#id9" class="a">[58]</a>.</p>
 `;
 
 const xhtml = (body: string) =>
@@ -113,11 +119,21 @@ describe('Footnote popup for a note wrapped in a body-level span (#7564, browser
   it('shows every paragraph of a long note that starts with the reference number', async () => {
     const { handled, rendered } = await openPopup('id15');
     await handled;
-    const text = popupText(await rendered);
-    expect(text).toContain('Первый абзац длинного примечания.');
-    expect(text).toContain('Четвёртый абзац.');
-    expect(text).not.toContain('Примечания');
-    expect(text).not.toContain('Следующее примечание.');
+    expect(popupText(await rendered)).toBe(
+      '55 Первый абзац длинного примечания.Второй абзац.Третий абзац.Четвёртый абзац.',
+    );
+  });
+
+  it('shows a note whose span sits inside another inline wrapper', async () => {
+    const { handled, rendered } = await openPopup('id11');
+    await handled;
+    expect(popupText(await rendered)).toBe('57 Вложенное примечание.');
+  });
+
+  it('shows a note whose number block has no whitespace after it', async () => {
+    const { handled, rendered } = await openPopup('id9');
+    await handled;
+    expect(popupText(await rendered)).toBe('58Примечание без пробелов.');
   });
 
   it('still rejects a note that does not start with the reference number', async () => {
