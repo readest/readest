@@ -12,6 +12,23 @@
 
 mod ops;
 
+/// Writes one line, `args` and a newline, with one write. `eprintln!` writes each piece of its
+/// format as it goes (stderr is unbuffered), ~16 writes for a trace line; on a Kindle, where
+/// stderr is a file on its FUSE storage, each write is a round trip to the FUSE daemon.
+pub fn write_line(out: &mut impl std::io::Write, args: std::fmt::Arguments) {
+    let mut line = std::fmt::format(args);
+    line.push('\n');
+    let _ = out.write_all(line.as_bytes());
+}
+
+/// `eprintln!` in one write ([`write_line`]), for the trace and console lines.
+#[macro_export]
+macro_rules! eline {
+    ($($arg:tt)*) => {
+        $crate::write_line(&mut ::std::io::stderr().lock(), ::std::format_args!($($arg)*))
+    };
+}
+
 use std::{
     cell::RefCell,
     path::{Path, PathBuf},
@@ -299,7 +316,7 @@ pub(crate) fn note_forced_layout(op: &str, ms: f64) {
         f.set((sum + ms, n + u32::from(ms >= 1.0)));
     });
     if ms >= 20.0 && std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
-        eprintln!("{{\"label\": \"forced-layout\", \"op\": \"{op}\", \"ms\": {ms:.1}}}");
+        eline!("{{\"label\": \"forced-layout\", \"op\": \"{op}\", \"ms\": {ms:.1}}}");
     }
 }
 
@@ -701,7 +718,7 @@ impl QjsDocument {
                 )
             });
             if let Some((_, what)) = &trace {
-                eprintln!("qjs script start: {what}");
+                eline!("qjs script start: {what}");
             }
             match src {
                 Some(src) => {
@@ -730,7 +747,7 @@ impl QjsDocument {
                 None => self.eval_source(&inline, "<inline>"),
             }
             if let Some((t, what)) = trace {
-                eprintln!(
+                eline!(
                     "qjs script done: {what} in {:.0} ms",
                     t.elapsed().as_secs_f64() * 1000.0
                 );

@@ -15,6 +15,8 @@ mod fonts;
 mod frame;
 mod webview;
 
+use blitz_qjs_script::eline;
+
 use tauri_runtime::{
     DeviceEventFilter, Error, EventLoopProxy, ExitRequestedEventAction, Icon, ProgressBarState,
     Result, RunEvent, Runtime, RuntimeHandle, RuntimeInitArgs, RuntimeInitAttrs, UserAttentionType,
@@ -1513,7 +1515,7 @@ impl<T: UserEvent> Runtime<T> for BlitzRuntime {
             if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some()
                 && wait_ms + msgs_ms + tick_ms > 30.0
             {
-                eprintln!(
+                eline!(
                     "loop: timeout {:.1} wait {wait_ms:.1} msgs {n_msgs} {msgs_ms:.1} tick {tick_ms:.1}",
                     timeout.as_secs_f64() * 1000.0
                 );
