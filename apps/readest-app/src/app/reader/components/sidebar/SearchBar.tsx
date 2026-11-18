@@ -11,6 +11,7 @@ import { getBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { eventDispatcher } from '@/utils/event';
 import {
   createLibrarySearchSession,
   resolveSearchResultCfis,
@@ -140,6 +141,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
       };
       if (!appService?.isMobile) {
         inputRef.current.focus();
+        // Select any existing term so typing replaces it right away.
+        inputRef.current.select();
       }
     }
     if (isVisible && searchTerm) {
@@ -156,13 +159,40 @@ const SearchBar: React.FC<SearchBarProps> = ({ isVisible, bookKey, onHideSearchB
         } else {
           onHideSearchBar();
         }
+      } else if (e.key.toLowerCase() === 'f' && (e.ctrlKey || e.metaKey)) {
+        // Ctrl+F again while the search bar is up: select the current term
+        // so typing replaces it without clearing first.
+        e.preventDefault();
+        if (!appService?.isMobile) {
+          inputRef.current?.focus();
+          inputRef.current?.select();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onHideSearchBar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onHideSearchBar, appService]);
+
+  // Ctrl+F issued while focus is elsewhere (book iframe, sidebar buttons)
+  // reaches the shortcut layer, which re-opens the search bar via a
+  // 'search-term' event with a null term. Select the current term so typing
+  // replaces it without clearing first.
+  useEffect(() => {
+    const onSelectRequest = (event: CustomEvent) => {
+      const { term } = (event.detail ?? {}) as { term?: string | null };
+      if (term === null && !appService?.isMobile) {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+    eventDispatcher.on('search-term', onSelectRequest);
+    return () => {
+      eventDispatcher.off('search-term', onSelectRequest);
+    };
+  }, [appService]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
