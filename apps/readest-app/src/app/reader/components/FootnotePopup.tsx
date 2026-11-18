@@ -199,8 +199,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const [popupBounds, setPopupBounds] = useState<PopupBounds | null>(null);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
-  const sizeAdjustCountRef = useRef(0);
-  const maxSizeAdjustCount = 3;
   const contentSizeObserverRef = useRef<ResizeObserver | null>(null);
   const linkRequestRef = useRef(0);
   const contentSizeFrameRef = useRef<number | null>(null);
@@ -578,26 +576,13 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       footnoteHrefRef.current = href;
       setSourceHref(getJumpHref(href));
       resetPopupAnnotationState({ index: index ?? -1, extract: extract ?? null });
-      sizeAdjustCountRef.current = 0;
       view.addEventListener('relocate', () => {
-        const readingAxisSize = fitPopupToContent(view as FoliateView);
-        // The cross-axis widening reflows the document, so keep it capped.
-        if (readingAxisSize > 0 && sizeAdjustCountRef.current < maxSizeAdjustCount) {
-          sizeAdjustCountRef.current += 1;
-          const { renderer } = view as FoliateView;
-          const viewSettings = getViewSettings(bookKey)!;
-          const scrollRatio = renderer.viewSize / readingAxisSize;
-          if (scrollRatio > 1.5) {
-            if (popupVerticalRef.current ?? viewSettings.vertical) {
-              setResponsiveHeight(
-                clipPopupHeight(Math.min(popupWidth * scrollRatio, getMaxHeight())),
-              );
-            } else {
-              setResponsiveWidth(clipPopupWith(Math.min(popupWidth * scrollRatio, getMaxWidth())));
-            }
-          }
-        }
-        setShowPopup(true);
+        // The cross axis keeps its seeded size. Growing it from the clipped
+        // reading-axis ratio (#5887) iterated through reflows and landed
+        // wherever the anchor's free room happened to cap it, so on a narrow
+        // screen the same note opened at near-full-screen height or half of
+        // it depending on where its marker sat; the box scrolls instead.
+        if (fitPopupToContent(view as FoliateView) > 0) setShowPopup(true);
       });
     };
 
@@ -757,7 +742,6 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     stopTrackingPopupContentSize();
     resetPopupAnnotationState();
     historyRef.current = { items: [], index: -1 };
-    sizeAdjustCountRef.current = 0;
     trianglePositionRef.current = null;
     setCanGoBack(false);
     setPopupBounds(null);

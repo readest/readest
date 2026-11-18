@@ -16,6 +16,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { page } from 'vitest/browser';
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 
 import '@/styles/globals.css';
@@ -108,15 +109,16 @@ let anchor: HTMLElement;
 /**
  * Drive a link click in the book through to a rendered, document-backed popup.
  * With `noteWritingMode`, the note gets a document of its own in that mode.
+ * `viewSize` is the stub renderer's content size along the note's reading axis.
  */
-const openLinkedFootnote = (noteWritingMode?: string) => {
+const openLinkedFootnote = (noteWritingMode?: string, viewSize = 220) => {
   const href = 'text/part0012.xhtml#appendix-c';
   const view = document.createElement('div');
   const note = noteWritingMode ? document.createElement('iframe') : null;
   if (note) view.appendChild(note);
   Object.defineProperty(view, 'renderer', {
     value: {
-      viewSize: 220,
+      viewSize,
       setAttribute: () => {},
       // The popup has attached the view before styling its document.
       setStyles: () => {
@@ -257,6 +259,34 @@ describe('footnote popup box (#5999)', () => {
     // The cross axis is a vertical box's too, not the 88px line the book's
     // horizontal seed gave it.
     expect(content.clientHeight).toBeGreaterThan(content.clientWidth);
+  });
+
+  // On a narrow screen a long vertical note's column stack overflows the
+  // available width. Growing the cross axis from that clipped ratio (#5887)
+  // capped at whatever room the anchor's side happened to have and never
+  // shrank back after the reflow, so the same note opened near full-screen
+  // height on a phone and half of it elsewhere. The cross axis keeps its
+  // seeded size and the note scrolls along its reading axis instead.
+  test('a long vertical note scrolls instead of growing the cross axis', async () => {
+    const { innerWidth, innerHeight } = window;
+    await page.viewport(390, 800);
+    try {
+      h.viewSettings = { vertical: true, rtl: false, scrolled: false };
+      render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+      // A note whose column stack is 600px wide: far past what the popup can
+      // show beside the anchor on a 390px screen.
+      openLinkedFootnote('vertical-rl', 600);
+
+      const content = document.querySelector<HTMLElement>('.footnote-content')!;
+      // Cross axis: the 360px seed (less the container's border), never grown
+      // from the clipped reading-axis ratio.
+      expect(content.clientHeight).toBe(358);
+      // Reading axis: clipped to the room beside the anchor, so the note
+      // scrolls there instead of the box growing.
+      expect(content.clientWidth).toBeLessThan(598);
+    } finally {
+      await page.viewport(innerWidth, innerHeight);
+    }
   });
 
   // At most one scrollbar, ever: a note too long for the box scrolls along its
