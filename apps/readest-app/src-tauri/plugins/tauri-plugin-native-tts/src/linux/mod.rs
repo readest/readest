@@ -145,6 +145,7 @@ impl Worker {
                     self.publish();
                     let _ = command.reply.send(result.map(|()| PlayoutControlResponse {
                         session: Some(self.session),
+                        armed: None,
                     }));
                 }
                 Err(mpsc::RecvTimeoutError::Disconnected) => break,

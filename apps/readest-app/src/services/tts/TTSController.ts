@@ -130,6 +130,8 @@ type TTSState =
 // A sentence position for A-B repeat. A CFI rather than a Range: the section's
 // document is replaced on re-attach and section changes.
 type TTSLoopPoint = { sectionIndex: number; cfi: string };
+// An A-B span as a stretch of one narration file, in seconds of that file.
+export type NarrationLoopSpan = { audioHref: string; clipBegin: number; clipEnd: number };
 export type TTSLoopState = 'off' | 'a' | 'ab';
 
 const HIGHLIGHT_KEY = 'tts-highlight';
@@ -191,6 +193,13 @@ export class TTSController extends EventTarget {
   pauseAfterSentence: boolean = false;
   #loopA: TTSLoopPoint | null = null;
   #loopB: TTSLoopPoint | null = null;
+  // The A-B span as narration clips, for the section it was resolved in.
+  #narrationLoop: {
+    a: TTSLoopPoint;
+    b: TTSLoopPoint;
+    section: MediaOverlaySection;
+    span: NarrationLoopSpan | null;
+  } | null = null;
   #paragraphGapSec: number = DEFAULT_PARAGRAPH_GAP_SEC;
   #nossmlCnt: number = 0;
   // Consecutive native-TTS utterances that ended in a terminal 'error' without
@@ -2061,6 +2070,7 @@ export class TTSController extends EventTarget {
     if (this.#loopB) {
       this.#loopA = this.#loopB = null;
       this.drawLoopRange();
+      void this.ttsMediaOverlayClient.refreshLoop();
       return 'off';
     }
     const range = this.#getTts()?.getLastRange();
@@ -2076,7 +2086,50 @@ export class TTSController extends EventTarget {
       this.#loopB = point;
     }
     this.drawLoopRange();
+    void this.ttsMediaOverlayClient.refreshLoop();
     return this.loopState;
+  }
+
+  // The A-B span as one stretch of a narration recording: from the start of
+  // A's clip to the end of B's, when both are clips of the same file in the
+  // section now narrated. The native Android player repeats such a span by
+  // itself, so it keeps repeating while the WebView is throttled.
+  getNarrationLoop(): NarrationLoopSpan | null {
+    const a = this.#loopA;
+    const b = this.#loopB;
+    const section = this.#mediaOverlaySection;
+    if (!a || !b || !section) return null;
+    if (a.sectionIndex !== this.#ttsSectionIndex || b.sectionIndex !== this.#ttsSectionIndex) {
+      return null;
+    }
+    const cached = this.#narrationLoop;
+    if (cached && cached.a === a && cached.b === b && cached.section === section) {
+      return cached.span;
+    }
+    const pars = section.pars;
+    let from = -1;
+    let to = -1;
+    for (let i = 0; i < pars.length && (from < 0 || to < 0); i++) {
+      const cfi = this.#cfiOf(pars[i]!.range);
+      if (from < 0 && cfi === a.cfi) from = i;
+      if (to < 0 && cfi === b.cfi) to = i;
+    }
+    const first = pars[from];
+    const last = pars[to];
+    let span: NarrationLoopSpan | null = null;
+    // One stretch of one file: every clip from A to B in that file, so a
+    // clip of another file in between is never skipped.
+    if (
+      first &&
+      last &&
+      from <= to &&
+      first.clipBegin < last.clipEnd &&
+      pars.slice(from, to + 1).every((par) => par.audioHref === first.audioHref)
+    ) {
+      span = { audioHref: first.audioHref, clipBegin: first.clipBegin, clipEnd: last.clipEnd };
+    }
+    this.#narrationLoop = { a, b, section, span };
+    return span;
   }
 
   // Tint the A-B span (just A while B is unset) in every live view, so the
