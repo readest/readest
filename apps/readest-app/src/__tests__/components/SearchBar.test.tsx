@@ -163,6 +163,56 @@ describe('SearchBar', () => {
     expect(mocks.setSearchResults.mock.lastCall![1]).toHaveLength(50);
   });
 
+  // A hit held back by the interval must not wait for the next chapter, which
+  // can take seconds to search.
+  it('shows a held-back hit when the interval ends, before the search completes', async () => {
+    let finish!: () => void;
+    const nextChapter = new Promise<void>((resolve) => (finish = resolve));
+    mocks.resolveSearchResultCfis.mockResolvedValue([{ cfi: 'cfi-0' }]);
+    mocks.searchLibraryBooks.mockImplementation(async function* () {
+      yield { type: 'progress', bookProgress: 0.5 };
+      yield {
+        type: 'result',
+        result: { index: 0, label: 'Chapter 0', subitems: [{ locator: {}, excerpt: 'm' }] },
+      };
+      await nextChapter;
+      yield { type: 'book-completed', book: { hash: 'book-hash' }, matchCount: 1 };
+    });
+
+    await renderBar();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(mocks.setSearchResults).toHaveBeenCalledWith('book-1', [
+      { index: 0, label: 'Chapter 0', subitems: [{ cfi: 'cfi-0', excerpt: 'm' }] },
+    ]);
+
+    finish();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(mocks.setSearchResults.mock.lastCall![1]).toHaveLength(1);
+  });
+
+  it('drops a held-back hit when the search fails before the interval ends', async () => {
+    mocks.resolveSearchResultCfis.mockResolvedValue([{ cfi: 'cfi-0' }]);
+    mocks.searchLibraryBooks.mockImplementation(async function* () {
+      yield { type: 'progress', bookProgress: 0.5 };
+      yield {
+        type: 'result',
+        result: { index: 0, label: 'Chapter 0', subitems: [{ locator: {}, excerpt: 'm' }] },
+      };
+      yield { type: 'book-error', book: { hash: 'book-hash' }, error: 'broken' };
+    });
+
+    await renderBar();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(mocks.setSearchResults).toHaveBeenCalledTimes(1);
+    expect(mocks.setSearchResults).toHaveBeenLastCalledWith('book-1', []);
+  });
+
   it('searches the whole book when progress is not available yet', async () => {
     mocks.progress = null;
     await renderBar();
