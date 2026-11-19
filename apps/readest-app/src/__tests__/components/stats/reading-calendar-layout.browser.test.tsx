@@ -38,9 +38,19 @@ vi.mock('@/services/statistics/statisticsDb', () => ({
       const quarter = Math.floor(
         new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime() / 900000,
       );
+      const startTimeMs = quarter * 900_000;
+      const speeds = [
+        { unit: 'characters', count: 350, durationMs: 60_000 },
+        { unit: 'words', count: 180, durationMs: 60_000 },
+      ];
       return {
         getQuarterHourDurations: async () => [{ quarter, seconds: 3600 }],
         getReadingTotals: async () => ({ seconds: 3600, books: 2, pages: 10 }),
+        getReadingSpeedTotals: async () => speeds,
+        getReadingSpeedSamples: async (startMs: number, endMs: number) =>
+          speeds
+            .filter(({ durationMs }) => startTimeMs < endMs && startTimeMs + durationMs > startMs)
+            .map((speed) => ({ ...speed, startTimeMs })),
         getBookQuarterHourDurations: async () => [
           {
             quarter,
@@ -206,6 +216,9 @@ describe('reading calendar in the statistics dialog', () => {
       fireEvent.click(entry);
       await screen.findByRole('button', { name: /人间草木：那些平凡而美好的时刻/ });
       const calendar = screen.getByRole('group', { name: 'Reading Calendar' });
+      const status = calendar.querySelector('[role="status"]');
+      expect(status?.textContent).toContain('350 characters/min');
+      expect(status?.textContent).toContain('180 words/min');
       const grid = calendar.querySelector<HTMLElement>('[aria-busy]')!;
       expect(getComputedStyle(grid).touchAction).toContain('pan-y');
       expect(getComputedStyle(grid).touchAction).toContain('pinch-zoom');
