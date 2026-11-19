@@ -159,9 +159,17 @@ impl Display {
                     down: false,
                 });
             };
+            let mut finger_down = false;
             while let Ok(ev) = conn.wait_for_event() {
                 if let Some(input) = pointer_input(&ev) {
+                    if let Input::Pointer { down, .. } = input {
+                        finger_down = down;
+                    }
                     on_input(input);
+                    continue;
+                }
+                if let Some(forward) = page_turn(&ev, finger_down) {
+                    click(if forward { cw * 5.0 / 6.0 } else { cw / 6.0 });
                     continue;
                 }
                 match ev {
@@ -172,15 +180,6 @@ impl Display {
                             let _ = put(&conn, target, &rows, all);
                         }
                     }
-                    // wheel: 4 up = back, 5 down = forward (press only)
-                    Event::ButtonPress(e) if e.detail == 4 => click(cw / 6.0),
-                    Event::ButtonPress(e) if e.detail == 5 => click(cw * 5.0 / 6.0),
-                    // evdev keycodes: Left 113, Up 111, Page Up 112 back; Right 114, Down 116, Page Down 117, Space 65 forward
-                    Event::KeyPress(e) => match e.detail {
-                        111..=113 => click(cw / 6.0),
-                        114 | 116 | 117 | 65 => click(cw * 5.0 / 6.0),
-                        _ => {}
-                    },
                     Event::ClientMessage(ClientMessageEvent { data, .. })
                         if data.as_data32()[0] == delete =>
                     {
@@ -328,6 +327,27 @@ fn pointer_input(ev: &Event) -> Option<Input> {
     }
 }
 
+/// Whether a wheel turn or key turns the page forward (`true`, a click on the right third) or
+/// back (a click on the left third). The wheel: 4 up = back, 5 down = forward (press only);
+/// evdev keycodes: Left 113, Up 111, Page Up 112 back; Right 114, Down 116, Page Down 117,
+/// Space 65 forward. Never while a finger is down: the Kindle's touch driver adds wheel presses
+/// to a quick swipe, whose moves the page already gets, and a click there would end the swipe.
+fn page_turn(ev: &Event, finger_down: bool) -> Option<bool> {
+    if finger_down {
+        return None;
+    }
+    match ev {
+        Event::ButtonPress(e) if e.detail == 4 => Some(false),
+        Event::ButtonPress(e) if e.detail == 5 => Some(true),
+        Event::KeyPress(e) => match e.detail {
+            111..=113 => Some(false),
+            114 | 116 | 117 | 65 => Some(true),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 /// A box of pixels: left, top, right, bottom (right and bottom exclusive).
 pub(crate) type Rect = (usize, usize, usize, usize);
 
@@ -374,11 +394,37 @@ fn put(
 
 #[cfg(test)]
 mod tests {
-    use super::{Input, PixelFormat, convert, pointer_input, update};
+    use super::{Input, PixelFormat, convert, page_turn, pointer_input, update};
     use x11rb::protocol::Event;
     use x11rb::protocol::xproto::{
         BUTTON_PRESS_EVENT, BUTTON_RELEASE_EVENT, ButtonPressEvent, KeyButMask, MotionNotifyEvent,
     };
+
+    // The Kindle's touch driver adds a wheel press to a quick swipe while the finger is down (the
+    // trace logged a swipe from (464, 861) to (484, 1115) with a back-turn click at (179, 724)
+    // between its press and release): the click reset the pan and clicked what lay under it.
+    #[test]
+    fn a_wheel_or_key_turns_the_page_only_with_no_finger_down() {
+        let wheel = |detail| {
+            Event::ButtonPress(ButtonPressEvent {
+                response_type: BUTTON_PRESS_EVENT,
+                detail,
+                ..Default::default()
+            })
+        };
+        let key = |detail| {
+            Event::KeyPress(x11rb::protocol::xproto::KeyPressEvent {
+                detail,
+                ..Default::default()
+            })
+        };
+        let events = [wheel(4), wheel(5), key(113), key(117)];
+        assert_eq!(
+            events.each_ref().map(|e| page_turn(e, false)),
+            [Some(false), Some(true), Some(false), Some(true)]
+        );
+        assert_eq!(events.each_ref().map(|e| page_turn(e, true)), [None; 4]);
+    }
 
     // A drag on the Kindle's touch screen: the finger lands, moves with the button held, lifts.
     #[test]
