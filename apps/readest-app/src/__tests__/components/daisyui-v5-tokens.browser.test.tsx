@@ -6,6 +6,7 @@
  * instead of the OS (#5587: white native popups on Windows dark mode).
  */
 
+import { useState } from 'react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import { themes, applyCustomTheme } from '@/styles/themes';
@@ -218,7 +219,7 @@ describe('daisyUI 5 theme tokens', () => {
         ariaLabel='Anchored select'
       />,
     );
-    fireEvent.click(getByRole('button', { name: 'A', expanded: false }));
+    fireEvent.click(getByRole('button', { name: /A$/, expanded: false }));
     const menu = getByRole('listbox');
     expect(menu.className).toContain('end-0');
     expect(menu.className).toContain('top-full');
@@ -254,7 +255,7 @@ describe('daisyUI 5 theme tokens', () => {
         <div style={{ height: 200 }} />
       </div>,
     );
-    fireEvent.click(getByRole('button', { name: 'A', expanded: false }));
+    fireEvent.click(getByRole('button', { name: /A$/, expanded: false }));
 
     const menu = getByRole('listbox');
     expect(menu.className).toContain('bottom-full');
@@ -275,7 +276,7 @@ describe('daisyUI 5 theme tokens', () => {
         <div style={{ height: 600 }} />
       </div>,
     );
-    fireEvent.click(getByRole('button', { name: 'Option 0', expanded: false }));
+    fireEvent.click(getByRole('button', { name: /Option 0$/, expanded: false }));
 
     const menu = getByRole('listbox');
     const panel = getByTestId('panel').getBoundingClientRect();
@@ -314,7 +315,7 @@ describe('daisyUI 5 theme tokens', () => {
         <div style={{ height: 300 }} />
       </div>,
     );
-    const trigger = getByRole('button', { name: 'Option 0', expanded: false });
+    const trigger = getByRole('button', { name: /Option 0$/, expanded: false });
     const triggerBox = trigger.getBoundingClientRect();
     fireEvent.click(trigger);
 
@@ -349,7 +350,7 @@ describe('daisyUI 5 theme tokens', () => {
         ariaLabel='Toggle select'
       />,
     );
-    const trigger = getByRole('button', { name: 'A', expanded: false });
+    const trigger = getByRole('button', { name: /A$/, expanded: false });
     expect(queryByRole('listbox')).toBeNull();
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
 
@@ -375,7 +376,7 @@ describe('daisyUI 5 theme tokens', () => {
         ariaLabel='Pick select'
       />,
     );
-    fireEvent.click(getByRole('button', { name: 'A', expanded: false }));
+    fireEvent.click(getByRole('button', { name: /A$/, expanded: false }));
     const optionButtons = getByRole('listbox').querySelectorAll('li button');
     expect(optionButtons).toHaveLength(2);
     fireEvent.click(optionButtons[1]!);
@@ -403,7 +404,7 @@ describe('daisyUI 5 theme tokens', () => {
         ariaLabel='Escape select'
       />,
     );
-    const trigger = getByRole('button', { name: 'A', expanded: false });
+    const trigger = getByRole('button', { name: /A$/, expanded: false });
     fireEvent.click(trigger);
     fireEvent.keyDown(getByRole('listbox'), { key: 'Escape' });
 
@@ -425,11 +426,147 @@ describe('daisyUI 5 theme tokens', () => {
         ariaLabel='Focus select'
       />,
     );
-    const trigger = getByRole('button', { name: 'A', expanded: false });
+    const trigger = getByRole('button', { name: /A$/, expanded: false });
     fireEvent.click(trigger);
     fireEvent.click(getByRole('listbox').querySelectorAll('li button')[1]!);
     // The option unmounts with the menu; focus must not fall to <body>.
     expect(document.activeElement).toBe(trigger);
+  });
+
+  it('names the trigger and the listbox after the setting', () => {
+    // The visible text is only the value ("Auto"), so the setting's own label
+    // has to travel with it -- otherwise a screen reader announces a bare
+    // value with no idea which row it belongs to.
+    const { getByRole } = render(
+      <SettingsSelect
+        value='auto'
+        onChange={() => {}}
+        options={[
+          { value: 'auto', label: 'Auto' },
+          { value: 'ltr', label: 'Left to right' },
+        ]}
+        ariaLabel='Reading direction'
+      />,
+    );
+    const trigger = getByRole('button', { name: 'Reading direction: Auto' });
+    fireEvent.click(trigger);
+    expect(getByRole('listbox', { name: 'Reading direction' })).toBeTruthy();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('re-places the menu when the options change while it is open', () => {
+    const optionsOf = (count: number) =>
+      count === 2
+        ? [
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+          ]
+        : Array.from({ length: count }, (_, i) => ({ value: `v${i}`, label: `Option ${i}` }));
+    const panel = (count: number) => (
+      <div
+        style={{ position: 'fixed', left: 0, top: 0, width: 320, height: 400, overflow: 'auto' }}
+      >
+        <div style={{ height: 200 }} />
+        <SettingsSelect
+          value='a'
+          onChange={() => {}}
+          options={optionsOf(count)}
+          ariaLabel='Swapped select'
+        />
+        <div style={{ height: 400 }} />
+      </div>
+    );
+    const { getByRole, rerender } = render(panel(2));
+    fireEvent.click(getByRole('button', { name: /A$/ }));
+    // Two options fit below the control.
+    expect(getByRole('listbox').className).toContain('top-full');
+
+    // The same open menu, refilled with a list that no longer fits: the side
+    // and the height budget have to follow the new content.
+    rerender(panel(40));
+    const menu = getByRole('listbox');
+    expect(menu.className).toContain('bottom-full');
+    expect(menu.style.maxHeight).not.toBe('');
+  });
+
+  it('puts the hidden select back when the caller rejects a pick', async () => {
+    // The caller owns the value. A controlled parent that ignores the change
+    // leaves the native control holding an option the UI never took, and
+    // nothing re-renders to fix it -- so the DOM has to be reconciled here.
+    const { getByRole } = render(
+      <SettingsSelect
+        value='a'
+        onChange={() => {}}
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+        ariaLabel='Rejected select'
+      />,
+    );
+    const select = getByRole('combobox') as HTMLSelectElement;
+    fireEvent.click(getByRole('button', { name: /A$/ }));
+    fireEvent.click(getByRole('listbox').querySelectorAll('li button')[1]!);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(select.value).toBe('a');
+  });
+
+  it('follows the value the caller accepts', async () => {
+    const Controlled = () => {
+      const [value, setValue] = useState('a');
+      return (
+        <SettingsSelect
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          options={[
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+          ]}
+          ariaLabel='Controlled select'
+        />
+      );
+    };
+    const { getByRole } = render(<Controlled />);
+    const select = getByRole('combobox') as HTMLSelectElement;
+    fireEvent.click(getByRole('button', { name: 'Controlled select: A' }));
+    fireEvent.click(getByRole('listbox').querySelectorAll('li button')[1]!);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(select.value).toBe('b');
+    expect(getByRole('button', { name: 'Controlled select: B' })).toBeTruthy();
+  });
+
+  it('leaves Escape to whatever the user tabbed to', () => {
+    // The menu can stay open after Shift+Tab. Claiming Escape then would drag
+    // focus back into a control the user has already left.
+    const windowListener = vi.fn();
+    window.addEventListener('keydown', windowListener);
+    const { getByRole, getByTestId, queryByRole } = render(
+      <div>
+        <SettingsSelect
+          value='a'
+          onChange={() => {}}
+          options={[
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+          ]}
+          ariaLabel='Blurred select'
+        />
+        <button data-testid='outside' type='button'>
+          Outside
+        </button>
+      </div>,
+    );
+    fireEvent.click(getByRole('button', { name: 'Blurred select: A' }));
+    const outside = getByTestId('outside') as HTMLButtonElement;
+    outside.focus();
+    fireEvent.keyDown(outside, { key: 'Escape' });
+
+    expect(queryByRole('listbox')).toBeNull();
+    expect(document.activeElement).toBe(outside);
+    expect(windowListener).toHaveBeenCalled();
+    window.removeEventListener('keydown', windowListener);
   });
 
   it('never opens a disabled select', () => {
@@ -442,7 +579,7 @@ describe('daisyUI 5 theme tokens', () => {
         ariaLabel='Disabled select'
       />,
     );
-    const trigger = getByRole('button', { name: 'A', expanded: false }) as HTMLButtonElement;
+    const trigger = getByRole('button', { name: /A$/, expanded: false }) as HTMLButtonElement;
     expect(trigger.disabled).toBe(true);
     fireEvent.click(trigger);
     expect(queryByRole('listbox')).toBeNull();
@@ -463,7 +600,7 @@ describe('daisyUI 5 theme tokens', () => {
           />
         </div>,
       );
-      const trigger = getByRole('button', { name: 'Fit', expanded: false });
+      const trigger = getByRole('button', { name: /Fit$/, expanded: false });
       const box = trigger.getBoundingClientRect();
       const row = trigger.closest('div[dir]')!.getBoundingClientRect();
       expect(box.width).toBeLessThan(row.width / 2);
