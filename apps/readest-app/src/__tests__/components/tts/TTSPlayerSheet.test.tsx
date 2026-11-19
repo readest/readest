@@ -192,7 +192,6 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
 
 describe('TTSPlayerSheet', () => {
   beforeEach(() => {
-    localStorage.clear();
     viewSettings['ttsRate'] = 1.0;
     viewSettings['ttsSentenceGap'] = 0.15;
     viewSettings['isEink'] = false;
@@ -679,6 +678,37 @@ describe('TTSPlayerSheet', () => {
     fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
     expect(screen.getByText('Guy')).toBeTruthy();
     expect(screen.queryByText('Aseng')).toBeNull();
+  });
+
+  test('the voice view opens on every engine, like the voice library', async () => {
+    const twoEngines = [
+      ...voiceGroups,
+      {
+        id: 'xunfei',
+        name: 'Xunfei Speech',
+        engine: 'xunfei-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    render(
+      <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
+    );
+    const engineSelect = () =>
+      screen
+        .getByLabelText('Voice Engine')
+        .parentElement?.parentElement?.querySelector('select') as HTMLSelectElement;
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Aseng'));
+    fireEvent.change(engineSelect(), { target: { value: 'xunfei-tts/xunfei' } });
+    fireEvent.change(screen.getByLabelText('Filter voices'), { target: { value: 'Ase' } });
+    expect(screen.queryByText('Guy')).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Go Back'));
+    fireEvent.click(screen.getByLabelText('Voice'));
+    expect(engineSelect().value).toBe('');
+    expect((screen.getByLabelText('Filter voices') as HTMLInputElement).value).toBe('');
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.getByText('Aseng')).toBeTruthy();
   });
 
   test('escape in the filter field does not dismiss the player sheet', async () => {

@@ -201,8 +201,7 @@ const TTSPlayerSheet = ({
   const [coverFailed, setCoverFailed] = useState(false);
   const [view, setView] = useState<SheetView>('main');
   const [voiceGroups, setVoiceGroups] = useState<TTSVoicesGroup[]>([]);
-  // Reopen on the engine last shown in either voice picker (Settings shares
-  // this preference), instead of dropping back to "All".
+  // The voice view's engine ('' for all of them) and filter text.
   const [voiceSection, setVoiceSection] = useState('');
   const [voiceQuery, setVoiceQuery] = useState('');
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
@@ -286,8 +285,7 @@ const TTSPlayerSheet = ({
   );
   const isNarrating = selectedVoice === MEDIA_OVERLAY_VOICE_ID;
 
-  // Fresh open: land on the main view with current rate/voice, and resync the
-  // engine picker with the preference Settings may have changed meanwhile.
+  // Fresh open: land on the main view with current rate/voice.
   useEffect(() => {
     if (!isOpen) return;
     setView('main');
@@ -733,7 +731,12 @@ const TTSPlayerSheet = ({
             <button
               type='button'
               aria-label={_('Voice')}
-              onClick={() => setView('voice')}
+              onClick={() => {
+                // Like the voice library, every visit starts on all engines, unfiltered.
+                setVoiceSection('');
+                setVoiceQuery('');
+                setView('voice');
+              }}
               className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
             >
               <RiVoiceAiFill size={iconSize18} />
