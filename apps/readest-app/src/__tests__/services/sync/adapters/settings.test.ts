@@ -332,6 +332,7 @@ describe('settingsAdapter', () => {
       'bookorbit.username',
       'bookorbit.userkey',
       'bookorbit.password',
+      'bookorbit.apiKey',
       'bookorbit.customHeaders',
       'grimmory.username',
       'grimmory.password',

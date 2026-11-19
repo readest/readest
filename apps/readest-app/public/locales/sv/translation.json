@@ -2843,5 +2843,8 @@
   "Filter voices": "Filtrera röster",
   "Plain placeholder covers": "Enkla platshållaromslag",
   "Previous Week": "Föregående vecka",
-  "Next Week": "Nästa vecka"
+  "Next Week": "Nästa vecka",
+  "API Key (optional)": "API-nyckel (valfritt)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "I BookOrbit 3.8.0 eller senare strömmar en API-nyckel från Inställningar > Konto > API-nycklar ljudböcker utan ditt kontolösenord. Välj Läsa och skriva så att din lyssningsposition synkroniseras.",
+  "Could not sign in to BookOrbit for audiobooks": "Det gick inte att logga in på BookOrbit för ljudböcker"
 }

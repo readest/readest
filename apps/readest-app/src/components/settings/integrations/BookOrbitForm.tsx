@@ -41,6 +41,7 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
   const [url, setUrl] = useState(settings.bookorbit.serverUrl || '');
   const [username, setUsername] = useState(settings.bookorbit.username || '');
   const [password, setPassword] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [deviceName, setDeviceName] = useState('');
   const [osName, setOsName] = useState('');
@@ -136,12 +137,15 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
     }
     setHeaderError('');
     setIsConnecting(true);
+    const key = apiKey.trim();
     const config = {
       ...settings.bookorbit,
       serverUrl: url,
       username,
       userkey: md5(password),
-      password,
+      // With an API key the audiobook API needs no password, so none is kept.
+      password: key ? '' : password,
+      apiKey: key,
       deviceName,
       customHeaders: hasCustomHeaders(parsedHeaders.headers) ? parsedHeaders.headers : undefined,
       allowSelfSignedCert,
@@ -165,10 +169,17 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
     }
     setIsConnecting(false);
     setPassword('');
+    setApiKey('');
   };
 
   const handleDisconnect = async () => {
-    const bookorbit = { ...settings.bookorbit, userkey: '', password: '', enabled: false };
+    const bookorbit = {
+      ...settings.bookorbit,
+      userkey: '',
+      password: '',
+      apiKey: '',
+      enabled: false,
+    };
     const newSettings = { ...settings, bookorbit };
     setSettings(newSettings);
     await saveSettings(envConfig, newSettings);
@@ -397,6 +408,22 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
             </div>
 
             <div className='space-y-1.5'>
+              <SectionTitle as='label' htmlFor='bookorbit-api-key' className='block'>
+                {_('API Key (optional)')}
+              </SectionTitle>
+              <input
+                id='bookorbit-api-key'
+                type='password'
+                placeholder='bok_…'
+                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                spellCheck='false'
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                autoComplete='off'
+              />
+            </div>
+
+            <div className='space-y-1.5'>
               <SectionTitle as='label' htmlFor='bookorbit-custom-headers' className='block'>
                 {_('Custom Headers (optional)')}
               </SectionTitle>
@@ -429,6 +456,11 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
               <li>
                 {_(
                   'Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.',
+                )}
+              </li>
+              <li>
+                {_(
+                  'On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.',
                 )}
               </li>
             </Tips>

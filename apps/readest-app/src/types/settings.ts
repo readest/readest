@@ -125,6 +125,12 @@ export interface BookOrbitSettings {
   username: string;
   userkey: string;
   password?: string;
+  /**
+   * BookOrbit 3.8+ API key for the audiobook API. When set, it is sent as the
+   * bearer instead of signing in with `password`; KOReader sync still uses
+   * `username` and `userkey`, which BookOrbit's KOReader routes require.
+   */
+  apiKey?: string;
   deviceId: string;
   deviceName: string;
   strategy: KOSyncStrategy;

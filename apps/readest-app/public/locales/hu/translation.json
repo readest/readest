@@ -2843,5 +2843,8 @@
   "Filter voices": "Hangok szűrése",
   "Plain placeholder covers": "Egyszerű helyettesítő borítók",
   "Previous Week": "Előző hét",
-  "Next Week": "Következő hét"
+  "Next Week": "Következő hét",
+  "API Key (optional)": "API-kulcs (opcionális)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "A BookOrbit 3.8.0-s vagy újabb verziójában a Beállítások > Fiók > API-kulcsok menüpontban létrehozott API-kulccsal fiókjelszó nélkül streamelheti a hangoskönyveket. Válassza az Olvasás és írás lehetőséget, hogy a hallgatási pozíció szinkronizálódjon.",
+  "Could not sign in to BookOrbit for audiobooks": "Nem sikerült bejelentkezni a BookOrbitba a hangoskönyvekhez"
 }

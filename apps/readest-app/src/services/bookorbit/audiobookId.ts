@@ -29,11 +29,11 @@ const sameHost = (url: string, serverUrl: string): boolean => {
  */
 export const matchBookOrbitAudiobook = (
   hrefs: string[],
-  settings: Pick<BookOrbitSettings, 'serverUrl' | 'password'>,
+  settings: Pick<BookOrbitSettings, 'serverUrl' | 'password' | 'apiKey'>,
 ): { bookId: number } | null => {
-  // The audiobook API authenticates with a JWT, which needs the real password.
-  // A sync set up with only a `userkey` cannot log in, so stay on OPDS.
-  if (!settings.serverUrl || !settings.password) return null;
+  // The audiobook API needs a JWT from the real password, or an API key. A
+  // sync set up with only a `userkey` cannot sign in, so stay on OPDS.
+  if (!settings.serverUrl || !(settings.password || settings.apiKey)) return null;
   if (hrefs.length === 0) return null;
 
   const ids = new Set<number>();

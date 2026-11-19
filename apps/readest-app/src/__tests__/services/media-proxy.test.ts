@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   servers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
   settingsServers: [] as Array<{ url: string; deletedAt?: number; allowSelfSignedCert?: boolean }>,
   bookorbit: undefined as
-    | { serverUrl: string; password?: string; allowSelfSignedCert?: boolean }
+    | { serverUrl: string; password?: string; apiKey?: string; allowSelfSignedCert?: boolean }
     | undefined,
 }));
 
@@ -170,6 +170,23 @@ describe('getMediaProxyBase (#6216)', () => {
     // ...and a later Audiobookshelf-only call must not flip it back.
     await fresh();
     expect(mocks.invoke.mock.calls[1]![1]).toMatchObject({ selfSigned: [] });
+  });
+
+  // Signed in with an API key and no password (#7508), BookOrbit is just as
+  // configured, so its certificate choice must still hold.
+  it('keeps a BookOrbit origin verified when it signs in with an API key', async () => {
+    mocks.servers = [{ url: 'https://home.example/abs', allowSelfSignedCert: true }];
+    mocks.bookorbit = {
+      serverUrl: 'https://home.example',
+      password: '',
+      apiKey: 'bok_key',
+      allowSelfSignedCert: false,
+    };
+    mocks.invoke.mockResolvedValue('http://127.0.0.1:41234/s3cret');
+    const { getMediaProxyBase: fresh } = await import('@/services/audiobook/mediaProxy');
+
+    await fresh();
+    expect(mocks.invoke.mock.calls[0]![1]).toMatchObject({ selfSigned: [] });
   });
 
   it("lets a server's live store copy turn the option on over a stale persisted copy", async () => {

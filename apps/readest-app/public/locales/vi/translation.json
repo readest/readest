@@ -2770,5 +2770,8 @@
   "Filter voices": "Lọc giọng đọc",
   "Plain placeholder covers": "Bìa thay thế đơn giản",
   "Previous Week": "Tuần trước",
-  "Next Week": "Tuần sau"
+  "Next Week": "Tuần sau",
+  "API Key (optional)": "Khóa API (tùy chọn)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "Trên BookOrbit 3.8.0 trở lên, khóa API tạo tại Cài đặt > Tài khoản > Khóa API cho phép phát trực tuyến sách nói mà không cần mật khẩu tài khoản. Hãy chọn Đọc và ghi để vị trí nghe của bạn được đồng bộ.",
+  "Could not sign in to BookOrbit for audiobooks": "Không thể đăng nhập BookOrbit để nghe sách nói"
 }

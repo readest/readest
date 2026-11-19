@@ -10,12 +10,13 @@ import { BookOrbitClient } from './client';
 
 export const createBookOrbitClient = (): BookOrbitClient | null => {
   const { bookorbit } = useSettingsStore.getState().settings;
-  if (!bookorbit?.serverUrl || !bookorbit.password) return null;
+  if (!bookorbit?.serverUrl || !(bookorbit.password || bookorbit.apiKey)) return null;
   return new BookOrbitClient(
     {
       serverUrl: bookorbit.serverUrl,
       username: bookorbit.username,
       password: bookorbit.password,
+      apiKey: bookorbit.apiKey,
       customHeaders: bookorbit.customHeaders,
       allowSelfSignedCert: allowsSelfSignedCert(bookorbit),
     },

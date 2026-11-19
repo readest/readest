@@ -2989,5 +2989,8 @@
   "Filter voices": "Фільтр голосів",
   "Plain placeholder covers": "Прості обкладинки-заповнювачі",
   "Previous Week": "Попередній тиждень",
-  "Next Week": "Наступний тиждень"
+  "Next Week": "Наступний тиждень",
+  "API Key (optional)": "API-ключ (необов'язково)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "У BookOrbit 3.8.0 або новішій версії API-ключ із розділу Налаштування > Обліковий запис > API-ключі транслює аудіокниги без пароля облікового запису. Виберіть «Читання й запис», щоб позиція прослуховування синхронізувалася.",
+  "Could not sign in to BookOrbit for audiobooks": "Не вдалося увійти в BookOrbit для аудіокниг"
 }

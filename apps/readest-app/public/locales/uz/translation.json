@@ -2843,5 +2843,8 @@
   "Filter voices": "Ovozlarni filtrlash",
   "Plain placeholder covers": "Oddiy oʻrinbosar muqovalar",
   "Previous Week": "Oldingi hafta",
-  "Next Week": "Keyingi hafta"
+  "Next Week": "Keyingi hafta",
+  "API Key (optional)": "API kalit (ixtiyoriy)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 yoki undan keyingi versiyada Sozlamalar > Hisob > API kalitlar bo‘limidan olingan API kalit audiokitoblarni hisob parolisiz oqim tarzida eshittiradi. Tinglash joyingiz sinxronlanishi uchun O‘qish va yozish’ni tanlang.",
+  "Could not sign in to BookOrbit for audiobooks": "Audiokitoblar uchun BookOrbit’ga kirib bo‘lmadi"
 }

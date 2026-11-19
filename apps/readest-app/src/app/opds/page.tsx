@@ -719,6 +719,7 @@ export default function BrowserPage() {
                         serverUrl: settings.bookorbit!.serverUrl,
                         username: settings.bookorbit!.username,
                         password: settings.bookorbit!.password,
+                        apiKey: settings.bookorbit!.apiKey,
                         customHeaders: settings.bookorbit!.customHeaders,
                         allowSelfSignedCert: allowsSelfSignedCert(settings.bookorbit!),
                       },

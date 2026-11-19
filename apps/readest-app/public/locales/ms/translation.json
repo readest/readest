@@ -2770,5 +2770,8 @@
   "Filter voices": "Tapis suara",
   "Plain placeholder covers": "Kulit pemegang tempat ringkas",
   "Previous Week": "Minggu sebelumnya",
-  "Next Week": "Minggu seterusnya"
+  "Next Week": "Minggu seterusnya",
+  "API Key (optional)": "Kunci API (pilihan)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "Pada BookOrbit 3.8.0 atau lebih baharu, kunci API daripada Tetapan > Akaun > Kunci API menstrim buku audio tanpa kata laluan akaun anda. Pilih Baca dan tulis supaya kedudukan mendengar anda disegerakkan.",
+  "Could not sign in to BookOrbit for audiobooks": "Tidak dapat log masuk ke BookOrbit untuk buku audio"
 }

@@ -2770,5 +2770,8 @@
   "Filter voices": "กรองเสียง",
   "Plain placeholder covers": "ปกตัวยึดตำแหน่งแบบเรียบ",
   "Previous Week": "สัปดาห์ก่อนหน้า",
-  "Next Week": "สัปดาห์ถัดไป"
+  "Next Week": "สัปดาห์ถัดไป",
+  "API Key (optional)": "คีย์ API (ไม่บังคับ)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "ใน BookOrbit 3.8.0 ขึ้นไป คีย์ API จาก การตั้งค่า > บัญชี > คีย์ API จะสตรีมหนังสือเสียงได้โดยไม่ต้องใช้รหัสผ่านบัญชีของคุณ เลือก อ่านและเขียน เพื่อให้ตำแหน่งการฟังของคุณซิงค์",
+  "Could not sign in to BookOrbit for audiobooks": "ไม่สามารถลงชื่อเข้าใช้ BookOrbit สำหรับหนังสือเสียงได้"
 }
