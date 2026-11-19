@@ -2,11 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import { AUTH_REQUEST_TIMEOUT_MS, withAuthRequestTimeout } from '@/utils/authRequestTimeout';
 
-// A request that never gets an answer and only ends when its signal aborts,
-// like fetch() does.
-const unanswered = (_input: RequestInfo | URL, init?: RequestInit) =>
+// A request that never gets an answer and only ends when a signal aborts it
+// after the call: the signal in init or, failing that, the Request's own.
+const unanswered = (input: RequestInfo | URL, init?: RequestInit) =>
   new Promise<Response>((_, reject) => {
-    init?.signal?.addEventListener('abort', () => reject(init.signal!.reason));
+    const signal = init?.signal ?? (input instanceof Request ? input.signal : undefined);
+    signal?.addEventListener('abort', () => reject(signal.reason));
   });
 
 // An answer whose headers arrive but whose body stops halfway. Like fetch(),
