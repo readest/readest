@@ -119,9 +119,11 @@ export const isValidLang = (lang?: string) => {
   return iso6392.some((l) => l.iso6391 === code || l.iso6392B === code || l.iso6392T === code);
 };
 
+// Converts the base subtag and keeps any region: `zho-CN` → `zh-CN`.
 export const code6392to6391 = (code: string): string => {
-  const lang = iso6392.find((l) => l.iso6392B === code || l.iso6392T === code);
-  return lang?.iso6391 || '';
+  const [base, ...rest] = code.split('-');
+  const lang = iso6392.find((l) => l.iso6392B === base || l.iso6392T === base);
+  return lang?.iso6391 ? [lang.iso6391, ...rest].join('-') : '';
 };
 
 const commonIndivToMacro: Record<string, string> = {

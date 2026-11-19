@@ -308,6 +308,12 @@ describe('code6392to6391', () => {
     expect(code6392to6391('fas')).toBe('fa');
   });
 
+  it('should convert the base of a regional ISO 639-2 tag and keep the region', () => {
+    expect(code6392to6391('zho-CN')).toBe('zh-CN');
+    expect(code6392to6391('chi-CN')).toBe('zh-CN');
+    expect(code6392to6391('fra-CA')).toBe('fr-CA');
+  });
+
   it('should return empty string for unknown codes', () => {
     expect(code6392to6391('xyz')).toBe('');
     expect(code6392to6391('qqq')).toBe('');
