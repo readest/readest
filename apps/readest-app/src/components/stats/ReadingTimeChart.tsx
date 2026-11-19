@@ -25,14 +25,14 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
 
   const locale = getLocale();
   const today = new Date();
+  const todayKey = toDateKey(today);
   // A reading dated after today (from a device whose clock runs ahead) doesn't count yet.
-  const bars = getReadingBars(daily, range, period).map((bar) =>
-    bar.date > today ? { ...bar, seconds: 0 } : bar,
-  );
+  const pastDaily = new Map([...daily].filter(([key]) => key <= todayKey));
+  const bars = getReadingBars(pastDaily, range, period);
   const start = bars[0]!.date;
   const end = shiftPeriod(range, start, 1);
   const isCurrent = end > today;
-  const firstKey = [...daily.keys(), toDateKey(today)].sort()[0]!;
+  const firstKey = [...pastDaily.keys(), todayKey].sort()[0]!;
   // Days not yet come can't be selected, and the average leaves them out.
   const lastIndex = bars.filter((bar) => bar.date <= today).length - 1;
   const daysEnd = isCurrent

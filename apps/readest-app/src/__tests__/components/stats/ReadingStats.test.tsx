@@ -114,6 +114,9 @@ describe('ReadingTimeChart calendar periods', () => {
     expect(container.querySelector<HTMLElement>('[data-index="2"] > span')!.style.height).toBe(
       '100%',
     );
+    // October's bar is the current month: it holds 10-16 and 10-20, not 10-23.
+    fireEvent.click(screen.getByRole('radio', { name: 'Year' }));
+    expect(screen.getByRole('status').textContent).toMatch(/^40mDaily average/);
   });
 
   it('does not select days that have not come yet', () => {
