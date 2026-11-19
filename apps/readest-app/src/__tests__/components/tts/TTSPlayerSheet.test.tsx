@@ -93,6 +93,7 @@ vi.mock('@/services/tts/voicePreview', () => ({
   suspendReadingForPreview: preview.suspend,
   playVoicePreview: preview.play,
   READEST_TTS_ENGINE: 'readest-tts',
+  XUNFEI_TTS_ENGINE: 'xunfei-tts',
 }));
 
 // Premium gating for the offline-audio row. Defaults to a signed-in premium
@@ -631,6 +632,136 @@ describe('TTSPlayerSheet', () => {
     fireEvent.click(await waitFor(() => screen.getByText('Guy')));
     expect(props.onSetVoice).toHaveBeenCalledWith('guy', 'en-US', false);
     expect(viewSettings['ttsVoice']).toBe('guy');
+  });
+
+  test('voice view shows the engine picker and the voice filter', async () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    expect(screen.getByLabelText('Voice Engine')).toBeTruthy();
+    // Groups load async; 'All' plus one engine once they arrive.
+    await waitFor(() => screen.getByText('Guy'));
+    const select = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    expect(select?.querySelectorAll('option').length).toBe(2);
+    expect(screen.getByLabelText('Filter voices')).toBeTruthy();
+  });
+
+  test('the voice filter narrows the list by name', async () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.change(await waitFor(() => screen.getByLabelText('Filter voices')), {
+      target: { value: 'Guy' },
+    });
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.queryByText('Ava')).toBeNull();
+  });
+
+  test('picking an engine narrows the voice list to that group', async () => {
+    const twoEngines = [
+      ...voiceGroups,
+      {
+        id: 'xunfei',
+        name: 'Xunfei Speech',
+        engine: 'xunfei-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    render(
+      <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
+    );
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Aseng'));
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.queryByText('Aseng')).toBeNull();
+  });
+
+  test('the voice view opens on every engine, like the voice library', async () => {
+    const twoEngines = [
+      ...voiceGroups,
+      {
+        id: 'xunfei',
+        name: 'Xunfei Speech',
+        engine: 'xunfei-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    render(
+      <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
+    );
+    const engineSelect = () =>
+      screen
+        .getByLabelText('Voice Engine')
+        .parentElement?.parentElement?.querySelector('select') as HTMLSelectElement;
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Aseng'));
+    fireEvent.change(engineSelect(), { target: { value: 'xunfei-tts/xunfei' } });
+    fireEvent.change(screen.getByLabelText('Filter voices'), { target: { value: 'Ase' } });
+    expect(screen.queryByText('Guy')).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Go Back'));
+    fireEvent.click(screen.getByLabelText('Voice'));
+    expect(engineSelect().value).toBe('');
+    expect((screen.getByLabelText('Filter voices') as HTMLInputElement).value).toBe('');
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.getByText('Aseng')).toBeTruthy();
+  });
+
+  test('escape in the filter field does not dismiss the player sheet', async () => {
+    const props = makeProps();
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Ava'));
+    fireEvent.keyDown(screen.getByLabelText('Filter voices'), { key: 'Escape' });
+    expect(props.onClose).not.toHaveBeenCalled();
+  });
+
+  test('the gender tab survives an engine switch and genderless groups stay visible', async () => {
+    const engines = [
+      voiceGroups[0],
+      {
+        id: 'custom',
+        name: 'My Service',
+        engine: 'custom-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+      {
+        id: 'maleonly',
+        name: 'Male Only',
+        engine: 'male-tts',
+        voices: [
+          { id: 'male1', name: 'MaleOne', lang: 'en-US', disabled: false, gender: 'male' as const },
+        ],
+      },
+    ];
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(engines) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Guy'));
+    fireEvent.click(screen.getByRole('radio', { name: 'Female' }));
+    expect(screen.getByText('Ava')).toBeTruthy();
+    expect(screen.queryByText('Guy')).toBeNull();
+
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    // The genderless engine has no gender metadata; its voices must still
+    // list although the retained tab is Female and the tabs are hidden.
+    fireEvent.change(engineSelect!, { target: { value: 'custom-tts/custom' } });
+    await waitFor(() => screen.getByText('Aseng'));
+    // An engine with only male voices must not hide behind the retained
+    // Female tab either: its voices stay listed, with "All" shown selected.
+    fireEvent.change(engineSelect!, { target: { value: 'male-tts/maleonly' } });
+    await waitFor(() => screen.getByText('MaleOne'));
+    expect(screen.getByRole('radio', { name: 'All' }).getAttribute('aria-checked')).toBe('true');
+    // Back to the gendered engine: the retained Female tab narrows it again.
+    fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
+    expect(screen.getByText('Ava')).toBeTruthy();
+    expect(screen.queryByText('Guy')).toBeNull();
   });
 
   test('timer button drills into the timer list and selects a timeout', async () => {
