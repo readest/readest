@@ -116,11 +116,11 @@ export const isValidLang = (lang?: string) => {
   if (typeof lang !== 'string') return false;
   if (['und', 'mul', 'mis', 'zxx'].includes(lang)) return false;
   const code = normalizedLangCode(lang);
-  return iso6392.some((l) => l.iso6391 === code || l.iso6392B === code);
+  return iso6392.some((l) => l.iso6391 === code || l.iso6392B === code || l.iso6392T === code);
 };
 
 export const code6392to6391 = (code: string): string => {
-  const lang = iso6392.find((l) => l.iso6392B === code);
+  const lang = iso6392.find((l) => l.iso6392B === code || l.iso6392T === code);
   return lang?.iso6391 || '';
 };
 
@@ -143,7 +143,9 @@ export const code6393to6391 = (code: string): string => {
 
 export const getLanguageName = (code: string): string => {
   const lang = normalizedLangCode(code);
-  const language = iso6392.find((l) => l.iso6391 === lang || l.iso6392B === lang);
+  const language = iso6392.find(
+    (l) => l.iso6391 === lang || l.iso6392B === lang || l.iso6392T === lang,
+  );
   return language ? language.name : lang;
 };
 

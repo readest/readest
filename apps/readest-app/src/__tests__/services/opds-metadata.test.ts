@@ -143,6 +143,18 @@ describe('applyOPDSMetadata', () => {
     expect(book.author).toContain('John Smith');
   });
 
+  it('derives primaryLanguage from an ISO 639-2/T feed code (#7649)', () => {
+    // Calibre-Web sends <dcterms:language>zho</dcterms:language>; Read Aloud
+    // picks its voices from primaryLanguage.
+    const zh = createBook();
+    applyOPDSMetadata(zh, { language: 'zho' });
+    expect(zh.primaryLanguage).toBe('zh');
+
+    const fr = createBook();
+    applyOPDSMetadata(fr, { language: ['fra'] });
+    expect(fr.primaryLanguage).toBe('fr');
+  });
+
   it('keeps derived fields the feed says nothing about', () => {
     const book = createBook();
     // Simulates "Download Again" on a book whose title the user edited: the
