@@ -283,23 +283,20 @@ describe("readest_syncstats", function()
 
     -- The open book's statistics session keeps page events in memory until
     -- its next insertDB. When a pull deletes that book's statistics (#7494),
-    -- those read before the deletion must not be written afterwards, and the
-    -- page being read counts only from the deletion on.
-    it("covers the open book's unwritten events when its statistics are deleted", function()
-        local conn = SQ3.open(statsDbPath())
-        conn:exec("INSERT INTO book (title, authors, md5) VALUES ('Open', 'A', 'md5-open');")
-        conn:close()
-        -- a stand-in for KOReader's ReaderStatistics (times need not be in
-        -- reading order here): insertDB writes tuples that have a duration
-        -- and keeps the current page's start, like the real one
-        local statistics = { id_curr_book = 1, doc_md5 = "md5-open", curr_page = 7, flushed = 0 }
-        statistics.page_stat = {
+    -- those read before the deletion must never be written afterwards, and
+    -- the page being read counts only from the deletion on.
+    -- A stand-in for KOReader's ReaderStatistics: insertDB writes tuples that
+    -- have a duration and keeps the current page's start, like the real one,
+    -- and does nothing while the book's statistics are frozen.
+    local function openSession(frozen)
+        local st = { id_curr_book = 1, doc_md5 = "md5-open", curr_page = 7, frozen = frozen }
+        st.page_stat = { -- times need not be in reading order here
             [5] = { { 1000, 30 } }, -- read before the deletion
             [6] = { { 2100, 30 } }, -- read after it
             [7] = { { 1990, 0 } },  -- being read since before it
         }
-        function statistics:insertDB()
-            self.flushed = self.flushed + 1
+        function st:insertDB()
+            if self.frozen then return end
             local c = SQ3.open(statsDbPath())
             for page, list in pairs(self.page_stat) do
                 for _, t in ipairs(list) do
@@ -313,35 +310,47 @@ describe("readest_syncstats", function()
             local cur = self.page_stat[self.curr_page]
             self.page_stat = { [self.curr_page] = { { cur[#cur][1], 0 } } }
         end
+        local conn = SQ3.open(statsDbPath())
+        conn:exec("INSERT INTO book (title, authors, md5) VALUES ('Open', 'A', 'md5-open');")
+        conn:close()
+        return st
+    end
+    local function pullDeletionOf(md5, statistics)
         local response = {
-            statBooks = { { book_hash = "md5-open", title = "Open", authors = "A", deleted_at_ms = 2000500 } },
+            statBooks = { { book_hash = md5, title = "T", authors = "A", deleted_at_ms = 2000500 } },
             statPages = {},
         }
         local client = { pullChanges = function(_, _params, cb) cb(true, response, 200) end }
-
         SyncStats:pull({ stats_pull_cursor = 0 }, client, false, { statistics = statistics })
+    end
+    local function storedStarts()
+        local c = SQ3.open(statsDbPath())
+        local starts = c:rowexec("SELECT GROUP_CONCAT(start_time) FROM page_stat_data;")
+        c:close()
+        return tostring(starts)
+    end
 
-        local conn2 = SQ3.open(statsDbPath())
-        local starts = conn2:rowexec("SELECT GROUP_CONCAT(start_time) FROM page_stat_data;")
-        conn2:close()
-        assert.are.equal(1, statistics.flushed)
-        assert.are.equal("2100", tostring(starts))
+    it("covers the open book's unwritten events when its statistics are deleted", function()
+        local statistics = openSession(false)
+        pullDeletionOf("md5-open", statistics)
+        assert.are.equal("2100", storedStarts())
+        assert.are.equal(2001, statistics.page_stat[7][1][1])
+    end)
+
+    it("covers them while the open book's statistics are frozen, once unfrozen", function()
+        local statistics = openSession(true)
+        pullDeletionOf("md5-open", statistics)
+        statistics.frozen = false
+        statistics:insertDB()
+        assert.are.equal("2100", storedStarts())
         assert.are.equal(2001, statistics.page_stat[7][1][1])
     end)
 
     it("leaves the open book's session alone when another book is deleted", function()
-        local statistics = { id_curr_book = 1, doc_md5 = "md5-open", curr_page = 7, flushed = 0,
-            page_stat = { [7] = { { 1990, 0 } } } }
-        function statistics:insertDB() self.flushed = self.flushed + 1 end
-        local response = {
-            statBooks = { { book_hash = "md5-other", title = "O", authors = "A", deleted_at_ms = 2000500 } },
-            statPages = {},
-        }
-        local client = { pullChanges = function(_, _params, cb) cb(true, response, 200) end }
-
-        SyncStats:pull({ stats_pull_cursor = 0 }, client, false, { statistics = statistics })
-
-        assert.are.equal(0, statistics.flushed)
+        local statistics = openSession(false)
+        pullDeletionOf("md5-other", statistics)
+        assert.are.equal("nil", storedStarts())
+        assert.are.equal(1000, statistics.page_stat[5][1][1])
         assert.are.equal(1990, statistics.page_stat[7][1][1])
     end)
 

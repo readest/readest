@@ -331,7 +331,9 @@ function SyncStats:pull(settings, client, interactive, ui)
                 -- The open book's session keeps page events in memory until its
                 -- next insertDB. When this pull deletes that book's statistics
                 -- (#7494), write them first so the deletion covers those read
-                -- before it, and count the page being read from the deletion on.
+                -- before it; then drop the ones insertDB kept (all of them while
+                -- the book's statistics are frozen), counting the page being
+                -- read from the deletion on.
                 local live_before
                 if live_book_id and st.doc_md5 then
                     for _, b in ipairs(response.statBooks or {}) do
@@ -342,9 +344,17 @@ function SyncStats:pull(settings, client, interactive, ui)
                 if live_before then st:insertDB() end
                 self:applyRemote(response.statBooks, response.statPages, live_book_id)
                 if live_before then
-                    local cur = st.page_stat and st.page_stat[st.curr_page]
-                    local t = cur and cur[#cur]
-                    if t and t[1] < live_before then t[1] = live_before end
+                    for page, list in pairs(st.page_stat or {}) do
+                        for i = #list, 1, -1 do
+                            if list[i][1] < live_before then
+                                if page == st.curr_page and i == #list then
+                                    list[i][1] = live_before
+                                else
+                                    table.remove(list, i)
+                                end
+                            end
+                        end
+                    end
                 end
                 total_pages = total_pages + npages
                 local newest = since
