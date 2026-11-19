@@ -19,6 +19,9 @@ interface TextEditorProps {
   onSelect?: (start: number, end: number) => void;
   onCompositionStart?: () => void;
   onCompositionEnd?: (value: string) => void;
+  // Read Aloud holds the view still while this editor has focus (#6837). The
+  // Notebook turns it off: it stays open while the page turns (#7663).
+  holdsReadAloud?: boolean;
 }
 
 export interface TextEditorRef {
@@ -49,6 +52,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
       onSelect,
       onCompositionStart,
       onCompositionEnd,
+      holdsReadAloud = true,
     },
     ref,
   ) => {
@@ -141,8 +145,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
           'content font-size-sm',
           className,
         )}
-        // Read Aloud stops following the voice while a note editor has focus.
-        data-note-editor=''
+        data-note-editor={holdsReadAloud ? '' : undefined}
         dir='auto'
         rows={minRows}
         spellCheck={spellCheck}

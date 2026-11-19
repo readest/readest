@@ -53,10 +53,10 @@ const PAGE_FOLLOW_INTERVAL_MS = 200;
 // stall rather than after it, slow enough to cost nothing over a long session.
 const TTS_BUFFERING_POLL_MS = 400;
 
-// Following the voice turns the page and focuses the spoken text inside the
-// book's iframe, which takes the caret (and an IME composition) out of a note
-// being typed and closes its popup (#6837). The view holds still while a note
-// editor has focus; the next mark catches up once it loses focus.
+// Following the voice turns the page, and a page turn closes the note popup
+// (#6837). The view holds still while a marked note editor has focus; the next
+// mark catches up once it loses focus. The Notebook is left unmarked: it stays
+// open beside the page, so the page keeps up with the voice (#7663).
 const isTypingNote = () => !!document.activeElement?.hasAttribute('data-note-editor');
 
 // Text the book hides is still read aloud: a display:none long description

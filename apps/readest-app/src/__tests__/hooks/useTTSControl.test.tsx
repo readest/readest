@@ -309,6 +309,9 @@ import { ttsMediaBridge } from '@/services/tts/ttsMediaBridge';
 import { eventDispatcher } from '@/utils/event';
 import { pageBreakFraction } from '@/utils/ttsPageFollow';
 import { useReaderStore } from '@/store/readerStore';
+import { useNotebookDocumentStore } from '@/store/notebookDocumentStore';
+import NotebookEditor from '@/app/reader/components/notebook/NotebookEditor';
+import AnnotationNoteEditor from '@/app/reader/components/annotator/AnnotationNoteEditor';
 
 const getSetTTSEnabledMock = () =>
   (
@@ -1311,6 +1314,48 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
       });
 
       expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // The hold is for editors a page turn takes away: the note popup closes on
+  // relocation. The Notebook stays open beside the page, and the book no
+  // longer takes the caret from a text field, so the page keeps up with the
+  // voice while it is typed in (#7663).
+  describe('which note editors hold the view (#7663)', () => {
+    const followMark = async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => new Range() });
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+    };
+
+    it('turns the page with the voice while the Notebook is typed in', async () => {
+      useNotebookDocumentStore.getState().hydrate('book', '', null);
+      render(
+        <NotebookEditor
+          bookKey='book-1'
+          handleOpenAnnotations={vi.fn()}
+          excerpts={[]}
+          onDeleteExcerpt={vi.fn()}
+        />,
+      );
+      const notebook = screen.getByRole('textbox', { name: 'Notebook' });
+      notebook.focus();
+      expect(document.activeElement).toBe(notebook);
+
+      await followMark();
+
+      expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledTimes(1);
+    });
+
+    it('holds the view while the note popup is typed in', async () => {
+      render(<AnnotationNoteEditor value='' onSave={vi.fn()} onCancel={vi.fn()} />);
+      expect(document.activeElement?.localName).toBe('textarea');
+
+      await followMark();
+
+      expect(mockView.renderer.scrollToAnchor).not.toHaveBeenCalled();
     });
   });
 });
