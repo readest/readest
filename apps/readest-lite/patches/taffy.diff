@@ -1,0 +1,14 @@
+diff -ruN taffy/src/compute/block.rs taffy/src/compute/block.rs
+--- taffy/src/compute/block.rs
++++ taffy/src/compute/block.rs
+@@ -1850,7 +1850,9 @@
+                     item.overflow,
+                     item.contain,
+                     &overflow_container,
+-                    resolved_margin.map(|value| value.min(0.0)),
++                    // The block-end margin edge reaches the margin collapsed through the item from
++                    // its own last child, as in Chromium: a scroller scrolls far enough to show it.
++                    Rect { bottom: bottom_margin_set.resolve(), ..resolved_margin.map(|value| value.min(0.0)) },
+                 ));
+             }
+ 

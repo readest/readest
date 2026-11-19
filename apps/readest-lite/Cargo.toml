@@ -33,6 +33,10 @@ servo_arc = { path = "vendor/stylo/servo_arc" }
 to_shmem = { path = "vendor/stylo/to_shmem" }
 to_shmem_derive = { path = "vendor/stylo/to_shmem_derive" }
 
+# Taffy at Blitz's pin, with layout fixes.
+[patch."https://github.com/DioxusLabs/taffy"]
+taffy = { path = "vendor/taffy" }
+
 # Dependencies optimized in dev builds: an -O0 QuickJS takes minutes to run Readest's bundle.
 [profile.dev.package."*"]
 opt-level = 2
