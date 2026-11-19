@@ -491,12 +491,14 @@ describe('CustomDictionaries — context dictionary (#5544)', () => {
     expect(screen.queryByRole('combobox', { name: 'AI Translator' })).toBeNull();
   });
 
-  it('cannot be enabled without premium', () => {
+  it('cannot be enabled without premium, and says so with a Premium badge', () => {
     platform.premium = false;
     useCustomTranslatorStore.setState({ translators: [llm('a')], loaded: true });
     seedSettings(contextSettings);
     const { container } = render(<CustomDictionaries onBack={() => {}} />);
     expect(getToggles(container)[0]!.disabled).toBe(true);
+    expect(screen.getByText('Premium', { exact: true })).toBeTruthy();
+    expect(screen.queryByText('Requires Readest Premium.')).toBeNull();
   });
 
   it('saves custom dictionary instructions and an output limit independently of translation', async () => {

@@ -2539,7 +2539,6 @@
   "— or —": "— অথবা —",
   "Visit {{url}} and enter": "<1>{{url}}</1><2> এ যান এবং কোডটি লিখুন</2>",
   "Context Dictionary": "প্রসঙ্গ অভিধান",
-  "Requires Readest Premium.": "Readest Premium প্রয়োজন।",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "এটি ব্যবহার করতে কাস্টম অনুবাদক-এ একটি OpenAI-সামঞ্জস্যপূর্ণ অনুবাদক যোগ করুন।",
   "Explains the selected text as it is used in the passage, in your translation target language.": "নির্বাচিত লেখাটি অনুচ্ছেদে যেভাবে ব্যবহৃত হয়েছে, তা আপনার অনুবাদের লক্ষ্য ভাষায় ব্যাখ্যা করে।",
   "AI Translator": "AI অনুবাদক",

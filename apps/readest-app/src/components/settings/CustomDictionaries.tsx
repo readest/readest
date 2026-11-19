@@ -480,10 +480,10 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           id,
           label: builtinLabel(id, _),
           kind: 'builtin',
+          badge: hasPremium ? undefined : _('Premium'),
           disabled: !contextTranslator,
-          reason: !hasPremium
-            ? _('Requires Readest Premium.')
-            : !contextTranslator
+          reason:
+            hasPremium && !contextTranslator
               ? _('Add an OpenAI-compatible translator in Custom Translators to use it.')
               : undefined,
         });
