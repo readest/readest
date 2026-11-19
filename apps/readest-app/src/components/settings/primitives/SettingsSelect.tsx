@@ -26,15 +26,17 @@ const isPickerOpen = (select: HTMLSelectElement) => {
 };
 
 /**
- * Trailing-edge select for use inside `<SettingsRow>` / `<BoxedList>`. The
- * daisyui `<select>` has its own chrome suppressed (`border-0! bg-transparent!
- * bg-none! focus:outline-hidden! ...`); the wrapper carries a subtle fill so
- * the value and the `<MdArrowDropDown>` chevron read as one button, like the
- * font pickers. The chevron is drawn over the select's end padding with
+ * Chromeless trailing-edge select for use inside `<SettingsRow>` /
+ * `<BoxedList>`. Renders the daisyui `<select>` element with all chrome
+ * suppressed (`border-0! bg-transparent! bg-none! focus:outline-hidden! ...`)
+ * plus a real `<MdArrowDropDown>` icon at the cell's trailing edge so the
+ * chevron lands at the same X as toggles in adjacent rows. The chevron is
+ * pulled back over the select's end padding (`pe-6!`, `-ms-5`) with
  * `pointer-events-none`, so a press on it lands on the select (#7650) and the
- * native picker opens and closes as usual.
+ * native picker opens and closes as usual, at the same position as before.
  *
- * Hover / focus state is signaled by the wrapper's bg-shift — no rings, per
+ * Hover / focus state is signaled by a wrapper bg-shift
+ * (`hover:bg-base-200/60 focus-within:bg-base-200/60`) — no rings, per
  * DESIGN.md §5's "Why no ring?" rule.
  */
 const SettingsSelect: React.FC<SettingsSelectProps> = ({
@@ -61,12 +63,11 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
   }, []);
 
   return (
-    // The wrapper is the visible control (fill and chevron), so the picker
-    // anchors to it rather than to the bare <select>; the name is scoped so a
-    // page full of these rows resolves each picker to its own wrapper rather
-    // than to the last one in tree order. `position-anchor` is applied to
-    // `::picker(select)` in globals.css.
-    <div className='[anchor-name:--settings-select] [anchor-scope:--settings-select] eink-bordered bg-base-200/70 hover:bg-base-300/70 focus-within:bg-base-300/70 relative inline-flex max-w-[60%] items-center rounded-md'>
+    // Anchor the picker to the wrapper -- the control the user sees, chevron
+    // included -- and scope the name so a page full of these rows resolves each
+    // picker to its own wrapper rather than to the last one in tree order.
+    // `position-anchor` is applied to `::picker(select)` in globals.css.
+    <div className='[anchor-name:--settings-select] [anchor-scope:--settings-select] flex max-w-[60%] items-center rounded-md focus-within:bg-transparent hover:bg-transparent'>
       {/* No `appearance-none!` here: daisyUI's `.select` already hides the
           native arrow and, where supported, opts into `appearance: base-select`
           so the option popup is painted by the page in the app theme instead
@@ -92,7 +93,7 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
       </select>
       <MdArrowDropDown
         aria-hidden='true'
-        className='text-base-content/55 pointer-events-none absolute end-0.5 h-5 w-5'
+        className='text-base-content/55 pointer-events-none -ms-5 h-5 w-5 shrink-0'
       />
     </div>
   );

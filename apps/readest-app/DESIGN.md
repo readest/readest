@@ -572,14 +572,13 @@ When a control sits inside a bordered card, it shouldn't carry its own
 border or fill. The card supplies the visual boundary; the control just
 sits on the row.
 
-- **Selects:** use `SettingsSelect`. The `<select>` itself gets
+- **Selects:** drop `eink-bordered`. Add
   `bg-transparent! bg-none!` to suppress daisyui's background chevron (its
   `.select` already hides the native arrow; never add `appearance-none!`, that
   would cancel the `appearance: base-select` popup that keeps the options
-  themed instead of OS-drawn, #5587). The one exception to "no fill": its
-  wrapper carries a subtle `bg-base-200/70` fill plus `eink-bordered`, so the
-  value and a real `<MdArrowDropDown>` read as one button, like the font
-  pickers — see "End-aligned values" below.
+  themed instead of OS-drawn, #5587). Render a real `<MdArrowDropDown>`
+  icon at the cell's trailing edge for the affordance — see "End-aligned
+  values" below.
 - **Inputs:** drop `eink-bordered`. Add `bg-transparent!`
   with `hover:bg-base-200/60! focus:bg-base-200/60!` so the field still
   signals interactability. Use `text-end` and `pe-0!` so the value sits
@@ -600,31 +599,30 @@ The trap: daisyui's select renders its chevron via background-image at
 select's right edge. So if the toggle in row 1 ends at the row's `pe-4`
 edge, the chevron in row 2 ends 16px before that — visibly misaligned.
 
-**Fix:** suppress daisyui's bg-image chevron and draw an explicit icon over
-the select's own end padding (`pe-6!`), absolutely positioned with
-`pointer-events-none`. The chevron then sits inside the select's hit area: a
-press on it opens the native picker, and a second press closes it (#7650 —
-a chevron drawn *outside* the select looked like a button and did nothing).
-The wrapper is `inline-flex` so it hugs the select, and its fill is the
-control's visible edge.
-
-The select's own daisyui focus chrome (outline + box-shadow + ring) is
-suppressed; **no focus ring** on controls inside the boxed list — focus
-state is signaled by the wrapper's bg-shift instead (hover and
-focus-within both lift the fill to `bg-base-300/70`). Rings would compete
+**Fix:** suppress daisyui's bg-image chevron and render an explicit icon at
+the cell's trailing edge. The select's own daisyui focus chrome (outline +
+box-shadow + ring) is suppressed; **no focus ring** on controls inside the
+boxed list — focus state is signaled by a subtle wrapper bg-shift instead
+(hover and focus-within both lift to `bg-base-200/60`). Rings would compete
 with the card's own border and double-stack with adjacent rows.
 
 ```tsx
-<div className='eink-bordered bg-base-200/70 hover:bg-base-300/70 focus-within:bg-base-300/70 relative inline-flex max-w-[60%] items-center rounded-md'>
+<div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex max-w-[60%] items-center rounded-md'>
   <select className='select h-9 min-w-0 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-6! ps-2! text-end text-sm focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'>
     {/* options */}
   </select>
   <MdArrowDropDown
     aria-hidden='true'
-    className='text-base-content/55 pointer-events-none absolute end-0.5 h-5 w-5'
+    className='text-base-content/55 pointer-events-none -ms-5 h-5 w-5 shrink-0'
   />
 </div>
 ```
+
+The chevron is pulled back over the select's own end padding (`pe-6!` on the
+select, `-ms-5` on the icon), so it sits at the same X as before but inside
+the select's hit area: with `pointer-events-none`, a press on it lands on the
+select and opens the native picker, and a second press closes it (#7650 — a
+chevron drawn *beside* the select looked like a button and did nothing).
 
 Escape in the open picker must close only the picker. `Dialog` listens for
 Escape on its `<dialog>` element natively, which runs before any React
@@ -638,8 +636,9 @@ listener while the picker is `:open`.
 > four properties. Missing any of them — especially `border-0` — leaves a
 > visible focus border leaking through.
 
-The select's fill now ends at the same X as the toggle's trailing edge in
-adjacent rows, because both are flush with the row's `pe-4` padding.
+The `<MdArrowDropDown>` icon's trailing edge now lives at the same X as the
+toggle's trailing edge in adjacent rows, because both are flush with the
+row's `pe-4` padding.
 
 For inputs, no wrapper is needed — the input is one element, so put the
 hover/focus bg directly on it. Suppress daisyui's own focus chrome the
