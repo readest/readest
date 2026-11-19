@@ -572,13 +572,12 @@ When a control sits inside a bordered card, it shouldn't carry its own
 border or fill. The card supplies the visual boundary; the control just
 sits on the row.
 
-- **Selects:** drop `eink-bordered`. Add
-  `bg-transparent! bg-none!` to suppress daisyui's background chevron (its
-  `.select` already hides the native arrow; never add `appearance-none!`, that
-  would cancel the `appearance: base-select` popup that keeps the options
-  themed instead of OS-drawn, #5587). Render a real `<MdArrowDropDown>`
-  icon at the cell's trailing edge for the affordance — see "End-aligned
-  values" below.
+- **Selects:** use `SettingsSelect` — one slightly raised button
+  (`bg-base-200/70`, `hover:bg-base-300/70`) wrapping the value and
+  `<MdArrowDropDown>` as a single hit area, like the font pickers. A hidden
+  native `<select>` still owns the value and `onChange` contract. Standalone
+  daisyUI selects (AI model, WebDAV sort) keep `appearance: base-select` for
+  the themed in-page popup (#5587); never add `appearance-none!` to those.
 - **Inputs:** drop `eink-bordered`. Add `bg-transparent!`
   with `hover:bg-base-200/60! focus:bg-base-200/60!` so the field still
   signals interactability. Use `text-end` and `pe-0!` so the value sits
@@ -594,40 +593,72 @@ The selected value of a select/input MUST end-align (`text-end`). The
 **visible right edge** of every row's value (toggle, chevron icon, input
 text) MUST land at the same X — the row's trailing padding.
 
-The trap: daisyui's select renders its chevron via background-image at
-`calc(100% - 1rem) center`, which floats the glyph 16px _inside_ the
-select's right edge. So if the toggle in row 1 ends at the row's `pe-4`
-edge, the chevron in row 2 ends 16px before that — visibly misaligned.
-
-**Fix:** suppress daisyui's bg-image chevron and render an explicit icon at
-the cell's trailing edge. The select's own daisyui focus chrome (outline +
-box-shadow + ring) is suppressed; **no focus ring** on controls inside the
-boxed list — focus state is signaled by a subtle wrapper bg-shift instead
-(hover and focus-within both lift to `bg-base-200/60`). Rings would compete
-with the card's own border and double-stack with adjacent rows.
+`SettingsSelect` puts the value and the chevron in one button with a subtle
+fill; the menu is anchored to that button's trailing edge so its right edge
+lines up with toggles in adjacent rows. One click opens, a second click on
+the same button dismisses — the native `<select>` popup can't be closed from
+script (`blur()` and synthetic outside clicks don't dismiss it), so the menu
+is painted by the component instead.
 
 ```tsx
-<div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex max-w-[60%] items-center rounded-md'>
-  <select className='select h-9 min-w-0 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-1! ps-2! text-end text-sm focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'>
-    {/* options */}
-  </select>
-  <MdArrowDropDown
-    aria-hidden='true'
-    className='text-base-content/55 pointer-events-none h-5 w-5 shrink-0'
-  />
+<div className='flex max-w-[60%] items-center justify-end'>
+  <div className='relative inline-flex max-w-full'>
+    <button
+      type='button'
+      aria-expanded={open}
+      onClick={() => setOpen((wasOpen) => !wasOpen)}
+      className='flex h-9 max-w-full items-center gap-1 rounded-md bg-base-200/70 px-2 text-end hover:bg-base-300/70'
+    >
+      <span className='min-w-0 truncate text-sm'>{selected.label}</span>
+      <MdArrowDropDown aria-hidden='true' className='h-5 w-5 shrink-0' />
+    </button>
+    {open && (
+      <ul
+        role='listbox'
+        style={menuMaxHeight ? { maxHeight: menuMaxHeight } : undefined}
+        className={`absolute end-0 z-50 max-h-60 min-w-full overflow-auto overscroll-contain rounded-md bg-base-100 p-1 shadow-lg ring-1 ring-base-300 ${
+          dropUp ? 'bottom-full mb-1' : 'top-full mt-1'
+        }`}
+      >
+        {/* options */}
+      </ul>
+    )}
+  </div>
+  <select className='sr-only' value={value} onChange={onChange} />
 </div>
 ```
 
-> **Why so many `!` overrides?** daisyui's `.select` and `.input` apply
-> `border-width: 1px` + `border-color` (base-content/20 at rest, `var(--color-base-content)` on
-> focus), plus `outline`, `box-shadow`, and `ring` chrome on focus. To make
-> the control truly chromeless inside a boxed list, you need to kill all
-> four properties. Missing any of them — especially `border-0` — leaves a
-> visible focus border leaking through.
+The chevron keeps the existing `MdArrowDropDown` glyph and 20px size. The
+`sr-only` `<select>` stays in the tree as the labelled `combobox`: it carries
+the `aria-label`, so assistive tech — and anything that reads or writes the
+control's value — still sees a select, while the button is what the pointer and
+the keyboard drive (`aria-haspopup="listbox"` + `aria-expanded`, named by the
+value it shows). Every caller keeps its `onChange={(e) => e.target.value}`
+shape. The select is uncontrolled: `defaultValue` on mount, then an effect
+mirrors the `value` prop through the native setter, so a caller that rejects a
+pick and rolls back stays in sync; picking an option likewise writes through
+the setter before dispatching `change`, otherwise React's value tracker
+swallows the event.
 
-The `<MdArrowDropDown>` icon's trailing edge now lives at the same X as the
-toggle's trailing edge in adjacent rows, because both are flush with the
-row's `pe-4` padding.
+The menu has to behave like a native popup, because that is what users
+compare it against:
+
+- **Placement.** Measure against the nearest scrollable ancestor (the settings
+  panel scrolls its own content; the window is not the visible edge). Drop
+  below by default; flip above when the content does not fit below *and* there
+  is more room above.
+- **Long lists.** Clamp to the room left on the chosen side via inline
+  `maxHeight` and scroll inside the menu (`overscroll-contain` so wheeling the
+  list doesn't drag the panel). Options are never clipped against the panel
+  edge, and the 240px `max-h-60` cap still applies when there is plenty of
+  room.
+- **Open on the current value.** A long list must not start at option one when
+  the value sits far down it; centre the selected row on open.
+
+For standalone daisyUI selects and inputs inside a boxed list, suppress the
+focus chrome with `border-0! focus:shadow-none! focus:outline-hidden!
+focus:ring-0!` — missing any of them leaves a visible focus border leaking
+through. `SettingsSelect` needs none of these overrides.
 
 For inputs, no wrapper is needed — the input is one element, so put the
 hover/focus bg directly on it. Suppress daisyui's own focus chrome the

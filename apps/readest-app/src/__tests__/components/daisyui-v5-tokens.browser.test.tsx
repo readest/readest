@@ -6,8 +6,8 @@
  * instead of the OS (#5587: white native popups on Windows dark mode).
  */
 
-import { describe, it, expect, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { themes, applyCustomTheme } from '@/styles/themes';
 import SettingsSelect from '@/components/settings/primitives/SettingsSelect';
 import Select from '@/components/Select';
@@ -155,23 +155,15 @@ describe('daisyUI 5 theme tokens', () => {
   });
 
   it('renders the select picker in-page (#5587)', () => {
-    const { getByTestId, getByLabelText } = render(
-      <>
-        <select data-testid='select' className='select'>
-          <option>x</option>
-        </select>
-        <SettingsSelect
-          value='a'
-          onChange={() => {}}
-          options={[{ value: 'a', label: 'A' }]}
-          ariaLabel='Settings select'
-        />
-      </>,
+    // SettingsSelect paints its own menu now; this guards the plain daisyUI
+    // selects still using the native popup (AI model, WebDAV sort), which must
+    // keep the themed in-page picker rather than falling back to the OS one.
+    const { getByTestId } = render(
+      <select data-testid='select' className='select'>
+        <option>x</option>
+      </select>,
     );
     expect(getComputedStyle(getByTestId('select')).appearance).toBe('base-select');
-    // The settings primitive strips daisyUI's chevron and chrome; it must not
-    // also strip the appearance, or the popup falls back to the OS one.
-    expect(getComputedStyle(getByLabelText('Settings select')).appearance).toBe('base-select');
   });
 
   it('keeps picker options on one line', () => {
@@ -217,15 +209,8 @@ describe('daisyUI 5 theme tokens', () => {
     expect(withoutBaseSelect).toBeLessThanOrEqual(withBaseSelect + 1);
   });
 
-  it('anchors the settings picker to the whole control, chevron included', () => {
-    // SettingsSelect suppresses daisyUI's in-select chevron and renders a
-    // separate 20px MdArrowDropDown *outside* the <select>. The picker's
-    // implicit anchor is the <select>, so it lands short of the control's
-    // visible trailing edge. Measured on device: <select> right 913px, wrapper
-    // right 968px, picker right 910px -- 20px adrift of the chevron the user
-    // reads as the edge of the control. Anchoring to the wrapper lands it at
-    // 965px, flush.
-    const { getByLabelText } = render(
+  it('parks the custom menu at the control trailing edge', () => {
+    const { getByRole } = render(
       <SettingsSelect
         value='a'
         onChange={() => {}}
@@ -233,23 +218,193 @@ describe('daisyUI 5 theme tokens', () => {
         ariaLabel='Anchored select'
       />,
     );
-    const select = getByLabelText('Anchored select');
-    const wrapper = select.parentElement!;
-    const css = (el: Element, prop: string, pseudo?: string) =>
-      getComputedStyle(el as HTMLElement, pseudo)
-        .getPropertyValue(prop)
-        .trim();
+    fireEvent.click(getByRole('button', { name: 'A', expanded: false }));
+    const menu = getByRole('listbox');
+    expect(menu.className).toContain('end-0');
+    expect(menu.className).toContain('top-full');
+  });
 
-    expect(css(wrapper, 'anchor-name')).toBe('--settings-select');
-    // Scoped, so a page full of these rows resolves each picker to its own
-    // wrapper rather than to the last one in tree order.
-    expect(css(wrapper, 'anchor-scope')).toBe('--settings-select');
-    expect(css(select, 'position-anchor', '::picker(select)')).toBe('--settings-select');
+  it('flips the menu above the control when the panel has no room below', () => {
+    // The settings panel is its own scroller, so a select in the last rows
+    // would otherwise draw its menu past the panel edge and stretch the
+    // page's bottom padding. Native selects flip; so does this one.
+    const { getByRole } = render(
+      <div
+        data-testid='panel'
+        style={{
+          position: 'fixed',
+          left: 0,
+          bottom: 0,
+          width: 320,
+          height: 200,
+          overflow: 'auto',
+        }}
+      >
+        <div style={{ height: 160 }} />
+        <SettingsSelect
+          value='a'
+          onChange={() => {}}
+          options={[
+            { value: 'a', label: 'A' },
+            { value: 'b', label: 'B' },
+            { value: 'c', label: 'C' },
+          ]}
+          ariaLabel='Flipped select'
+        />
+        <div style={{ height: 200 }} />
+      </div>,
+    );
+    fireEvent.click(getByRole('button', { name: 'A', expanded: false }));
+
+    const menu = getByRole('listbox');
+    expect(menu.className).toContain('bottom-full');
+    expect(menu.className).not.toContain('top-full');
+  });
+
+  it('scrolls a long list inside the menu instead of clipping it', () => {
+    const options = Array.from({ length: 60 }, (_, i) => ({
+      value: `v${i}`,
+      label: `Option ${i}`,
+    }));
+    const { getByRole, getByTestId } = render(
+      <div
+        data-testid='panel'
+        style={{ position: 'fixed', left: 0, top: 0, width: 320, height: 400, overflow: 'auto' }}
+      >
+        <SettingsSelect value='v0' onChange={() => {}} options={options} ariaLabel='Long select' />
+        <div style={{ height: 600 }} />
+      </div>,
+    );
+    fireEvent.click(getByRole('button', { name: 'Option 0', expanded: false }));
+
+    const menu = getByRole('listbox');
+    const panel = getByTestId('panel').getBoundingClientRect();
+    expect(menu.querySelectorAll('li')).toHaveLength(60);
+    // The resting cap still applies when there is room; the rest scrolls.
+    expect(menu.style.maxHeight).toBe('');
+    expect(menu.clientHeight).toBeLessThanOrEqual(241);
+    expect(menu.scrollHeight).toBeGreaterThan(menu.clientHeight);
+    expect(menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(panel.bottom + 1);
+  });
+
+  it('clamps the menu to the roomier side when neither side fits', () => {
+    const options = Array.from({ length: 60 }, (_, i) => ({
+      value: `v${i}`,
+      label: `Option ${i}`,
+    }));
+    const { getByRole, getByTestId } = render(
+      <div
+        data-testid='panel'
+        style={{
+          position: 'fixed',
+          left: 0,
+          bottom: 0,
+          width: 320,
+          height: 150,
+          overflow: 'auto',
+        }}
+      >
+        <div style={{ height: 100 }} />
+        <SettingsSelect
+          value='v0'
+          onChange={() => {}}
+          options={options}
+          ariaLabel='Clamped select'
+        />
+        <div style={{ height: 300 }} />
+      </div>,
+    );
+    const trigger = getByRole('button', { name: 'Option 0', expanded: false });
+    const triggerBox = trigger.getBoundingClientRect();
+    fireEvent.click(trigger);
+
+    const menu = getByRole('listbox');
+    const panel = getByTestId('panel').getBoundingClientRect();
+    const box = menu.getBoundingClientRect();
+    // Flips up (more room above) and shrinks to that room instead of spilling.
+    expect(box.bottom).toBeLessThanOrEqual(triggerBox.top);
+    expect(box.top).toBeGreaterThanOrEqual(panel.top - 1);
+    expect(box.bottom).toBeLessThanOrEqual(panel.bottom);
+    expect(menu.style.maxHeight).not.toBe('');
+    expect(menu.clientHeight).toBeLessThan(menu.scrollHeight);
+    // Clamped to whole rows, so no option is cut through the middle.
+    const rowHeight = menu.querySelector('li > button')!.clientHeight;
+    const style = getComputedStyle(menu);
+    const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+    expect((menu.clientHeight - padding) % rowHeight).toBe(0);
+    // Every option is still reachable by scrolling the menu.
+    menu.scrollTop = menu.scrollHeight;
+    expect(menu.scrollTop).toBeGreaterThan(0);
+  });
+
+  it('toggles the menu from the value and chevron together', () => {
+    const { getByRole, queryByRole } = render(
+      <SettingsSelect
+        value='a'
+        onChange={() => {}}
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+        ariaLabel='Toggle select'
+      />,
+    );
+    const trigger = getByRole('button', { name: 'A', expanded: false });
+    expect(queryByRole('listbox')).toBeNull();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(trigger);
+    expect(getByRole('listbox')).toBeTruthy();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(trigger);
+    expect(queryByRole('listbox')).toBeNull();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('reports the picked value and closes the menu', () => {
+    const onChange = vi.fn();
+    const { getByRole, queryByRole } = render(
+      <SettingsSelect
+        value='a'
+        onChange={onChange}
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+        ariaLabel='Pick select'
+      />,
+    );
+    fireEvent.click(getByRole('button', { name: 'A', expanded: false }));
+    const optionButtons = getByRole('listbox').querySelectorAll('li button');
+    expect(optionButtons).toHaveLength(2);
+    fireEvent.click(optionButtons[1]!);
+
+    expect(onChange).toHaveBeenCalledOnce();
+    const event = onChange.mock.calls[0]![0] as { target: { value: string } };
+    expect(event.target.value).toBe('b');
+    expect(queryByRole('listbox')).toBeNull();
+  });
+
+  it('never opens a disabled select', () => {
+    const { getByRole, queryByRole } = render(
+      <SettingsSelect
+        value='a'
+        onChange={() => {}}
+        options={[{ value: 'a', label: 'A' }]}
+        disabled
+        ariaLabel='Disabled select'
+      />,
+    );
+    const trigger = getByRole('button', { name: 'A', expanded: false }) as HTMLButtonElement;
+    expect(trigger.disabled).toBe(true);
+    fireEvent.click(trigger);
+    expect(queryByRole('listbox')).toBeNull();
   });
 
   for (const direction of ['ltr', 'rtl']) {
-    it(`keeps short settings values next to their chevron in ${direction}`, () => {
-      const { getByLabelText } = render(
+    it(`keeps the control hugging its value in ${direction}`, () => {
+      const { getByRole } = render(
         <div dir={direction} style={{ width: 400, display: 'flex', justifyContent: 'end' }}>
           <SettingsSelect
             value='fit'
@@ -262,17 +417,15 @@ describe('daisyUI 5 theme tokens', () => {
           />
         </div>,
       );
-      const select = getByLabelText('Cover sizing');
-      const style = getComputedStyle(select);
-      const context = document.createElement('canvas').getContext('2d')!;
-      context.font = `${style.fontSize} ${style.fontFamily}`;
-      const contentWidth =
-        context.measureText('Fit').width +
-        parseFloat(style.paddingLeft) +
-        parseFloat(style.paddingRight);
-      expect(select.getBoundingClientRect().width).toBeLessThanOrEqual(contentWidth + 2);
-      select.style.appearance = 'none';
-      expect(select.getBoundingClientRect().width).toBeLessThanOrEqual(contentWidth + 2);
+      const trigger = getByRole('button', { name: 'Fit', expanded: false });
+      const box = trigger.getBoundingClientRect();
+      const row = trigger.closest('div[dir]')!.getBoundingClientRect();
+      expect(box.width).toBeLessThan(row.width / 2);
+      // `justify-end` follows the inline axis: trailing edge is right in LTR,
+      // left in RTL.
+      const edge = direction === 'ltr' ? box.right : box.left;
+      const rowEdge = direction === 'ltr' ? row.right : row.left;
+      expect(Math.round(edge)).toBe(Math.round(rowEdge));
     });
   }
 
