@@ -48,7 +48,7 @@ export interface BookOrbitPlaybackState {
  */
 export type BookOrbitTarget = Pick<
   BookOrbitSettings,
-  'serverUrl' | 'username' | 'password' | 'customHeaders'
+  'serverUrl' | 'username' | 'password' | 'apiKey' | 'customHeaders'
 > & {
   /** Short-lived bearer token, cached between requests by the caller. */
   accessToken?: string;
@@ -104,7 +104,8 @@ export class BookOrbitClient {
   #loginInFlight: Promise<void> | null = null;
 
   constructor(server: BookOrbitTarget, callbacks: { onTokensUpdated: (p: TokenPatch) => void }) {
-    this.#server = { ...server };
+    // An API key is the bearer itself (BookOrbit 3.8+), so it needs no login.
+    this.#server = { ...server, accessToken: server.apiKey || server.accessToken };
     this.#base = server.serverUrl.replace(/\/+$/, '');
     this.#onTokensUpdated = callbacks.onTokensUpdated;
   }
@@ -136,6 +137,8 @@ export class BookOrbitClient {
    * caller has to ask.
    */
   refreshAccessToken(): Promise<void> {
+    // An API key does not expire on a timer; it stays the bearer.
+    if (this.#server.apiKey) return Promise.resolve();
     return this.#login();
   }
 
@@ -186,8 +189,10 @@ export class BookOrbitClient {
   }
 
   async #doLogin(): Promise<void> {
-    const { username, password } = this.#server;
-    if (!username && !password) throw new BookOrbitAuthError();
+    const { username, password, apiKey } = this.#server;
+    // A refused API key is revoked, expired or sent to a server before 3.8:
+    // signing in again cannot fix that.
+    if (apiKey || (!username && !password)) throw new BookOrbitAuthError();
 
     const res = await boFetch(
       `${this.#base}/api/v1/auth/login`,

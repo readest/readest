@@ -2770,5 +2770,8 @@
   "Filter voices": "音声を絞り込む",
   "Plain placeholder covers": "シンプルなプレースホルダー表紙",
   "Previous Week": "前の週",
-  "Next Week": "次の週"
+  "Next Week": "次の週",
+  "API Key (optional)": "APIキー（任意）",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0以降では、「設定 > アカウント > APIキー」で作成したAPIキーを使うと、アカウントのパスワードなしでオーディオブックをストリーミングできます。再生位置を同期するには「読み取りと書き込み」を選んでください。",
+  "Could not sign in to BookOrbit for audiobooks": "オーディオブック用にBookOrbitへサインインできませんでした"
 }

@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_BOOKORBIT_SETTINGS, DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import { SETTINGS_ENCRYPTED_FIELDS, SETTINGS_WHITELIST } from '@/services/sync/adapters/settings';
+import { BACKUP_SETTINGS_CREDENTIAL_FIELDS } from '@/services/backupService';
 
 describe('BookOrbit settings', () => {
   it('syncs the self-signed certificate choice for KOSync and BookOrbit as plain settings', () => {
@@ -37,5 +38,14 @@ describe('BookOrbit settings', () => {
     for (const field of ['bookorbit.enabled', 'bookorbit.deviceId', 'bookorbit.deviceName']) {
       expect(SETTINGS_WHITELIST).not.toContain(field);
     }
+  });
+
+  // An API key (BookOrbit 3.8+) is a credential like the password: it follows
+  // the user to their other devices encrypted, and stays out of a backup zip
+  // unless they ask for credentials to be included (#7508).
+  it('treats the API key as a credential', () => {
+    expect(SETTINGS_WHITELIST).toContain('bookorbit.apiKey');
+    expect(SETTINGS_ENCRYPTED_FIELDS).toContain('bookorbit.apiKey');
+    expect(BACKUP_SETTINGS_CREDENTIAL_FIELDS).toContain('bookorbit.apiKey');
   });
 });

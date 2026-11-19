@@ -2770,5 +2770,8 @@
   "Filter voices": "སྐད་གདངས་འཚག་འདེམས།",
   "Plain placeholder covers": "ཚབ་ཀྱི་ཁ་ཤོག་རྐྱང་པ།",
   "Previous Week": "གཟའ་འཁོར་སྔ་མ།",
-  "Next Week": "གཟའ་འཁོར་རྗེས་མ།"
+  "Next Week": "གཟའ་འཁོར་རྗེས་མ།",
+  "API Key (optional)": "API ལྡེ་མིག་ (གདམ་གའི)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 དང་དེའི་རྗེས་ཀྱི་པར་གཞིར་ སྒྲིག་འགོད > རྩིས་ཐོ > API ལྡེ་མིག་ ནས་བཟོས་པའི་ API ལྡེ་མིག་གིས་ཁྱེད་ཀྱི་རྩིས་ཐོའི་གསང་ཨང་མེད་པར་སྒྲ་དེབ་རྒྱུན་སྤེལ་བྱེད། ཉན་སའི་གནས་ས་མཉམ་འགྲིག་བྱེད་ཆེད་ ཀློག་པ་དང་འབྲི་བ་ གདམ་རོགས།",
+  "Could not sign in to BookOrbit for audiobooks": "སྒྲ་དེབ་ཆེད་དུ་ BookOrbit ནང་ཐོ་འཇུག་བྱེད་མ་ཐུབ།"
 }

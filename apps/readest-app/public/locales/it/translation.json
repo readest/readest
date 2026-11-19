@@ -2916,5 +2916,8 @@
   "Filter voices": "Filtra le voci",
   "Plain placeholder covers": "Copertine segnaposto semplici",
   "Previous Week": "Settimana precedente",
-  "Next Week": "Settimana successiva"
+  "Next Week": "Settimana successiva",
+  "API Key (optional)": "Chiave API (facoltativo)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "Con BookOrbit 3.8.0 o successivo, una chiave API creata in Impostazioni > Account > Chiavi API trasmette gli audiolibri senza la password del tuo account. Scegli Lettura e scrittura per sincronizzare la posizione di ascolto.",
+  "Could not sign in to BookOrbit for audiobooks": "Impossibile accedere a BookOrbit per gli audiolibri"
 }

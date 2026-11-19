@@ -68,7 +68,12 @@ const absServerOrigins = (): { origins: Set<string>; strict: Set<string> } => {
 /** The BookOrbit server's origin when the user verifies its certificate. */
 const strictBookOrbitOrigin = (): string | null => {
   const bookorbit = useSettingsStore.getState().settings?.bookorbit;
-  if (!bookorbit?.serverUrl || !bookorbit.password || allowsSelfSignedCert(bookorbit)) return null;
+  if (
+    !bookorbit?.serverUrl ||
+    !(bookorbit.password || bookorbit.apiKey) ||
+    allowsSelfSignedCert(bookorbit)
+  )
+    return null;
   try {
     return new URL(bookorbit.serverUrl).origin;
   } catch {

@@ -2916,5 +2916,8 @@
   "Filter voices": "Filtrează vocile",
   "Plain placeholder covers": "Coperți substitut simple",
   "Previous Week": "Săptămâna precedentă",
-  "Next Week": "Săptămâna următoare"
+  "Next Week": "Săptămâna următoare",
+  "API Key (optional)": "Cheie API (opțional)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "În BookOrbit 3.8.0 sau mai nou, o cheie API din Setări > Cont > Chei API redă în flux cărțile audio fără parola contului. Alegeți Citire și scriere pentru ca poziția de ascultare să se sincronizeze.",
+  "Could not sign in to BookOrbit for audiobooks": "Nu s-a putut face conectarea la BookOrbit pentru cărțile audio"
 }

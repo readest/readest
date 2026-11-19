@@ -2843,5 +2843,8 @@
   "Filter voices": "ভয়েস ফিল্টার করুন",
   "Plain placeholder covers": "সাধারণ প্লেসহোল্ডার প্রচ্ছদ",
   "Previous Week": "আগের সপ্তাহ",
-  "Next Week": "পরের সপ্তাহ"
+  "Next Week": "পরের সপ্তাহ",
+  "API Key (optional)": "API কী (ঐচ্ছিক)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 বা পরবর্তী সংস্করণে, সেটিংস > অ্যাকাউন্ট > API কী থেকে তৈরি একটি API কী আপনার অ্যাকাউন্টের পাসওয়ার্ড ছাড়াই অডিওবুক স্ট্রিম করে। আপনার শোনার অবস্থান সিঙ্ক করতে পড়া ও লেখা বেছে নিন।",
+  "Could not sign in to BookOrbit for audiobooks": "অডিওবুকের জন্য BookOrbit-এ সাইন ইন করা যায়নি"
 }

@@ -2843,5 +2843,8 @@
   "Filter voices": "හඬ පෙරහන් කරන්න",
   "Plain placeholder covers": "සරල ස්ථාන දරණ කවර",
   "Previous Week": "පෙර සතිය",
-  "Next Week": "ඊළඟ සතිය"
+  "Next Week": "ඊළඟ සතිය",
+  "API Key (optional)": "API යතුර (විකල්ප)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 හෝ ඊට පසු අනුවාදයේ, සැකසුම් > ගිණුම > API යතුරු යටතේ සාදන API යතුරක් ඔබගේ ගිණුමේ මුරපදය නොමැතිව ශ්‍රව්‍ය පොත් ප්‍රවාහ කරයි. ඔබගේ සවන්දීමේ ස්ථානය සමමුහුර්ත වීමට කියවීම සහ ලිවීම තෝරන්න.",
+  "Could not sign in to BookOrbit for audiobooks": "ශ්‍රව්‍ය පොත් සඳහා BookOrbit වෙත පුරනය විය නොහැකි විය"
 }

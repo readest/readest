@@ -1,6 +1,10 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BookOrbitClient, UnsupportedManifestError } from '@/services/bookorbit/client';
+import {
+  BookOrbitAuthError,
+  BookOrbitClient,
+  UnsupportedManifestError,
+} from '@/services/bookorbit/client';
 import { MANIFEST_SCHEMA, SUPPORTED_SCHEMA_VERSION } from '@/services/bookorbit/manifest';
 import type { BookOrbitTarget } from '@/services/bookorbit/client';
 
@@ -120,6 +124,50 @@ describe('BookOrbitClient', () => {
     expect(url).toBe('http://localhost:13380/api/v1/audiobooks/9/playback-state');
     expect(init.method).toBe('PUT');
     expect(JSON.parse(init.body)).toMatchObject({ assetId: 'aud_x', positionMs: 1234 });
+  });
+});
+
+// BookOrbit 3.8 added API keys, which its REST API takes as the bearer. The
+// KOReader sync credentials then no longer have to double as the account's
+// sign-in for the audiobook API (#7508).
+describe('BookOrbitClient with an API key', () => {
+  const keyed: BookOrbitTarget = {
+    serverUrl: 'http://localhost:13381',
+    username: 'admin',
+    password: '',
+    apiKey: 'bok_key',
+    allowSelfSignedCert: true,
+  };
+
+  it('sends the key as the bearer, without signing in', async () => {
+    fetchMock.mockResolvedValueOnce(json(manifest));
+    const client = new BookOrbitClient(keyed, { onTokensUpdated: vi.fn() });
+
+    await client.getManifest(9);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(authHeader(fetchMock.mock.calls[0]!)).toBe('Bearer bok_key');
+  });
+
+  // A revoked key, or a server older than 3.8, answers 401. There is nothing
+  // to mint, so the failure is reported instead of retried.
+  it('reports a refused key without trying to sign in', async () => {
+    fetchMock.mockResolvedValue(json({ message: 'Invalid API key' }, 401));
+    const client = new BookOrbitClient(keyed, { onTokensUpdated: vi.fn() });
+
+    await expect(client.getManifest(9)).rejects.toBeInstanceOf(BookOrbitAuthError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  // The media proxy's timer refreshes before re-registering the bearer, so a
+  // key the user replaced in settings only reaches the proxy if this resolves.
+  it('refreshes to the same key without signing in', async () => {
+    const client = new BookOrbitClient(keyed, { onTokensUpdated: vi.fn() });
+
+    await client.refreshAccessToken();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(client.accessToken).toBe('bok_key');
   });
 });
 

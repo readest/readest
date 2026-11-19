@@ -2989,5 +2989,8 @@
   "Filter voices": "Filtriraj glasove",
   "Plain placeholder covers": "Preproste nadomestne naslovnice",
   "Previous Week": "Prejšnji teden",
-  "Next Week": "Naslednji teden"
+  "Next Week": "Naslednji teden",
+  "API Key (optional)": "API ključ (neobvezno)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "V BookOrbitu 3.8.0 ali novejšem API ključ iz Nastavitve > Račun > API ključi pretaka zvočne knjige brez gesla vašega računa. Izberite Branje in pisanje, da se položaj poslušanja sinhronizira.",
+  "Could not sign in to BookOrbit for audiobooks": "Prijava v BookOrbit za zvočne knjige ni uspela"
 }

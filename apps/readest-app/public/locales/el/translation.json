@@ -2843,5 +2843,8 @@
   "Filter voices": "Φιλτράρισμα φωνών",
   "Plain placeholder covers": "Απλά εξώφυλλα κράτησης θέσης",
   "Previous Week": "Προηγούμενη εβδομάδα",
-  "Next Week": "Επόμενη εβδομάδα"
+  "Next Week": "Επόμενη εβδομάδα",
+  "API Key (optional)": "Κλειδί API (προαιρετικό)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "Στο BookOrbit 3.8.0 ή νεότερο, ένα κλειδί API από Ρυθμίσεις > Λογαριασμός > Κλειδιά API μεταδίδει ηχοβιβλία χωρίς τον κωδικό του λογαριασμού σας. Επιλέξτε Ανάγνωση και εγγραφή ώστε να συγχρονίζεται η θέση ακρόασής σας.",
+  "Could not sign in to BookOrbit for audiobooks": "Δεν ήταν δυνατή η σύνδεση στο BookOrbit για ηχοβιβλία"
 }

@@ -2843,5 +2843,8 @@
   "Filter voices": "Stemmen filteren",
   "Plain placeholder covers": "Eenvoudige tijdelijke omslagen",
   "Previous Week": "Vorige week",
-  "Next Week": "Volgende week"
+  "Next Week": "Volgende week",
+  "API Key (optional)": "API-sleutel (optioneel)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "Vanaf BookOrbit 3.8.0 streamt een API-sleutel uit Instellingen > Account > API-sleutels luisterboeken zonder je accountwachtwoord. Kies Lezen en schrijven zodat je luisterpositie wordt gesynchroniseerd.",
+  "Could not sign in to BookOrbit for audiobooks": "Kan niet aanmelden bij BookOrbit voor luisterboeken"
 }

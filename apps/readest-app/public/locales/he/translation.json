@@ -2916,5 +2916,8 @@
   "Filter voices": "סינון קולות",
   "Plain placeholder covers": "כריכות ממלא מקום פשוטות",
   "Previous Week": "השבוע הקודם",
-  "Next Week": "השבוע הבא"
+  "Next Week": "השבוע הבא",
+  "API Key (optional)": "מפתח API (אופציונלי)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "ב-BookOrbit 3.8.0 ואילך, מפתח API מתוך הגדרות > חשבון > מפתחות API מזרים ספרי שמע בלי סיסמת החשבון שלך. בחר קריאה וכתיבה כדי שמיקום ההאזנה שלך יסונכרן.",
+  "Could not sign in to BookOrbit for audiobooks": "לא ניתן להתחבר ל-BookOrbit עבור ספרי שמע"
 }

@@ -2770,5 +2770,8 @@
   "Filter voices": "음성 필터",
   "Plain placeholder covers": "단순한 대체 표지",
   "Previous Week": "이전 주",
-  "Next Week": "다음 주"
+  "Next Week": "다음 주",
+  "API Key (optional)": "API 키 (선택 사항)",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 이상에서는 설정 > 계정 > API 키에서 만든 API 키로 계정 비밀번호 없이 오디오북을 스트리밍할 수 있습니다. 듣기 위치가 동기화되도록 읽기 및 쓰기를 선택하세요.",
+  "Could not sign in to BookOrbit for audiobooks": "오디오북을 위해 BookOrbit에 로그인할 수 없습니다"
 }

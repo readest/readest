@@ -2770,5 +2770,8 @@
   "Filter voices": "篩選發音人",
   "Plain placeholder covers": "純文字佔位封面",
   "Previous Week": "上一週",
-  "Next Week": "下一週"
+  "Next Week": "下一週",
+  "API Key (optional)": "API 金鑰（選填）",
+  "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "在 BookOrbit 3.8.0 或更新版本中，使用「設定 > 帳戶 > API 金鑰」中建立的 API 金鑰即可串流有聲書，無需帳戶密碼。請選擇「讀寫」權限，以便同步收聽進度。",
+  "Could not sign in to BookOrbit for audiobooks": "無法登入 BookOrbit 以播放有聲書"
 }
