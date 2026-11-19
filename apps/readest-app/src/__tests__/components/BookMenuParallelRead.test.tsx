@@ -17,14 +17,19 @@ vi.mock('@/app/reader/hooks/useBooksManager', () => ({
 // eslint-disable-next-line import/first
 import BookMenu from '@/app/reader/components/sidebar/BookMenu';
 
-const makeBook = (hash: string, title: string, format: BookFormat): Book => ({
+const makeBook = (
+  hash: string,
+  title: string,
+  format: BookFormat,
+  downloadedAt: number | null = 1,
+): Book => ({
   hash,
   format,
   title,
   author: 'Author',
   createdAt: 0,
   updatedAt: 0,
-  downloadedAt: 1,
+  downloadedAt,
 });
 
 beforeEach(() => {
@@ -55,5 +60,24 @@ describe('BookMenu Parallel Read book list', () => {
   it('lists downloaded PDF books so a PDF can be opened in parallel (#4991)', () => {
     render(<BookMenu />);
     expect(screen.getByRole('menuitem', { name: 'A PDF Book' })).toBeTruthy();
+  });
+
+  it('lists the book being read even when it has no downloadedAt stamp (#4991)', () => {
+    // A local book with no cloud copy opens without ever being stamped, so the
+    // book on screen must not drop out of its own Parallel Read list.
+    useLibraryStore.getState().setLibrary([makeBook('book1', 'Open PDF', 'PDF', null)]);
+    render(<BookMenu />);
+    expect(screen.getByRole('menuitem', { name: 'Open PDF' })).toBeTruthy();
+  });
+
+  it('still hides books that are not on this device and not open', () => {
+    useLibraryStore
+      .getState()
+      .setLibrary([
+        makeBook('book1', 'Open PDF', 'PDF'),
+        makeBook('cloud', 'Cloud Book', 'EPUB', null),
+      ]);
+    render(<BookMenu />);
+    expect(screen.queryByRole('menuitem', { name: 'Cloud Book' })).toBeNull();
   });
 });
