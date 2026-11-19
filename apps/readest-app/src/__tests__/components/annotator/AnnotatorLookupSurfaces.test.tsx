@@ -45,6 +45,8 @@ const h = vi.hoisted(() => ({
   invokeSystemDictionary: vi.fn(),
   recordLookup: vi.fn(),
   contextTranslator: { id: 'llm' } as { id: string } | undefined,
+  // An unsigned JWT on the pro plan; null is a signed-out, free reader.
+  token: 'eyJhbGciOiJub25lIn0.eyJwbGFuIjoicHJvIn0.sig' as string | null,
   isTextSelected: { current: true },
   appService: {} as { isIOSApp?: boolean },
   onNativeTouch: null as null | ((ev: { type: string; x: number; y: number }) => void),
@@ -162,6 +164,10 @@ vi.mock('@/store/customDictionaryStore', () => ({
     () => ({ loadCustomDictionaries: vi.fn().mockResolvedValue(undefined) }),
     { getState: () => ({ settings: h.lookupSettings }) },
   ),
+}));
+
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ token: h.token, user: null }),
 }));
 
 vi.mock('@/services/dictionaries/providers/contextProvider', async (importOriginal) => ({
@@ -393,6 +399,7 @@ beforeEach(() => {
   h.lookupSettings.saveLookupsToVocabulary = true;
   h.viewSettings.annotationToolbarItems = ['copy'];
   h.contextTranslator = { id: 'llm' };
+  h.token = 'eyJhbGciOiJub25lIn0.eyJwbGFuIjoicHJvIn0.sig';
   h.setSelection = null;
   h.viewSettings.enableAnnotationQuickActions = false;
   h.viewSettings.annotationQuickAction = '';
@@ -454,8 +461,11 @@ describe('the Context Dictionary tool (#7497)', () => {
     expect(screen.getByTestId('dictionary-surface').dataset['contextOnly']).toBe('false');
   });
 
-  test('is unavailable without an OpenAI-compatible translator', async () => {
-    h.contextTranslator = undefined;
+  test.each([
+    ['an OpenAI-compatible translator', () => (h.contextTranslator = undefined)],
+    ['premium', () => (h.token = null)],
+  ])('is unavailable without %s', async (_name, withhold) => {
+    withhold();
     h.viewSettings.annotationToolbarItems = ['contextdictionary'];
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectText('Welten');

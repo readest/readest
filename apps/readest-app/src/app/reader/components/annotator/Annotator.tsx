@@ -3,6 +3,8 @@ import { RiDeleteBinLine } from 'react-icons/ri';
 
 import * as CFI from 'foliate-js/epubcfi.js';
 import { useEnv } from '@/context/EnvContext';
+import { useAuth } from '@/context/AuthContext';
+import { isCustomTranslatorAllowed } from '@/utils/access';
 import {
   BookNote,
   BooknoteGroup,
@@ -213,6 +215,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
 }) => {
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
+  const { token } = useAuth();
   const { settings, setSettingsDialogBookKey, setSettingsDialogOpen, setActiveSettingsItemId } =
     useSettingsStore();
   const { isDarkMode, themeCode } = useThemeStore();
@@ -2762,7 +2765,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           tooltipText: _(label),
           Icon,
           onClick: handleContextDictionary,
-          disabled: !getContextTranslator(),
+          // Premium, like the Context Dictionary switch in Manage Dictionaries.
+          disabled: !isCustomTranslatorAllowed(token) || !getContextTranslator(),
         };
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };

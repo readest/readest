@@ -33,6 +33,8 @@ const settings = {
   },
 };
 
+vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ token: null, user: null }) }));
+
 vi.mock('@/hooks/useShortcuts', () => ({ default: () => {} }));
 
 vi.mock('@/context/EnvContext', () => ({
