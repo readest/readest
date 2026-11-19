@@ -261,6 +261,11 @@
   than Chromium's touch slop (15px from where it landed, not 2px), and the page gets no
   `touchmove` until then, as Chromium sends none inside the slop. A tap whose finger shifted a few
   pixels lost its click, and foliate-js's paginator took it for a swipe.
+- `blitz-dom` assets/default.css: an inline `<svg>` has `overflow: hidden`, as in the UA
+  stylesheets of Chromium and Firefox, so as a flex item its automatic minimum size is 0 and it
+  shrinks into a smaller button. The sheet's default namespace is XHTML, so the rule names the SVG
+  namespace. Readest's icons kept their `width`/`height` and overflowed their buttons: the
+  sidebar's Close chevron (27.5px in a 24px button) was drawn a quarter too big.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 

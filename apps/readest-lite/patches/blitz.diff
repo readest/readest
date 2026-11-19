@@ -183,7 +183,15 @@ diff -ruN blitz/Cargo.toml blitz/Cargo.toml
 diff -ruN blitz/packages/blitz-dom/assets/default.css blitz/packages/blitz-dom/assets/default.css
 --- blitz/packages/blitz-dom/assets/default.css
 +++ blitz/packages/blitz-dom/assets/default.css
-@@ -59,12 +59,27 @@
+@@ -5,6 +5,7 @@
+ @namespace url(http://www.w3.org/1999/xhtml);
+ /* set default namespace to HTML */
+ @namespace xul url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
++@namespace svg url(http://www.w3.org/2000/svg);
+ 
+ @font-face {
+     font-family: -moz-bullet-font;
+@@ -59,12 +60,27 @@
      display: none !important;
  }
  
@@ -211,7 +219,7 @@ diff -ruN blitz/packages/blitz-dom/assets/default.css blitz/packages/blitz-dom/a
  input[type="radio"] {
      width: 14px;
      height: 14px;
-@@ -109,8 +124,10 @@
+@@ -109,8 +125,10 @@
  }
  
  /* https://html.spec.whatwg.org/multipage/rendering.html#the-select-element-2
@@ -223,6 +231,20 @@ diff -ruN blitz/packages/blitz-dom/assets/default.css blitz/packages/blitz-dom/a
      letter-spacing: initial;
      word-spacing: initial;
      line-height: initial;
+@@ -144,6 +162,13 @@
+     overflow: clip !important;
+ }
+ 
++/* An inline <svg> clips its content to its box, as the UA stylesheets of
++ * Chromium and Firefox (svg.css) say, so as a flex item its automatic
++ * minimum size is 0 and it shrinks into a smaller container. */
++svg|svg:not(:root) {
++    overflow: hidden;
++}
++
+ input[type="file"] {
+     border: none;
+     padding: 0;
 diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/document.rs
 --- blitz/packages/blitz-dom/src/document.rs
 +++ blitz/packages/blitz-dom/src/document.rs
