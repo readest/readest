@@ -289,12 +289,110 @@ pub async fn download_file<R: tauri::Runtime>(
     skip_ssl_verification: Option<bool>,
     on_progress: Channel<ProgressPayload>,
 ) -> Result<HashMap<String, String>> {
-    use futures::stream::{self, StreamExt};
+    let allowed_path = ensure_path_allowed(&app, file_path)?;
+    download_to_path(
+        url,
+        &allowed_path,
+        headers,
+        body,
+        single_threaded,
+        skip_ssl_verification,
+        on_progress,
+    )
+    .await
+}
+
+// Never expose a partial download at the destination. The guard removes the
+// staging file when an error or a cancelled future drops the download.
+struct DownloadTempFile(PathBuf);
+
+impl Drop for DownloadTempFile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
+fn content_range(value: &str) -> Option<(u64, u64, u64)> {
+    let (unit, range) = value.split_once(' ')?;
+    if !unit.eq_ignore_ascii_case("bytes") {
+        return None;
+    }
+    let (range, total) = range.split_once('/')?;
+    let (start, end) = range.split_once('-')?;
+    let decimal = |s: &str| {
+        (!s.is_empty() && s.bytes().all(|b| b.is_ascii_digit()))
+            .then(|| s.parse::<u64>().ok())
+            .flatten()
+    };
+    let (start, end, total) = (decimal(start)?, decimal(end)?, decimal(total)?);
+    (start <= end && end < total).then_some((start, end, total))
+}
+
+async fn download_to_path(
+    url: &str,
+    file_path: &Path,
+    headers: HashMap<String, String>,
+    body: Option<String>,
+    single_threaded: Option<bool>,
+    skip_ssl_verification: Option<bool>,
+    on_progress: Channel<ProgressPayload>,
+) -> Result<HashMap<String, String>> {
+    let metadata = match tokio::fs::metadata(file_path).await {
+        Ok(metadata) if metadata.is_dir() => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::IsADirectory,
+                format!("is a directory: {}", file_path.display()),
+            )
+            .into());
+        }
+        Ok(metadata) => Some(metadata),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error.into()),
+    };
+    let temporary_path =
+        file_path.with_file_name(format!(".readest-download-{}.part", uuid::Uuid::new_v4()));
+    // Open synchronously so no await point separates creating the file from
+    // installing its guard, and write through this handle only: no later
+    // open can recreate the path after the guard removes it.
+    let file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary_path)?;
+    let temporary = DownloadTempFile(temporary_path);
+    // Keep a replaced book's permission bits. Best effort: a filesystem that
+    // refuses chmod must not fail a download that would otherwise succeed.
+    #[cfg(unix)]
+    if let Some(metadata) = metadata {
+        let _ = file.set_permissions(metadata.permissions());
+    }
+    #[cfg(not(unix))]
+    let _ = metadata;
+    let response_headers = download_into_file(
+        url,
+        File::from_std(file),
+        headers,
+        body,
+        single_threaded,
+        skip_ssl_verification,
+        on_progress,
+    )
+    .await?;
+    tokio::fs::rename(&temporary.0, file_path).await?;
+    Ok(response_headers)
+}
+
+async fn download_into_file(
+    url: &str,
+    file: File,
+    headers: HashMap<String, String>,
+    body: Option<String>,
+    single_threaded: Option<bool>,
+    skip_ssl_verification: Option<bool>,
+    on_progress: Channel<ProgressPayload>,
+) -> Result<HashMap<String, String>> {
+    use futures::stream;
     use std::cmp::min;
     use tokio::io::AsyncSeekExt;
-
-    let allowed_path = ensure_path_allowed(&app, file_path)?;
-    let file_path = allowed_path.as_path();
 
     const PART_SIZE: u64 = 1024 * 1024;
 
@@ -314,12 +412,18 @@ pub async fn download_file<R: tauri::Runtime>(
         client: &reqwest::Client,
         verified: Option<&reqwest::Client>,
         url: &str,
-        file_path: &Path,
+        file: File,
         headers: &HashMap<String, String>,
         body: &Option<String>,
         on_progress: Channel<ProgressPayload>,
     ) -> Result<HashMap<String, String>> {
         let response = send(client, verified, url, body.as_ref(), headers).await?;
+        if response.status() == reqwest::StatusCode::PARTIAL_CONTENT {
+            return Err(Error::HttpErrorCode(
+                response.status().as_u16(),
+                "expected a complete download response".into(),
+            ));
+        }
         if !response.status().is_success() {
             return Err(Error::HttpErrorCode(
                 response.status().as_u16(),
@@ -335,7 +439,7 @@ pub async fn download_file<R: tauri::Runtime>(
         }
 
         let total = response.content_length().unwrap_or(0);
-        let mut file = BufWriter::new(File::create(file_path).await?);
+        let mut file = BufWriter::new(file);
         let mut stream = response.bytes_stream();
 
         let mut stats = TransferStats::default();
@@ -358,7 +462,7 @@ pub async fn download_file<R: tauri::Runtime>(
             &client,
             verified.as_ref(),
             url,
-            file_path,
+            file,
             &headers,
             &body,
             on_progress,
@@ -376,13 +480,12 @@ pub async fn download_file<R: tauri::Runtime>(
         .map(|v| v.to_str().unwrap_or(""))
         .unwrap_or("")
         .eq_ignore_ascii_case("bytes");
-    let total = range_resp
+    let probe_range = range_resp
         .headers()
         .get("content-range")
         .and_then(|v| v.to_str().ok())
-        .and_then(|s| s.split('/').nth(1))
-        .and_then(|s| s.parse::<u64>().ok())
-        .unwrap_or(0);
+        .and_then(content_range);
+    let total = probe_range.map(|(_, _, total)| total).unwrap_or(0);
 
     let mut resp_headers = HashMap::new();
     for (key, value) in range_resp.headers().iter() {
@@ -391,12 +494,16 @@ pub async fn download_file<R: tauri::Runtime>(
         }
     }
 
-    if !accept_ranges || total == 0 {
+    if range_resp.status() != reqwest::StatusCode::PARTIAL_CONTENT
+        || !accept_ranges
+        || total == 0
+        || probe_range != Some((0, 0, total))
+    {
         return single_threaded_download(
             &client,
             verified.as_ref(),
             url,
-            file_path,
+            file,
             &headers,
             &body,
             on_progress,
@@ -406,14 +513,13 @@ pub async fn download_file<R: tauri::Runtime>(
 
     // Multi-part download with range access
     let part_count = total.div_ceil(PART_SIZE);
-    let file = File::create(file_path).await?;
     file.set_len(total).await?;
 
     let file = Arc::new(tokio::sync::Mutex::new(file));
     let progress = Arc::new(tokio::sync::Mutex::new(TransferStats::default()));
 
-    stream::iter(0..part_count)
-        .for_each_concurrent(8, |i| {
+    stream::iter((0..part_count).map(Ok::<_, Error>))
+        .try_for_each_concurrent(8, |i| {
             let client = client.clone();
             let verified = verified.clone();
             let file = Arc::clone(&file);
@@ -430,26 +536,35 @@ pub async fn download_file<R: tauri::Runtime>(
                 let mut headers = headers;
                 headers.insert("Range".into(), range_header);
 
-                let resp = match send(&client, verified.as_ref(), &url, None, &headers).await {
-                    Ok(r) => r,
-                    Err(_) => return,
-                };
-
-                if !resp.status().is_success()
-                    && resp.status() != reqwest::StatusCode::PARTIAL_CONTENT
-                {
-                    return;
+                let resp = send(&client, verified.as_ref(), &url, None, &headers).await?;
+                if resp.status() != reqwest::StatusCode::PARTIAL_CONTENT {
+                    return Err(Error::HttpErrorCode(
+                        resp.status().as_u16(),
+                        "expected a partial-content download response".into(),
+                    ));
                 }
-
-                let bytes = match resp.bytes().await {
-                    Ok(b) => b,
-                    Err(_) => return,
-                };
+                if resp
+                    .headers()
+                    .get(reqwest::header::CONTENT_RANGE)
+                    .and_then(|v| v.to_str().ok())
+                    .and_then(content_range)
+                    != Some((start, end, total))
+                {
+                    return Err(Error::ContentLength(
+                        "download response has an unexpected Content-Range".into(),
+                    ));
+                }
+                let bytes = resp.bytes().await?;
+                if bytes.len() as u64 != end - start + 1 {
+                    return Err(Error::ContentLength(
+                        "download response has an unexpected byte length".into(),
+                    ));
+                }
 
                 {
                     let mut f = file.lock().await;
-                    f.seek(std::io::SeekFrom::Start(start)).await.unwrap();
-                    f.write_all(&bytes).await.unwrap();
+                    f.seek(std::io::SeekFrom::Start(start)).await?;
+                    f.write_all(&bytes).await?;
                 }
 
                 {
@@ -461,9 +576,11 @@ pub async fn download_file<R: tauri::Runtime>(
                         transfer_speed: stat.transfer_speed,
                     });
                 }
+                Ok(())
             }
         })
-        .await;
+        .await?;
+    file.lock().await.flush().await?;
 
     Ok(resp_headers)
 }
@@ -529,12 +646,71 @@ fn file_to_body(channel: Channel<ProgressPayload>, file: File, file_len: u64) ->
 #[cfg(test)]
 mod tests {
     use super::{
-        has_disallowed_components, is_within_app_storage, is_within_data_dir, resolve_path,
-        resolve_request, send,
+        download_to_path, has_disallowed_components, is_within_app_storage, is_within_data_dir,
+        resolve_path, resolve_request, send,
     };
     use std::collections::HashMap;
     use std::path::{Path, PathBuf};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    struct TestDir(PathBuf);
+
+    impl TestDir {
+        fn new() -> Self {
+            let path =
+                std::env::temp_dir().join(format!("readest-download-{}", uuid::Uuid::new_v4()));
+            std::fs::create_dir(&path).unwrap();
+            Self(path)
+        }
+    }
+
+    impl std::ops::Deref for TestDir {
+        type Target = Path;
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+
+    impl AsRef<Path> for TestDir {
+        fn as_ref(&self) -> &Path {
+            &self.0
+        }
+    }
+
+    impl Drop for TestDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    async fn finish_fixture<T>(mut task: tokio::task::JoinHandle<T>) -> T {
+        match tokio::time::timeout(std::time::Duration::from_secs(5), &mut task).await {
+            Ok(result) => result.unwrap(),
+            Err(_) => {
+                task.abort();
+                panic!("HTTP fixture did not finish within five seconds");
+            }
+        }
+    }
+
+    async fn read_request(stream: &mut (impl tokio::io::AsyncRead + Unpin)) -> String {
+        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            let mut bytes = Vec::new();
+            let mut chunk = [0; 1024];
+            while !bytes.windows(4).any(|w| w == b"\r\n\r\n") {
+                let count = stream.read(&mut chunk).await.unwrap();
+                assert!(count > 0, "request ended before its headers");
+                bytes.extend_from_slice(&chunk[..count]);
+                assert!(
+                    bytes.len() <= 16 * 1024,
+                    "fixture request headers are too large"
+                );
+            }
+            String::from_utf8(bytes).unwrap().to_lowercase()
+        })
+        .await
+        .expect("HTTP fixture request headers timed out")
+    }
 
     #[test]
     fn data_dir_authorizes_custom_library_locations() {
@@ -658,10 +834,12 @@ mod tests {
         let server = tokio::spawn(async move {
             let mut requests = Vec::new();
             for response in responses(port) {
-                let (mut stream, _) = listener.accept().await.unwrap();
-                let mut bytes = vec![0; 4096];
-                let count = stream.read(&mut bytes).await.unwrap();
-                requests.push(String::from_utf8_lossy(&bytes[..count]).to_lowercase());
+                let (mut stream, _) =
+                    tokio::time::timeout(std::time::Duration::from_secs(5), listener.accept())
+                        .await
+                        .expect("HTTP fixture connection timed out")
+                        .unwrap();
+                requests.push(read_request(&mut stream).await);
                 stream.write_all(response.as_bytes()).await.unwrap();
             }
             requests
@@ -674,6 +852,376 @@ mod tests {
     }
 
     const BOOK: &str = "HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\nbook";
+
+    const RANGE_PROBE: &str = "HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\nContent-Range: bytes 0-0/4\r\nContent-Length: 1\r\nConnection: close\r\n\r\nb";
+    const BOOK_RANGE: &str = "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes 0-3/4\r\nContent-Length: 4\r\nConnection: close\r\n\r\nbook";
+
+    #[tokio::test]
+    async fn fallback_rejects_a_partial_response_but_accepts_a_full_book() {
+        for partial in [true, false] {
+            let dir = TestDir::new();
+            let path = dir.join("book.epub");
+            std::fs::write(&path, b"existing book").unwrap();
+            let (port, server) = serve(move |_| {
+                vec![
+                    BOOK.into(),
+                    if partial {
+                        BOOK_RANGE.into()
+                    } else {
+                        BOOK.into()
+                    },
+                ]
+            })
+            .await;
+            let result = download_to_path(
+                &format!("http://127.0.0.1:{port}/book"),
+                &path,
+                HashMap::new(),
+                None,
+                None,
+                None,
+                tauri::ipc::Channel::new(|_| Ok(())),
+            )
+            .await;
+            finish_fixture(server).await;
+            let bytes = std::fs::read(&path).unwrap();
+            assert_eq!(
+                result.is_err(),
+                partial,
+                "a full GET must not publish partial content"
+            );
+            assert_eq!(
+                bytes,
+                if partial {
+                    b"existing book".as_slice()
+                } else {
+                    b"book".as_slice()
+                }
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn range_units_are_case_insensitive() {
+        for mixed_probe in [false, true] {
+            let dir = TestDir::new();
+            let path = dir.join("book.epub");
+            let (port, server) = serve(move |_| {
+                vec![
+                    if mixed_probe {
+                        RANGE_PROBE.replace("bytes 0-0", "Bytes 0-0")
+                    } else {
+                        RANGE_PROBE.into()
+                    },
+                    BOOK_RANGE.replace("bytes 0-3", "Bytes 0-3"),
+                ]
+            })
+            .await;
+            let result = download_to_path(
+                &format!("http://127.0.0.1:{port}/book"),
+                &path,
+                HashMap::new(),
+                None,
+                None,
+                None,
+                tauri::ipc::Channel::new(|_| Ok(())),
+            )
+            .await;
+            let requests = finish_fixture(server).await;
+            assert!(
+                result.is_ok(),
+                "equivalent range units must be accepted: {result:?}"
+            );
+            assert!(
+                requests[1].contains("range: bytes=0-3"),
+                "valid probe must use multipart"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn directory_destinations_are_rejected_before_requesting_data() {
+        let dir = TestDir::new();
+        let result = download_to_path(
+            "http://127.0.0.1:9/book",
+            &dir,
+            HashMap::new(),
+            None,
+            None,
+            None,
+            tauri::ipc::Channel::new(|_| Ok(())),
+        )
+        .await;
+        assert!(
+            matches!(&result, Err(super::Error::Io(e)) if e.kind() == std::io::ErrorKind::IsADirectory),
+            "directory must be rejected before any network request: {result:?}"
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn replacement_preserves_existing_unix_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = TestDir::new();
+        let path = dir.join("book.epub");
+        std::fs::write(&path, b"existing book").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let (port, server) = serve(|_| vec![BOOK.into()]).await;
+        download_to_path(
+            &format!("http://127.0.0.1:{port}/book"),
+            &path,
+            HashMap::new(),
+            None,
+            Some(true),
+            None,
+            tauri::ipc::Channel::new(|_| Ok(())),
+        )
+        .await
+        .unwrap();
+        finish_fixture(server).await;
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(
+            mode, 0o600,
+            "replacement must not widen the book's permissions"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_late_range_failure_discards_earlier_staged_parts() {
+        let dir = TestDir::new();
+        let path = dir.join("book.epub");
+        std::fs::write(&path, b"existing book").unwrap();
+        let written = std::sync::Arc::new(tokio::sync::Notify::new());
+        let notified = written.clone();
+        let staging_dir = dir.to_path_buf();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let mut tasks = Vec::new();
+            for _ in 0..3 {
+                let (mut stream, _) =
+                    tokio::time::timeout(std::time::Duration::from_secs(5), listener.accept())
+                        .await
+                        .unwrap()
+                        .unwrap();
+                let written = written.clone();
+                let staging_dir = staging_dir.clone();
+                tasks.push(tokio::spawn(async move {
+                    let request = read_request(&mut stream).await;
+                    let (range, body) = if request.contains("range: bytes=0-0\r\n") {
+                        ("0-0", vec![b'a'])
+                    } else if request.contains("range: bytes=0-1048575\r\n") {
+                        ("0-1048575", vec![b'a'; 1024 * 1024])
+                    } else if request.contains("range: bytes=1048576-1048579\r\n") {
+                        tokio::time::timeout(std::time::Duration::from_secs(5), written.notified())
+                            .await.expect("first part must reach staging before the failure");
+                        let staging = std::fs::read_dir(staging_dir).unwrap()
+                            .map(|entry| entry.unwrap())
+                            .find(|entry| entry.file_name().to_string_lossy().starts_with(".readest-download-"))
+                            .expect("download must have a staging file").path();
+                        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+                            loop {
+                                let bytes = tokio::fs::read(&staging).await.unwrap();
+                                if bytes.get(..1024 * 1024).is_some_and(|part| part.iter().all(|b| *b == b'a')) {
+                                    break;
+                                }
+                                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+                            }
+                        }).await.expect("first part must be readable before the short response");
+                        ("1048576-1048579", b"ab".to_vec())
+                    } else {
+                        panic!("unexpected range request");
+                    };
+                    let header = format!("HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\nContent-Range: bytes {range}/1048580\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len());
+                    stream.write_all(header.as_bytes()).await.unwrap();
+                    stream.write_all(&body).await.unwrap();
+                }));
+            }
+            for task in tasks {
+                finish_fixture(task).await;
+            }
+        });
+        let result = download_to_path(
+            &format!("http://127.0.0.1:{port}/book"),
+            &path,
+            HashMap::new(),
+            None,
+            None,
+            None,
+            tauri::ipc::Channel::new(move |_| {
+                notified.notify_one();
+                Ok(())
+            }),
+        )
+        .await;
+        finish_fixture(server).await;
+        assert!(
+            matches!(result, Err(super::Error::ContentLength(message))
+            if message == "download response has an unexpected byte length"),
+            "the late part must fail the byte-length check"
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), b"existing book");
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1);
+    }
+
+    #[tokio::test]
+    async fn failed_ranges_reject_and_preserve_an_existing_book() {
+        for response in [
+            "HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+            // A server which ignores Range must not be written at a part offset.
+            BOOK,
+            "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes 1-4/5\r\nContent-Length: 4\r\nConnection: close\r\n\r\nbook",
+            "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes 0-3/4\r\nContent-Length: 2\r\nConnection: close\r\n\r\nbo",
+            // A broken stream after successful response headers.
+            "HTTP/1.1 206 Partial Content\r\nContent-Range: bytes 0-3/4\r\nContent-Length: 4\r\nConnection: close\r\n\r\nbo",
+        ] {
+            let dir = TestDir::new();
+            let path = dir.join("book.epub");
+            std::fs::write(&path, b"existing book").unwrap();
+            let response = response.to_string();
+            let (port, server) = serve(move |_| vec![RANGE_PROBE.into(), response]).await;
+            let result = download_to_path(
+                &format!("http://127.0.0.1:{port}/book"),
+                &path,
+                HashMap::new(),
+                None,
+                None,
+                None,
+                tauri::ipc::Channel::new(|_| Ok(())),
+            )
+            .await;
+            finish_fixture(server).await;
+            let bytes = std::fs::read(&path).unwrap();
+            let entries = std::fs::read_dir(&dir).unwrap().count();
+            assert!(result.is_err(), "a failed or invalid range must reject: {result:?}");
+            assert_eq!(bytes, b"existing book", "failed download must preserve the old book");
+            assert_eq!(entries, 1, "failed download must remove its temporary file");
+        }
+    }
+
+    #[tokio::test]
+    async fn failed_single_stream_preserves_an_existing_book() {
+        let dir = TestDir::new();
+        let path = dir.join("book.epub");
+        std::fs::write(&path, b"existing book").unwrap();
+        let (port, server) = serve(|_| {
+            vec!["HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\nbo".into()]
+        })
+        .await;
+        let result = download_to_path(
+            &format!("http://127.0.0.1:{port}/book"),
+            &path,
+            HashMap::new(),
+            None,
+            Some(true),
+            None,
+            tauri::ipc::Channel::new(|_| Ok(())),
+        )
+        .await;
+        finish_fixture(server).await;
+        let bytes = std::fs::read(&path).unwrap();
+        let entries = std::fs::read_dir(&dir).unwrap().count();
+        assert!(result.is_err());
+        assert_eq!(
+            bytes, b"existing book",
+            "failed stream must preserve the old book"
+        );
+        assert_eq!(entries, 1, "failed stream must remove its temporary file");
+    }
+
+    #[tokio::test]
+    async fn complete_download_replaces_the_book_without_temporary_files() {
+        for single in [false, true] {
+            let dir = TestDir::new();
+            let path = dir.join("book.epub");
+            std::fs::write(&path, b"existing book").unwrap();
+            let (port, server) = serve(move |_| {
+                if single {
+                    vec![BOOK.into()]
+                } else {
+                    vec![RANGE_PROBE.into(), BOOK_RANGE.into()]
+                }
+            })
+            .await;
+            let result = download_to_path(
+                &format!("http://127.0.0.1:{port}/book"),
+                &path,
+                HashMap::new(),
+                None,
+                Some(single),
+                None,
+                tauri::ipc::Channel::new(|_| Ok(())),
+            )
+            .await;
+            finish_fixture(server).await;
+            let bytes = std::fs::read(&path).unwrap();
+            let entries = std::fs::read_dir(&dir).unwrap().count();
+            assert!(result.is_ok(), "{result:?}");
+            assert_eq!(bytes, b"book");
+            assert_eq!(
+                entries, 1,
+                "completed download must leave only the final book"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn multipart_download_writes_each_range_at_its_offset() {
+        let expected: Vec<u8> = (0..1024 * 1024 + 17).map(|i| (i % 251) as u8).collect();
+        let response_bytes = expected.clone();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            // One probe plus two concurrent parts; respond to their requested
+            // offsets rather than assuming which part connects first.
+            for _ in 0..3 {
+                let (mut stream, _) =
+                    tokio::time::timeout(std::time::Duration::from_secs(5), listener.accept())
+                        .await
+                        .expect("HTTP fixture connection timed out")
+                        .unwrap();
+                let request = read_request(&mut stream).await;
+                let range = request
+                    .lines()
+                    .find_map(|line| line.strip_prefix("range: bytes="))
+                    .unwrap();
+                let (start, end) = range.split_once('-').unwrap();
+                let start: usize = start.parse().unwrap();
+                let end: usize = end.parse().unwrap();
+                let header = format!(
+                    "HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\nContent-Range: bytes {start}-{end}/{}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    response_bytes.len(),
+                    end - start + 1,
+                );
+                stream.write_all(header.as_bytes()).await.unwrap();
+                stream
+                    .write_all(&response_bytes[start..=end])
+                    .await
+                    .unwrap();
+            }
+        });
+        let dir = TestDir::new();
+        let path = dir.join("book.epub");
+        download_to_path(
+            &format!("http://127.0.0.1:{port}/book"),
+            &path,
+            HashMap::new(),
+            None,
+            None,
+            None,
+            tauri::ipc::Channel::new(|_| Ok(())),
+        )
+        .await
+        .unwrap();
+        finish_fixture(server).await;
+        let bytes = std::fs::read(&path).unwrap();
+        let entries = std::fs::read_dir(&dir).unwrap().count();
+        assert_eq!(
+            bytes, expected,
+            "all multipart bytes must reach the final file"
+        );
+        assert_eq!(entries, 1);
+    }
 
     /// The download's relaxed and verified clients, told apart by user agent,
     /// with books.example.org and cdn.example.org both on the test server.
@@ -716,7 +1264,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.text().await.unwrap(), "book");
-        let requests = server.await.unwrap();
+        let requests = finish_fixture(server).await;
         assert!(
             requests[0].starts_with("get /get ") && requests[0].contains("user-agent: relaxed")
         );
@@ -761,7 +1309,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(response.text().await.unwrap(), "book");
-        let requests = server.await.unwrap();
+        let requests = finish_fixture(server).await;
         assert!(requests[0].starts_with("post /export "));
         assert!(requests[1].starts_with("get /done "));
         assert!(requests[2].starts_with("get /book "), "{}", requests[2]);

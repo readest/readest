@@ -133,6 +133,12 @@ impl<R: Runtime> NativeTts<R> {
             .run_mobile_plugin("update_carplay_state", payload)
             .map_err(Into::into)
     }
+
+    pub fn take_cold_playback(&self) -> crate::Result<TakeColdPlaybackResponse> {
+        self.0
+            .run_mobile_plugin("take_cold_playback", ())
+            .map_err(Into::into)
+    }
 }
 
 impl<R: Runtime> NativeTts<R> {

@@ -40,6 +40,11 @@ struct UpdateCarPlayStateArgs: Decodable {
   let author: String?
 }
 
+struct TakeColdPlaybackResponse: Encodable {
+  let bookHash: String?
+  let playing: Bool
+}
+
 struct UpdateMediaLibraryArgs: Decodable {
   let booksJson: String
 }
@@ -320,6 +325,9 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
   override init() {
     super.init()
     synthesizer.delegate = self
+    NotificationCenter.default.addObserver(
+      self, selector: #selector(carPlayPlayBook(_:)),
+      name: Notification.Name("readestCarPlayPlayBook"), object: nil)
   }
 
   // MARK: - Lifecycle
@@ -492,10 +500,14 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       let active = args.active ?? true
       DispatchQueue.main.async {
         if active {
+          // Read Aloud started in the reader takes over from CarPlay's.
+          self.stopColdReadAloud(keepMediaSession: true)
           self.activateRemoteCommands()
-        } else {
+        } else if self.coldReadAloud == nil {
+          // A reader waking up ends its own old session, not CarPlay's.
           self.deactivateRemoteCommands()
         }
+        self.webViewPlaying = false
       }
       invoke.resolve()
     } catch {
@@ -510,37 +522,43 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       let position = args.position
       let duration = args.duration
       DispatchQueue.main.async {
+        guard self.coldReadAloud == nil else { return }
+        self.webViewPlaying = playing
         // DIAGNOSTIC (remove before release): per-push session snapshot, to
         // see when WebKit steals the category back and what state we run in.
         let snap = AVAudioSession.sharedInstance()
         keepAliveLog.log(
           "state push: playing=\(playing) cat=\(snap.category.rawValue) opts=\(snap.categoryOptions.rawValue) rate=\(self.keepAliveQueuePlayer?.rate ?? -1)"
         )
-        // The keep-alive must mirror play/pause: MediaRemote derives the
-        // client's Playing/Paused from the app's actual audio activity, and
-        // the lock screen only surfaces a Playing client.
-        self.setKeepAlivePlaying(playing)
-        let center = self.activeInfoCenter()
-        var info = center.nowPlayingInfo ?? [String: Any]()
-        info[MPNowPlayingInfoPropertyPlaybackRate] = playing ? 1.0 : 0.0
-        // Declare pausable audio content: live streams are the documented case
-        // where the lock-screen card OMITS the play/pause button entirely, so
-        // both keys are set explicitly rather than left to defaults.
-        info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
-        info[MPNowPlayingInfoPropertyIsLiveStream] = false
-        if let position = position {
-          info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = position / 1000.0
-        }
-        if let duration = duration, duration > 0 {
-          info[MPMediaItemPropertyPlaybackDuration] = duration / 1000.0
-        }
-        center.nowPlayingInfo = info
-        self.setSystemPlaybackState(playing: playing)
+        self.publishPlaybackState(playing: playing, position: position, duration: duration)
       }
       invoke.resolve()
     } catch {
       invoke.reject("Failed to update playback state: \(error.localizedDescription)")
     }
+  }
+
+  private func publishPlaybackState(playing: Bool, position: Double?, duration: Double?) {
+    // The keep-alive must mirror play/pause: MediaRemote derives the
+    // client's Playing/Paused from the app's actual audio activity, and
+    // the lock screen only surfaces a Playing client.
+    setKeepAlivePlaying(playing)
+    let center = activeInfoCenter()
+    var info = center.nowPlayingInfo ?? [String: Any]()
+    info[MPNowPlayingInfoPropertyPlaybackRate] = playing ? 1.0 : 0.0
+    // Declare pausable audio content: live streams are the documented case
+    // where the lock-screen card OMITS the play/pause button entirely, so
+    // both keys are set explicitly rather than left to defaults.
+    info[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.audio.rawValue
+    info[MPNowPlayingInfoPropertyIsLiveStream] = false
+    if let position = position {
+      info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = position / 1000.0
+    }
+    if let duration = duration, duration > 0 {
+      info[MPMediaItemPropertyPlaybackDuration] = duration / 1000.0
+    }
+    center.nowPlayingInfo = info
+    setSystemPlaybackState(playing: playing)
   }
 
   @objc public func update_media_session_metadata(_ invoke: Invoke) {
@@ -552,6 +570,7 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
       let artwork = args.artwork
 
       DispatchQueue.main.async {
+        guard self.coldReadAloud == nil else { return }
         let center = self.activeInfoCenter()
         var info = center.nowPlayingInfo ?? [String: Any]()
         info[MPMediaItemPropertyTitle] = title
@@ -569,6 +588,7 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
           guard let image = self.loadImage(from: artwork) else { return }
           let mpArtwork = MPMediaItemArtwork(boundsSize: image.size) { _ in image }
           DispatchQueue.main.async {
+            guard self.coldReadAloud == nil else { return }
             let center = self.activeInfoCenter()
             var info = center.nowPlayingInfo ?? [String: Any]()
             info[MPMediaItemPropertyArtwork] = mpArtwork
@@ -742,7 +762,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         keepAliveLog.log("interruption began IGNORED (self-inflicted session op)")
         return
       }
-      interruptionForwarded = true
+      // A paused CarPlay player has nothing to resume when it ends.
+      interruptionForwarded = coldReadAloud?.isPlaying ?? true
       keepAliveLog.log("interruption began")
       triggerMediaSession("media-session-pause")
     case .ended:
@@ -824,6 +845,8 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         return .success
       }
       keepAliveLog.log("pauseCommand")
+      // The driver's Pause cancels an interruption's pending resume.
+      if self.coldReadAloud != nil { self.interruptionForwarded = false }
       self.triggerMediaSession("media-session-pause")
       return .success
     }
@@ -838,6 +861,7 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
         return .success
       }
       keepAliveLog.log("toggleCommand")
+      if self.coldReadAloud?.isPlaying == true { self.interruptionForwarded = false }
       self.triggerMediaSession("media-session-toggle")
       return .success
     }
@@ -1087,7 +1111,118 @@ class NativeTTSPlugin: Plugin, AVSpeechSynthesizerDelegate {
   }
 
   private func triggerMediaSession(_ event: String) {
-    trigger(event, data: JSObject())
+    guard let cold = coldReadAloud else {
+      trigger(event, data: JSObject())
+      return
+    }
+    switch event {
+    case "media-session-play": cold.play()
+    case "media-session-pause": cold.pause()
+    case "media-session-toggle": cold.isPlaying ? cold.pause() : cold.play()
+    case "media-session-next", "media-session-seek-forward": cold.skip(1)
+    case "media-session-previous", "media-session-seek-backward": cold.skip(-1)
+    default: break
+    }
+  }
+
+  // MARK: - CarPlay Read Aloud with the phone locked (#7566)
+  //
+  // A book picked in CarPlay normally opens in the reader, which starts Read
+  // Aloud. iOS suspends the reader's WebView while the phone app is off screen
+  // (the phone locked), so nothing played until the phone was unlocked. Then
+  // the book is read here instead, and the reader takes over once it is back
+  // on screen (take_cold_playback).
+
+  private var coldReadAloud: ColdReadAloud?
+  // The reader reported playing: its WebView is running and can take the pick.
+  private var webViewPlaying = false
+
+  private static var phoneAppOnScreen: Bool {
+    UIApplication.shared.connectedScenes.contains {
+      $0 is UIWindowScene && [.foregroundActive, .foregroundInactive].contains($0.activationState)
+    }
+  }
+
+  // Posted by CarPlaySceneDelegate with an NSMutableDictionary; "handled"
+  // tells it not to open the book in the reader as well.
+  @objc private func carPlayPlayBook(_ note: Notification) {
+    guard let request = note.object as? NSMutableDictionary, let hash = request["hash"] as? String
+    else { return }
+    guard !(request["isAudiobook"] as? Bool ?? false), !webViewPlaying, !Self.phoneAppOnScreen,
+      let cold = ColdReadAloud(
+        bookHash: hash, title: request["title"] as? String ?? "",
+        author: request["author"] as? String ?? "")
+    else {
+      // The reader plays this pick; a book read here must not go on over it.
+      stopColdReadAloud(keepMediaSession: false)
+      return
+    }
+    request["handled"] = true
+    if coldReadAloud != nil {
+      stopColdReadAloud(keepMediaSession: true)
+    } else if mediaSessionActive {
+      // The reader's paused session may be bound to its own player; this
+      // player gets a session of its own.
+      deactivateRemoteCommands()
+    }
+    coldReadAloud = cold
+    cold.onChange = { [weak self, weak cold] in
+      guard let self = self, let cold = cold, self.coldReadAloud === cold else { return }
+      self.publishPlaybackState(playing: cold.isPlaying, position: nil, duration: nil)
+    }
+    cold.onEnd = { [weak self, weak cold] toReader, playing in
+      guard let self = self, let cold = cold, self.coldReadAloud === cold else { return }
+      self.stopColdReadAloud(keepMediaSession: false)
+      // A book left to the reader opens there once it can run, as before;
+      // it starts reading only if it wasn't paused meanwhile.
+      let query = playing ? "?autoplay=tts" : ""
+      guard toReader, let url = URL(string: "readest://book/\(cold.bookHash)\(query)") else { return }
+      _ = UIApplication.shared.delegate?.application?(UIApplication.shared, open: url, options: [:])
+    }
+    activateRemoteCommands()
+    var info: [String: Any] = [MPMediaItemPropertyTitle: cold.title, MPMediaItemPropertyArtist: cold.author]
+    if let cover = UIImage(contentsOfFile: cold.coverURL.path) {
+      info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: cover.size) { _ in cover }
+    }
+    activeInfoCenter().nowPlayingInfo = info
+    setCarPlayNowReading(title: cold.title, author: cold.author)
+    cold.start()
+  }
+
+  private func stopColdReadAloud(keepMediaSession: Bool) {
+    guard let cold = coldReadAloud else { return }
+    coldReadAloud = nil
+    cold.stop()
+    if !keepMediaSession { deactivateRemoteCommands() }
+    setCarPlayNowReading(title: nil, author: nil)
+  }
+
+  private func setCarPlayNowReading(title: String?, author: String?) {
+    let defaults = UserDefaults.standard
+    defaults.set(title != nil, forKey: "readest.carplay.active")
+    defaults.set(title ?? "", forKey: "readest.carplay.title")
+    defaults.set(author ?? "", forKey: "readest.carplay.author")
+    NotificationCenter.default.post(name: Notification.Name("readestCarPlayStateChanged"), object: nil)
+  }
+
+  // The reader, back on screen, takes the book CarPlay is reading: the player
+  // stops with its position saved to the book's config, and the reader opens
+  // the book there, reading on if it was playing. While the phone app is off
+  // screen the reader can't run, so the player keeps going.
+  @objc public func take_cold_playback(_ invoke: Invoke) {
+    DispatchQueue.main.async {
+      guard let cold = self.coldReadAloud, Self.phoneAppOnScreen else {
+        invoke.resolve(TakeColdPlaybackResponse(bookHash: nil, playing: false))
+        return
+      }
+      let playing = cold.isPlaying
+      // Playing on, the session is kept for the reader's Read Aloud, so other
+      // audio isn't handed the car for the moment in between; it shows paused,
+      // with the silent keep-alive stopped, until the reader plays. Paused, it ends.
+      self.stopColdReadAloud(keepMediaSession: playing)
+      if playing { self.publishPlaybackState(playing: false, position: nil, duration: nil) }
+      invoke.resolve(TakeColdPlaybackResponse(bookHash: cold.bookHash, playing: playing))
+    }
   }
 
   // MARK: - Native audio playout (Edge TTS)
