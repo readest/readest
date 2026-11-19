@@ -86,6 +86,35 @@ describe('Readest Cloud auth routing (#6416)', () => {
     ]);
   });
 
+  it('refreshes on the Supabase host when the proxy never answers', async () => {
+    const supabase = await loadClient(CLOUD_URL);
+    await supabase.auth.signInWithPassword({ email: 'a@b.c', password: 'pw' });
+    fetchMock.mockClear();
+    fetchMock.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).origin === PROXY_URL) {
+        return new Promise<Response>((_, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(init.signal!.reason));
+        });
+      }
+      return new Response(JSON.stringify({ ...session, access_token: 'access-2' }), {
+        status: 200,
+      });
+    });
+
+    vi.useFakeTimers();
+    const refresh = supabase.auth.refreshSession();
+    await vi.advanceTimersByTimeAsync(35_000);
+    const { data, error } = await refresh;
+    vi.useRealTimers();
+
+    expect(error).toBeNull();
+    expect(data.session?.access_token).toBe('access-2');
+    expect(requestedUrls()).toEqual([
+      `${PROXY_URL}/auth/v1/token?grant_type=refresh_token`,
+      `${CLOUD_URL}/auth/v1/token?grant_type=refresh_token`,
+    ]);
+  });
+
   it('keeps the proxy answer when the proxy can be reached', async () => {
     const supabase = await loadClient(CLOUD_URL);
     await supabase.auth.signInWithPassword({ email: 'a@b.c', password: 'pw' });
