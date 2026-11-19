@@ -260,6 +260,30 @@ describe('PageboundClient', () => {
     expect(calls('GET', '/api/v1/books/dixon')).toHaveLength(0);
   });
 
+  // Store and Calibre titles often end in the series: Pagebound's search still
+  // finds the book, but its title has no such suffix (#7480).
+  test('auto-match accepts the title without a trailing bracketed series', async () => {
+    route(
+      on('GET', 'typesense.net', () =>
+        json({
+          hits: [{ document: { id: '3012', uuid: 'senlin', title: 'Senlin Ascends' } }],
+        }),
+      ),
+      on('GET', '/books/senlin', () => json({ book: remoteBook, user_book: currentUserBook })),
+      on('POST', '/reading_updates', () => json({}, 201)),
+    );
+    const senlin = {
+      ...book,
+      title: 'Senlin Ascends (The Books of Babel Book 1)',
+      author: 'Josiah Bancroft',
+    };
+
+    await newClient().pushProgress(senlin, cfg({ progress: [1, 100] }), { broadcast: false });
+
+    expect(calls('GET', '/books/senlin')).toHaveLength(1);
+    expect(calls('POST', '/reading_updates')).toHaveLength(1);
+  });
+
   test('auto-match fails over to Link Book when no title matches', async () => {
     route(
       on('GET', 'typesense.net', () =>
