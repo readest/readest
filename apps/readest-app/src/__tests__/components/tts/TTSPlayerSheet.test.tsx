@@ -699,6 +699,14 @@ describe('TTSPlayerSheet', () => {
         engine: 'custom-tts',
         voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
       },
+      {
+        id: 'maleonly',
+        name: 'Male Only',
+        engine: 'male-tts',
+        voices: [
+          { id: 'male1', name: 'MaleOne', lang: 'en-US', disabled: false, gender: 'male' as const },
+        ],
+      },
     ];
     const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(engines) });
     render(<TTSPlayerSheet {...props} />);
@@ -715,6 +723,11 @@ describe('TTSPlayerSheet', () => {
     // list although the retained tab is Female and the tabs are hidden.
     fireEvent.change(engineSelect!, { target: { value: 'custom-tts/custom' } });
     await waitFor(() => screen.getByText('Aseng'));
+    // An engine with only male voices must not hide behind the retained
+    // Female tab either: its voices stay listed, with "All" shown selected.
+    fireEvent.change(engineSelect!, { target: { value: 'male-tts/maleonly' } });
+    await waitFor(() => screen.getByText('MaleOne'));
+    expect(screen.getByRole('radio', { name: 'All' }).getAttribute('aria-checked')).toBe('true');
     // Back to the gendered engine: the retained Female tab narrows it again.
     fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
     expect(screen.getByText('Ava')).toBeTruthy();

@@ -57,11 +57,15 @@ const VoiceList: React.FC<VoiceListProps> = ({
   // A name a user's own service gave is shown as is; built-in names are UI strings.
   const nameOf = (item: TTSVoice | TTSVoicesGroup) => (item.literalName ? item.name : _(item.name));
   const hasGenders = groups.some((group) => group.voices.some((voice) => voice.gender));
-  // Groups without gender metadata (a custom service) can't honor a retained
-  // gender tab; fall back to "all" while only they are shown, so the hidden
-  // tab never empties the list. The tab comes back as it was once a gendered
-  // group is shown again.
-  const effectiveGender = hasGenders ? gender : 'all';
+  // The retained tab only applies while the shown voices actually include one
+  // of that gender: groups without gender metadata, or an engine that only
+  // has male voices, must not hide behind a Female tab left over from another
+  // engine. Fall back to "all" for matching and the selected-tab state; the
+  // choice itself is kept and comes back once such voices are shown again.
+  const hasSelectedGender = groups.some((group) =>
+    group.voices.some((voice) => voice.gender === gender),
+  );
+  const effectiveGender = gender === 'all' || hasSelectedGender ? gender : 'all';
   const needle = query.trim().toLowerCase();
   const matches = (voice: TTSVoice) =>
     (effectiveGender === 'all' || voice.gender === effectiveGender) &&
@@ -87,12 +91,12 @@ const VoiceList: React.FC<VoiceListProps> = ({
               key={value}
               type='button'
               role='radio'
-              aria-checked={gender === value}
+              aria-checked={effectiveGender === value}
               onClick={() => setGender(value)}
               className={clsx(
                 'flex h-9 items-center justify-center rounded-full px-4 text-[0.85em] font-medium transition-colors',
                 'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
-                gender === value
+                effectiveGender === value
                   ? 'bg-base-300 text-base-content eink-inverted shadow-xs'
                   : 'text-base-content/60 hover:text-base-content',
               )}
