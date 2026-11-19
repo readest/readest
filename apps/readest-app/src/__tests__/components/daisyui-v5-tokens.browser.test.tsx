@@ -386,6 +386,52 @@ describe('daisyUI 5 theme tokens', () => {
     expect(queryByRole('listbox')).toBeNull();
   });
 
+  it('eats Escape so the settings dialog underneath stays open', () => {
+    // The dialog listens for Escape on the native <dialog>, which runs before
+    // React's delegated handler, so the menu has to stop the key in the
+    // capture phase -- otherwise one Escape closes both.
+    const windowListener = vi.fn();
+    window.addEventListener('keydown', windowListener);
+    const { getByRole, queryByRole } = render(
+      <SettingsSelect
+        value='a'
+        onChange={() => {}}
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+        ariaLabel='Escape select'
+      />,
+    );
+    const trigger = getByRole('button', { name: 'A', expanded: false });
+    fireEvent.click(trigger);
+    fireEvent.keyDown(getByRole('listbox'), { key: 'Escape' });
+
+    expect(queryByRole('listbox')).toBeNull();
+    expect(windowListener).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(trigger);
+    window.removeEventListener('keydown', windowListener);
+  });
+
+  it('returns focus to the trigger after a pick', () => {
+    const { getByRole } = render(
+      <SettingsSelect
+        value='a'
+        onChange={() => {}}
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+        ariaLabel='Focus select'
+      />,
+    );
+    const trigger = getByRole('button', { name: 'A', expanded: false });
+    fireEvent.click(trigger);
+    fireEvent.click(getByRole('listbox').querySelectorAll('li button')[1]!);
+    // The option unmounts with the menu; focus must not fall to <body>.
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it('never opens a disabled select', () => {
     const { getByRole, queryByRole } = render(
       <SettingsSelect

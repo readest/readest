@@ -115,8 +115,7 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
     }
   }, [open, menuMaxHeight]);
 
-  // Dismiss on an outside press. Escape is handled on the focused control
-  // itself so it doesn't bubble out and close the whole settings dialog.
+  // Dismiss on an outside press.
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
@@ -124,6 +123,23 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
     };
     document.addEventListener('pointerdown', onPointerDown);
     return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [open]);
+
+  // Escape has to close only the menu. The settings dialog listens for Escape
+  // on the native <dialog>, which sees the key before any React handler on a
+  // descendant, so an onKeyDown alone would take the dialog down with the menu.
+  // Catch it in the capture phase and close over it.
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(false);
+      buttonRef.current?.focus();
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
   }, [open]);
 
   // Mirror the prop onto the uncontrolled select. Without this, a caller that
@@ -138,7 +154,6 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     e.stopPropagation();
-    if (e.key === 'Escape') setOpen(false);
   };
 
   const pick = (option: SettingsSelectOption) => {
@@ -150,6 +165,9 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
       select.dispatchEvent(new Event('change', { bubbles: true }));
     }
     setOpen(false);
+    // The option that had focus is about to unmount; without this, focus falls
+    // back to the document body and keyboard users lose their place.
+    buttonRef.current?.focus();
   };
 
   return (
@@ -163,9 +181,9 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
           disabled={disabled}
           onClick={() => setOpen((wasOpen) => !wasOpen)}
           onKeyDown={handleKeyDown}
-          className='flex h-9 max-w-full items-center gap-1 rounded-md bg-base-200/70 px-2 text-end transition-colors hover:bg-base-300/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-base-content/40 disabled:cursor-default disabled:opacity-60'
+          className='settings-content eink-bordered flex h-9 max-w-full items-center gap-1 rounded-md bg-base-200/70 px-2 text-end transition-colors hover:bg-base-300/70 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-base-content/40 disabled:cursor-default disabled:opacity-60'
         >
-          <span className='min-w-0 truncate text-sm'>{selected?.label ?? value}</span>
+          <span className='min-w-0 truncate'>{selected?.label ?? value}</span>
           <MdArrowDropDown aria-hidden='true' className='text-base-content/55 h-5 w-5 shrink-0' />
         </button>
 
@@ -175,7 +193,7 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
             role='listbox'
             onKeyDown={handleKeyDown}
             style={menuMaxHeight ? { maxHeight: menuMaxHeight } : undefined}
-            className={`absolute end-0 z-50 max-h-60 min-w-full overflow-auto overscroll-contain rounded-md bg-base-100 p-1 shadow-lg ring-1 ring-base-300 ${
+            className={`eink-bordered absolute end-0 z-50 max-h-60 min-w-full overflow-auto overscroll-contain rounded-md bg-base-100 p-1 shadow-lg ring-1 ring-base-300 ${
               dropUp ? 'bottom-full mb-1' : 'top-full mt-1'
             }`}
           >
@@ -185,7 +203,7 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
                   type='button'
                   disabled={opt.disabled}
                   onClick={() => pick(opt)}
-                  className={`flex w-full items-center justify-between gap-3 rounded-sm px-2 py-1.5 text-start text-sm whitespace-nowrap hover:bg-base-200 disabled:cursor-default disabled:opacity-40 ${
+                  className={`settings-content flex w-full items-center justify-between gap-3 rounded-sm px-2 py-1.5 text-start whitespace-nowrap hover:bg-base-200 disabled:cursor-default disabled:opacity-40 ${
                     opt.value === value ? 'bg-base-200' : ''
                   }`}
                 >
