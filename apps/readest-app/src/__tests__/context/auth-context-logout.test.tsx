@@ -94,4 +94,25 @@ describe('AuthContext logout', () => {
       expect(localStorage.getItem(key), key).toBeNull();
     }
   });
+
+  it('signs this device out when the logout request cannot reach the server', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+    await waitFor(() => expect(result.current.user?.id).toBe(user.id));
+    const answer = authFetch.getMockImplementation()!;
+    authFetch.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname === '/auth/v1/logout') {
+        throw new TypeError('Failed to fetch');
+      }
+      return answer(input, init);
+    });
+
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    // The SDK must not keep a session it would restore on the next start.
+    expect((await supabase.auth.getSession()).data.session).toBeNull();
+    expect(localStorage.getItem('logout-test-session')).toBeNull();
+    expect(result.current.user).toBeNull();
+  });
 });
