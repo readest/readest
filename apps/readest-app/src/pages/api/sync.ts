@@ -726,20 +726,34 @@ export async function GET(req: NextRequest) {
       // but flagged with deleted_at (and deleted_at_ms for the koplugin, whose
       // JSON decoder turns null into a truthy function) for clients to skip.
       // This covers archived rows and rows a device pushed after the deletion.
+      const statBooks = new Map(
+        ((sb.data ?? []) as unknown as StatBookRecord[]).map((b) => [b.book_hash, b]),
+      );
       if (pageRows.length > 0) {
-        const { data: deletions, error: delErr } = await supabase
-          .from('stat_books')
-          .select('book_hash,deleted_at')
-          .eq('user_id', user.id)
-          .not('deleted_at', 'is', null);
-        if (delErr)
-          return NextResponse.json(
-            { error: `stat_books: ${delErr.message || 'Unknown error'}` },
-            { status: 500 },
-          );
+        const deletions: StatBookRecord[] = [];
+        for (let offset = 0; ; offset += PAGE) {
+          const { data, error: delErr } = await supabase
+            .from('stat_books')
+            .select('*')
+            .eq('user_id', user.id)
+            .not('deleted_at', 'is', null)
+            .order('book_hash', { ascending: true })
+            .range(offset, offset + PAGE - 1);
+          if (delErr)
+            return NextResponse.json(
+              { error: `stat_books: ${delErr.message || 'Unknown error'}` },
+              { status: 500 },
+            );
+          const rows = (data ?? []) as StatBookRecord[];
+          deletions.push(...rows);
+          if (rows.length < PAGE) break;
+        }
         const deletedAt = new Map<string, number>();
-        for (const d of (deletions ?? []) as StatBookRecord[]) {
+        for (const d of deletions) {
           if (d.deleted_at) deletedAt.set(d.book_hash, ms(d.deleted_at));
+          // A deletion committed after stat_books was read above is returned
+          // too: the cursor moves on the pages alone and can pass it.
+          if (ms(d.updated_at) > since.getTime()) statBooks.set(d.book_hash, d);
         }
         if (deletedAt.size > 0) {
           pageRows = pageRows.map((r) => {
@@ -752,7 +766,7 @@ export async function GET(req: NextRequest) {
       }
       (
         results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
-      ).statBooks = withMs((sb.data ?? []) as unknown as StatBookRecord[]).map((b) =>
+      ).statBooks = withMs([...statBooks.values()]).map((b) =>
         b.deleted_at ? { ...b, deleted_at_ms: ms(b.deleted_at) } : b,
       );
       (

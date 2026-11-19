@@ -154,6 +154,7 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
         </div>
         <BookStatsList
           db={stats.db}
+          reloadKey={stats}
           onChange={() =>
             void readStats(stats.db)
               .then(setStats)

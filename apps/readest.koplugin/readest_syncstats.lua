@@ -326,8 +326,26 @@ function SyncStats:pull(settings, client, interactive, ui)
                     .. " since=" .. tostring(since))
                 -- Resolved inside the callback so it reflects the session state
                 -- at apply time, after the async network round-trip.
-                local live_book_id = ui and ui.statistics and ui.statistics.id_curr_book or nil
+                local st = ui and ui.statistics
+                local live_book_id = st and st.id_curr_book or nil
+                -- The open book's session keeps page events in memory until its
+                -- next insertDB. When this pull deletes that book's statistics
+                -- (#7494), write them first so the deletion covers those read
+                -- before it, and count the page being read from the deletion on.
+                local live_before
+                if live_book_id and st.doc_md5 then
+                    for _, b in ipairs(response.statBooks or {}) do
+                        local at = tonumber(b.deleted_at_ms)
+                        if at and b.book_hash == st.doc_md5 then live_before = math.ceil(at / 1000) end
+                    end
+                end
+                if live_before then st:insertDB() end
                 self:applyRemote(response.statBooks, response.statPages, live_book_id)
+                if live_before then
+                    local cur = st.page_stat and st.page_stat[st.curr_page]
+                    local t = cur and cur[#cur]
+                    if t and t[1] < live_before then t[1] = live_before end
+                end
                 total_pages = total_pages + npages
                 local newest = since
                 for _, p in ipairs(response.statPages or {}) do

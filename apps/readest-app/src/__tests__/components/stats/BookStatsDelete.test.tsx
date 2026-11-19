@@ -127,6 +127,36 @@ describe('Statistics by Book', () => {
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByText('Dune')).toBeTruthy();
   });
+
+  it('adds the books the dialog’s pull brings in while the page is open', async () => {
+    sync.user = { id: 'u' };
+    const books = [entry('a', 'Dune', 600)];
+    fakeDb(books);
+    let finishPull = () => {};
+    sync.pullStats.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishPull = () => {
+            books.push(entry('b', 'Foundation', 300));
+            resolve();
+          };
+        }),
+    );
+    await openBooksPage();
+    expect(await screen.findByText('Dune')).toBeTruthy();
+    expect(screen.queryByText('Foundation')).toBeNull();
+    await act(async () => finishPull());
+    expect(await screen.findByText('Foundation')).toBeTruthy();
+  });
+
+  it('says the list failed to load rather than that there are no statistics', async () => {
+    const fake = fakeDb([entry('a', 'Dune', 600)]);
+    fake.getBookStats.mockRejectedValue(new Error('locked'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    await openBooksPage();
+    expect(await screen.findByText('Failed to load reading statistics')).toBeTruthy();
+    expect(screen.queryByText('No reading statistics yet')).toBeNull();
+  });
 });
 
 describe('Book Details: Reading Statistics', () => {

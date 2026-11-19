@@ -41,7 +41,8 @@ const makeBuilder = (table: string) => {
     }
     const range = chain.find((c) => c.method === 'range')?.args as [number, number] | undefined;
     if (range) rows = rows.slice(range[0], range[1] + 1);
-    return resolve({ data: rows, error: null });
+    // PostgREST caps every response at 1000 rows (Supabase's db-max-rows)
+    return resolve({ data: rows.slice(0, 1000), error: null });
   };
   return builder;
 };
@@ -125,6 +126,7 @@ beforeEach(() => {
   calls.length = 0;
   upserts.length = 0;
   fromMock.mockClear();
+  fromMock.mockImplementation((table: string) => makeBuilder(table));
   rpcMock.mockClear();
   for (const k of Object.keys(tableData)) delete tableData[k];
   bucket.get.mockReset();
@@ -195,6 +197,34 @@ describe('GET /api/sync?type=stats with a deleted book', () => {
     tableData['stat_pages'] = [hot('h1', 1000, 10)];
     const res = await pull('type=stats&since=0');
     expect(deletedKeys(res.statPages)).toEqual(['h1@1000']);
+  });
+
+  it('finds every deletion when the account has more than 1000 deleted books', async () => {
+    tableData['stat_books'] = Array.from({ length: 1001 }, (_, i) =>
+      statBook(`d${String(i).padStart(4, '0')}`, iso(DELETED_MS)),
+    );
+    tableData['stat_pages'] = [hot('d1000', 1999, DELETED_MS + 10)];
+    const res = await pull(`type=stats&since=${DELETED_MS + 5}&limit=1000`);
+    expect(deletedKeys(res.statPages)).toEqual(['d1000@1999']);
+  });
+
+  it('returns a deletion committed after stat_books was read, which the cursor passes', async () => {
+    // h1 is deleted between the stat_books read and the deletion lookup; a page
+    // pushed after the deletion moves the client's cursor past its updated_at,
+    // so this response is the only one that can carry it.
+    tableData['stat_pages'] = [hot('h1', 1999, DELETED_MS + 10)];
+    let reads = 0;
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'stat_books' && ++reads === 2) {
+        tableData['stat_books'] = [statBook('h1', iso(DELETED_MS))];
+      }
+      return makeBuilder(table);
+    });
+    const res = await pull('type=stats&since=1000&limit=1000');
+    expect(deletedKeys(res.statPages)).toEqual(['h1@1999']);
+    expect(res.statBooks).toEqual([
+      expect.objectContaining({ book_hash: 'h1', deleted_at_ms: DELETED_MS }),
+    ]);
   });
 
   it('does not look for deletions when there are no events to return', async () => {

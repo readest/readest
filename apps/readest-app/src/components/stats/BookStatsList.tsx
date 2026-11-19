@@ -10,27 +10,40 @@ import DeleteBookStatsAlert from './DeleteBookStatsAlert';
 
 interface BookStatsListProps {
   db: StatisticsDb;
+  /** The list is read again whenever this changes, e.g. after the dialog's pull. */
+  reloadKey: unknown;
   /** Called after a book's statistics were deleted, so totals can be read again. */
   onChange: () => void;
 }
 
 /** Every book in the statistics, most recently read first, each deletable (#7494). */
-const BookStatsList: React.FC<BookStatsListProps> = ({ db, onChange }) => {
+const BookStatsList: React.FC<BookStatsListProps> = ({ db, reloadKey, onChange }) => {
   const _ = useTranslation();
   const [books, setBooks] = useState<BookStats[] | null>(null);
+  const [failed, setFailed] = useState(false);
   const [deleting, setDeleting] = useState<BookStats | null>(null);
 
   const load = useCallback(() => {
     db.getBookStats()
-      .then(setBooks)
+      .then((loaded) => {
+        setBooks(loaded);
+        setFailed(false);
+      })
       .catch((err) => {
         console.error('Failed to load book statistics:', err);
-        setBooks([]);
+        setFailed(true);
       });
   }, [db]);
 
-  useEffect(load, [load]);
+  useEffect(load, [load, reloadKey]);
 
+  if (failed) {
+    return (
+      <p className='text-base-content/70 py-10 text-center'>
+        {_('Failed to load reading statistics')}
+      </p>
+    );
+  }
   if (!books) return null;
   if (books.length === 0) {
     return (
