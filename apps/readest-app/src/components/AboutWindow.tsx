@@ -5,6 +5,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
+import { CHECK_UPDATE_TIMEOUT_MS, UPDATE_ERROR_DISPLAY_MS } from '@/services/constants';
 import { isTauriAppPlatform } from '@/services/environment';
 import { parseWebViewInfo } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
@@ -76,8 +77,18 @@ export const AboutWindow = () => {
 
   const handleCheckUpdate = async () => {
     setUpdateStatus('checking');
+    // The manifest fetch only honors connectTimeout; a stalled check must
+    // still fail.
+    let deadlineTimer: ReturnType<typeof setTimeout> | null = null;
     try {
-      const hasUpdate = await checkForAppUpdates(_, false, settings.updateChannel);
+      const checkDeadline = new Promise<never>((_, reject) => {
+        deadlineTimer = setTimeout(
+          () => reject(new Error('update check timed out')),
+          CHECK_UPDATE_TIMEOUT_MS,
+        );
+      });
+      const checkPromise = checkForAppUpdates(_, false, settings.updateChannel);
+      const hasUpdate = await Promise.race([checkPromise, checkDeadline]);
       if (hasUpdate) {
         handleClose();
       } else {
@@ -86,6 +97,8 @@ export const AboutWindow = () => {
     } catch (error) {
       console.info('Error checking for updates:', error);
       setUpdateStatus('error');
+    } finally {
+      if (deadlineTimer) clearTimeout(deadlineTimer);
     }
   };
 
@@ -97,6 +110,13 @@ export const AboutWindow = () => {
       setUpdateStatus('error');
     }
   };
+
+  // Show the failure briefly, then restore the Check Update button.
+  useEffect(() => {
+    if (updateStatus !== 'error') return;
+    const timer = setTimeout(() => setUpdateStatus(null), UPDATE_ERROR_DISPLAY_MS);
+    return () => clearTimeout(timer);
+  }, [updateStatus]);
 
   const handleClose = () => {
     setIsOpen(false);

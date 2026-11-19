@@ -1041,6 +1041,16 @@ export const SYNC_NOTES_INTERVAL_SEC = 5;
 export const SYNC_BOOKS_INTERVAL_SEC = 5;
 export const CHECK_UPDATE_INTERVAL_SEC = 24 * 60 * 60;
 
+// Update-dialog timings: hard deadline for a manual update check (the
+// manifest fetch only honors connectTimeout), no-progress window covering
+// both the pre-body (0/0 MB) and mid-transfer stalls (healthy slow
+// connections emit per-chunk events and never trip it), and how long a
+// failure stays on screen (the Toast.tsx default) before the action button
+// returns.
+export const CHECK_UPDATE_TIMEOUT_MS = 15_000;
+export const DOWNLOAD_STALL_TIMEOUT_MS = 15_000;
+export const UPDATE_ERROR_DISPLAY_MS = 5_000;
+
 export const MAX_ZOOM_LEVEL = 500;
 export const MIN_ZOOM_LEVEL = 50;
 export const ZOOM_STEP = 10;

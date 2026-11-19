@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import semver from 'semver';
 import Image from 'next/image';
 import { useEnv } from '@/context/EnvContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { type as osType, arch as osArch } from '@tauri-apps/plugin-os';
 import { check, Update } from '@tauri-apps/plugin-updater';
 import { relaunch, exit } from '@tauri-apps/plugin-process';
@@ -25,6 +25,8 @@ import {
   READEST_UPDATER_FILE,
   READEST_CHANGELOG_FILE,
   READEST_UPDATER_PUBKEY,
+  DOWNLOAD_STALL_TIMEOUT_MS,
+  UPDATE_ERROR_DISPLAY_MS,
 } from '@/services/constants';
 import Dialog from '@/components/Dialog';
 import Link from './Link';
@@ -112,10 +114,24 @@ export const UpdaterContent = ({
   const [showOriginal, setShowOriginal] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [contentLength, setContentLength] = useState<number | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState<number | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // `running` while a download attempt is in flight, `idle` back at the
+  // plain download button.
+  const [phase, setPhase] = useState<'idle' | 'running'>('idle');
+  // Download failure (stall or native error), rendered inline and
+  // auto-reverted to the button; the check-phase `error` above replaces the
+  // whole view instead.
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  // Belt-and-braces sync re-entry guard on top of the button's native
+  // disabled attribute: two live downloadAndInstall calls racing each other
+  // is the one thing this machinery must never allow.
+  const attemptLiveRef = useRef(false);
+  // Attempt generation: the JS-orchestrated install flows check it after
+  // their download resolves and skip verify/install/launch if the attempt
+  // was failed or superseded.
+  const attemptIdRef = useRef(0);
 
   useEffect(() => {
     setTargetLang(getLocale());
@@ -147,6 +163,7 @@ export const UpdaterContent = ({
           date: data.pub_date,
           body: data.notes,
           downloadAndInstall: async (onEvent) => {
+            const attempt = attemptIdRef.current;
             await new Promise<void>(async (resolve, reject) => {
               let downloaded = 0;
               let total = 0;
@@ -177,6 +194,8 @@ export const UpdaterContent = ({
               });
             });
 
+            // A stalled or superseded attempt must not install.
+            if (attemptIdRef.current !== attempt) return;
             const res = await installPackage({
               path: apkFilePath,
             });
@@ -237,7 +256,10 @@ export const UpdaterContent = ({
           date: data.pub_date,
           body: data.notes,
           downloadAndInstall: async (onEvent) => {
+            const attempt = attemptIdRef.current;
             await downloadWithProgress(downloadUrl, exeFilePath, onEvent);
+            // A stalled or superseded attempt must not launch.
+            if (attemptIdRef.current !== attempt) return;
             try {
               console.log('Launching new executable:', exeFilePath);
               const command = Command.create('start-readest', ['/C', 'start', '', exeFilePath]);
@@ -272,7 +294,10 @@ export const UpdaterContent = ({
           date: data.pub_date,
           body: data.notes,
           downloadAndInstall: async (onEvent) => {
+            const attempt = attemptIdRef.current;
             await downloadWithProgress(downloadUrl, appImageFilePath, onEvent);
+            // A stalled or superseded attempt must not launch.
+            if (attemptIdRef.current !== attempt) return;
             try {
               // Make the AppImage executable
               const chmodCommand = Command.create('chmod-appimage', ['+x', appImageFilePath]);
@@ -300,6 +325,7 @@ export const UpdaterContent = ({
       date: n.pubDate,
       body: n.notes,
       downloadAndInstall: async (onEvent) => {
+        const attempt = attemptIdRef.current;
         if (TAURI_UPDATER_KEYS.has(n.platformKey)) {
           // macOS / Windows-NSIS: Tauri updater (verify + install +
           // relaunch). A 0 contentLength (server omitted Content-Length) is
@@ -338,6 +364,8 @@ export const UpdaterContent = ({
           filePath = await appService!.resolveFilePath(fileName, 'Cache');
         }
         await downloadWithProgress(n.url, filePath, onEvent);
+        // A stalled or superseded attempt must not install.
+        if (attemptIdRef.current !== attempt) return;
         const ok = await verifyUpdateSignature(filePath, n.signature, READEST_UPDATER_PUBKEY);
         if (!ok) {
           console.error('Nightly signature verification failed; aborting install');
@@ -475,50 +503,122 @@ export const UpdaterContent = ({
   }, []);
 
   const handleDownloadInstall = async () => {
-    if (!update) {
+    if (!update || attemptLiveRef.current) {
       return;
     }
+    attemptLiveRef.current = true;
+    attemptIdRef.current++;
     let downloaded = 0;
     let contentLength = 0;
     let lastLogged = 0;
+    let stallTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearStallTimer = () => {
+      if (stallTimer) {
+        clearTimeout(stallTimer);
+        stallTimer = null;
+      }
+    };
     setProgress(0);
-    setIsDownloading(true);
+    setPhase('running');
     try {
-      await update.downloadAndInstall?.((event) => {
-        switch (event.event) {
-          case 'Started':
-            contentLength = event.data.contentLength!;
-            setContentLength(contentLength);
-            break;
-          case 'Progress':
-            downloaded += event.data.chunkLength;
-            setDownloaded(downloaded);
-            // Guard against a 0 total (server omitted Content-Length): keep the
-            // bar at an indeterminate 0% instead of NaN/Infinity.
-            const percent = contentLength > 0 ? Math.floor((downloaded / contentLength) * 100) : 0;
-            setProgress(percent);
-            if (downloaded - lastLogged >= 1 * 1024 * 1024) {
-              console.log(`downloaded ${downloaded} bytes from ${contentLength}`);
-              lastLogged = downloaded;
-            }
-            break;
-          case 'Finished':
-            console.log('download finished');
-            setProgress(100);
-            break;
+      await new Promise<void>((resolve, reject) => {
+        // Stall watchdog: re-armed on every progress event, so only a
+        // genuine no-byte window reports failure. The native transfer cannot
+        // be cancelled from JS: desktop-plugin paths may still complete
+        // natively (update installed); custom paths die via reqwest's read
+        // timeout, and the attempt generation stops their leftover
+        // orchestration from installing — its downloaded bytes are discarded
+        // (no resume; a retry re-downloads the whole package).
+        const armStallTimer = () => {
+          clearStallTimer();
+          stallTimer = setTimeout(() => {
+            stallTimer = null;
+            reject(new Error('download stalled'));
+          }, DOWNLOAD_STALL_TIMEOUT_MS);
+        };
+        armStallTimer();
+        const onEvent = (event: DownloadEvent) => {
+          // Stragglers from an abandoned transfer stop here.
+          if (stallTimer === null) return;
+          switch (event.event) {
+            case 'Started':
+              contentLength = event.data.contentLength!;
+              setContentLength(contentLength);
+              armStallTimer();
+              break;
+            case 'Progress':
+              downloaded += event.data.chunkLength;
+              setDownloaded(downloaded);
+              // Guard against a 0 total (server omitted Content-Length): keep the
+              // bar at an indeterminate 0% instead of NaN/Infinity.
+              const percent =
+                contentLength > 0 ? Math.floor((downloaded / contentLength) * 100) : 0;
+              setProgress(percent);
+              if (downloaded - lastLogged >= 1 * 1024 * 1024) {
+                console.log(`downloaded ${downloaded} bytes from ${contentLength}`);
+                lastLogged = downloaded;
+              }
+              armStallTimer();
+              break;
+            case 'Finished':
+              // Install/relaunch may outlast the watchdog window (desktop
+              // plugin handoff; Android's install_package resolves as soon
+              // as the installer intent is dispatched), so stop watching.
+              clearStallTimer();
+              console.log('download finished');
+              setProgress(100);
+              break;
+          }
+        };
+        if (update.downloadAndInstall) {
+          try {
+            update.downloadAndInstall(onEvent).then(resolve, reject);
+          } catch (error) {
+            // A sync throw never reaches the handlers above.
+            reject(error);
+          }
+        } else {
+          reject(new Error('downloadAndInstall unavailable'));
         }
       });
+      attemptLiveRef.current = false;
+      setPhase('idle');
+      setProgress(null);
+      setDownloaded(null);
+      setContentLength(null);
       console.log('package installed');
       if (!appService?.isAndroidApp && process.env.NODE_ENV === 'production') {
-        await relaunch();
+        // Installed already; a failed relaunch is not a download failure.
+        try {
+          await relaunch();
+        } catch (relaunchError) {
+          console.error('Relaunch after update failed:', relaunchError);
+        }
       }
     } catch (error) {
       console.error('Failed to download and install update:', error);
-      setError(_('Failed to download and install update'));
+      // Invalidate the attempt generation so in-flight orchestration skips
+      // its install tail.
+      attemptIdRef.current++;
+      attemptLiveRef.current = false;
+      setDownloadError(_('Failed to download and install update'));
     } finally {
-      setIsDownloading(false);
+      clearStallTimer();
     }
   };
+
+  // Revert the failure message to the button after the display window.
+  useEffect(() => {
+    if (!downloadError) return;
+    const timer = setTimeout(() => {
+      setDownloadError(null);
+      setPhase('idle');
+      setProgress(null);
+      setDownloaded(null);
+      setContentLength(null);
+    }, UPDATE_ERROR_DISPLAY_MS);
+    return () => clearTimeout(timer);
+  }, [downloadError]);
 
   if (!isMounted) {
     return null;
@@ -558,33 +658,44 @@ export const UpdaterContent = ({
               <p className='mb-2'>{_('Download and install now?')}</p>
 
               <div className='flex w-full flex-row items-center justify-end gap-4'>
-                {progress !== null && (
-                  <div className='flex grow flex-col'>
-                    <progress
-                      className='progress my-1 h-4 w-full'
-                      value={progress}
-                      max='100'
-                    ></progress>
-                    <p className='text-base-content/75 flex items-center justify-center text-sm'>
-                      {progress < 100
-                        ? _('Downloading {{downloaded}} of {{contentLength}}', {
-                            downloaded: downloaded
-                              ? `${Math.floor(downloaded / 1024 / 1024)} MB`
-                              : '0 MB',
-                            contentLength: contentLength
-                              ? `${Math.floor(contentLength / 1024 / 1024)} MB`
-                              : '0 MB',
-                          })
-                        : _('Download finished')}
-                    </p>
-                  </div>
+                {downloadError ? (
+                  <p className='text-error grow text-sm font-bold'>{downloadError}</p>
+                ) : (
+                  // The bar lives exactly as long as a download attempt.
+                  progress !== null && (
+                    <div className='flex grow flex-col'>
+                      <progress
+                        className='progress my-1 h-4 w-full'
+                        value={progress}
+                        max='100'
+                      ></progress>
+                      <p className='text-base-content/75 flex items-center justify-center text-sm'>
+                        {progress < 100
+                          ? _('Downloading {{downloaded}} of {{contentLength}}', {
+                              downloaded: downloaded
+                                ? `${Math.floor(downloaded / 1024 / 1024)} MB`
+                                : '0 MB',
+                              contentLength: contentLength
+                                ? `${Math.floor(contentLength / 1024 / 1024)} MB`
+                                : '0 MB',
+                            })
+                          : _('Download finished')}
+                      </p>
+                    </div>
+                  )
                 )}
 
-                <div className={clsx('card-actions', isDownloading && 'hidden sm:flex')}>
+                <div
+                  className={clsx(
+                    'card-actions',
+                    (phase !== 'idle' || downloadError) && 'hidden sm:flex',
+                  )}
+                >
                   <button
+                    disabled={!update || phase !== 'idle' || !!downloadError}
                     className={clsx(
                       'btn btn-warning text-base-100 px-6 font-bold',
-                      (!update || isDownloading) && 'btn-disabled',
+                      (!update || phase !== 'idle' || downloadError) && 'btn-disabled',
                     )}
                     onClick={handleDownloadInstall}
                   >

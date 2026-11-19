@@ -575,12 +575,28 @@ describe('resolveNightlyUpdate', () => {
     expect(r).toBeNull();
   });
 
-  test('returns null when both manifests fail to fetch', async () => {
+  test('rejects when both manifests fail to fetch (a failed check, not "no update")', async () => {
     const fetchFn = vi.fn(async () => {
       throw new Error('network');
     });
+    await expect(resolveNightlyUpdate('0.11.4', platformKey, fetchFn as never)).rejects.toThrow(
+      'Failed to fetch update manifests',
+    );
+  });
+
+  test('rejects when both manifests answer with HTTP errors', async () => {
+    const fetchFn = vi.fn(async () => ({ ok: false, json: async () => ({}) }));
+    await expect(resolveNightlyUpdate('0.11.4', platformKey, fetchFn as never)).rejects.toThrow();
+  });
+
+  test('still resolves from the stable manifest when only the nightly fetch fails', async () => {
+    const fetchFn = vi.fn(async (url: string) => {
+      if (url.includes('nightly')) throw new Error('network');
+      return mkRes({ version: '0.11.5', platforms: { [platformKey]: entry } });
+    });
     const r = await resolveNightlyUpdate('0.11.4', platformKey, fetchFn as never);
-    expect(r).toBeNull();
+    expect(r?.version).toBe('0.11.5');
+    expect(r?.endpoint).not.toContain('nightly');
   });
 });
 

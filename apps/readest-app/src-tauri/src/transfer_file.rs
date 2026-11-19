@@ -19,7 +19,7 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 use read_progress_stream::ReadProgressStream;
 
 use std::path::{Path, PathBuf};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use std::{collections::HashMap, sync::Arc};
 
 type Result<T> = std::result::Result<T, Error>;
@@ -377,8 +377,30 @@ async fn download_to_path(
         on_progress,
     )
     .await?;
+    // Re-read the destination's permission bits at replace time: a
+    // superseded attempt's late staging rename must not clobber the
+    // executable bit a winning attempt set on the committed file.
+    #[cfg(unix)]
+    if let Ok(meta) = tokio::fs::metadata(file_path).await {
+        let _ = tokio::fs::set_permissions(&temporary.0, meta.permissions()).await;
+    }
     tokio::fs::rename(&temporary.0, file_path).await?;
     Ok(response_headers)
+}
+
+// Deadlines for the download_file command — the whole native transfer
+// channel (updater, book downloads, cloud-sync providers, OPDS, WebDAV
+// pane), which previously hung forever on a stalled stream.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const READ_TIMEOUT: Duration = Duration::from_secs(30);
+
+fn transfer_client_builder() -> reqwest::ClientBuilder {
+    // connect_timeout bounds TCP/TLS establishment; read_timeout bounds the
+    // idle gap between body chunks. Both surface as an error; the caller's
+    // staging-file guard cleans up.
+    reqwest::ClientBuilder::new()
+        .connect_timeout(CONNECT_TIMEOUT)
+        .read_timeout(READ_TIMEOUT)
 }
 
 async fn download_into_file(
@@ -397,13 +419,13 @@ async fn download_into_file(
     const PART_SIZE: u64 = 1024 * 1024;
 
     let relaxed = skip_ssl_verification.unwrap_or(false);
-    let mut builder = reqwest::ClientBuilder::new()
+    let mut builder = transfer_client_builder()
         .danger_accept_invalid_certs(relaxed)
         .danger_accept_invalid_hostnames(relaxed);
     let mut verified = None;
     if relaxed {
         builder = builder.redirect(reqwest::redirect::Policy::none());
-        verified = Some(reqwest::Client::new());
+        verified = Some(transfer_client_builder().build()?);
     }
     let client = builder.build()?;
     let force_single = single_threaded.unwrap_or(false);
@@ -554,27 +576,31 @@ async fn download_into_file(
                         "download response has an unexpected Content-Range".into(),
                     ));
                 }
-                let bytes = resp.bytes().await?;
-                if bytes.len() as u64 != end - start + 1 {
-                    return Err(Error::ContentLength(
-                        "download response has an unexpected byte length".into(),
-                    ));
-                }
-
+                // Stream the range chunk-by-chunk so progress events keep
+                // flowing on slow-but-alive connections; emitting once per
+                // whole 1 MiB part would look like a stall to a 15s client
+                // watchdog.
+                let mut stream = resp.bytes_stream();
+                let mut part_len: u64 = 0;
                 {
                     let mut f = file.lock().await;
                     f.seek(std::io::SeekFrom::Start(start)).await?;
-                    f.write_all(&bytes).await?;
+                    while let Some(chunk) = stream.try_next().await? {
+                        f.write_all(&chunk).await?;
+                        part_len += chunk.len() as u64;
+                        let mut stat = progress.lock().await;
+                        stat.record_chunk_transfer(chunk.len());
+                        let _ = on_progress.send(ProgressPayload {
+                            progress: stat.total_transferred,
+                            total,
+                            transfer_speed: stat.transfer_speed,
+                        });
+                    }
                 }
-
-                {
-                    let mut stat = progress.lock().await;
-                    stat.record_chunk_transfer(bytes.len());
-                    let _ = on_progress.send(ProgressPayload {
-                        progress: stat.total_transferred,
-                        total,
-                        transfer_speed: stat.transfer_speed,
-                    });
+                if part_len != end - start + 1 {
+                    return Err(Error::ContentLength(
+                        "download response has an unexpected byte length".into(),
+                    ));
                 }
                 Ok(())
             }

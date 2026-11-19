@@ -7,7 +7,7 @@
  * the auto-translated changelog back to the source English text (and back).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 const { mockInstallNightlyUpdate } = vi.hoisted(() => ({
@@ -75,6 +75,8 @@ vi.mock('@/services/constants', () => ({
   READEST_UPDATER_FILE: 'https://example.com/latest.json',
   READEST_CHANGELOG_FILE: 'https://example.com/release-notes.json',
   READEST_UPDATER_PUBKEY: 'pk',
+  DOWNLOAD_STALL_TIMEOUT_MS: 15_000,
+  UPDATE_ERROR_DISPLAY_MS: 5_000,
 }));
 
 // ── Tauri / heavy modules pulled in by UpdaterWindow's top-level imports ──
@@ -99,7 +101,7 @@ vi.mock('@/components/Link', () => ({ default: () => null }));
 
 import { UpdaterContent } from '@/components/UpdaterWindow';
 import { tauriDownload } from '@/utils/transfer';
-import { installPackage } from '@/utils/bridge';
+import { installPackage, verifyUpdateSignature } from '@/utils/bridge';
 
 const RELEASE_NOTES = {
   releases: {
@@ -113,6 +115,7 @@ beforeEach(() => {
   mockArch = 'aarch64';
   vi.mocked(tauriDownload).mockReset();
   vi.mocked(installPackage).mockReset();
+  vi.mocked(verifyUpdateSignature).mockReset();
   mockTranslate.mockClear();
   mockInstallNightlyUpdate.mockReset();
   window.fetch = vi.fn(async () => ({
@@ -236,5 +239,263 @@ describe('UpdaterContent — auto-translated changelog', () => {
     await waitFor(() => expect(screen.getByText('First feature')).toBeTruthy());
     expect(mockTranslate).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Show original' })).toBeNull();
+  });
+});
+
+// The useTranslation mock above returns the raw i18n template, so progress
+// lines match on a prefix rather than the interpolated "0 MB" figures.
+describe('UpdaterContent — download stall watchdog', () => {
+  const NIGHTLY_UPDATE = {
+    endpoint: 'https://example.com/nightly.json',
+    version: '0.11.20',
+    platformKey: 'windows-x86_64',
+    url: 'https://example.com/readest.exe',
+    signature: 'signature',
+  };
+  type NightlyEvent =
+    | { event: 'progress'; contentLength?: number; downloaded: number }
+    | { event: 'finished' };
+
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    cleanup();
+  });
+
+  it('fails a stalled download and restores the button after the display window', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // Connected but stalled before the first byte: no Started, no Progress,
+    // progress frozen at 0/0 MB — exactly the case connectTimeout never covers.
+    // The native transfer never settles (worst case on the desktop plugin
+    // paths, which have no native timeout at all).
+    mockInstallNightlyUpdate.mockImplementation(() => new Promise<void>(() => {}));
+
+    render(<UpdaterContent latestVersion='0.11.20' nightlyUpdate={NIGHTLY_UPDATE} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+    expect(await screen.findByText(/Downloading/)).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    expect(screen.getByText('Failed to download and install update')).toBeTruthy();
+    expect(screen.queryByText(/Downloading/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'DOWNLOAD & INSTALL' }).className).toContain(
+      'btn-disabled',
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(screen.queryByText('Failed to download and install update')).toBeNull();
+    expect(screen.getByRole('button', { name: 'DOWNLOAD & INSTALL' }).className).not.toContain(
+      'btn-disabled',
+    );
+  });
+
+  it('recovers from a stall and lets a retry actually start a new transfer', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    mockInstallNightlyUpdate.mockImplementation(() => new Promise<void>(() => {}));
+
+    render(<UpdaterContent latestVersion='0.11.20' nightlyUpdate={NIGHTLY_UPDATE} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+    expect(await screen.findByText(/Downloading/)).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    expect(screen.getByText('Failed to download and install update')).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(screen.queryByText('Failed to download and install update')).toBeNull();
+    expect(screen.getByRole('button', { name: 'DOWNLOAD & INSTALL' }).className).not.toContain(
+      'btn-disabled',
+    );
+
+    // The retry must actually start a new transfer, not just look clickable:
+    // the attempt slot has to be free again after the stall was reported.
+    mockInstallNightlyUpdate.mockImplementation(() => new Promise<void>(() => {}));
+    fireEvent.click(screen.getByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByText(/Downloading/)).toBeTruthy();
+  });
+
+  it('fails a mid-transfer stall and ignores stragglers from the abandoned transfer', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let onProgress: ((event: NightlyEvent) => void) | null = null;
+    mockInstallNightlyUpdate.mockImplementation(
+      (_endpoint: string, callback?: (event: NightlyEvent) => void) => {
+        onProgress = callback ?? null;
+        callback?.({ event: 'progress', contentLength: 10_000_000, downloaded: 500 });
+        return new Promise<void>(() => {});
+      },
+    );
+
+    render(<UpdaterContent latestVersion='0.11.20' nightlyUpdate={NIGHTLY_UPDATE} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+    expect(await screen.findByText(/Downloading/)).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    expect(screen.getByText('Failed to download and install update')).toBeTruthy();
+
+    // A late chunk from the transfer that was declared failed must not
+    // resurrect the progress UI or re-arm the watchdog.
+    await act(async () => {
+      onProgress?.({ event: 'progress', contentLength: 10_000_000, downloaded: 900 });
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.queryByText(/Downloading/)).toBeNull();
+    expect(screen.getByText('Failed to download and install update')).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(screen.queryByText('Failed to download and install update')).toBeNull();
+    expect(screen.getByRole('button', { name: 'DOWNLOAD & INSTALL' }).className).not.toContain(
+      'btn-disabled',
+    );
+  });
+
+  it('skips the installer when a stalled Android download resolves after the failure', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    mockOS = 'android';
+    // The zombie download resolves late (network recovered after the watchdog
+    // already reported the failure); the orchestration must skip the installer.
+    let resolveDownload: ((value: Record<string, string>) => void) | null = null;
+    vi.mocked(tauriDownload).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveDownload = resolve as typeof resolveDownload;
+        }),
+    );
+    vi.mocked(window.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        version: '0.11.20',
+        platforms: { 'android-arm64': { url: 'https://example.com/update.apk' } },
+      }),
+    } as Response);
+
+    render(<UpdaterContent latestVersion='0.11.20' />);
+    fireEvent.click(await screen.findByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+    expect(await screen.findByText(/Downloading/)).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    expect(screen.getByText('Failed to download and install update')).toBeTruthy();
+
+    // The abandoned download finally completes; no installer may pop.
+    await act(async () => {
+      resolveDownload?.({});
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(installPackage).not.toHaveBeenCalled();
+    expect(screen.getByText('Failed to download and install update')).toBeTruthy();
+  });
+
+  it('skips verify/install when a stalled nightly download resolves after the failure', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // The nightly custom flow's Android branch — the same installPackage call
+    // this fork's own Android nightly builds take: the zombie download
+    // resolves late, after the watchdog already reported failure.
+    let resolveDownload: ((value: Record<string, string>) => void) | null = null;
+    vi.mocked(tauriDownload).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveDownload = resolve as typeof resolveDownload;
+        }),
+    );
+
+    render(
+      <UpdaterContent
+        latestVersion='0.11.20'
+        nightlyUpdate={{
+          endpoint: 'https://example.com/nightly.json',
+          version: '0.11.20',
+          platformKey: 'android-arm64',
+          url: 'https://example.com/readest_arm64.apk',
+          signature: 'signature',
+        }}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+    expect(await screen.findByText(/Downloading/)).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    expect(screen.getByText('Failed to download and install update')).toBeTruthy();
+
+    // The abandoned download finally completes; verify/install must be skipped.
+    await act(async () => {
+      resolveDownload?.({});
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(verifyUpdateSignature).not.toHaveBeenCalled();
+    expect(installPackage).not.toHaveBeenCalled();
+    expect(screen.getByText('Failed to download and install update')).toBeTruthy();
+  });
+
+  it('installs a nightly download that completes normally (positive path)', async () => {
+    mockOS = 'android';
+    // Guards the generation check against silently going always-stale (e.g.
+    // `attempt` captured at render time instead of at call time): the
+    // negative tests cannot tell, because "never install" is exactly what
+    // they assert. These are the assertions that must stay true.
+    vi.mocked(tauriDownload).mockResolvedValueOnce({});
+    vi.mocked(verifyUpdateSignature).mockResolvedValueOnce(true);
+    vi.mocked(installPackage).mockResolvedValueOnce({ success: true });
+
+    render(
+      <UpdaterContent
+        latestVersion='0.11.20'
+        nightlyUpdate={{
+          endpoint: 'https://example.com/nightly.json',
+          version: '0.11.20',
+          platformKey: 'android-arm64',
+          url: 'https://example.com/readest_arm64.apk',
+          signature: 'signature',
+        }}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+
+    await waitFor(() => expect(verifyUpdateSignature).toHaveBeenCalledOnce());
+    expect(installPackage).toHaveBeenCalledOnce();
+  });
+
+  it('keeps a healthy-but-slow download running without tripping the watchdog', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    mockInstallNightlyUpdate.mockImplementation(
+      (_endpoint: string, callback?: (event: NightlyEvent) => void) => {
+        let downloaded = 0;
+        const interval = setInterval(() => {
+          downloaded += 100;
+          callback?.({ event: 'progress', contentLength: 10_000_000, downloaded });
+        }, 5_000);
+        void interval;
+        return new Promise<void>(() => {});
+      },
+    );
+
+    render(<UpdaterContent latestVersion='0.11.20' nightlyUpdate={NIGHTLY_UPDATE} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+
+    // 45s at a 5s tick: every gap stays under the 15s window, so the
+    // watchdog must never fire even though the transfer crawls.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(screen.queryByText('Failed to download and install update')).toBeNull();
+    expect(screen.getByText(/Downloading/)).toBeTruthy();
   });
 });

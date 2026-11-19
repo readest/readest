@@ -115,6 +115,12 @@ export const resolveNightlyUpdate = async (
     fetchManifest(fetchFn, READEST_NIGHTLY_UPDATER_FILE),
     fetchManifest(fetchFn, READEST_UPDATER_FILE),
   ]);
+  if (!nightly && !stable) {
+    // A failed check (network error or non-OK response) — never masquerade
+    // as "no update available". Either one manifest loading is enough to
+    // degrade gracefully.
+    throw new Error('Failed to fetch update manifests');
+  }
   const sources: Array<[UpdateManifest | null, string]> = [
     [nightly, READEST_NIGHTLY_UPDATER_FILE],
     [stable, READEST_UPDATER_FILE],
