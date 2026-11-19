@@ -34,6 +34,7 @@ import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDow
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { startAudioKeepAlive, stopAudioKeepAlive } from './WebAudioPlayer';
+import { releaseUnblockAudio } from './ttsMediaBridge';
 import { isSameLang, isValidLang } from '@/utils/lang';
 import { normalizeLyricText } from '@/utils/ttsLyrics';
 import {
@@ -91,6 +92,9 @@ const PRELOAD_AHEAD_SEC = 180;
 const PRELOAD_MAX_PARAGRAPHS = 40;
 // Preload the next paragraphs this long after a paragraph starts at the latest.
 const PRELOAD_NEXT_AFTER_MS = 500;
+// How long a paused session keeps the audio keep-alive, as long as Media3
+// keeps a paused player in the foreground.
+const PAUSED_KEEP_ALIVE_MS = 10 * 60 * 1000;
 
 const isSameRange = (a: Range, b: Range) =>
   a.startContainer.ownerDocument === b.startContainer.ownerDocument &&
@@ -266,6 +270,7 @@ export class TTSController extends EventTarget {
 
   #state: TTSState = 'stopped';
   #terminated = false;
+  #pausedKeepAliveTimer: ReturnType<typeof setTimeout> | undefined;
   // View attachment: false while the session runs headless (book closed).
   // The epoch invalidates in-flight attachView calls when a detach (or a
   // newer attach) supersedes them.
@@ -407,15 +412,27 @@ export class TTSController extends EventTarget {
   //     freeze and Play from a Bluetooth headset only flips the notification —
   //     the native foreground service answers, the reader never wakes to speak,
   //     and the in-app player drifts out of sync until the app is foregrounded.
-  //     See #5561.
+  //     See #5561. Only for PAUSED_KEEP_ALIVE_MS, though: the tone keeps the
+  //     audio output open, so a session left paused stopped the device from
+  //     sleeping (#7546). The looping silent element from unblockAudio() goes
+  //     too: it holds an output of its own, and Android needs it for neither
+  //     media keys (the native session has them) nor autoplay (wry turns the
+  //     gesture requirement off). Play from the app still resumes after that.
   #syncAudioKeepAlive() {
+    clearTimeout(this.#pausedKeepAliveTimer);
     const directSpeak = this.ttsClient.getCapabilities().mediaClock === false;
-    const needsKeepAlive =
-      !!this.appService?.isAndroidApp && (directSpeak || this.state.includes('paused'));
-    if (needsKeepAlive) {
-      startAudioKeepAlive();
-    } else {
+    const paused = this.state.includes('paused');
+    if (!this.appService?.isAndroidApp || !(directSpeak || paused)) {
       stopAudioKeepAlive();
+      return;
+    }
+    startAudioKeepAlive();
+    if (paused) {
+      this.#pausedKeepAliveTimer = setTimeout(() => {
+        if (!this.state.includes('paused')) return;
+        stopAudioKeepAlive();
+        releaseUnblockAudio();
+      }, PAUSED_KEEP_ALIVE_MS);
     }
   }
 
@@ -2046,6 +2063,7 @@ export class TTSController extends EventTarget {
     if (pause) {
       await this.stop();
       this.state = 'forward-paused';
+      this.#syncAudioKeepAlive();
     } else {
       await this.#delayParagraphGap(signal);
       if (signal.aborted) return;
@@ -2257,6 +2275,7 @@ export class TTSController extends EventTarget {
 
   async resume() {
     this.state = 'playing';
+    this.#syncAudioKeepAlive();
     await this.ttsClient.resume().catch((e) => this.error(e));
   }
 

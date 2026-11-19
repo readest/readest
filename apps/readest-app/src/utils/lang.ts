@@ -116,12 +116,14 @@ export const isValidLang = (lang?: string) => {
   if (typeof lang !== 'string') return false;
   if (['und', 'mul', 'mis', 'zxx'].includes(lang)) return false;
   const code = normalizedLangCode(lang);
-  return iso6392.some((l) => l.iso6391 === code || l.iso6392B === code);
+  return iso6392.some((l) => l.iso6391 === code || l.iso6392B === code || l.iso6392T === code);
 };
 
+// Converts the base subtag and keeps any region: `zho-CN` → `zh-CN`.
 export const code6392to6391 = (code: string): string => {
-  const lang = iso6392.find((l) => l.iso6392B === code);
-  return lang?.iso6391 || '';
+  const [base, ...rest] = code.split('-');
+  const lang = iso6392.find((l) => l.iso6392B === base || l.iso6392T === base);
+  return lang?.iso6391 ? [lang.iso6391, ...rest].join('-') : '';
 };
 
 const commonIndivToMacro: Record<string, string> = {
@@ -143,7 +145,9 @@ export const code6393to6391 = (code: string): string => {
 
 export const getLanguageName = (code: string): string => {
   const lang = normalizedLangCode(code);
-  const language = iso6392.find((l) => l.iso6391 === lang || l.iso6392B === lang);
+  const language = iso6392.find(
+    (l) => l.iso6391 === lang || l.iso6392B === lang || l.iso6392T === lang,
+  );
   return language ? language.name : lang;
 };
 

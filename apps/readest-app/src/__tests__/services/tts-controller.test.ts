@@ -41,6 +41,11 @@ vi.mock('@/services/tts/WebAudioPlayer', async (importActual) => ({
   startAudioKeepAlive: () => startKeepAlive(),
   stopAudioKeepAlive: () => stopKeepAlive(),
 }));
+const releaseUnblock = vi.fn();
+vi.mock('@/services/tts/ttsMediaBridge', async (importActual) => ({
+  ...(await importActual<typeof import('@/services/tts/ttsMediaBridge')>()),
+  releaseUnblockAudio: () => releaseUnblock(),
+}));
 
 vi.mock('@/services/tts/TTSUtils', () => ({
   TTSUtils: {
@@ -2245,6 +2250,112 @@ describe('TTSController', () => {
       await c.pause();
 
       expect(startKeepAlive).toHaveBeenCalled();
+    });
+
+    // The tone and the looping silent element each keep an audio output open,
+    // so a session left paused held one open for good and kept a sleeping BOOX
+    // from suspending (#7546). Transport still reaches the page for as long as
+    // Media3 keeps a paused player in the foreground.
+    test.each([
+      ['native', false],
+      ['Edge', true],
+    ] as const)('drops the keep-alive once a paused %s session has idled for ten minutes', async (_engine, buffered) => {
+      const c = await makeAndroidNativeController();
+      if (buffered) c.ttsClient = c.ttsEdgeClient;
+      vi.spyOn(c, 'forward').mockResolvedValue();
+      c.speak('<speak>hello</speak>');
+      await vi.waitFor(() => expect(c.state).toBe('playing'), { timeout: 5000 });
+      vi.useFakeTimers();
+      try {
+        await c.pause();
+        expect(startKeepAlive).toHaveBeenCalled();
+        stopKeepAlive.mockClear();
+        releaseUnblock.mockClear();
+
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000 - 1);
+        expect(stopKeepAlive).not.toHaveBeenCalled();
+        expect(releaseUnblock).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1);
+        expect(stopKeepAlive).toHaveBeenCalled();
+        expect(releaseUnblock).toHaveBeenCalled();
+        expect(c.state).toContain('paused');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    test('a session played again before the limit keeps its keep-alive', async () => {
+      const c = await makeAndroidNativeController();
+      vi.spyOn(c, 'forward').mockResolvedValue();
+      c.speak('<speak>hello</speak>');
+      await vi.waitFor(() => expect(c.state).toBe('playing'), { timeout: 5000 });
+      vi.useFakeTimers();
+      try {
+        await c.pause();
+        await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+        c.speak('<speak>hello again</speak>');
+        await vi.advanceTimersByTimeAsync(0);
+        expect(c.state).toBe('playing');
+        stopKeepAlive.mockClear();
+        releaseUnblock.mockClear();
+
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+        expect(stopKeepAlive).not.toHaveBeenCalled();
+        expect(releaseUnblock).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    test('a session parked by sentence-by-sentence mode drops the keep-alive after ten minutes', async () => {
+      const c = await makeAndroidNativeController();
+      let count = 0;
+      c.ttsClient.speak = vi.fn().mockImplementation(async function* (
+        _ssml: string,
+        _signal: AbortSignal,
+        preload?: boolean,
+      ): AsyncGenerator<TTSMessageEvent> {
+        if (preload || count++ > 0) return;
+        yield { code: 'end' };
+      });
+      c.pauseAfterSentence = true;
+      vi.useFakeTimers();
+      try {
+        await c.speak('<speak>hello</speak>');
+        await vi.advanceTimersByTimeAsync(0);
+        expect(c.state).toBe('forward-paused');
+        stopKeepAlive.mockClear();
+        releaseUnblock.mockClear();
+
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+        expect(stopKeepAlive).toHaveBeenCalled();
+        expect(releaseUnblock).toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    // A direct-speak engine that pauses in place (Web Speech) resumes through
+    // resume(), not a new speak(), so the tone dropped at the limit must come
+    // back there or the hidden page stalls between sentences again (#4408).
+    test('resuming in place after the limit restores the keep-alive', async () => {
+      const c = await makeAndroidNativeController();
+      vi.spyOn(c, 'forward').mockResolvedValue();
+      c.speak('<speak>hello</speak>');
+      await vi.waitFor(() => expect(c.state).toBe('playing'), { timeout: 5000 });
+      vi.useFakeTimers();
+      try {
+        await c.pause();
+        expect(c.state).toBe('paused');
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+        expect(stopKeepAlive).toHaveBeenCalled();
+        startKeepAlive.mockClear();
+
+        await c.resume();
+        expect(startKeepAlive).toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     test('does not keep the page awake while paused off Android', async () => {

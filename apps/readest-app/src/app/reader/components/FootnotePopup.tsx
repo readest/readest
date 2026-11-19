@@ -207,17 +207,23 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const size18 = useResponsiveSize(18);
   const popupPadding = useResponsiveSize(10);
 
-  // The window less the cell's safe-area insets, so the popup stays clear of
-  // the Dynamic Island, a camera cutout and the home indicator (#7389).
+  // The cell less its safe-area insets, so the popup stays clear of the
+  // Dynamic Island, a camera cutout and the home indicator (#7389). In cell
+  // coordinates, like the triangle point: measured from the window, a pinned
+  // sidebar or the book beside this one counted as room, and the popup slid
+  // back over its noteref to fit the cell (#7637).
   const getSafeArea = () => {
     const { top, right, bottom, left } = gridInsetsRef.current;
+    const cell = document.querySelector(`#gridcell-${bookKey}`)?.getBoundingClientRect();
+    const cellWidth = cell?.width ?? window.innerWidth;
+    const cellHeight = cell?.height ?? window.innerHeight;
     return {
       top,
       left,
-      right: window.innerWidth - right,
-      bottom: window.innerHeight - bottom,
-      width: window.innerWidth - left - right,
-      height: window.innerHeight - top - bottom,
+      right: cellWidth - right,
+      bottom: cellHeight - bottom,
+      width: cellWidth - left - right,
+      height: cellHeight - top - bottom,
     };
   };
 
