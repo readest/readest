@@ -16,6 +16,7 @@ describe('Docker image build', () => {
    */
   test('builds the web app with webpack so the image has a service worker', () => {
     const buildWeb = dockerfile
+      .replace(/\\\n\s*/g, '')
       .split('\n')
       .find((line) => line.startsWith('RUN ') && line.includes('pnpm build-web'));
 
