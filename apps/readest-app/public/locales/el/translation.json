@@ -2858,5 +2858,15 @@
   "Statistics by Book": "Στατιστικά ανά βιβλίο",
   "Each book’s reading time, most recently read first": "Ο χρόνος ανάγνωσης κάθε βιβλίου, με το πιο πρόσφατο πρώτο",
   "Look up text in the context dictionary after selection": "Αναζήτηση κειμένου στο λεξικό συμφραζομένων μετά την επιλογή",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Ενεργοποιήστε το παραπάνω για ερώτηση σε κάθε αναζήτηση ή προσθέστε το εργαλείο «Λεξικό συμφραζομένων» στη γραμμή επιλογής για ερώτηση μόνο όταν το πατάτε."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Ενεργοποιήστε το παραπάνω για ερώτηση σε κάθε αναζήτηση ή προσθέστε το εργαλείο «Λεξικό συμφραζομένων» στη γραμμή επιλογής για ερώτηση μόνο όταν το πατάτε.",
+  "Failed to merge reading statistics": "Αποτυχία συγχώνευσης των στατιστικών ανάγνωσης",
+  "Merge “{{source}}” into “{{target}}”?": "Συγχώνευση του «{{source}}» στο «{{target}}»;",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Ο χρόνος ανάγνωσής του θα μεταφερθεί στο άλλο βιβλίο σε όλες τις συσκευές σας. Η ενέργεια δεν αναιρείται.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Ο χρόνος ανάγνωσής του θα μεταφερθεί στο άλλο βιβλίο σε αυτήν τη συσκευή. Η ενέργεια δεν αναιρείται.",
+  "Merge": "Συγχώνευση",
+  "Merge “{{title}}” into:": "Συγχώνευση του «{{title}}» σε:",
+  "Merge Statistics": "Συγχώνευση στατιστικών",
+  "Merge statistics of {{title}}": "Συγχώνευση στατιστικών του {{title}}",
+  "No other books have reading statistics": "Κανένα άλλο βιβλίο δεν έχει στατιστικά ανάγνωσης",
+  "Merge another entry into this book:": "Συγχώνευση άλλης καταχώρισης σε αυτό το βιβλίο:"
 }

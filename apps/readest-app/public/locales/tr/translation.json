@@ -2858,5 +2858,15 @@
   "Statistics by Book": "Kitaba Göre İstatistikler",
   "Each book’s reading time, most recently read first": "Her kitabın okuma süresi, en son okunan önce",
   "Look up text in the context dictionary after selection": "Seçimden sonra metni bağlam sözlüğünde ara",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Her aramada sorulması için yukarıdan açın ya da yalnızca dokunduğunuzda sorulması için Bağlam Sözlüğü aracını seçim araç çubuğuna ekleyin."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Her aramada sorulması için yukarıdan açın ya da yalnızca dokunduğunuzda sorulması için Bağlam Sözlüğü aracını seçim araç çubuğuna ekleyin.",
+  "Failed to merge reading statistics": "Okuma istatistikleri birleştirilemedi",
+  "Merge “{{source}}” into “{{target}}”?": "“{{source}}”, “{{target}}” ile birleştirilsin mi?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Okuma süresi tüm cihazlarınızda diğer kitaba taşınır. Bu işlem geri alınamaz.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Okuma süresi bu cihazda diğer kitaba taşınır. Bu işlem geri alınamaz.",
+  "Merge": "Birleştir",
+  "Merge “{{title}}” into:": "“{{title}}” şununla birleştirilsin:",
+  "Merge Statistics": "İstatistikleri Birleştir",
+  "Merge statistics of {{title}}": "{{title}} istatistiklerini birleştir",
+  "No other books have reading statistics": "Başka hiçbir kitabın okuma istatistiği yok",
+  "Merge another entry into this book:": "Bu kitapla birleştirilecek başka bir kayıt:"
 }

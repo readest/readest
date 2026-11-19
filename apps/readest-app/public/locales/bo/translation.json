@@ -2785,5 +2785,15 @@
   "Statistics by Book": "དཔེ་དེབ་ལྟར་གྱི་གྲངས་ཐོ།",
   "Each book’s reading time, most recently read first": "དཔེ་དེབ་རེ་རེའི་ཀློག་དུས། ཉེ་ཆར་ཀློག་པ་སྔོན་ལ།",
   "Look up text in the context dictionary after selection": "ཡིག་ཆ་འདེམས་རྗེས་སྐབས་དོན་ཚིག་མཛོད་ནང་འཚོལ་",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "འཚོལ་བ་རེ་རེར་འདྲི་བར་གོང་དུ་ཁ་ཕྱེ། ཡང་ན་མནན་དུས་ཁོ་ནར་འདྲི་བར་སྐབས་དོན་ཚིག་མཛོད་ཀྱི་ལག་ཆ་འདེམས་པའི་ལག་ཆའི་ཕྲེང་དུ་སྣོན།"
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "འཚོལ་བ་རེ་རེར་འདྲི་བར་གོང་དུ་ཁ་ཕྱེ། ཡང་ན་མནན་དུས་ཁོ་ནར་འདྲི་བར་སྐབས་དོན་ཚིག་མཛོད་ཀྱི་ལག་ཆ་འདེམས་པའི་ལག་ཆའི་ཕྲེང་དུ་སྣོན།",
+  "Failed to merge reading statistics": "ཀློག་པའི་གྲངས་ཐོ་མཉམ་སྡེབ་བྱེད་མ་ཐུབ།",
+  "Merge “{{source}}” into “{{target}}”?": "“{{source}}” དེ་ “{{target}}” ནང་མཉམ་སྡེབ་བྱེད་དམ།",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "དེའི་ཀློག་དུས་ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཚང་མའི་ཐོག་དཔེ་དེབ་གཞན་དེར་སྤོ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "དེའི་ཀློག་དུས་སྒྲིག་ཆས་འདིའི་ཐོག་དཔེ་དེབ་གཞན་དེར་སྤོ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
+  "Merge": "མཉམ་སྡེབ།",
+  "Merge “{{title}}” into:": "“{{title}}” མཉམ་སྡེབ་ས།",
+  "Merge Statistics": "གྲངས་ཐོ་མཉམ་སྡེབ།",
+  "Merge statistics of {{title}}": "{{title}} ཡི་གྲངས་ཐོ་མཉམ་སྡེབ།",
+  "No other books have reading statistics": "དཔེ་དེབ་གཞན་ལ་ཀློག་པའི་གྲངས་ཐོ་མེད།",
+  "Merge another entry into this book:": "དཔེ་དེབ་འདིའི་ནང་ཚན་པ་གཞན་ཞིག་མཉམ་སྡེབ།"
 }

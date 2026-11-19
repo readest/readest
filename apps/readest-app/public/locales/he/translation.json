@@ -2931,5 +2931,15 @@
   "Statistics by Book": "סטטיסטיקה לפי ספר",
   "Each book’s reading time, most recently read first": "זמן הקריאה של כל ספר, מהנקרא לאחרונה",
   "Look up text in the context dictionary after selection": "חפש טקסט במילון ההקשר לאחר הבחירה",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "הפעילו אותו למעלה כדי לשאול בכל חיפוש, או הוסיפו את הכלי „מילון הקשר” לסרגל הבחירה כדי לשאול רק כשמקישים עליו."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "הפעילו אותו למעלה כדי לשאול בכל חיפוש, או הוסיפו את הכלי „מילון הקשר” לסרגל הבחירה כדי לשאול רק כשמקישים עליו.",
+  "Failed to merge reading statistics": "מיזוג סטטיסטיקת הקריאה נכשל",
+  "Merge “{{source}}” into “{{target}}”?": "למזג את “{{source}}” לתוך “{{target}}”?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "זמן הקריאה שלו יועבר לספר האחר בכל המכשירים שלך. לא ניתן לבטל פעולה זו.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "זמן הקריאה שלו יועבר לספר האחר במכשיר הזה. לא ניתן לבטל פעולה זו.",
+  "Merge": "מיזוג",
+  "Merge “{{title}}” into:": "מיזוג “{{title}}” לתוך:",
+  "Merge Statistics": "מיזוג סטטיסטיקה",
+  "Merge statistics of {{title}}": "מיזוג הסטטיסטיקה של {{title}}",
+  "No other books have reading statistics": "לאף ספר אחר אין סטטיסטיקת קריאה",
+  "Merge another entry into this book:": "מיזוג רשומה אחרת לתוך הספר הזה:"
 }

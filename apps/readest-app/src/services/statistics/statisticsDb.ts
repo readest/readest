@@ -323,6 +323,44 @@ export class StatisticsDb {
     await this.exclusive(() => this.deleteEventsBefore(md5, Number.MAX_SAFE_INTEGER));
   }
 
+  /** Every page event of a book, oldest first. */
+  async getBookEvents(md5: string): Promise<PageStatEvent[]> {
+    const rows = await this.db.select<{
+      page: number;
+      startTime: number;
+      duration: number;
+      totalPages: number;
+    }>(
+      `SELECT p.page AS page, p.start_time AS startTime, p.duration AS duration,
+              p.total_pages AS totalPages
+       FROM page_stat_data p JOIN book b ON b.id = p.id_book
+       WHERE b.md5 = ? ORDER BY p.start_time, p.page`,
+      [md5],
+    );
+    return rows.map((r) => ({ bookMd5: md5, ...r }));
+  }
+
+  /**
+   * Move every event of `source` onto `target` (a key both hold keeps the
+   * longer duration), then delete `source`.
+   */
+  async mergeBook(source: string, target: StatBook): Promise<void> {
+    await this.exclusive(async () => {
+      await this.db.execute('BEGIN');
+      try {
+        const events = await this.getBookEvents(source);
+        const id = await this.upsertBook(target);
+        for (const e of events) await this.insertPageEvent(id, e);
+        await this.recomputeBookTotals(id);
+        await this.deleteEventsBefore(source, Number.MAX_SAFE_INTEGER);
+        await this.db.execute('COMMIT');
+      } catch (err) {
+        await this.db.execute('ROLLBACK');
+        throw err;
+      }
+    });
+  }
+
   /** Delete a book's events that started before `before`; drop its row once none are left. */
   private async deleteEventsBefore(md5: string, before: number): Promise<void> {
     const rows = await this.db.select<BookRow>(`SELECT id FROM book WHERE md5 = ?`, [md5]);

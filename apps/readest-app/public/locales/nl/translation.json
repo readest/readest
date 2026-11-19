@@ -2858,5 +2858,15 @@
   "Statistics by Book": "Statistieken per boek",
   "Each book’s reading time, most recently read first": "Leestijd per boek, meest recent gelezen eerst",
   "Look up text in the context dictionary after selection": "Zoek tekst op in het contextwoordenboek na selectie",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Zet het hierboven aan om bij elke zoekopdracht te vragen, of voeg het hulpmiddel Contextwoordenboek toe aan de selectiewerkbalk om alleen te vragen als je erop tikt."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Zet het hierboven aan om bij elke zoekopdracht te vragen, of voeg het hulpmiddel Contextwoordenboek toe aan de selectiewerkbalk om alleen te vragen als je erop tikt.",
+  "Failed to merge reading statistics": "Leesstatistieken konden niet worden samengevoegd",
+  "Merge “{{source}}” into “{{target}}”?": "‘{{source}}’ samenvoegen in ‘{{target}}’?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "De leestijd gaat op al je apparaten naar het andere boek. Dit kan niet ongedaan worden gemaakt.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "De leestijd gaat op dit apparaat naar het andere boek. Dit kan niet ongedaan worden gemaakt.",
+  "Merge": "Samenvoegen",
+  "Merge “{{title}}” into:": "‘{{title}}’ samenvoegen in:",
+  "Merge Statistics": "Statistieken samenvoegen",
+  "Merge statistics of {{title}}": "Statistieken van {{title}} samenvoegen",
+  "No other books have reading statistics": "Geen andere boeken hebben leesstatistieken",
+  "Merge another entry into this book:": "Een ander item in dit boek samenvoegen:"
 }

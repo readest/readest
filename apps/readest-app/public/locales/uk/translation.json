@@ -3004,5 +3004,15 @@
   "Statistics by Book": "Статистика за книгами",
   "Each book’s reading time, most recently read first": "Час читання кожної книги, спершу нещодавні",
   "Look up text in the context dictionary after selection": "Шукати текст у контекстному словнику після виділення",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Увімкніть його вище, щоб запитувати під час кожного пошуку, або додайте інструмент «Контекстний словник» на панель виділення, щоб запитувати лише після натискання."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Увімкніть його вище, щоб запитувати під час кожного пошуку, або додайте інструмент «Контекстний словник» на панель виділення, щоб запитувати лише після натискання.",
+  "Failed to merge reading statistics": "Не вдалося об’єднати статистику читання",
+  "Merge “{{source}}” into “{{target}}”?": "Об’єднати «{{source}}» у «{{target}}»?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Час читання цієї книги буде перенесено до іншої книги на всіх ваших пристроях. Цю дію неможливо скасувати.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Час читання цієї книги буде перенесено до іншої книги на цьому пристрої. Цю дію неможливо скасувати.",
+  "Merge": "Об’єднати",
+  "Merge “{{title}}” into:": "Об’єднати «{{title}}» у:",
+  "Merge Statistics": "Об’єднати статистику",
+  "Merge statistics of {{title}}": "Об’єднати статистику: {{title}}",
+  "No other books have reading statistics": "Інші книги не мають статистики читання",
+  "Merge another entry into this book:": "Об’єднати інший запис із цією книгою:"
 }

@@ -2858,5 +2858,15 @@
   "Statistics by Book": "სტატისტიკა წიგნების მიხედვით",
   "Each book’s reading time, most recently read first": "თითოეული წიგნის კითხვის დრო, ბოლოს წაკითხულიდან დაწყებული",
   "Look up text in the context dictionary after selection": "ტექსტის მოძებნა კონტექსტურ ლექსიკონში მონიშვნის შემდეგ",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "ჩართეთ ზემოთ, რომ ყოველ ძიებაზე იკითხოს, ან დაამატეთ კონტექსტური ლექსიკონის ხელსაწყო მონიშვნის ხელსაწყოთა ზოლში, რომ მხოლოდ შეხებისას იკითხოს."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "ჩართეთ ზემოთ, რომ ყოველ ძიებაზე იკითხოს, ან დაამატეთ კონტექსტური ლექსიკონის ხელსაწყო მონიშვნის ხელსაწყოთა ზოლში, რომ მხოლოდ შეხებისას იკითხოს.",
+  "Failed to merge reading statistics": "კითხვის სტატისტიკის გაერთიანება ვერ მოხერხდა",
+  "Merge “{{source}}” into “{{target}}”?": "გაერთიანდეს „{{source}}“ „{{target}}“-ში?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "მისი კითხვის დრო ყველა თქვენს მოწყობილობაზე გადავა მეორე წიგნზე. ამის გაუქმება შეუძლებელია.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "მისი კითხვის დრო ამ მოწყობილობაზე გადავა მეორე წიგნზე. ამის გაუქმება შეუძლებელია.",
+  "Merge": "გაერთიანება",
+  "Merge “{{title}}” into:": "„{{title}}“-ის გაერთიანება:",
+  "Merge Statistics": "სტატისტიკის გაერთიანება",
+  "Merge statistics of {{title}}": "{{title}} — სტატისტიკის გაერთიანება",
+  "No other books have reading statistics": "სხვა წიგნებს კითხვის სტატისტიკა არ აქვს",
+  "Merge another entry into this book:": "სხვა ჩანაწერის გაერთიანება ამ წიგნში:"
 }

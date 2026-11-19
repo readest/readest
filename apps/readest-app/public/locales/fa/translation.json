@@ -2858,5 +2858,15 @@
   "Statistics by Book": "آمار به تفکیک کتاب",
   "Each book’s reading time, most recently read first": "زمان مطالعه هر کتاب، به ترتیب آخرین مطالعه",
   "Look up text in the context dictionary after selection": "جستجوی متن در فرهنگ بافتاری پس از انتخاب",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "آن را در بالا روشن کنید تا در هر جستجو پرسیده شود، یا ابزار «فرهنگ بافتاری» را به نوار ابزار انتخاب اضافه کنید تا فقط با زدن آن پرسیده شود."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "آن را در بالا روشن کنید تا در هر جستجو پرسیده شود، یا ابزار «فرهنگ بافتاری» را به نوار ابزار انتخاب اضافه کنید تا فقط با زدن آن پرسیده شود.",
+  "Failed to merge reading statistics": "ادغام آمار مطالعه ناموفق بود",
+  "Merge “{{source}}” into “{{target}}”?": "«{{source}}» در «{{target}}» ادغام شود؟",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "زمان مطالعه آن در همه دستگاه‌های شما به کتاب دیگر منتقل می‌شود. این کار قابل بازگشت نیست.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "زمان مطالعه آن در این دستگاه به کتاب دیگر منتقل می‌شود. این کار قابل بازگشت نیست.",
+  "Merge": "ادغام",
+  "Merge “{{title}}” into:": "ادغام «{{title}}» در:",
+  "Merge Statistics": "ادغام آمار",
+  "Merge statistics of {{title}}": "ادغام آمار {{title}}",
+  "No other books have reading statistics": "کتاب دیگری آمار مطالعه ندارد",
+  "Merge another entry into this book:": "ادغام مورد دیگری در این کتاب:"
 }

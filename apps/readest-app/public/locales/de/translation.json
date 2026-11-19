@@ -2858,5 +2858,15 @@
   "Statistics by Book": "Statistik nach Buch",
   "Each book’s reading time, most recently read first": "Lesezeit pro Buch, zuletzt gelesene zuerst",
   "Look up text in the context dictionary after selection": "Text nach Auswahl im Kontextwörterbuch nachschlagen",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Schalte es oben ein, um bei jedem Nachschlagen zu fragen, oder füge das Werkzeug „Kontextwörterbuch“ zur Auswahl-Werkzeugleiste hinzu, um nur beim Antippen zu fragen."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Schalte es oben ein, um bei jedem Nachschlagen zu fragen, oder füge das Werkzeug „Kontextwörterbuch“ zur Auswahl-Werkzeugleiste hinzu, um nur beim Antippen zu fragen.",
+  "Failed to merge reading statistics": "Lesestatistik konnte nicht zusammengeführt werden",
+  "Merge “{{source}}” into “{{target}}”?": "„{{source}}“ in „{{target}}“ zusammenführen?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Die Lesezeit wird auf all deinen Geräten dem anderen Buch zugeordnet. Das kann nicht rückgängig gemacht werden.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Die Lesezeit wird auf diesem Gerät dem anderen Buch zugeordnet. Das kann nicht rückgängig gemacht werden.",
+  "Merge": "Zusammenführen",
+  "Merge “{{title}}” into:": "„{{title}}“ zusammenführen in:",
+  "Merge Statistics": "Statistik zusammenführen",
+  "Merge statistics of {{title}}": "Statistik von {{title}} zusammenführen",
+  "No other books have reading statistics": "Keine anderen Bücher haben eine Lesestatistik",
+  "Merge another entry into this book:": "Einen anderen Eintrag in dieses Buch zusammenführen:"
 }

@@ -2785,5 +2785,15 @@
   "Statistics by Book": "Statistik per Buku",
   "Each book’s reading time, most recently read first": "Waktu membaca tiap buku, yang terakhir dibaca lebih dulu",
   "Look up text in the context dictionary after selection": "Cari teks di kamus konteks setelah pemilihan",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Aktifkan di atas untuk bertanya pada setiap pencarian, atau tambahkan alat Kamus Konteks ke bilah alat pilihan untuk bertanya hanya saat Anda mengetuknya."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Aktifkan di atas untuk bertanya pada setiap pencarian, atau tambahkan alat Kamus Konteks ke bilah alat pilihan untuk bertanya hanya saat Anda mengetuknya.",
+  "Failed to merge reading statistics": "Gagal menggabungkan statistik membaca",
+  "Merge “{{source}}” into “{{target}}”?": "Gabungkan “{{source}}” ke “{{target}}”?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Waktu membacanya akan dipindahkan ke buku lain di semua perangkat Anda. Tindakan ini tidak dapat dibatalkan.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Waktu membacanya akan dipindahkan ke buku lain di perangkat ini. Tindakan ini tidak dapat dibatalkan.",
+  "Merge": "Gabungkan",
+  "Merge “{{title}}” into:": "Gabungkan “{{title}}” ke:",
+  "Merge Statistics": "Gabungkan Statistik",
+  "Merge statistics of {{title}}": "Gabungkan statistik {{title}}",
+  "No other books have reading statistics": "Tidak ada buku lain yang memiliki statistik membaca",
+  "Merge another entry into this book:": "Gabungkan entri lain ke buku ini:"
 }

@@ -3004,5 +3004,15 @@
   "Statistics by Book": "Statystyki według książek",
   "Each book’s reading time, most recently read first": "Czas czytania każdej książki, od ostatnio czytanej",
   "Look up text in the context dictionary after selection": "Sprawdź zaznaczony tekst w słowniku kontekstowym",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Włącz go powyżej, aby pytać przy każdym wyszukiwaniu, lub dodaj narzędzie Słownik kontekstowy do paska zaznaczenia, aby pytać tylko po jego dotknięciu."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Włącz go powyżej, aby pytać przy każdym wyszukiwaniu, lub dodaj narzędzie Słownik kontekstowy do paska zaznaczenia, aby pytać tylko po jego dotknięciu.",
+  "Failed to merge reading statistics": "Nie udało się scalić statystyk czytania",
+  "Merge “{{source}}” into “{{target}}”?": "Scalić „{{source}}” z „{{target}}”?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Czas czytania tej książki zostanie przeniesiony do drugiej książki na wszystkich Twoich urządzeniach. Tej operacji nie można cofnąć.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Czas czytania tej książki zostanie przeniesiony do drugiej książki na tym urządzeniu. Tej operacji nie można cofnąć.",
+  "Merge": "Scal",
+  "Merge “{{title}}” into:": "Scal „{{title}}” z:",
+  "Merge Statistics": "Scal statystyki",
+  "Merge statistics of {{title}}": "Scal statystyki: {{title}}",
+  "No other books have reading statistics": "Żadna inna książka nie ma statystyk czytania",
+  "Merge another entry into this book:": "Scal inny wpis z tą książką:"
 }

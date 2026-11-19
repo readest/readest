@@ -109,10 +109,41 @@ export async function deleteBookStats(
   client: PushClient | null,
   book: StatBook,
 ): Promise<void> {
-  if (client) {
-    await client.pushChanges({
-      statBooks: [{ ...toWireBook(book), deleted_at: new Date().toISOString() }],
-    });
-  }
+  if (client) await pushDeletion(client, book);
   await stats.deleteBook(book.bookMd5);
+}
+
+const pushDeletion = (client: PushClient, book: StatBook) =>
+  client.pushChanges({
+    statBooks: [{ ...toWireBook(book), deleted_at: new Date().toISOString() }],
+  });
+
+/**
+ * Merge two entries of the same book (#7494): every event of `source` becomes
+ * an event of `target`, and `source` is deleted. With a sync client this
+ * device first pulls, so it holds every event of `source`, then pushes them
+ * under `target` and only then deletes `source` on the server. A failure
+ * before that leaves both entries as they were here; retrying is safe, since
+ * the server keeps the longer duration of an event it already has.
+ */
+export async function mergeBookStats(
+  stats: StatisticsDb,
+  client: (PushClient & PullClient) | null,
+  source: StatBook,
+  target: StatBook,
+): Promise<void> {
+  if (client) {
+    await pullStats(stats, client);
+    const events = await stats.getBookEvents(source.bookMd5);
+    for (let i = 0; i < events.length; i += PUSH_CHUNK) {
+      await client.pushChanges({
+        statBooks: [toWireBook(target)],
+        statPages: events
+          .slice(i, i + PUSH_CHUNK)
+          .map((e) => toWirePage({ ...e, bookMd5: target.bookMd5 })),
+      });
+    }
+    await pushDeletion(client, source);
+  }
+  await stats.mergeBook(source.bookMd5, target);
 }

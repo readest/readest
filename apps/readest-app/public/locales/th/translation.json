@@ -2785,5 +2785,15 @@
   "Statistics by Book": "สถิติตามหนังสือ",
   "Each book’s reading time, most recently read first": "เวลาอ่านของหนังสือแต่ละเล่ม เรียงจากที่อ่านล่าสุด",
   "Look up text in the context dictionary after selection": "ค้นหาข้อความในพจนานุกรมตามบริบทหลังการเลือก",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "เปิดด้านบนเพื่อถามทุกครั้งที่ค้นหา หรือเพิ่มเครื่องมือพจนานุกรมตามบริบทลงในแถบเครื่องมือการเลือกเพื่อถามเฉพาะเมื่อคุณแตะ"
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "เปิดด้านบนเพื่อถามทุกครั้งที่ค้นหา หรือเพิ่มเครื่องมือพจนานุกรมตามบริบทลงในแถบเครื่องมือการเลือกเพื่อถามเฉพาะเมื่อคุณแตะ",
+  "Failed to merge reading statistics": "รวมสถิติการอ่านไม่สำเร็จ",
+  "Merge “{{source}}” into “{{target}}”?": "รวม “{{source}}” เข้ากับ “{{target}}” หรือไม่",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "เวลาอ่านของหนังสือเล่มนี้จะย้ายไปยังหนังสืออีกเล่มในอุปกรณ์ทั้งหมดของคุณ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "เวลาอ่านของหนังสือเล่มนี้จะย้ายไปยังหนังสืออีกเล่มในอุปกรณ์นี้ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+  "Merge": "รวม",
+  "Merge “{{title}}” into:": "รวม “{{title}}” เข้ากับ:",
+  "Merge Statistics": "รวมสถิติ",
+  "Merge statistics of {{title}}": "รวมสถิติของ {{title}}",
+  "No other books have reading statistics": "ไม่มีหนังสือเล่มอื่นที่มีสถิติการอ่าน",
+  "Merge another entry into this book:": "รวมรายการอื่นเข้ากับหนังสือเล่มนี้:"
 }

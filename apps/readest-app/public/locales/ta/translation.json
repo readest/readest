@@ -2858,5 +2858,15 @@
   "Statistics by Book": "புத்தகவாரியான புள்ளிவிவரங்கள்",
   "Each book’s reading time, most recently read first": "ஒவ்வொரு புத்தகத்தின் வாசிப்பு நேரம், சமீபத்தில் படித்தவை முதலில்",
   "Look up text in the context dictionary after selection": "தேர்வுக்குப் பிறகு சூழல் அகராதியில் உரையைத் தேடு",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "ஒவ்வொரு தேடலிலும் கேட்க மேலே இதை இயக்கவும், அல்லது தட்டும்போது மட்டும் கேட்க தேர்வுக் கருவிப்பட்டியில் சூழல் அகராதி கருவியைச் சேர்க்கவும்."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "ஒவ்வொரு தேடலிலும் கேட்க மேலே இதை இயக்கவும், அல்லது தட்டும்போது மட்டும் கேட்க தேர்வுக் கருவிப்பட்டியில் சூழல் அகராதி கருவியைச் சேர்க்கவும்.",
+  "Failed to merge reading statistics": "வாசிப்பு புள்ளிவிவரங்களை இணைக்க முடியவில்லை",
+  "Merge “{{source}}” into “{{target}}”?": "“{{source}}” ஐ “{{target}}” உடன் இணைக்கவா?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "இதன் வாசிப்பு நேரம் உங்கள் எல்லா சாதனங்களிலும் மற்ற புத்தகத்துக்கு மாற்றப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "இதன் வாசிப்பு நேரம் இந்தச் சாதனத்தில் மற்ற புத்தகத்துக்கு மாற்றப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+  "Merge": "இணை",
+  "Merge “{{title}}” into:": "“{{title}}” ஐ இதனுடன் இணை:",
+  "Merge Statistics": "புள்ளிவிவரங்களை இணை",
+  "Merge statistics of {{title}}": "{{title}} புள்ளிவிவரங்களை இணை",
+  "No other books have reading statistics": "வேறு எந்தப் புத்தகத்துக்கும் வாசிப்பு புள்ளிவிவரங்கள் இல்லை",
+  "Merge another entry into this book:": "இந்தப் புத்தகத்துடன் வேறொரு பதிவை இணை:"
 }
