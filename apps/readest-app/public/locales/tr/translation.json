@@ -2857,5 +2857,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Okuma süresi tüm cihazlarınızdan kaldırılır. Bu işlem geri alınamaz.",
   "Its reading time is removed from this device. This can’t be undone.": "Okuma süresi bu cihazdan kaldırılır. Bu işlem geri alınamaz.",
   "Statistics by Book": "Kitaba Göre İstatistikler",
-  "Each book’s reading time, most recently read first": "Her kitabın okuma süresi, en son okunan önce"
+  "Each book’s reading time, most recently read first": "Her kitabın okuma süresi, en son okunan önce",
+  "Look up text in the context dictionary after selection": "Seçimden sonra metni bağlam sözlüğünde ara",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Her aramada sorulması için yukarıdan açın ya da yalnızca dokunduğunuzda sorulması için Bağlam Sözlüğü aracını seçim araç çubuğuna ekleyin."
 }

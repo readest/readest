@@ -2930,5 +2930,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Su tiempo de lectura se eliminará de todos tus dispositivos. Esta acción no se puede deshacer.",
   "Its reading time is removed from this device. This can’t be undone.": "Su tiempo de lectura se eliminará de este dispositivo. Esta acción no se puede deshacer.",
   "Statistics by Book": "Estadísticas por libro",
-  "Each book’s reading time, most recently read first": "Tiempo de lectura de cada libro, del más reciente al más antiguo"
+  "Each book’s reading time, most recently read first": "Tiempo de lectura de cada libro, del más reciente al más antiguo",
+  "Look up text in the context dictionary after selection": "Buscar texto en el diccionario contextual después de la selección",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Actívalo arriba para consultarlo en cada búsqueda, o añade la herramienta Diccionario contextual a la barra de selección para consultarlo solo al tocarla."
 }

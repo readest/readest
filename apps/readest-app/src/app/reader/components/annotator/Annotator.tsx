@@ -25,6 +25,7 @@ import { useVocabularyStore } from '@/store/vocabularyStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
 import { invokeSystemDictionary } from '@/services/dictionaries/systemDictionary';
 import { buildSelectionContext } from '@/services/dictionaries/contextDictionary';
+import { getContextTranslator } from '@/services/dictionaries/providers/contextProvider';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -271,6 +272,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // Decided when the lookup opens, as for the note editor: the keyboard for a
   // Learning word's hint field must not swap the popup for the sheet (#7570).
   const [dictionaryInSheet, setDictionaryInSheet] = useState(false);
+  // Set by the Context Dictionary tool: the lookup asks the AI alone (#7497).
+  const [dictionaryContextOnly, setDictionaryContextOnly] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -2051,6 +2054,18 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     setShowAnnotPopup(false);
     void suppressNativeSelectionHandles();
     setDictionaryInSheet(isSheetViewport());
+    setDictionaryContextOnly(false);
+    setShowDictionaryPopup(true);
+  };
+
+  // Asks the AI context dictionary alone, so it can stay off in the dictionary
+  // list and spend no tokens on everyday lookups (#7497).
+  const handleContextDictionary = () => {
+    if (!selection || !selection.text) return;
+    setShowAnnotPopup(false);
+    void suppressNativeSelectionHandles();
+    setDictionaryInSheet(isSheetViewport());
+    setDictionaryContextOnly(true);
     setShowDictionaryPopup(true);
   };
 
@@ -2742,6 +2757,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         return { tooltipText: _(label), Icon, onClick: handleSearch };
       case 'dictionary':
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
+      case 'contextdictionary':
+        return {
+          tooltipText: _(label),
+          Icon,
+          onClick: handleContextDictionary,
+          disabled: !getContextTranslator(),
+        };
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };
       case 'tts':
@@ -2848,6 +2870,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
                 lang={bookData.bookDoc?.metadata.language as string}
                 selection={dictionarySelection}
                 capture={dictionaryCapture}
+                contextOnly={dictionaryContextOnly}
                 onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
               />
@@ -2864,6 +2887,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
               trianglePosition={trianglePosition}
               popupWidth={dictPopupWidth}
               popupHeight={dictPopupHeight}
+              contextOnly={dictionaryContextOnly}
               onDismiss={handleDismissPopupShowToolbar}
               onManage={onManage}
             />

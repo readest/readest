@@ -18,6 +18,7 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'annotate',
   'search',
   'dictionary',
+  'contextdictionary',
   'translate',
   'tts',
   'proofread',
@@ -28,7 +29,9 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
 // Default toolbar: the eight pre-existing tools in their original order.
 // 'share' starts hidden in the Available tray per the #4014 design, and
 // 'copylink' is opt-in the same way (#5452) — a niche action most readers
-// never need, reachable by adding it in Customize Toolbar.
+// never need, reachable by adding it in Customize Toolbar. So is
+// 'contextdictionary', which asks the AI alone and spends the user's tokens
+// (#7497).
 export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
   'copy',
   'highlight',

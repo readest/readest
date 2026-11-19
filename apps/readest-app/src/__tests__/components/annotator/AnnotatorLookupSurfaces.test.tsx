@@ -14,7 +14,7 @@
  * surface on the frame it opened.
  */
 
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { eventDispatcher } from '@/utils/event';
 import type { TextSelection } from '@/utils/sel';
@@ -44,6 +44,7 @@ const h = vi.hoisted(() => ({
   },
   invokeSystemDictionary: vi.fn(),
   recordLookup: vi.fn(),
+  contextTranslator: { id: 'llm' } as { id: string } | undefined,
   isTextSelected: { current: true },
   appService: {} as { isIOSApp?: boolean },
   onNativeTouch: null as null | ((ev: { type: string; x: number; y: number }) => void),
@@ -163,6 +164,11 @@ vi.mock('@/store/customDictionaryStore', () => ({
   ),
 }));
 
+vi.mock('@/services/dictionaries/providers/contextProvider', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/dictionaries/providers/contextProvider')>()),
+  getContextTranslator: () => h.contextTranslator,
+}));
+
 vi.mock('@/services/dictionaries/systemDictionary', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/dictionaries/systemDictionary')>()),
   isSystemDictionarySupported: () => true,
@@ -268,7 +274,19 @@ vi.mock('@/app/reader/components/annotator/ImportAnnotationsDialog', () => ({
   default: () => null,
 }));
 vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
-  default: () => <div data-testid='annotation-toolbar' />,
+  default: ({
+    buttons,
+  }: {
+    buttons: { tooltipText: string; onClick: () => void; disabled?: boolean }[];
+  }) => (
+    <div data-testid='annotation-toolbar'>
+      {buttons.map((b) => (
+        <button key={b.tooltipText} type='button' disabled={b.disabled} onClick={b.onClick}>
+          {b.tooltipText}
+        </button>
+      ))}
+    </div>
+  ),
 }));
 // The dismiss button stands in for the popup's close / backdrop tap, so a test
 // can drive the route back out of the lookup. Each surface reads its text the
@@ -281,16 +299,19 @@ vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
     position,
     trianglePosition,
     popupHeight,
+    contextOnly,
   }: {
     word: string;
     onDismiss: () => void;
     position: { point: { y: number } };
     trianglePosition: { point: { y: number } };
     popupHeight: number;
+    contextOnly?: boolean;
   }) => (
     <div
       data-testid='dictionary-surface'
       data-kind='popup'
+      data-context-only={String(!!contextOnly)}
       data-word={word.trim()}
       data-top={position.point.y}
       data-height={popupHeight}
@@ -301,8 +322,21 @@ vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
   ),
 }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
-  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface' data-kind='sheet' data-word={word.trim()}>
+  default: ({
+    word,
+    onDismiss,
+    contextOnly,
+  }: {
+    word: string;
+    onDismiss: () => void;
+    contextOnly?: boolean;
+  }) => (
+    <div
+      data-testid='dictionary-surface'
+      data-kind='sheet'
+      data-context-only={String(!!contextOnly)}
+      data-word={word.trim()}
+    >
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
     </div>
   ),
@@ -357,6 +391,8 @@ beforeEach(() => {
   h.isTextSelected.current = true;
   h.lookupSettings.providerEnabled = {};
   h.lookupSettings.saveLookupsToVocabulary = true;
+  h.viewSettings.annotationToolbarItems = ['copy'];
+  h.contextTranslator = { id: 'llm' };
   h.setSelection = null;
   h.viewSettings.enableAnnotationQuickActions = false;
   h.viewSettings.annotationQuickAction = '';
@@ -396,6 +432,37 @@ test.each([
   } else {
     expect(h.recordLookup).not.toHaveBeenCalled();
   }
+});
+
+describe('the Context Dictionary tool (#7497)', () => {
+  test('opens the lookup with the context dictionary alone; Dictionary opens every one', async () => {
+    h.viewSettings.annotationToolbarItems = ['dictionary', 'contextdictionary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('Welten');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Context Dictionary' }));
+    });
+    expect(screen.getByTestId('dictionary-surface').dataset['contextOnly']).toBe('true');
+
+    act(() => {
+      fireEvent.click(screen.getByTestId('dictionary-dismiss'));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
+    });
+    expect(screen.getByTestId('dictionary-surface').dataset['contextOnly']).toBe('false');
+  });
+
+  test('is unavailable without an OpenAI-compatible translator', async () => {
+    h.contextTranslator = undefined;
+    h.viewSettings.annotationToolbarItems = ['contextdictionary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('Welten');
+
+    const button = screen.getByRole('button', { name: 'Context Dictionary' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+  });
 });
 
 describe('a lookup surface survives the selection it is anchored to being republished', () => {

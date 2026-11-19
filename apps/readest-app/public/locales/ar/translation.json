@@ -3149,5 +3149,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "ستتم إزالة وقت قراءته من جميع أجهزتك. لا يمكن التراجع عن هذا الإجراء.",
   "Its reading time is removed from this device. This can’t be undone.": "ستتم إزالة وقت قراءته من هذا الجهاز. لا يمكن التراجع عن هذا الإجراء.",
   "Statistics by Book": "الإحصاءات حسب الكتاب",
-  "Each book’s reading time, most recently read first": "وقت قراءة كل كتاب، الأحدث قراءةً أولًا"
+  "Each book’s reading time, most recently read first": "وقت قراءة كل كتاب، الأحدث قراءةً أولًا",
+  "Look up text in the context dictionary after selection": "البحث عن النص في قاموس السياق بعد التحديد",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "شغّله أعلاه ليُسأل في كل بحث، أو أضف أداة «قاموس السياق» إلى شريط أدوات التحديد ليُسأل فقط عند النقر عليها."
 }

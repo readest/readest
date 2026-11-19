@@ -2857,5 +2857,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "De leestijd wordt van al je apparaten verwijderd. Dit kan niet ongedaan worden gemaakt.",
   "Its reading time is removed from this device. This can’t be undone.": "De leestijd wordt van dit apparaat verwijderd. Dit kan niet ongedaan worden gemaakt.",
   "Statistics by Book": "Statistieken per boek",
-  "Each book’s reading time, most recently read first": "Leestijd per boek, meest recent gelezen eerst"
+  "Each book’s reading time, most recently read first": "Leestijd per boek, meest recent gelezen eerst",
+  "Look up text in the context dictionary after selection": "Zoek tekst op in het contextwoordenboek na selectie",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Zet het hierboven aan om bij elke zoekopdracht te vragen, of voeg het hulpmiddel Contextwoordenboek toe aan de selectiewerkbalk om alleen te vragen als je erop tikt."
 }

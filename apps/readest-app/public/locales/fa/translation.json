@@ -2857,5 +2857,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "زمان مطالعه آن از همه دستگاه‌های شما حذف می‌شود. این کار قابل بازگشت نیست.",
   "Its reading time is removed from this device. This can’t be undone.": "زمان مطالعه آن از این دستگاه حذف می‌شود. این کار قابل بازگشت نیست.",
   "Statistics by Book": "آمار به تفکیک کتاب",
-  "Each book’s reading time, most recently read first": "زمان مطالعه هر کتاب، به ترتیب آخرین مطالعه"
+  "Each book’s reading time, most recently read first": "زمان مطالعه هر کتاب، به ترتیب آخرین مطالعه",
+  "Look up text in the context dictionary after selection": "جستجوی متن در فرهنگ بافتاری پس از انتخاب",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "آن را در بالا روشن کنید تا در هر جستجو پرسیده شود، یا ابزار «فرهنگ بافتاری» را به نوار ابزار انتخاب اضافه کنید تا فقط با زدن آن پرسیده شود."
 }

@@ -3003,5 +3003,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Время чтения этой книги будет удалено со всех ваших устройств. Это действие нельзя отменить.",
   "Its reading time is removed from this device. This can’t be undone.": "Время чтения этой книги будет удалено с этого устройства. Это действие нельзя отменить.",
   "Statistics by Book": "Статистика по книгам",
-  "Each book’s reading time, most recently read first": "Время чтения каждой книги, сначала недавние"
+  "Each book’s reading time, most recently read first": "Время чтения каждой книги, сначала недавние",
+  "Look up text in the context dictionary after selection": "Искать текст в контекстном словаре после выделения",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Включите его выше, чтобы спрашивать при каждом поиске, или добавьте инструмент «Контекстный словарь» на панель выделения, чтобы спрашивать только по нажатию."
 }

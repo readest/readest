@@ -2784,5 +2784,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "この本の読書時間がすべてのデバイスから削除されます。この操作は元に戻せません。",
   "Its reading time is removed from this device. This can’t be undone.": "この本の読書時間がこのデバイスから削除されます。この操作は元に戻せません。",
   "Statistics by Book": "本ごとの統計",
-  "Each book’s reading time, most recently read first": "本ごとの読書時間（最近読んだ順）"
+  "Each book’s reading time, most recently read first": "本ごとの読書時間（最近読んだ順）",
+  "Look up text in the context dictionary after selection": "選択後のテキストを文脈辞書で調べる",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "上でオンにするとすべての検索で問い合わせます。選択ツールバーに「文脈辞書」ツールを追加すると、タップしたときだけ問い合わせます。"
 }

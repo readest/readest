@@ -2857,5 +2857,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "इसका पढ़ने का समय आपके सभी डिवाइस से हटा दिया जाएगा। इसे पूर्ववत नहीं किया जा सकता।",
   "Its reading time is removed from this device. This can’t be undone.": "इसका पढ़ने का समय इस डिवाइस से हटा दिया जाएगा। इसे पूर्ववत नहीं किया जा सकता।",
   "Statistics by Book": "किताब के अनुसार आँकड़े",
-  "Each book’s reading time, most recently read first": "हर किताब का पढ़ने का समय, हाल में पढ़ी गई पहले"
+  "Each book’s reading time, most recently read first": "हर किताब का पढ़ने का समय, हाल में पढ़ी गई पहले",
+  "Look up text in the context dictionary after selection": "चयन के बाद संदर्भ शब्दकोश में पाठ देखें",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "हर खोज में पूछने के लिए इसे ऊपर चालू करें, या केवल टैप करने पर पूछने के लिए चयन टूलबार में संदर्भ शब्दकोश टूल जोड़ें।"
 }

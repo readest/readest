@@ -2857,5 +2857,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Ο χρόνος ανάγνωσής του θα αφαιρεθεί από όλες τις συσκευές σας. Η ενέργεια δεν αναιρείται.",
   "Its reading time is removed from this device. This can’t be undone.": "Ο χρόνος ανάγνωσής του θα αφαιρεθεί από αυτήν τη συσκευή. Η ενέργεια δεν αναιρείται.",
   "Statistics by Book": "Στατιστικά ανά βιβλίο",
-  "Each book’s reading time, most recently read first": "Ο χρόνος ανάγνωσης κάθε βιβλίου, με το πιο πρόσφατο πρώτο"
+  "Each book’s reading time, most recently read first": "Ο χρόνος ανάγνωσης κάθε βιβλίου, με το πιο πρόσφατο πρώτο",
+  "Look up text in the context dictionary after selection": "Αναζήτηση κειμένου στο λεξικό συμφραζομένων μετά την επιλογή",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Ενεργοποιήστε το παραπάνω για ερώτηση σε κάθε αναζήτηση ή προσθέστε το εργαλείο «Λεξικό συμφραζομένων» στη γραμμή επιλογής για ερώτηση μόνο όταν το πατάτε."
 }

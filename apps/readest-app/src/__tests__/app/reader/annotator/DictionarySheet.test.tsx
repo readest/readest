@@ -127,6 +127,17 @@ vi.mock('@/services/environment', async () => {
   };
 });
 
+// The AI context dictionary, faked so the context-only sheet has something to ask.
+const contextLookup = vi.hoisted(() => vi.fn());
+vi.mock('@/services/dictionaries/providers/contextProvider', () => ({
+  contextProvider: {
+    id: 'builtin:context',
+    kind: 'builtin',
+    label: 'Context Dictionary',
+    lookup: contextLookup,
+  },
+}));
+
 // Mock the registry: every test pushes its own providers onto this list.
 const providersForNextRender: DictionaryProvider[] = [];
 vi.mock('@/services/dictionaries/registry', () => ({
@@ -317,6 +328,7 @@ const renderSheet = (
     selection: DictionarySelectionContext;
     onDismiss: () => void;
     onManage: () => void;
+    contextOnly: boolean;
   }> = {},
 ) =>
   render(
@@ -326,6 +338,7 @@ const renderSheet = (
       selection={props.selection}
       onDismiss={props.onDismiss ?? (() => {})}
       onManage={props.onManage}
+      contextOnly={props.contextOnly}
     />,
   );
 
@@ -599,6 +612,23 @@ describe('DictionarySheet — in-content navigation', () => {
     fireEvent.click(screen.getByLabelText('Back'));
     await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('hello'));
     expect(screen.queryByLabelText('Back')).toBeNull();
+  });
+});
+
+describe('DictionarySheet — context dictionary alone (#7497)', () => {
+  it('asks only the context dictionary, whether or not it is on in the list', async () => {
+    providersForNextRender.push(buildRealStarDictProvider());
+    contextLookup.mockImplementation(
+      async (word: string, ctx: DictionaryLookupContext): Promise<DictionaryLookupOutcome> => {
+        ctx.container.append(document.createTextNode(`AI explains ${word}`));
+        return { ok: true, headword: word, sourceLabel: 'LLM' };
+      },
+    );
+    renderSheet({ word: 'hello', contextOnly: true });
+
+    await waitFor(() => expect(screen.getByText('AI explains hello')).toBeTruthy());
+    expect(screen.getAllByTestId('dict-card')).toHaveLength(1);
+    expect(screen.queryByText('CMU American English spelling')).toBeNull();
   });
 });
 

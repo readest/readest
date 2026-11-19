@@ -2857,5 +2857,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "მისი კითხვის დრო წაიშლება ყველა თქვენი მოწყობილობიდან. ამის გაუქმება შეუძლებელია.",
   "Its reading time is removed from this device. This can’t be undone.": "მისი კითხვის დრო წაიშლება ამ მოწყობილობიდან. ამის გაუქმება შეუძლებელია.",
   "Statistics by Book": "სტატისტიკა წიგნების მიხედვით",
-  "Each book’s reading time, most recently read first": "თითოეული წიგნის კითხვის დრო, ბოლოს წაკითხულიდან დაწყებული"
+  "Each book’s reading time, most recently read first": "თითოეული წიგნის კითხვის დრო, ბოლოს წაკითხულიდან დაწყებული",
+  "Look up text in the context dictionary after selection": "ტექსტის მოძებნა კონტექსტურ ლექსიკონში მონიშვნის შემდეგ",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "ჩართეთ ზემოთ, რომ ყოველ ძიებაზე იკითხოს, ან დაამატეთ კონტექსტური ლექსიკონის ხელსაწყო მონიშვნის ხელსაწყოთა ზოლში, რომ მხოლოდ შეხებისას იკითხოს."
 }

@@ -2857,5 +2857,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Az olvasási idő minden eszközödről törlődik. Ez nem vonható vissza.",
   "Its reading time is removed from this device. This can’t be undone.": "Az olvasási idő erről az eszközről törlődik. Ez nem vonható vissza.",
   "Statistics by Book": "Statisztika könyvenként",
-  "Each book’s reading time, most recently read first": "Az egyes könyvek olvasási ideje, a legutóbb olvasottal kezdve"
+  "Each book’s reading time, most recently read first": "Az egyes könyvek olvasási ideje, a legutóbb olvasottal kezdve",
+  "Look up text in the context dictionary after selection": "Szöveg kikeresése a kontextusszótárban kijelölés után",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Kapcsold be fent, hogy minden keresésnél kérdezzen, vagy add hozzá a Kontextusszótár eszközt a kijelölési eszköztárhoz, hogy csak koppintásra kérdezzen."
 }

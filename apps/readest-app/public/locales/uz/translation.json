@@ -2857,5 +2857,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Uning oʻqish vaqti barcha qurilmalaringizdan olib tashlanadi. Buni ortga qaytarib boʻlmaydi.",
   "Its reading time is removed from this device. This can’t be undone.": "Uning oʻqish vaqti bu qurilmadan olib tashlanadi. Buni ortga qaytarib boʻlmaydi.",
   "Statistics by Book": "Kitoblar boʻyicha statistika",
-  "Each book’s reading time, most recently read first": "Har bir kitobning oʻqish vaqti, oxirgi oʻqilganlari birinchi"
+  "Each book’s reading time, most recently read first": "Har bir kitobning oʻqish vaqti, oxirgi oʻqilganlari birinchi",
+  "Look up text in the context dictionary after selection": "Tanlovdan keyin matnni kontekst lugʻatida qidirish",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Har bir qidiruvda so‘rash uchun uni yuqorida yoqing yoki faqat bosganingizda so‘rash uchun Kontekst lugʻati vositasini tanlov asboblar paneliga qo‘shing."
 }

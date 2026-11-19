@@ -63,12 +63,21 @@ describe('annotationToolbar helpers', () => {
       'annotate',
       'search',
       'dictionary',
+      'contextdictionary',
       'translate',
       'tts',
       'proofread',
       'share',
       'quotecard',
     ]);
+  });
+
+  test('contextdictionary is opt-in: off the default toolbar, offered in the available tray (#7497)', () => {
+    expect(ALL_ANNOTATION_TOOL_TYPES).toContain('contextdictionary');
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('contextdictionary');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, true)).toContain(
+      'contextdictionary',
+    );
   });
 
   test('quotecard is opt-in and offered even when text share is unavailable', () => {

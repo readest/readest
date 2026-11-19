@@ -2784,5 +2784,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "དེའི་ཀློག་དུས་ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཚང་མ་ནས་བསུབ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
   "Its reading time is removed from this device. This can’t be undone.": "དེའི་ཀློག་དུས་སྒྲིག་ཆས་འདི་ནས་བསུབ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
   "Statistics by Book": "དཔེ་དེབ་ལྟར་གྱི་གྲངས་ཐོ།",
-  "Each book’s reading time, most recently read first": "དཔེ་དེབ་རེ་རེའི་ཀློག་དུས། ཉེ་ཆར་ཀློག་པ་སྔོན་ལ།"
+  "Each book’s reading time, most recently read first": "དཔེ་དེབ་རེ་རེའི་ཀློག་དུས། ཉེ་ཆར་ཀློག་པ་སྔོན་ལ།",
+  "Look up text in the context dictionary after selection": "ཡིག་ཆ་འདེམས་རྗེས་སྐབས་དོན་ཚིག་མཛོད་ནང་འཚོལ་",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "འཚོལ་བ་རེ་རེར་འདྲི་བར་གོང་དུ་ཁ་ཕྱེ། ཡང་ན་མནན་དུས་ཁོ་ནར་འདྲི་བར་སྐབས་དོན་ཚིག་མཛོད་ཀྱི་ལག་ཆ་འདེམས་པའི་ལག་ཆའི་ཕྲེང་དུ་སྣོན།"
 }

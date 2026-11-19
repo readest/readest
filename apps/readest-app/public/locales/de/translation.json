@@ -2857,5 +2857,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Die Lesezeit wird von all deinen Geräten entfernt. Das kann nicht rückgängig gemacht werden.",
   "Its reading time is removed from this device. This can’t be undone.": "Die Lesezeit wird von diesem Gerät entfernt. Das kann nicht rückgängig gemacht werden.",
   "Statistics by Book": "Statistik nach Buch",
-  "Each book’s reading time, most recently read first": "Lesezeit pro Buch, zuletzt gelesene zuerst"
+  "Each book’s reading time, most recently read first": "Lesezeit pro Buch, zuletzt gelesene zuerst",
+  "Look up text in the context dictionary after selection": "Text nach Auswahl im Kontextwörterbuch nachschlagen",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Schalte es oben ein, um bei jedem Nachschlagen zu fragen, oder füge das Werkzeug „Kontextwörterbuch“ zur Auswahl-Werkzeugleiste hinzu, um nur beim Antippen zu fragen."
 }

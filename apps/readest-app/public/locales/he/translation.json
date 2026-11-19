@@ -2930,5 +2930,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "זמן הקריאה שלו יוסר מכל המכשירים שלך. לא ניתן לבטל פעולה זו.",
   "Its reading time is removed from this device. This can’t be undone.": "זמן הקריאה שלו יוסר מהמכשיר הזה. לא ניתן לבטל פעולה זו.",
   "Statistics by Book": "סטטיסטיקה לפי ספר",
-  "Each book’s reading time, most recently read first": "זמן הקריאה של כל ספר, מהנקרא לאחרונה"
+  "Each book’s reading time, most recently read first": "זמן הקריאה של כל ספר, מהנקרא לאחרונה",
+  "Look up text in the context dictionary after selection": "חפש טקסט במילון ההקשר לאחר הבחירה",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "הפעילו אותו למעלה כדי לשאול בכל חיפוש, או הוסיפו את הכלי „מילון הקשר” לסרגל הבחירה כדי לשאול רק כשמקישים עליו."
 }

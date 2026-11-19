@@ -3003,5 +3003,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Čas branja bo odstranjen z vseh vaših naprav. Tega ni mogoče razveljaviti.",
   "Its reading time is removed from this device. This can’t be undone.": "Čas branja bo odstranjen s te naprave. Tega ni mogoče razveljaviti.",
   "Statistics by Book": "Statistika po knjigah",
-  "Each book’s reading time, most recently read first": "Čas branja vsake knjige, najprej nazadnje brane"
+  "Each book’s reading time, most recently read first": "Čas branja vsake knjige, najprej nazadnje brane",
+  "Look up text in the context dictionary after selection": "Poišči besedilo v kontekstnem slovarju po izbiri",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Vklopite ga zgoraj, da se vpraša ob vsakem iskanju, ali dodajte orodje Kontekstni slovar v orodno vrstico izbire, da se vpraša le, ko ga tapnete."
 }

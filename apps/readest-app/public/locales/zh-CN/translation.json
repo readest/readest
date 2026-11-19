@@ -2784,5 +2784,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "这本书的阅读时长将从你的所有设备中移除。此操作无法撤销。",
   "Its reading time is removed from this device. This can’t be undone.": "这本书的阅读时长将从此设备中移除。此操作无法撤销。",
   "Statistics by Book": "按书籍统计",
-  "Each book’s reading time, most recently read first": "每本书的阅读时长，最近阅读的在前"
+  "Each book’s reading time, most recently read first": "每本书的阅读时长，最近阅读的在前",
+  "Look up text in the context dictionary after selection": "在语境词典中查找选中文本",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "在上方开启后，每次查词都会询问；或将“语境词典”工具添加到选择工具栏，仅在点按时询问。"
 }
