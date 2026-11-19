@@ -57,9 +57,14 @@ const VoiceList: React.FC<VoiceListProps> = ({
   // A name a user's own service gave is shown as is; built-in names are UI strings.
   const nameOf = (item: TTSVoice | TTSVoicesGroup) => (item.literalName ? item.name : _(item.name));
   const hasGenders = groups.some((group) => group.voices.some((voice) => voice.gender));
+  // Groups without gender metadata (a custom service) can't honor a retained
+  // gender tab; fall back to "all" while only they are shown, so the hidden
+  // tab never empties the list. The tab comes back as it was once a gendered
+  // group is shown again.
+  const effectiveGender = hasGenders ? gender : 'all';
   const needle = query.trim().toLowerCase();
   const matches = (voice: TTSVoice) =>
-    (gender === 'all' || voice.gender === gender) &&
+    (effectiveGender === 'all' || voice.gender === effectiveGender) &&
     (!needle ||
       `${nameOf(voice)} ${getVoiceLanguageName(voice.lang)}`.toLowerCase().includes(needle));
   const shown = groups
@@ -99,7 +104,7 @@ const VoiceList: React.FC<VoiceListProps> = ({
       )}
       {shown.length === 0 && (
         <p className='text-base-content/70 px-4 py-6 text-center'>
-          {gender === 'all' && !needle
+          {effectiveGender === 'all' && !needle
             ? _('No voices available')
             : _('No voices match this filter')}
         </p>

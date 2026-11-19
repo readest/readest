@@ -486,6 +486,9 @@ const TTSPlayerSheet = ({
     <Dialog
       id='tts_player_sheet'
       isOpen={isOpen}
+      // The voice filter field must stay reachable while the software
+      // keyboard is up on short mobile viewports.
+      aboveKeyboard
       // The lyric sheet needs room to read as one: at the cover player's 0.65
       // it collapses to two or three visible lines.
       snapHeight={showLyrics ? 0.8 : 0.65}
@@ -809,9 +812,14 @@ const TTSPlayerSheet = ({
               value={voiceQuery}
               spellCheck={false}
               onChange={(event) => setVoiceQuery(event.target.value)}
-              // Keep typed keys and Esc from reaching the player Dialog's
-              // window-level handler, which would dismiss the whole sheet.
-              onKeyDown={(event) => event.stopPropagation()}
+              // Capture phase: the Dialog listens natively on the sheet
+              // element itself, and its bubble handler runs before React's
+              // root one — a bubble-phase stopPropagation here never fires
+              // for the keys Dialog swallows (Esc dismisses the sheet).
+              onKeyDownCapture={(event) => {
+                event.stopPropagation();
+                if (event.key === 'Escape') event.preventDefault();
+              }}
               placeholder={_('Filter voices')}
               aria-label={_('Filter voices')}
               className='settings-content min-w-0 flex-1 bg-transparent px-2 focus:outline-hidden'
@@ -829,7 +837,6 @@ const TTSPlayerSheet = ({
             )}
           </div>
           <VoiceList
-            key={activeSection}
             groups={shownGroups}
             query={voiceQuery}
             selected={{ voiceId: selectedVoice }}

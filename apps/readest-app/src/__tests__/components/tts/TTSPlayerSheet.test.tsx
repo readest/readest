@@ -681,6 +681,46 @@ describe('TTSPlayerSheet', () => {
     expect(screen.queryByText('Aseng')).toBeNull();
   });
 
+  test('escape in the filter field does not dismiss the player sheet', async () => {
+    const props = makeProps();
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Ava'));
+    fireEvent.keyDown(screen.getByLabelText('Filter voices'), { key: 'Escape' });
+    expect(props.onClose).not.toHaveBeenCalled();
+  });
+
+  test('the gender tab survives an engine switch and genderless groups stay visible', async () => {
+    const engines = [
+      voiceGroups[0],
+      {
+        id: 'custom',
+        name: 'My Service',
+        engine: 'custom-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(engines) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Guy'));
+    fireEvent.click(screen.getByRole('radio', { name: 'Female' }));
+    expect(screen.getByText('Ava')).toBeTruthy();
+    expect(screen.queryByText('Guy')).toBeNull();
+
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    // The genderless engine has no gender metadata; its voices must still
+    // list although the retained tab is Female and the tabs are hidden.
+    fireEvent.change(engineSelect!, { target: { value: 'custom-tts/custom' } });
+    await waitFor(() => screen.getByText('Aseng'));
+    // Back to the gendered engine: the retained Female tab narrows it again.
+    fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
+    expect(screen.getByText('Ava')).toBeTruthy();
+    expect(screen.queryByText('Guy')).toBeNull();
+  });
+
   test('timer button drills into the timer list and selects a timeout', async () => {
     const props = makeProps();
     render(<TTSPlayerSheet {...props} />);
