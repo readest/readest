@@ -2773,5 +2773,16 @@
   "Next Week": "གཟའ་འཁོར་རྗེས་མ།",
   "API Key (optional)": "API ལྡེ་མིག་ (གདམ་གའི)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 དང་དེའི་རྗེས་ཀྱི་པར་གཞིར་ སྒྲིག་འགོད > རྩིས་ཐོ > API ལྡེ་མིག་ ནས་བཟོས་པའི་ API ལྡེ་མིག་གིས་ཁྱེད་ཀྱི་རྩིས་ཐོའི་གསང་ཨང་མེད་པར་སྒྲ་དེབ་རྒྱུན་སྤེལ་བྱེད། ཉན་སའི་གནས་ས་མཉམ་འགྲིག་བྱེད་ཆེད་ ཀློག་པ་དང་འབྲི་བ་ གདམ་རོགས།",
-  "Could not sign in to BookOrbit for audiobooks": "སྒྲ་དེབ་ཆེད་དུ་ BookOrbit ནང་ཐོ་འཇུག་བྱེད་མ་ཐུབ།"
+  "Could not sign in to BookOrbit for audiobooks": "སྒྲ་དེབ་ཆེད་དུ་ BookOrbit ནང་ཐོ་འཇུག་བྱེད་མ་ཐུབ།",
+  "No reading statistics yet": "ད་དུང་ཀློག་པའི་གྲངས་ཐོ་མེད།",
+  "Delete Statistics": "གྲངས་ཐོ་བསུབ་པ།",
+  "Delete statistics of {{title}}": "{{title}} ཡི་གྲངས་ཐོ་བསུབ་པ།",
+  "Pages Read": "ཀློག་ཟིན་པའི་ཤོག་ངོས།",
+  "Last Read": "མཐའ་མའི་ཀློག་ཚེས།",
+  "Failed to delete reading statistics": "ཀློག་པའི་གྲངས་ཐོ་བསུབ་མ་ཐུབ།",
+  "Delete the reading statistics of “{{title}}”?": "“{{title}}” ཡི་ཀློག་པའི་གྲངས་ཐོ་བསུབ་བམ།",
+  "Its reading time is removed from all your devices. This can’t be undone.": "དེའི་ཀློག་དུས་ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཚང་མ་ནས་བསུབ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
+  "Its reading time is removed from this device. This can’t be undone.": "དེའི་ཀློག་དུས་སྒྲིག་ཆས་འདི་ནས་བསུབ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
+  "Statistics by Book": "དཔེ་དེབ་ལྟར་གྱི་གྲངས་ཐོ།",
+  "Each book’s reading time, most recently read first": "དཔེ་དེབ་རེ་རེའི་ཀློག་དུས། ཉེ་ཆར་ཀློག་པ་སྔོན་ལ།"
 }

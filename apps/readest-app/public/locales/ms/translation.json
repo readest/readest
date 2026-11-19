@@ -2773,5 +2773,16 @@
   "Next Week": "Minggu seterusnya",
   "API Key (optional)": "Kunci API (pilihan)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "Pada BookOrbit 3.8.0 atau lebih baharu, kunci API daripada Tetapan > Akaun > Kunci API menstrim buku audio tanpa kata laluan akaun anda. Pilih Baca dan tulis supaya kedudukan mendengar anda disegerakkan.",
-  "Could not sign in to BookOrbit for audiobooks": "Tidak dapat log masuk ke BookOrbit untuk buku audio"
+  "Could not sign in to BookOrbit for audiobooks": "Tidak dapat log masuk ke BookOrbit untuk buku audio",
+  "No reading statistics yet": "Belum ada statistik membaca",
+  "Delete Statistics": "Padam Statistik",
+  "Delete statistics of {{title}}": "Padam statistik {{title}}",
+  "Pages Read": "Halaman Dibaca",
+  "Last Read": "Terakhir Dibaca",
+  "Failed to delete reading statistics": "Gagal memadam statistik membaca",
+  "Delete the reading statistics of “{{title}}”?": "Padam statistik membaca “{{title}}”?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "Masa membacanya akan dialih keluar daripada semua peranti anda. Tindakan ini tidak boleh dibuat asal.",
+  "Its reading time is removed from this device. This can’t be undone.": "Masa membacanya akan dialih keluar daripada peranti ini. Tindakan ini tidak boleh dibuat asal.",
+  "Statistics by Book": "Statistik Mengikut Buku",
+  "Each book’s reading time, most recently read first": "Masa membaca setiap buku, yang terbaru dibaca dahulu"
 }

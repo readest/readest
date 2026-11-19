@@ -2846,5 +2846,16 @@
   "Next Week": "পরের সপ্তাহ",
   "API Key (optional)": "API কী (ঐচ্ছিক)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 বা পরবর্তী সংস্করণে, সেটিংস > অ্যাকাউন্ট > API কী থেকে তৈরি একটি API কী আপনার অ্যাকাউন্টের পাসওয়ার্ড ছাড়াই অডিওবুক স্ট্রিম করে। আপনার শোনার অবস্থান সিঙ্ক করতে পড়া ও লেখা বেছে নিন।",
-  "Could not sign in to BookOrbit for audiobooks": "অডিওবুকের জন্য BookOrbit-এ সাইন ইন করা যায়নি"
+  "Could not sign in to BookOrbit for audiobooks": "অডিওবুকের জন্য BookOrbit-এ সাইন ইন করা যায়নি",
+  "No reading statistics yet": "এখনও পড়ার কোনো পরিসংখ্যান নেই",
+  "Delete Statistics": "পরিসংখ্যান মুছুন",
+  "Delete statistics of {{title}}": "{{title}}-এর পরিসংখ্যান মুছুন",
+  "Pages Read": "পড়া পৃষ্ঠা",
+  "Last Read": "শেষ পড়া",
+  "Failed to delete reading statistics": "পড়ার পরিসংখ্যান মোছা যায়নি",
+  "Delete the reading statistics of “{{title}}”?": "“{{title}}”-এর পড়ার পরিসংখ্যান মুছবেন?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "এর পড়ার সময় আপনার সব ডিভাইস থেকে সরানো হবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+  "Its reading time is removed from this device. This can’t be undone.": "এর পড়ার সময় এই ডিভাইস থেকে সরানো হবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+  "Statistics by Book": "বই অনুযায়ী পরিসংখ্যান",
+  "Each book’s reading time, most recently read first": "প্রতিটি বইয়ের পড়ার সময়, সম্প্রতি পড়া আগে"
 }

@@ -2773,5 +2773,16 @@
   "Next Week": "下一周",
   "API Key (optional)": "API 密钥（可选）",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "在 BookOrbit 3.8.0 或更高版本中，用“设置 > 账户 > API 密钥”中创建的 API 密钥即可串流有声书，无需账户密码。请选择“读写”权限，以便同步收听进度。",
-  "Could not sign in to BookOrbit for audiobooks": "无法登录 BookOrbit 以播放有声书"
+  "Could not sign in to BookOrbit for audiobooks": "无法登录 BookOrbit 以播放有声书",
+  "No reading statistics yet": "暂无阅读统计",
+  "Delete Statistics": "删除统计",
+  "Delete statistics of {{title}}": "删除《{{title}}》的统计",
+  "Pages Read": "已读页数",
+  "Last Read": "最近阅读",
+  "Failed to delete reading statistics": "无法删除阅读统计",
+  "Delete the reading statistics of “{{title}}”?": "要删除《{{title}}》的阅读统计吗？",
+  "Its reading time is removed from all your devices. This can’t be undone.": "这本书的阅读时长将从你的所有设备中移除。此操作无法撤销。",
+  "Its reading time is removed from this device. This can’t be undone.": "这本书的阅读时长将从此设备中移除。此操作无法撤销。",
+  "Statistics by Book": "按书籍统计",
+  "Each book’s reading time, most recently read first": "每本书的阅读时长，最近阅读的在前"
 }

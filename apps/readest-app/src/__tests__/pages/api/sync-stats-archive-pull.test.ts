@@ -27,7 +27,7 @@ const makeBuilder = (table: string) => {
       chain.push({ method, args });
       return builder;
     };
-  for (const m of ['select', 'eq', 'or', 'gt', 'lt', 'in', 'is', 'order', 'range']) {
+  for (const m of ['select', 'eq', 'or', 'gt', 'lt', 'in', 'is', 'not', 'order', 'range']) {
     builder[m] = rec(m);
   }
   // biome-ignore lint/suspicious/noThenProperty: mock PostgREST builder is intentionally thenable

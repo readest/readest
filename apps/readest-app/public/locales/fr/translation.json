@@ -2919,5 +2919,16 @@
   "Next Week": "Semaine suivante",
   "API Key (optional)": "Clé API (facultatif)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "Avec BookOrbit 3.8.0 ou ultérieur, une clé API créée dans Paramètres > Compte > Clés API permet d'écouter les livres audio en streaming sans le mot de passe de votre compte. Choisissez Lecture et écriture pour que votre position d'écoute soit synchronisée.",
-  "Could not sign in to BookOrbit for audiobooks": "Impossible de se connecter à BookOrbit pour les livres audio"
+  "Could not sign in to BookOrbit for audiobooks": "Impossible de se connecter à BookOrbit pour les livres audio",
+  "No reading statistics yet": "Aucune statistique de lecture pour l’instant",
+  "Delete Statistics": "Supprimer les statistiques",
+  "Delete statistics of {{title}}": "Supprimer les statistiques de {{title}}",
+  "Pages Read": "Pages lues",
+  "Last Read": "Dernière lecture",
+  "Failed to delete reading statistics": "Impossible de supprimer les statistiques de lecture",
+  "Delete the reading statistics of “{{title}}”?": "Supprimer les statistiques de lecture de « {{title}} » ?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "Son temps de lecture sera supprimé de tous vos appareils. Cette action est irréversible.",
+  "Its reading time is removed from this device. This can’t be undone.": "Son temps de lecture sera supprimé de cet appareil. Cette action est irréversible.",
+  "Statistics by Book": "Statistiques par livre",
+  "Each book’s reading time, most recently read first": "Temps de lecture de chaque livre, du plus récent au plus ancien"
 }

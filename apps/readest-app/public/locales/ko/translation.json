@@ -2773,5 +2773,16 @@
   "Next Week": "다음 주",
   "API Key (optional)": "API 키 (선택 사항)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 이상에서는 설정 > 계정 > API 키에서 만든 API 키로 계정 비밀번호 없이 오디오북을 스트리밍할 수 있습니다. 듣기 위치가 동기화되도록 읽기 및 쓰기를 선택하세요.",
-  "Could not sign in to BookOrbit for audiobooks": "오디오북을 위해 BookOrbit에 로그인할 수 없습니다"
+  "Could not sign in to BookOrbit for audiobooks": "오디오북을 위해 BookOrbit에 로그인할 수 없습니다",
+  "No reading statistics yet": "아직 독서 통계가 없습니다",
+  "Delete Statistics": "통계 삭제",
+  "Delete statistics of {{title}}": "{{title}} 통계 삭제",
+  "Pages Read": "읽은 페이지",
+  "Last Read": "마지막으로 읽은 날",
+  "Failed to delete reading statistics": "독서 통계를 삭제하지 못했습니다",
+  "Delete the reading statistics of “{{title}}”?": "“{{title}}”의 독서 통계를 삭제할까요?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "이 책의 독서 시간이 모든 기기에서 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+  "Its reading time is removed from this device. This can’t be undone.": "이 책의 독서 시간이 이 기기에서 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+  "Statistics by Book": "책별 통계",
+  "Each book’s reading time, most recently read first": "책별 독서 시간, 최근에 읽은 순"
 }

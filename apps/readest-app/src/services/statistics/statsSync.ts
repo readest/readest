@@ -74,14 +74,21 @@ export async function pullStats(stats: StatisticsDb, client: PullClient): Promis
       bookMd5: b.book_hash,
       title: b.title,
       authors: b.authors,
+      // Events are whole seconds: one that started before the deletion's
+      // millisecond started before its next whole second.
+      ...(b.deleted_at_ms ? { deletedAt: Math.ceil(b.deleted_at_ms / 1000) } : {}),
     }));
-    const events: PageStatEvent[] = wirePages.map((p) => ({
-      bookMd5: p.book_hash,
-      page: p.page,
-      startTime: p.start_time,
-      duration: p.duration,
-      totalPages: p.total_pages,
-    }));
+    // Events of a deleted book come flagged (#7494): skip them, but still count
+    // them for the cursor below.
+    const events: PageStatEvent[] = wirePages
+      .filter((p) => !p.deleted_at_ms)
+      .map((p) => ({
+        bookMd5: p.book_hash,
+        page: p.page,
+        startTime: p.start_time,
+        duration: p.duration,
+        totalPages: p.total_pages,
+      }));
     await stats.applyRemoteEvents(books, events);
     // Advance the cursor to the newest page-event updated_at_ms. Stop when a
     // page yields no further page-event progress (covers the empty-pages and
@@ -90,4 +97,22 @@ export async function pullStats(stats: StatisticsDb, client: PullClient): Promis
     if (newest <= since) break;
     await stats.setCursor('pull', newest);
   }
+}
+
+/**
+ * Delete a book's reading statistics (#7494). With a sync client the server
+ * records the deletion first, so every device drops the book's events on its
+ * next pull; if that fails, nothing is deleted here either.
+ */
+export async function deleteBookStats(
+  stats: StatisticsDb,
+  client: PushClient | null,
+  book: StatBook,
+): Promise<void> {
+  if (client) {
+    await client.pushChanges({
+      statBooks: [{ ...toWireBook(book), deleted_at: new Date().toISOString() }],
+    });
+  }
+  await stats.deleteBook(book.bookMd5);
 }

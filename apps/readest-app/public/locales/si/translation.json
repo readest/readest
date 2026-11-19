@@ -2846,5 +2846,16 @@
   "Next Week": "ඊළඟ සතිය",
   "API Key (optional)": "API යතුර (විකල්ප)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 හෝ ඊට පසු අනුවාදයේ, සැකසුම් > ගිණුම > API යතුරු යටතේ සාදන API යතුරක් ඔබගේ ගිණුමේ මුරපදය නොමැතිව ශ්‍රව්‍ය පොත් ප්‍රවාහ කරයි. ඔබගේ සවන්දීමේ ස්ථානය සමමුහුර්ත වීමට කියවීම සහ ලිවීම තෝරන්න.",
-  "Could not sign in to BookOrbit for audiobooks": "ශ්‍රව්‍ය පොත් සඳහා BookOrbit වෙත පුරනය විය නොහැකි විය"
+  "Could not sign in to BookOrbit for audiobooks": "ශ්‍රව්‍ය පොත් සඳහා BookOrbit වෙත පුරනය විය නොහැකි විය",
+  "No reading statistics yet": "තවම කියවීමේ සංඛ්‍යාලේඛන නැත",
+  "Delete Statistics": "සංඛ්‍යාලේඛන මකන්න",
+  "Delete statistics of {{title}}": "{{title}} හි සංඛ්‍යාලේඛන මකන්න",
+  "Pages Read": "කියවූ පිටු",
+  "Last Read": "අවසන් වරට කියවූයේ",
+  "Failed to delete reading statistics": "කියවීමේ සංඛ්‍යාලේඛන මැකීමට නොහැකි විය",
+  "Delete the reading statistics of “{{title}}”?": "“{{title}}” හි කියවීමේ සංඛ්‍යාලේඛන මකන්නද?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "එහි කියවීමේ කාලය ඔබගේ සියලු උපාංගවලින් ඉවත් කෙරේ. මෙය අහෝසි කළ නොහැක.",
+  "Its reading time is removed from this device. This can’t be undone.": "එහි කියවීමේ කාලය මෙම උපාංගයෙන් ඉවත් කෙරේ. මෙය අහෝසි කළ නොහැක.",
+  "Statistics by Book": "පොත අනුව සංඛ්‍යාලේඛන",
+  "Each book’s reading time, most recently read first": "එක් එක් පොතේ කියවීමේ කාලය, මෑතකදී කියවූ ඒවා මුලින්"
 }

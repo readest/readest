@@ -2919,5 +2919,16 @@
   "Next Week": "Săptămâna următoare",
   "API Key (optional)": "Cheie API (opțional)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "În BookOrbit 3.8.0 sau mai nou, o cheie API din Setări > Cont > Chei API redă în flux cărțile audio fără parola contului. Alegeți Citire și scriere pentru ca poziția de ascultare să se sincronizeze.",
-  "Could not sign in to BookOrbit for audiobooks": "Nu s-a putut face conectarea la BookOrbit pentru cărțile audio"
+  "Could not sign in to BookOrbit for audiobooks": "Nu s-a putut face conectarea la BookOrbit pentru cărțile audio",
+  "No reading statistics yet": "Încă nu există statistici de lectură",
+  "Delete Statistics": "Șterge statisticile",
+  "Delete statistics of {{title}}": "Șterge statisticile pentru {{title}}",
+  "Pages Read": "Pagini citite",
+  "Last Read": "Ultima lectură",
+  "Failed to delete reading statistics": "Statisticile de lectură nu au putut fi șterse",
+  "Delete the reading statistics of “{{title}}”?": "Ștergi statisticile de lectură pentru „{{title}}”?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "Timpul de lectură va fi eliminat de pe toate dispozitivele tale. Acțiunea nu poate fi anulată.",
+  "Its reading time is removed from this device. This can’t be undone.": "Timpul de lectură va fi eliminat de pe acest dispozitiv. Acțiunea nu poate fi anulată.",
+  "Statistics by Book": "Statistici pe carte",
+  "Each book’s reading time, most recently read first": "Timpul de lectură al fiecărei cărți, cele citite recent primele"
 }

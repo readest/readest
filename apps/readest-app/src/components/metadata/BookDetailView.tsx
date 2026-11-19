@@ -36,6 +36,7 @@ import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { saveSysSettings } from '@/helpers/settings';
 import BookCover from '@/components/BookCover';
 import BookCoverViewer, { useBookCoverViewer } from '@/components/BookCoverViewer';
+import BookStatsSection from '@/components/stats/BookStatsSection';
 import Dropdown from '../Dropdown';
 import MenuItem from '../MenuItem';
 
@@ -462,6 +463,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
             </div>
           )}
         </div>
+        <BookStatsSection book={book} />
         <div className='metadata-description'>
           <button
             className={clsx(
