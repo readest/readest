@@ -1,8 +1,14 @@
 import clsx from 'clsx';
 import React, { useRef, useState } from 'react';
+import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import SegmentedControl from '@/components/SegmentedControl';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getReadingBars, type ReadingRange } from '@/services/statistics/readingStats';
+import {
+  getReadingBars,
+  shiftPeriod,
+  toDateKey,
+  type ReadingRange,
+} from '@/services/statistics/readingStats';
 import { formatDuration } from '@/utils/duration';
 import { getLocale } from '@/utils/misc';
 
@@ -13,16 +19,50 @@ interface ReadingTimeChartProps {
 const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
   const _ = useTranslation();
   const [range, setRange] = useState<ReadingRange>('week');
+  const [period, setPeriod] = useState(() => new Date());
   const [selected, setSelected] = useState<number | null>(null);
   const pointerFocus = useRef(false);
 
   const locale = getLocale();
-  const bars = getReadingBars(daily, range);
+  const today = new Date();
+  const todayKey = toDateKey(today);
+  // A reading dated after today (from a device whose clock runs ahead) doesn't count yet.
+  const pastDaily = new Map([...daily].filter(([key]) => key <= todayKey));
+  const bars = getReadingBars(pastDaily, range, period);
+  const start = bars[0]!.date;
+  const end = shiftPeriod(range, start, 1);
+  const isCurrent = end > today;
+  const firstKey = [...pastDaily.keys(), todayKey].sort()[0]!;
+  // Days not yet come can't be selected, and the average leaves them out.
+  const lastIndex = bars.filter((bar) => bar.date <= today).length - 1;
+  const daysEnd = isCurrent
+    ? new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+    : end;
+  const days = Math.round((daysEnd.getTime() - start.getTime()) / 86400000);
   const total = bars.reduce((sum, bar) => sum + bar.seconds, 0);
   const max = Math.max(...bars.map((bar) => bar.seconds), 60);
-  const today = new Date();
-  const days = Math.round((today.getTime() - bars[0]!.date.getTime()) / 86400000) + 1;
   const time = (seconds: number) => formatDuration(Math.floor(seconds / 60), _);
+
+  const periodLabel =
+    range === 'year'
+      ? String(start.getFullYear())
+      : range === 'month'
+        ? start.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+        : new Intl.DateTimeFormat(locale, {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          }).formatRange(start, bars[bars.length - 1]!.date);
+  const [previousLabel, nextLabel] = {
+    week: [_('Previous Week'), _('Next Week')],
+    month: [_('Previous Month'), _('Next Month')],
+    year: [_('Previous Year'), _('Next Year')],
+  }[range];
+
+  const changePeriod = (delta: number) => {
+    setPeriod(shiftPeriod(range, start, delta));
+    setSelected(null);
+  };
 
   const formatBarDate = (date: Date) =>
     range === 'year'
@@ -32,8 +72,7 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
   const formatAxisLabel = (date: Date, index: number) => {
     if (range === 'week') return date.toLocaleDateString(locale, { weekday: 'narrow' });
     if (range === 'year') return date.toLocaleDateString(locale, { month: 'narrow' });
-    // Label every 7th day counting back from today, so today is always labeled.
-    return (bars.length - 1 - index) % 7 === 0 ? String(date.getDate()) : '';
+    return index % 7 === 0 ? String(date.getDate()) : '';
   };
 
   const bar = selected !== null ? bars[selected] : undefined;
@@ -47,7 +86,7 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
     const step = { ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1 }[event.key];
     if (!step || selected === null) return;
     event.preventDefault();
-    setSelected(Math.min(bars.length - 1, Math.max(0, selected + step)));
+    setSelected(Math.min(lastIndex, Math.max(0, selected + step)));
   };
 
   // Hover only brightens the bar under the pointer (with a tooltip); the
@@ -61,7 +100,7 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
   };
 
   const handleFocus = () => {
-    if (!pointerFocus.current) setSelected((current) => current ?? bars.length - 1);
+    if (!pointerFocus.current) setSelected((current) => current ?? lastIndex);
     pointerFocus.current = false;
   };
 
@@ -78,9 +117,33 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
         value={range}
         onChange={(value) => {
           setRange(value);
+          setPeriod(new Date());
           setSelected(null);
         }}
       />
+      <div className='flex items-center justify-between'>
+        <span className='font-medium tabular-nums'>{periodLabel}</span>
+        <div className='flex items-center gap-1'>
+          <button
+            type='button'
+            aria-label={previousLabel}
+            disabled={toDateKey(start) <= firstKey}
+            onClick={() => changePeriod(-1)}
+            className='btn btn-ghost btn-circle h-8 min-h-8 w-8 p-0 disabled:bg-transparent'
+          >
+            <MdChevronLeft className='h-5 w-5 rtl:rotate-180' />
+          </button>
+          <button
+            type='button'
+            aria-label={nextLabel}
+            disabled={isCurrent}
+            onClick={() => changePeriod(1)}
+            className='btn btn-ghost btn-circle h-8 min-h-8 w-8 p-0 disabled:bg-transparent'
+          >
+            <MdChevronRight className='h-5 w-5 rtl:rotate-180' />
+          </button>
+        </div>
+      </div>
       <div role='status'>
         <div className='text-2xl font-semibold tabular-nums'>{time(bar ? bar.seconds : total)}</div>
         <div className='text-base-content/70 text-[0.85em]'>
@@ -108,9 +171,16 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
           {bars.map((item, index) => (
             <span
               key={item.date.getTime()}
-              data-index={index}
-              title={`${formatBarDate(item.date)} · ${time(item.seconds)}`}
-              className='group flex h-full min-w-0 flex-1 cursor-pointer items-end'
+              data-index={index <= lastIndex ? index : undefined}
+              title={
+                index <= lastIndex
+                  ? `${formatBarDate(item.date)} · ${time(item.seconds)}`
+                  : undefined
+              }
+              className={clsx(
+                'group flex h-full min-w-0 flex-1 items-end',
+                index <= lastIndex && 'cursor-pointer',
+              )}
             >
               <span
                 className={clsx(
