@@ -59,10 +59,11 @@ describe('withAuthRequestTimeout', () => {
       'https://auth.example.test/auth/v1/token?grant_type=refresh_token',
       { method: 'POST' },
     );
-    const assertion = expect(request).rejects.toMatchObject({ name: 'TimeoutError' });
+    const isSettled = settled(request);
 
     await vi.advanceTimersByTimeAsync(AUTH_REQUEST_TIMEOUT_MS);
-    await assertion;
+    expect(isSettled(), 'the request ends at the time limit').toBe(true);
+    await expect(request).rejects.toMatchObject({ name: 'TimeoutError' });
   });
 
   it('fails an auth request under a base path', async () => {
@@ -106,9 +107,12 @@ describe('withAuthRequestTimeout', () => {
         signal: caller.signal,
       }),
     );
+    const isSettled = settled(request);
 
     caller.abort(new Error('closed'));
+    await vi.advanceTimersByTimeAsync(0);
 
+    expect(isSettled(), "the request ends when the caller's Request aborts").toBe(true);
     await expect(request).rejects.toThrow('closed');
   });
 
