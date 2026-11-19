@@ -480,10 +480,10 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
           id,
           label: builtinLabel(id, _),
           kind: 'builtin',
+          badge: hasPremium ? undefined : _('Premium'),
           disabled: !contextTranslator,
-          reason: !hasPremium
-            ? _('Requires Readest Premium.')
-            : !contextTranslator
+          reason:
+            hasPremium && !contextTranslator
               ? _('Add an OpenAI-compatible translator in Custom Translators to use it.')
               : undefined,
         });
@@ -914,9 +914,11 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         <BoxedList
           className='mt-4'
           title={_('Context Dictionary')}
-          description={_(
+          description={`${_(
             'Explains the selected text as it is used in the passage, in your translation target language.',
-          )}
+          )} ${_(
+            'Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.',
+          )}`}
         >
           <SettingsRow label={_('AI Translator')}>
             <SettingsSelect

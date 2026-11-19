@@ -2539,7 +2539,6 @@
   "— or —": "— অথবা —",
   "Visit {{url}} and enter": "<1>{{url}}</1><2> এ যান এবং কোডটি লিখুন</2>",
   "Context Dictionary": "প্রসঙ্গ অভিধান",
-  "Requires Readest Premium.": "Readest Premium প্রয়োজন।",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "এটি ব্যবহার করতে কাস্টম অনুবাদক-এ একটি OpenAI-সামঞ্জস্যপূর্ণ অনুবাদক যোগ করুন।",
   "Explains the selected text as it is used in the passage, in your translation target language.": "নির্বাচিত লেখাটি অনুচ্ছেদে যেভাবে ব্যবহৃত হয়েছে, তা আপনার অনুবাদের লক্ষ্য ভাষায় ব্যাখ্যা করে।",
   "AI Translator": "AI অনুবাদক",
@@ -2857,5 +2856,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "এর পড়ার সময় আপনার সব ডিভাইস থেকে সরানো হবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
   "Its reading time is removed from this device. This can’t be undone.": "এর পড়ার সময় এই ডিভাইস থেকে সরানো হবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
   "Statistics by Book": "বই অনুযায়ী পরিসংখ্যান",
-  "Each book’s reading time, most recently read first": "প্রতিটি বইয়ের পড়ার সময়, সম্প্রতি পড়া আগে"
+  "Each book’s reading time, most recently read first": "প্রতিটি বইয়ের পড়ার সময়, সম্প্রতি পড়া আগে",
+  "Look up text in the context dictionary after selection": "নির্বাচনের পরে টেক্সট প্রসঙ্গ অভিধানে দেখুন",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "প্রতিটি খোঁজে জিজ্ঞাসা করতে উপরে এটি চালু করুন, অথবা শুধু ট্যাপ করলে জিজ্ঞাসা করতে নির্বাচন টুলবারে প্রসঙ্গ অভিধান টুল যোগ করুন।"
 }

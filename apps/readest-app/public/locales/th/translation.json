@@ -2476,7 +2476,6 @@
   "— or —": "— หรือ —",
   "Visit {{url}} and enter": "<0>ไปที่ </0><1>{{url}}</1><2> แล้วป้อนรหัส</2>",
   "Context Dictionary": "พจนานุกรมตามบริบท",
-  "Requires Readest Premium.": "ต้องใช้ Readest Premium",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "เพิ่มตัวแปลที่รองรับ OpenAI ในตัวแปลภาษาแบบกำหนดเองเพื่อใช้งาน",
   "Explains the selected text as it is used in the passage, in your translation target language.": "อธิบายข้อความที่เลือกตามที่ใช้ในข้อความตอนนั้น เป็นภาษาปลายทางของการแปล",
   "AI Translator": "ตัวแปล AI",
@@ -2784,5 +2783,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "เวลาอ่านของหนังสือเล่มนี้จะถูกลบออกจากอุปกรณ์ทั้งหมดของคุณ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
   "Its reading time is removed from this device. This can’t be undone.": "เวลาอ่านของหนังสือเล่มนี้จะถูกลบออกจากอุปกรณ์นี้ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
   "Statistics by Book": "สถิติตามหนังสือ",
-  "Each book’s reading time, most recently read first": "เวลาอ่านของหนังสือแต่ละเล่ม เรียงจากที่อ่านล่าสุด"
+  "Each book’s reading time, most recently read first": "เวลาอ่านของหนังสือแต่ละเล่ม เรียงจากที่อ่านล่าสุด",
+  "Look up text in the context dictionary after selection": "ค้นหาข้อความในพจนานุกรมตามบริบทหลังการเลือก",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "เปิดด้านบนเพื่อถามทุกครั้งที่ค้นหา หรือเพิ่มเครื่องมือพจนานุกรมตามบริบทลงในแถบเครื่องมือการเลือกเพื่อถามเฉพาะเมื่อคุณแตะ"
 }

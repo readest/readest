@@ -83,6 +83,8 @@ const settings = {
   },
 };
 
+vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ token: null, user: null }) }));
+
 vi.mock('@/hooks/useShortcuts', () => ({
   default: (actions: Record<string, () => boolean>) => {
     h.actions = actions;

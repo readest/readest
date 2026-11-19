@@ -2476,7 +2476,6 @@
   "— or —": "— atau —",
   "Visit {{url}} and enter": "<0>Kunjungi </0><1>{{url}}</1><2> dan masukkan kode</2>",
   "Context Dictionary": "Kamus Konteks",
-  "Requires Readest Premium.": "Memerlukan Readest Premium.",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "Tambahkan penerjemah yang kompatibel dengan OpenAI di Penerjemah Khusus untuk menggunakannya.",
   "Explains the selected text as it is used in the passage, in your translation target language.": "Menjelaskan teks yang dipilih sesuai penggunaannya dalam bagian bacaan, dalam bahasa target terjemahan Anda.",
   "AI Translator": "Penerjemah AI",
@@ -2784,5 +2783,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Waktu membacanya akan dihapus dari semua perangkat Anda. Tindakan ini tidak dapat dibatalkan.",
   "Its reading time is removed from this device. This can’t be undone.": "Waktu membacanya akan dihapus dari perangkat ini. Tindakan ini tidak dapat dibatalkan.",
   "Statistics by Book": "Statistik per Buku",
-  "Each book’s reading time, most recently read first": "Waktu membaca tiap buku, yang terakhir dibaca lebih dulu"
+  "Each book’s reading time, most recently read first": "Waktu membaca tiap buku, yang terakhir dibaca lebih dulu",
+  "Look up text in the context dictionary after selection": "Cari teks di kamus konteks setelah pemilihan",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Aktifkan di atas untuk bertanya pada setiap pencarian, atau tambahkan alat Kamus Konteks ke bilah alat pilihan untuk bertanya hanya saat Anda mengetuknya."
 }

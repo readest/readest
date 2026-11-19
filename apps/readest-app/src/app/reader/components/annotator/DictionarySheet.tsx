@@ -17,6 +17,8 @@ interface DictionarySheetProps {
   selection?: DictionarySelectionContext;
   /** Save this lookup to the vocabulary builder and show the Learning / Mastered chips. */
   capture?: VocabularyCapture;
+  /** Ask the AI context dictionary alone (the Context Dictionary tool, #7497). */
+  contextOnly?: boolean;
   onDismiss: () => void;
   onManage?: () => void;
 }
@@ -26,10 +28,11 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
   lang,
   selection,
   capture,
+  contextOnly,
   onDismiss,
   onManage,
 }) => {
-  const state = useDictionaryResults({ word, lang, selection, capture });
+  const state = useDictionaryResults({ word, lang, selection, capture, contextOnly });
   return (
     <Dialog
       isOpen

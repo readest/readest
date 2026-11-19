@@ -2476,7 +2476,6 @@
   "— or —": "— hoặc —",
   "Visit {{url}} and enter": "<0>Truy cập </0><1>{{url}}</1><2> và nhập mã</2>",
   "Context Dictionary": "Từ điển ngữ cảnh",
-  "Requires Readest Premium.": "Yêu cầu Readest Premium.",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "Thêm một trình dịch tương thích OpenAI trong Trình dịch tùy chỉnh để sử dụng.",
   "Explains the selected text as it is used in the passage, in your translation target language.": "Giải thích văn bản được chọn theo cách nó được dùng trong đoạn văn, bằng ngôn ngữ đích dịch của bạn.",
   "AI Translator": "Trình dịch AI",
@@ -2784,5 +2783,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Thời gian đọc của sách này sẽ bị xóa khỏi tất cả thiết bị của bạn. Không thể hoàn tác thao tác này.",
   "Its reading time is removed from this device. This can’t be undone.": "Thời gian đọc của sách này sẽ bị xóa khỏi thiết bị này. Không thể hoàn tác thao tác này.",
   "Statistics by Book": "Thống kê theo sách",
-  "Each book’s reading time, most recently read first": "Thời gian đọc của từng cuốn sách, sách đọc gần đây nhất trước"
+  "Each book’s reading time, most recently read first": "Thời gian đọc của từng cuốn sách, sách đọc gần đây nhất trước",
+  "Look up text in the context dictionary after selection": "Tra cứu văn bản trong từ điển ngữ cảnh sau khi chọn",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Bật ở trên để hỏi mỗi lần tra cứu, hoặc thêm công cụ Từ điển ngữ cảnh vào thanh công cụ chọn để chỉ hỏi khi bạn nhấn vào."
 }

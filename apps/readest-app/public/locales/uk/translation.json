@@ -2665,7 +2665,6 @@
   "— or —": "— або —",
   "Visit {{url}} and enter": "<0>Перейдіть на </0><1>{{url}}</1><2> і введіть код</2>",
   "Context Dictionary": "Контекстний словник",
-  "Requires Readest Premium.": "Потрібен Readest Premium.",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "Додайте OpenAI-сумісний перекладач у розділі «Власні перекладачі», щоб скористатися ним.",
   "Explains the selected text as it is used in the passage, in your translation target language.": "Пояснює виділений текст так, як його вжито в уривку, мовою перекладу.",
   "AI Translator": "ШІ-перекладач",
@@ -3003,5 +3002,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Час читання цієї книги буде видалено з усіх ваших пристроїв. Цю дію неможливо скасувати.",
   "Its reading time is removed from this device. This can’t be undone.": "Час читання цієї книги буде видалено з цього пристрою. Цю дію неможливо скасувати.",
   "Statistics by Book": "Статистика за книгами",
-  "Each book’s reading time, most recently read first": "Час читання кожної книги, спершу нещодавні"
+  "Each book’s reading time, most recently read first": "Час читання кожної книги, спершу нещодавні",
+  "Look up text in the context dictionary after selection": "Шукати текст у контекстному словнику після виділення",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Увімкніть його вище, щоб запитувати під час кожного пошуку, або додайте інструмент «Контекстний словник» на панель виділення, щоб запитувати лише після натискання."
 }

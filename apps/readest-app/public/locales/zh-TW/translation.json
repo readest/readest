@@ -2476,7 +2476,6 @@
   "— or —": "— 或 —",
   "Visit {{url}} and enter": "<0>前往 </0><1>{{url}}</1><2> 並輸入代碼</2>",
   "Context Dictionary": "語境辭典",
-  "Requires Readest Premium.": "需要 Readest Premium。",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "在「自訂翻譯器」中新增一個相容 OpenAI 的翻譯器即可使用。",
   "Explains the selected text as it is used in the passage, in your translation target language.": "依選取文字在段落中的用法進行解釋，使用你的翻譯目標語言。",
   "AI Translator": "AI 翻譯器",
@@ -2784,5 +2783,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "這本書的閱讀時長將從你的所有裝置中移除。此操作無法復原。",
   "Its reading time is removed from this device. This can’t be undone.": "這本書的閱讀時長將從此裝置中移除。此操作無法復原。",
   "Statistics by Book": "依書籍統計",
-  "Each book’s reading time, most recently read first": "每本書的閱讀時長，最近閱讀的在前"
+  "Each book’s reading time, most recently read first": "每本書的閱讀時長，最近閱讀的在前",
+  "Look up text in the context dictionary after selection": "在語境辭典中查找選取後的文字",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "在上方開啟後，每次查詢都會詢問；或將「語境辭典」工具加入選取工具列，僅在點按時詢問。"
 }

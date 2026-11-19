@@ -2602,7 +2602,6 @@
   "— or —": "— ou —",
   "Visit {{url}} and enter": "<0>Rendez-vous sur </0><1>{{url}}</1><2> et saisissez le code</2>",
   "Context Dictionary": "Dictionnaire contextuel",
-  "Requires Readest Premium.": "Nécessite Readest Premium.",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "Ajoutez un traducteur compatible OpenAI dans Traducteurs personnalisés pour l’utiliser.",
   "Explains the selected text as it is used in the passage, in your translation target language.": "Explique le texte sélectionné tel qu’il est employé dans le passage, dans votre langue cible de traduction.",
   "AI Translator": "Traducteur IA",
@@ -2930,5 +2929,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Son temps de lecture sera supprimé de tous vos appareils. Cette action est irréversible.",
   "Its reading time is removed from this device. This can’t be undone.": "Son temps de lecture sera supprimé de cet appareil. Cette action est irréversible.",
   "Statistics by Book": "Statistiques par livre",
-  "Each book’s reading time, most recently read first": "Temps de lecture de chaque livre, du plus récent au plus ancien"
+  "Each book’s reading time, most recently read first": "Temps de lecture de chaque livre, du plus récent au plus ancien",
+  "Look up text in the context dictionary after selection": "Chercher le texte dans le dictionnaire contextuel après la sélection",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Activez-le ci-dessus pour l’interroger à chaque recherche, ou ajoutez l’outil Dictionnaire contextuel à la barre de sélection pour l’interroger seulement quand vous le touchez."
 }

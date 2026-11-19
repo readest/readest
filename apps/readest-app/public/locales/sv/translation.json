@@ -2539,7 +2539,6 @@
   "— or —": "— eller —",
   "Visit {{url}} and enter": "<0>Besök </0><1>{{url}}</1><2> och ange koden</2>",
   "Context Dictionary": "Kontextordbok",
-  "Requires Readest Premium.": "Kräver Readest Premium.",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "Lägg till en OpenAI-kompatibel översättare under Egna översättare för att använda den.",
   "Explains the selected text as it is used in the passage, in your translation target language.": "Förklarar den markerade texten så som den används i stycket, på ditt målspråk för översättning.",
   "AI Translator": "AI-översättare",
@@ -2857,5 +2856,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Lästiden tas bort från alla dina enheter. Det går inte att ångra.",
   "Its reading time is removed from this device. This can’t be undone.": "Lästiden tas bort från den här enheten. Det går inte att ångra.",
   "Statistics by Book": "Statistik per bok",
-  "Each book’s reading time, most recently read first": "Lästid för varje bok, senast lästa först"
+  "Each book’s reading time, most recently read first": "Lästid för varje bok, senast lästa först",
+  "Look up text in the context dictionary after selection": "Slå upp text i kontextordboken efter markering",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Slå på den ovan för att fråga vid varje uppslag, eller lägg till verktyget Kontextordbok i markeringsverktygsfältet för att bara fråga när du trycker på det."
 }

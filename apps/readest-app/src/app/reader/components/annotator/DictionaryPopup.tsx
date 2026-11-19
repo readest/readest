@@ -19,6 +19,8 @@ interface DictionaryPopupProps {
   selection?: DictionarySelectionContext;
   /** Save this lookup to the vocabulary builder and show the Learning / Mastered chips. */
   capture?: VocabularyCapture;
+  /** Ask the AI context dictionary alone (the Context Dictionary tool, #7497). */
+  contextOnly?: boolean;
   position: Position;
   trianglePosition: Position;
   popupWidth: number;
@@ -103,6 +105,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   lang,
   selection,
   capture,
+  contextOnly,
   position,
   trianglePosition,
   popupWidth,
@@ -110,7 +113,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   onDismiss,
   onManage,
 }) => {
-  const state = useDictionaryResults({ word, lang, selection, capture });
+  const state = useDictionaryResults({ word, lang, selection, capture, contextOnly });
   const { box, gripProps } = usePopupResize(useResponsiveSize(10));
   return (
     <Popup

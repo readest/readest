@@ -2539,7 +2539,6 @@
   "— or —": "— ή —",
   "Visit {{url}} and enter": "<0>Επισκεφθείτε το </0><1>{{url}}</1><2> και εισαγάγετε τον κωδικό</2>",
   "Context Dictionary": "Λεξικό συμφραζομένων",
-  "Requires Readest Premium.": "Απαιτεί Readest Premium.",
   "Add an OpenAI-compatible translator in Custom Translators to use it.": "Προσθέστε έναν μεταφραστή συμβατό με OpenAI στο «Προσαρμοσμένοι μεταφραστές» για να το χρησιμοποιήσετε.",
   "Explains the selected text as it is used in the passage, in your translation target language.": "Εξηγεί το επιλεγμένο κείμενο όπως χρησιμοποιείται στο απόσπασμα, στη γλώσσα-στόχο της μετάφρασής σας.",
   "AI Translator": "Μεταφραστής ΤΝ",
@@ -2857,5 +2856,7 @@
   "Its reading time is removed from all your devices. This can’t be undone.": "Ο χρόνος ανάγνωσής του θα αφαιρεθεί από όλες τις συσκευές σας. Η ενέργεια δεν αναιρείται.",
   "Its reading time is removed from this device. This can’t be undone.": "Ο χρόνος ανάγνωσής του θα αφαιρεθεί από αυτήν τη συσκευή. Η ενέργεια δεν αναιρείται.",
   "Statistics by Book": "Στατιστικά ανά βιβλίο",
-  "Each book’s reading time, most recently read first": "Ο χρόνος ανάγνωσης κάθε βιβλίου, με το πιο πρόσφατο πρώτο"
+  "Each book’s reading time, most recently read first": "Ο χρόνος ανάγνωσης κάθε βιβλίου, με το πιο πρόσφατο πρώτο",
+  "Look up text in the context dictionary after selection": "Αναζήτηση κειμένου στο λεξικό συμφραζομένων μετά την επιλογή",
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Ενεργοποιήστε το παραπάνω για ερώτηση σε κάθε αναζήτηση ή προσθέστε το εργαλείο «Λεξικό συμφραζομένων» στη γραμμή επιλογής για ερώτηση μόνο όταν το πατάτε."
 }

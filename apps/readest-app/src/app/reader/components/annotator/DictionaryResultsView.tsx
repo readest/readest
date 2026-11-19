@@ -13,6 +13,7 @@ import ModalPortal from '@/components/ModalPortal';
 import ImageViewer from '@/app/reader/components/ImageViewer';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
+import { contextProvider } from '@/services/dictionaries/providers/contextProvider';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
 import { isTauriAppPlatform } from '@/services/environment';
 import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
@@ -62,6 +63,8 @@ export interface UseDictionaryResultsArgs {
   selection?: DictionarySelectionContext;
   /** Save the lookup to the vocabulary builder (#789); also enables the header chips. */
   capture?: VocabularyCapture;
+  /** Ask the AI context dictionary alone, on or off in the list (#7497). */
+  contextOnly?: boolean;
 }
 
 export interface VocabularyCapture {
@@ -118,6 +121,7 @@ export function useDictionaryResults({
   lang,
   selection,
   capture,
+  contextOnly,
 }: UseDictionaryResultsArgs): DictionaryResultsState {
   const { appService } = useEnv();
   const { dictionaries, settings } = useCustomDictionaryStore();
@@ -127,11 +131,13 @@ export function useDictionaryResults({
   // own recordings (#6265). Providers without bundled audio ignore it.
   const autoPlayPronunciation = settings.autoPlayPronunciation ?? false;
 
-  const computedProviders = getEnabledProviders({
-    settings,
-    dictionaries,
-    fs: appService ?? undefined,
-  });
+  const computedProviders = contextOnly
+    ? [contextProvider]
+    : getEnabledProviders({
+        settings,
+        dictionaries,
+        fs: appService ?? undefined,
+      });
   const providersSignature = computedProviders.map((p) => p.id).join('|');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const providers = useMemo<DictionaryProvider[]>(() => computedProviders, [providersSignature]);
