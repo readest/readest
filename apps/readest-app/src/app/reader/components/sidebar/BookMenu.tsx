@@ -55,10 +55,6 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
     return cfg.booknotes.filter((n) => n.type === 'annotation' && !n.deletedAt).length;
   }, [sideBarBookKey, getConfig]);
 
-  // A book open in the reader is on this device even if it was never stamped
-  // `downloadedAt` (a local book with no cloud copy skips that stamp).
-  const openBookHashes = new Set(bookKeys.map((key) => key.split('-')[0]));
-
   const handleParallelView = (id: string) => {
     openParallelView(id);
     setIsDropdownOpen?.(false);
@@ -194,7 +190,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       >
         <ul className='max-h-60 overflow-y-auto'>
           {getVisibleLibrary()
-            .filter((book) => !!book.downloadedAt || openBookHashes.has(book.hash))
+            .filter((book) => !!book.downloadedAt)
             .slice(0, 20)
             .map((book) => (
               <MenuItem
