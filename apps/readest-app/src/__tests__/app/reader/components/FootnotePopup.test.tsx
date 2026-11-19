@@ -202,6 +202,8 @@ const createPopupView = () => {
 const renderPopup = async () => {
   const grid = document.createElement('div');
   grid.id = `gridcell-${BOOK_KEY}`;
+  // The popup measures its room in the cell; here the cell fills the window.
+  grid.getBoundingClientRect = () => new DOMRect(0, 0, window.innerWidth, window.innerHeight);
   document.body.appendChild(grid);
   const { default: FootnotePopup } = await import('@/app/reader/components/FootnotePopup');
   return render(<FootnotePopup bookKey={BOOK_KEY} bookDoc={{} as BookDoc} />);
