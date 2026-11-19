@@ -281,6 +281,17 @@ one of each).
   13.008px there and was 13px here, so every unitless line height built on it was 0.011 px short
   and lines drifted down the page.
 
+## taffy.diff (DioxusLabs/taffy fca167cf6)
+
+Blitz's pin, the crate alone (`src`, `Cargo.toml`); the root `Cargo.toml` patches it.
+
+- `compute/block`: a scroll container's scrollable overflow reaches the block-end margin edge of
+  each in-flow child, including the margin collapsed through it from its own last child, plus the
+  container's end padding, as in Chromium. Taffy added only negative margins, so Readest's
+  Settings dialog (content ending in `my-4`) scrolled 16px less than Readest and drew a longer
+  thumb. Taffy's hand-written test `block_end_margins_do_not_extend_scrollable_overflow` asserts
+  the opposite and fails with this patch; Chromium 151 gives its 150px-margin case 350px, not 200.
+
 ## tauri.diff (readest/tauri d6ef6e4c7, feat/cef)
 
 - `Cargo.toml`: the workspace cut to the seven crates Lite builds.
