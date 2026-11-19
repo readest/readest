@@ -2307,6 +2307,57 @@ describe('TTSController', () => {
       }
     });
 
+    test('a session parked by sentence-by-sentence mode drops the keep-alive after ten minutes', async () => {
+      const c = await makeAndroidNativeController();
+      let count = 0;
+      c.ttsClient.speak = vi.fn().mockImplementation(async function* (
+        _ssml: string,
+        _signal: AbortSignal,
+        preload?: boolean,
+      ): AsyncGenerator<TTSMessageEvent> {
+        if (preload || count++ > 0) return;
+        yield { code: 'end' };
+      });
+      c.pauseAfterSentence = true;
+      vi.useFakeTimers();
+      try {
+        await c.speak('<speak>hello</speak>');
+        await vi.advanceTimersByTimeAsync(0);
+        expect(c.state).toBe('forward-paused');
+        stopKeepAlive.mockClear();
+        releaseUnblock.mockClear();
+
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+        expect(stopKeepAlive).toHaveBeenCalled();
+        expect(releaseUnblock).toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    // A direct-speak engine that pauses in place (Web Speech) resumes through
+    // resume(), not a new speak(), so the tone dropped at the limit must come
+    // back there or the hidden page stalls between sentences again (#4408).
+    test('resuming in place after the limit restores the keep-alive', async () => {
+      const c = await makeAndroidNativeController();
+      vi.spyOn(c, 'forward').mockResolvedValue();
+      c.speak('<speak>hello</speak>');
+      await vi.waitFor(() => expect(c.state).toBe('playing'), { timeout: 5000 });
+      vi.useFakeTimers();
+      try {
+        await c.pause();
+        expect(c.state).toBe('paused');
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+        expect(stopKeepAlive).toHaveBeenCalled();
+        startKeepAlive.mockClear();
+
+        await c.resume();
+        expect(startKeepAlive).toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     test('does not keep the page awake while paused off Android', async () => {
       await controller.initViewTTS(0);
       vi.spyOn(controller, 'forward').mockResolvedValue();

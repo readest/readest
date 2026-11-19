@@ -2063,6 +2063,7 @@ export class TTSController extends EventTarget {
     if (pause) {
       await this.stop();
       this.state = 'forward-paused';
+      this.#syncAudioKeepAlive();
     } else {
       await this.#delayParagraphGap(signal);
       if (signal.aborted) return;
@@ -2274,6 +2275,7 @@ export class TTSController extends EventTarget {
 
   async resume() {
     this.state = 'playing';
+    this.#syncAudioKeepAlive();
     await this.ttsClient.resume().catch((e) => this.error(e));
   }
 
