@@ -1,6 +1,7 @@
 //! `BLITZ_TAURI_WINDOW=1|gray` (cargo feature `window`): shows each painted frame in an X11 window
 //! (XWayland works) so a person can use the page. Mouse clicks become pointer events at the same
-//! device pixels; the wheel, arrow keys, Space and Page Up/Down click the right or left third (the
+//! device pixels, and moves with the button held (a finger dragging on the Kindle) pointer moves;
+//! the wheel, arrow keys, Space and Page Up/Down click the right or left third (the
 //! reader's page-turn zones). `gray` shows frames as an e-ink screen would; an 8-bit gray screen
 //! (Kindle's X server) always gets gray. The window keeps the last frame for exposes and never
 //! paints on its own: what you see is what the runtime painted.
@@ -17,8 +18,18 @@ use x11rb::rust_connection::RustConnection;
 use x11rb::wrapper::ConnectionExt as _;
 
 /// Input for the page, in device pixels.
+#[cfg_attr(test, derive(Debug, PartialEq))]
 pub(crate) enum Input {
-    Pointer { x: f32, y: f32, down: bool },
+    Pointer {
+        x: f32,
+        y: f32,
+        down: bool,
+    },
+    /// The pointer moved with the button held.
+    Move {
+        x: f32,
+        y: f32,
+    },
     Close,
 }
 
@@ -82,6 +93,7 @@ impl Display {
         let events = EventMask::EXPOSURE
             | EventMask::BUTTON_PRESS
             | EventMask::BUTTON_RELEASE
+            | EventMask::BUTTON1_MOTION
             | EventMask::KEY_PRESS;
         conn.create_window(
             depth,
@@ -148,6 +160,10 @@ impl Display {
                 });
             };
             while let Ok(ev) = conn.wait_for_event() {
+                if let Some(input) = pointer_input(&ev) {
+                    on_input(input);
+                    continue;
+                }
                 match ev {
                     Event::Expose(e) if e.count == 0 => {
                         let rows = last.lock().unwrap();
@@ -155,15 +171,6 @@ impl Display {
                             let all = (0, 0, usize::from(w), usize::from(h));
                             let _ = put(&conn, target, &rows, all);
                         }
-                    }
-                    Event::ButtonPress(e) | Event::ButtonRelease(e) if e.detail == 1 => {
-                        let down =
-                            e.response_type & 0x7f == x11rb::protocol::xproto::BUTTON_PRESS_EVENT;
-                        on_input(Input::Pointer {
-                            x: f32::from(e.event_x),
-                            y: f32::from(e.event_y),
-                            down,
-                        });
                     }
                     // wheel: 4 up = back, 5 down = forward (press only)
                     Event::ButtonPress(e) if e.detail == 4 => click(cw / 6.0),
@@ -303,6 +310,24 @@ fn update(
     y0.map(|y0| (x0, y0, x1, y1))
 }
 
+/// The pointer input an X event carries: the first button pressed or released, or the pointer
+/// moved with it held (the window asks for no other motion). On the Kindle a finger is that
+/// button: without its moves, a drag reached the page as a tap where it ended.
+fn pointer_input(ev: &Event) -> Option<Input> {
+    match ev {
+        Event::ButtonPress(e) | Event::ButtonRelease(e) if e.detail == 1 => Some(Input::Pointer {
+            x: f32::from(e.event_x),
+            y: f32::from(e.event_y),
+            down: e.response_type & 0x7f == x11rb::protocol::xproto::BUTTON_PRESS_EVENT,
+        }),
+        Event::MotionNotify(e) => Some(Input::Move {
+            x: f32::from(e.event_x),
+            y: f32::from(e.event_y),
+        }),
+        _ => None,
+    }
+}
+
 /// A box of pixels: left, top, right, bottom (right and bottom exclusive).
 pub(crate) type Rect = (usize, usize, usize, usize);
 
@@ -349,7 +374,50 @@ fn put(
 
 #[cfg(test)]
 mod tests {
-    use super::{PixelFormat, convert, update};
+    use super::{Input, PixelFormat, convert, pointer_input, update};
+    use x11rb::protocol::Event;
+    use x11rb::protocol::xproto::{
+        BUTTON_PRESS_EVENT, BUTTON_RELEASE_EVENT, ButtonPressEvent, KeyButMask, MotionNotifyEvent,
+    };
+
+    // A drag on the Kindle's touch screen: the finger lands, moves with the button held, lifts.
+    #[test]
+    fn a_drag_reaches_the_page_as_a_press_moves_and_a_release() {
+        let button = |response_type, x, y| ButtonPressEvent {
+            response_type,
+            detail: 1,
+            event_x: x,
+            event_y: y,
+            ..Default::default()
+        };
+        let events = [
+            Event::ButtonPress(button(BUTTON_PRESS_EVENT, 800, 919)),
+            Event::MotionNotify(MotionNotifyEvent {
+                event_x: 798,
+                event_y: 880,
+                state: KeyButMask::BUTTON1,
+                ..Default::default()
+            }),
+            Event::ButtonRelease(button(BUTTON_RELEASE_EVENT, 792, 700)),
+        ];
+        let inputs: Vec<_> = events.iter().map(pointer_input).collect();
+        assert_eq!(
+            inputs,
+            [
+                Some(Input::Pointer {
+                    x: 800.0,
+                    y: 919.0,
+                    down: true
+                }),
+                Some(Input::Move { x: 798.0, y: 880.0 }),
+                Some(Input::Pointer {
+                    x: 792.0,
+                    y: 700.0,
+                    down: false
+                }),
+            ]
+        );
+    }
 
     // Converting every frame to the window's pixels took 34 ms a frame on a Kindle, and half of
     // a page turn's frames change nothing.

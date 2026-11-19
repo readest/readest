@@ -257,6 +257,10 @@
   `scrollbar-color`'s thumb colour on its track colour, with the sizes and thumb rounding Chromium
   has at a real device scale of 2. Readest's dialogs and menus laid their content 15px wider than
   Readest does.
+- `blitz-dom` events/pointer, events/driver, document: a finger pans only after it moves more
+  than Chromium's touch slop (15px from where it landed, not 2px), and the page gets no
+  `touchmove` until then, as Chromium sends none inside the slop. A tap whose finger shifted a few
+  pixels lost its click, and foliate-js's paginator took it for a swipe.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
