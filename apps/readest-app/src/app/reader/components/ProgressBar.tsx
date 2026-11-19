@@ -38,6 +38,33 @@ import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { CHUNKED_SECTION_THRESHOLD, getCalibratedPagePair } from '@/utils/chapterScreens';
 import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
+// Private-use characters standing in for the time and the page count in a
+// translated readout; no translation contains them.
+const TIME_MARK = '\uE000';
+const PAGES_MARK = '\uE001';
+
+// A marked readout as spans: the time, the page count, and the words around
+// them in `labelClass`.
+const renderMarked = (marked: string, time: string, pages: string, labelClass: string) =>
+  marked
+    .split(new RegExp(`(${TIME_MARK}|${PAGES_MARK})`))
+    .filter(Boolean)
+    .map((part, i) =>
+      part === TIME_MARK ? (
+        <span key={i} className='time-left-number'>
+          {time}
+        </span>
+      ) : part === PAGES_MARK ? (
+        <span key={i} className='pages-left-number'>
+          {pages}
+        </span>
+      ) : (
+        <span key={i} className={labelClass}>
+          {part}
+        </span>
+      ),
+    );
+
 interface ProgressBarProps {
   bookKey: string;
   horizontalGap: number;
@@ -235,35 +262,43 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         (n) => formatNumber(n, localize, lang),
       )
     : '';
-  const timeLeftStr = showPagesLeft
+  // The time readouts are translated with marks in place of the time and the
+  // page count, so the footer can wrap each part (renderMarked) for Custom
+  // Reader UI CSS (#7483) in any word order. `replace` feeds the marks to
+  // i18next while `count` still picks the plural form.
+  const timeLeftMarked = showPagesLeft
     ? remainingInBook
-      ? _('{{time}} left in book', { time: durationLeft })
-      : _('{{time}} left in chapter', { time: durationLeft })
+      ? _('{{time}} left in book', { time: TIME_MARK })
+      : _('{{time}} left in chapter', { time: TIME_MARK })
     : '';
   // One sentence when both are on, so "left in book/chapter" isn't said twice.
-  const numberLeft = localize && showBothRemaining ? formatNumber(pagesLeft, true, lang) : '';
-  const timeAndPagesLeftStr =
+  const numberLeft = localize ? formatNumber(pagesLeft, true, lang) : String(pagesLeft);
+  const timeAndPagesLeftMarked =
     showBothRemaining && showPagesLeft
       ? localize
         ? remainingInBook
           ? _('{{time}} and {{number}} pages left in book', {
-              time: durationLeft,
-              number: numberLeft,
+              time: TIME_MARK,
+              number: PAGES_MARK,
             })
           : _('{{time}} and {{number}} pages left in chapter', {
-              time: durationLeft,
-              number: numberLeft,
+              time: TIME_MARK,
+              number: PAGES_MARK,
             })
         : remainingInBook
           ? _('{{time}} and {{count}} pages left in book', {
-              time: durationLeft,
               count: pagesLeft,
+              replace: { time: TIME_MARK, count: PAGES_MARK },
             })
           : _('{{time}} and {{count}} pages left in chapter', {
-              time: durationLeft,
               count: pagesLeft,
+              replace: { time: TIME_MARK, count: PAGES_MARK },
             })
       : '';
+  const fillMarks = (marked: string) =>
+    marked.split(TIME_MARK).join(durationLeft).split(PAGES_MARK).join(numberLeft);
+  const timeLeftStr = fillMarks(timeLeftMarked);
+  const timeAndPagesLeftStr = fillMarks(timeAndPagesLeftMarked);
   const pagesLeftStr = showPagesLeft
     ? localize
       ? remainingInBook
@@ -452,11 +487,11 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           >
             {showBothRemaining ? (
               <span className={clsx('time-left-label text-start', pillClass)} style={pillStyle}>
-                {timeAndPagesLeftStr}
+                {renderMarked(timeAndPagesLeftMarked, durationLeft, numberLeft, 'pages-left-label')}
               </span>
             ) : viewSettings.showRemainingTime ? (
               <span className={clsx('time-left-label text-start', pillClass)} style={pillStyle}>
-                {timeLeftStr}
+                {renderMarked(timeLeftMarked, durationLeft, numberLeft, 'time-left-text')}
               </span>
             ) : viewSettings.showRemainingPages && showPagesLeft ? (
               <span className={clsx('text-start', pillClass)} style={pillStyle}>
