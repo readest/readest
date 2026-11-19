@@ -103,6 +103,19 @@ describe('ReadingTimeChart calendar periods', () => {
     expect(screen.getByRole('status').textContent).toContain('41m');
   });
 
+  it('leaves readings dated after today out of the total and the scale', () => {
+    // A synced device whose clock runs ahead can store a reading for Friday.
+    vi.useFakeTimers({ now: new Date('2026-10-21T12:00:00'), toFake: ['Date'] });
+    const { container } = render(
+      <ReadingTimeChart daily={new Map([...daily, ['2026-10-23', 3600]])} />,
+    );
+    expect(screen.getByRole('status').textContent).toBe('10mDaily average 2m');
+    // 10-20 is the week's longest reading so far, so its bar is full height.
+    expect(container.querySelector<HTMLElement>('[data-index="2"] > span')!.style.height).toBe(
+      '100%',
+    );
+  });
+
   it('does not select days that have not come yet', () => {
     vi.useFakeTimers({ now: new Date('2026-10-21T12:00:00'), toFake: ['Date'] });
     const { container } = render(<ReadingTimeChart daily={daily} />);

@@ -25,7 +25,10 @@ const ReadingTimeChart: React.FC<ReadingTimeChartProps> = ({ daily }) => {
 
   const locale = getLocale();
   const today = new Date();
-  const bars = getReadingBars(daily, range, period);
+  // A reading dated after today (from a device whose clock runs ahead) doesn't count yet.
+  const bars = getReadingBars(daily, range, period).map((bar) =>
+    bar.date > today ? { ...bar, seconds: 0 } : bar,
+  );
   const start = bars[0]!.date;
   const end = shiftPeriod(range, start, 1);
   const isCurrent = end > today;
