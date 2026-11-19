@@ -56,9 +56,13 @@ const SettingsSelect: React.FC<SettingsSelectProps> = ({
     .join('\u0001');
   // Selection is written through the native select, then reported to the
   // caller. If the caller rejects the change, no render follows to correct the
-  // DOM, so the latest prop is kept here for the deferred check in `pick`.
+  // DOM, so the latest prop is mirrored here for the deferred check in `pick`.
+  // Written in a layout effect, not during render: it has to be in place before
+  // the deferred check runs, and render has to stay free of side effects.
   const valueRef = useRef(value);
-  valueRef.current = value;
+  useLayoutEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   // Native selects drop their popup above the control when it would otherwise
   // be clipped, and clamp it to the room that is left so every option stays
