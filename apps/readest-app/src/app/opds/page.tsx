@@ -772,6 +772,7 @@ export default function BrowserPage() {
       catalogSourceId,
       publication,
       publicationCoverHref,
+      settings.bookorbit,
     ],
   );
 

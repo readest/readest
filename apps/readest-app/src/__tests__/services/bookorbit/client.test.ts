@@ -158,6 +158,17 @@ describe('BookOrbitClient with an API key', () => {
     await expect(client.getManifest(9)).rejects.toBeInstanceOf(BookOrbitAuthError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  // The media proxy's timer refreshes before re-registering the bearer, so a
+  // key the user replaced in settings only reaches the proxy if this resolves.
+  it('refreshes to the same key without signing in', async () => {
+    const client = new BookOrbitClient(keyed, { onTokensUpdated: vi.fn() });
+
+    await client.refreshAccessToken();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(client.accessToken).toBe('bok_key');
+  });
 });
 
 describe('BookOrbitClient (API) – TLS certificate checks', () => {

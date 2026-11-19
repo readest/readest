@@ -137,6 +137,8 @@ export class BookOrbitClient {
    * caller has to ask.
    */
   refreshAccessToken(): Promise<void> {
+    // An API key does not expire on a timer; it stays the bearer.
+    if (this.#server.apiKey) return Promise.resolve();
     return this.#login();
   }
 

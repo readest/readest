@@ -364,7 +364,7 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
                 id='bookorbit-server-url'
                 type='text'
                 placeholder='https://books.example.com'
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 spellCheck='false'
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -384,7 +384,7 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
                 id='bookorbit-username'
                 type='text'
                 placeholder={_('Your Username')}
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 spellCheck='false'
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -400,7 +400,7 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
                 id='bookorbit-password'
                 type='password'
                 placeholder={_('Your Password')}
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete='current-password'
@@ -415,7 +415,7 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
                 id='bookorbit-api-key'
                 type='password'
                 placeholder='bok_…'
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 spellCheck='false'
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
