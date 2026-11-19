@@ -608,15 +608,26 @@ with the card's own border and double-stack with adjacent rows.
 
 ```tsx
 <div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex max-w-[60%] items-center rounded-md'>
-  <select className='select h-9 min-w-0 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-1! ps-2! text-end text-sm focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'>
+  <select className='select h-9 min-w-0 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-6! ps-2! text-end text-sm focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'>
     {/* options */}
   </select>
   <MdArrowDropDown
     aria-hidden='true'
-    className='text-base-content/55 pointer-events-none h-5 w-5 shrink-0'
+    className='text-base-content/55 pointer-events-none -ms-5 h-5 w-5 shrink-0'
   />
 </div>
 ```
+
+The chevron is pulled back over the select's own end padding (`pe-6!` on the
+select, `-ms-5` on the icon), so it sits at the same X as before but inside
+the select's hit area: with `pointer-events-none`, a press on it lands on the
+select and opens the native picker, and a second press closes it (#7650 — a
+chevron drawn *beside* the select looked like a button and did nothing).
+
+Escape in the open picker must close only the picker. `Dialog` listens for
+Escape on its `<dialog>` element natively, which runs before any React
+`onKeyDown` on the select, so `SettingsSelect` stops the key with a native
+listener while the picker is `:open`.
 
 > **Why so many `!` overrides?** daisyui's `.select` and `.input` apply
 > `border-width: 1px` + `border-color` (base-content/20 at rest, `var(--color-base-content)` on
