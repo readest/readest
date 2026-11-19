@@ -256,6 +256,16 @@ describe('isValidLang', () => {
     expect(isValidLang('chi')).toBe(true);
   });
 
+  it('should return true for ISO 639-2/T codes that differ from the B code', () => {
+    // Calibre-Web OPDS feeds send these (#7649).
+    expect(isValidLang('zho')).toBe(true);
+    expect(isValidLang('fra')).toBe(true);
+    expect(isValidLang('deu')).toBe(true);
+    expect(isValidLang('ces')).toBe(true);
+    expect(isValidLang('nld')).toBe(true);
+    expect(isValidLang('fas')).toBe(true);
+  });
+
   it('should return false for special/undefined language codes', () => {
     expect(isValidLang('und')).toBe(false); // undetermined
     expect(isValidLang('mul')).toBe(false); // multiple
@@ -287,6 +297,21 @@ describe('code6392to6391', () => {
     expect(code6392to6391('por')).toBe('pt');
     expect(code6392to6391('ita')).toBe('it');
     expect(code6392to6391('rus')).toBe('ru');
+  });
+
+  it('should convert ISO 639-2T codes to ISO 639-1', () => {
+    expect(code6392to6391('zho')).toBe('zh');
+    expect(code6392to6391('fra')).toBe('fr');
+    expect(code6392to6391('deu')).toBe('de');
+    expect(code6392to6391('ces')).toBe('cs');
+    expect(code6392to6391('nld')).toBe('nl');
+    expect(code6392to6391('fas')).toBe('fa');
+  });
+
+  it('should convert the base of a regional ISO 639-2 tag and keep the region', () => {
+    expect(code6392to6391('zho-CN')).toBe('zh-CN');
+    expect(code6392to6391('chi-CN')).toBe('zh-CN');
+    expect(code6392to6391('fra-CA')).toBe('fr-CA');
   });
 
   it('should return empty string for unknown codes', () => {
@@ -351,6 +376,12 @@ describe('getLanguageName', () => {
     expect(getLanguageName('eng')).toBe('English');
     expect(getLanguageName('fre')).toBe('French');
     expect(getLanguageName('ger')).toBe('German');
+  });
+
+  it('should return language names for ISO 639-2T codes', () => {
+    expect(getLanguageName('zho')).toBe('Chinese');
+    expect(getLanguageName('fra')).toBe('French');
+    expect(getLanguageName('deu')).toBe('German');
   });
 
   it('should return the normalized code itself for unknown languages', () => {

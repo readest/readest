@@ -51,6 +51,14 @@ describe('parseSSMLLang', () => {
     expect(parseSSMLLang(ssml, 'en')).toBe('en-GB');
   });
 
+  // Read Aloud has voices for `zh-CN`, not `zho-CN`: a three-letter tag with a
+  // region is usable only once its base is converted.
+  it('should convert the base of a regional ISO 639-2 tag to ISO 639-1', () => {
+    expect(parseSSMLLang(ssmlWithLang('zho-CN', '<mark name="0"/>你好'), 'zh')).toBe('zh-CN');
+    expect(parseSSMLLang(ssmlWithLang('chi-CN', '<mark name="0"/>你好'), 'zh')).toBe('zh-CN');
+    expect(parseSSMLLang(ssmlWithLang('fra-CA', '<mark name="0"/>Bonjour'), 'fr')).toBe('fr-CA');
+  });
+
   it('should keep document lang when it matches primaryLang', () => {
     const ssml = ssmlWithLang('fr', '<mark name="0"/>Bonjour');
     expect(parseSSMLLang(ssml, 'fr')).toBe('fr');
