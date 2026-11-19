@@ -291,6 +291,12 @@ Blitz's pin, the crate alone (`src`, `Cargo.toml`); the root `Cargo.toml` patche
   Settings dialog (content ending in `my-4`) scrolled 16px less than Readest and drew a longer
   thumb. Taffy's hand-written test `block_end_margins_do_not_extend_scrollable_overflow` asserts
   the opposite and fails with this patch; Chromium 151 gives its 150px-margin case 350px, not 200.
+- `compute/flexbox`: an item's percentage size resolves against the container's cross size only
+  when that size is definite (the container's style sets it, or it was stretched in a container
+  with a definite size), as for the main size; otherwise it behaves as `auto`, also when the item
+  is measured. A container centred in its line was given its measured height as a known but
+  indefinite size, and Readest's library header grouped its buttons in a 36px box where Readest
+  has 32px.
 
 ## tauri.diff (readest/tauri d6ef6e4c7, feat/cef)
 

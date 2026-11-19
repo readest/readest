@@ -12,3 +12,50 @@ diff -ruN taffy/src/compute/block.rs taffy/src/compute/block.rs
                  ));
              }
  
+diff -ruN taffy/src/compute/flexbox.rs taffy/src/compute/flexbox.rs
+--- taffy/src/compute/flexbox.rs
++++ taffy/src/compute/flexbox.rs
+@@ -840,11 +840,7 @@
+     // Percentage sizes of items resolve against the container's inner size, but only if that size
+     // is definite. A known main size which is derived from the container's own content is treated
+     // as indefinite here.
+-    let percent_resolution_size = if constants.known_main_size_is_definite {
+-        constants.node_inner_size
+-    } else {
+-        constants.node_inner_size.with_main(constants.dir, None)
+-    };
++    let percent_resolution_size = percent_basis(constants);
+ 
+     // Allocate once, for the child count, when the first item is generated (some children may not generate one)
+     let child_count = tree.child_count(node);
+@@ -1474,6 +1470,21 @@
+     Size { width: true, height: true }.with_main(dir, main_is_definite).with_cross(dir, cross_is_definite)
+ }
+ 
++/// The container's inner size as a basis for its items' percentage sizes: each axis only where that
++/// size is definite. A known main size derived from the container's own content is indefinite, and
++/// so is a known cross size the container was given without it being definite (the container
++/// was centred rather than stretched in its own line): percentages there behave as `auto`.
++fn percent_basis(constants: &AlgoConstants) -> Size<Option<f32>> {
++    let dir = constants.dir;
++    let size = constants.node_inner_size;
++    let size = if constants.known_main_size_is_definite { size } else { size.with_main(dir, None) };
++    if constants.has_definite_cross_size {
++        size
++    } else {
++        size.with_cross(dir, None)
++    }
++}
++
+ /// Determine the container's main size (if not already known)
+ fn determine_container_main_size(
+     tree: &mut impl LayoutFlexboxContainer,
+@@ -2079,7 +2090,7 @@
+                         height: if constants.is_row { child_cross } else { child.target_size.height.into() },
+                     },
+                     known_dimensions_are_definite: item_known_dimension_definiteness(constants, child),
+-                    parent_size: constants.node_inner_size,
++                    parent_size: constants.node_inner_size.with_cross(constants.dir, percent_basis(constants).cross(constants.dir)),
+                     available_space: Size {
+                         width: if constants.is_row { child_available_main } else { child_available_cross },
+                         height: if constants.is_row { child_available_cross } else { child_available_main },
