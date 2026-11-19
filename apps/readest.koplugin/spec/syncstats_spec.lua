@@ -346,6 +346,19 @@ describe("readest_syncstats", function()
         assert.are.equal(2001, statistics.page_stat[7][1][1])
     end)
 
+    -- KOReader pauses statistics on suspend and, on resume, adds the pause's
+    -- length to the page's start (onReadingResumed). A deletion made during
+    -- the pause must not push that start past the resume time.
+    it("keeps the page being read in step with a pause that began before the deletion", function()
+        local statistics = openSession(false)
+        statistics._reading_paused_ts = 2000 -- suspended at 2000 s, deleted at 2000.5 s
+        pullDeletionOf("md5-open", statistics)
+        -- resumed at 2100 s, as onReadingResumed does
+        local t = statistics.page_stat[7][1]
+        t[1] = t[1] + (2100 - statistics._reading_paused_ts)
+        assert.are.equal(2100, t[1])
+    end)
+
     it("leaves the open book's session alone when another book is deleted", function()
         local statistics = openSession(false)
         pullDeletionOf("md5-other", statistics)

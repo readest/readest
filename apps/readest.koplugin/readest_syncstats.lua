@@ -348,7 +348,9 @@ function SyncStats:pull(settings, client, interactive, ui)
                         for i = #list, 1, -1 do
                             if list[i][1] < live_before then
                                 if page == st.curr_page and i == #list then
-                                    list[i][1] = live_before
+                                    -- never past a pause's start: resuming adds
+                                    -- the pause's length to it (onReadingResumed)
+                                    list[i][1] = math.min(live_before, st._reading_paused_ts or live_before)
                                 else
                                     table.remove(list, i)
                                 end
