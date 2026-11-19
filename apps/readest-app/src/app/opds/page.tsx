@@ -21,6 +21,7 @@ import { queueOPDSBookUploads } from '@/services/opds/cloudUpload';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useTheme } from '@/hooks/useTheme';
 import { useLibrary } from '@/hooks/useLibrary';
+import { useLibraryFileSync } from '@/app/library/hooks/useLibraryFileSync';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToReader } from '@/utils/nav';
 import { getFileExtFromMimeType } from '@/libs/document';
@@ -158,6 +159,9 @@ export default function BrowserPage() {
 
   useTheme({ systemUIVisible: false });
   useTransferQueue(libraryLoaded);
+  // A download imports the book here, off the library screen: publish it to
+  // library.json on WebDAV / Google Drive / S3 too (#7464).
+  useLibraryFileSync();
 
   useEffect(() => {
     startURLRef.current = state.startURL;
