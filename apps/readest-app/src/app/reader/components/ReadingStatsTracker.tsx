@@ -137,9 +137,7 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
     const db = dbRef.current;
     if (!db || !bookMd5 || events.length === 0) return;
     try {
-      const idBook = await db.upsertBook({ bookMd5, title, authors });
-      for (const e of events) await db.insertPageEvent(idBook, e);
-      await db.recomputeBookTotals(idBook);
+      await db.recordEvents({ bookMd5, title, authors }, events);
       schedulePush();
     } catch (err) {
       // The statistics DB can be closed mid-write on app/tab teardown

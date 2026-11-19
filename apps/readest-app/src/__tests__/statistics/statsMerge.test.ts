@@ -61,6 +61,21 @@ describe('mergeBook', () => {
   });
 });
 
+describe('recording while a merge runs', () => {
+  it('keeps an event recorded for the source while it is merged', async () => {
+    // Read Aloud or the reader can record the source book (Read Aloud keeps
+    // playing after its book closes) while the merge runs from the library
+    const stats = await db();
+    await seed(stats, 'old', [{ page: 1, startTime: 100, duration: 30 }]);
+    await Promise.all([
+      stats.mergeBook('old', NEW),
+      stats.recordEvents(OLD, [{ page: 3, startTime: 300, duration: 20, totalPages: 50 }]),
+    ]);
+    const seconds = Object.fromEntries((await stats.getBookStats()).map((b) => [b.md5, b.seconds]));
+    expect(seconds).toEqual({ new: 30, old: 20 });
+  });
+});
+
 describe('mergeBookStats', () => {
   const client = () => ({
     pullChanges: vi.fn().mockResolvedValue({ statBooks: [], statPages: [] }),

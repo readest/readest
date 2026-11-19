@@ -9,9 +9,7 @@ const mocks = vi.hoisted(() => ({
   progress: null as BookProgress | null,
   playbackState: null as 'playing' | 'paused' | null,
   db: {
-    upsertBook: vi.fn(),
-    insertPageEvent: vi.fn(),
-    recomputeBookTotals: vi.fn(),
+    recordEvents: vi.fn(),
   },
 }));
 
@@ -94,9 +92,7 @@ describe('ReadingStatsTracker while TTS plays', () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     mocks.open.mockResolvedValue(mocks.db);
-    mocks.db.upsertBook.mockResolvedValue(1);
-    mocks.db.insertPageEvent.mockResolvedValue(undefined);
-    mocks.db.recomputeBookTotals.mockResolvedValue(undefined);
+    mocks.db.recordEvents.mockResolvedValue(undefined);
     mocks.getBookData.mockReturnValue({
       book: { hash: 'md5-1', title: 'Book', author: 'Author' },
     } as unknown as null);
@@ -119,7 +115,7 @@ describe('ReadingStatsTracker while TTS plays', () => {
     rerender(<ReadingStatsTracker bookKey={BOOK_KEY} />);
     await settle();
 
-    expect(mocks.db.insertPageEvent).toHaveBeenCalled();
+    expect(mocks.db.recordEvents).toHaveBeenCalled();
   });
 
   it('stops recording page dwell while TTS is playing', async () => {
@@ -135,7 +131,7 @@ describe('ReadingStatsTracker while TTS plays', () => {
     rerender(<ReadingStatsTracker bookKey={BOOK_KEY} />);
     await settle();
 
-    expect(mocks.db.insertPageEvent).not.toHaveBeenCalled();
+    expect(mocks.db.recordEvents).not.toHaveBeenCalled();
   });
 
   it('resumes recording once TTS stops', async () => {
@@ -150,7 +146,7 @@ describe('ReadingStatsTracker while TTS plays', () => {
     rerender(<ReadingStatsTracker bookKey={BOOK_KEY} />);
     await settle();
 
-    expect(mocks.db.insertPageEvent).toHaveBeenCalled();
+    expect(mocks.db.recordEvents).toHaveBeenCalled();
   });
 
   it('starts dormant when mounted into an already-playing session', async () => {
@@ -163,7 +159,7 @@ describe('ReadingStatsTracker while TTS plays', () => {
     rerender(<ReadingStatsTracker bookKey={BOOK_KEY} />);
     await settle();
 
-    expect(mocks.db.insertPageEvent).not.toHaveBeenCalled();
+    expect(mocks.db.recordEvents).not.toHaveBeenCalled();
   });
 
   it('keeps recording when another book is the one being read aloud', async () => {
@@ -176,6 +172,6 @@ describe('ReadingStatsTracker while TTS plays', () => {
     rerender(<ReadingStatsTracker bookKey={BOOK_KEY} />);
     await settle();
 
-    expect(mocks.db.insertPageEvent).toHaveBeenCalled();
+    expect(mocks.db.recordEvents).toHaveBeenCalled();
   });
 });

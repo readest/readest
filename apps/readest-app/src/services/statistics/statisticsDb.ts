@@ -344,6 +344,22 @@ export class StatisticsDb {
    * Move every event of `source` onto `target` (a key both hold keeps the
    * longer duration), then delete `source`.
    */
+  /**
+   * Record a book's page events and refresh its totals, after any merge,
+   * deletion or pull in progress: run between them, the events could go to a
+   * row that is then deleted, or be deleted without being merged.
+   */
+  async recordEvents(
+    book: StatBook,
+    events: { page: number; startTime: number; duration: number; totalPages: number }[],
+  ): Promise<void> {
+    await this.exclusive(async () => {
+      const id = await this.upsertBook(book);
+      for (const e of events) await this.insertPageEvent(id, e);
+      await this.recomputeBookTotals(id);
+    });
+  }
+
   async mergeBook(source: string, target: StatBook): Promise<void> {
     await this.exclusive(async () => {
       await this.db.execute('BEGIN');

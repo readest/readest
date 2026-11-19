@@ -8,9 +8,7 @@ const mocks = vi.hoisted(() => ({
   config: null as BookConfig | null,
   book: null as { hash: string; title: string; author: string } | null,
   db: {
-    upsertBook: vi.fn(),
-    insertPageEvent: vi.fn(),
-    recomputeBookTotals: vi.fn(),
+    recordEvents: vi.fn(),
   },
   open: vi.fn(),
   pushStats: vi.fn(),
@@ -49,7 +47,7 @@ import {
 type RecordedEvent = { page: number; startTime: number; duration: number; totalPages: number };
 
 const insertedEvents = (): RecordedEvent[] =>
-  mocks.db.insertPageEvent.mock.calls.map((call) => (call as unknown[])[1] as RecordedEvent);
+  mocks.db.recordEvents.mock.calls.flatMap((call) => (call as unknown[])[1] as RecordedEvent[]);
 
 const totalDuration = () => insertedEvents().reduce((sum, e) => sum + e.duration, 0);
 
@@ -123,9 +121,7 @@ describe('TtsStatsRecorder', () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     mocks.open.mockResolvedValue(mocks.db);
-    mocks.db.upsertBook.mockResolvedValue(1);
-    mocks.db.insertPageEvent.mockResolvedValue(undefined);
-    mocks.db.recomputeBookTotals.mockResolvedValue(undefined);
+    mocks.db.recordEvents.mockResolvedValue(undefined);
     mocks.pushStats.mockResolvedValue(undefined);
     mocks.book = { hash: 'md5-1', title: 'Book', author: 'Author' };
     mocks.config = { progress: [1, 200], updatedAt: 0 } as BookConfig;
@@ -241,7 +237,7 @@ describe('TtsStatsRecorder', () => {
     await vi.advanceTimersByTimeAsync(90_000);
     await recorder.stop();
 
-    expect(mocks.db.insertPageEvent).not.toHaveBeenCalled();
+    expect(mocks.db.recordEvents).not.toHaveBeenCalled();
     warn.mockRestore();
   });
 
@@ -254,7 +250,7 @@ describe('TtsStatsRecorder', () => {
     await vi.advanceTimersByTimeAsync(90_000);
     await recorder.stop();
 
-    expect(mocks.db.insertPageEvent).not.toHaveBeenCalled();
+    expect(mocks.db.recordEvents).not.toHaveBeenCalled();
   });
 
   it('keeps a failing CFI resolve from tearing down the session', async () => {
@@ -270,7 +266,7 @@ describe('TtsStatsRecorder', () => {
     await vi.advanceTimersByTimeAsync(90_000);
     await expect(recorder.stop()).resolves.toBeUndefined();
 
-    expect(mocks.db.insertPageEvent).not.toHaveBeenCalled();
+    expect(mocks.db.recordEvents).not.toHaveBeenCalled();
     warn.mockRestore();
   });
 
