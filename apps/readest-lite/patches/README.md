@@ -266,6 +266,11 @@
   shrinks into a smaller button. The sheet's default namespace is XHTML, so the rule names the SVG
   namespace. Readest's icons kept their `width`/`height` and overflowed their buttons: the
   sidebar's Close chevron (27.5px in a 24px button) was drawn a quarter too big.
+- `blitz-paint` text: `opacity` on an inline element fades its text and text decorations,
+  multiplied through nested inline elements (the inline root's own opacity is its layer, as
+  before), by the run's colour alpha rather than a layer per run. Blitz ignored it, so the words
+  Readest's Speed Reading context panel dims (`opacity-70`) were drawn in full ink and the current
+  word didn't stand out. An inline element's own background and border don't fade yet.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
