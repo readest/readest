@@ -179,9 +179,10 @@ interface RSVPOverlayProps {
   chapters: TOCItem[];
   currentChapterHref: string | null;
   /**
-   * Resolved CSS font-family for the displayed word, mirroring the reader's
-   * font face/family settings. When undefined, the word keeps the monospace
-   * fallback. See getBaseFontFamily in utils/style.
+   * Resolved CSS font-family for the displayed word and the context text,
+   * mirroring the reader's font face/family settings. When undefined, the word
+   * keeps the monospace fallback and the context the app font. See
+   * getBaseFontFamily in utils/style.
    */
   fontFamily?: string;
   /** Book language, used to pick dictionary providers for context lookups. */
@@ -1044,6 +1045,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               ref={contextPanelRef}
               data-testid='rsvp-context-panel'
               className='select-text text-left text-base leading-relaxed md:text-lg'
+              style={{ fontFamily }}
               onClick={handleContextClick}
               onKeyDown={handleContextKeyDown}
               onMouseUp={handleContextSelection}
