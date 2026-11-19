@@ -32,6 +32,16 @@ export type BookStats = {
   lastRead: number; // Unix seconds
 };
 
+export type ReadingSpeedUnit = 'characters' | 'words';
+
+export type ReadingSpeed = {
+  unit: ReadingSpeedUnit;
+  count: number;
+  durationMs: number;
+};
+
+export type ReadingSpeedSample = ReadingSpeed & { startTimeMs: number };
+
 /** Tunables for the tracker's flush/idle behavior. KOReader-aligned defaults. */
 export interface StatsTrackingConfig {
   /** Seconds of inactivity before the current page event is flushed + paused. */
@@ -47,3 +57,5 @@ export const DEFAULT_STATS_TRACKING_CONFIG: StatsTrackingConfig = {
   maxEventSeconds: 120,
   minEventSeconds: 3,
 };
+
+export const MAX_READING_SPEED_SAMPLE_MS = DEFAULT_STATS_TRACKING_CONFIG.idleTimeoutSeconds * 1000;

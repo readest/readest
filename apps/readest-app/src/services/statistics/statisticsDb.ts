@@ -1,7 +1,13 @@
 import type { AppService } from '@/types/system';
 import type { DatabaseService, DatabaseRow } from '@/types/database';
-import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
-import type { BookStats, PageStatEvent, StatBook } from '@/types/statistics';
+import { DEFAULT_STATS_TRACKING_CONFIG, MAX_READING_SPEED_SAMPLE_MS } from '@/types/statistics';
+import type {
+  BookStats,
+  PageStatEvent,
+  ReadingSpeed,
+  ReadingSpeedSample,
+  StatBook,
+} from '@/types/statistics';
 import type { BookQuarterHourDuration } from './readingStats';
 
 interface BookRow extends DatabaseRow {
@@ -234,6 +240,34 @@ export class StatisticsDb {
        FROM page_stat_data`,
     );
     return rows[0] ?? { seconds: 0, books: 0, pages: 0 };
+  }
+
+  // Local samples extend the stats DB without changing KOReader page events or
+  // the sync protocol. Queued so the write can't land inside a pull's open BEGIN.
+  async insertReadingSpeed(bookMd5: string, sample: ReadingSpeedSample): Promise<void> {
+    await this.exclusive(async () => {
+      await this.db.execute(
+        `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms)
+         VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+        [sample.startTimeMs, bookMd5, sample.unit, sample.count, sample.durationMs],
+      );
+    });
+  }
+
+  async getReadingSpeedSamples(startMs: number, endMs: number): Promise<ReadingSpeedSample[]> {
+    return this.db.select<ReadingSpeedSample>(
+      `SELECT start_time_ms AS startTimeMs, unit, count, duration_ms AS durationMs
+       FROM readest_reading_speed
+       WHERE start_time_ms >= ? AND start_time_ms < ? AND start_time_ms + duration_ms > ?`,
+      [startMs - MAX_READING_SPEED_SAMPLE_MS, endMs, startMs],
+    );
+  }
+
+  async getReadingSpeedTotals(): Promise<ReadingSpeed[]> {
+    return this.db.select<ReadingSpeed>(
+      `SELECT unit, SUM(count) AS count, SUM(duration_ms) AS durationMs
+       FROM readest_reading_speed GROUP BY unit ORDER BY unit`,
+    );
   }
 
   async getBookByMd5(md5: string): Promise<BookRow | null> {

@@ -6,7 +6,13 @@ import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
-import { getDailySeconds, getStreaks, toDateKey } from '@/services/statistics/readingStats';
+import {
+  getDailyReadingSpeeds,
+  getDailySeconds,
+  getStreaks,
+  toDateKey,
+} from '@/services/statistics/readingStats';
+import type { ReadingSpeed } from '@/types/statistics';
 import { BoxedList, NavigationRow, SettingsRow } from '@/components/settings/primitives';
 import SubPageHeader from '@/components/settings/SubPageHeader';
 import { formatDuration } from '@/utils/duration';
@@ -15,6 +21,7 @@ import ReadingTimeChart from './ReadingTimeChart';
 import ReadingHeatmap from './ReadingHeatmap';
 import ReadingCalendar from './ReadingCalendar';
 import BookStatsList from './BookStatsList';
+import { formatReadingSpeed } from './formatReadingSpeed';
 
 export const setReadingStatsDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('reading_stats_window');
@@ -30,14 +37,22 @@ interface ReadingStats {
   db: StatisticsDb;
   daily: Map<string, number>;
   totals: { seconds: number; books: number; pages: number };
+  todaySpeed: ReadingSpeed[];
+  totalSpeed: ReadingSpeed[];
 }
 
 const readStats = async (db: StatisticsDb): Promise<ReadingStats> => {
-  const [quarters, totals] = await Promise.all([
+  const today = new Date();
+  const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const dayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).getTime();
+  const [quarters, totals, samples, totalSpeed] = await Promise.all([
     db.getQuarterHourDurations(),
     db.getReadingTotals(),
+    db.getReadingSpeedSamples(dayStart, dayEnd),
+    db.getReadingSpeedTotals(),
   ]);
-  return { db, daily: getDailySeconds(quarters), totals };
+  const todaySpeed = getDailyReadingSpeeds(samples, dayStart, dayEnd).get(toDateKey(today)) ?? [];
+  return { db, daily: getDailySeconds(quarters), totals, todaySpeed, totalSpeed };
 };
 
 /** A sub-page of the dialog, or null for the statistics themselves. */
@@ -125,6 +140,7 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
   const streaks = getStreaks(daily);
   const time = (seconds: number) => formatDuration(Math.floor(seconds / 60), _);
   const days = (count: number) => _('{{count}} days', { count });
+  const speed = (speeds: ReadingSpeed[]) => formatReadingSpeed(speeds, getLocale(), _) || '—';
 
   if (page === 'calendar') {
     return (
@@ -212,6 +228,11 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
         <SettingsRow label={_('Today')}>
           <span className='tabular-nums'>{time(daily.get(toDateKey(new Date())) ?? 0)}</span>
         </SettingsRow>
+        <SettingsRow label={_('Reading Speed Today')}>
+          <span dir='auto' className='text-end tabular-nums'>
+            {speed(stats.todaySpeed)}
+          </span>
+        </SettingsRow>
         <SettingsRow label={_('Current Streak')}>
           <span className='tabular-nums'>{days(streaks.current)}</span>
         </SettingsRow>
@@ -222,6 +243,11 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
       <BoxedList title={_('All Time')}>
         <SettingsRow label={_('Reading Time')}>
           <span className='tabular-nums'>{time(totals.seconds)}</span>
+        </SettingsRow>
+        <SettingsRow label={_('Reading Speed')}>
+          <span dir='auto' className='text-end tabular-nums'>
+            {speed(stats.totalSpeed)}
+          </span>
         </SettingsRow>
         <SettingsRow label={_('Books')}>
           <span className='tabular-nums'>{totals.books.toLocaleString(getLocale())}</span>
