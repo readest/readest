@@ -205,7 +205,9 @@ export class PageboundClient {
   private async resolveLink(book: Book, config: BookConfig): Promise<PageboundBookLink> {
     if (config.pagebound) return config.pagebound;
     const base = book.title.replace(/(\s*[([][^()[\]]*[)\]])+\s*$/, '').trim() || book.title;
-    const parts = base.includes(':') ? base.split(':').map(normalizeTitle).filter(Boolean) : [];
+    const parts = [book.title, base].flatMap((title) =>
+      title.includes(':') ? title.split(':').map(normalizeTitle).filter(Boolean) : [],
+    );
     const titles = new Set([normalizeTitle(book.title), normalizeTitle(base), ...parts]);
     for (const query of new Set([book.title, base, ...parts])) {
       const matches = (await this.searchBooks(query)).filter(
