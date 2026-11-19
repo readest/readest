@@ -8,6 +8,7 @@ import {
   getDailySeconds,
   getReadingBars,
   getStreaks,
+  shiftPeriod,
   toDateKey,
 } from '@/services/statistics/readingStats';
 
@@ -80,24 +81,67 @@ describe('getStreaks', () => {
 });
 
 describe('getReadingBars', () => {
-  it('ends the week and month on today', () => {
-    const days = daily({ '2026-10-21': 60, '2026-10-15': 30, '2026-10-14': 999 });
+  it('covers the Sunday-first calendar week holding the date', () => {
+    // 2026-10-21 is a Wednesday: its week runs Sunday 10-18 to Saturday 10-24.
+    const days = daily({
+      '2026-10-17': 999,
+      '2026-10-18': 30,
+      '2026-10-21': 60,
+      '2026-10-25': 999,
+    });
     const week = getReadingBars(days, 'week', today);
-    expect(week).toHaveLength(7);
-    expect(toDateKey(week[0]!.date)).toBe('2026-10-15');
-    expect(week.map((b) => b.seconds)).toEqual([30, 0, 0, 0, 0, 0, 60]);
-    const month = getReadingBars(days, 'month', today);
-    expect(month).toHaveLength(30);
-    expect(toDateKey(month[29]!.date)).toBe('2026-10-21');
+    expect(week.map((b) => toDateKey(b.date))).toEqual([
+      '2026-10-18',
+      '2026-10-19',
+      '2026-10-20',
+      '2026-10-21',
+      '2026-10-22',
+      '2026-10-23',
+      '2026-10-24',
+    ]);
+    expect(week.map((b) => b.seconds)).toEqual([30, 0, 0, 60, 0, 0, 0]);
   });
 
-  it('sums the last 12 months into monthly bars', () => {
-    const days = daily({ '2025-10-31': 999, '2025-11-01': 60, '2026-10-01': 30, '2026-10-21': 30 });
+  it('runs a week across a year end', () => {
+    // 2027-01-01 is a Friday.
+    const week = getReadingBars(new Map(), 'week', new Date('2027-01-01T08:00:00'));
+    expect(toDateKey(week[0]!.date)).toBe('2026-12-27');
+    expect(toDateKey(week[6]!.date)).toBe('2027-01-02');
+  });
+
+  it('covers the calendar month from its first to its last day', () => {
+    const days = daily({
+      '2026-09-30': 999,
+      '2026-10-01': 30,
+      '2026-10-31': 60,
+      '2026-11-01': 999,
+    });
+    const month = getReadingBars(days, 'month', today);
+    expect(month).toHaveLength(31);
+    expect(toDateKey(month[0]!.date)).toBe('2026-10-01');
+    expect(toDateKey(month[30]!.date)).toBe('2026-10-31');
+    expect(month.reduce((sum, b) => sum + b.seconds, 0)).toBe(90);
+    expect(getReadingBars(days, 'month', new Date('2026-02-14T12:00:00'))).toHaveLength(28);
+  });
+
+  it('sums the calendar year into January to December bars', () => {
+    const days = daily({ '2025-12-31': 999, '2026-01-01': 60, '2026-10-21': 30, '2026-12-31': 30 });
     const year = getReadingBars(days, 'year', today);
-    expect(year).toHaveLength(12);
-    expect(toDateKey(year[0]!.date)).toBe('2025-11-01');
+    expect(year.map((b) => toDateKey(b.date))).toEqual(
+      Array.from({ length: 12 }, (_, i) => `2026-${String(i + 1).padStart(2, '0')}-01`),
+    );
     expect(year[0]!.seconds).toBe(60);
-    expect(year[11]!.seconds).toBe(60);
-    expect(year.reduce((sum, b) => sum + b.seconds, 0)).toBe(120);
+    expect(year[9]!.seconds).toBe(30);
+    expect(year[11]!.seconds).toBe(30);
+  });
+});
+
+describe('shiftPeriod', () => {
+  it('steps to the start of the neighbouring week, month or year', () => {
+    expect(toDateKey(shiftPeriod('week', today, -1))).toBe('2026-10-11');
+    expect(toDateKey(shiftPeriod('week', new Date('2026-12-30T12:00:00'), 1))).toBe('2027-01-03');
+    expect(toDateKey(shiftPeriod('month', new Date('2026-01-31T12:00:00'), -1))).toBe('2025-12-01');
+    expect(toDateKey(shiftPeriod('month', new Date('2026-01-31T12:00:00'), 1))).toBe('2026-02-01');
+    expect(toDateKey(shiftPeriod('year', today, -1))).toBe('2025-01-01');
   });
 });
