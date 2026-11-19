@@ -28,9 +28,16 @@ let currentRenderer: { page: number; pages: number };
 let currentSectionFractions: number[] = [];
 let currentTocHrefIndex: Record<string, number> = {};
 
+// Per-test translations; like i18next, `replace` (when given) supplies the
+// interpolated values while `count` only picks the plural form.
+let currentTranslations: Record<string, string> = {};
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (s: string, values?: Record<string, unknown>) =>
-    s.replace(/{{(\w+)}}/g, (match, name) => String(values?.[name] ?? match)),
+  useTranslation: () => (s: string, values?: Record<string, unknown>) => {
+    const data = (values?.['replace'] as Record<string, unknown> | undefined) ?? values;
+    return (currentTranslations[s] ?? s).replace(/{{(\w+)}}/g, (match, name) =>
+      String(data?.[name] ?? match),
+    );
+  },
 }));
 
 let currentAppService = { isMobile: false, hasSafeAreaInset: false };
@@ -117,6 +124,7 @@ beforeEach(() => {
   currentRenderer = { page: 0, pages: 0 };
   currentSectionFractions = [];
   currentTocHrefIndex = {};
+  currentTranslations = {};
 });
 
 const makeProgress = (current: number, total: number): BookProgress =>
@@ -294,6 +302,96 @@ describe('ProgressBar — remaining time and pages together', () => {
     const text = container.querySelector('.remaining-info')?.textContent ?? '';
     expect(text).toMatch(new RegExp(`and 3 pages left ${scope}$`));
     expect(text.match(/left/g)).toHaveLength(1);
+  });
+});
+
+describe('ProgressBar — Custom Reader UI CSS hooks on the remaining readouts (#7483)', () => {
+  // [class, text] of each part of the readout, in order.
+  const parts = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('.remaining-info > span > span')).map((el) => [
+      el.className,
+      el.textContent,
+    ]);
+
+  beforeEach(() => {
+    currentProgress = makeProgress(2, 5);
+    currentRenderer = { page: 1, pages: 4 };
+  });
+
+  it('wraps the time, the page count and the words when both are shown', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      showRemainingPages: true,
+      showRemainingTime: true,
+    } as ViewSettings;
+
+    const { container } = renderProgressBar();
+
+    expect(parts(container)).toEqual([
+      ['time-left-number', '1m'],
+      ['pages-left-label', ' and '],
+      ['pages-left-number', '3'],
+      ['pages-left-label', ' pages left in chapter'],
+    ]);
+  });
+
+  it('follows the word order of the translation', () => {
+    currentTranslations = {
+      '{{time}} and {{count}} pages left in chapter': 'متبقي {{time}} و{{count}} صفحة في الفصل',
+    };
+    currentViewSettings = {
+      ...baseSettings,
+      showRemainingPages: true,
+      showRemainingTime: true,
+    } as ViewSettings;
+
+    const { container } = renderProgressBar();
+
+    expect(parts(container)).toEqual([
+      ['pages-left-label', 'متبقي '],
+      ['time-left-number', '1m'],
+      ['pages-left-label', ' و'],
+      ['pages-left-number', '3'],
+      ['pages-left-label', ' صفحة في الفصل'],
+    ]);
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      'متبقي 1m و3 صفحة في الفصل',
+    );
+  });
+
+  it('wraps Chinese numerals in vertical Chinese layouts', () => {
+    localStorage.setItem('i18nextLng', 'zh-CN');
+    currentViewSettings = {
+      ...baseSettings,
+      vertical: true,
+      showRemainingPages: true,
+      showRemainingTime: true,
+    } as ViewSettings;
+
+    const { container } = renderProgressBar();
+    localStorage.removeItem('i18nextLng');
+
+    expect(parts(container)).toEqual([
+      ['time-left-number', '一m'],
+      ['pages-left-label', ' and '],
+      ['pages-left-number', '三'],
+      ['pages-left-label', ' pages left in chapter'],
+    ]);
+  });
+
+  it('wraps the time and the words when only the time is shown', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      showRemainingPages: false,
+      showRemainingTime: true,
+    } as ViewSettings;
+
+    const { container } = renderProgressBar();
+
+    expect(parts(container)).toEqual([
+      ['time-left-number', '1m'],
+      ['time-left-text', ' left in chapter'],
+    ]);
   });
 });
 
