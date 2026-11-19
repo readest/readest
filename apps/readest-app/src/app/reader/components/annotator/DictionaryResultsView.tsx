@@ -13,7 +13,12 @@ import ModalPortal from '@/components/ModalPortal';
 import ImageViewer from '@/app/reader/components/ImageViewer';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
-import { contextProvider } from '@/services/dictionaries/providers/contextProvider';
+import {
+  contextProvider,
+  getContextTranslator,
+} from '@/services/dictionaries/providers/contextProvider';
+import { getLLMTranslators } from '@/store/customTranslatorStore';
+import Select from '@/components/Select';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
 import { isTauriAppPlatform } from '@/services/environment';
 import { cancelWordPronounce, pronounceWord, warmWordAudio } from '@/services/tts/wordPronouncer';
@@ -27,6 +32,7 @@ import type {
   DictionarySelectionContext,
   WebSearchEntry,
 } from '@/services/dictionaries/types';
+import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
 import type { Insets } from '@/types/misc';
 import type { VocabularyOccurrence, VocabularyState } from '@/services/vocabulary/types';
 import { entryId, normalizeWordKey } from '@/services/vocabulary/entry';
@@ -89,6 +95,8 @@ export interface DictionaryResultsState {
   resolveWebSearchUrl: (id: string) => string | undefined;
   onWebSearchClickTauri: (e: React.MouseEvent<HTMLAnchorElement>, id: string) => void;
   noProvidersAtAll: boolean;
+  /** Ask the context dictionary card again with another AI translator (#7669). */
+  setContextTranslator: (id: string) => void;
   /** Dictionary popup font-size multiplier (#4443); `1` = default sizes. */
   fontScale: number;
   /** Data URL of the entry image being shown full screen, or `null` (#6018). */
@@ -123,8 +131,9 @@ export function useDictionaryResults({
   capture,
   contextOnly,
 }: UseDictionaryResultsArgs): DictionaryResultsState {
-  const { appService } = useEnv();
-  const { dictionaries, settings } = useCustomDictionaryStore();
+  const { appService, envConfig } = useEnv();
+  const { dictionaries, settings, setContextTranslatorId, saveCustomDictionaries } =
+    useCustomDictionaryStore();
   const isDarkMode = useThemeStore((s) => s.isDarkMode);
   const themeCode = useThemeStore((s) => s.themeCode);
   // Speak the entry as soon as it renders, for dictionaries that carry their
@@ -348,28 +357,14 @@ export function useDictionaryResults({
     });
   }, []);
 
-  // Lookup orchestration: fan out across all definition providers in
-  // parallel whenever currentWord (or the provider list) changes.
-  useEffect(() => {
-    if (!definitionProviders.length) return;
-
-    setCards(() => {
-      const next: Record<string, CardState> = {};
-      for (const provider of definitionProviders) {
-        next[provider.id] = {
-          state: 'loading',
-          loadKey,
-          outcome: undefined,
-          expanded: false,
-        };
-      }
-      return next;
-    });
-
-    const controllers = new Map<string, AbortController>();
-    definitionProviders.forEach((provider) => {
+  // One in-flight lookup per provider; a new lookup for a provider aborts its
+  // previous one.
+  const controllersRef = useRef(new Map<string, AbortController>());
+  const lookupProvider = useCallback(
+    (provider: DictionaryProvider) => {
+      controllersRef.current.get(provider.id)?.abort();
       const controller = new AbortController();
-      controllers.set(provider.id, controller);
+      controllersRef.current.set(provider.id, controller);
 
       const run = async () => {
         let outcome: DictionaryLookupOutcome;
@@ -429,21 +424,60 @@ export function useDictionaryResults({
         });
       };
       void run();
-    });
+    },
+    [
+      loadKey,
+      currentWord,
+      langCode,
+      pushWord,
+      isDarkMode,
+      themeCode.bg,
+      themeCode.fg,
+      autoPlayPronunciation,
+      autoPlayProviderId,
+      currentSelection,
+    ],
+  );
 
+  // Lookup orchestration: fan out across all definition providers in
+  // parallel whenever currentWord (or the provider list) changes.
+  useEffect(() => {
+    if (!definitionProviders.length) return;
+
+    setCards(() => {
+      const next: Record<string, CardState> = {};
+      for (const provider of definitionProviders) {
+        next[provider.id] = {
+          state: 'loading',
+          loadKey,
+          outcome: undefined,
+          expanded: false,
+        };
+      }
+      return next;
+    });
+    definitionProviders.forEach(lookupProvider);
+
+    const controllers = controllersRef.current;
     return () => controllers.forEach((c) => c.abort());
-  }, [
-    currentWord,
-    definitionProviders,
-    langCode,
-    pushWord,
-    isDarkMode,
-    themeCode.bg,
-    themeCode.fg,
-    autoPlayPronunciation,
-    autoPlayProviderId,
-    currentSelection,
-  ]);
+  }, [definitionProviders, lookupProvider]);
+
+  // Switching the AI translator re-asks the context dictionary card only.
+  const setContextTranslator = useCallback(
+    (id: string) => {
+      setContextTranslatorId(id);
+      void saveCustomDictionaries(envConfig);
+      const provider = definitionProviders.find((p) => p.id === BUILTIN_PROVIDER_IDS.context);
+      if (!provider) return;
+      setCards((prev) => {
+        const old = prev[provider.id];
+        if (!old) return prev;
+        return { ...prev, [provider.id]: { ...old, state: 'loading', outcome: undefined } };
+      });
+      lookupProvider(provider);
+    },
+    [definitionProviders, lookupProvider, envConfig],
+  );
 
   // Visible cards = providers that are still loading or finished with a
   // result. Empty/unsupported/error cards are removed entirely.
@@ -499,6 +533,7 @@ export function useDictionaryResults({
     resolveWebSearchUrl,
     onWebSearchClickTauri,
     noProvidersAtAll,
+    setContextTranslator,
     fontScale: settings.fontScale ?? 1,
     zoomedImageSrc,
     closeZoomedImage,
@@ -716,12 +751,14 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   resolveWebSearchUrl,
   onWebSearchClickTauri,
   noProvidersAtAll,
+  setContextTranslator,
   fontScale,
   zoomedImageSrc,
   closeZoomedImage,
 }) => {
   const _ = useTranslation();
   const safeAreaInsets = useThemeStore((s) => s.safeAreaInsets);
+  const contextTranslators = getLLMTranslators();
 
   // `first:pt-2` keeps the leading section's tighter top padding whichever of
   // the two comes first.
@@ -752,7 +789,8 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                     if (node === e.currentTarget) break;
                     if (node instanceof Element) {
                       const tag = node.tagName;
-                      if (tag === 'A' || tag === 'BUTTON' || tag === 'IMG') return;
+                      if (tag === 'A' || tag === 'BUTTON' || tag === 'IMG' || tag === 'SELECT')
+                        return;
                     }
                   }
                   toggleExpanded(p.id);
@@ -790,7 +828,17 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                 />
                 {!isLoading && (
                   <div className='border-base-content/10 -me-4 mt-2 border-b pb-2'>
-                    <span className='not-eink:opacity-60 text-xs'>{sourceLabel}</span>
+                    {p.id === BUILTIN_PROVIDER_IDS.context && contextTranslators.length > 1 ? (
+                      <Select
+                        ariaLabel={_('AI Translator')}
+                        value={getContextTranslator()?.id ?? ''}
+                        onChange={(e) => setContextTranslator(e.target.value)}
+                        options={contextTranslators.map((t) => ({ value: t.id, label: t.name }))}
+                        className='not-eink:opacity-60 -ms-3 h-6 min-h-6 text-xs'
+                      />
+                    ) : (
+                      <span className='not-eink:opacity-60 text-xs'>{sourceLabel}</span>
+                    )}
                   </div>
                 )}
               </div>
