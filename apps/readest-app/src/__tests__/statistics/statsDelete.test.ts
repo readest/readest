@@ -61,7 +61,8 @@ describe('deleteBook', () => {
 describe('pullStats with a deleted book', () => {
   it('deletes the events read before the deletion and keeps later ones', async () => {
     const stats = await db();
-    await seed(stats, 'a', [100, 2500]);
+    // a local event at 2000 s, inside the deletion's fractional second
+    await seed(stats, 'a', [100, 2000, 2500]);
     const client = {
       pullChanges: vi
         .fn()
