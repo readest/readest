@@ -50,6 +50,7 @@ describe('withAuthRequestTimeout', () => {
     await vi.advanceTimersByTimeAsync(AUTH_REQUEST_TIMEOUT_MS - 1);
     expect(isSettled()).toBe(false);
     await vi.advanceTimersByTimeAsync(1);
+    expect(isSettled(), 'the request ends at the time limit').toBe(true);
     await expect(request).rejects.toMatchObject({ name: 'TimeoutError' });
   });
 
@@ -69,10 +70,11 @@ describe('withAuthRequestTimeout', () => {
       'https://reader.example.test/backend/auth/v1/token?grant_type=refresh_token',
       { method: 'POST' },
     );
-    const assertion = expect(request).rejects.toMatchObject({ name: 'TimeoutError' });
+    const isSettled = settled(request);
 
     await vi.advanceTimersByTimeAsync(AUTH_REQUEST_TIMEOUT_MS);
-    await assertion;
+    expect(isSettled(), 'the request ends at the time limit').toBe(true);
+    await expect(request).rejects.toMatchObject({ name: 'TimeoutError' });
   });
 
   it('passes other requests through unchanged', async () => {
@@ -137,7 +139,9 @@ describe('withAuthRequestTimeout', () => {
     await supabase.auth.signInWithPassword({ email: 'reader@example.test', password: 'pw' });
 
     const refresh = supabase.auth.refreshSession();
+    const isSettled = settled(refresh);
     await vi.advanceTimersByTimeAsync(60_000);
+    expect(isSettled(), 'the refresh gives up within a minute').toBe(true);
     const { error } = await refresh;
 
     expect(error?.name).toBe('AuthRetryableFetchError');

@@ -102,10 +102,12 @@ describe('Readest Cloud auth routing (#6416)', () => {
     });
 
     vi.useFakeTimers();
-    const refresh = supabase.auth.refreshSession();
+    let finished = false;
+    const refresh = supabase.auth.refreshSession().finally(() => (finished = true));
     await vi.advanceTimersByTimeAsync(35_000);
-    const { data, error } = await refresh;
     vi.useRealTimers();
+    expect(finished, 'the refresh falls back to the Supabase host in time').toBe(true);
+    const { data, error } = await refresh;
 
     expect(error).toBeNull();
     expect(data.session?.access_token).toBe('access-2');
