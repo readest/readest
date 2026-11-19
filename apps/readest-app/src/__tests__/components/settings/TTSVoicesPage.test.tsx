@@ -113,7 +113,6 @@ const renderPage = (props: Partial<React.ComponentProps<typeof TTSVoicesPage>> =
       bookKey={null}
       onBack={vi.fn()}
       onDefaultChange={onDefaultChange}
-      initialSection=''
       onLeave={vi.fn()}
       {...props}
     />,
@@ -208,6 +207,36 @@ describe('TTSVoicesPage', () => {
 
     pickEngine('All');
     expect(screen.getByText('Heart')).toBeTruthy();
+  });
+
+  it('reopens on the engine of the voice in use, not the one last browsed', async () => {
+    // Ryan (Edge TTS) is the voice in use, chosen on an earlier visit.
+    TTSUtils.setDefaultVoice('edge-tts', 'en', 'en-GB-RyanNeural');
+    renderPage();
+    await screen.findByText('Ryan');
+    // Browse Readest Voice without picking a voice, then leave the page.
+    pickEngine('Readest Voice');
+    expect(screen.getByText('Ethan')).toBeTruthy();
+    cleanup();
+
+    // The browsed engine is dropped: the picker re-derives from Ryan's engine.
+    renderPage();
+    expect(await screen.findByText('Ryan')).toBeTruthy();
+    expect(screen.queryByText('Ethan')).toBeNull();
+    expect(engineSelect().selectedOptions[0]!.text).toBe('Edge TTS');
+  });
+
+  it('picking a voice from the full list anchors the next visit on its engine', async () => {
+    renderPage();
+    // No engine picked: the full list shows, and Ryan is chosen from it.
+    expect(await screen.findByText('Heart')).toBeTruthy();
+    fireEvent.click(screen.getByText('Ryan'));
+    cleanup();
+
+    renderPage();
+    expect(await screen.findByText('Ryan')).toBeTruthy();
+    expect(screen.queryByText('Heart')).toBeNull();
+    expect(engineSelect().selectedOptions[0]!.text).toBe('Edge TTS');
   });
 
   it('offers each custom service on its own, by its name', async () => {

@@ -118,6 +118,7 @@ vi.mock('@/app/reader/components/tts/TTSChaptersView', () => ({
 }));
 
 import TTSPlayerSheet from '@/app/reader/components/tts/TTSPlayerSheet';
+import { TTSUtils } from '@/services/tts/TTSUtils';
 
 const waitFor = <T,>(callback: () => T | Promise<T>) =>
   waitForWithOptions(callback, { interval: 1 });
@@ -671,16 +672,20 @@ describe('TTSPlayerSheet', () => {
       <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
     );
     fireEvent.click(screen.getByLabelText('Voice'));
-    await waitFor(() => screen.getByText('Aseng'));
+    // The picker opens on the voice in use (Ava, Edge TTS); widen to All to
+    // reach another engine's voices.
+    await waitFor(() => screen.getByText('Guy'));
     const engineSelect = screen
       .getByLabelText('Voice Engine')
       .parentElement?.parentElement?.querySelector('select');
+    fireEvent.change(engineSelect!, { target: { value: '' } });
+    await waitFor(() => screen.getByText('Aseng'));
     fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
     expect(screen.getByText('Guy')).toBeTruthy();
     expect(screen.queryByText('Aseng')).toBeNull();
   });
 
-  test('the voice view opens on every engine, like the voice library', async () => {
+  test('the voice view reopens on the engine of the voice in use, not the one browsed', async () => {
     const twoEngines = [
       ...voiceGroups,
       {
@@ -698,17 +703,48 @@ describe('TTSPlayerSheet', () => {
         .getByLabelText('Voice Engine')
         .parentElement?.parentElement?.querySelector('select') as HTMLSelectElement;
     fireEvent.click(screen.getByLabelText('Voice'));
-    await waitFor(() => screen.getByText('Aseng'));
-    fireEvent.change(engineSelect(), { target: { value: 'xunfei-tts/xunfei' } });
-    fireEvent.change(screen.getByLabelText('Filter voices'), { target: { value: 'Ase' } });
-    expect(screen.queryByText('Guy')).toBeNull();
+    // Ava (Edge TTS) is the voice in use, so the picker opens on it.
+    await waitFor(() => screen.getByText('Guy'));
+    expect(engineSelect().value).toBe('edge-tts/edge');
+    expect(screen.queryByText('Aseng')).toBeNull();
 
-    fireEvent.click(screen.getByLabelText('Go Back'));
-    fireEvent.click(screen.getByLabelText('Voice'));
-    expect(engineSelect().value).toBe('');
-    expect((screen.getByLabelText('Filter voices') as HTMLInputElement).value).toBe('');
-    expect(screen.getByText('Guy')).toBeTruthy();
+    // Browse Xunfei without picking a voice, then leave the picker.
+    fireEvent.change(engineSelect(), { target: { value: 'xunfei-tts/xunfei' } });
     expect(screen.getByText('Aseng')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('Go Back'));
+
+    fireEvent.click(screen.getByLabelText('Voice'));
+    // The browsed engine is dropped: the voice in use anchors the picker again.
+    expect(engineSelect().value).toBe('edge-tts/edge');
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.queryByText('Aseng')).toBeNull();
+  });
+
+  test('browsing another engine leaves the persisted voice preference alone', async () => {
+    // The Settings voice library derives its engine display from this exact
+    // preference, so browsing here must never touch it.
+    TTSUtils.setDefaultVoice('edge-tts', 'en', 'ava');
+    const twoEngines = [
+      ...voiceGroups,
+      {
+        id: 'xunfei',
+        name: 'Xunfei Speech',
+        engine: 'xunfei-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    render(
+      <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
+    );
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Guy'));
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    fireEvent.change(engineSelect!, { target: { value: 'xunfei-tts/xunfei' } });
+    expect(screen.getByText('Aseng')).toBeTruthy();
+
+    expect(TTSUtils.getDefaultVoice('en')).toEqual({ engine: 'edge-tts', voiceId: 'ava' });
   });
 
   test('escape in the filter field does not dismiss the player sheet', async () => {
@@ -853,6 +889,12 @@ describe('TTSPlayerSheet', () => {
     const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(narrationGroups) });
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Voice'));
+    // The picker opens on the voice in use (Ava, Edge TTS); widen to All to
+    // reach the narration group.
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    fireEvent.change(engineSelect!, { target: { value: '' } });
     fireEvent.click(await waitFor(() => screen.getByText('Jane Reader')));
 
     expect(props.onSetVoice).toHaveBeenCalledWith('media-overlay', 'en', false);
@@ -1011,6 +1053,12 @@ describe('TTSPlayerSheet', () => {
     const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(narrationGroups) });
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Voice'));
+    // The picker opens on the voice in use (Ava, Edge TTS); widen to All to
+    // reach the narration group.
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    fireEvent.change(engineSelect!, { target: { value: '' } });
     await waitFor(() => screen.getByText('Jane Reader'));
     expect(screen.queryByLabelText('Preview Jane Reader')).toBeNull();
     expect(screen.getByLabelText('Preview Guy')).toBeTruthy();

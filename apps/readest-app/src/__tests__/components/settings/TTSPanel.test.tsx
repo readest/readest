@@ -212,7 +212,8 @@ describe('TTSPanel sign-in round trip from the voice library', () => {
     expect(restored.selectedOptions[0]!.text).toBe('Readest Voice');
     expect(screen.queryByText('Aria')).toBeNull();
 
-    // Back ends that visit: the next one starts on every engine again.
+    // No voice was chosen (the pick was blocked for a signed-out reader), so
+    // the next visit has none to anchor on and starts on every engine again.
     fireEvent.click(screen.getByText('TTS'));
     fireEvent.click(await screen.findByText('Voice Library'));
     await screen.findByText('Ethan');

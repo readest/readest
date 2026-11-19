@@ -201,8 +201,11 @@ const TTSPlayerSheet = ({
   const [coverFailed, setCoverFailed] = useState(false);
   const [view, setView] = useState<SheetView>('main');
   const [voiceGroups, setVoiceGroups] = useState<TTSVoicesGroup[]>([]);
-  // The voice view's engine ('' for all of them) and filter text.
-  const [voiceSection, setVoiceSection] = useState('');
+  // What the voice view's engine picker shows. `null` means no browsing yet,
+  // and the value falls back to the engine of the voice currently in use
+  // (derived below during render, so the list is never filtered a beat after
+  // the user has already clicked).
+  const [browsedSection, setBrowsedSection] = useState<string | null>(null);
   const [voiceQuery, setVoiceQuery] = useState('');
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState('');
@@ -317,6 +320,17 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, ttsLang, clientsReady]);
 
+  // Reopen on the engine of the voice currently in use — not on whatever
+  // engine was last browsed — so leaving and returning still shows the engine
+  // behind the chosen voice. Derived during render, like the Settings voice
+  // library, so the two pickers behave identically.
+  const derivedSection = useMemo(() => {
+    if (!selectedVoice) return '';
+    const group = voiceGroups.find((g) => g.voices.some((v) => v.id === selectedVoice));
+    return group ? sectionKey(group) : '';
+  }, [voiceGroups, selectedVoice]);
+  const voiceSection = browsedSection ?? derivedSection;
+
   // The engine picker narrows the list to one section; the text filter (and
   // VoiceList's gender tabs) narrow it further. Same model as the Settings
   // voice library, so the two pages behave identically.
@@ -336,7 +350,10 @@ const TTSPlayerSheet = ({
 
   const handleSectionChange = (event: ChangeEvent<HTMLSelectElement>) => {
     voicePreview.stop();
-    setVoiceSection(event.target.value);
+    // Browsing an engine is transient: it filters the list while the picker is
+    // on, and leaving the view drops it, so the next visit re-derives from the
+    // voice in use (see derivedSection).
+    setBrowsedSection(event.target.value);
   };
 
   const handleSelectRate = (value: number) => {
@@ -732,8 +749,9 @@ const TTSPlayerSheet = ({
               type='button'
               aria-label={_('Voice')}
               onClick={() => {
-                // Like the voice library, every visit starts on all engines, unfiltered.
-                setVoiceSection('');
+                // Drop any browsing so the picker re-derives from the voice in
+                // use (like the voice library); the text filter starts empty.
+                setBrowsedSection(null);
                 setVoiceQuery('');
                 setView('voice');
               }}

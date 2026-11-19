@@ -26,9 +26,10 @@ interface TTSVoicesPageProps {
   bookKey: string | null;
   onBack: () => void;
   onDefaultChange: () => void;
-  // The engine to show at first ('' for all of them): the one on show before a
-  // sign-in round trip.
-  initialSection: string;
+  // The engine to show at first (undefined for all of them): the one on show
+  // before a sign-in round trip. Without one, the picker derives from the
+  // voice currently in use.
+  initialSection?: string;
   // Runs just before the page leaves for sign-in or the plans page (a locked
   // voice, or a Readest Voice preview signed out), with the engine on show.
   onLeave: (section: string) => void;
@@ -55,7 +56,11 @@ const TTSVoicesPage: React.FC<TTSVoicesPageProps> = ({
   const { user } = useAuth();
   const [lang, setLang] = useState(initialLang);
   const [groups, setGroups] = useState<TTSVoicesGroup[] | null>(null);
-  const [section, setSection] = useState(initialSection);
+  // What the engine picker shows. `null` means no browsing yet, and the value
+  // falls back to a sign-in round trip (initialSection) or — its absence — the
+  // engine of the voice currently in use (derived below during render, so the
+  // list is never filtered a beat after the user has already clicked).
+  const [browsedSection, setBrowsedSection] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [defaultVoice, setDefaultVoice] = useState(() => TTSUtils.getDefaultVoice(initialLang));
 
@@ -70,6 +75,19 @@ const TTSVoicesPage: React.FC<TTSVoicesPageProps> = ({
       current = false;
     };
   }, [library, lang]);
+
+  // Reopen on the engine of the voice currently in use — not on whatever
+  // engine was last browsed — so leaving and returning still shows the engine
+  // behind the chosen voice.
+  const derivedSection = useMemo(() => {
+    if (!groups || !defaultVoice) return '';
+    const group = groups.find(
+      (g) =>
+        g.engine === defaultVoice.engine && g.voices.some((v) => v.id === defaultVoice.voiceId),
+    );
+    return group ? sectionKey(group) : '';
+  }, [groups, defaultVoice]);
+  const section = browsedSection ?? initialSection ?? derivedSection;
 
   // The section picked while this language has it, else every engine.
   const activeSection = groups?.some((group) => sectionKey(group) === section) ? section : '';
@@ -127,7 +145,10 @@ const TTSVoicesPage: React.FC<TTSVoicesPageProps> = ({
 
   const handleSectionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     preview.stop();
-    setSection(event.target.value);
+    // Browsing an engine is transient: it filters the list while the picker is
+    // on, and leaving the page drops it, so the next visit re-derives from the
+    // voice in use (see derivedSection).
+    setBrowsedSection(event.target.value);
   };
 
   return (

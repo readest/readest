@@ -244,7 +244,7 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
             setShowVoices(false);
           }}
           onDefaultChange={refreshDefaultVoiceName}
-          initialSection={returnTo ?? ''}
+          initialSection={returnTo ?? undefined}
           onLeave={(section) => {
             returnToVoices = section;
           }}
