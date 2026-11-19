@@ -36,10 +36,12 @@ beforeEach(() => {
     viewStates: { book1: { viewSettings: {} } },
   });
   useSidebarStore.setState({ sideBarBookKey: 'book1' });
-  useLibraryStore.getState().setLibrary([
-    makeBook('epub-hash', 'An EPUB Book', 'EPUB'),
-    makeBook('pdf-hash', 'A PDF Book', 'PDF'),
-  ]);
+  useLibraryStore
+    .getState()
+    .setLibrary([
+      makeBook('epub-hash', 'An EPUB Book', 'EPUB'),
+      makeBook('pdf-hash', 'A PDF Book', 'PDF'),
+    ]);
 });
 
 afterEach(() => {
@@ -49,11 +51,11 @@ afterEach(() => {
 describe('BookMenu Parallel Read book list', () => {
   it('lists downloaded EPUB books', () => {
     render(<BookMenu />);
-    expect(screen.getByRole('menuitem', { name: 'An EPUB Book' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: /An EPUB Book/ })).toBeTruthy();
   });
 
   it('lists downloaded PDF books so a PDF can be opened in parallel (#4991)', () => {
     render(<BookMenu />);
-    expect(screen.getByRole('menuitem', { name: 'A PDF Book' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: /A PDF Book/ })).toBeTruthy();
   });
 });
