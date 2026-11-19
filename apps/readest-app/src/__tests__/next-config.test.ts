@@ -114,6 +114,7 @@ describe('Service worker precache', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'web');
     vi.resetModules();
     await import('../../next.config.mjs');
+    expect(withSerwistInit, 'the web build sets up Serwist').toHaveBeenCalled();
 
     let manifest: ManifestEntry[] = [
       { url: '/vendor/pdfjs/pdf.worker.min.mjs', revision: 'r1', size: 1 },
