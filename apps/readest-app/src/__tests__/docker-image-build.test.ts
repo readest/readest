@@ -15,8 +15,11 @@ describe('Docker image build', () => {
    * app can't load offline or work as an offline PWA.
    */
   test('builds the web app with webpack so the image has a service worker', () => {
-    const buildWeb = dockerfile.split('\n').find((line) => line.includes('pnpm build-web'));
+    const buildWeb = dockerfile
+      .split('\n')
+      .find((line) => line.startsWith('RUN ') && line.includes('pnpm build-web'));
 
+    expect(buildWeb, 'the Dockerfile builds the web app').toBeDefined();
     expect(buildWeb).toMatch(/^RUN pnpm patch-build-webpack && /);
   });
 });
