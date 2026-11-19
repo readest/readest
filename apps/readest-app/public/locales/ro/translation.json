@@ -2931,5 +2931,15 @@
   "Statistics by Book": "Statistici pe carte",
   "Each book’s reading time, most recently read first": "Timpul de lectură al fiecărei cărți, cele citite recent primele",
   "Look up text in the context dictionary after selection": "Căutați text în dicționarul contextual după selecție",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Activează-l mai sus pentru a-l întreba la fiecare căutare sau adaugă instrumentul Dicționar contextual în bara de selecție pentru a-l întreba doar când îl atingi."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Activează-l mai sus pentru a-l întreba la fiecare căutare sau adaugă instrumentul Dicționar contextual în bara de selecție pentru a-l întreba doar când îl atingi.",
+  "Failed to merge reading statistics": "Statisticile de lectură nu au putut fi combinate",
+  "Merge “{{source}}” into “{{target}}”?": "Combini „{{source}}” cu „{{target}}”?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Timpul de lectură trece la cealaltă carte pe toate dispozitivele tale. Acțiunea nu poate fi anulată.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Timpul de lectură trece la cealaltă carte pe acest dispozitiv. Acțiunea nu poate fi anulată.",
+  "Merge": "Combină",
+  "Merge “{{title}}” into:": "Combină „{{title}}” cu:",
+  "Merge Statistics": "Combină statisticile",
+  "Merge statistics of {{title}}": "Combină statisticile pentru {{title}}",
+  "No other books have reading statistics": "Nicio altă carte nu are statistici de lectură",
+  "Merge another entry into this book:": "Combină o altă intrare cu această carte:"
 }

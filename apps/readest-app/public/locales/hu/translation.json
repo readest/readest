@@ -2858,5 +2858,15 @@
   "Statistics by Book": "Statisztika könyvenként",
   "Each book’s reading time, most recently read first": "Az egyes könyvek olvasási ideje, a legutóbb olvasottal kezdve",
   "Look up text in the context dictionary after selection": "Szöveg kikeresése a kontextusszótárban kijelölés után",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Kapcsold be fent, hogy minden keresésnél kérdezzen, vagy add hozzá a Kontextusszótár eszközt a kijelölési eszköztárhoz, hogy csak koppintásra kérdezzen."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Kapcsold be fent, hogy minden keresésnél kérdezzen, vagy add hozzá a Kontextusszótár eszközt a kijelölési eszköztárhoz, hogy csak koppintásra kérdezzen.",
+  "Failed to merge reading statistics": "Nem sikerült egyesíteni az olvasási statisztikát",
+  "Merge “{{source}}” into “{{target}}”?": "Egyesíted a(z) „{{source}}” bejegyzést ezzel: „{{target}}”?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Az olvasási idő minden eszközödön átkerül a másik könyvhöz. Ez nem vonható vissza.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Az olvasási idő ezen az eszközön átkerül a másik könyvhöz. Ez nem vonható vissza.",
+  "Merge": "Egyesítés",
+  "Merge “{{title}}” into:": "„{{title}}” egyesítése ezzel:",
+  "Merge Statistics": "Statisztika egyesítése",
+  "Merge statistics of {{title}}": "Statisztika egyesítése: {{title}}",
+  "No other books have reading statistics": "Más könyvnek nincs olvasási statisztikája",
+  "Merge another entry into this book:": "Másik bejegyzés egyesítése ezzel a könyvvel:"
 }

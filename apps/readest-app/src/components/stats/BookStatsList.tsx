@@ -1,27 +1,28 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { MdOutlineDelete } from 'react-icons/md';
+import { MdCallMerge, MdOutlineDelete } from 'react-icons/md';
 import { BoxedList, SettingsRow } from '@/components/settings/primitives';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { StatisticsDb } from '@/services/statistics/statisticsDb';
 import type { BookStats } from '@/types/statistics';
-import { formatDate } from '@/utils/book';
-import { formatDuration } from '@/utils/duration';
-import DeleteBookStatsAlert from './DeleteBookStatsAlert';
+import BookStatsAlert, { type BookStatsAction } from './BookStatsAlert';
+import BookStatsPicker, { describeBookStats, toStatBook } from './BookStatsPicker';
 
 interface BookStatsListProps {
   db: StatisticsDb;
   /** The list is read again whenever this changes, e.g. after the dialog's pull. */
   reloadKey: unknown;
-  /** Called after a book's statistics were deleted, so totals can be read again. */
+  /** Called after the entries changed, so totals can be read again. */
   onChange: () => void;
 }
 
-/** Every book in the statistics, most recently read first, each deletable (#7494). */
+/** Every book in the statistics, most recently read first; each can be merged or deleted (#7494). */
 const BookStatsList: React.FC<BookStatsListProps> = ({ db, reloadKey, onChange }) => {
   const _ = useTranslation();
   const [books, setBooks] = useState<BookStats[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const [deleting, setDeleting] = useState<BookStats | null>(null);
+  // the entry being merged into another, while its target is picked
+  const [merging, setMerging] = useState<BookStats | null>(null);
+  const [action, setAction] = useState<BookStatsAction | null>(null);
 
   const load = useCallback(() => {
     db.getBookStats()
@@ -51,38 +52,65 @@ const BookStatsList: React.FC<BookStatsListProps> = ({ db, reloadKey, onChange }
     );
   }
 
+  const alert = action && (
+    <BookStatsAlert
+      db={db}
+      action={action}
+      onClose={() => setAction(null)}
+      onDone={() => {
+        setMerging(null);
+        load();
+        onChange();
+      }}
+    />
+  );
+
+  if (merging) {
+    return (
+      <>
+        <BookStatsPicker
+          prompt={_('Merge “{{title}}” into:', { title: merging.title })}
+          books={books.filter((b) => b.md5 !== merging.md5)}
+          title={merging.title}
+          onPick={(target) =>
+            setAction({ type: 'merge', source: toStatBook(merging), target: toStatBook(target) })
+          }
+          onCancel={() => setMerging(null)}
+        />
+        {alert}
+      </>
+    );
+  }
+
   return (
     <>
       <BoxedList>
         {books.map((book) => (
-          <SettingsRow
-            key={book.md5}
-            label={book.title}
-            description={`${formatDuration(Math.floor(book.seconds / 60), _)} · ${formatDate(book.lastRead * 1000) ?? ''}`}
-          >
-            <button
-              type='button'
-              className='btn btn-ghost btn-sm shrink-0 px-1'
-              title={_('Delete Statistics')}
-              aria-label={_('Delete statistics of {{title}}', { title: book.title })}
-              onClick={() => setDeleting(book)}
-            >
-              <MdOutlineDelete className='text-error h-5 w-5' />
-            </button>
+          <SettingsRow key={book.md5} label={book.title} description={describeBookStats(book, _)}>
+            <div className='flex shrink-0 items-center'>
+              <button
+                type='button'
+                className='btn btn-ghost btn-sm px-1'
+                title={_('Merge Statistics')}
+                aria-label={_('Merge statistics of {{title}}', { title: book.title })}
+                onClick={() => setMerging(book)}
+              >
+                <MdCallMerge className='h-5 w-5' />
+              </button>
+              <button
+                type='button'
+                className='btn btn-ghost btn-sm px-1'
+                title={_('Delete Statistics')}
+                aria-label={_('Delete statistics of {{title}}', { title: book.title })}
+                onClick={() => setAction({ type: 'delete', book: toStatBook(book) })}
+              >
+                <MdOutlineDelete className='text-error h-5 w-5' />
+              </button>
+            </div>
           </SettingsRow>
         ))}
       </BoxedList>
-      {deleting && (
-        <DeleteBookStatsAlert
-          db={db}
-          book={deleting}
-          onClose={() => setDeleting(null)}
-          onDeleted={() => {
-            load();
-            onChange();
-          }}
-        />
-      )}
+      {alert}
     </>
   );
 };

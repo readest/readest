@@ -2931,5 +2931,15 @@
   "Statistics by Book": "Estatísticas por livro",
   "Each book’s reading time, most recently read first": "Tempo de leitura de cada livro, do mais recente para o mais antigo",
   "Look up text in the context dictionary after selection": "Procurar texto no dicionário contextual após a seleção",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Ative-o acima para consultar em cada pesquisa, ou adicione a ferramenta Dicionário contextual à barra de seleção para consultar apenas quando lhe tocar."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Ative-o acima para consultar em cada pesquisa, ou adicione a ferramenta Dicionário contextual à barra de seleção para consultar apenas quando lhe tocar.",
+  "Failed to merge reading statistics": "Não foi possível unir as estatísticas de leitura",
+  "Merge “{{source}}” into “{{target}}”?": "Unir «{{source}}» a «{{target}}»?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "O tempo de leitura passará para o outro livro em todos os seus dispositivos. Esta ação não pode ser anulada.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "O tempo de leitura passará para o outro livro neste dispositivo. Esta ação não pode ser anulada.",
+  "Merge": "Unir",
+  "Merge “{{title}}” into:": "Unir «{{title}}» a:",
+  "Merge Statistics": "Unir estatísticas",
+  "Merge statistics of {{title}}": "Unir as estatísticas de {{title}}",
+  "No other books have reading statistics": "Nenhum outro livro tem estatísticas de leitura",
+  "Merge another entry into this book:": "Unir outra entrada a este livro:"
 }

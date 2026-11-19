@@ -3004,5 +3004,15 @@
   "Statistics by Book": "Статистика по книгам",
   "Each book’s reading time, most recently read first": "Время чтения каждой книги, сначала недавние",
   "Look up text in the context dictionary after selection": "Искать текст в контекстном словаре после выделения",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Включите его выше, чтобы спрашивать при каждом поиске, или добавьте инструмент «Контекстный словарь» на панель выделения, чтобы спрашивать только по нажатию."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Включите его выше, чтобы спрашивать при каждом поиске, или добавьте инструмент «Контекстный словарь» на панель выделения, чтобы спрашивать только по нажатию.",
+  "Failed to merge reading statistics": "Не удалось объединить статистику чтения",
+  "Merge “{{source}}” into “{{target}}”?": "Объединить «{{source}}» с «{{target}}»?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Время чтения этой книги будет перенесено в другую книгу на всех ваших устройствах. Это действие нельзя отменить.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Время чтения этой книги будет перенесено в другую книгу на этом устройстве. Это действие нельзя отменить.",
+  "Merge": "Объединить",
+  "Merge “{{title}}” into:": "Объединить «{{title}}» с:",
+  "Merge Statistics": "Объединить статистику",
+  "Merge statistics of {{title}}": "Объединить статистику: {{title}}",
+  "No other books have reading statistics": "У других книг нет статистики чтения",
+  "Merge another entry into this book:": "Объединить другую запись с этой книгой:"
 }

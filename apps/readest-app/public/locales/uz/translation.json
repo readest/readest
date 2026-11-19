@@ -2858,5 +2858,15 @@
   "Statistics by Book": "Kitoblar boʻyicha statistika",
   "Each book’s reading time, most recently read first": "Har bir kitobning oʻqish vaqti, oxirgi oʻqilganlari birinchi",
   "Look up text in the context dictionary after selection": "Tanlovdan keyin matnni kontekst lugʻatida qidirish",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Har bir qidiruvda so‘rash uchun uni yuqorida yoqing yoki faqat bosganingizda so‘rash uchun Kontekst lugʻati vositasini tanlov asboblar paneliga qo‘shing."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Har bir qidiruvda so‘rash uchun uni yuqorida yoqing yoki faqat bosganingizda so‘rash uchun Kontekst lugʻati vositasini tanlov asboblar paneliga qo‘shing.",
+  "Failed to merge reading statistics": "Oʻqish statistikasini birlashtirib boʻlmadi",
+  "Merge “{{source}}” into “{{target}}”?": "“{{source}}” “{{target}}” bilan birlashtirilsinmi?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Uning oʻqish vaqti barcha qurilmalaringizda boshqa kitobga oʻtkaziladi. Buni ortga qaytarib boʻlmaydi.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Uning oʻqish vaqti bu qurilmada boshqa kitobga oʻtkaziladi. Buni ortga qaytarib boʻlmaydi.",
+  "Merge": "Birlashtirish",
+  "Merge “{{title}}” into:": "“{{title}}” quyidagi bilan birlashtirilsin:",
+  "Merge Statistics": "Statistikani birlashtirish",
+  "Merge statistics of {{title}}": "{{title}} statistikasini birlashtirish",
+  "No other books have reading statistics": "Boshqa hech bir kitobda oʻqish statistikasi yoʻq",
+  "Merge another entry into this book:": "Bu kitobga boshqa yozuvni birlashtirish:"
 }

@@ -2858,5 +2858,15 @@
   "Statistics by Book": "Statistik per bok",
   "Each book’s reading time, most recently read first": "Lästid för varje bok, senast lästa först",
   "Look up text in the context dictionary after selection": "Slå upp text i kontextordboken efter markering",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Slå på den ovan för att fråga vid varje uppslag, eller lägg till verktyget Kontextordbok i markeringsverktygsfältet för att bara fråga när du trycker på det."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "Slå på den ovan för att fråga vid varje uppslag, eller lägg till verktyget Kontextordbok i markeringsverktygsfältet för att bara fråga när du trycker på det.",
+  "Failed to merge reading statistics": "Det gick inte att slå ihop lässtatistiken",
+  "Merge “{{source}}” into “{{target}}”?": "Slå ihop ”{{source}}” med ”{{target}}”?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "Lästiden flyttas till den andra boken på alla dina enheter. Det går inte att ångra.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "Lästiden flyttas till den andra boken på den här enheten. Det går inte att ångra.",
+  "Merge": "Slå ihop",
+  "Merge “{{title}}” into:": "Slå ihop ”{{title}}” med:",
+  "Merge Statistics": "Slå ihop statistik",
+  "Merge statistics of {{title}}": "Slå ihop statistik för {{title}}",
+  "No other books have reading statistics": "Inga andra böcker har lässtatistik",
+  "Merge another entry into this book:": "Slå ihop en annan post med den här boken:"
 }

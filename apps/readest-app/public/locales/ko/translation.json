@@ -2785,5 +2785,15 @@
   "Statistics by Book": "책별 통계",
   "Each book’s reading time, most recently read first": "책별 독서 시간, 최근에 읽은 순",
   "Look up text in the context dictionary after selection": "선택 후 텍스트를 문맥 사전에서 찾기",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "위에서 켜면 찾을 때마다 요청하고, 선택 도구 모음에 \"문맥 사전\" 도구를 추가하면 탭할 때만 요청합니다."
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "위에서 켜면 찾을 때마다 요청하고, 선택 도구 모음에 \"문맥 사전\" 도구를 추가하면 탭할 때만 요청합니다.",
+  "Failed to merge reading statistics": "독서 통계를 병합하지 못했습니다",
+  "Merge “{{source}}” into “{{target}}”?": "“{{source}}”을(를) “{{target}}”에 병합할까요?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "이 책의 독서 시간이 모든 기기에서 다른 책으로 옮겨집니다. 이 작업은 되돌릴 수 없습니다.",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "이 책의 독서 시간이 이 기기에서 다른 책으로 옮겨집니다. 이 작업은 되돌릴 수 없습니다.",
+  "Merge": "병합",
+  "Merge “{{title}}” into:": "“{{title}}”을(를) 병합할 대상:",
+  "Merge Statistics": "통계 병합",
+  "Merge statistics of {{title}}": "{{title}} 통계 병합",
+  "No other books have reading statistics": "독서 통계가 있는 다른 책이 없습니다",
+  "Merge another entry into this book:": "이 책에 병합할 다른 항목:"
 }

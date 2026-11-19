@@ -2858,5 +2858,15 @@
   "Statistics by Book": "किताब के अनुसार आँकड़े",
   "Each book’s reading time, most recently read first": "हर किताब का पढ़ने का समय, हाल में पढ़ी गई पहले",
   "Look up text in the context dictionary after selection": "चयन के बाद संदर्भ शब्दकोश में पाठ देखें",
-  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "हर खोज में पूछने के लिए इसे ऊपर चालू करें, या केवल टैप करने पर पूछने के लिए चयन टूलबार में संदर्भ शब्दकोश टूल जोड़ें।"
+  "Turn it on above to ask with every lookup, or add the Context Dictionary tool to the selection toolbar to ask only when you tap it.": "हर खोज में पूछने के लिए इसे ऊपर चालू करें, या केवल टैप करने पर पूछने के लिए चयन टूलबार में संदर्भ शब्दकोश टूल जोड़ें।",
+  "Failed to merge reading statistics": "पढ़ने के आँकड़े मिलाए नहीं जा सके",
+  "Merge “{{source}}” into “{{target}}”?": "“{{source}}” को “{{target}}” में मिलाएं?",
+  "Its reading time moves to the other book on all your devices. This can’t be undone.": "इसका पढ़ने का समय आपके सभी डिवाइस पर दूसरी किताब में चला जाएगा। इसे पूर्ववत नहीं किया जा सकता।",
+  "Its reading time moves to the other book on this device. This can’t be undone.": "इसका पढ़ने का समय इस डिवाइस पर दूसरी किताब में चला जाएगा। इसे पूर्ववत नहीं किया जा सकता।",
+  "Merge": "मिलाएं",
+  "Merge “{{title}}” into:": "“{{title}}” को इसमें मिलाएं:",
+  "Merge Statistics": "आँकड़े मिलाएं",
+  "Merge statistics of {{title}}": "{{title}} के आँकड़े मिलाएं",
+  "No other books have reading statistics": "किसी और किताब के पढ़ने के आँकड़े नहीं हैं",
+  "Merge another entry into this book:": "इस किताब में कोई और प्रविष्टि मिलाएं:"
 }
