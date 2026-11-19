@@ -2846,5 +2846,16 @@
   "Next Week": "შემდეგი კვირა",
   "API Key (optional)": "API გასაღები (არასავალდებულო)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0-სა და უფრო ახალ ვერსიებში API გასაღები, შექმნილი აქ: Settings > Account > API keys, აუდიოწიგნებს თქვენი ანგარიშის პაროლის გარეშე უკრავს. აირჩიეთ Read and write, რომ მოსმენის პოზიცია სინქრონიზდეს.",
-  "Could not sign in to BookOrbit for audiobooks": "აუდიოწიგნებისთვის BookOrbit-ში შესვლა ვერ მოხერხდა"
+  "Could not sign in to BookOrbit for audiobooks": "აუდიოწიგნებისთვის BookOrbit-ში შესვლა ვერ მოხერხდა",
+  "No reading statistics yet": "კითხვის სტატისტიკა ჯერ არ არის",
+  "Delete Statistics": "სტატისტიკის წაშლა",
+  "Delete statistics of {{title}}": "{{title}} — სტატისტიკის წაშლა",
+  "Pages Read": "წაკითხული გვერდები",
+  "Last Read": "ბოლოს წაკითხული",
+  "Failed to delete reading statistics": "კითხვის სტატისტიკის წაშლა ვერ მოხერხდა",
+  "Delete the reading statistics of “{{title}}”?": "წაიშალოს „{{title}}“-ის კითხვის სტატისტიკა?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "მისი კითხვის დრო წაიშლება ყველა თქვენი მოწყობილობიდან. ამის გაუქმება შეუძლებელია.",
+  "Its reading time is removed from this device. This can’t be undone.": "მისი კითხვის დრო წაიშლება ამ მოწყობილობიდან. ამის გაუქმება შეუძლებელია.",
+  "Statistics by Book": "სტატისტიკა წიგნების მიხედვით",
+  "Each book’s reading time, most recently read first": "თითოეული წიგნის კითხვის დრო, ბოლოს წაკითხულიდან დაწყებული"
 }

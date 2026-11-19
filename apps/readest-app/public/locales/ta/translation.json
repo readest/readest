@@ -2846,5 +2846,16 @@
   "Next Week": "அடுத்த வாரம்",
   "API Key (optional)": "API விசை (விரும்பினால்)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 அல்லது அதற்குப் பிந்தைய பதிப்பில், அமைப்புகள் > கணக்கு > API விசைகள் என்பதில் உருவாக்கிய API விசை உங்கள் கணக்கு கடவுச்சொல் இல்லாமல் ஒலிப்புத்தகங்களை ஸ்ட்ரீம் செய்யும். நீங்கள் கேட்கும் இடம் ஒத்திசைய படித்தல் மற்றும் எழுதுதல் என்பதைத் தேர்ந்தெடுக்கவும்.",
-  "Could not sign in to BookOrbit for audiobooks": "ஒலிப்புத்தகங்களுக்காக BookOrbit-இல் உள்நுழைய முடியவில்லை"
+  "Could not sign in to BookOrbit for audiobooks": "ஒலிப்புத்தகங்களுக்காக BookOrbit-இல் உள்நுழைய முடியவில்லை",
+  "No reading statistics yet": "இன்னும் வாசிப்பு புள்ளிவிவரங்கள் இல்லை",
+  "Delete Statistics": "புள்ளிவிவரங்களை நீக்கு",
+  "Delete statistics of {{title}}": "{{title}} புள்ளிவிவரங்களை நீக்கு",
+  "Pages Read": "படித்த பக்கங்கள்",
+  "Last Read": "கடைசியாகப் படித்தது",
+  "Failed to delete reading statistics": "வாசிப்பு புள்ளிவிவரங்களை நீக்க முடியவில்லை",
+  "Delete the reading statistics of “{{title}}”?": "“{{title}}” இன் வாசிப்பு புள்ளிவிவரங்களை நீக்கவா?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "இதன் வாசிப்பு நேரம் உங்கள் எல்லா சாதனங்களிலிருந்தும் அகற்றப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+  "Its reading time is removed from this device. This can’t be undone.": "இதன் வாசிப்பு நேரம் இந்தச் சாதனத்திலிருந்து அகற்றப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+  "Statistics by Book": "புத்தகவாரியான புள்ளிவிவரங்கள்",
+  "Each book’s reading time, most recently read first": "ஒவ்வொரு புத்தகத்தின் வாசிப்பு நேரம், சமீபத்தில் படித்தவை முதலில்"
 }

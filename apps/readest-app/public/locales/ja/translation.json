@@ -2773,5 +2773,16 @@
   "Next Week": "次の週",
   "API Key (optional)": "APIキー（任意）",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0以降では、「設定 > アカウント > APIキー」で作成したAPIキーを使うと、アカウントのパスワードなしでオーディオブックをストリーミングできます。再生位置を同期するには「読み取りと書き込み」を選んでください。",
-  "Could not sign in to BookOrbit for audiobooks": "オーディオブック用にBookOrbitへサインインできませんでした"
+  "Could not sign in to BookOrbit for audiobooks": "オーディオブック用にBookOrbitへサインインできませんでした",
+  "No reading statistics yet": "読書統計はまだありません",
+  "Delete Statistics": "統計を削除",
+  "Delete statistics of {{title}}": "{{title}}の統計を削除",
+  "Pages Read": "読んだページ数",
+  "Last Read": "最終閲読日",
+  "Failed to delete reading statistics": "読書統計を削除できませんでした",
+  "Delete the reading statistics of “{{title}}”?": "「{{title}}」の読書統計を削除しますか？",
+  "Its reading time is removed from all your devices. This can’t be undone.": "この本の読書時間がすべてのデバイスから削除されます。この操作は元に戻せません。",
+  "Its reading time is removed from this device. This can’t be undone.": "この本の読書時間がこのデバイスから削除されます。この操作は元に戻せません。",
+  "Statistics by Book": "本ごとの統計",
+  "Each book’s reading time, most recently read first": "本ごとの読書時間（最近読んだ順）"
 }

@@ -2773,5 +2773,16 @@
   "Next Week": "Tuần sau",
   "API Key (optional)": "Khóa API (tùy chọn)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "Trên BookOrbit 3.8.0 trở lên, khóa API tạo tại Cài đặt > Tài khoản > Khóa API cho phép phát trực tuyến sách nói mà không cần mật khẩu tài khoản. Hãy chọn Đọc và ghi để vị trí nghe của bạn được đồng bộ.",
-  "Could not sign in to BookOrbit for audiobooks": "Không thể đăng nhập BookOrbit để nghe sách nói"
+  "Could not sign in to BookOrbit for audiobooks": "Không thể đăng nhập BookOrbit để nghe sách nói",
+  "No reading statistics yet": "Chưa có thống kê đọc",
+  "Delete Statistics": "Xóa thống kê",
+  "Delete statistics of {{title}}": "Xóa thống kê của {{title}}",
+  "Pages Read": "Số trang đã đọc",
+  "Last Read": "Lần đọc gần nhất",
+  "Failed to delete reading statistics": "Không thể xóa thống kê đọc",
+  "Delete the reading statistics of “{{title}}”?": "Xóa thống kê đọc của “{{title}}”?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "Thời gian đọc của sách này sẽ bị xóa khỏi tất cả thiết bị của bạn. Không thể hoàn tác thao tác này.",
+  "Its reading time is removed from this device. This can’t be undone.": "Thời gian đọc của sách này sẽ bị xóa khỏi thiết bị này. Không thể hoàn tác thao tác này.",
+  "Statistics by Book": "Thống kê theo sách",
+  "Each book’s reading time, most recently read first": "Thời gian đọc của từng cuốn sách, sách đọc gần đây nhất trước"
 }

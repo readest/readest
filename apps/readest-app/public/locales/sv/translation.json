@@ -2846,5 +2846,16 @@
   "Next Week": "Nästa vecka",
   "API Key (optional)": "API-nyckel (valfritt)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "I BookOrbit 3.8.0 eller senare strömmar en API-nyckel från Inställningar > Konto > API-nycklar ljudböcker utan ditt kontolösenord. Välj Läsa och skriva så att din lyssningsposition synkroniseras.",
-  "Could not sign in to BookOrbit for audiobooks": "Det gick inte att logga in på BookOrbit för ljudböcker"
+  "Could not sign in to BookOrbit for audiobooks": "Det gick inte att logga in på BookOrbit för ljudböcker",
+  "No reading statistics yet": "Ingen lässtatistik än",
+  "Delete Statistics": "Ta bort statistik",
+  "Delete statistics of {{title}}": "Ta bort statistik för {{title}}",
+  "Pages Read": "Lästa sidor",
+  "Last Read": "Senast läst",
+  "Failed to delete reading statistics": "Det gick inte att ta bort lässtatistiken",
+  "Delete the reading statistics of “{{title}}”?": "Ta bort lässtatistiken för ”{{title}}”?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "Lästiden tas bort från alla dina enheter. Det går inte att ångra.",
+  "Its reading time is removed from this device. This can’t be undone.": "Lästiden tas bort från den här enheten. Det går inte att ångra.",
+  "Statistics by Book": "Statistik per bok",
+  "Each book’s reading time, most recently read first": "Lästid för varje bok, senast lästa först"
 }

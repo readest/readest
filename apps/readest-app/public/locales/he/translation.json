@@ -2919,5 +2919,16 @@
   "Next Week": "השבוע הבא",
   "API Key (optional)": "מפתח API (אופציונלי)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "ב-BookOrbit 3.8.0 ואילך, מפתח API מתוך הגדרות > חשבון > מפתחות API מזרים ספרי שמע בלי סיסמת החשבון שלך. בחר קריאה וכתיבה כדי שמיקום ההאזנה שלך יסונכרן.",
-  "Could not sign in to BookOrbit for audiobooks": "לא ניתן להתחבר ל-BookOrbit עבור ספרי שמע"
+  "Could not sign in to BookOrbit for audiobooks": "לא ניתן להתחבר ל-BookOrbit עבור ספרי שמע",
+  "No reading statistics yet": "אין עדיין סטטיסטיקת קריאה",
+  "Delete Statistics": "מחיקת סטטיסטיקה",
+  "Delete statistics of {{title}}": "מחיקת הסטטיסטיקה של {{title}}",
+  "Pages Read": "דפים שנקראו",
+  "Last Read": "קריאה אחרונה",
+  "Failed to delete reading statistics": "מחיקת סטטיסטיקת הקריאה נכשלה",
+  "Delete the reading statistics of “{{title}}”?": "למחוק את סטטיסטיקת הקריאה של “{{title}}”?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "זמן הקריאה שלו יוסר מכל המכשירים שלך. לא ניתן לבטל פעולה זו.",
+  "Its reading time is removed from this device. This can’t be undone.": "זמן הקריאה שלו יוסר מהמכשיר הזה. לא ניתן לבטל פעולה זו.",
+  "Statistics by Book": "סטטיסטיקה לפי ספר",
+  "Each book’s reading time, most recently read first": "זמן הקריאה של כל ספר, מהנקרא לאחרונה"
 }

@@ -2992,5 +2992,16 @@
   "Next Week": "Наступний тиждень",
   "API Key (optional)": "API-ключ (необов'язково)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "У BookOrbit 3.8.0 або новішій версії API-ключ із розділу Налаштування > Обліковий запис > API-ключі транслює аудіокниги без пароля облікового запису. Виберіть «Читання й запис», щоб позиція прослуховування синхронізувалася.",
-  "Could not sign in to BookOrbit for audiobooks": "Не вдалося увійти в BookOrbit для аудіокниг"
+  "Could not sign in to BookOrbit for audiobooks": "Не вдалося увійти в BookOrbit для аудіокниг",
+  "No reading statistics yet": "Статистики читання ще немає",
+  "Delete Statistics": "Видалити статистику",
+  "Delete statistics of {{title}}": "Видалити статистику: {{title}}",
+  "Pages Read": "Прочитано сторінок",
+  "Last Read": "Востаннє прочитано",
+  "Failed to delete reading statistics": "Не вдалося видалити статистику читання",
+  "Delete the reading statistics of “{{title}}”?": "Видалити статистику читання «{{title}}»?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "Час читання цієї книги буде видалено з усіх ваших пристроїв. Цю дію неможливо скасувати.",
+  "Its reading time is removed from this device. This can’t be undone.": "Час читання цієї книги буде видалено з цього пристрою. Цю дію неможливо скасувати.",
+  "Statistics by Book": "Статистика за книгами",
+  "Each book’s reading time, most recently read first": "Час читання кожної книги, спершу нещодавні"
 }

@@ -18,7 +18,19 @@ export interface StatBook {
   bookMd5: string;
   title: string;
   authors: string; // KOReader stores authors as a single text field
+  /** Unix seconds. Set when the book's statistics were deleted: events that started before it are gone. */
+  deletedAt?: number;
 }
+
+/** One book's totals, as listed for managing statistics (a type, so it is a DatabaseRow). */
+export type BookStats = {
+  md5: string;
+  title: string;
+  authors: string;
+  seconds: number;
+  pages: number;
+  lastRead: number; // Unix seconds
+};
 
 /** Tunables for the tracker's flush/idle behavior. KOReader-aligned defaults. */
 export interface StatsTrackingConfig {

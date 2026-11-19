@@ -720,9 +720,55 @@ export async function GET(req: NextRequest) {
           doubles: [segmentsRead, Math.min(archived.length, pageRows.length), limit],
         });
       }
+      // A book's reading statistics are deleted (#7494) by setting deleted_at on
+      // its stat_books row: every event of that book read before then is gone.
+      // Its events are still returned, so pages and cursors stay as they were,
+      // but flagged with deleted_at (and deleted_at_ms for the koplugin, whose
+      // JSON decoder turns null into a truthy function) for clients to skip.
+      // This covers archived rows and rows a device pushed after the deletion.
+      const statBooks = new Map(
+        ((sb.data ?? []) as unknown as StatBookRecord[]).map((b) => [b.book_hash, b]),
+      );
+      if (pageRows.length > 0) {
+        const deletions: StatBookRecord[] = [];
+        for (let offset = 0; ; offset += PAGE) {
+          const { data, error: delErr } = await supabase
+            .from('stat_books')
+            .select('*')
+            .eq('user_id', user.id)
+            .not('deleted_at', 'is', null)
+            .order('book_hash', { ascending: true })
+            .range(offset, offset + PAGE - 1);
+          if (delErr)
+            return NextResponse.json(
+              { error: `stat_books: ${delErr.message || 'Unknown error'}` },
+              { status: 500 },
+            );
+          const rows = (data ?? []) as StatBookRecord[];
+          deletions.push(...rows);
+          if (rows.length < PAGE) break;
+        }
+        const deletedAt = new Map<string, number>();
+        for (const d of deletions) {
+          if (d.deleted_at) deletedAt.set(d.book_hash, ms(d.deleted_at));
+          // A deletion committed after stat_books was read above is returned
+          // too: the cursor moves on the pages alone and can pass it.
+          if (ms(d.updated_at) > since.getTime()) statBooks.set(d.book_hash, d);
+        }
+        if (deletedAt.size > 0) {
+          pageRows = pageRows.map((r) => {
+            const at = deletedAt.get(r.book_hash);
+            return at && r.start_time * 1000 < at
+              ? { ...r, deleted_at: new Date(at).toISOString(), deleted_at_ms: at }
+              : r;
+          });
+        }
+      }
       (
         results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
-      ).statBooks = withMs((sb.data ?? []) as unknown as StatBookRecord[]);
+      ).statBooks = withMs([...statBooks.values()]).map((b) =>
+        b.deleted_at ? { ...b, deleted_at_ms: ms(b.deleted_at) } : b,
+      );
       (
         results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
       ).statPages = withMs(pageRows as unknown as StatPageRecord[]);
@@ -1127,18 +1173,28 @@ export async function POST(req: NextRequest) {
     }
 
     if (statBooks.length > 0) {
-      const rows = statBooks.map((b: StatBookRecord) => ({
+      // A row carrying deleted_at deletes the book's statistics (#7494), stamped
+      // with the server's time. Every other row leaves deleted_at out of the
+      // upsert, so a device that hasn't pulled the deletion can't undo it.
+      const now = new Date().toISOString();
+      const toRow = (b: StatBookRecord) => ({
         user_id: user.id,
         book_hash: b.book_hash,
         title: b.title,
         authors: b.authors,
-        updated_at: new Date().toISOString(),
-        deleted_at: b.deleted_at ?? null,
-      }));
-      const { error } = await supabase
-        .from('stat_books')
-        .upsert(rows, { onConflict: 'user_id,book_hash' });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        updated_at: now,
+      });
+      const live = statBooks.filter((b) => !b.deleted_at).map(toRow);
+      const deleted = statBooks
+        .filter((b) => b.deleted_at)
+        .map((b) => ({ ...toRow(b), deleted_at: now }));
+      for (const rows of [live, deleted]) {
+        if (rows.length === 0) continue;
+        const { error } = await supabase
+          .from('stat_books')
+          .upsert(rows, { onConflict: 'user_id,book_hash' });
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      }
     }
 
     if (statPages.length > 0) {

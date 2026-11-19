@@ -19,7 +19,9 @@ export interface StatBookRecord {
   authors: string;
   updated_at?: string;
   updated_at_ms?: number; // epoch ms, attached by the GET response for cursor math
+  // Set when the book's statistics were deleted: its events read before then are gone.
   deleted_at?: string | null;
+  deleted_at_ms?: number; // epoch ms of deleted_at, attached by the GET response
 }
 
 export interface StatPageRecord {
@@ -33,6 +35,7 @@ export interface StatPageRecord {
   updated_at?: string;
   updated_at_ms?: number; // epoch ms, attached by the GET response for cursor math
   deleted_at?: string | null;
+  deleted_at_ms?: number; // set by the GET response when the book's statistics were deleted
 }
 
 export interface SyncResult {

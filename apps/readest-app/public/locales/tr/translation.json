@@ -2846,5 +2846,16 @@
   "Next Week": "Sonraki hafta",
   "API Key (optional)": "API Anahtarı (isteğe bağlı)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "BookOrbit 3.8.0 veya sonrasında, Ayarlar > Hesap > API anahtarları altından oluşturulan bir API anahtarı sesli kitapları hesap parolanız olmadan aktarır. Dinleme konumunuzun eşitlenmesi için Okuma ve yazma'yı seçin.",
-  "Could not sign in to BookOrbit for audiobooks": "Sesli kitaplar için BookOrbit'te oturum açılamadı"
+  "Could not sign in to BookOrbit for audiobooks": "Sesli kitaplar için BookOrbit'te oturum açılamadı",
+  "No reading statistics yet": "Henüz okuma istatistiği yok",
+  "Delete Statistics": "İstatistikleri Sil",
+  "Delete statistics of {{title}}": "{{title}} istatistiklerini sil",
+  "Pages Read": "Okunan Sayfalar",
+  "Last Read": "Son Okuma",
+  "Failed to delete reading statistics": "Okuma istatistikleri silinemedi",
+  "Delete the reading statistics of “{{title}}”?": "“{{title}}” kitabının okuma istatistikleri silinsin mi?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "Okuma süresi tüm cihazlarınızdan kaldırılır. Bu işlem geri alınamaz.",
+  "Its reading time is removed from this device. This can’t be undone.": "Okuma süresi bu cihazdan kaldırılır. Bu işlem geri alınamaz.",
+  "Statistics by Book": "Kitaba Göre İstatistikler",
+  "Each book’s reading time, most recently read first": "Her kitabın okuma süresi, en son okunan önce"
 }

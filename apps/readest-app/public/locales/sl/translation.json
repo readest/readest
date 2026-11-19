@@ -2992,5 +2992,16 @@
   "Next Week": "Naslednji teden",
   "API Key (optional)": "API ključ (neobvezno)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "V BookOrbitu 3.8.0 ali novejšem API ključ iz Nastavitve > Račun > API ključi pretaka zvočne knjige brez gesla vašega računa. Izberite Branje in pisanje, da se položaj poslušanja sinhronizira.",
-  "Could not sign in to BookOrbit for audiobooks": "Prijava v BookOrbit za zvočne knjige ni uspela"
+  "Could not sign in to BookOrbit for audiobooks": "Prijava v BookOrbit za zvočne knjige ni uspela",
+  "No reading statistics yet": "Statistike branja še ni",
+  "Delete Statistics": "Izbriši statistiko",
+  "Delete statistics of {{title}}": "Izbriši statistiko: {{title}}",
+  "Pages Read": "Prebrane strani",
+  "Last Read": "Nazadnje prebrano",
+  "Failed to delete reading statistics": "Statistike branja ni bilo mogoče izbrisati",
+  "Delete the reading statistics of “{{title}}”?": "Želite izbrisati statistiko branja za »{{title}}«?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "Čas branja bo odstranjen z vseh vaših naprav. Tega ni mogoče razveljaviti.",
+  "Its reading time is removed from this device. This can’t be undone.": "Čas branja bo odstranjen s te naprave. Tega ni mogoče razveljaviti.",
+  "Statistics by Book": "Statistika po knjigah",
+  "Each book’s reading time, most recently read first": "Čas branja vsake knjige, najprej nazadnje brane"
 }

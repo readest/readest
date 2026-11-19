@@ -2846,5 +2846,16 @@
   "Next Week": "Volgende week",
   "API Key (optional)": "API-sleutel (optioneel)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "Vanaf BookOrbit 3.8.0 streamt een API-sleutel uit Instellingen > Account > API-sleutels luisterboeken zonder je accountwachtwoord. Kies Lezen en schrijven zodat je luisterpositie wordt gesynchroniseerd.",
-  "Could not sign in to BookOrbit for audiobooks": "Kan niet aanmelden bij BookOrbit voor luisterboeken"
+  "Could not sign in to BookOrbit for audiobooks": "Kan niet aanmelden bij BookOrbit voor luisterboeken",
+  "No reading statistics yet": "Nog geen leesstatistieken",
+  "Delete Statistics": "Statistieken verwijderen",
+  "Delete statistics of {{title}}": "Statistieken van {{title}} verwijderen",
+  "Pages Read": "Gelezen pagina’s",
+  "Last Read": "Laatst gelezen",
+  "Failed to delete reading statistics": "Leesstatistieken konden niet worden verwijderd",
+  "Delete the reading statistics of “{{title}}”?": "Leesstatistieken van ‘{{title}}’ verwijderen?",
+  "Its reading time is removed from all your devices. This can’t be undone.": "De leestijd wordt van al je apparaten verwijderd. Dit kan niet ongedaan worden gemaakt.",
+  "Its reading time is removed from this device. This can’t be undone.": "De leestijd wordt van dit apparaat verwijderd. Dit kan niet ongedaan worden gemaakt.",
+  "Statistics by Book": "Statistieken per boek",
+  "Each book’s reading time, most recently read first": "Leestijd per boek, meest recent gelezen eerst"
 }

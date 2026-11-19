@@ -2773,5 +2773,16 @@
   "Next Week": "สัปดาห์ถัดไป",
   "API Key (optional)": "คีย์ API (ไม่บังคับ)",
   "On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.": "ใน BookOrbit 3.8.0 ขึ้นไป คีย์ API จาก การตั้งค่า > บัญชี > คีย์ API จะสตรีมหนังสือเสียงได้โดยไม่ต้องใช้รหัสผ่านบัญชีของคุณ เลือก อ่านและเขียน เพื่อให้ตำแหน่งการฟังของคุณซิงค์",
-  "Could not sign in to BookOrbit for audiobooks": "ไม่สามารถลงชื่อเข้าใช้ BookOrbit สำหรับหนังสือเสียงได้"
+  "Could not sign in to BookOrbit for audiobooks": "ไม่สามารถลงชื่อเข้าใช้ BookOrbit สำหรับหนังสือเสียงได้",
+  "No reading statistics yet": "ยังไม่มีสถิติการอ่าน",
+  "Delete Statistics": "ลบสถิติ",
+  "Delete statistics of {{title}}": "ลบสถิติของ {{title}}",
+  "Pages Read": "หน้าที่อ่านแล้ว",
+  "Last Read": "อ่านล่าสุด",
+  "Failed to delete reading statistics": "ลบสถิติการอ่านไม่สำเร็จ",
+  "Delete the reading statistics of “{{title}}”?": "ลบสถิติการอ่านของ “{{title}}” หรือไม่",
+  "Its reading time is removed from all your devices. This can’t be undone.": "เวลาอ่านของหนังสือเล่มนี้จะถูกลบออกจากอุปกรณ์ทั้งหมดของคุณ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+  "Its reading time is removed from this device. This can’t be undone.": "เวลาอ่านของหนังสือเล่มนี้จะถูกลบออกจากอุปกรณ์นี้ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+  "Statistics by Book": "สถิติตามหนังสือ",
+  "Each book’s reading time, most recently read first": "เวลาอ่านของหนังสือแต่ละเล่ม เรียงจากที่อ่านล่าสุด"
 }
