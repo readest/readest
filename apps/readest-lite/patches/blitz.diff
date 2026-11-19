@@ -6748,7 +6748,51 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
 diff -ruN blitz/packages/blitz-paint/src/text.rs blitz/packages/blitz-paint/src/text.rs
 --- blitz/packages/blitz-paint/src/text.rs
 +++ blitz/packages/blitz-paint/src/text.rs
-@@ -622,9 +622,12 @@
+@@ -151,6 +151,9 @@
+     fill_color: Color,
+     /// The decoration this node introduces as a decorating box, if any.
+     decoration: Option<ResolvedDecoration>,
++    /// The product of `opacity` over the inline elements from the inline root (excluded: its
++    /// own opacity is a layer) down to this node, which fades its text and decorations.
++    alpha: f32,
+ }
+ 
+ /// Resolve the cached style values for a single node into a [`DecorationStackEntry`].
+@@ -160,6 +163,7 @@
+             node_id,
+             fill_color: Color::BLACK,
+             decoration: None,
++            alpha: 1.0,
+         };
+     };
+ 
+@@ -207,6 +211,7 @@
+         node_id,
+         fill_color,
+         decoration,
++        alpha: styles.get_effects().opacity,
+     }
+ }
+ 
+@@ -236,6 +241,8 @@
+ /// paint a single line spanning the box rather than one segment per run.
+ struct LineDecoration {
+     node_id: NodeId,
++    /// The decorating box's [`DecorationStackEntry::alpha`].
++    alpha: f32,
+     deco: ResolvedDecoration,
+     min_x: f64,
+     max_x: f64,
+@@ -439,7 +446,7 @@
+         if width <= 0.0 {
+             continue;
+         }
+-        let brush = anyrender::Paint::from(brush_override.unwrap_or(deco.color));
++        let brush = anyrender::Paint::from(brush_override.unwrap_or(deco.color).multiply_alpha(acc.alpha));
+ 
+         // `text-decoration-inset` shortens (or, when negative, extends) the line from the
+         // inline-start/end edges. Percentages resolve against the decoration line length
+@@ -622,9 +629,12 @@
                  let metrics = run.font_metrics();
                  let style = glyph_run.style();
                  let synthesis = run.synthesis();
@@ -6762,6 +6806,35 @@ diff -ruN blitz/packages/blitz-paint/src/text.rs blitz/packages/blitz-paint/src/
  
                  let css_font_size = font_size as f64 / scale;
  
+@@ -649,11 +659,18 @@
+                     .count();
+                 stack.truncate(shared);
+                 for &node_id in &path_scratch[shared..] {
+-                    stack.push(resolve_decoration_entry(doc, node_id));
++                    let mut entry = resolve_decoration_entry(doc, node_id);
++                    entry.alpha = match stack.last() {
++                        Some(parent) => parent.alpha * entry.alpha,
++                        None => 1.0,
++                    };
++                    stack.push(entry);
+                 }
+ 
++                let alpha = stack.last().map_or(1.0, |e| e.alpha);
+                 let fill_color = brush_override
+-                    .unwrap_or_else(|| stack.last().map(|e| e.fill_color).unwrap_or(Color::BLACK));
++                    .unwrap_or_else(|| stack.last().map(|e| e.fill_color).unwrap_or(Color::BLACK))
++                    .multiply_alpha(alpha);
+ 
+                 let embolden = if FONT_EMBOLDEN_ENABLED {
+                     font_embolden(font_size as f64, fill_color, transform)
+@@ -711,6 +728,7 @@
+                         None => {
+                             deco_boxes.push(LineDecoration {
+                                 node_id: entry.node_id,
++                                alpha: entry.alpha,
+                                 deco: entry.decoration.clone().unwrap(),
+                                 min_x: f64::INFINITY,
+                                 max_x: f64::NEG_INFINITY,
 diff -ruN blitz/packages/blitz-traits/src/shell.rs blitz/packages/blitz-traits/src/shell.rs
 --- blitz/packages/blitz-traits/src/shell.rs
 +++ blitz/packages/blitz-traits/src/shell.rs
