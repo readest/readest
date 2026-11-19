@@ -93,6 +93,7 @@ vi.mock('@/services/tts/voicePreview', () => ({
   suspendReadingForPreview: preview.suspend,
   playVoicePreview: preview.play,
   READEST_TTS_ENGINE: 'readest-tts',
+  XUNFEI_TTS_ENGINE: 'xunfei-tts',
 }));
 
 // Premium gating for the offline-audio row. Defaults to a signed-in premium
@@ -191,6 +192,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
 
 describe('TTSPlayerSheet', () => {
   beforeEach(() => {
+    localStorage.clear();
     viewSettings['ttsRate'] = 1.0;
     viewSettings['ttsSentenceGap'] = 0.15;
     viewSettings['isEink'] = false;
@@ -631,6 +633,52 @@ describe('TTSPlayerSheet', () => {
     fireEvent.click(await waitFor(() => screen.getByText('Guy')));
     expect(props.onSetVoice).toHaveBeenCalledWith('guy', 'en-US', false);
     expect(viewSettings['ttsVoice']).toBe('guy');
+  });
+
+  test('voice view shows the engine picker and the voice filter', async () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    expect(screen.getByLabelText('Voice Engine')).toBeTruthy();
+    // Groups load async; 'All' plus one engine once they arrive.
+    await waitFor(() => screen.getByText('Guy'));
+    const select = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    expect(select?.querySelectorAll('option').length).toBe(2);
+    expect(screen.getByLabelText('Filter voices')).toBeTruthy();
+  });
+
+  test('the voice filter narrows the list by name', async () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.change(await waitFor(() => screen.getByLabelText('Filter voices')), {
+      target: { value: 'Guy' },
+    });
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.queryByText('Ava')).toBeNull();
+  });
+
+  test('picking an engine narrows the voice list to that group', async () => {
+    const twoEngines = [
+      ...voiceGroups,
+      {
+        id: 'xunfei',
+        name: 'Xunfei Speech',
+        engine: 'xunfei-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    render(
+      <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
+    );
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Aseng'));
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.queryByText('Aseng')).toBeNull();
   });
 
   test('timer button drills into the timer list and selects a timeout', async () => {
