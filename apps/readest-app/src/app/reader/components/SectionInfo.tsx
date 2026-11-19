@@ -62,15 +62,9 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   const band = getHeaderBandGeometry(topInset, viewSettings.marginTopPx);
   const maskHeight = Math.min(topInset, band.bottom);
 
-  // The header band is reserved margin except for a fixed-layout book in
-  // scrolled mode, where FoliateViewer pins scrollTop to 0 and the pages run
-  // underneath it. `auto` never gives the header a chip either way; a color
-  // the reader chose (#5938) paints one in both flow modes.
-  const chip = getChromeChip(viewSettings, 'header', {
+  const chip = getChromeChip(viewSettings, {
     isEink,
-    isScrolled,
     isVertical,
-    bandReserved: !isScrolled || !bookData?.isFixedLayout,
   });
   const textColor = getChromeTextColor(viewSettings, isEink);
   const fontSize = getChromeFontSize(viewSettings, isEink);

@@ -13,7 +13,7 @@ interface StatusInfoProps {
   className?: string;
   /** A custom header/footer text color is set: the percentage inherits it. */
   inheritTextColor?: boolean;
-  /** Backdrop for the scrolled-mode pill; see ProgressBar. */
+  /** Custom footer backdrop; see ProgressBar. */
   style?: React.CSSProperties;
 }
 

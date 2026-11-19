@@ -1,5 +1,5 @@
 import type { ViewSettings } from '@/types/book';
-import { footerInfoVisible } from './footerBand';
+import { footerReservesBand, getFooterStripHeight } from './footerBand';
 
 // Card height of the TTS mini player (h-14). See getTTSMiniPlayerClearance for
 // when the reader text reserves a band of this height.
@@ -18,7 +18,7 @@ const BASE_OFFSET = 16;
  *   - the bottom bar while it is shown (hoveredBookKey === bookKey), or the
  *     expanded action panel above it (panelTopOffset: measured distance from
  *     the bottom edge to the open panel's top, safe-area margin excluded)
- *   - the footer info band / floating pills once the bar is dismissed
+ *   - the reserved footer band once the bar is dismissed
  *   - otherwise a 16px resting offset above the bottom edge
  */
 export const getTTSMiniPlayerBottomOffset = (
@@ -29,11 +29,7 @@ export const getTTSMiniPlayerBottomOffset = (
     const aboveBar = usesMobileBar ? ABOVE_MOBILE_BAR : ABOVE_DESKTOP_BAR;
     return Math.max(aboveBar, panelTopOffset + PANEL_GAP);
   }
-  const footerAtBottom =
-    viewSettings.showFooter &&
-    !viewSettings.vertical &&
-    (footerInfoVisible(viewSettings) || viewSettings.showStickyProgressBar);
-  return footerAtBottom ? Math.max(viewSettings.marginBottomPx, BASE_OFFSET) : BASE_OFFSET;
+  return footerReservesBand(viewSettings) ? getFooterStripHeight(viewSettings) : BASE_OFFSET;
 };
 
 /**

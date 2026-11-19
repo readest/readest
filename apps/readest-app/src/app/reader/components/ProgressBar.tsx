@@ -19,8 +19,8 @@ import {
 import {
   type BottomCornerRadii,
   footerInfoVisible,
-  footerReservesBand,
   getCornerClearance,
+  getFooterStripHeight,
   NO_CORNERS,
 } from '../utils/footerBand';
 import {
@@ -170,9 +170,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
   // Sticky progress bar is horizontal-only; vertical mode keeps its side footer.
   const stickyBarActive = viewSettings.showStickyProgressBar && !isVertical;
-  // The info sits on a reserved bottom band (paginated, sticky bar, or Solid
-  // Footer in scrolled mode, #6793) rather than over the text.
-  const bandReserved = footerReservesBand(viewSettings) && !isVertical;
   const tickFractions = useMemo(
     () => (stickyBarActive ? getChapterTickFractions(view, bookData?.bookDoc?.toc) : []),
     [stickyBarActive, view, bookData?.bookDoc?.toc],
@@ -289,50 +286,28 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   // Tap to toggle (#5293): tapping the footer hides/shows the info without
   // touching layout or settings — the reserved band stays so the book text
   // never reflows, showFooter is never written, and the state resets when the
-  // book reopens. The full-width container stays pointer-events-none so taps
-  // and text selection over book content pass through; only the strip (or the
-  // pills in scrolled mode, see below) is a tap target.
+  // book reopens. Only the strip is a tap target.
   const [dismissed, setDismissed] = useState(false);
 
-  // Scrolled mode reserves no bottom band by default (footerReservesBand) —
-  // the info floats over the book text, so each segment carries its own
-  // shrink-wrapped pill backdrop to stay legible instead of a full-width bar.
-  // The pills double as the tap targets there: making the whole strip
-  // tappable would swallow taps and text selection over the last lines of the
-  // page, so the strip is only a target where it sits on reserved margin space
-  // (paginated band, sticky-bar band, Solid Footer band, vertical side column).
   const hasFooterContent = stickyBarActive || footerInfoVisible(viewSettings);
-  const stripTappable = hasFooterContent && (isVertical || footerReservesBand(viewSettings));
-  // On a reserved band `auto` needs no pill; a color the reader chose still
-  // paints, since they asked to see it (#5938).
-  const chip = getChromeChip(viewSettings, 'footer', {
-    isEink,
-    isScrolled: !!viewSettings.scrolled,
-    isVertical: !!isVertical,
-    bandReserved,
-  });
-  // The segment is the tap target for #5293 wherever the info floats over the
-  // text -- that has to hold even when the reader turns the backdrop off, or
-  // "Background: none" would silently take tap-to-toggle away with it.
-  const pillTappable = !!viewSettings.scrolled && !isVertical && !bandReserved;
+  const chip = getChromeChip(viewSettings, { isEink, isVertical: !!isVertical });
   const pillClass =
-    (pillTappable || chip) &&
+    chip &&
     clsx(
-      'progress-pill rounded-md px-1.5',
-      pillTappable && 'pointer-events-auto cursor-pointer',
-      chip && 'eink-bordered',
-      chip?.kind === 'theme' && 'bg-base-100/85',
+      'progress-pill eink-bordered rounded-md px-1.5',
+      chip.kind === 'theme' && 'bg-base-100/85',
     );
   const pillStyle = chip?.kind === 'custom' ? { backgroundColor: chip.color } : undefined;
   const textColor = getChromeTextColor(viewSettings, isEink);
   const fontSize = getChromeFontSize(viewSettings, isEink);
   const showStatusInfo = hasTimeInfo || hasBatteryInfo;
 
-  // The text is centered in the marginBottomPx strip, so on phones with rounded
+  // The text is centered in the footer strip, so on phones with rounded
   // screen corners a small bottom margin drops its ends into the corner arc.
   // Pull them inward just enough to clear it; the book layout is untouched.
   const bottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
-  const textBottom = bottomPadding + viewSettings.marginBottomPx / 2 - fontSize / 2;
+  const stripHeight = getFooterStripHeight(viewSettings);
+  const textBottom = bottomPadding + stripHeight / 2 - fontSize / 2;
   const cornerClearance = (radius: number) =>
     isVertical ? 0 : getCornerClearance(radius, textBottom);
   const inlinePadding = (inset: number, clearance: number, hostOffset = 0) => {
@@ -422,7 +397,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         onClick={hasFooterContent ? () => setDismissed((prev) => !prev) : undefined}
         className={clsx(
           'progress-strip flex items-center',
-          stripTappable && 'pointer-events-auto cursor-pointer',
+          hasFooterContent && 'pointer-events-auto cursor-pointer',
           dismissed && 'opacity-0',
           // Hide immediately so a page turn during the old 300 ms fade cannot
           // repaint a partly visible footer. Showing may still fade in.
@@ -432,7 +407,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           // with even gaps. Without it, keep the 3-zone left/center/right row.
           stickyBarActive ? 'gap-x-3' : 'justify-between gap-x-2',
         )}
-        style={isVertical ? {} : { height: `${viewSettings.marginBottomPx}px` }}
+        style={isVertical ? {} : { height: `${stripHeight}px`, lineHeight: 1.5 }}
       >
         {stickyBarActive && (
           <StickyProgressBar

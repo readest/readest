@@ -1,5 +1,6 @@
 import type { ViewSettings } from '@/types/book';
 import { getInsetEdges } from '@/utils/grid';
+import { getChromeFontSize } from './headerFooterStyle';
 
 /** Radii (px) of the rounded bottom screen corners a book cell meets. */
 export interface BottomCornerRadii {
@@ -54,23 +55,14 @@ export const getCellCornerRadii = (
   };
 };
 
-/**
- * Whether the book layout must reserve the full-width bottom band
- * (marginBottomPx of page margin / scroll padding) for the footer.
- *
- * The band used to be reserved whenever Show Footer was on, which read as a
- * "solid bar" across the bottom of the screen: scrolled text clipped hard at
- * its edge, and it lingered even when the footer had nothing to show. Now:
- *   - the sticky progress bar (always-visible, display-only) keeps its band
- *   - scrolled mode reserves it only with Solid Footer on (#6793); otherwise
- *     the info floats over the text in shrink-wrapped pills (see ProgressBar)
- *     instead of a full-width strip
- *   - paginated mode, and scrolled mode with Solid Footer on, reserve it only
- *     while some info actually renders
- */
-export const footerReservesBand = (viewSettings: ViewSettings): boolean => {
-  if (!viewSettings.showFooter) return false;
-  if (viewSettings.showStickyProgressBar) return true;
-  if (viewSettings.scrolled && !viewSettings.solidScrolledFooter) return false;
-  return footerInfoVisible(viewSettings);
-};
+/** Show Footer reserves the bottom band in either flow. Vertical writing uses a side column. */
+export const footerReservesBand = (viewSettings: ViewSettings): boolean =>
+  viewSettings.showFooter && !viewSettings.vertical;
+
+/** Keep one line of footer text inside the strip even with a small stored margin. */
+export const getFooterStripHeight = (viewSettings: ViewSettings): number =>
+  Math.max(
+    viewSettings.marginBottomPx,
+    16,
+    Math.ceil(getChromeFontSize(viewSettings, viewSettings.isEink) * 1.5),
+  );

@@ -408,8 +408,6 @@ export interface ViewConfig {
   showRemainingPages: boolean;
   showProgressInfo: boolean;
   showStickyProgressBar: boolean;
-  /** Scrolled mode reserves the footer band, like paginated mode (#6793). */
-  solidScrolledFooter: boolean;
   showCurrentTime: boolean;
   use24HourClock: boolean;
   showCurrentBatteryStatus: boolean;
@@ -427,10 +425,8 @@ export interface ViewConfig {
   /** `''` follows the theme's base-content; otherwise a `#rrggbb`. */
   headerFooterTextColor: string;
   /**
-   * `'auto'` keeps the built-in backdrop (the scrolled-mode footer pill and
-   * nothing behind the header), `'none'` removes it everywhere, and a
-   * `#rrggbb` paints a matching chip behind both header and footer in every
-   * flow mode.
+   * `'auto'` uses the default styling, `'none'` suppresses backdrops, and a
+   * `#rrggbb` paints a matching chip behind the horizontal header and footer.
    */
   headerFooterBackground: string;
   /** 0-1 alpha applied to a `#rrggbb` headerFooterBackground. */

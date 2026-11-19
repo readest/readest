@@ -112,7 +112,7 @@ import { manageSyntaxHighlighting } from '@/utils/highlightjs';
 import { isDialogueHighlightActive, manageDialogueHighlight } from '@/utils/dialogueHighlight';
 import { getViewInsets } from '@/utils/insets';
 import { collectDocumentImages, DocumentImage } from '../utils/documentImages';
-import { footerReservesBand } from '../utils/footerBand';
+import { footerReservesBand, getFooterStripHeight } from '../utils/footerBand';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { handleA11yNavigation } from '@/utils/a11y';
 import { isCJKLang } from '@/utils/lang';
@@ -1210,12 +1210,11 @@ const FoliateViewer: React.FC<{
     const showDoubleBorderHeader = showDoubleBorder && viewSettings.showHeader;
     const showDoubleBorderFooter = showDoubleBorder && viewSettings.showFooter;
     const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
-    // The bottom band is reserved only while the footer displays something
-    // there (and in scrolled mode only with Solid Footer on; otherwise the
-    // info floats in pills) — see footerReservesBand. Otherwise the empty
-    // reservation shows as a full-width blank bar that steals space from the
-    // book text.
-    const showBottomFooter = footerReservesBand(viewSettings) && !viewSettings.vertical;
+    const showBottomFooter = footerReservesBand(viewSettings);
+    const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
+    const footerBarHeight = showBottomFooter
+      ? getFooterStripHeight(viewSettings) + safeBottomPadding
+      : 0;
     const moreTopInset = showTopHeader ? Math.max(0, 16 - insets.top) : 0;
     // Only the persistent 'minimal' card reserves a band; the 'full' one
     // auto-hides with the toolbar and overlaps instead (#5310).
@@ -1223,7 +1222,7 @@ const FoliateViewer: React.FC<{
       ? getTTSMiniPlayerClearance(viewSettings, gridInsets.bottom * 0.33)
       : 0;
     const moreBottomInset = showBottomFooter
-      ? Math.max(0, Math.max(miniPlayerClearance, 16) - insets.bottom)
+      ? Math.max(0, Math.max(miniPlayerClearance, footerBarHeight) - insets.bottom)
       : Math.max(0, miniPlayerClearance);
     const moreRightInset = showDoubleBorderHeader ? 32 : 0;
     const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
@@ -1267,18 +1266,11 @@ const FoliateViewer: React.FC<{
     }
 
     if (viewSettings.scrolled) {
-      const headerVisible = showTopHeader;
-      const footerVisible = showBottomFooter;
-      const safeBottomPadding = appService?.hasSafeAreaInset ? gridInsets.bottom * 0.33 : 0;
-      const footerBarHeight = safeBottomPadding + viewSettings.marginBottomPx;
       // topMargin, not the raw margin sum: it carries the 16px moreTopInset
       // floor, so a negative top margin keeps the scroll viewport glued to the
       // lifted header band instead of running under it (#5303).
-      const scrollTop = headerVisible ? topMargin : 0;
-      const scrollBottom = Math.max(
-        footerVisible ? Math.max(footerBarHeight, miniPlayerClearance) : miniPlayerClearance,
-        drawingDock?.bottom ?? 0,
-      );
+      const scrollTop = showTopHeader ? topMargin : 0;
+      const scrollBottom = Math.max(footerBarHeight, miniPlayerClearance, drawingDock?.bottom ?? 0);
       setScrollMargins({ top: bookData?.isFixedLayout ? 0 : scrollTop, bottom: scrollBottom });
     } else {
       setScrollMargins({ top: 0, bottom: 0 });
@@ -1588,15 +1580,8 @@ const FoliateViewer: React.FC<{
     viewState?.drawingEnabled,
     // Switching Player Style changes whether a band is reserved at all.
     viewSettings?.ttsPlayerStyle,
-    // footerReservesBand inputs: the band must collapse/return live when the
-    // user flips these settings.
-    viewSettings?.showStickyProgressBar,
-    viewSettings?.solidScrolledFooter,
-    viewSettings?.showRemainingTime,
-    viewSettings?.showRemainingPages,
-    viewSettings?.showProgressInfo,
-    viewSettings?.showCurrentTime,
-    viewSettings?.showCurrentBatteryStatus,
+    viewSettings?.headerFooterFontSize,
+    viewSettings?.isEink,
   ]);
 
   return (

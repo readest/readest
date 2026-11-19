@@ -442,27 +442,22 @@ describe('ProgressBar — footer overlay pointer contract', () => {
     expect(progressInfo.classList.contains('pointer-events-auto')).toBe(false);
   });
 
-  it('wraps each info segment in its own pill backdrop in scrolled mode', () => {
-    // Scrolled mode reserves no bottom band — the info floats over the book
-    // text, so each segment needs a shrink-wrapped backdrop to stay legible.
-    readerSettings({ scrolled: true, showRemainingPages: true });
+  it('renders footer info on the band in scrolled mode with the progress bar off', () => {
+    readerSettings({ scrolled: true, showRemainingPages: true, showStickyProgressBar: false });
 
     const { container } = renderProgressBar();
 
-    const pills = container.querySelectorAll('.progress-pill');
-    expect(pills.length).toBeGreaterThanOrEqual(2); // remaining + progress
-    for (const pill of pills) {
-      expect((pill as HTMLElement).classList.contains('bg-base-100/85')).toBe(true);
-    }
+    expect(container.querySelector('.remaining-info')).not.toBeNull();
+    expect(container.querySelector('.progress-info-label')).not.toBeNull();
+    expect(container.querySelector('.progress-pill')).toBeNull();
   });
 
-  it('drops the pill backdrops in scrolled mode with Solid Footer on (#6793)', () => {
-    // The band is reserved, so the info sits on it instead of over the text.
-    readerSettings({ scrolled: true, showRemainingPages: true, solidScrolledFooter: true });
+  it('keeps the strip tall enough for large footer text with a small bottom margin', () => {
+    readerSettings({ scrolled: true, marginBottomPx: 0, headerFooterFontSize: 24 });
 
     const { container } = renderProgressBar();
 
-    expect(container.querySelector('.progress-pill')).toBeNull();
+    expect(container.querySelector<HTMLElement>('.progress-strip')?.style.height).toBe('36px');
   });
 
   it('does not add pill backdrops in paginated mode (band holds the info)', () => {
@@ -478,10 +473,7 @@ describe('ProgressBar — tap to toggle visibility (#5293)', () => {
   // Tapping the footer toggles the info's visibility without touching layout
   // or settings: the reserved band stays, showFooter never changes, and the
   // state is ephemeral — a fresh mount (book open) starts visible again.
-  // Where the strip sits on reserved margin space (paginated band, sticky
-  // bar, vertical side column) the whole strip is the tap target; in scrolled
-  // mode the info floats over book text, so only the pills are tappable and
-  // the strip keeps letting taps and text selection through.
+  // The strip sits outside the book text and can be tapped across its width.
   const readerSettings = (overrides?: Partial<ViewSettings>) => {
     currentViewSettings = {
       ...baseSettings,
@@ -542,32 +534,20 @@ describe('ProgressBar — tap to toggle visibility (#5293)', () => {
     ).toBe(false);
   });
 
-  it('keeps the strip passive in scrolled mode — the pills are the tap targets', () => {
+  it('toggles the info visibility from the strip in scrolled mode without a progress bar', () => {
     readerSettings({ scrolled: true, showRemainingPages: true });
 
     const { container } = renderProgressBar();
 
     const strip = container.querySelector('.progress-strip') as HTMLElement;
-    expect(strip.classList.contains('pointer-events-auto')).toBe(false);
+    expect(strip.classList.contains('pointer-events-auto')).toBe(true);
 
-    const pill = container.querySelector('.progress-pill') as HTMLElement;
-    expect(pill.classList.contains('pointer-events-auto')).toBe(true);
-
-    fireEvent.click(pill);
+    fireEvent.click(strip);
     expect(strip.classList.contains('opacity-0')).toBe(true);
   });
 
   it('makes the whole strip tappable in scrolled mode when the sticky bar reserves the band', () => {
     readerSettings({ scrolled: true, showStickyProgressBar: true });
-
-    const { container } = renderProgressBar();
-
-    const strip = container.querySelector('.progress-strip') as HTMLElement;
-    expect(strip.classList.contains('pointer-events-auto')).toBe(true);
-  });
-
-  it('makes the whole strip tappable in scrolled mode with Solid Footer on (#6793)', () => {
-    readerSettings({ scrolled: true, showRemainingPages: true, solidScrolledFooter: true });
 
     const { container } = renderProgressBar();
 
@@ -660,15 +640,12 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
     expect(info.classList.contains('mix-blend-difference')).toBe(false);
   });
 
-  // #5342: scrolled mode gives every segment its own bg-base-100/85 pill, and
-  // the blend applies to the container as a group -- a white pill differenced
-  // against the white PDF page turns pure black. The pill already guarantees
-  // legibility, so the blend must stand down whenever pills are on.
-  it('drops the blend for a fixed-layout book when the pills provide the backdrop', () => {
+  it('preserves a custom footer backdrop for a fixed-layout book in scrolled mode', () => {
     currentViewSettings = {
       ...baseSettings,
       isEink: false,
       scrolled: true,
+      headerFooterBackground: '#aabbcc',
       showRemainingPages: true,
       showRemainingTime: false,
     } as ViewSettings;
@@ -684,12 +661,12 @@ describe('ProgressBar — contrast against the page (#4901)', () => {
     expect(info.classList.contains('text-base-content')).toBe(true);
   });
 
-  it('keeps the blend for a fixed-layout book in scrolled mode when the sticky bar replaces the pills', () => {
+  it('keeps the default blend for a fixed-layout book with the progress bar off', () => {
     currentViewSettings = {
       ...baseSettings,
       isEink: false,
       scrolled: true,
-      showStickyProgressBar: true,
+      showStickyProgressBar: false,
       showRemainingPages: true,
       showRemainingTime: false,
     } as ViewSettings;
@@ -856,8 +833,8 @@ describe('ProgressBar — rounded screen corners', () => {
   it('pulls the footer ends clear of the corner arc when the bottom margin is small', () => {
     currentViewSettings = { ...baseSettings, marginBottomPx: 16, headerFooterFontSize: 12 };
     const style = footerStyle(renderWithCorners(45, 45).container);
-    expect(style.paddingInlineStart).toBe('max(calc(2.5% + 8px), 35.7px)');
-    expect(style.paddingInlineEnd).toBe('max(calc(2.5% + 8px), 35.7px)');
+    expect(style.paddingInlineStart).toBe('max(calc(2.5% + 8px), 32.8px)');
+    expect(style.paddingInlineEnd).toBe('max(calc(2.5% + 8px), 32.8px)');
   });
 
   it('keeps the regular padding when the text sits above the corner arc', () => {
@@ -873,7 +850,7 @@ describe('ProgressBar — rounded screen corners', () => {
     // Left of two side-by-side books: its right edge sits mid-screen.
     currentViewSettings = { ...baseSettings, marginBottomPx: 16, headerFooterFontSize: 12 };
     const style = footerStyle(renderWithCorners(45, 0).container);
-    expect(style.paddingInlineStart).toBe('max(calc(2.5% + 8px), 35.7px)');
+    expect(style.paddingInlineStart).toBe('max(calc(2.5% + 8px), 32.8px)');
     expect(style.paddingInlineEnd).toBe('calc(2.5% + 8px)');
   });
 });

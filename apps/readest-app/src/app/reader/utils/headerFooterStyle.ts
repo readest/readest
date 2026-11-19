@@ -29,19 +29,6 @@ export const getChromeFontSize = (viewSettings: ViewSettings, isEink: boolean): 
  */
 export type ChromeChip = { kind: 'theme' } | { kind: 'custom'; color: string };
 
-export interface ChromeChipContext {
-  isEink: boolean;
-  isScrolled: boolean;
-  isVertical: boolean;
-  /**
-   * The element sits on reserved margin rather than over the book text, so
-   * `auto` needs no backdrop. Always true for the header of a reflowable book
-   * (FoliateViewer's scrollTop), and for the footer whenever it keeps the
-   * bottom band (footerReservesBand).
-   */
-  bandReserved: boolean;
-}
-
 /**
  * True once the reader has taken the chrome's legibility into their own hands
  * with an explicit color or backdrop.
@@ -68,32 +55,13 @@ export const getChromeTextColor = (
   return viewSettings.headerFooterTextColor;
 };
 
-/**
- * Backdrop for the header title / footer info.
- *
- * `auto` reproduces what each element does today: the footer gets its
- * scrolled-mode pill (scrolled mode reserves no band unless the sticky bar or
- * Solid Footer is on, so the info floats over the text — see footerBand.ts),
- * the header gets nothing (its band _is_
- * reserved for reflowable books, and fixed-layout relies on the blend). A
- * chosen color paints both, in either flow mode — otherwise picking one would
- * silently do nothing for paginated readers.
- *
- * Vertical mode is excluded throughout: its chrome lives in a reserved side
- * column, never over the text.
- */
+/** A custom backdrop for horizontal header and footer info. */
 export const getChromeChip = (
   viewSettings: ViewSettings,
-  element: 'header' | 'footer',
-  { isEink, isScrolled, isVertical, bandReserved }: ChromeChipContext,
+  { isEink, isVertical }: { isEink: boolean; isVertical: boolean },
 ): ChromeChip | null => {
   const background = getBackground(viewSettings);
-  if (isVertical || background === 'none') return null;
-  if (background === 'auto') {
-    const floatsOverText = isScrolled && !bandReserved;
-    return element === 'footer' && floatsOverText ? { kind: 'theme' } : null;
-  }
-  if (!isHexColor(background)) return null;
+  if (isVertical || !isHexColor(background)) return null;
   // E-ink keeps the opaque themed pill: the hue would render as an
   // indistinguishable gray, and the theme chip carries `eink-bordered`.
   if (isEink) return { kind: 'theme' };

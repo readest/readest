@@ -64,7 +64,7 @@ describe('getTTSMiniPlayerBottomOffset', () => {
     );
   });
 
-  it('sits above the floating footer pills in scrolled mode', () => {
+  it('sits above the reserved footer in scrolled mode', () => {
     expect(getTTSMiniPlayerBottomOffset(settings({ scrolled: true }), { barVisible: false })).toBe(
       DEFAULT_BOOK_LAYOUT.marginBottomPx,
     );
@@ -76,7 +76,7 @@ describe('getTTSMiniPlayerBottomOffset', () => {
     ).toBe(16);
   });
 
-  it('falls back to 16px when no footer widget renders at the bottom', () => {
+  it('sits above the reserved footer even when no footer widget renders', () => {
     expect(
       getTTSMiniPlayerBottomOffset(
         settings({
@@ -88,7 +88,7 @@ describe('getTTSMiniPlayerBottomOffset', () => {
         }),
         { barVisible: false },
       ),
-    ).toBe(16);
+    ).toBe(DEFAULT_BOOK_LAYOUT.marginBottomPx);
   });
 
   it('keeps the footer offset for the sticky progress bar even without widgets', () => {
@@ -115,7 +115,9 @@ describe('getTTSMiniPlayerBottomOffset', () => {
 
   it('never drops below 16px even with a tiny bottom margin', () => {
     expect(
-      getTTSMiniPlayerBottomOffset(settings({ marginBottomPx: 8 }), { barVisible: false }),
+      getTTSMiniPlayerBottomOffset(settings({ marginBottomPx: 8, headerFooterFontSize: 8 }), {
+        barVisible: false,
+      }),
     ).toBe(16);
   });
 });
