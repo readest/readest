@@ -3213,6 +3213,21 @@
         },
       };
     },
+    // Never zoomed: foliate-js's paginator reads `scale` on every touch move.
+    visualViewport: {
+      __proto__: EventTarget.prototype,
+      scale: 1,
+      offsetLeft: 0,
+      offsetTop: 0,
+      pageLeft: 0,
+      pageTop: 0,
+      get width() {
+        return n.viewport()[0];
+      },
+      get height() {
+        return n.viewport()[1];
+      },
+    },
     MutationObserver,
     IntersectionObserver,
     ResizeObserver,

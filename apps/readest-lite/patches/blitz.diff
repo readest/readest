@@ -248,7 +248,17 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          #[cfg(feature = "writing-mode")]
          {
              style_config::set_pref!("layout.css.writing-mode.enabled", true);
-@@ -379,6 +385,8 @@
+@@ -357,6 +363,9 @@
+     pub(crate) last_mousedown_time: Option<Instant>,
+     /// The position where mousedown occurred (for selection drags and double-click detection)
+     pub(crate) mousedown_position: taffy::Point<f32>,
++    /// Whether the finger down since `mousedown_position` has moved beyond the touch slop
++    /// (`touch_move_in_slop`).
++    pub(crate) touch_left_slop: bool,
+     /// How many clicks have been made in quick succession
+     pub(crate) click_count: u16,
+     /// Whether we're currently in a text selection drag (moved 2px+ from mousedown)
+@@ -379,6 +388,8 @@
      pub(crate) has_canvas: bool,
      /// Whether there are subdocuments that are animating (so we should re-render every frame)
      pub(crate) subdoc_is_animating: bool,
@@ -257,7 +267,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
      /// Map of id attribute values to node IDs for fast lookups.
      /// May contain multiple nodes for the same id: `get_element_by_id`
-@@ -394,6 +402,8 @@
+@@ -394,6 +405,8 @@
      pub(crate) controls_to_form: HashMap<NodeId, NodeId>,
      /// Nodes that contain sub documents
      pub(crate) sub_document_nodes: HashSet<NodeId>,
@@ -266,7 +276,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Load state (abort controller and in-flight request id) for each
      /// `<iframe>` element whose sub-document is loaded automatically
      pub(crate) iframe_loads: HashMap<NodeId, crate::iframe::IframeLoad>,
-@@ -410,7 +420,8 @@
+@@ -410,7 +423,8 @@
      pub(crate) pending_resource_deallocations: Vec<anyrender::ResourceId>,
  
      /// Cache of loaded images, keyed by URL. Allows reusing images across multiple
@@ -276,7 +286,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub(crate) image_cache: HashMap<String, ImageData>,
  
      /// Tracks in-flight image requests. When an image is being fetched, additional
-@@ -418,6 +429,10 @@
+@@ -418,6 +432,10 @@
      /// Value is a list of (node_id, image_type) pairs waiting for the image.
      pub(crate) pending_images: HashMap<String, Vec<(NodeId, ImageType)>>,
  
@@ -287,7 +297,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Nodes whose `background-image`/`mask-image` layers need flushing to
      /// dedicated storage on the node because their style changed (populated by
      /// the style traversal and by pseudo-element box construction).
-@@ -563,8 +578,10 @@
+@@ -563,8 +581,10 @@
              mousedown_node_id: None,
              has_active_animations: false,
              subdoc_is_animating: false,
@@ -298,7 +308,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              iframe_loads: HashMap::new(),
  
              #[cfg(feature = "custom-widget")]
-@@ -576,6 +593,7 @@
+@@ -576,6 +596,7 @@
              deferred_construction_nodes: Vec::new(),
              image_cache: HashMap::new(),
              pending_images: HashMap::new(),
@@ -306,7 +316,15 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              pending_style_image_nodes: Vec::new(),
              pending_critical_resources: HashSet::new(),
              controls_to_form: HashMap::new(),
-@@ -840,7 +858,8 @@
+@@ -590,6 +611,7 @@
+             devtools_title: None,
+             last_mousedown_time: None,
+             mousedown_position: taffy::Point::ZERO,
++            touch_left_slop: false,
+             click_count: 0,
+             drag_mode: DragMode::None,
+             hovered_scrollbar: None,
+@@ -840,7 +862,8 @@
          self.shell_provider.request_redraw();
      }
  
@@ -316,7 +334,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          let node = &mut self.nodes[node_id];
          let did_change = node.element_data_mut().unwrap().set_style_property(
              name,
-@@ -851,9 +870,11 @@
+@@ -851,9 +874,11 @@
          if did_change {
              node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
          }
@@ -329,7 +347,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          let node = &mut self.nodes[node_id];
          let did_change = node.element_data_mut().unwrap().remove_style_property(
              name,
-@@ -863,6 +884,7 @@
+@@ -863,6 +888,7 @@
          if did_change {
              node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
          }
@@ -337,7 +355,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      pub fn sub_document_node_ids(&self) -> Vec<NodeId> {
-@@ -1093,6 +1115,9 @@
+@@ -1093,6 +1119,9 @@
              if let Some(before) = node.before() {
                  self.drop_node_ignoring_parent_with(before, on_drop);
              }
@@ -347,7 +365,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              if let Some(after) = node.after() {
                  self.drop_node_ignoring_parent_with(after, on_drop);
              }
-@@ -1124,6 +1149,20 @@
+@@ -1124,6 +1153,20 @@
          for nested_id in nested {
              self.deallocate_anonymous_block(nested_id);
          }
@@ -368,7 +386,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          self.remove_node_from_tree(anon_id);
      }
-@@ -1397,7 +1436,13 @@
+@@ -1397,7 +1440,13 @@
                          "Resource load failed"
                      );
                      #[cfg(not(feature = "tracing"))]
@@ -383,7 +401,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
                  } else {
                      #[cfg(feature = "tracing")]
                      tracing::warn!(error = err.as_str(), "Resource load failed (no url)");
-@@ -1493,6 +1538,35 @@
+@@ -1493,6 +1542,35 @@
          }
      }
  
@@ -419,7 +437,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Cache a loaded image and apply it to all nodes waiting on it
      /// (`<img>` elements, `background-image` layers and `mask-image` layers).
      fn apply_loaded_image(&mut self, url: &str, image: ImageData) {
-@@ -1526,6 +1600,7 @@
+@@ -1526,6 +1604,7 @@
                      // Clear layout cache
                      node.clear_layout_cache();
                      node.insert_damage(ALL_DAMAGE);
@@ -427,7 +445,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
                  }
                  ImageType::Background(idx) | ImageType::Mask(idx) => {
                      let layer_image = node.element_data_mut().and_then(|el| {
-@@ -1684,6 +1759,62 @@
+@@ -1684,6 +1763,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -490,7 +508,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2049,13 +2180,21 @@
+@@ -2049,13 +2184,21 @@
          }
  
          self.hover_node_id = hover_node_id;
@@ -515,7 +533,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn clear_hover(&mut self) -> bool {
          // The pointer is no longer over the document, so stop re-resolving
          // hover state against it.
-@@ -2073,9 +2212,7 @@
+@@ -2073,9 +2216,7 @@
  
          self.hover_node_id = None;
          self.hover_node_is_text = false;
@@ -526,7 +544,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          true
      }
-@@ -2333,6 +2470,56 @@
+@@ -2333,6 +2474,56 @@
          self.stylist.device()
      }
  
@@ -583,7 +601,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn get_cursor(&self) -> Option<CursorIcon> {
          // Prefer the precise hit node: `cursor` and `user-select` may be set on
          // a pseudo-element or resolved on an anonymous box, and text hits carry
-@@ -2440,6 +2627,40 @@
+@@ -2440,6 +2631,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -624,7 +642,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2668,27 @@
+@@ -2447,17 +2672,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -662,7 +680,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2759,7 @@
+@@ -2528,7 +2763,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -671,7 +689,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2774,329 @@
+@@ -2543,20 +2778,329 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -1013,7 +1031,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3484,36 @@
+@@ -2944,6 +3488,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1050,7 +1068,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4078,58 @@
+@@ -3508,6 +4082,58 @@
  }
  
  #[cfg(test)]
@@ -1109,7 +1127,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4403,7 @@
+@@ -3781,3 +4407,7 @@
          );
      }
  }
@@ -1152,10 +1170,90 @@ diff -ruN blitz/packages/blitz-dom/src/events/driver.rs blitz/packages/blitz-dom
              return;
          };
  
+@@ -347,8 +364,13 @@
+                     event_state = self.run_handler_event(&mut mouse_event, event_state);
+                 }
+             } else if data.is_finger() || data.is_pen() {
+-                let mut touch_event = DomEvent::new(target, make_touch_data(data));
+-                event_state = self.run_handler_event(&mut touch_event, event_state);
++                let in_slop = data.is_finger()
++                    && matches!(ptr_event.data, DomEventData::PointerMove(_))
++                    && super::touch_move_in_slop(&mut self.doc.inner_mut(), &data);
++                if !in_slop {
++                    let mut touch_event = DomEvent::new(target, make_touch_data(data));
++                    event_state = self.run_handler_event(&mut touch_event, event_state);
++                }
+             }
+         }
+ 
+diff -ruN blitz/packages/blitz-dom/src/events/mod.rs blitz/packages/blitz-dom/src/events/mod.rs
+--- blitz/packages/blitz-dom/src/events/mod.rs
++++ blitz/packages/blitz-dom/src/events/mod.rs
+@@ -10,7 +10,7 @@
+ use focus::generate_focus_events;
+ pub(crate) use ime::handle_ime_event;
+ use keyboard::{KeyboardOrTextInputEvent, handle_key_or_input_event};
+-pub(crate) use pointer::DragMode;
++pub(crate) use pointer::{DragMode, touch_move_in_slop};
+ use pointer::{handle_click, handle_pointerdown, handle_pointermove, handle_pointerup};
+ 
+ use crate::{BaseDocument, events::pointer::handle_wheel};
 diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-dom/src/events/pointer.rs
 --- blitz/packages/blitz-dom/src/events/pointer.rs
 +++ blitz/packages/blitz-dom/src/events/pointer.rs
-@@ -499,13 +499,20 @@
+@@ -204,6 +204,24 @@
+     (allow_x, allow_y)
+ }
+ 
++/// How far a finger may move from where it landed and still tap (Chromium's touch slop, CSS px):
++/// beyond it the touch pans, and only then does the page get `touchmove`.
++const TOUCH_SLOP: f32 = 15.0;
++
++/// Whether a finger's move is still within the touch slop of where it landed, where Chromium
++/// sends the page no `touchmove` (when `touchstart` wasn't cancelled): a tap whose finger shifts
++/// stays a tap to the page's touch handlers. Once the finger leaves the slop, every later move of
++/// the touch is sent.
++pub(crate) fn touch_move_in_slop(doc: &mut BaseDocument, event: &BlitzPointerEvent) -> bool {
++    if doc.touch_left_slop {
++        return false;
++    }
++    let dx = event.page_x() - doc.mousedown_position.x;
++    let dy = event.page_y() - doc.mousedown_position.y;
++    doc.touch_left_slop = dx.hypot(dy) > TOUCH_SLOP;
++    !doc.touch_left_slop
++}
++
+ pub(crate) fn handle_pointermove<F: FnMut(DomEvent)>(
+     doc: &mut BaseDocument,
+     target: NodeId,
+@@ -216,11 +234,16 @@
+ 
+     let mut changed = doc.set_hover_to(x, y);
+ 
+-    // Check if we've moved enough to be considered a selection drag (2px threshold)
++    // Check if we've moved enough to be considered a selection drag (2px threshold), or for a
++    // finger a pan: past the touch slop, so a tap whose finger shifts stays a tap.
+     if buttons != MouseEventButtons::None && doc.drag_mode == DragMode::None {
+         let dx = x - doc.mousedown_position.x;
+         let dy = y - doc.mousedown_position.y;
+-        if dx.abs() > 2.0 || dy.abs() > 2.0 {
++        let moved = match event.id {
++            BlitzPointerId::Finger(_) => dx.hypot(dy) > TOUCH_SLOP,
++            _ => dx.abs() > 2.0 || dy.abs() > 2.0,
++        };
++        if moved {
+             match event.id {
+                 BlitzPointerId::Mouse | BlitzPointerId::Pen => {
+                     if let Some(mousedown_node_id) = doc.mousedown_node_id {
+@@ -408,6 +431,7 @@
+     // Update mousedown tracking for next click and selection drag detection
+     doc.last_mousedown_time = Some(Instant::now());
+     doc.mousedown_position = taffy::Point { x, y };
++    doc.touch_left_slop = false;
+     doc.drag_mode = DragMode::None;
+     doc.scroll_animation = ScrollAnimationState::None;
+ 
+@@ -499,13 +523,20 @@
      match click_target {
          ClickTarget::Disabled => (),
          ClickTarget::SelectableText => {
@@ -1178,7 +1276,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
          }
          ClickTarget::TextInput {
              content_box_offset,
-@@ -553,6 +560,41 @@
+@@ -553,6 +584,41 @@
      }
  }
  
@@ -1220,7 +1318,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
  pub(crate) fn handle_pointerup<F: FnMut(DomEvent)>(
      doc: &mut BaseDocument,
      target: NodeId,
-@@ -598,6 +640,14 @@
+@@ -598,6 +664,14 @@
          }
      }
  
@@ -1235,7 +1333,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
      // Dispatch a click event
      if do_click && event.button == MouseEventButton::Main {
          dispatch_event(DomEvent::new(target, DomEventData::Click(event.clone())));
-@@ -804,6 +854,11 @@
+@@ -804,6 +878,11 @@
                  _ => {}
              }
  

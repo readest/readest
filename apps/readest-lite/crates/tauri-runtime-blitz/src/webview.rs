@@ -312,6 +312,9 @@ impl BlitzWebview {
                             y,
                             down,
                         },
+                        crate::display::Input::Move { x, y } => {
+                            Message::PointerMove { webview, x, y }
+                        }
                         crate::display::Input::Close => Message::Exit(0),
                     });
                 },
@@ -632,8 +635,8 @@ impl BlitzWebview {
             let unix0 = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map_or(0, |d| d.as_millis());
-            for down in [true, false] {
-                send_pointer(doc, &self.pointers, x, y, down);
+            for touch in [Touch::Down, Touch::Up] {
+                send_pointer(doc, &self.pointers, x, y, touch);
             }
             eline!(
                 "{{\"label\": \"tap\", \"t_ms\": {t0:.1}, \"unix_ms\": {}, \"handler_ms\": {:.1}, \"target\": \"{target}\", \"x\": {x:.0}, \"y\": {y:.0}}}",
@@ -700,7 +703,8 @@ impl BlitzWebview {
     pub fn pointer(&mut self, x: f32, y: f32, down: bool) {
         let Some(doc) = self.doc.as_mut() else { return };
         let t0 = t_ms();
-        send_pointer(doc, &self.pointers, x / self.scale, y / self.scale, down);
+        let touch = if down { Touch::Down } else { Touch::Up };
+        send_pointer(doc, &self.pointers, x / self.scale, y / self.scale, touch);
         self.input = true;
         if std::env::var_os("BLITZ_TAURI_TRACE_LOOP").is_some() {
             eline!(
@@ -708,6 +712,20 @@ impl BlitzWebview {
                 t_ms() - t0
             );
         }
+    }
+
+    /// The finger moved while down, at device pixels `x`, `y`: over a scroller, past the touch
+    /// slop, it pans.
+    pub fn pointer_move(&mut self, x: f32, y: f32) {
+        let Some(doc) = self.doc.as_mut() else { return };
+        send_pointer(
+            doc,
+            &self.pointers,
+            x / self.scale,
+            y / self.scale,
+            Touch::Move,
+        );
+        self.input = true;
     }
 
     fn report_js(&mut self) {
@@ -934,13 +952,21 @@ fn should_paint(
 }
 
 /// `__tauri.*`, the native side of `web.js`.
-/// A primary pointer down or up at CSS pixels `x`, `y` (a finger, as on a touch screen).
+/// What a finger did.
+#[derive(Clone, Copy, PartialEq)]
+enum Touch {
+    Down,
+    Move,
+    Up,
+}
+
+/// A primary pointer down, moved or up at CSS pixels `x`, `y` (a finger, as on a touch screen).
 fn send_pointer(
     doc: &mut QjsDocument,
     pointers: &Arc<atomic_refcell::AtomicRefCell<Vec<BlitzPointerEvent>>>,
     x: f32,
     y: f32,
-    down: bool,
+    touch: Touch,
 ) {
     let p = BlitzPointerEvent {
         id: BlitzPointerId::Finger(0),
@@ -954,20 +980,20 @@ fn send_pointer(
             client_y: y,
         },
         button: MouseEventButton::Main,
-        buttons: if down {
-            MouseEventButtons::Primary
-        } else {
+        buttons: if touch == Touch::Up {
             MouseEventButtons::None
+        } else {
+            MouseEventButtons::Primary
         },
         mods: Default::default(),
         details: PointerDetails::default(),
         element: Default::default(),
         active_pointers: Arc::clone(pointers),
     };
-    doc.handle_ui_event(if down {
-        UiEvent::PointerDown(p)
-    } else {
-        UiEvent::PointerUp(p)
+    doc.handle_ui_event(match touch {
+        Touch::Down => UiEvent::PointerDown(p),
+        Touch::Move => UiEvent::PointerMove(p),
+        Touch::Up => UiEvent::PointerUp(p),
     });
 }
 

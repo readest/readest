@@ -81,6 +81,13 @@ pub(crate) enum Message {
         y: f32,
         down: bool,
     },
+    /// The pointer moved with the button held, in device pixels.
+    #[cfg_attr(not(feature = "window"), allow(dead_code))]
+    PointerMove {
+        webview: u32,
+        x: f32,
+        y: f32,
+    },
     /// An `EventLoopProxy` user event; the loop downcasts it to its `T`.
     UserEvent(Box<dyn Any + Send>),
     Exit(i32),
@@ -1469,6 +1476,9 @@ impl<T: UserEvent> Runtime<T> for BlitzRuntime {
                         y,
                         down,
                     } => with_webview(webview, &mut |wv| wv.pointer(x, y, down)),
+                    Message::PointerMove { webview, x, y } => {
+                        with_webview(webview, &mut |wv| wv.pointer_move(x, y))
+                    }
                     Message::UserEvent(event) => {
                         if let Ok(event) = event.downcast::<T>() {
                             callback(RunEvent::UserEvent(*event));
