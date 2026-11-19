@@ -532,12 +532,14 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
           bundleDir: textureInfo.bundleDir,
           byteSize: textureInfo.byteSize,
         });
+        // Save before the next await: a sync pull reloads the store from
+        // settings and can land mid-import, dropping unsaved images (#7671).
+        saveCustomTextures(envConfig);
         if (customTexture && !customTexture.error) {
           await loadTexture(envConfig, customTexture.id);
           if (appService) void queueReplicaBinaryUpload('texture', customTexture, appService);
         }
       }
-      saveCustomTextures(envConfig);
     });
   };
 

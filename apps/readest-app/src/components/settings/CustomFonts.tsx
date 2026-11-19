@@ -79,6 +79,10 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
             bundleDir: fontInfo.bundleDir,
             byteSize: fontInfo.byteSize,
           });
+          // Save before the next await: a sync pull reloads the store from
+          // settings, and one can land mid-import (closing the picker
+          // focuses the window), dropping fonts not saved yet (#7671).
+          saveCustomFonts(envConfig);
           console.log('Added custom font:', customFont);
           if (customFont && !customFont.error) {
             const loadedFont = await loadFont(envConfig, customFont.id);
@@ -86,7 +90,6 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
             if (appService) void queueReplicaBinaryUpload('font', customFont, appService);
           }
         }
-        saveCustomFonts(envConfig);
       } finally {
         // Keep the card visible — it now shows the font family name.
         // availableFamilies will pick it up on next render and the
