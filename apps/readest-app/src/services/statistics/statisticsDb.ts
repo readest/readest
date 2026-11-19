@@ -1,7 +1,7 @@
 import type { AppService } from '@/types/system';
 import type { DatabaseService, DatabaseRow } from '@/types/database';
-import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
-import type { PageStatEvent, StatBook } from '@/types/statistics';
+import { DEFAULT_STATS_TRACKING_CONFIG, MAX_READING_SPEED_SAMPLE_MS } from '@/types/statistics';
+import type { PageStatEvent, ReadingSpeed, ReadingSpeedSample, StatBook } from '@/types/statistics';
 import type { BookQuarterHourDuration } from './readingStats';
 
 interface BookRow extends DatabaseRow {
@@ -49,10 +49,19 @@ function bindLifecycle(): void {
  * leaves this class.
  */
 export class StatisticsDb {
-  // Serializes applyRemoteEvents so two concurrent pulls can't nest BEGINs.
-  private applyRemoteLock: Promise<void> = Promise.resolve();
+  // A local speed write must not accidentally join a remote pull transaction.
+  private writeQueue: Promise<void> = Promise.resolve();
 
   private constructor(private readonly db: DatabaseService) {}
+
+  private queueWrite<T>(write: () => Promise<T>): Promise<T> {
+    const result = this.writeQueue.then(write);
+    this.writeQueue = result.then(
+      () => {},
+      () => {},
+    );
+    return result;
+  }
 
   /** Production entry point — opens + migrates statistics.db (per-tab singleton). */
   static async open(appService: AppService): Promise<StatisticsDb> {
@@ -236,6 +245,33 @@ export class StatisticsDb {
     return rows[0] ?? { seconds: 0, books: 0, pages: 0 };
   }
 
+  // Local samples extend the stats DB without changing KOReader page events or the sync protocol.
+  async insertReadingSpeed(bookMd5: string, sample: ReadingSpeedSample): Promise<void> {
+    await this.queueWrite(() =>
+      this.db.execute(
+        `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms)
+       VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+        [sample.startTimeMs, bookMd5, sample.unit, sample.count, sample.durationMs],
+      ),
+    );
+  }
+
+  async getReadingSpeedSamples(startMs: number, endMs: number): Promise<ReadingSpeedSample[]> {
+    return this.db.select<ReadingSpeedSample>(
+      `SELECT start_time_ms AS startTimeMs, unit, count, duration_ms AS durationMs
+       FROM readest_reading_speed
+       WHERE start_time_ms >= ? AND start_time_ms < ? AND start_time_ms + duration_ms > ?`,
+      [startMs - MAX_READING_SPEED_SAMPLE_MS, endMs, startMs],
+    );
+  }
+
+  async getReadingSpeedTotals(): Promise<ReadingSpeed[]> {
+    return this.db.select<ReadingSpeed>(
+      `SELECT unit, SUM(count) AS count, SUM(duration_ms) AS durationMs
+       FROM readest_reading_speed GROUP BY unit ORDER BY unit`,
+    );
+  }
+
   async getBookByMd5(md5: string): Promise<BookRow | null> {
     const rows = await this.db.select<BookRow>(`SELECT * FROM book WHERE md5 = ? LIMIT 1`, [md5]);
     return rows[0] ?? null;
@@ -290,16 +326,9 @@ export class StatisticsDb {
 
   async applyRemoteEvents(books: StatBook[], events: PageStatEvent[]): Promise<void> {
     if (books.length === 0 && events.length === 0) return;
-    // Serialize against other pulls: the statistics connection is shared across
-    // ReadingStatsTracker instances (split view), and a second concurrent pull
-    // would open a BEGIN inside this one's still-open BEGIN ("cannot start a
-    // transaction within a transaction", Sentry READEST-N). The per-op native
-    // lock can't make this multi-statement transaction atomic on its own.
-    const prev = this.applyRemoteLock;
-    let release!: () => void;
-    this.applyRemoteLock = new Promise<void>((resolve) => (release = resolve));
-    await prev;
-    try {
+    // The per-op native lock cannot serialize a multi-statement transaction
+    // with another pull or a local speed write on the shared connection.
+    return this.queueWrite(async () => {
       // One transaction for the whole pulled batch: a single commit instead of
       // O(rows) fsyncs, and the apply is atomic (a failed pull leaves no partial
       // state). Critical when a fresh device backfills tens of thousands of rows.
@@ -324,9 +353,7 @@ export class StatisticsDb {
         await this.db.execute('ROLLBACK');
         throw err;
       }
-    } finally {
-      release();
-    }
+    });
   }
 
   async getCursor(key: CursorKey): Promise<number> {

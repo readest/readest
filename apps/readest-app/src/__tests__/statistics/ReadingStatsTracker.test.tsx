@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Window } from 'happy-dom';
 import type { BookProgress } from '@/types/book';
 
 const mocks = vi.hoisted(() => ({
@@ -11,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   db: {
     upsertBook: vi.fn(),
     insertPageEvent: vi.fn(),
+    insertReadingSpeed: vi.fn().mockResolvedValue(undefined),
     recomputeBookTotals: vi.fn(),
   },
 }));
@@ -32,6 +34,9 @@ vi.mock('@/services/statistics/statsSync', () => ({
   pullStats: vi.fn(),
 }));
 vi.mock('@/services/sync/syncCategories', () => ({ isSyncCategoryEnabled: () => false }));
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: { getState: () => ({ settings: { bookorbit: {}, grimmory: {} } }) },
+}));
 vi.mock('@/libs/sync', () => ({ SyncClient: class {} }));
 vi.mock('@/services/tts/TTSSessionManager', () => ({
   ttsSessionManager: {
@@ -120,6 +125,33 @@ describe('ReadingStatsTracker while TTS plays', () => {
     await settle();
 
     expect(mocks.db.insertPageEvent).toHaveBeenCalled();
+  });
+
+  it('records the visible text passed during a forward turn as a timed speed sample', async () => {
+    const doc = new Window().document as unknown as Document;
+    const text = doc.createTextNode('A short English sentence. The next page.');
+    doc.body.append(text);
+    const openRange = (current: number, start: number, end: number) => {
+      setPage(current);
+      const range = doc.createRange();
+      range.setStart(text, start);
+      range.setEnd(text, end);
+      mocks.progress = { ...mocks.progress!, index: 0, range };
+    };
+    const startTimeMs = Date.now();
+    openRange(0, 0, 25);
+    const { rerender } = mount();
+    await settle(20_000);
+    openRange(1, 26, text.length);
+    rerender(<ReadingStatsTracker bookKey={BOOK_KEY} />);
+    await settle();
+
+    expect(mocks.db.insertReadingSpeed).toHaveBeenCalledWith('md5-1', {
+      unit: 'words',
+      count: 4,
+      startTimeMs,
+      durationMs: 20_000,
+    });
   });
 
   it('stops recording page dwell while TTS is playing', async () => {
