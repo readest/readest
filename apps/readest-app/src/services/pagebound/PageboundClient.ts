@@ -200,14 +200,16 @@ export class PageboundClient {
   // title matches, preferring the same author. The author stays out of the
   // query: Pagebound spells names its own way ("J.R.R. Tolkien") and Typesense
   // needs every query word to match. Pagebound often drops a "Series:" prefix
-  // or a subtitle, so each part of a "Series: Title" is searched for too.
+  // or a subtitle, so each part of a "Series: Title" is searched for too, as is
+  // a title without the trailing "(Series Book 1)" that store editions add.
   private async resolveLink(book: Book, config: BookConfig): Promise<PageboundBookLink> {
     if (config.pagebound) return config.pagebound;
-    const parts = book.title.includes(':')
-      ? book.title.split(':').map(normalizeTitle).filter(Boolean)
-      : [];
-    const titles = new Set([normalizeTitle(book.title), ...parts]);
-    for (const query of [book.title, ...parts]) {
+    const base = book.title.replace(/(\s*[([][^()[\]]*[)\]])+\s*$/, '').trim() || book.title;
+    const parts = [book.title, base].flatMap((title) =>
+      title.includes(':') ? title.split(':').map(normalizeTitle).filter(Boolean) : [],
+    );
+    const titles = new Set([normalizeTitle(book.title), normalizeTitle(base), ...parts]);
+    for (const query of new Set([book.title, base, ...parts])) {
       const matches = (await this.searchBooks(query)).filter(
         (hit) => hit.uuid && Number.isFinite(hit.bookId) && titles.has(normalizeTitle(hit.title)),
       );

@@ -260,6 +260,55 @@ describe('PageboundClient', () => {
     expect(calls('GET', '/api/v1/books/dixon')).toHaveLength(0);
   });
 
+  // Store and Calibre titles often end in the series: Pagebound's search still
+  // finds the book, but its title has no such suffix (#7480).
+  test('auto-match accepts the title without a trailing bracketed series', async () => {
+    const searched: string[] = [];
+    route(
+      (url) => {
+        const { hostname, searchParams } = new URL(url);
+        if (!hostname.endsWith('.typesense.net')) return undefined;
+        const q = searchParams.get('q')!;
+        searched.push(q);
+        const doc = { id: '3012', uuid: 'senlin', title: 'Senlin Ascends' };
+        return json({ hits: q === 'Senlin Ascends' ? [{ document: doc }] : [] });
+      },
+      on('GET', '/books/senlin', () => json({ book: remoteBook, user_book: currentUserBook })),
+      on('POST', '/reading_updates', () => json({}, 201)),
+    );
+    const senlin = {
+      ...book,
+      title: 'Senlin Ascends (The Books of Babel Book 1)',
+      author: 'Josiah Bancroft',
+    };
+
+    await newClient().pushProgress(senlin, cfg({ progress: [1, 100] }), { broadcast: false });
+
+    expect(searched).toEqual(['Senlin Ascends (The Books of Babel Book 1)', 'Senlin Ascends']);
+    expect(calls('GET', '/books/senlin')).toHaveLength(1);
+    expect(calls('POST', '/reading_updates')).toHaveLength(1);
+  });
+
+  test('auto-match still accepts a part of the full title that keeps its bracketed suffix', async () => {
+    const doc = { id: '7', uuid: 'final-empire', title: 'The Final Empire (Mistborn Book 1)' };
+    route(
+      on('GET', 'typesense.net', () => json({ hits: [{ document: doc }] })),
+      on('GET', '/books/final-empire', () =>
+        json({ book: remoteBook, user_book: currentUserBook }),
+      ),
+      on('POST', '/reading_updates', () => json({}, 201)),
+    );
+    const mistborn = {
+      ...book,
+      title: 'Mistborn: The Final Empire (Mistborn Book 1)',
+      author: 'Brandon Sanderson',
+    };
+
+    await newClient().pushProgress(mistborn, cfg({ progress: [1, 100] }), { broadcast: false });
+
+    expect(calls('POST', '/reading_updates')).toHaveLength(1);
+  });
+
   test('auto-match fails over to Link Book when no title matches', async () => {
     route(
       on('GET', 'typesense.net', () =>
