@@ -2768,5 +2768,7 @@
   "Search by field:": "ค้นหาตามฟิลด์:",
   "Voice Engine": "เอนจินเสียง",
   "Filter voices": "กรองเสียง",
-  "Plain placeholder covers": "ปกตัวยึดตำแหน่งแบบเรียบ"
+  "Plain placeholder covers": "ปกตัวยึดตำแหน่งแบบเรียบ",
+  "Previous Week": "สัปดาห์ก่อนหน้า",
+  "Next Week": "สัปดาห์ถัดไป"
 }

@@ -61,6 +61,78 @@ describe('ReadingTimeChart keyboard access', () => {
   });
 });
 
+describe('ReadingTimeChart calendar periods', () => {
+  // Wednesday: the week so far is Sunday 10-18 to today, and 10-16 is last week.
+  const daily = new Map([
+    ['2026-10-16', 1800],
+    ['2026-10-20', 600],
+  ]);
+
+  it('shows the calendar week so far and steps back to the previous one', () => {
+    vi.useFakeTimers({ now: new Date('2026-10-21T12:00:00'), toFake: ['Date'] });
+    render(<ReadingTimeChart daily={daily} />);
+    const status = screen.getByRole('status');
+    const previous = screen.getByRole('button', { name: 'Previous Week' });
+    const next = screen.getByRole('button', { name: 'Next Week' });
+
+    // 10 minutes over the four days read so far, Sunday to today.
+    expect(status.textContent).toBe('10mDaily average 2m');
+    expect(next).toHaveProperty('disabled', true);
+    expect(previous).toHaveProperty('disabled', false);
+
+    fireEvent.click(previous);
+    expect(status.textContent).toBe('30mDaily average 4m');
+    // Nothing was read before that week.
+    expect(previous).toHaveProperty('disabled', true);
+    expect(next).toHaveProperty('disabled', false);
+    fireEvent.click(next);
+    expect(status.textContent).toBe('10mDaily average 2m');
+  });
+
+  it('labels the month and year it shows, and opens on the current one', () => {
+    vi.useFakeTimers({ now: new Date('2026-10-21T12:00:00'), toFake: ['Date'] });
+    render(<ReadingTimeChart daily={new Map([...daily, ['2026-09-05', 60]])} />);
+    fireEvent.click(screen.getByRole('radio', { name: 'Month' }));
+    expect(screen.getByText('Oktober 2026')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Previous Month' }));
+    expect(screen.getByText('September 2026')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Year' }));
+    expect(screen.getByText('2026')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Previous Year' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('status').textContent).toContain('41m');
+  });
+
+  it('leaves readings dated after today out of the total and the scale', () => {
+    // A synced device whose clock runs ahead can store a reading for Friday.
+    vi.useFakeTimers({ now: new Date('2026-10-21T12:00:00'), toFake: ['Date'] });
+    const { container } = render(
+      <ReadingTimeChart daily={new Map([...daily, ['2026-10-23', 3600]])} />,
+    );
+    expect(screen.getByRole('status').textContent).toBe('10mDaily average 2m');
+    // 10-20 is the week's longest reading so far, so its bar is full height.
+    expect(container.querySelector<HTMLElement>('[data-index="2"] > span')!.style.height).toBe(
+      '100%',
+    );
+    // October's bar is the current month: it holds 10-16 and 10-20, not 10-23.
+    fireEvent.click(screen.getByRole('radio', { name: 'Year' }));
+    expect(screen.getByRole('status').textContent).toMatch(/^40mDaily average/);
+  });
+
+  it('does not select days that have not come yet', () => {
+    vi.useFakeTimers({ now: new Date('2026-10-21T12:00:00'), toFake: ['Date'] });
+    const { container } = render(<ReadingTimeChart daily={daily} />);
+    const chart = screen.getByRole('group', { name: 'Reading Time' });
+    const status = screen.getByRole('status');
+
+    fireEvent.focus(chart);
+    expect(status.textContent).toContain('21');
+    fireEvent.keyDown(chart, { key: 'ArrowRight' });
+    expect(status.textContent).toContain('21');
+    expect(container.querySelectorAll('[data-index]')).toHaveLength(4);
+  });
+});
+
 describe('pointer behavior', () => {
   it('leaves the headline and footer alone on hover, and selects on click', () => {
     vi.useFakeTimers({ now: new Date('2026-10-21T12:00:00'), toFake: ['Date'] });
@@ -74,7 +146,8 @@ describe('pointer behavior', () => {
     const [chartStatus, heatmapStatus] = screen.getAllByRole('status');
     const chartBefore = chartStatus!.textContent;
     const heatmapBefore = heatmapStatus!.textContent;
-    const bar = container.querySelector('[data-index="5"]')!;
+    // The week runs Sunday 10-18 to Saturday 10-24, so 10-20 is its third bar.
+    const bar = container.querySelector('[data-index="2"]')!;
     const day = container.querySelector('[data-date="2026-10-20"]')!;
 
     fireEvent.mouseOver(bar);
