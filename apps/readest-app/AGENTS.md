@@ -139,6 +139,10 @@ When in doubt, toggle E-ink in Settings → Misc and check. The rules in `global
 
 Commits, PR titles and descriptions, issues, and review replies are public. Never include user counts, payment or subscription data (buyer numbers, revenue, audit results from production queries), or any user identifiers such as user ids, emails, or payment/session ids. Describe the mechanism, not the numbers behind it.
 
+### Commit attribution
+
+Every commit you write must end with an attribution line that names both the coding agent and the model, e.g. `Co-Authored-By: Claude Code (Claude Opus 5.5) <noreply@anthropic.com>`. If your harness supplies a default line that names only one of them, rewrite it to name both. In a PR from an outside contributor, a commit without this line makes the PR gate skip all CI; see [CONTRIBUTING.md](../../CONTRIBUTING.md#contributing-with-a-coding-agent).
+
 ### PR review workflow
 
 While a PR you opened, or pushed to, is under review, keep a persistent watch on its reviews and comments, its CI checks, and whether it still merges, for the whole session, and act on them without being asked.
