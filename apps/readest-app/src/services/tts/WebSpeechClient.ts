@@ -81,6 +81,10 @@ type WebSpeechVoice = SpeechSynthesisVoice & {
 // a platform with no voices at all never fires the event.
 const WEB_SPEECH_VOICES_TIMEOUT_MS = 2000;
 
+// Chrome on Android reports voice locales with an underscore (en_US) instead
+// of the BCP 47 form (en-US) the rest of the app compares against.
+const voiceLang = (voice: SpeechSynthesisVoice) => voice.lang.replace(/_/g, '-');
+
 export class WebSpeechClient implements TTSClient {
   name = 'web-speech';
   initialized = false;
@@ -234,7 +238,7 @@ export class WebSpeechClient implements TTSClient {
       return {
         id: voice.id,
         name: voice.name,
-        lang: voice.lang,
+        lang: voiceLang(voice),
         disabled: !this.initialized,
       } as TTSVoice;
     });
@@ -254,7 +258,7 @@ export class WebSpeechClient implements TTSClient {
     // whose sections mix region variants (e.g. en-US front matter and en-GB
     // body text); the requested locale's voices sort first. See #4033.
     const filteredVoices = this.#voices
-      .filter((voice) => isSameLang(voice.lang, lang))
+      .filter((voice) => isSameLang(voiceLang(voice), lang))
       .filter(isNotBlacklisted);
     const availableVoiceIds = new Set(filteredVoices.map((voice) => voice.voiceURI));
     const seenIds = new Set<string>();
@@ -274,7 +278,7 @@ export class WebSpeechClient implements TTSClient {
           ({
             id: voice.voiceURI,
             name: voice.name,
-            lang: voice.lang,
+            lang: voiceLang(voice),
           }) as TTSVoice,
       )
       .filter((voice) => {

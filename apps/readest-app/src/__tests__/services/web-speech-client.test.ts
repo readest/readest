@@ -136,3 +136,46 @@ describe('WebSpeechClient init with no voices available', () => {
     expect((await client.getAllVoices()).length).toBe(voices.length);
   });
 });
+
+// Chrome on Android reports voice locales with an underscore (en_US).
+describe('WebSpeechClient Android locale voices', () => {
+  const androidVoices = [
+    makeVoice('Japanese Japan', 'ja_JP'),
+    makeVoice('English United Kingdom', 'en_GB'),
+    makeVoice('English United States', 'en_US'),
+  ];
+  let client: WebSpeechClient;
+
+  beforeEach(async () => {
+    Object.defineProperty(window, 'speechSynthesis', {
+      value: {
+        getVoices: () => androidVoices,
+        cancel: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn(),
+        speak: vi.fn(),
+      },
+      configurable: true,
+    });
+    client = new WebSpeechClient();
+    await client.init();
+  });
+
+  test('offers Android voices for a book in a language without a region', async () => {
+    const groups = await client.getVoices('ja');
+
+    expect(groups[0]!.disabled).toBe(false);
+    expect(groups[0]!.voices.map((voice) => voice.name)).toEqual(['Japanese Japan']);
+    expect(await client.getWebSpeechVoiceFromLang('ja')).toBe(androidVoices[0]);
+  });
+
+  test("puts the Android voice of the book's region first", async () => {
+    const groups = await client.getVoices('en-US');
+
+    expect(groups[0]!.voices.map((voice) => voice.name)).toEqual([
+      'English United States',
+      'English United Kingdom',
+    ]);
+    expect(await client.getWebSpeechVoiceFromLang('en-US')).toBe(androidVoices[2]);
+  });
+});
