@@ -31,7 +31,6 @@ const ColorInput: React.FC<ColorInputProps> = ({
   pickerPosition = 'left',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,21 +57,29 @@ const ColorInput: React.FC<ColorInputProps> = ({
   // The settings dialog claims Escape on the <dialog> element (and on window) to
   // mean "step back one level", so while the picker is open Escape would cancel
   // the whole page — in the theme editor that drops the entire unsaved draft when
-  // the user only meant to put the picker away. Claim the key for as long as the
-  // picker is open. Listen on the wrapper, not the popup: the picker is opened
-  // from the swatch, so focus usually sits on a button outside `pickerRef`.
-  // Closing this way is a dismissal, not "done choosing", so onCommit stays out.
+  // the user only meant to put the picker away.
+  //
+  // Captured on document rather than bound to the picker or its wrapper: the
+  // popup can stay open while focus moves elsewhere (Shift+Tab never fires the
+  // mousedown that closes it), and the key has to be claimed before the dialog's
+  // listeners see it. Only one picker can be open — opening another one closes
+  // the first through that same mousedown listener — so there is no second owner
+  // to argue with.
   useEffect(() => {
-    const wrapper = wrapperRef.current;
-    if (!isOpen || !wrapper) return;
+    if (!isOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.stopPropagation();
       setIsOpen(false);
+      // The colour was already applied live on every onChange; closing the popup
+      // is the "interaction settled" moment onCommit exists for, whichever way it
+      // closes. Skipping it here would leave auto-save consumers (Word Lens gloss
+      // colour) with the new swatch showing but the old value stored.
+      onCommit?.();
     };
-    wrapper.addEventListener('keydown', handleKeyDown);
-    return () => wrapper.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen, onCommit]);
 
   // Anchored positioning only applies from `sm` up; below that the popup is
   // rendered as a centered floating card (see the popup container classes) so
@@ -87,7 +94,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
   };
 
   return (
-    <div ref={wrapperRef} className='relative flex items-center gap-1.5'>
+    <div className='relative flex items-center gap-1.5'>
       <button
         type='button'
         onClick={() => setIsOpen(!isOpen)}

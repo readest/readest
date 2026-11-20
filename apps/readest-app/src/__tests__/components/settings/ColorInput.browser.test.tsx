@@ -27,12 +27,16 @@ const InDialog = ({
   }, [onDialogKey]);
   return (
     <dialog ref={ref} open>
+      {/* A focusable control outside the colour input, as the theme editor has
+          a name field before its colour rows. */}
+      <button type='button'>Theme name</button>
       <ColorInput label='Accent' value='#ff0000' onChange={() => {}} onCommit={onCommit} />
     </dialog>
   );
 };
 
 const swatch = () => screen.getByLabelText('Accent');
+const nameField = () => screen.getByRole('button', { name: 'Theme name' });
 // The popup's hex field is the only textbox on screen, so it doubles as the
 // picker's "is it open" probe.
 const pickerOpen = () => screen.queryByRole('textbox') !== null;
@@ -46,7 +50,7 @@ describe('ColorInput', () => {
     await userEvent.click(swatch());
     expect(pickerOpen()).toBe(true);
     // The picker opens from the swatch, so focus stays on it rather than moving
-    // into the popup — the case a listener bound to the popup would miss.
+    // into the popup.
     swatch().focus();
     expect(document.activeElement).toBe(swatch());
 
@@ -54,9 +58,9 @@ describe('ColorInput', () => {
 
     expect(pickerOpen()).toBe(false);
     expect(onDialogKey).not.toHaveBeenCalled();
-    // Escape is a dismissal, not "done choosing": nothing gets pinned to the
-    // palette the way a click outside commits.
-    expect(onCommit).not.toHaveBeenCalled();
+    // Closing the popup is the moment onCommit exists for, so an auto-save
+    // consumer keeps the colour the user just picked.
+    expect(onCommit).toHaveBeenCalledTimes(1);
   });
 
   it('closes only the picker on Escape from inside the popup', async () => {
@@ -71,13 +75,32 @@ describe('ColorInput', () => {
     expect(onDialogKey).not.toHaveBeenCalled();
   });
 
-  it('leaves Escape to the page while the picker is closed', async () => {
+  it('still owns Escape after focus has moved out of the picker', async () => {
     const onDialogKey = vi.fn();
     render(<InDialog onDialogKey={onDialogKey} />);
 
-    swatch().focus();
+    await userEvent.click(swatch());
+    expect(pickerOpen()).toBe(true);
+    // No mousedown happens on a keyboard focus move, so the picker stays open
+    // with focus outside it entirely.
+    nameField().focus();
+    expect(document.activeElement).toBe(nameField());
+
+    await userEvent.keyboard('{Escape}');
+
+    expect(pickerOpen()).toBe(false);
+    expect(onDialogKey).not.toHaveBeenCalled();
+  });
+
+  it('leaves Escape to the page while the picker is closed', async () => {
+    const onDialogKey = vi.fn();
+    const onCommit = vi.fn();
+    render(<InDialog onDialogKey={onDialogKey} onCommit={onCommit} />);
+
+    nameField().focus();
     await userEvent.keyboard('{Escape}');
 
     expect(onDialogKey).toHaveBeenCalledWith('Escape');
+    expect(onCommit).not.toHaveBeenCalled();
   });
 });
