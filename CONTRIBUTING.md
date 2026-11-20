@@ -171,6 +171,8 @@ pnpm build
 
 Please also make a manual, functional test of your changes. When all that's done, it's time to file a pull request to upstream and fill out the title and body appropriately.
 
+Every pull request must link the issue it addresses: open one first if none exists, then put `Fixes #<number>` in the pull request description. Until it does, CI is skipped and the pull request is labeled `needs-issue`.
+
 ## Credits
 
 This documented was inspired by the contributing guidelines for [cloudflare/wrangler2](https://github.com/cloudflare/wrangler2/blob/main/CONTRIBUTING.md).

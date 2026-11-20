@@ -7,12 +7,31 @@ on:
 permissions:
   contents: read
 jobs:
+  # Outside PRs must link an issue and attribute every commit to an agent and
+  # model (CONTRIBUTING.md); every other job waits on this and is skipped when
+  # it fails. pr-gate.yml posts the explanation on the PR.
+  gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - run: node .github/scripts/pr-gate.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
   # Evaluation only: the flake exposes no `checks`, so this verifies that every
   # output still evaluates across systems without compiling anything. The full
   # build runs in nix-build.yml on main, which is also what populates the cache.
   # Only on pull_request: main pushes are already covered by nix-build.yml, and
   # running both there would build and push the same paths twice.
   nix_flake_check:
+    needs: gate
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -35,6 +54,7 @@ jobs:
   # PRs that don't touch the Rust backend. The job still runs and reports
   # success so it stays green as a required check.
   rust_lint:
+    needs: gate
     runs-on: ubuntu-latest
     # pull-requests: read lets dorny/paths-filter list a PR's changed files
     # via the REST API (the top-level grant is contents: read only).
@@ -103,6 +123,7 @@ jobs:
   # libs by the release workflow. Before this job it had no PR-time CI at
   # all. Paths-filtered like rust_lint so most PRs skip the toolchain install.
   koplugin_rust_lint:
+    needs: gate
     runs-on: ubuntu-latest
     # pull-requests: read lets dorny/paths-filter list a PR's changed files
     # via the REST API (the top-level grant is contents: read only).
@@ -147,6 +168,7 @@ jobs:
         run: cargo test
 
   build_web_app:
+    needs: gate
     # Pinned: our Playwright (1.60) has no Chromium build for ubuntu26.04,
     # which ubuntu-latest now resolves to on some runners.
     runs-on: ubuntu-24.04
@@ -219,6 +241,7 @@ jobs:
   # across two parallel shards (vitest --shard). The browser tests run in
   # test_web_browser; koplugin + browser-extension tests in test_extensions.
   test_web_app:
+    needs: gate
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -248,6 +271,7 @@ jobs:
         run: pnpm test:pr:web:unit --shard=${{ matrix.shard }}/2
 
   test_web_browser:
+    needs: gate
     # Pinned: our Playwright (1.60) has no Chromium build for ubuntu26.04,
     # which ubuntu-latest now resolves to on some runners.
     runs-on: ubuntu-24.04
@@ -294,6 +318,7 @@ jobs:
   # (and the ~45s LuaJIT/busted install they need) only run when the koplugin
   # sources changed, so most PRs skip that cost entirely.
   test_extensions:
+    needs: gate
     runs-on: ubuntu-latest
     # pull-requests: read lets dorny/paths-filter list a PR's changed files
     # via the REST API (the top-level grant is contents: read only).
@@ -372,6 +397,7 @@ jobs:
   # changed. Frontend-only PRs are covered by the web build/test jobs. The job
   # still runs and reports success so it stays green as a required check.
   build_tauri_app:
+    needs: gate
     runs-on: ubuntu-latest
     # pull-requests: read lets dorny/paths-filter list a PR's changed files
     # via the REST API (the top-level grant is contents: read only).
