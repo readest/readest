@@ -41,11 +41,6 @@ export const stepBackSettingsSubPage = (): boolean => {
   return true;
 };
 
-/** Test-only reset for the module-level stack. */
-export const resetSettingsSubPageBackStack = () => {
-  backStack.length = 0;
-};
-
 /**
  * Registers `onBack` as the Escape/Back target while this sub-page is mounted.
  * The handler is read through a ref so an inline arrow does not re-register on

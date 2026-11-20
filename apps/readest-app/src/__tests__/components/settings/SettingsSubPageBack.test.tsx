@@ -1,160 +1,167 @@
 // @vitest-environment happy-dom
 import React, { useState } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * Escape (and Android Back, which the dialog routes the same way) leaves one
- * settings level at a time. Settings nests its pages inside a single dialog —
- * Font → Manage Fonts, TTS → Voice Library, Integrations → Data Flow — and the
- * dialog used to close outright from any depth, dropping the reader back into
- * the book.
+ * Escape, Android Back and the Settings header's back arrow leave one settings
+ * level at a time. Settings nests its pages inside a single dialog — Font →
+ * Manage Fonts, TTS → Voice Library, Integrations → Data Flow — and the dialog
+ * used to close outright from any depth, dropping the reader back into the book.
  */
 
+const env = vi.hoisted(() => ({ isAndroidApp: false, isMobile: false }));
+const settings = vi.hoisted(() => ({ setSettingsDialogOpen: vi.fn() }));
+const fontPanel = vi.hoisted(() => ({ render: (): React.ReactNode => null }));
+
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: {} }),
+  useEnv: () => ({ envConfig: {}, appService: env }),
 }));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
+vi.mock('@/store/deviceStore', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/store/deviceStore')>()),
+  useDeviceControlStore: () => ({
+    acquireBackKeyInterception: vi.fn(),
+    releaseBackKeyInterception: vi.fn(),
+  }),
+}));
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: () => ({
+    setFontPanelView: vi.fn(),
+    setSettingsDialogOpen: settings.setSettingsDialogOpen,
+    setActiveSettingsItemId: vi.fn(),
+    setRequestedPanel: vi.fn(),
+  }),
+}));
+vi.mock('@/components/command-palette', () => ({ useCommandPalette: () => ({ open: vi.fn() }) }));
+vi.mock('@/components/Dropdown', () => ({ default: () => null }));
+vi.mock('@/components/settings/DialogMenu', () => ({ default: () => null }));
+vi.mock('@/components/settings/FontPanel', () => ({ default: () => fontPanel.render() }));
+vi.mock('@/components/settings/LayoutPanel', () => ({ default: () => null }));
+vi.mock('@/components/settings/ThemePanel', () => ({ default: () => null }));
+vi.mock('@/components/settings/ControlPanel', () => ({ default: () => null }));
+vi.mock('@/components/settings/TTSPanel', () => ({ default: () => null }));
+vi.mock('@/components/settings/LangPanel', () => ({ default: () => null }));
+vi.mock('@/components/settings/AIPanel', () => ({ default: () => null }));
+vi.mock('@/components/settings/IntegrationsPanel', () => ({ default: () => null }));
+vi.mock('@/components/settings/MiscPanel', () => ({ default: () => null }));
 
-import Dialog from '@/components/Dialog';
-import SubPageHeader from '@/components/settings/SubPageHeader';
-import {
-  SettingsSubPageBackScope,
-  resetSettingsSubPageBackStack,
-  stepBackSettingsSubPage,
-} from '@/components/settings/settingsSubPageBack';
+const { default: Dialog } = await import('@/components/Dialog');
+const { default: SubPageHeader } = await import('@/components/settings/SubPageHeader');
+const { default: SettingsDialog } = await import('@/components/settings/SettingsDialog');
+const { eventDispatcher } = await import('@/utils/event');
 
-/** The wiring SettingsDialog uses: step out of a sub-page, else close. */
-const SettingsShell: React.FC<{ onClose: () => void; children: React.ReactNode }> = ({
-  onClose,
-  children,
-}) => (
-  <Dialog
-    isOpen={true}
-    onClose={onClose}
-    onBack={() => {
-      if (stepBackSettingsSubPage()) return;
-      onClose();
-    }}
-  >
-    <SettingsSubPageBackScope>{children}</SettingsSubPageBackScope>
-  </Dialog>
-);
+/** Font → Voice Library → Custom service, as TTS nests its pages. */
+const NestedPanel = () => {
+  const [depth, setDepth] = useState(0);
+  if (depth === 0) return <button onClick={() => setDepth(1)}>Voice Library</button>;
+  if (depth === 1)
+    return (
+      <div>
+        <SubPageHeader parentLabel='TTS' currentLabel='Voice Library' onBack={() => setDepth(0)} />
+        <button onClick={() => setDepth(2)}>Open service editor</button>
+      </div>
+    );
+  return (
+    <SubPageHeader
+      parentLabel='Voice Library'
+      currentLabel='Custom service'
+      onBack={() => setDepth(1)}
+    />
+  );
+};
 
-const pressEscape = () => fireEvent.keyDown(window, { key: 'Escape' });
+const openNested = () => {
+  render(<SettingsDialog bookKey='' />);
+  fireEvent.click(screen.getByText('Voice Library'));
+  fireEvent.click(screen.getByText('Open service editor'));
+  expect(screen.getByText('Custom service')).toBeTruthy();
+};
+
+const expectSteppedBackThroughEveryLevel = (back: () => void) => {
+  back();
+  expect(screen.queryByText('Custom service')).toBeNull();
+  expect(screen.getByText('Open service editor')).toBeTruthy();
+  expect(settings.setSettingsDialogOpen).not.toHaveBeenCalled();
+
+  back();
+  expect(screen.queryByText('Open service editor')).toBeNull();
+  expect(screen.getByText('Voice Library')).toBeTruthy();
+  expect(settings.setSettingsDialogOpen).not.toHaveBeenCalled();
+
+  back();
+  expect(settings.setSettingsDialogOpen).toHaveBeenCalledTimes(1);
+  expect(settings.setSettingsDialogOpen).toHaveBeenCalledWith(false);
+};
 
 beforeEach(() => {
-  resetSettingsSubPageBackStack();
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
+  env.isAndroidApp = false;
+  settings.setSettingsDialogOpen.mockClear();
+  fontPanel.render = () => <NestedPanel />;
 });
 
 afterEach(() => {
   cleanup();
-  resetSettingsSubPageBackStack();
+  vi.unstubAllGlobals();
 });
 
 describe('Settings back stack', () => {
-  it('steps out of a sub-page instead of closing the dialog', () => {
-    const onClose = vi.fn();
-    const Panel = () => {
-      const [sub, setSub] = useState(false);
-      return sub ? (
-        <SubPageHeader
-          parentLabel='Font'
-          currentLabel='Custom Fonts'
-          onBack={() => setSub(false)}
-        />
-      ) : (
-        <button onClick={() => setSub(true)}>Manage Fonts</button>
-      );
-    };
-    render(
-      <SettingsShell onClose={onClose}>
-        <Panel />
-      </SettingsShell>,
-    );
-
-    fireEvent.click(screen.getByText('Manage Fonts'));
-    pressEscape();
-
-    expect(onClose).not.toHaveBeenCalled();
-    expect(screen.queryByText('Custom Fonts')).toBeNull();
-    expect(screen.getByText('Manage Fonts')).toBeTruthy();
+  it('steps back one level per Escape and closes only from the panel', () => {
+    openNested();
+    expectSteppedBackThroughEveryLevel(() => fireEvent.keyDown(window, { key: 'Escape' }));
   });
 
-  it('closes the dialog once the panel itself is showing', () => {
-    const onClose = vi.fn();
-    render(
-      <SettingsShell onClose={onClose}>
-        <p>Font panel</p>
-      </SettingsShell>,
-    );
-
-    pressEscape();
-
-    expect(onClose).toHaveBeenCalledTimes(1);
+  it('steps back one level per Android Back and closes only from the panel', () => {
+    env.isAndroidApp = true;
+    openNested();
+    expectSteppedBackThroughEveryLevel(() => {
+      let consumed = false;
+      act(() => {
+        consumed = eventDispatcher.dispatchSync('native-key-down', { keyName: 'Back' });
+      });
+      expect(consumed).toBe(true);
+    });
   });
 
-  it('steps back one level at a time through nested pages', () => {
-    const onClose = vi.fn();
-    const Panel = () => {
-      const [depth, setDepth] = useState(0);
-      if (depth === 0) return <button onClick={() => setDepth(1)}>Voice Library</button>;
-      if (depth === 1)
-        return (
-          <div>
-            <SubPageHeader
-              parentLabel='TTS'
-              currentLabel='Voice Library'
-              onBack={() => setDepth(0)}
-            />
-            <button onClick={() => setDepth(2)}>Open service editor</button>
-          </div>
-        );
-      return (
-        <SubPageHeader
-          parentLabel='Voice Library'
-          currentLabel='Custom service'
-          onBack={() => setDepth(1)}
-        />
-      );
-    };
-    render(
-      <SettingsShell onClose={onClose}>
-        <Panel />
-      </SettingsShell>,
+  it("steps back one level per tap on the header's back arrow", () => {
+    openNested();
+    expectSteppedBackThroughEveryLevel(() =>
+      fireEvent.click(screen.getByRole('button', { name: 'Back' })),
     );
+  });
 
-    fireEvent.click(screen.getByText('Voice Library'));
-    fireEvent.click(screen.getByText('Open service editor'));
+  it('closes straight away when no sub-page is open', () => {
+    fontPanel.render = () => <p>Font panel</p>;
+    render(<SettingsDialog bookKey='' />);
 
-    pressEscape();
-    expect(screen.queryByText('Custom service')).toBeNull();
-    expect(screen.getByText('Voice Library')).toBeTruthy();
-    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: 'Escape' });
 
-    pressEscape();
-    expect(screen.getByText('Voice Library')).toBeTruthy();
-    expect(onClose).not.toHaveBeenCalled();
-
-    pressEscape();
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(settings.setSettingsDialogOpen).toHaveBeenCalledWith(false);
   });
 
   it('leaves headers outside Settings out of the stack', () => {
-    // Reading stats and the catalog manager render the same header inside a
-    // dialog that already carries its own onBack; Escape there must close that
-    // dialog, not reach into a Settings level left behind.
+    // Reading stats renders the same header inside its own dialog; Escape there
+    // must close that dialog, not reach into a Settings level left behind.
     const onClose = vi.fn();
+    const onHeaderBack = vi.fn();
     render(
       <Dialog isOpen={true} onClose={onClose}>
-        <SubPageHeader parentLabel='Stats' currentLabel='Monthly' onBack={vi.fn()} />
+        <SubPageHeader parentLabel='Stats' currentLabel='Monthly' onBack={onHeaderBack} />
       </Dialog>,
     );
 
-    pressEscape();
+    fireEvent.keyDown(window, { key: 'Escape' });
 
     expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onHeaderBack).not.toHaveBeenCalled();
   });
 });
