@@ -26,3 +26,5 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [#5649 FXL text follows the theme](fxl-authored-colors-5649.md) MERGED #5657; FXL docs get ONLY applyFixedlayoutStyles
 - [#5663 last page unreachable on iOS 18](ios-last-page-scroll-clamp-5663.md) MERGED #5678 + foliate#73; WebKit clamps final scrollLeft after animated transforms; rAF re-apply fixes; repros 18.5 NOT 26.3
 - [Scroll offsets quantize; sub-pixel rendering differs](scroll-offsets-quantize-subpixel-rendering.md) MERGED #5679 + foliate#74; Blink SNAPS composited layers to device px; measure pixels, not getBoundingClientRect
+- [Scroll overlap = PDF only](scroll-overlap-fixed-layout-only.md) MERGED #6621
+- [#5179 layered-turn toolbar sync](pr-5179-layered-turn-toolbar-sync.md) MERGED

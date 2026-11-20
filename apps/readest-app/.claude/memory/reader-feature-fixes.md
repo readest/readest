@@ -123,3 +123,29 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [#6442 pages-left counter stalled](pages-left-counter-stall-6442.md) regression from #6319 (+ #6450 last…
 - [#6155/#6212 Duokan footnotes froze paged mode](duokan-footnote-image-clamp-thrash-6155.md) FIXED foliate-js#96 (b9dcd03) +…
 - [#6253 set_window_title dead at runtime](app-command-acl-manifest-6253.md) app commands need build.rs…
+- [MiMo Custom TTS via chat completions](custom-tts-mimo-chat-completions.md) MERGED
+- [#258 custom OpenAI-compatible TTS (BYOK)](custom-tts-byok-258.md) MERGED #6746
+- [Edge TTS endpoint moved](edge-tts-msedgeservices-endpoint-6722.md) MERGED #6722
+- [#6719 iOS 16 share sheet never opened](ios16-sharekit-url-parse-6719.md) MERGED #6770
+- [#4937 Android Lookup App picker](android-lookup-app-picker-4937.md) MERGED #7272
+- [#6723 center+indent-0 !important](text-align-center-important-6723.md) MERGED #6763
+- [#6656 blockquote paragraphs kept margins](blockquote-paragraph-margins-6656.md) MERGED #6759
+- [#5830 quote cards](quote-card-5830.md) MERGED #6701
+- [Shared listener dies in reader iframes](sentry-iframe-shared-listener-dead.md) MERGED #6771
+- [#6527 Hardcover on reader sync row](hardcover-sync-row-6527.md) MERGED
+- [#6271 BookDrop rang on reader open](bookdrop-cue-priming-rang-on-reader-open-6271.md) MERGED #6277
+- [#6199 external links opened on a stray tap](external-link-confirm-6199.md) MERGED #6254
+- [#6141 ghost highlight after adjust+delete](annotation-edit-ghost-highlight-6141.md) MERGED #6357
+- [#5939 edge gestures vs mid-touch selection](edge-gesture-selection-after-touchstart-5939.md) MERGED #5958
+- [Reader remount: section doc briefly rootless](reader-remount-rootless-section-doc.md) MERGED #6758
+- [#6865 translator Thinking Default/Off](translator-thinking-off-6865.md) MERGED #7275
+- [#7276 Ignore publisher font names](ignore-publisher-fonts-7276.md) MERGED #7298
+- [RSVP let the screen sleep](rsvp-screen-wake-lock.md) MERGED #7200
+- [#1750 Notion sync](notion-sync-pr-5949-review.md) MERGED #5949
+- [TTS voice preview + Voice Library](tts-voice-preview-library.md) MERGED #7322
+- [#7312 approve sender blocked by CORS](send-approve-sender-cors-7312.md) MERGED
+- [localeCompare options = per-call collator](localecompare-options-collator-perf.md) MERGED #6693
+- [Curl/Flip chrome flashes: invalidate lifted cover](curl-toolbar-flash-invalidate-cover.md) MERGED #7343; CDP window.ipc hook
+- [#7171 native cover above the keyboard](native-cover-above-ime-7171.md) MERGED #7191
+- [iOS native paper curl #7046](ios-native-paper-curl-7046.md) MERGED c811741af
+- [Carousel spine lost on remount](carousel-spine-lost-on-remount.md) MERGED #6624+#6625

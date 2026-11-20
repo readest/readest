@@ -45,3 +45,12 @@ Moved from MEMORY.md to keep the index small. One line per memory; open the link
 - [#6428 koplugin session expired](koplugin-session-expired-6428.md) MERGED #6445 (489eb705d)…
 - [Scrolled-mode cover never relocates = no progress sync](scrolled-cover-no-relocate-progress-sync.md) MERGED #6130 (fff0a08ad) +…
 - [#6896 KOSync FB2 → KOReader cover](kosync-fb2-docfragment-xpointer-6896.md) MERGED #6905 (2d37bbfc2); FB2 ↔ /FictionBook/body[1]/<tag>[N]; headless CREngine recipe
+- [#6700 sign-out logged out all devices](signout-global-scope-6700.md) fixed #6709
+- [#6663 deletes undeleted by pull merge](book-tombstone-updatedat-6663.md) MERGED #6682
+- [#5570 KOSync/BookOrbit custom headers](custom-headers-kosync-bookorbit-5570.md) MERGED
+- [#5661 "Synced in an hour"](sync-clock-skew-lastsynced-5661.md) clamp MERGED #5674
+- [#5931 S3 Full Sync never restores covers](pr-6116-cover-repair-review.md) MERGED #6116
+- [#6933 macOS 26+ forked worker getaddrinfo](koplugin-macos-fork-getaddrinfo-6933.md) MERGED #7021
+- [Cloud delete missed hash-named files](storage-delete-hash-key-and-desktop-cache-7063.md) #7063 + #7066 MERGED
+- [#6816 synced cover stuck after failed download](cover-sync-failed-download-stuck-6816.md) MERGED #7116
+- [#6685 exit leaves sync workers running](koplugin-exit-orphan-sync-workers-6685.md) MERGED #7293
