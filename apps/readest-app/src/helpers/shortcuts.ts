@@ -353,7 +353,10 @@ const DEFAULT_SHORTCUTS = {
   },
   onEscape: {
     keys: ['Escape'],
-    description: _('Close'),
+    // Esc steps back one level inside nested pages (Settings sub-pages) and
+    // closes the current surface only when there is nothing left to back out
+    // of, so the label names both behaviors.
+    description: _('Back / Close'),
     section: 'General',
   },
 };

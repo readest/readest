@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useAppRouter } from '@/hooks/useAppRouter';
-import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { isCustomTTSAllowed } from '@/utils/access';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { useReaderStore } from '@/store/readerStore';
@@ -148,12 +147,6 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsSkipInlineAnnotations]);
-
-  // Android Back / Esc steps back to this panel instead of closing Settings.
-  useKeyDownActions({
-    enabled: showCustomServices,
-    onCancel: () => setShowCustomServices(false),
-  });
 
   // Every engine's voices, for the Voices page and to name the default here.
   useEffect(() => {

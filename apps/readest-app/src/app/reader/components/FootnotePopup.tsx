@@ -35,6 +35,7 @@ import { isLinkTargetVisible, shouldCheckAsFootnote } from '../utils/footnoteHeu
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
 import { refreshSectionGlosses } from '../utils/wordlensSection';
+import { glossWordRange } from '../utils/wordlensRuby';
 import {
   FootnoteExtractMapping,
   getFootnoteLocalCfi,
@@ -488,6 +489,26 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           pointerDown = false;
           if (selectionTimer) clearTimeout(selectionTimer);
           report(true);
+        });
+        // Word Lens: a tap on a hinted word looks it up, as it does in the
+        // book (#7691). A hint inside a link stays a link, and the reported
+        // range isn't selected here, so no later caret clears it.
+        doc.addEventListener('click', (ev: MouseEvent) => {
+          const ruby = (ev.target as Element | null)?.closest?.('ruby.wl-gloss');
+          if (!ruby || ruby.closest('a') || doc.getSelection()?.isCollapsed === false) return;
+          const range = glossWordRange(ruby);
+          if (!range) return;
+          selectionReported = false;
+          const getPopupCfi = getPopupCfiMapper(index);
+          eventDispatcher.dispatch('footnote-selection', {
+            key: bookKey,
+            range,
+            index,
+            cfi: getPopupCfi?.(range),
+            href: footnoteHrefRef.current?.split('#')[0],
+            getPopupCfi,
+            wordLens: true,
+          });
         });
         if (appService?.isMobile) {
           // Same as the main view: the selection handles suffice on mobile.

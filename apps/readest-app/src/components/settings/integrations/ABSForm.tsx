@@ -15,6 +15,7 @@ import type { AppService } from '@/types/system';
 import { parseAbsFilePath } from '@/utils/audiobook';
 import { eventDispatcher } from '@/utils/event';
 import SubPageHeader from '../SubPageHeader';
+import { useSettingsSubPageBack } from '../settingsSubPageBack';
 import { BoxedList, NavigationRow, SectionTitle, SettingsSwitchRow, Tips } from '../primitives';
 import { allowsSelfSignedCert } from '@/utils/tls';
 import SelfSignedCertSwitch from './SelfSignedCertSwitch';
@@ -276,6 +277,9 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
   onRemoved,
 }) => {
   const _ = useTranslation();
+  // Escape / Android Back goes back to the server list, not out of Settings.
+  // The page's SubPageHeader registered first, so this level sits on top of it.
+  useSettingsSubPageBack(onBack);
   const [name, setName] = useState(server.name);
   const [libraries, setLibraries] = useState<ABSLibrary[] | null>(null);
   const [libError, setLibError] = useState('');

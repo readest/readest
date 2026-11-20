@@ -29,6 +29,7 @@
   "Updating password ...": "მიმდინარეობს პაროლის განახლება ...",
   "Your password has been updated": "თქვენი პაროლი განახლდა",
   "Back": "უკან",
+  "Back / Close": "უკან / დახურვა",
   "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "დადასტურების წერილი გაიგზავნა! ცვლილების დასადასტურებლად შეამოწმეთ ძველი და ახალი ელფოსტის მისამართები.",
   "Failed to update email": "ელფოსტის განახლება ვერ მოხერხდა",
   "New Email": "ახალი ელფოსტა",

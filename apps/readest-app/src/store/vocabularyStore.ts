@@ -33,6 +33,8 @@ interface VocabularyStore {
   load(appService: AppService): Promise<void>;
   /** Save a dictionary lookup. Never moves modifiedAt of a live entry. */
   recordLookup(input: { word: string; lang: string; occurrence?: VocabularyOccurrence }): void;
+  /** Whether the word is marked Learning or Mastered. */
+  isMarked(word: string, lang: string): boolean;
   /** The entry id for a word, creating an empty live entry if needed; '' for no letters. */
   ensureEntry(word: string, lang: string): string;
   setState(id: string, state: VocabularyState): void;
@@ -158,6 +160,11 @@ export const useVocabularyStore = create<VocabularyStore>((set, get) => {
       const current = get().entries[entryId(lang, key)];
       const base = current && !current.deletedAt ? current : freshEntry(word, lang, key, now);
       put([{ ...(occurrence ? addOccurrence(base, occurrence) : base), dirty: true }]);
+    },
+
+    isMarked: (word, lang) => {
+      const e = get().entries[entryId(lang, normalizeWordKey(word))];
+      return !!e && !e.deletedAt && e.state !== 'none';
     },
 
     ensureEntry: (word, lang) => {
