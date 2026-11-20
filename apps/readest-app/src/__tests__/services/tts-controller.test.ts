@@ -323,6 +323,38 @@ describe('TTSController', () => {
       expect(releaseUnblock).not.toHaveBeenCalled();
       expect(unblock).not.toHaveBeenCalled();
     });
+
+    // iPadOS Safari sends a desktop ("Macintosh") user agent.
+    test('releases it for Web TTS in the browser on iPad', async () => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15',
+      );
+      Object.defineProperty(navigator, 'maxTouchPoints', { value: 5, configurable: true });
+      try {
+        await controller.initViewTTS(0);
+
+        await controller.setVoice('unknown-voice', 'ja');
+        await controller.start();
+
+        expect(controller.ttsClient).toBe(controller.ttsWebClient);
+        expect(releaseUnblock, 'the silent audio is released on iPad').toHaveBeenCalled();
+      } finally {
+        Reflect.deleteProperty(navigator, 'maxTouchPoints');
+      }
+    });
+
+    test('leaves it alone for Web TTS in the browser on a Mac', async () => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15',
+      );
+      await controller.initViewTTS(0);
+
+      await controller.setVoice('unknown-voice', 'ja');
+      await controller.start();
+
+      expect(releaseUnblock).not.toHaveBeenCalled();
+      expect(unblock).not.toHaveBeenCalled();
+    });
   });
 
   describe('constructor', () => {

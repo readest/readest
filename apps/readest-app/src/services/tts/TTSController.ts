@@ -420,8 +420,12 @@ export class TTSController extends EventTarget {
     if (this.#releasesSilentAudio()) unblockAudio();
   }
 
+  // iPadOS Safari sends a desktop ("Macintosh") user agent; touch points give
+  // it away.
   #releasesSilentAudio() {
-    return getOSPlatform() === 'ios' && !this.appService?.isIOSApp;
+    const os = getOSPlatform();
+    const iOS = os === 'ios' || (os === 'macos' && navigator.maxTouchPoints > 1);
+    return iOS && !this.appService?.isIOSApp;
   }
 
   // Keep the hidden WebView schedulable, in the two cases where it would
