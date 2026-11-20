@@ -138,6 +138,13 @@ export const generateDarkPalette = ({ bg, fg, primary }: BaseColor) => {
   } as Palette;
 };
 
+export const customThemeToTheme = ({ name, label, colors }: CustomTheme): Theme => ({
+  name,
+  label,
+  colors: { light: generateLightPalette(colors.light), dark: generateDarkPalette(colors.dark) },
+  isCustomizable: true,
+});
+
 const _ = (stubKey: string) => stubKey;
 
 export const themes = [
