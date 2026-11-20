@@ -22,6 +22,14 @@ type ColorInputProps = {
   pickerPosition?: 'left' | 'center' | 'right';
 };
 
+// Pickers stack: a second one can open by keyboard (Enter on another swatch
+// never fires the mousedown that would close the first), so more than one can be
+// live at a time. Only the most recently opened one answers Escape — every open
+// picker listens on document, and stopPropagation does not stop the other
+// listeners on that same node, so without this one key press would close them
+// all.
+const openPickers: Array<() => void> = [];
+
 const ColorInput: React.FC<ColorInputProps> = ({
   label,
   value,
@@ -62,14 +70,10 @@ const ColorInput: React.FC<ColorInputProps> = ({
   // Captured on document rather than bound to the picker or its wrapper: the
   // popup can stay open while focus moves elsewhere (Shift+Tab never fires the
   // mousedown that closes it), and the key has to be claimed before the dialog's
-  // listeners see it. Only one picker can be open — opening another one closes
-  // the first through that same mousedown listener — so there is no second owner
-  // to argue with.
+  // listeners see it.
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.stopPropagation();
+    const close = () => {
       setIsOpen(false);
       // The colour was already applied live on every onChange; closing the popup
       // is the "interaction settled" moment onCommit exists for, whichever way it
@@ -77,8 +81,19 @@ const ColorInput: React.FC<ColorInputProps> = ({
       // colour) with the new swatch showing but the old value stored.
       onCommit?.();
     };
+    openPickers.push(close);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (openPickers[openPickers.length - 1] !== close) return;
+      event.stopPropagation();
+      close();
+    };
     document.addEventListener('keydown', handleKeyDown, true);
-    return () => document.removeEventListener('keydown', handleKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+      const index = openPickers.indexOf(close);
+      if (index !== -1) openPickers.splice(index, 1);
+    };
   }, [isOpen, onCommit]);
 
   // Anchored positioning only applies from `sm` up; below that the popup is

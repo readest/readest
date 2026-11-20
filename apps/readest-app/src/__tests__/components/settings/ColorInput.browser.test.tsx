@@ -35,6 +35,23 @@ const InDialog = ({
   );
 };
 
+// Two pickers in one page, as the theme editor renders a row of them.
+const TwoPickers = ({ onDialogKey }: { onDialogKey: (key: string) => void }) => {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current!;
+    const listener = (e: KeyboardEvent) => onDialogKey(e.key);
+    dialog.addEventListener('keydown', listener);
+    return () => dialog.removeEventListener('keydown', listener);
+  }, [onDialogKey]);
+  return (
+    <dialog ref={ref} open>
+      <ColorInput label='Accent' value='#ff0000' onChange={() => {}} />
+      <ColorInput label='Link' value='#0000ff' onChange={() => {}} />
+    </dialog>
+  );
+};
+
 const swatch = () => screen.getByLabelText('Accent');
 const nameField = () => screen.getByRole('button', { name: 'Theme name' });
 // The popup's hex field is the only textbox on screen, so it doubles as the
@@ -102,5 +119,28 @@ describe('ColorInput', () => {
 
     expect(onDialogKey).toHaveBeenCalledWith('Escape');
     expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it('closes one picker per Escape when two are open', async () => {
+    const onDialogKey = vi.fn();
+    render(<TwoPickers onDialogKey={onDialogKey} />);
+
+    // The first opens by pointer; the second by keyboard, which fires no
+    // mousedown and so leaves the first one open too.
+    await userEvent.click(screen.getByLabelText('Accent'));
+    screen.getByLabelText('Link').focus();
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getAllByRole('textbox')).toHaveLength(2);
+    // The Enter that opened the second picker is expected to reach the page;
+    // only Escape is the key being claimed here.
+    onDialogKey.mockClear();
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getAllByRole('textbox')).toHaveLength(1);
+    expect(onDialogKey).not.toHaveBeenCalled();
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('textbox')).toBeNull();
+    expect(onDialogKey).not.toHaveBeenCalled();
   });
 });
