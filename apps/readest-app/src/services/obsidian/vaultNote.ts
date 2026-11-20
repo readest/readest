@@ -57,7 +57,14 @@ const quote = (text: string, prefix: string) =>
     .split('\n')
     .map((line) => (line ? `${prefix} ${line}` : prefix));
 
-export const renderHighlight = (highlight: VaultHighlight, bookTitle: string): string => {
+const SHOWN_DAY = / · (\d{4}-\d{2}-\d{2})$/;
+
+/** `day` defaults to the local day the highlight was made; '' leaves it out. */
+export const renderHighlight = (
+  highlight: VaultHighlight,
+  bookTitle: string,
+  day = highlight.createdAt ? toDateKey(new Date(highlight.createdAt)) : '',
+): string => {
   const color = highlight.color.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'yellow';
   const label = (highlight.chapter || bookTitle)
     .replace(/\s+/g, ' ')
@@ -67,7 +74,7 @@ export const renderHighlight = (highlight: VaultHighlight, bookTitle: string): s
     /[()]/g,
     (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
   );
-  const date = highlight.createdAt ? ` · ${toDateKey(new Date(highlight.createdAt))}` : '';
+  const date = day ? ` · ${day}` : '';
   const lines = [`> [!quote|${color}] [${label}](${url})${date}`, ...quote(highlight.text, '>')];
   if (highlight.note.trim()) lines.push('>', '> > [!note]', ...quote(highlight.note, '> >'));
   return lines.join('\n');
@@ -161,12 +168,18 @@ export const mergeVaultNote = (
   if (cursor === Infinity) cursor = heading >= 0 ? heading + 1 : lines.length;
 
   for (const highlight of active) {
-    const rendered = renderHighlight(highlight, book.title);
     const unit = findUnit(lines, highlight.id);
+    // Keep the day a block already shows: a device in another time zone would
+    // date it differently and take the block for a user edit.
+    const shownDay = unit ? SHOWN_DAY.exec(unit.callout.split('\n')[0]!)?.[1] : undefined;
+    const rendered = renderHighlight(highlight, book.title, shownDay);
     if (unit) {
+      // A block written before highlights had dates is adopted like a matching one.
+      const undated =
+        !written[highlight.id] && unit.callout === renderHighlight(highlight, book.title, '');
       if (unit.callout === rendered) {
         written[highlight.id] = hash(rendered);
-      } else if (untouched(highlight.id, unit)) {
+      } else if (undated || untouched(highlight.id, unit)) {
         const replacement = unitLines(rendered, highlight.id);
         lines.splice(unit.start, unit.idLine - unit.start + 1, ...replacement);
         written[highlight.id] = hash(rendered);

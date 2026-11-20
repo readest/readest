@@ -161,6 +161,32 @@ describe('mergeVaultNote', () => {
     expect(text).toContain('/annotation/a2)\n> text a2 (mine)\n');
   });
 
+  it('adopts an undated block on a device with no record of it, unless the user edited it', () => {
+    const undated = sync(createVaultNote(book), [
+      hl('a1', { createdAt: 0 }),
+      hl('a2', { createdAt: 0 }),
+    ]);
+    const edited = undated.text.replace('> text a2', '> text a2 (mine)');
+    const { text, written } = sync(edited, [hl('a1'), hl('a2')], {});
+    expect(text).toContain('/annotation/a1) · 2026-11-04\n> text a1\n');
+    expect(text).toContain('/annotation/a2)\n> text a2 (mine)\n');
+    expect(Object.keys(written)).toEqual(['a1']);
+  });
+
+  it('keeps the day a block shows when this device would date it differently', () => {
+    // Same highlight, seen from a time zone where it falls on the day before.
+    const elsewhere = { createdAt: new Date(2026, 10, 3, 23, 30).getTime() };
+    const first = sync(createVaultNote(book), [hl('a1')]);
+
+    const adopted = sync(first.text, [hl('a1', elsewhere)], {});
+    expect(adopted.text).toBe(first.text);
+    expect(Object.keys(adopted.written)).toEqual(['a1']);
+
+    const moved = sync(first.text, [hl('a1', { ...elsewhere, note: 'n' })], first.written);
+    expect(moved.text).toContain('/annotation/a1) · 2026-11-04\n> text a1\n');
+    expect(moved.text).toContain('> > n\n\n^rd-a1');
+  });
+
   it('leaves a block the user edited', () => {
     const first = sync(createVaultNote(book), [hl('a1')]);
     const edited = first.text.replace('> text a1', '> text a1 (my edit)');
