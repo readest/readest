@@ -7,6 +7,7 @@ import {
   getChapterScreensVersion,
   getMeasuredChapterScreens,
   getScreenPageMap,
+  growChapterScreens,
   harvestLoadedChapterScreens,
   locateScreenPage,
   recordChapterScreens,
@@ -129,6 +130,31 @@ describe('chapterScreens', () => {
     recordChapterScreens(bookKey, 0, 2);
     recordChapterScreens(bookKey, 1, 2);
     expect(getCalibratedPagePair(bookKey, book, 1, 3, false, 0)).toEqual({ current: 5, total: 6 });
+  });
+
+  it('grows the snapshot once the reader pages past a chapter that grew', () => {
+    const book = [{ size: 3000 }, { size: 3000 }, { size: 3000 }];
+    recordChapterScreens(bookKey, 0, 2);
+    recordChapterScreens(bookKey, 1, 2);
+    recordChapterScreens(bookKey, 2, 2);
+    snapshotChapterScreens(bookKey);
+    // Late images lay chapter 1 out on four screens.
+    recordChapterScreens(bookKey, 1, 4);
+    growChapterScreens(bookKey, 1, 1);
+    expect(getScreenPageMap(bookKey, book).total).toBe(6);
+
+    const version = getChapterScreensVersion();
+    growChapterScreens(bookKey, 1, 2);
+    const map = getScreenPageMap(bookKey, book);
+    expect(map).toEqual({ counts: [2, 4, 2], starts: [0, 2, 6], total: 8 });
+    expect(getChapterScreensVersion()).toBeGreaterThan(version);
+    // Jumps reach both added pages, and the next chapter moves with them.
+    expect(locateScreenPage(map, 4)).toEqual({ index: 1, fraction: 2 / 3 });
+    expect(locateScreenPage(map, 5)).toEqual({ index: 1, fraction: 2.75 / 3 });
+    expect(locateScreenPage(map, 6)).toEqual({ index: 2, fraction: 0 });
+    // A chapter with no snapshot count (chunked) stays estimated.
+    growChapterScreens(bookKey, 3, 9);
+    expect(getScreenPageMap(bookKey, book)).toEqual(map);
   });
 
   it('locates a screen page: its spine item and an anchor the paginator lands on it with', () => {

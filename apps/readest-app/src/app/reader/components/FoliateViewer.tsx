@@ -33,6 +33,7 @@ import {
   CHUNKED_SECTION_THRESHOLD,
   clearChapterScreens,
   getMeasuredChapterScreens,
+  growChapterScreens,
   harvestLoadedChapterScreens,
   recordChapterScreens,
   snapshotChapterScreens,
@@ -371,6 +372,8 @@ const FoliateViewer: React.FC<{
         // mid-chapter, where they would break the one-page-per-turn cadence.
         snapshotChapterScreens(bookKey);
       }
+      const page = viewRef.current?.renderer?.page;
+      if (sampledSpine != null && page != null) growChapterScreens(bookKey, sampledSpine, page);
     },
     [bookKey],
   );
@@ -484,17 +487,25 @@ const FoliateViewer: React.FC<{
   const settingsFingerprint = viewSettings
     ? JSON.stringify(viewSettings) + '|' + JSON.stringify(getLoadedFonts())
     : '';
-  useEffect(() => {
-    invalidateChapterScreens();
-  }, [bookKey, invalidateChapterScreens, settingsFingerprint]);
-  // Turning Stable Page Numbers off lays nothing out again, so no relocate
-  // follows: measure the loaded chapters now, or the readouts keep byte-grid
-  // numbers until the next page turn (#7445). Runs after the drop above.
   const stablePageNumbers = viewSettings?.stablePageNumbers;
   useEffect(() => {
+    invalidateChapterScreens();
+    // With Stable Page Numbers off the readouts and jumps read these counts.
+    // A setting that lays nothing out again (turning this one off, too) has
+    // no relocate to measure them, so measure what is loaded now, or the
+    // readouts keep the old numbers until the next page turn (#7445). The
+    // entry marker stays dropped: a setting that does lay the book out again
+    // relocates in this chapter afterwards and re-takes the snapshot.
     if (stablePageNumbers !== false) return;
     sampleChapterScreens(viewRef.current?.renderer?.primaryIndex);
-  }, [stablePageNumbers, sampleChapterScreens]);
+    lastSampledSpineRef.current = null;
+  }, [
+    bookKey,
+    invalidateChapterScreens,
+    settingsFingerprint,
+    stablePageNumbers,
+    sampleChapterScreens,
+  ]);
 
   // Same for container resizes (window, sidebar, orientation): the paginator
   // re-renders on resize, invalidating every measured count. The view element

@@ -2,10 +2,12 @@ import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 import FoliateViewer from '@/app/reader/components/FoliateViewer';
+import { useFoliateEvents } from '@/app/reader/hooks/useFoliateEvents';
 import {
   clearChapterScreens,
   getChapterScreensVersion,
   getMeasuredChapterScreens,
+  getScreenPageMap,
 } from '@/utils/chapterScreens';
 
 // Turning Stable Page Numbers off changes no layout, so nothing relocates.
@@ -13,6 +15,10 @@ import {
 // byte-grid numbers until the next page turn (#7445: "Toggling the Show
 // Footer off and on is sometimes required").
 
+const layout = vi.hoisted(() => ({
+  contents: [] as { index: number; contentPages: number }[],
+  page: 1,
+}));
 const { readerState, openGate, bookDataState, attrs, viewSettings } = vi.hoisted(() => {
   const viewSettings = {
     writingMode: 'auto',
@@ -20,6 +26,7 @@ const { readerState, openGate, bookDataState, attrs, viewSettings } = vi.hoisted
     vertical: false,
     compactMarginTopPx: 16,
     stablePageNumbers: true,
+    disableDoubleClick: false,
   };
   return {
     attrs: new Map<string, string>(),
@@ -80,13 +87,12 @@ vi.mock('@/types/view', () => ({
           getAttribute: (name: string) => attrs.get(name) ?? null,
           removeAttribute: (name: string) => attrs.delete(name),
           primaryIndex: 1,
-          page: 1,
+          get page() {
+            return layout.page;
+          },
           pages: 6,
           columnCount: 1,
-          getContents: () => [
-            { index: 1, contentPages: 6 },
-            { index: 2, contentPages: 4 },
-          ],
+          getContents: () => layout.contents,
         },
         {
           get: (target, key) => (key in target ? target[key as keyof typeof target] : anyCall),
@@ -103,8 +109,11 @@ vi.mock('@/services/transformService', () => ({}));
 vi.mock('@/app/reader/utils/wordlensSection', () => ({}));
 vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: vi.fn() }));
 vi.mock('@/app/reader/hooks/useBrightnessGesture', () => ({ useBrightnessGesture: () => ({}) }));
+// Stable, as the hook's useCallback is: a new function per render would
+// recreate commitRelocate, whose effect cleanup drops the measurements.
+const isWipeAhead = vi.hoisted(() => () => false);
 vi.mock('@/app/reader/hooks/useAutoScroll', () => ({
-  useAutoScroll: () => ({ isWipeAhead: () => false }),
+  useAutoScroll: () => ({ isWipeAhead }),
 }));
 vi.mock('@/app/reader/hooks/useAutoScrollSpeedGesture', () => ({
   useAutoScrollSpeedGesture: () => ({}),
@@ -156,10 +165,26 @@ const props = {
   contentInsets: { top: 0, right: 0, bottom: 0, left: 0 },
 } as unknown as ComponentProps<typeof FoliateViewer>;
 
+const screenCounts = () => getScreenPageMap('test-book', [{}, { size: 1 }, { size: 1 }]).counts;
+const relocateInChapter1 = () =>
+  vi.mocked(useFoliateEvents).mock.lastCall?.[1]?.onRelocate?.(
+    new CustomEvent('relocate', {
+      detail: { location: { current: 0, next: 1, total: 10 }, section: { current: 1, total: 3 } },
+    }),
+  );
+
+const loaded = (chapter1: number, chapter2: number) => {
+  layout.contents = [
+    { index: 1, contentPages: chapter1 },
+    { index: 2, contentPages: chapter2 },
+  ];
+};
+
 it('measures the loaded chapters as soon as Stable Page Numbers is turned off', async () => {
   attrs.clear();
   openGate.pending = Promise.resolve();
   viewSettings.stablePageNumbers = true;
+  loaded(6, 4);
   const { rerender } = render(<FoliateViewer {...props} />);
   await waitFor(() => expect(attrs.has('margin-top')).toBe(true));
   expect(getMeasuredChapterScreens('test-book')).toBeUndefined();
@@ -171,4 +196,51 @@ it('measures the loaded chapters as soon as Stable Page Numbers is turned off', 
   expect(Object.fromEntries(getMeasuredChapterScreens('test-book') ?? [])).toEqual({ 1: 6, 2: 4 });
   // The readouts re-render from the new snapshot.
   expect(getChapterScreensVersion()).toBeGreaterThan(version);
+});
+
+it('measures again after another setting drops the measurements', async () => {
+  attrs.clear();
+  openGate.pending = Promise.resolve();
+  viewSettings.stablePageNumbers = false;
+  viewSettings.disableDoubleClick = false;
+  loaded(6, 4);
+  const { rerender } = render(<FoliateViewer {...props} />);
+  await waitFor(() => expect(attrs.has('margin-top')).toBe(true));
+  rerender(<FoliateViewer {...props} />);
+  const version = getChapterScreensVersion();
+
+  // A setting that lays nothing out again brings no relocate: the readouts
+  // and the jump targets must still have the loaded chapters' counts.
+  viewSettings.disableDoubleClick = true;
+  rerender(<FoliateViewer {...props} />);
+  expect(Object.fromEntries(getMeasuredChapterScreens('test-book') ?? [])).toEqual({ 1: 6, 2: 4 });
+  expect(getChapterScreensVersion()).toBeGreaterThan(version);
+
+  // One that does lays the book out again and relocates in the same chapter:
+  // that relocate takes the new counts.
+  loaded(9, 5);
+  relocateInChapter1();
+  await waitFor(() => expect(screenCounts()).toEqual([0, 9, 5]));
+  viewSettings.disableDoubleClick = false;
+});
+
+it('counts the screens a chapter gained once the reader pages past them', async () => {
+  attrs.clear();
+  openGate.pending = Promise.resolve();
+  viewSettings.stablePageNumbers = false;
+  loaded(6, 4);
+  layout.page = 1;
+  const { rerender } = render(<FoliateViewer {...props} />);
+  await waitFor(() => expect(attrs.has('margin-top')).toBe(true));
+  rerender(<FoliateViewer {...props} />);
+  relocateInChapter1();
+  await waitFor(() => expect(screenCounts()).toEqual([0, 6, 4]));
+
+  // Late images lay chapter 1 out on eight screens, and the reader turns to
+  // the seventh: the total and the jumps count the two added screens.
+  loaded(8, 4);
+  layout.page = 6;
+  relocateInChapter1();
+  await waitFor(() => expect(screenCounts()).toEqual([0, 8, 4]));
+  layout.page = 1;
 });

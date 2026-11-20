@@ -52,14 +52,32 @@ export const subscribeChapterScreens = (listener: () => void) => {
     listeners.delete(listener);
   };
 };
+const publish = () => {
+  version++;
+  listeners.forEach((listener) => listener());
+};
 
 /** Freeze the live measurements into the readout snapshot at chapter entry. */
 export const snapshotChapterScreens = (bookKey: string) => {
   const live = maps.get(bookKey);
   if (live) snapshots.set(bookKey, new Map(live));
   else snapshots.delete(bookKey);
-  version++;
-  listeners.forEach((listener) => listener());
+  publish();
+};
+
+/**
+ * A chapter can grow after its entry snapshot (late images or fonts). Once
+ * the reader pages past the snapshot's count, the snapshot takes the
+ * chapter's live count, so the total, the jumps and the TOC all count the
+ * added screens. Before that the snapshot holds: adopting the live map
+ * mid-chapter would move the base and total under the reader.
+ */
+export const growChapterScreens = (bookKey: string, spine: number, page: number) => {
+  const snapshot = snapshots.get(bookKey);
+  const count = snapshot?.get(spine);
+  if (!snapshot || count === undefined || page < count) return;
+  snapshot.set(spine, Math.max(page + 1, maps.get(bookKey)?.get(spine) ?? 0));
+  publish();
 };
 
 export const clearChapterScreens = (bookKey: string) => {
