@@ -33,6 +33,7 @@ import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 import AIPanel from './AIPanel';
 import TTSPanel from './TTSPanel';
+import { SettingsSubPageBackScope, stepBackSettingsSubPage } from './settingsSubPageBack';
 
 export type SettingsPanelType =
   | 'Font'
@@ -324,6 +325,15 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     setSettingsDialogOpen(false);
   };
 
+  // Escape, Android Back and the mobile back arrow leave one level at a time:
+  // a sub-page (Manage Fonts, Voice Library, an integrations form…) steps back
+  // to the panel it was opened from, and only the panel itself closes the
+  // dialog. See settingsSubPageBack.tsx.
+  const handleBack = () => {
+    if (stepBackSettingsSubPage()) return;
+    handleClose();
+  };
+
   // handle activeSettingsItemId: switch to correct panel and scroll to item
   useEffect(() => {
     if (!activeSettingsItemId) return;
@@ -473,6 +483,8 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     <Dialog
       isOpen={true}
       onClose={handleClose}
+      // Back steps out of a sub-page before it closes the dialog.
+      onBack={handleBack}
       // Settings sits in the overlay z-index scale (see ModalPortal.tsx) above
       // the RSVP immersive overlay (z-100) so dictionary management opened from
       // inside RSVP shows on top instead of behind it (#3235), and below the
@@ -494,8 +506,8 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           <div className='-mt-2 flex w-full items-center justify-center pb-2 sm:hidden'>
             <button
               tabIndex={-1}
-              aria-label={_('Close')}
-              onClick={handleClose}
+              aria-label={_('Back')}
+              onClick={handleBack}
               className={
                 'btn btn-ghost btn-circle absolute left-3 flex h-8 min-h-8 w-8 hover:bg-transparent focus:outline-hidden'
               }
@@ -560,53 +572,58 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         </div>
       }
     >
-      <div
-        ref={panelRef}
-        role='group'
-        aria-label={`${_(currentPanel?.label || '')} - ${_('Settings')}`}
-      >
-        {activePanel === 'Font' && (
-          <FontPanel
-            bookKey={bookKey}
-            onRegisterReset={(fn) => registerResetFunction('Font', fn)}
-          />
-        )}
-        {activePanel === 'Layout' && (
-          <LayoutPanel
-            bookKey={bookKey}
-            onRegisterReset={(fn) => registerResetFunction('Layout', fn)}
-          />
-        )}
-        {activePanel === 'Theme' && (
-          <ThemePanel
-            bookKey={bookKey}
-            onRegisterReset={(fn) => registerResetFunction('Theme', fn)}
-          />
-        )}
-        {activePanel === 'Control' && (
-          <ControlPanel
-            bookKey={bookKey}
-            onRegisterReset={(fn) => registerResetFunction('Control', fn)}
-          />
-        )}
-        {activePanel === 'TTS' && (
-          <TTSPanel bookKey={bookKey} onRegisterReset={(fn) => registerResetFunction('TTS', fn)} />
-        )}
-        {activePanel === 'Language' && (
-          <LangPanel
-            bookKey={bookKey}
-            onRegisterReset={(fn) => registerResetFunction('Language', fn)}
-          />
-        )}
-        {activePanel === 'AI' && <AIPanel />}
-        {activePanel === 'Integrations' && <IntegrationsPanel />}
-        {activePanel === 'Custom' && (
-          <MiscPanel
-            bookKey={bookKey}
-            onRegisterReset={(fn) => registerResetFunction('Custom', fn)}
-          />
-        )}
-      </div>
+      <SettingsSubPageBackScope>
+        <div
+          ref={panelRef}
+          role='group'
+          aria-label={`${_(currentPanel?.label || '')} - ${_('Settings')}`}
+        >
+          {activePanel === 'Font' && (
+            <FontPanel
+              bookKey={bookKey}
+              onRegisterReset={(fn) => registerResetFunction('Font', fn)}
+            />
+          )}
+          {activePanel === 'Layout' && (
+            <LayoutPanel
+              bookKey={bookKey}
+              onRegisterReset={(fn) => registerResetFunction('Layout', fn)}
+            />
+          )}
+          {activePanel === 'Theme' && (
+            <ThemePanel
+              bookKey={bookKey}
+              onRegisterReset={(fn) => registerResetFunction('Theme', fn)}
+            />
+          )}
+          {activePanel === 'Control' && (
+            <ControlPanel
+              bookKey={bookKey}
+              onRegisterReset={(fn) => registerResetFunction('Control', fn)}
+            />
+          )}
+          {activePanel === 'TTS' && (
+            <TTSPanel
+              bookKey={bookKey}
+              onRegisterReset={(fn) => registerResetFunction('TTS', fn)}
+            />
+          )}
+          {activePanel === 'Language' && (
+            <LangPanel
+              bookKey={bookKey}
+              onRegisterReset={(fn) => registerResetFunction('Language', fn)}
+            />
+          )}
+          {activePanel === 'AI' && <AIPanel />}
+          {activePanel === 'Integrations' && <IntegrationsPanel />}
+          {activePanel === 'Custom' && (
+            <MiscPanel
+              bookKey={bookKey}
+              onRegisterReset={(fn) => registerResetFunction('Custom', fn)}
+            />
+          )}
+        </div>
+      </SettingsSubPageBackScope>
     </Dialog>
   );
 };

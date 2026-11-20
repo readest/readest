@@ -202,6 +202,10 @@ export class ReaderPage extends BasePage {
     await this.page.locator('[data-tab="Control"]').click();
     await this.page.locator('[data-setting-id="settings.control.customizeToolbar"]').click();
     await this.page.getByRole('button', { name, exact: true }).click();
+    // Settings sub-pages pop one level on Escape (the sub-page back stack),
+    // so leaving Settings from inside Customize Toolbar takes two: the first
+    // steps back to the Control panel, the second closes the dialog.
+    await this.page.keyboard.press('Escape');
     await this.page.keyboard.press('Escape');
   }
 

@@ -3,7 +3,6 @@ import { MdClose, MdSearch } from 'react-icons/md';
 import { PiSpinner } from 'react-icons/pi';
 import { useAuth } from '@/context/AuthContext';
 import { useAppRouter } from '@/hooks/useAppRouter';
-import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useVoicePreview } from '@/hooks/useVoicePreview';
 import { getBookProgress } from '@/store/readerProgressStore';
@@ -58,8 +57,6 @@ const TTSVoicesPage: React.FC<TTSVoicesPageProps> = ({
   const [section, setSection] = useState(initialSection);
   const [query, setQuery] = useState('');
   const [defaultVoice, setDefaultVoice] = useState(() => TTSUtils.getDefaultVoice(initialLang));
-
-  useKeyDownActions({ onCancel: onBack });
 
   useEffect(() => {
     if (!library) return;
