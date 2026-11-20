@@ -719,6 +719,76 @@ describe('DictionarySheet — context dictionary AI translator (#7669)', () => {
     expect(starDictLookups).toBe(lookupsBefore);
   });
 
+  it('keeps the other cards and the picker in place while the new translator answers', async () => {
+    useCustomTranslatorStore.setState({
+      loaded: true,
+      translators: [llm('gpt', 'GPT'), llm('claude', 'Claude')],
+    });
+    let release!: () => void;
+    contextLookup.mockImplementation(
+      async (word: string, ctx: DictionaryLookupContext): Promise<DictionaryLookupOutcome> => {
+        const id = useCustomDictionaryStore.getState().settings.contextTranslatorId ?? 'gpt';
+        if (id === 'claude') await new Promise<void>((resolve) => (release = resolve));
+        ctx.container.append(document.createTextNode(`${id} explains ${word}`));
+        return { ok: true, headword: word, sourceLabel: id };
+      },
+    );
+    const fixed = (id: string): DictionaryProvider => ({
+      id,
+      kind: 'stardict',
+      label: id,
+      async lookup(word, ctx) {
+        ctx.container.append(document.createTextNode(`${id}: ${word}`));
+        return { ok: true, headword: word, sourceLabel: id };
+      },
+    });
+    providersForNextRender.push(fixed('one'), fixed('two'), fixed('three'), {
+      id: 'builtin:context',
+      kind: 'builtin',
+      label: 'Context Dictionary',
+      lookup: contextLookup,
+    });
+    renderSheet({ word: 'hello' });
+
+    await waitFor(() => expect(screen.getByText('gpt explains hello')).toBeTruthy());
+    const picker = screen.getByLabelText('AI Translator') as HTMLSelectElement;
+    const contextCard = picker.closest('[data-testid="dict-card"]')!;
+    const otherCards = () =>
+      screen.getAllByTestId('dict-card').filter((card) => card !== contextCard);
+    // Four results: every card starts collapsed.
+    await waitFor(() =>
+      expect(otherCards().map((c) => c.getAttribute('aria-expanded'))).toEqual([
+        'false',
+        'false',
+        'false',
+      ]),
+    );
+
+    picker.focus();
+    await act(async () => {
+      fireEvent.change(picker, { target: { value: 'claude' } });
+    });
+
+    // While the new translator answers, nothing else moves and focus stays put.
+    expect(otherCards().map((c) => c.getAttribute('aria-expanded'))).toEqual([
+      'false',
+      'false',
+      'false',
+    ]);
+    expect(screen.getByLabelText('AI Translator')).toBe(picker);
+    expect(document.activeElement).toBe(picker);
+    expect(contextCard.querySelector('[data-testid="dict-card-skeleton"]')).not.toBeNull();
+
+    await act(async () => release());
+    await waitFor(() => expect(screen.getByText('claude explains hello')).toBeTruthy());
+    expect(contextCard.querySelector('[data-testid="dict-card-skeleton"]')).toBeNull();
+    expect(otherCards().map((c) => c.getAttribute('aria-expanded'))).toEqual([
+      'false',
+      'false',
+      'false',
+    ]);
+  });
+
   it('shows no picker with a single AI translator', async () => {
     useCustomTranslatorStore.setState({ loaded: true, translators: [llm('gpt', 'GPT')] });
     providersForNextRender.push({

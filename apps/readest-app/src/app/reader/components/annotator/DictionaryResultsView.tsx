@@ -60,6 +60,12 @@ interface CardState {
   loadKey: string;
   outcome?: DictionaryLookupOutcome;
   expanded: boolean;
+  /**
+   * Asking again with another AI translator (#7669): shows the skeleton but
+   * stays `loaded`, so the footer picker keeps focus and the other cards keep
+   * their auto-expand state.
+   */
+  refreshing?: boolean;
 }
 
 export interface UseDictionaryResultsArgs {
@@ -393,8 +399,12 @@ export function useDictionaryResults({
                   if (controller.signal.aborted) return;
                   setCards((prev) => {
                     const old = prev[provider.id];
-                    if (!old || old.loadKey !== loadKey || old.state !== 'loading') return prev;
-                    return { ...prev, [provider.id]: { ...old, state: 'loaded' } };
+                    if (!old || old.loadKey !== loadKey) return prev;
+                    if (old.state !== 'loading' && !old.refreshing) return prev;
+                    return {
+                      ...prev,
+                      [provider.id]: { ...old, state: 'loaded', refreshing: false },
+                    };
                   });
                 },
               });
@@ -420,7 +430,7 @@ export function useDictionaryResults({
         setCards((prev) => {
           const old = prev[provider.id];
           if (!old || old.loadKey !== loadKey) return prev;
-          return { ...prev, [provider.id]: { ...old, state, outcome } };
+          return { ...prev, [provider.id]: { ...old, state, outcome, refreshing: false } };
         });
       };
       void run();
@@ -472,7 +482,7 @@ export function useDictionaryResults({
       setCards((prev) => {
         const old = prev[provider.id];
         if (!old) return prev;
-        return { ...prev, [provider.id]: { ...old, state: 'loading', outcome: undefined } };
+        return { ...prev, [provider.id]: { ...old, refreshing: true } };
       });
       lookupProvider(provider);
     },
@@ -773,6 +783,7 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
         {visibleDefinitionProviders.map((p) => {
           const card = cards[p.id];
           const isLoading = !card || card.state === 'loading';
+          const showSkeleton = isLoading || !!card.refreshing;
           const expanded = card?.expanded ?? false;
           const sourceLabel =
             card?.outcome?.ok && card.outcome.sourceLabel ? card.outcome.sourceLabel : _(p.label);
@@ -803,7 +814,7 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                 }}
                 className={clsx('cursor-pointer rounded-lg')}
               >
-                {isLoading && (
+                {showSkeleton && (
                   <div
                     data-testid='dict-card-skeleton'
                     className='bg-base-200/50 h-12 animate-pulse rounded-sm'
@@ -820,7 +831,7 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                   style={{ '--dict-font-scale': fontScale } as React.CSSProperties}
                   className={clsx(
                     'font-sans',
-                    isLoading && 'hidden',
+                    showSkeleton && 'hidden',
                     !isLoading &&
                       !expanded &&
                       'line-clamp-4 max-h-40 overflow-hidden [-webkit-box-orient:vertical] [display:-webkit-box]',
