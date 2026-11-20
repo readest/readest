@@ -49,7 +49,11 @@ WORKDIR /app/apps/readest-app
 # next.config.mjs gates `output: 'standalone'` on BUILD_STANDALONE so other
 # web builds keep their default output.
 ENV BUILD_STANDALONE=true
-RUN pnpm build-web
+# @serwist/next only emits the service worker (public/sw.js) from a webpack
+# build, so switch `next build` to webpack as `pnpm deploy` does. The webpack
+# build runs out of memory with Node's default heap; give it the 8 GB the
+# release workflows use.
+RUN pnpm patch-build-webpack && NODE_OPTIONS=--max-old-space-size=8192 pnpm build-web
 
 # Production runtime ships only the standalone server, its traced node_modules,
 # and the static/public assets — no pnpm, no source tree, no dev dependencies,
