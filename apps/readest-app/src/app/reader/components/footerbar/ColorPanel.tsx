@@ -163,7 +163,9 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
           <button
             onClick={() => cycleThemeMode()}
             className={clsx(
-              'flex shrink-0 flex-col items-center justify-center rounded-lg p-3 transition-all',
+              // Previews the dark palette in every mode, but e-ink forces the
+              // icon to the current base-content: flatten it so the icon shows.
+              'eink-bordered flex shrink-0 flex-col items-center justify-center rounded-lg p-3 transition-all',
               'h-[40px] min-w-[80px]',
               themeMode === 'dark'
                 ? 'ring-primary ring-offset-base-200 ring-2 ring-offset-2'
