@@ -845,7 +845,7 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                         value={getContextTranslator()?.id ?? ''}
                         onChange={(e) => setContextTranslator(e.target.value)}
                         options={contextTranslators.map((t) => ({ value: t.id, label: t.name }))}
-                        className='not-eink:opacity-60 -ms-3 h-6 min-h-6 text-xs'
+                        className='not-eink:opacity-60 focus-visible:ring-base-content/15 -ms-3 h-6 min-h-6 text-xs focus-visible:ring-2'
                       />
                     ) : (
                       <span className='not-eink:opacity-60 text-xs'>{sourceLabel}</span>
