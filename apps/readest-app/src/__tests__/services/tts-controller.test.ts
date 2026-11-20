@@ -42,9 +42,11 @@ vi.mock('@/services/tts/WebAudioPlayer', async (importActual) => ({
   stopAudioKeepAlive: () => stopKeepAlive(),
 }));
 const releaseUnblock = vi.fn();
+const unblock = vi.fn();
 vi.mock('@/services/tts/ttsMediaBridge', async (importActual) => ({
   ...(await importActual<typeof import('@/services/tts/ttsMediaBridge')>()),
   releaseUnblockAudio: () => releaseUnblock(),
+  unblockAudio: () => unblock(),
 }));
 
 vi.mock('@/services/tts/TTSUtils', () => ({
@@ -232,6 +234,127 @@ describe('TTSController', () => {
     // is still alive.
     await new Promise((resolve) => setTimeout(resolve, 0));
     vi.restoreAllMocks();
+  });
+
+  describe('iOS Web TTS silent audio ownership', () => {
+    beforeEach(() => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)',
+      );
+      releaseUnblock.mockClear();
+      unblock.mockClear();
+      speakingControllers.push(controller);
+    });
+
+    test('releases the silent audio once reading starts with Web TTS', async () => {
+      vi.mocked(TTSUtils.getPreferredClient).mockReturnValueOnce('web');
+      await controller.init();
+      await controller.initViewTTS(0);
+      expect(
+        releaseUnblock,
+        'the silent audio is left alone until reading starts',
+      ).not.toHaveBeenCalled();
+
+      await controller.speak('<speak>hello</speak>');
+
+      expect(controller.ttsClient).toBe(controller.ttsWebClient);
+      expect(releaseUnblock, 'the silent audio is released for Web TTS').toHaveBeenCalled();
+      expect(unblock, 'the silent audio stays released').not.toHaveBeenCalled();
+    });
+
+    test("releases it when the book's language picks Web TTS", async () => {
+      await controller.init();
+      await controller.initViewTTS(0);
+      expect(controller.ttsClient).toBe(controller.ttsEdgeClient);
+      expect(unblock, 'the silent audio is left alone until reading starts').not.toHaveBeenCalled();
+
+      vi.mocked(TTSUtils.getPreferredClientForLang).mockReturnValueOnce('web');
+      await controller.setLang('ja');
+      await controller.speak('<speak>hello</speak>');
+
+      expect(controller.ttsClient).toBe(controller.ttsWebClient);
+      expect(releaseUnblock, 'the silent audio is released for Web TTS').toHaveBeenCalled();
+      expect(unblock, 'the silent audio stays released').not.toHaveBeenCalled();
+    });
+
+    test('restores it when switching from Web TTS to Edge', async () => {
+      controller.ttsEdgeVoices = [{ id: 'edge-voice-1', name: 'Edge', lang: 'ja-JP' }];
+      await controller.initViewTTS(0);
+
+      await controller.setVoice('unknown-voice', 'ja');
+      await controller.start();
+      expect(controller.ttsClient).toBe(controller.ttsWebClient);
+      expect(releaseUnblock, 'the silent audio is released for Web TTS').toHaveBeenCalledTimes(1);
+
+      await controller.stop();
+      await controller.setVoice('edge-voice-1', 'ja');
+      await controller.start();
+      expect(controller.ttsClient).toBe(controller.ttsEdgeClient);
+      expect(unblock, 'the silent audio is restored for Edge').toHaveBeenCalledTimes(1);
+    });
+
+    test('plays the silent audio for a voice change only in the browser on iOS', () => {
+      controller.unblockSilentAudio();
+      expect(unblock, 'played in the browser on iOS').toHaveBeenCalledTimes(1);
+
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      );
+      controller.unblockSilentAudio();
+      expect(unblock, 'left alone on Windows').toHaveBeenCalledTimes(1);
+
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)',
+      );
+      const iosApp = new TTSController(createMockAppService(false, true), mockView, false);
+      iosApp.unblockSilentAudio();
+      expect(unblock, 'left alone in the iOS app').toHaveBeenCalledTimes(1);
+    });
+
+    test('leaves the silent audio alone for Web TTS on Windows', async () => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      );
+      await controller.initViewTTS(0);
+
+      await controller.setVoice('unknown-voice', 'ja');
+      await controller.start();
+
+      expect(releaseUnblock).not.toHaveBeenCalled();
+      expect(unblock).not.toHaveBeenCalled();
+    });
+
+    // iPadOS Safari sends a desktop ("Macintosh") user agent.
+    test('releases it for Web TTS in the browser on iPad', async () => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15',
+      );
+      Object.defineProperty(navigator, 'maxTouchPoints', { value: 5, configurable: true });
+      try {
+        await controller.initViewTTS(0);
+
+        await controller.setVoice('unknown-voice', 'ja');
+        await controller.start();
+
+        expect(controller.ttsClient).toBe(controller.ttsWebClient);
+        expect(releaseUnblock, 'the silent audio is released on iPad').toHaveBeenCalled();
+      } finally {
+        Reflect.deleteProperty(navigator, 'maxTouchPoints');
+      }
+    });
+
+    test('leaves it alone for Web TTS in the browser on a Mac', async () => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15',
+      );
+      await controller.initViewTTS(0);
+
+      await controller.setVoice('unknown-voice', 'ja');
+      await controller.start();
+
+      expect(releaseUnblock).not.toHaveBeenCalled();
+      expect(unblock).not.toHaveBeenCalled();
+    });
   });
 
   describe('constructor', () => {
