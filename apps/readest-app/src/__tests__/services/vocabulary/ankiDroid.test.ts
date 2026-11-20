@@ -36,13 +36,38 @@ describe('ankiDroid', () => {
     expect((err as AnkiError).code).toBe('not_ready');
   });
 
-  it('sends notes and returns how many were added', async () => {
-    invokeSpy.mockResolvedValue({ added: 2 });
-    const notes = [{ fields: ['f', 'b'] as [string, string], tags: ['readest'] }];
-    await expect(ankiAddNotes('Readest Vocabulary', notes)).resolves.toBe(2);
-    expect(invokeSpy).toHaveBeenCalledWith('plugin:native-bridge|anki_add_notes', {
-      payload: { deckName: 'Readest Vocabulary', notes },
+  it('sends notes to each of their decks and returns how many were added', async () => {
+    invokeSpy.mockResolvedValue({ added: 1 });
+    const note = (deck: string, word: string) => ({
+      deck,
+      fields: [word, 'b'] as [string, string],
+      tags: ['readest'],
     });
+    const notes = [note('R::French', 'pain'), note('R::Spanish', 'hola'), note('R::French', 'vin')];
+    await expect(ankiAddNotes(notes)).resolves.toBe(2);
+    expect(invokeSpy.mock.calls).toEqual([
+      [
+        'plugin:native-bridge|anki_add_notes',
+        {
+          payload: {
+            deckName: 'R::French',
+            notes: [
+              { fields: ['pain', 'b'], tags: ['readest'] },
+              { fields: ['vin', 'b'], tags: ['readest'] },
+            ],
+          },
+        },
+      ],
+      [
+        'plugin:native-bridge|anki_add_notes',
+        {
+          payload: {
+            deckName: 'R::Spanish',
+            notes: [{ fields: ['hola', 'b'], tags: ['readest'] }],
+          },
+        },
+      ],
+    ]);
   });
 
   it('updates note tags and returns how many changed', async () => {

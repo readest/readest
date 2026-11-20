@@ -7,6 +7,7 @@ import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import {
+  ANKI_DECK,
   type AnkiImportPlan,
   ankiNotesToSend,
   ankiTagUpdates,
@@ -31,7 +32,6 @@ import { isAnkiAllowed } from '@/utils/access';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 
-const DECK_NAME = 'Readest Vocabulary';
 /** Anki calls a review card mature from a 21-day interval. */
 const MATURE_INTERVAL = 21;
 
@@ -144,7 +144,7 @@ export const useAnkiLink = () => {
    * make words Mastered, notes for words Readest doesn't have come in as Learning.
    */
   const pull = async () => {
-    const ids = deckFamily(await ankiListDecks(), DECK_NAME);
+    const ids = deckFamily(await ankiListDecks(), ANKI_DECK);
     const { notes: rows, cards } = ids.length
       ? await ankiReadDeck(ids, true)
       : { notes: [], cards: [] as AnkiCardRow[] };
@@ -189,7 +189,7 @@ export const useAnkiLink = () => {
         (e) => e.state === 'learning' && e.occurrences.length,
       );
       const outgoing = ankiNotesToSend(learning, notes);
-      const sent = outgoing.length ? await ankiAddNotes(DECK_NAME, outgoing) : 0;
+      const sent = outgoing.length ? await ankiAddNotes(outgoing) : 0;
       const updates = ankiTagUpdates(notes, entries, lang);
       if (updates.length) await ankiUpdateTags(updates);
       const parts = [
@@ -218,7 +218,7 @@ export const useAnkiLink = () => {
       setImportState({
         decks,
         languages: importLanguageOptions(entries),
-        deckId: (decks.find((d) => d.name === DECK_NAME) ?? decks[0]!).id,
+        deckId: (decks.find((d) => d.name === ANKI_DECK) ?? decks[0]!).id,
         lang: defaultImportLang(entries),
       });
     } catch (err) {

@@ -13,6 +13,9 @@ const MAX_UNSPACED_LEN = 12;
 // The hint input's maxLength in VocabularyDetail.
 const MAX_HINT_LEN = 80;
 
+/** The deck Sync reads, with every subdeck under it. */
+export const ANKI_DECK = 'Readest Vocabulary';
+
 const LANG_TAG_PREFIX = 'readest::lang::';
 // The mark tag Sync keeps on each note in step with the word (none for Looked Up).
 const MARK_TAGS: Partial<Record<VocabularyState, string>> = {
@@ -234,8 +237,17 @@ export const defaultImportLang = (entries: Record<string, VocabularyEntry>): str
   return best;
 };
 
-/** A note the AnkiDroid link adds: Front and Back, plus tags. */
+/**
+ * The subdeck Sync adds a word's note to: its language's English name, so a
+ * change of UI language never starts a second deck ("Spanish; Castilian" is
+ * cut to "Spanish"). Words of unknown language stay in the parent deck.
+ */
+export const ankiDeckName = (lang: string): string =>
+  lang === 'und' ? ANKI_DECK : `${ANKI_DECK}::${getLanguageName(lang).split(/[;,]/)[0]!.trim()}`;
+
+/** A note the AnkiDroid link adds to `deck`: Front and Back, plus tags. */
 export interface AnkiOutgoingNote {
+  deck: string;
   fields: [string, string];
   tags: string[];
 }
@@ -265,6 +277,7 @@ export const ankiNotesToSend = (
     if (have.has(`${e.lang}:${key}`) || have.has(`*:${key}`)) continue;
     const mark = MARK_TAGS[e.state];
     notes.push({
+      deck: ankiDeckName(e.lang),
       fields: [front, back],
       tags: [...tags, ankiLangTag(e.lang), ...(mark ? [mark] : [])],
     });

@@ -101,9 +101,7 @@ beforeEach(() => {
   anki.ankiRequestPermission.mockReset().mockResolvedValue(true);
   anki.ankiListDecks.mockReset().mockResolvedValue([{ id: 7, name: 'Readest Vocabulary' }]);
   anki.ankiReadDeck.mockReset().mockResolvedValue({ notes: [], cards: [] });
-  anki.ankiAddNotes
-    .mockReset()
-    .mockImplementation(async (_deck: string, notes: unknown[]) => notes.length);
+  anki.ankiAddNotes.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
   anki.ankiUpdateTags.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
 });
 afterEach(() => cleanup());
@@ -284,11 +282,10 @@ describe('VocabularyView Anki link', () => {
     renderWithMenu();
     fireEvent.click(await syncButton());
     await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
-    const [deck, notes] = anki.ankiAddNotes.mock.calls[0] as [
-      string,
-      { fields: [string, string]; tags: string[] }[],
+    const [notes] = anki.ankiAddNotes.mock.calls[0] as [
+      { deck: string; fields: [string, string]; tags: string[] }[],
     ];
-    expect(deck).toBe('Readest Vocabulary');
+    expect(notes.map((n) => n.deck)).toEqual(['Readest Vocabulary::English']);
     expect(notes.map((n) => n.fields[0].match(/>(\w+)</)?.[1])).toEqual(['spice']);
     expect(notes[0]!.tags).toEqual(
       expect.arrayContaining(['readest::lang::en', 'readest::learning']),
