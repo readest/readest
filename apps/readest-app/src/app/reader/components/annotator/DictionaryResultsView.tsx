@@ -187,11 +187,15 @@ export function useDictionaryResults({
 
   // Automatic capture: the word selected in the book, with its sentence.
   // Words reached through in-entry links have no sentence and aren't saved.
+  // With saving off, a word marked Learning or Mastered still keeps the
+  // sentences it is looked up in (#7691).
   const saveLookups = settings.saveLookupsToVocabulary !== false;
   useEffect(() => {
     // No sentence means a re-lookup (from the vocabulary window): chips only.
-    if (!capture?.occurrence || !saveLookups) return;
-    useVocabularyStore.getState().recordLookup({
+    if (!capture?.occurrence) return;
+    const vocabulary = useVocabularyStore.getState();
+    if (!saveLookups && !vocabulary.isMarked(word, capture.lang)) return;
+    vocabulary.recordLookup({
       word,
       lang: capture.lang,
       occurrence: capture.occurrence,

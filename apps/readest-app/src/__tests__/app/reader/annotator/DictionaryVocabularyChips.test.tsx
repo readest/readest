@@ -108,6 +108,31 @@ describe('dictionary vocabulary chips', () => {
     expect(entries()[0]).toMatchObject({ state, occurrences: [capture.occurrence] });
   });
 
+  // #7691: with auto-save off, a word already marked keeps collecting the
+  // sentences it is looked up in (a Word Lens hint tap is such a lookup);
+  // a word that isn't marked still gets nothing.
+  it.each([
+    'learning',
+    'mastered',
+  ] as const)('saves the sentence of a %s word with auto-save off', (state) => {
+    useCustomDictionaryStore.setState({
+      settings: { ...useCustomDictionaryStore.getState().settings, saveLookupsToVocabulary: false },
+    });
+    const store = useVocabularyStore.getState();
+    store.setState(store.ensureEntry('serendipity', 'en'), state);
+    sheet({ capture });
+    expect(entries()[0]).toMatchObject({ state, occurrences: [capture.occurrence] });
+  });
+
+  it('saves no sentence of an unmarked word with auto-save off', () => {
+    useCustomDictionaryStore.setState({
+      settings: { ...useCustomDictionaryStore.getState().settings, saveLookupsToVocabulary: false },
+    });
+    useVocabularyStore.getState().ensureEntry('serendipity', 'en');
+    sheet({ capture });
+    expect(entries()[0]).toMatchObject({ state: 'none', occurrences: [] });
+  });
+
   it('shows chips without recording when the capture has no sentence', () => {
     sheet({ capture: { lang: 'en' } });
     expect(screen.getByRole('button', { name: 'Learning' })).toBeTruthy();

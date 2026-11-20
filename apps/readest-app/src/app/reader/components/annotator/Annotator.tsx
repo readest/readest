@@ -94,6 +94,7 @@ import {
   selectLocationAnnotations,
 } from '../../utils/annotationIndex';
 import { findContentAtPoint } from '../../utils/crossDocSelection';
+import { glossWordRange } from '../../utils/wordlensRuby';
 import {
   expandAllRenderedSections,
   expandGlobalAnnotation,
@@ -706,6 +707,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         rect?: TextSelection['rect'];
         getPopupCfi?: TextSelection['getPopupCfi'];
         quickAction?: boolean;
+        /** A tap on a Word Lens hint in the popup: look the word up (#7691). */
+        wordLens?: boolean;
       };
       if (detail.key !== bookKey) return;
       // Every event for this book advances the epoch so a handler still
@@ -785,6 +788,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       if (detail.quickAction && quickAction !== 'tts') {
         isTextSelected.current = true;
       }
+      if (detail.wordLens) pendingWordLensDictRef.current = true;
       setSelection({
         key: bookKey,
         text,
@@ -1125,14 +1129,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       const content = view?.renderer?.getContents().find((c) => c.doc === doc);
       if (!content || content.index == null) return;
       const index = content.index;
-      const rt = element.querySelector('rt');
-      const range = doc.createRange();
-      try {
-        range.selectNodeContents(element);
-        if (rt) range.setEndBefore(rt);
-      } catch {
-        return;
-      }
+      const range = glossWordRange(element);
+      if (!range) return;
       const text = range.toString().trim() || word;
       pendingWordLensDictRef.current = true;
       setSelection({
@@ -2043,12 +2041,16 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         word,
         rect ? { rect, style: style ?? undefined } : undefined,
       );
-      const capture =
-        dictSettings.saveLookupsToVocabulary !== false ? getDictionaryCapture() : undefined;
-      if (capture?.occurrence) {
+      // A marked word keeps its sentences with saving off (#7691).
+      const capture = getDictionaryCapture();
+      const vocabulary = useVocabularyStore.getState();
+      if (
+        capture?.occurrence &&
+        (dictSettings.saveLookupsToVocabulary !== false || vocabulary.isMarked(word, capture.lang))
+      ) {
         const { lang, occurrence } = capture;
         void lookup.then((launched) => {
-          if (launched) useVocabularyStore.getState().recordLookup({ word, lang, occurrence });
+          if (launched) vocabulary.recordLookup({ word, lang, occurrence });
         });
       }
       handleDismissPopupAndSelection();
