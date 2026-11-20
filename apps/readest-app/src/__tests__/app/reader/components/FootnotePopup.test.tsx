@@ -540,6 +540,36 @@ describe('FootnotePopup jump to location', () => {
         )
         .map(([, detail]) => (detail as { quickAction?: boolean }).quickAction);
 
+    // #7691: a tap on a Word Lens hint looks the word up, as in the book; the
+    // Annotator opens the dictionary for a report flagged `wordLens`.
+    const wordLensReports = (dispatch: { mock: { calls: unknown[][] } }) =>
+      dispatch.mock.calls
+        .filter(
+          ([name, detail]) =>
+            name === 'footnote-selection' && (detail as { wordLens?: boolean }).wordLens,
+        )
+        .map(([, detail]) => (detail as { range: Range }).range.toString());
+
+    it('reports a tap on a Word Lens hint as a lookup of its word', async () => {
+      const { doc, dispatch } = await loadPopupDoc();
+      doc.body.innerHTML =
+        '<p>A pinch of <ruby class="wl-gloss">spice<rt>seasoning</rt></ruby> here.</p>';
+
+      doc.querySelector('rt')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      expect(wordLensReports(dispatch)).toEqual(['spice']);
+    });
+
+    it('leaves a Word Lens hint inside a link to the link', async () => {
+      const { doc, dispatch } = await loadPopupDoc();
+      doc.body.innerHTML =
+        '<p><a href="#n1"><ruby class="wl-gloss">spice<rt>seasoning</rt></ruby></a></p>';
+
+      doc.querySelector('ruby')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+      expect(wordLensReports(dispatch)).toEqual([]);
+    });
+
     it('marks a selection settled when the pointer is released', async () => {
       const { doc, dispatch } = await loadPopupDoc();
 

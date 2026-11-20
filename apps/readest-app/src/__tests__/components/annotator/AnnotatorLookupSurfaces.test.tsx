@@ -44,6 +44,8 @@ const h = vi.hoisted(() => ({
   },
   invokeSystemDictionary: vi.fn(),
   recordLookup: vi.fn(),
+  // Whether the looked-up word is marked Learning or Mastered.
+  wordMarked: false,
   contextTranslator: { id: 'llm' } as { id: string } | undefined,
   // An unsigned JWT on the pro plan; null is a signed-out, free reader.
   token: 'eyJhbGciOiJub25lIn0.eyJwbGFuIjoicHJvIn0.sig' as string | null,
@@ -182,7 +184,9 @@ vi.mock('@/services/dictionaries/systemDictionary', async (importOriginal) => ({
 }));
 
 vi.mock('@/store/vocabularyStore', () => ({
-  useVocabularyStore: { getState: () => ({ recordLookup: h.recordLookup }) },
+  useVocabularyStore: {
+    getState: () => ({ recordLookup: h.recordLookup, isMarked: () => h.wordMarked }),
+  },
 }));
 
 vi.mock('@/store/deviceStore', () => ({
@@ -397,6 +401,7 @@ beforeEach(() => {
   h.isTextSelected.current = true;
   h.lookupSettings.providerEnabled = {};
   h.lookupSettings.saveLookupsToVocabulary = true;
+  h.wordMarked = false;
   h.viewSettings.annotationToolbarItems = ['copy'];
   h.contextTranslator = { id: 'llm' };
   h.token = 'eyJhbGciOiJub25lIn0.eyJwbGFuIjoicHJvIn0.sig';
@@ -410,13 +415,16 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+// A marked word keeps its sentences with saving off (#7691).
 test.each([
-  [true, true, true],
-  [true, false, false],
-  [false, true, false],
-])('system dictionary saves lookups when enabled (%s) and launched (%s)', async (saveLookups, launched, saved) => {
+  [true, true, false, true],
+  [true, false, false, false],
+  [false, true, false, false],
+  [false, true, true, true],
+])('system dictionary saves lookups when enabled (%s), launched (%s) and marked (%s)', async (saveLookups, launched, marked, saved) => {
   h.lookupSettings.providerEnabled = { 'builtin:system': true };
   h.lookupSettings.saveLookupsToVocabulary = saveLookups;
+  h.wordMarked = marked;
   h.invokeSystemDictionary.mockResolvedValue(launched);
   render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
   await selectText('serendipity');
@@ -439,6 +447,53 @@ test.each([
   } else {
     expect(h.recordLookup).not.toHaveBeenCalled();
   }
+});
+
+// With saving off, a word unmarked or removed (e.g. by a sync) while the OS
+// lookup launches must not be saved back.
+test('system dictionary rechecks the mark once the lookup launches', async () => {
+  h.lookupSettings.providerEnabled = { 'builtin:system': true };
+  h.lookupSettings.saveLookupsToVocabulary = false;
+  h.wordMarked = true;
+  let launch: (launched: boolean) => void = () => {};
+  h.invokeSystemDictionary.mockReturnValue(new Promise<boolean>((r) => (launch = r)));
+  render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  await selectText('serendipity');
+
+  await act(async () => {
+    h.actions?.['onDictionarySelection']?.();
+  });
+  h.wordMarked = false;
+  await act(async () => launch(true));
+
+  expect(h.recordLookup).not.toHaveBeenCalled();
+});
+
+// #7691: the footnote popup reports a Word Lens hint tap as a popup selection
+// over the hinted word; it opens the dictionary like a hint tap in the book.
+test('a Word Lens hint tapped in the footnote popup opens the dictionary', async () => {
+  h.isTextSelected.current = false;
+  render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  const gridCell = document.createElement('div');
+  gridCell.id = 'gridcell-book-1';
+  document.body.append(gridCell);
+  const paragraph = document.createElement('p');
+  paragraph.textContent = 'spice';
+  document.body.append(paragraph);
+  const range = document.createRange();
+  range.selectNodeContents(paragraph);
+
+  await act(async () => {
+    await eventDispatcher.dispatch('footnote-selection', {
+      key: 'book-1',
+      range,
+      index: 3,
+      wordLens: true,
+    });
+  });
+
+  expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('spice');
+  expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
 });
 
 describe('the Context Dictionary tool (#7497)', () => {

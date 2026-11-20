@@ -129,6 +129,19 @@ export const clearGlosses = (doc: Document, joinText = false): boolean => {
   return rubies.length > 0;
 };
 
+/** The range over a gloss's word, without its <rt> hint; null if it can't be made. */
+export const glossWordRange = (ruby: Element): Range | null => {
+  const range = ruby.ownerDocument.createRange();
+  try {
+    range.selectNodeContents(ruby);
+    const rt = ruby.querySelector('rt');
+    if (rt) range.setEndBefore(rt);
+  } catch {
+    return null;
+  }
+  return range;
+};
+
 /** Given a tap target, return the base word if it is inside a gloss, else null. */
 export const findGlossWord = (target: HTMLElement | null): string | null => {
   const ruby = target?.closest(`ruby.${GLOSS_CLASS}`);
