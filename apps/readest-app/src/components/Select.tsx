@@ -13,6 +13,7 @@ type SelectProps = {
   options: Option[];
   disabled?: boolean;
   className?: string;
+  ariaLabel?: string;
 };
 
 export default function Select({
@@ -21,10 +22,12 @@ export default function Select({
   options,
   className,
   disabled = false,
+  ariaLabel,
 }: SelectProps) {
   return (
     <select
       value={value}
+      aria-label={ariaLabel}
       onChange={onChange}
       onKeyDown={(e) => e.stopPropagation()}
       className={clsx(
