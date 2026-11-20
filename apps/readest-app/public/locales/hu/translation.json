@@ -33,6 +33,7 @@
   "Updating password ...": "Jelszó frissítése ...",
   "Your password has been updated": "Jelszava frissítve lett",
   "Back": "Vissza",
+  "Back / Close": "Vissza / Bezárás",
   "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "Megerősítő e-mail elküldve! Kérjük, ellenőrizze régi és új e-mail címét a módosítás megerősítéséhez.",
   "Failed to update email": "Az e-mail frissítése nem sikerült",
   "New Email": "Új e-mail",

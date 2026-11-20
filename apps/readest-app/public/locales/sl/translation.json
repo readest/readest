@@ -33,6 +33,7 @@
   "Updating password ...": "Posodabljanje gesla ...",
   "Your password has been updated": "Vaše geslo je bilo posodobljeno",
   "Back": "Nazaj",
+  "Back / Close": "Nazaj / Zapri",
   "Confirmation email sent! Please check your old and new email addresses to confirm the change.": "Potrditvena e-pošta poslana! Prosimo, preverite svoj stari in novi e-poštni naslov za potrditev spremembe.",
   "Failed to update email": "Posodobitev e-pošte ni uspela",
   "New Email": "Nova e-pošta",
