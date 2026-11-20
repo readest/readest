@@ -173,18 +173,32 @@ describe('mergeVaultNote', () => {
     expect(Object.keys(written)).toEqual(['a1']);
   });
 
-  it('keeps the day a block shows when this device would date it differently', () => {
+  it('keeps the day of a block it owns when this device would date it differently', () => {
     // Same highlight, seen from a time zone where it falls on the day before.
     const elsewhere = { createdAt: new Date(2026, 10, 3, 23, 30).getTime() };
     const first = sync(createVaultNote(book), [hl('a1')]);
 
-    const adopted = sync(first.text, [hl('a1', elsewhere)], {});
-    expect(adopted.text).toBe(first.text);
-    expect(Object.keys(adopted.written)).toEqual(['a1']);
-
     const moved = sync(first.text, [hl('a1', { ...elsewhere, note: 'n' })], first.written);
     expect(moved.text).toContain('/annotation/a1) · 2026-11-04\n> text a1\n');
     expect(moved.text).toContain('> > n\n\n^rd-a1');
+
+    // A device with no record leaves it to the device that wrote it.
+    const other = sync(first.text, [hl('a1', elsewhere)], {});
+    expect(other.text).toBe(first.text);
+    expect(other.written).toEqual({});
+  });
+
+  it('leaves a block whose date the user edited through updates and deletes', () => {
+    const first = sync(createVaultNote(book), [hl('a1')]);
+    const edited = first.text.replace(' · 2026-11-04', ' · 2026-11-05');
+    expect(edited).not.toBe(first.text);
+
+    const opened = sync(edited, [hl('a1')], first.written);
+    expect(opened.text).toBe(edited);
+    const updated = sync(edited, [hl('a1', { note: 'n' })], opened.written);
+    expect(updated.text).toBe(edited);
+    const deleted = sync(edited, [hl('a1', { deleted: true })], updated.written);
+    expect(deleted.text).toBe(edited);
   });
 
   it('leaves a block the user edited', () => {

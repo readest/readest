@@ -169,9 +169,13 @@ export const mergeVaultNote = (
 
   for (const highlight of active) {
     const unit = findUnit(lines, highlight.id);
-    // Keep the day a block already shows: a device in another time zone would
-    // date it differently and take the block for a user edit.
-    const shownDay = unit ? SHOWN_DAY.exec(unit.callout.split('\n')[0]!)?.[1] : undefined;
+    // A block this device owns keeps the day it shows, so moving to another
+    // time zone doesn't rewrite it. Any other block is dated by this device,
+    // so a date the user edited never matches.
+    const shownDay =
+      unit && untouched(highlight.id, unit)
+        ? SHOWN_DAY.exec(unit.callout.split('\n')[0]!)?.[1]
+        : undefined;
     const rendered = renderHighlight(highlight, book.title, shownDay);
     if (unit) {
       // A block written before highlights had dates is adopted like a matching one.
