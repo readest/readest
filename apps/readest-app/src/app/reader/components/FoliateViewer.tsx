@@ -67,6 +67,7 @@ import {
 import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
 import { classifyAndTagStandaloneDiagrams } from '@/utils/imageClassifier';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
+import { mountWhiteTransparencyFilter } from '@/utils/imageBackground';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
 import { refreshSectionGlosses, whenSelectionClears } from '@/app/reader/utils/wordlensSection';
 import { useVocabularyStore } from '@/store/vocabularyStore';
@@ -656,6 +657,7 @@ const FoliateViewer: React.FC<{
         }
       }
 
+      mountWhiteTransparencyFilter(detail.doc);
       applyImageStyle(detail.doc, useThemeStore.getState().isDarkMode, bookData?.isFixedLayout);
       applyScrollableStyle(detail.doc);
       applyTableTouchScroll(detail.doc);

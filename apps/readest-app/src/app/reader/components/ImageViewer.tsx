@@ -9,6 +9,7 @@ import { Insets } from '@/types/misc';
 import { eventDispatcher } from '@/utils/event';
 import { canShareText } from '@/utils/share';
 import { dataUrlToBytes, imageExtensionFromMime } from '@/utils/image';
+import { mountWhiteTransparencyFilter } from '@/utils/imageBackground';
 import {
   isLightColor,
   probeImageInk,
@@ -130,6 +131,9 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
     setFitSize({ width: fitWidth, height: img.naturalHeight * fitRatio });
     setPixelPerfectScale(img.naturalWidth / (fitWidth * dpr));
   }, []);
+
+  // The page's filter, copied below, names its definition by id.
+  useEffect(() => mountWhiteTransparencyFilter(document), []);
 
   // A cached image can already be decoded before the load event would fire, and
   // rotating the device or resizing the window changes the fit size.
