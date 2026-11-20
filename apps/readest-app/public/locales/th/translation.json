@@ -2796,5 +2796,10 @@
   "Merge Statistics": "รวมสถิติ",
   "Merge statistics of {{title}}": "รวมสถิติของ {{title}}",
   "No other books have reading statistics": "ไม่มีหนังสือเล่มอื่นที่มีสถิติการอ่าน",
-  "Merge another entry into this book:": "รวมรายการอื่นเข้ากับหนังสือเล่มนี้:"
+  "Merge another entry into this book:": "รวมรายการอื่นเข้ากับหนังสือเล่มนี้:",
+  "Remove {{voice}} from favorites": "นำ {{voice}} ออกจากรายการโปรด",
+  "Add {{voice}} to favorites": "เพิ่ม {{voice}} ในรายการโปรด",
+  "Remove from favorites": "นำออกจากรายการโปรด",
+  "Add to favorites": "เพิ่มในรายการโปรด",
+  "Favorites": "รายการโปรด"
 }

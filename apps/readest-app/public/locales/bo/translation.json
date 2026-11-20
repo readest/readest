@@ -2796,5 +2796,10 @@
   "Merge Statistics": "གྲངས་ཐོ་མཉམ་སྡེབ།",
   "Merge statistics of {{title}}": "{{title}} ཡི་གྲངས་ཐོ་མཉམ་སྡེབ།",
   "No other books have reading statistics": "དཔེ་དེབ་གཞན་ལ་ཀློག་པའི་གྲངས་ཐོ་མེད།",
-  "Merge another entry into this book:": "དཔེ་དེབ་འདིའི་ནང་ཚན་པ་གཞན་ཞིག་མཉམ་སྡེབ།"
+  "Merge another entry into this book:": "དཔེ་དེབ་འདིའི་ནང་ཚན་པ་གཞན་ཞིག་མཉམ་སྡེབ།",
+  "Remove {{voice}} from favorites": "{{voice}} དགའ་ཤོས་ནས་བསུབ།",
+  "Add {{voice}} to favorites": "{{voice}} དགའ་ཤོས་ལ་ཁ་སྣོན།",
+  "Remove from favorites": "དགའ་ཤོས་ནས་བསུབ།",
+  "Add to favorites": "དགའ་ཤོས་ལ་ཁ་སྣོན།",
+  "Favorites": "དགའ་ཤོས།"
 }

@@ -2869,5 +2869,10 @@
   "Merge Statistics": "Συγχώνευση στατιστικών",
   "Merge statistics of {{title}}": "Συγχώνευση στατιστικών του {{title}}",
   "No other books have reading statistics": "Κανένα άλλο βιβλίο δεν έχει στατιστικά ανάγνωσης",
-  "Merge another entry into this book:": "Συγχώνευση άλλης καταχώρισης σε αυτό το βιβλίο:"
+  "Merge another entry into this book:": "Συγχώνευση άλλης καταχώρισης σε αυτό το βιβλίο:",
+  "Remove {{voice}} from favorites": "Αφαίρεση του {{voice}} από τα αγαπημένα",
+  "Add {{voice}} to favorites": "Προσθήκη του {{voice}} στα αγαπημένα",
+  "Remove from favorites": "Αφαίρεση από τα αγαπημένα",
+  "Add to favorites": "Προσθήκη στα αγαπημένα",
+  "Favorites": "Αγαπημένα"
 }

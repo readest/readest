@@ -2796,5 +2796,10 @@
   "Merge Statistics": "Gộp thống kê",
   "Merge statistics of {{title}}": "Gộp thống kê của {{title}}",
   "No other books have reading statistics": "Không có sách nào khác có thống kê đọc",
-  "Merge another entry into this book:": "Gộp một mục khác vào sách này:"
+  "Merge another entry into this book:": "Gộp một mục khác vào sách này:",
+  "Remove {{voice}} from favorites": "Xóa {{voice}} khỏi yêu thích",
+  "Add {{voice}} to favorites": "Thêm {{voice}} vào yêu thích",
+  "Remove from favorites": "Xóa khỏi yêu thích",
+  "Add to favorites": "Thêm vào yêu thích",
+  "Favorites": "Yêu thích"
 }

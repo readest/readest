@@ -3015,5 +3015,10 @@
   "Merge Statistics": "Združi statistiko",
   "Merge statistics of {{title}}": "Združi statistiko: {{title}}",
   "No other books have reading statistics": "Nobena druga knjiga nima statistike branja",
-  "Merge another entry into this book:": "V to knjigo združi drug vnos:"
+  "Merge another entry into this book:": "V to knjigo združi drug vnos:",
+  "Remove {{voice}} from favorites": "Odstrani {{voice}} iz priljubljenih",
+  "Add {{voice}} to favorites": "Dodaj {{voice}} med priljubljene",
+  "Remove from favorites": "Odstrani iz priljubljenih",
+  "Add to favorites": "Dodaj med priljubljene",
+  "Favorites": "Priljubljeni"
 }

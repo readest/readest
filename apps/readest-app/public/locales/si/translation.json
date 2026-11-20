@@ -2869,5 +2869,10 @@
   "Merge Statistics": "සංඛ්‍යාලේඛන ඒකාබද්ධ කරන්න",
   "Merge statistics of {{title}}": "{{title}} හි සංඛ්‍යාලේඛන ඒකාබද්ධ කරන්න",
   "No other books have reading statistics": "වෙනත් කිසිදු පොතකට කියවීමේ සංඛ්‍යාලේඛන නැත",
-  "Merge another entry into this book:": "මෙම පොතට වෙනත් ඇතුළත් කිරීමක් ඒකාබද්ධ කරන්න:"
+  "Merge another entry into this book:": "මෙම පොතට වෙනත් ඇතුළත් කිරීමක් ඒකාබද්ධ කරන්න:",
+  "Remove {{voice}} from favorites": "{{voice}} ප්‍රියතමයෙන් ඉවත් කරන්න",
+  "Add {{voice}} to favorites": "{{voice}} ප්‍රියතමයට එකතු කරන්න",
+  "Remove from favorites": "ප්‍රියතමයෙන් ඉවත් කරන්න",
+  "Add to favorites": "ප්‍රියතමයට එකතු කරන්න",
+  "Favorites": "ප්‍රියතම"
 }

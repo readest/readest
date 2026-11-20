@@ -2869,5 +2869,10 @@
   "Merge Statistics": "புள்ளிவிவரங்களை இணை",
   "Merge statistics of {{title}}": "{{title}} புள்ளிவிவரங்களை இணை",
   "No other books have reading statistics": "வேறு எந்தப் புத்தகத்துக்கும் வாசிப்பு புள்ளிவிவரங்கள் இல்லை",
-  "Merge another entry into this book:": "இந்தப் புத்தகத்துடன் வேறொரு பதிவை இணை:"
+  "Merge another entry into this book:": "இந்தப் புத்தகத்துடன் வேறொரு பதிவை இணை:",
+  "Remove {{voice}} from favorites": "{{voice}} ஐ பிடித்தவையிலிருந்து நீக்கு",
+  "Add {{voice}} to favorites": "{{voice}} ஐ பிடித்தவையில் சேர்க்கவும்",
+  "Remove from favorites": "பிடித்தவையிலிருந்து நீக்கு",
+  "Add to favorites": "பிடித்தவையில் சேர்க்கவும்",
+  "Favorites": "பிடித்தவை"
 }

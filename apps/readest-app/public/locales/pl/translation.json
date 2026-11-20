@@ -3015,5 +3015,10 @@
   "Merge Statistics": "Scal statystyki",
   "Merge statistics of {{title}}": "Scal statystyki: {{title}}",
   "No other books have reading statistics": "Żadna inna książka nie ma statystyk czytania",
-  "Merge another entry into this book:": "Scal inny wpis z tą książką:"
+  "Merge another entry into this book:": "Scal inny wpis z tą książką:",
+  "Remove {{voice}} from favorites": "Usuń {{voice}} z ulubionych",
+  "Add {{voice}} to favorites": "Dodaj {{voice}} do ulubionych",
+  "Remove from favorites": "Usuń z ulubionych",
+  "Add to favorites": "Dodaj do ulubionych",
+  "Favorites": "Ulubione"
 }

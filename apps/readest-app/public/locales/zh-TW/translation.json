@@ -2796,5 +2796,10 @@
   "Merge Statistics": "合併統計",
   "Merge statistics of {{title}}": "合併《{{title}}》的統計",
   "No other books have reading statistics": "沒有其他書籍有閱讀統計",
-  "Merge another entry into this book:": "將其他條目合併到這本書："
+  "Merge another entry into this book:": "將其他條目合併到這本書：",
+  "Remove {{voice}} from favorites": "將 {{voice}} 從我的最愛移除",
+  "Add {{voice}} to favorites": "將 {{voice}} 加入我的最愛",
+  "Remove from favorites": "從我的最愛移除",
+  "Add to favorites": "加入我的最愛",
+  "Favorites": "我的最愛"
 }

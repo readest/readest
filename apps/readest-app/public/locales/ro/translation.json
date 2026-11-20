@@ -2942,5 +2942,10 @@
   "Merge Statistics": "Combină statisticile",
   "Merge statistics of {{title}}": "Combină statisticile pentru {{title}}",
   "No other books have reading statistics": "Nicio altă carte nu are statistici de lectură",
-  "Merge another entry into this book:": "Combină o altă intrare cu această carte:"
+  "Merge another entry into this book:": "Combină o altă intrare cu această carte:",
+  "Remove {{voice}} from favorites": "Elimină {{voice}} din favorite",
+  "Add {{voice}} to favorites": "Adaugă {{voice}} la favorite",
+  "Remove from favorites": "Elimină din favorite",
+  "Add to favorites": "Adaugă la favorite",
+  "Favorites": "Favorite"
 }

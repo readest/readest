@@ -2869,5 +2869,10 @@
   "Merge Statistics": "Statisztika egyesítése",
   "Merge statistics of {{title}}": "Statisztika egyesítése: {{title}}",
   "No other books have reading statistics": "Más könyvnek nincs olvasási statisztikája",
-  "Merge another entry into this book:": "Másik bejegyzés egyesítése ezzel a könyvvel:"
+  "Merge another entry into this book:": "Másik bejegyzés egyesítése ezzel a könyvvel:",
+  "Remove {{voice}} from favorites": "{{voice}} eltávolítása a kedvencek közül",
+  "Add {{voice}} to favorites": "{{voice}} hozzáadása a kedvencekhez",
+  "Remove from favorites": "Eltávolítás a kedvencek közül",
+  "Add to favorites": "Hozzáadás a kedvencekhez",
+  "Favorites": "Kedvencek"
 }

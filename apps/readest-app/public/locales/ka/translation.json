@@ -2869,5 +2869,10 @@
   "Merge Statistics": "სტატისტიკის გაერთიანება",
   "Merge statistics of {{title}}": "{{title}} — სტატისტიკის გაერთიანება",
   "No other books have reading statistics": "სხვა წიგნებს კითხვის სტატისტიკა არ აქვს",
-  "Merge another entry into this book:": "სხვა ჩანაწერის გაერთიანება ამ წიგნში:"
+  "Merge another entry into this book:": "სხვა ჩანაწერის გაერთიანება ამ წიგნში:",
+  "Remove {{voice}} from favorites": "{{voice}}-ის ფავორიტებიდან წაშლა",
+  "Add {{voice}} to favorites": "{{voice}}-ის ფავორიტებში დამატება",
+  "Remove from favorites": "ფავორიტებიდან წაშლა",
+  "Add to favorites": "ფავორიტებში დამატება",
+  "Favorites": "ფავორიტები"
 }

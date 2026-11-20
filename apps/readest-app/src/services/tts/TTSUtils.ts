@@ -3,6 +3,7 @@ import { MULTILINGUAL_LANG, TTSVoice } from './types';
 export class TTSUtils {
   private static readonly LOCAL_STORAGE_KEY = 'ttsPreferredVoices';
   private static readonly PREFERRED_CLIENT_KEY = 'preferredClient';
+  private static readonly FAVORITE_VOICES_KEY = 'ttsFavoriteVoices';
 
   private static normalizeLanguage(language: string): string {
     if (!language) return 'n/a';
@@ -69,6 +70,36 @@ export class TTSUtils {
     const voiceId =
       this.getPreferredVoice(engine, language) ?? this.getPreferredVoice(engine, MULTILINGUAL_LANG);
     return voiceId ? { engine, voiceId } : null;
+  }
+
+  // A voice id is only unique within its engine, so a favorite is kept as
+  // "engine:voiceId".
+  static favoriteVoiceKey(engine: string, voiceId: string): string {
+    return `${engine}:${voiceId}`;
+  }
+
+  static getFavoriteVoices(): string[] {
+    try {
+      const stored = JSON.parse(localStorage.getItem(this.FAVORITE_VOICES_KEY) ?? '[]');
+      return Array.isArray(stored) ? stored.filter((key) => typeof key === 'string') : [];
+    } catch {
+      return [];
+    }
+  }
+
+  // Returns whether the voice is a favorite afterwards.
+  static toggleFavoriteVoice(engine: string, voiceId: string): boolean {
+    const key = this.favoriteVoiceKey(engine, voiceId);
+    const favorites = this.getFavoriteVoices();
+    const isFavorite = !favorites.includes(key);
+    const next = isFavorite ? [...favorites, key] : favorites.filter((k) => k !== key);
+    try {
+      localStorage.setItem(this.FAVORITE_VOICES_KEY, JSON.stringify(next));
+    } catch {
+      // Storage full or blocked: nothing changed.
+      return !isFavorite;
+    }
+    return isFavorite;
   }
 
   private static getPreferences(): Record<string, string> {

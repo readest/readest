@@ -2869,5 +2869,10 @@
   "Merge Statistics": "পরিসংখ্যান একত্র করুন",
   "Merge statistics of {{title}}": "{{title}}-এর পরিসংখ্যান একত্র করুন",
   "No other books have reading statistics": "অন্য কোনো বইয়ের পড়ার পরিসংখ্যান নেই",
-  "Merge another entry into this book:": "এই বইয়ের সঙ্গে অন্য একটি এন্ট্রি একত্র করুন:"
+  "Merge another entry into this book:": "এই বইয়ের সঙ্গে অন্য একটি এন্ট্রি একত্র করুন:",
+  "Remove {{voice}} from favorites": "{{voice}} প্রিয় থেকে সরান",
+  "Add {{voice}} to favorites": "{{voice}} প্রিয়তে যোগ করুন",
+  "Remove from favorites": "প্রিয় থেকে সরান",
+  "Add to favorites": "প্রিয়তে যোগ করুন",
+  "Favorites": "প্রিয়"
 }
