@@ -3020,5 +3020,12 @@
   "Add {{voice}} to favorites": "Dodaj {{voice}} med priljubljene",
   "Remove from favorites": "Odstrani iz priljubljenih",
   "Add to favorites": "Dodaj med priljubljene",
-  "Favorites": "Priljubljeni"
+  "Favorites": "Priljubljeni",
+  "Last Looked Up": "Nazadnje poiskano",
+  "Most Saved Sentences": "Največ shranjenih stavkov",
+  "Newest Added": "Najnovejše dodane",
+  "Oldest Added": "Najstarejše dodane",
+  "Alphabetical A-Z": "Abecedno A–Ž",
+  "Alphabetical Z-A": "Abecedno Ž–A",
+  "All Languages": "Vsi jeziki"
 }

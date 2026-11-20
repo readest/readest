@@ -2801,5 +2801,12 @@
   "Add {{voice}} to favorites": "{{voice}} 즐겨찾기에 추가",
   "Remove from favorites": "즐겨찾기에서 제거",
   "Add to favorites": "즐겨찾기에 추가",
-  "Favorites": "즐겨찾기"
+  "Favorites": "즐겨찾기",
+  "Last Looked Up": "최근 조회순",
+  "Most Saved Sentences": "저장한 문장 많은 순",
+  "Newest Added": "최근 추가순",
+  "Oldest Added": "오래된 추가순",
+  "Alphabetical A-Z": "알파벳순 A-Z",
+  "Alphabetical Z-A": "알파벳순 Z-A",
+  "All Languages": "모든 언어"
 }

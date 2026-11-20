@@ -2874,5 +2874,12 @@
   "Add {{voice}} to favorites": "{{voice}} ஐ பிடித்தவையில் சேர்க்கவும்",
   "Remove from favorites": "பிடித்தவையிலிருந்து நீக்கு",
   "Add to favorites": "பிடித்தவையில் சேர்க்கவும்",
-  "Favorites": "பிடித்தவை"
+  "Favorites": "பிடித்தவை",
+  "Last Looked Up": "கடைசியாகத் தேடியது",
+  "Most Saved Sentences": "அதிகம் சேமித்த வாக்கியங்கள்",
+  "Newest Added": "புதிதாகச் சேர்த்தவை",
+  "Oldest Added": "முதலில் சேர்த்தவை",
+  "Alphabetical A-Z": "அகர வரிசை A-Z",
+  "Alphabetical Z-A": "அகர வரிசை Z-A",
+  "All Languages": "அனைத்து மொழிகள்"
 }

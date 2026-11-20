@@ -2874,5 +2874,12 @@
   "Add {{voice}} to favorites": "{{voice}} zu Favoriten hinzufügen",
   "Remove from favorites": "Aus Favoriten entfernen",
   "Add to favorites": "Zu Favoriten hinzufügen",
-  "Favorites": "Favoriten"
+  "Favorites": "Favoriten",
+  "Last Looked Up": "Zuletzt nachgeschlagen",
+  "Most Saved Sentences": "Meiste gespeicherte Sätze",
+  "Newest Added": "Neueste zuerst",
+  "Oldest Added": "Älteste zuerst",
+  "Alphabetical A-Z": "Alphabetisch A–Z",
+  "Alphabetical Z-A": "Alphabetisch Z–A",
+  "All Languages": "Alle Sprachen"
 }

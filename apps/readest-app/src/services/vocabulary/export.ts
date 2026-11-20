@@ -80,6 +80,7 @@ export const toCsv = (entries: VocabularyEntry[]): string => {
       'first looked up',
       'last looked up',
       'lookup count',
+      'language',
     ],
   ];
   for (const e of entries) {
@@ -96,6 +97,7 @@ export const toCsv = (entries: VocabularyEntry[]): string => {
       day(times.length ? Math.min(...times) : e.createdAt),
       day(times.length ? Math.max(...times) : e.createdAt),
       String(e.occurrences.length),
+      e.lang,
     ]);
   }
   return `﻿${rows.map((r) => r.map(csvField).join(',')).join('\r\n')}\r\n`;

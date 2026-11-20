@@ -2874,5 +2874,12 @@
   "Add {{voice}} to favorites": "{{voice}}-ის ფავორიტებში დამატება",
   "Remove from favorites": "ფავორიტებიდან წაშლა",
   "Add to favorites": "ფავორიტებში დამატება",
-  "Favorites": "ფავორიტები"
+  "Favorites": "ფავორიტები",
+  "Last Looked Up": "ბოლოს მოძებნილი",
+  "Most Saved Sentences": "ყველაზე მეტი შენახული წინადადება",
+  "Newest Added": "ბოლოს დამატებული",
+  "Oldest Added": "პირველად დამატებული",
+  "Alphabetical A-Z": "ანბანით A-Z",
+  "Alphabetical Z-A": "ანბანით Z-A",
+  "All Languages": "ყველა ენა"
 }

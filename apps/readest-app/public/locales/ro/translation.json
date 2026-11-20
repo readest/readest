@@ -2947,5 +2947,12 @@
   "Add {{voice}} to favorites": "Adaugă {{voice}} la favorite",
   "Remove from favorites": "Elimină din favorite",
   "Add to favorites": "Adaugă la favorite",
-  "Favorites": "Favorite"
+  "Favorites": "Favorite",
+  "Last Looked Up": "Ultima căutare",
+  "Most Saved Sentences": "Cele mai multe propoziții salvate",
+  "Newest Added": "Cele mai noi adăugate",
+  "Oldest Added": "Cele mai vechi adăugate",
+  "Alphabetical A-Z": "Alfabetic A-Z",
+  "Alphabetical Z-A": "Alfabetic Z-A",
+  "All Languages": "Toate limbile"
 }

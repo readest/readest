@@ -2874,5 +2874,12 @@
   "Add {{voice}} to favorites": "{{voice}} ni sevimlilarga qoʻshish",
   "Remove from favorites": "Sevimlilardan olib tashlash",
   "Add to favorites": "Sevimlilarga qoʻshish",
-  "Favorites": "Sevimlilar"
+  "Favorites": "Sevimlilar",
+  "Last Looked Up": "Oxirgi qidirilgan",
+  "Most Saved Sentences": "Eng ko‘p saqlangan gaplar",
+  "Newest Added": "Eng yangi qo‘shilgan",
+  "Oldest Added": "Eng eski qo‘shilgan",
+  "Alphabetical A-Z": "Alifbo bo‘yicha A-Z",
+  "Alphabetical Z-A": "Alifbo bo‘yicha Z-A",
+  "All Languages": "Barcha tillar"
 }

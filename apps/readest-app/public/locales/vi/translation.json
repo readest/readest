@@ -2801,5 +2801,12 @@
   "Add {{voice}} to favorites": "Thêm {{voice}} vào yêu thích",
   "Remove from favorites": "Xóa khỏi yêu thích",
   "Add to favorites": "Thêm vào yêu thích",
-  "Favorites": "Yêu thích"
+  "Favorites": "Yêu thích",
+  "Last Looked Up": "Tra cứu gần nhất",
+  "Most Saved Sentences": "Nhiều câu đã lưu nhất",
+  "Newest Added": "Thêm mới nhất",
+  "Oldest Added": "Thêm cũ nhất",
+  "Alphabetical A-Z": "Theo bảng chữ cái A-Z",
+  "Alphabetical Z-A": "Theo bảng chữ cái Z-A",
+  "All Languages": "Tất cả ngôn ngữ"
 }

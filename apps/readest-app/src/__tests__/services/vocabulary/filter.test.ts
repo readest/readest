@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { filterEntries, listBooks } from '@/services/vocabulary/filter';
+import { filterEntries, listBooks, listLanguages } from '@/services/vocabulary/filter';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
 
 const entry = (
@@ -55,6 +55,15 @@ describe('filterEntries', () => {
       'sandworm',
     ]);
   });
+  it('filters by language', () => {
+    const mixed = [...entries, entry('haus', { id: 'de:haus', lang: 'de' }, [emma])];
+    expect(filterEntries(mixed, { lang: 'de' }).map((e) => e.key)).toEqual(['haus']);
+    expect(filterEntries(mixed, { lang: 'en' }).map((e) => e.key)).toEqual([
+      'spice',
+      'ball',
+      'sandworm',
+    ]);
+  });
   it('searches the word and the hint', () => {
     expect(filterEntries(entries, { query: 'WORM' }).map((e) => e.key)).toEqual(['sandworm']);
     expect(filterEntries(entries, { query: '香' }).map((e) => e.key)).toEqual(['spice']);
@@ -67,5 +76,17 @@ describe('listBooks', () => {
       { hash: 'd', title: 'Dune' },
       { hash: 'e', title: 'Emma' },
     ]);
+  });
+});
+
+describe('listLanguages', () => {
+  it('lists the languages of live words once', () => {
+    const mixed = [
+      ...entries,
+      entry('haus', { id: 'de:haus', lang: 'de' }),
+      entry('baum', { id: 'de:baum', lang: 'de' }),
+      entry('chat', { id: 'fr:chat', lang: 'fr', deletedAt: 5 }),
+    ];
+    expect(listLanguages(mixed).sort()).toEqual(['de', 'en']);
   });
 });

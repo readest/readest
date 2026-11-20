@@ -2874,5 +2874,12 @@
   "Add {{voice}} to favorites": "{{voice}} hozzáadása a kedvencekhez",
   "Remove from favorites": "Eltávolítás a kedvencek közül",
   "Add to favorites": "Hozzáadás a kedvencekhez",
-  "Favorites": "Kedvencek"
+  "Favorites": "Kedvencek",
+  "Last Looked Up": "Utoljára keresett",
+  "Most Saved Sentences": "Legtöbb mentett mondat",
+  "Newest Added": "Legújabban hozzáadott",
+  "Oldest Added": "Legrégebben hozzáadott",
+  "Alphabetical A-Z": "Betűrendben A–Z",
+  "Alphabetical Z-A": "Betűrendben Z–A",
+  "All Languages": "Minden nyelv"
 }

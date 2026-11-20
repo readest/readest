@@ -3166,5 +3166,12 @@
   "Add {{voice}} to favorites": "إضافة {{voice}} إلى المفضلة",
   "Remove from favorites": "إزالة من المفضلة",
   "Add to favorites": "إضافة إلى المفضلة",
-  "Favorites": "المفضلة"
+  "Favorites": "المفضلة",
+  "Last Looked Up": "آخر بحث",
+  "Most Saved Sentences": "الأكثر جملًا محفوظة",
+  "Newest Added": "الأحدث إضافة",
+  "Oldest Added": "الأقدم إضافة",
+  "Alphabetical A-Z": "أبجديًا A-Z",
+  "Alphabetical Z-A": "أبجديًا Z-A",
+  "All Languages": "كل اللغات"
 }

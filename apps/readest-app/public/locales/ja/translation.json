@@ -2801,5 +2801,12 @@
   "Add {{voice}} to favorites": "{{voice}}をお気に入りに追加",
   "Remove from favorites": "お気に入りから削除",
   "Add to favorites": "お気に入りに追加",
-  "Favorites": "お気に入り"
+  "Favorites": "お気に入り",
+  "Last Looked Up": "最後に調べた順",
+  "Most Saved Sentences": "保存した文が多い順",
+  "Newest Added": "追加日が新しい順",
+  "Oldest Added": "追加日が古い順",
+  "Alphabetical A-Z": "アルファベット順 A-Z",
+  "Alphabetical Z-A": "アルファベット順 Z-A",
+  "All Languages": "すべての言語"
 }

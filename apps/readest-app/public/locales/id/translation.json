@@ -2801,5 +2801,12 @@
   "Add {{voice}} to favorites": "Tambahkan {{voice}} ke favorit",
   "Remove from favorites": "Hapus dari favorit",
   "Add to favorites": "Tambahkan ke favorit",
-  "Favorites": "Favorit"
+  "Favorites": "Favorit",
+  "Last Looked Up": "Terakhir dicari",
+  "Most Saved Sentences": "Kalimat tersimpan terbanyak",
+  "Newest Added": "Terbaru ditambahkan",
+  "Oldest Added": "Terlama ditambahkan",
+  "Alphabetical A-Z": "Abjad A-Z",
+  "Alphabetical Z-A": "Abjad Z-A",
+  "All Languages": "Semua bahasa"
 }

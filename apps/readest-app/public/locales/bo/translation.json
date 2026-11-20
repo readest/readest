@@ -2801,5 +2801,12 @@
   "Add {{voice}} to favorites": "{{voice}} དགའ་ཤོས་ལ་ཁ་སྣོན།",
   "Remove from favorites": "དགའ་ཤོས་ནས་བསུབ།",
   "Add to favorites": "དགའ་ཤོས་ལ་ཁ་སྣོན།",
-  "Favorites": "དགའ་ཤོས།"
+  "Favorites": "དགའ་ཤོས།",
+  "Last Looked Up": "མཐའ་མའི་འཚོལ་ཞིབ།",
+  "Most Saved Sentences": "ཚིག་གྲུབ་ཉར་བ་མང་ཤོས།",
+  "Newest Added": "གསར་དུ་སྣོན་པ།",
+  "Oldest Added": "རྙིང་བ་སྣོན་པ།",
+  "Alphabetical A-Z": "ཀ་ཁའི་གོ་རིམ་ A-Z",
+  "Alphabetical Z-A": "ཀ་ཁའི་གོ་རིམ་ Z-A",
+  "All Languages": "སྐད་ཡིག་ཡོངས་རྫོགས།"
 }

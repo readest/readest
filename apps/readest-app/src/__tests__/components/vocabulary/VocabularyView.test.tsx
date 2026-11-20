@@ -235,6 +235,34 @@ describe('VocabularyView', () => {
     expect(scrollIntoView.mock.contexts[0]).toBe(select.parentElement);
   });
 
+  it('offers a language filter only when words span languages', () => {
+    render(<VocabularyView />);
+    expect(screen.queryByRole('combobox', { name: 'Language' })).toBeNull();
+    cleanup();
+    seed([
+      entry('sandworm', {}),
+      entry('haus', { id: 'de:haus', lang: 'de' }),
+      entry('baum', { id: 'de:baum', lang: 'de' }),
+    ]);
+    render(<VocabularyView />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), {
+      target: { value: 'de' },
+    });
+    expect(listWords()).toEqual(['haus', 'baum']);
+  });
+
+  it('drops the language filter when its last word is deleted', () => {
+    seed([entry('sandworm', {}), entry('haus', { id: 'de:haus', lang: 'de' })]);
+    render(<VocabularyView />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), {
+      target: { value: 'de' },
+    });
+    expect(listWords()).toEqual(['haus']);
+    act(() => useVocabularyStore.getState().remove('de:haus'));
+    expect(screen.queryByRole('combobox', { name: 'Language' })).toBeNull();
+    expect(listWords()).toEqual(['sandworm']);
+  });
+
   it('exports only the words the filters show', async () => {
     render(
       <DropdownProvider>
