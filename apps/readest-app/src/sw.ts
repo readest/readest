@@ -14,6 +14,11 @@ declare const self: ServiceWorkerGlobalScope;
 // and the reader.
 const isClientRoute = ({ pathname }: URL) =>
   pathname === '/' || ['/library', '/reader'].some((route) => pathname.startsWith(route));
+const isAppPage = (url: URL) => url.origin === self.location.origin && isClientRoute(url);
+
+// The page route reads `pages` by the first path segment, so one saved reader
+// serves every book.
+const pageCacheKey = ({ origin, pathname }: URL) => `${origin}/${pathname.split('/')[1]}`;
 
 const PAGE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 
@@ -51,12 +56,7 @@ const serwist = new Serwist({
             maxAgeSeconds: PAGE_MAX_AGE_SECONDS,
           }),
           {
-            cacheKeyWillBeUsed: async ({ request }) => {
-              const url = new URL(request.url);
-              const basePath = url.pathname.split('/')[1];
-              const cacheKey = `${url.origin}/${basePath}`;
-              return cacheKey;
-            },
+            cacheKeyWillBeUsed: async ({ request }) => pageCacheKey(new URL(request.url)),
           },
           {
             // In a browser tab the reader is at /reader/<ids>, and
@@ -142,25 +142,35 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       if (!(await caches.has(REPLACING_MARKER))) return;
+      const savedKinds = (await (await caches.open(PAGES_CACHE_NAME.html)).keys())
+        .map(({ url }) => new URL(url))
+        .filter(isAppPage)
+        .map(pageCacheKey);
       await Promise.all([caches.delete(PAGES_CACHE_NAME.html), caches.delete('client-pages')]);
       // cacheOnNavigation refetches a page through the service worker, so an old
       // copy in the general cache could come back into `pages` on a slow network.
       const general = await caches.open('offline-cache');
       for (const request of await general.keys()) {
-        const url = new URL(request.url);
-        if (url.origin === self.location.origin && isClientRoute(url))
-          await general.delete(request);
+        if (isAppPage(new URL(request.url))) await general.delete(request);
       }
       // The visit that brought this worker saved its page just before the worker
-      // took over. Save the open pages again from this build, so the app still
-      // opens offline before it navigates again. A network that doesn't answer
-      // in time leaves them to be saved on the next visit.
+      // took over. Save again from this build the pages the open windows loaded,
+      // so the app still opens offline before it navigates again. A window
+      // reports the URL it loaded, not one it moved to inside the app, so a book
+      // opened from the library would be left out: also save each kind of page
+      // saved before, under the key its route reads. A network that doesn't
+      // answer in time leaves them to be saved on the next visit.
       const pages = await caches.open(PAGES_CACHE_NAME.html);
       const open = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const urls = new Set([
+        ...open
+          .map(({ url }) => new URL(url))
+          .filter(isAppPage)
+          .map(({ href }) => href),
+        ...savedKinds,
+      ]);
       await Promise.all(
-        open.map(async ({ url }) => {
-          const page = new URL(url);
-          if (page.origin !== self.location.origin || !isClientRoute(page)) return;
+        [...urls].map(async (url) => {
           try {
             const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
             if (response.ok) await pages.put(url, response);
