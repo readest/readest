@@ -19,7 +19,7 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 use read_progress_stream::ReadProgressStream;
 
 use std::path::{Path, PathBuf};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use std::{collections::HashMap, sync::Arc};
 
 type Result<T> = std::result::Result<T, Error>;
@@ -381,6 +381,21 @@ async fn download_to_path(
     Ok(response_headers)
 }
 
+// A download fails instead of hanging when it can't connect, or when the
+// server sends nothing (response headers included) for READ_TIMEOUT. Tests
+// shorten the read timeout so a stall costs them seconds.
+pub(crate) const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+#[cfg(not(test))]
+pub(crate) const READ_TIMEOUT: Duration = Duration::from_secs(30);
+#[cfg(test)]
+pub(crate) const READ_TIMEOUT: Duration = Duration::from_secs(2);
+
+fn download_client() -> reqwest::ClientBuilder {
+    reqwest::ClientBuilder::new()
+        .connect_timeout(CONNECT_TIMEOUT)
+        .read_timeout(READ_TIMEOUT)
+}
+
 async fn download_into_file(
     url: &str,
     file: File,
@@ -397,13 +412,13 @@ async fn download_into_file(
     const PART_SIZE: u64 = 1024 * 1024;
 
     let relaxed = skip_ssl_verification.unwrap_or(false);
-    let mut builder = reqwest::ClientBuilder::new()
+    let mut builder = download_client()
         .danger_accept_invalid_certs(relaxed)
         .danger_accept_invalid_hostnames(relaxed);
     let mut verified = None;
     if relaxed {
         builder = builder.redirect(reqwest::redirect::Policy::none());
-        verified = Some(reqwest::Client::new());
+        verified = Some(download_client().build()?);
     }
     let client = builder.build()?;
     let force_single = single_threaded.unwrap_or(false);
@@ -1127,6 +1142,61 @@ mod tests {
             "failed stream must preserve the old book"
         );
         assert_eq!(entries, 1, "failed stream must remove its temporary file");
+    }
+
+    /// Downloads from a server that sends `response` and then goes silent
+    /// with the connection still open, and returns the download's error.
+    async fn download_from_a_stalled_server(response: &'static [u8], single: bool) -> super::Error {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            read_request(&mut stream).await;
+            stream.write_all(response).await.unwrap();
+            std::future::pending::<()>().await;
+        });
+        let dir = TestDir::new();
+        let path = dir.join("book.epub");
+        let url = format!("http://127.0.0.1:{port}/book");
+        let download = download_to_path(
+            &url,
+            &path,
+            HashMap::new(),
+            None,
+            Some(single),
+            None,
+            tauri::ipc::Channel::new(|_| Ok(())),
+        );
+        let result = tokio::time::timeout(std::time::Duration::from_secs(10), download).await;
+        server.abort();
+        let entries = std::fs::read_dir(&dir).unwrap().count();
+        assert_eq!(entries, 0, "a stalled download must leave nothing behind");
+        result
+            .expect("a stalled download must fail instead of waiting forever")
+            .unwrap_err()
+    }
+
+    #[tokio::test]
+    async fn a_server_that_withholds_headers_fails_the_download() {
+        // The range probe every download starts with: "0 MB of 0 MB" forever.
+        let error = download_from_a_stalled_server(b"", false).await;
+        assert!(
+            matches!(&error, super::Error::Request(e) if e.is_timeout()),
+            "{error:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_body_that_stops_mid_transfer_fails_the_download() {
+        let error = download_from_a_stalled_server(
+            b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nabc",
+            true,
+        )
+        .await;
+        assert!(
+            matches!(&error, super::Error::Request(e) if e.is_timeout()),
+            "{error:?}"
+        );
     }
 
     #[tokio::test]

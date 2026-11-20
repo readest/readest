@@ -116,6 +116,7 @@ export const UpdaterContent = ({
   const [downloaded, setDownloaded] = useState<number | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     setTargetLang(getLocale());
@@ -482,6 +483,7 @@ export const UpdaterContent = ({
     let contentLength = 0;
     let lastLogged = 0;
     setProgress(0);
+    setDownloadError(null);
     setIsDownloading(true);
     try {
       await update.downloadAndInstall?.((event) => {
@@ -514,7 +516,9 @@ export const UpdaterContent = ({
       }
     } catch (error) {
       console.error('Failed to download and install update:', error);
-      setError(_('Failed to download and install update'));
+      // Keep the update on screen so the reader can retry.
+      setProgress(null);
+      setDownloadError(_('Failed to download and install update'));
     } finally {
       setIsDownloading(false);
     }
@@ -558,6 +562,9 @@ export const UpdaterContent = ({
               <p className='mb-2'>{_('Download and install now?')}</p>
 
               <div className='flex w-full flex-row items-center justify-end gap-4'>
+                {downloadError && (
+                  <p className='text-error grow text-sm font-bold'>{downloadError}</p>
+                )}
                 {progress !== null && (
                   <div className='flex grow flex-col'>
                     <progress
