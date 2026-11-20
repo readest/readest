@@ -26,6 +26,7 @@ jobs:
   # model (CONTRIBUTING.md); every other job waits on this and is skipped when
   # it fails. pr-gate.yml posts the explanation on the PR.
   gate:
+    name: CodeQL gate
     runs-on: ubuntu-latest
     permissions:
       contents: read

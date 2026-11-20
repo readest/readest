@@ -3,6 +3,10 @@ name: PR gate
 # lack an agent attribution line. The same check runs as the `gate` job in
 # pull-request.yml and codeql.yml, which skips the rest of CI when it fails.
 #
+# This job ("PR gate") is the one to make a required check: it runs main's copy
+# of the workflow and script, so a PR can't edit it away. The CI gate jobs only
+# save CI minutes; a PR can edit those.
+#
 # pull_request_target gives the token write access, so this must never check
 # out or run the PR's code: the checkout below is the base branch.
 on:
@@ -15,6 +19,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   gate:
+    name: PR gate
     runs-on: ubuntu-latest
     permissions:
       contents: read
