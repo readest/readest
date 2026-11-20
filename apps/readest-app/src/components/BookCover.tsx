@@ -4,6 +4,7 @@ import { createContext, memo, useContext, useEffect, useRef, useState } from 're
 import { Book } from '@/types/book';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { formatAuthors, formatTitle } from '@/utils/book';
+import { getFallbackCoverColor } from '@/utils/cover';
 import { getInitializedAppService } from '@/services/environment';
 import { observeCoverForThumbnail } from '@/services/coverThumbnailService';
 import { useDefaultBookshelfCovers } from '@/hooks/useDefaultBookshelfCovers';
@@ -11,26 +12,6 @@ import { useLibraryStore } from '@/store/libraryStore';
 
 export const HideBookCoversContext = createContext<boolean | undefined>(undefined);
 export const PlainPlaceholderCoversContext = createContext<boolean | undefined>(undefined);
-
-// Cover art keeps its color across themes and metadata edits. Keep this palette
-// and mapping stable so a synced book has the same cover on every device.
-const FALLBACK_COVER_COLORS = [
-  '#8d642e',
-  '#77566e',
-  '#a15543',
-  '#386456',
-  '#486780',
-  '#356c70',
-  '#935c6b',
-  '#4d557b',
-];
-const getFallbackCoverColor = (bookHash: string) => {
-  let hash = 2166136261;
-  for (let i = 0; i < bookHash.length; i++) {
-    hash = Math.imul(hash ^ bookHash.charCodeAt(i), 16777619);
-  }
-  return FALLBACK_COVER_COLORS[(hash >>> 0) % FALLBACK_COVER_COLORS.length]!;
-};
 
 interface BookCoverProps {
   book: Book;
