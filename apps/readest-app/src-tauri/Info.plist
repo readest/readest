@@ -24,8 +24,6 @@
     <false/>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <true/>
-    <key>UIHomeIndicatorAutoHidden</key>
-    <true/>
     <key>UIRequiresFullScreen</key>
     <false/>
     <key>CFBundleDocumentTypes</key>
