@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { MdAdd } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import {
   ensureCustomTranslatorsLoaded,
   useCustomTranslatorStore,
@@ -192,8 +191,8 @@ const CustomTranslators: React.FC<CustomTranslatorsProps> = ({ targetLang, onBac
     ensureCustomTranslatorsLoaded(envConfig);
   }, [envConfig]);
 
-  // Esc / Android Back steps out of an editor before leaving this sub-page.
-  useKeyDownActions({ enabled: page.kind !== 'list', onCancel: backToList });
+  // Esc / Android Back steps out of an editor before leaving this sub-page:
+  // each page below registers its own header on the Settings back stack.
 
   if (page.kind === 'translator') {
     return (

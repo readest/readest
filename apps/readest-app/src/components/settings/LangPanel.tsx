@@ -20,7 +20,6 @@ import { getLocale } from '@/utils/misc';
 import { isCustomTranslatorAllowed } from '@/utils/access';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { useResetViewSettings } from '@/hooks/useResetSettings';
-import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { TRANSLATED_LANGS, TRANSLATOR_LANGS } from '@/services/constants';
 import { ConvertChineseVariant, TranslationFont, TranslationFontStyle } from '@/types/book';
 import { SettingsPanelPanelProp } from './SettingsDialog';
@@ -95,22 +94,9 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     translateTargetLang,
   );
 
-  // Android Back / Esc: when a sub-page is open, intercept and step back to the
-  // language list instead of letting <Dialog>'s listener close the whole
-  // Settings dialog. See the matching comment in FontPanel.tsx for the
-  // LIFO-dispatch reasoning.
-  useKeyDownActions({
-    enabled: showCustomDictionaries,
-    onCancel: () => setShowCustomDictionaries(false),
-  });
-  useKeyDownActions({
-    enabled: showCustomTranslators,
-    onCancel: () => setShowCustomTranslators(false),
-  });
-  useKeyDownActions({
-    enabled: showWordLens,
-    onCancel: () => setShowWordLens(false),
-  });
+  // Android Back / Esc: when a sub-page is open, the sub-page header registers
+  // itself on the Settings back stack and the dialog steps back here instead of
+  // closing. See settingsSubPageBack.tsx.
 
   // Deep-link: callers (e.g. the dictionary popup's manage icon) can set
   // activeSettingsItemId to `'settings.language.dictionaries.manage'` to

@@ -17,6 +17,7 @@ import {
 } from '@/services/sync/replicaBinaryUpload';
 import { eventDispatcher } from '@/utils/event';
 import { Tips } from './primitives';
+import { useSettingsSubPageBack } from './settingsSubPageBack';
 
 interface CustomFontsProps {
   bookKey: string;
@@ -31,6 +32,9 @@ type FontFamily = {
 const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   const _ = useTranslation();
   const { appService, envConfig } = useEnv();
+  // Escape and Android Back take the breadcrumb's way out, back to the Font
+  // panel, instead of closing Settings (this page has no SubPageHeader).
+  useSettingsSubPageBack(onBack);
   const { settings } = useSettingsStore();
   const {
     fonts: customFonts,

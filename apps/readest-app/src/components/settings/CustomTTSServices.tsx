@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { ensureCustomTTSServicesLoaded, useCustomTTSStore } from '@/store/customTTSStore';
 import { BoxedList, NavigationRow } from './primitives';
 import { AddButton } from './CustomTranslators';
@@ -22,8 +21,8 @@ const CustomTTSServices: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     ensureCustomTTSServicesLoaded(envConfig);
   }, [envConfig]);
 
-  // Esc / Android Back steps out of the editor before leaving this sub-page.
-  useKeyDownActions({ enabled: editing !== undefined, onCancel: backToList });
+  // Esc / Android Back steps out of the editor before leaving this sub-page:
+  // the editor registers its own header on the Settings back stack.
 
   if (editing !== undefined) {
     return (
