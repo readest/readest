@@ -268,6 +268,17 @@ describe('RSVPOverlay — reading font', () => {
     expect(word.classList.contains('font-mono')).toBe(true);
     expect(word.style.fontFamily).toBe('');
   });
+
+  // #7467: the context text kept the app font while the word used the book's.
+  test('applies the reader font family to the context text', () => {
+    const { getByTestId } = renderOverlay(wordState(), '"Bitter", "Source Han Serif CN", serif');
+    expect(getByTestId('rsvp-context-panel').style.fontFamily).toContain('Bitter');
+  });
+
+  test('keeps the app font on the context text when no font family is supplied', () => {
+    const { getByTestId } = renderOverlay(wordState());
+    expect(getByTestId('rsvp-context-panel').style.fontFamily).toBe('');
+  });
 });
 
 describe('RSVPOverlay — progress bar drag on mobile', () => {
