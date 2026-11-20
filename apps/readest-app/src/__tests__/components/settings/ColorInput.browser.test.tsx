@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { userEvent } from 'vitest/browser';
@@ -47,6 +47,35 @@ const TwoPickers = ({ onDialogKey }: { onDialogKey: (key: string) => void }) => 
   return (
     <dialog ref={ref} open>
       <ColorInput label='Accent' value='#ff0000' onChange={() => {}} />
+      <ColorInput label='Link' value='#0000ff' onChange={() => {}} />
+    </dialog>
+  );
+};
+
+// The highlight editor rebuilds each picker's onCommit from the colour being
+// edited, so a re-render hands ColorInput a new callback identity while the
+// popup stays open.
+const ChangingCommit = ({
+  onDialogKey,
+  onCommitA,
+}: {
+  onDialogKey: (key: string) => void;
+  onCommitA: () => void;
+}) => {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [, setVersion] = useState(0);
+  useEffect(() => {
+    const dialog = ref.current!;
+    const listener = (e: KeyboardEvent) => onDialogKey(e.key);
+    dialog.addEventListener('keydown', listener);
+    return () => dialog.removeEventListener('keydown', listener);
+  }, [onDialogKey]);
+  return (
+    <dialog ref={ref} open>
+      <button type='button' onClick={() => setVersion((v) => v + 1)}>
+        Bump
+      </button>
+      <ColorInput label='Accent' value='#ff0000' onChange={() => {}} onCommit={() => onCommitA()} />
       <ColorInput label='Link' value='#0000ff' onChange={() => {}} />
     </dialog>
   );
@@ -142,5 +171,32 @@ describe('ColorInput', () => {
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(onDialogKey).not.toHaveBeenCalled();
+  });
+
+  it('keeps the last-opened picker on top when an earlier one re-renders', async () => {
+    const onDialogKey = vi.fn();
+    const onCommitA = vi.fn();
+    render(<ChangingCommit onDialogKey={onDialogKey} onCommitA={onCommitA} />);
+
+    await userEvent.click(screen.getByLabelText('Accent'));
+    screen.getByLabelText('Link').focus();
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getAllByRole('textbox')).toHaveLength(2);
+
+    // Re-render the first picker with a fresh onCommit identity. By keyboard, as
+    // a click would close both pickers through their mousedown listeners.
+    screen.getByRole('button', { name: 'Bump' }).focus();
+    await userEvent.keyboard('{Enter}');
+    onDialogKey.mockClear();
+
+    await userEvent.keyboard('{Escape}');
+
+    // The second picker opened last, so it is the one Escape closes; the first
+    // stays open and is not committed.
+    const remaining = screen.getAllByRole('textbox') as HTMLInputElement[];
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]!.value).toBe('#ff0000');
+    expect(onCommitA).not.toHaveBeenCalled();
+    expect(onDialogKey).not.toHaveBeenCalledWith('Escape');
   });
 });

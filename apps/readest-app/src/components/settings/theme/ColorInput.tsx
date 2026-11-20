@@ -40,6 +40,12 @@ const ColorInput: React.FC<ColorInputProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
+  // Read through a ref so a caller that rebuilds `onCommit` on every render (the
+  // highlight editor does, from the colour being edited) cannot re-run the
+  // registration effect below: that would move this picker to the top of
+  // `openPickers` and hand it an Escape meant for a later one.
+  const onCommitRef = useRef(onCommit);
+  onCommitRef.current = onCommit;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -79,7 +85,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
       // is the "interaction settled" moment onCommit exists for, whichever way it
       // closes. Skipping it here would leave auto-save consumers (Word Lens gloss
       // colour) with the new swatch showing but the old value stored.
-      onCommit?.();
+      onCommitRef.current?.();
     };
     openPickers.push(close);
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -94,7 +100,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
       const index = openPickers.indexOf(close);
       if (index !== -1) openPickers.splice(index, 1);
     };
-  }, [isOpen, onCommit]);
+  }, [isOpen]);
 
   // Anchored positioning only applies from `sm` up; below that the popup is
   // rendered as a centered floating card (see the popup container classes) so
