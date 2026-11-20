@@ -91,6 +91,7 @@ class FetchEvent {
 type Listener = (event: { waitUntil: (promise: Promise<unknown>) => void }) => void;
 const listeners = new Map<string, Listener>();
 const registration: { active: object | null } = { active: null };
+let openWindows: { url: string }[] = [];
 const fire = async (type: string) => {
   const pending: Promise<unknown>[] = [];
   listeners.get(type)?.({ waitUntil: (promise) => pending.push(promise) });
@@ -110,6 +111,7 @@ beforeAll(async () => {
   vi.stubGlobal('self', {
     __SW_MANIFEST: [],
     registration,
+    clients: { matchAll: async () => openWindows },
     location: { origin: ORIGIN },
     addEventListener: (type: string, listener: Listener) => listeners.set(type, listener),
   });
@@ -121,6 +123,8 @@ beforeAll(async () => {
 beforeEach(() => {
   store.clear();
   registration.active = null;
+  openWindows = [];
+  vi.restoreAllMocks();
 });
 
 describe('service worker page cache', () => {
@@ -176,10 +180,32 @@ describe('service worker page cache', () => {
     await fire('install');
     await fire('activate');
 
-    expect(await caches.has(PAGES_CACHE_NAME.html), 'the saved pages are cleared').toBe(false);
+    expect(await savedBody('/library'), 'the saved pages are cleared').toBeUndefined();
     expect((await general.keys()).map(({ url }) => url)).toEqual([
       `${ORIGIN}/_next/static/chunks/app.js`,
     ]);
+  });
+
+  // The visit that brings the new worker saved its page just before the worker
+  // took over, so clearing alone would leave nothing to open offline.
+  test('saves the open pages again from the new build', async () => {
+    const pages = await caches.open(PAGES_CACHE_NAME.html);
+    await pages.put(`${ORIGIN}/library`, saved('old library'));
+    await pages.put(`${ORIGIN}/reader/a1b2`, saved('old reader'));
+    openWindows = [{ url: `${ORIGIN}/library` }, { url: `${ORIGIN}/user` }];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (url) => new Response(`new ${new URL(String(url)).pathname}`),
+    );
+    registration.active = {};
+
+    await fire('install');
+    await fire('activate');
+
+    expect(await savedBody('/library'), 'the open page is saved from the new build').toBe(
+      'new /library',
+    );
+    expect(await savedBody('/reader/a1b2'), 'a page not open stays cleared').toBeUndefined();
+    expect(await savedBody('/user'), 'only the app pages are saved').toBeUndefined();
   });
 
   test('keeps the saved pages on a first install', async () => {

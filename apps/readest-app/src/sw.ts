@@ -151,6 +151,22 @@ self.addEventListener('activate', (event) => {
         if (url.origin === self.location.origin && isClientRoute(url))
           await general.delete(request);
       }
+      // The visit that brought this worker saved its page just before the worker
+      // took over. Save the open pages again from this build, so the app still
+      // opens offline before it navigates again. A network that doesn't answer
+      // in time leaves them to be saved on the next visit.
+      const pages = await caches.open(PAGES_CACHE_NAME.html);
+      const open = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      await Promise.all(
+        open.map(async ({ url }) => {
+          const page = new URL(url);
+          if (page.origin !== self.location.origin || !isClientRoute(page)) return;
+          try {
+            const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
+            if (response.ok) await pages.put(url, response);
+          } catch {}
+        }),
+      );
       await caches.delete(REPLACING_MARKER);
     })(),
   );
