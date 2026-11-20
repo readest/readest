@@ -17,8 +17,8 @@ import {
   QUERY_GET_BOOKS,
   MUTATION_INSERT_USER_BOOK,
   MUTATION_UPDATE_USER_BOOK,
-  MUTATION_INSERT_READ,
-  MUTATION_UPDATE_READ,
+  mutationInsertRead,
+  mutationUpdateRead,
   MUTATION_INSERT_JOURNAL,
   MUTATION_UPDATE_JOURNAL,
   QUERY_GET_JOURNAL_ENTRIES,
@@ -42,6 +42,10 @@ type BookContext = {
   // book id here — Hardcover rejects a book id used as an edition_id (#4792).
   editionId: number | null;
   pages: number | null;
+  // The audiobook edition the user has this book on in Hardcover, with its
+  // length: progress then goes there as time listened (#7685). Notes keep the
+  // readable edition above.
+  audio: { editionId: number; seconds: number } | null;
   bookId: number;
   bookPages: number | null;
   title: string;
@@ -54,7 +58,12 @@ type BookContext = {
 
 type ActiveRead = { id: number; started_at: string | null };
 
-type EditionRow = { id: number; pages: number | null; reading_format_id?: number | null };
+type EditionRow = {
+  id: number;
+  pages: number | null;
+  reading_format_id?: number | null;
+  audio_seconds?: number | null;
+};
 
 type UserBookRow = {
   id: number;
@@ -237,23 +246,32 @@ export class HardcoverClient {
     return !!edition && edition.reading_format_id !== 2;
   }
 
-  private getHardcoverProgressPages(
+  // An audiobook edition the user picked on Hardcover for their read (or shelf
+  // entry), when it has a length to scale onto. Auto-matching never picks one.
+  private userAudiobook(userBook?: UserBookRow | null): BookContext['audio'] {
+    const edition = userBook?.user_book_reads?.[0]?.edition ?? userBook?.edition;
+    const seconds = edition?.reading_format_id === 2 ? (edition.audio_seconds ?? 0) : 0;
+    return edition && seconds > 0 ? { editionId: edition.id, seconds } : null;
+  }
+
+  // Scales local progress onto the edition's pages, or its seconds for an audiobook.
+  private getHardcoverProgress(
     current: number,
     total: number,
     context: BookContext,
   ): number | null {
     const boundedCurrent = Math.min(Math.max(current, 0), total);
-    const hardcoverTotal = context.pages ?? context.bookPages ?? 0;
+    const hardcoverTotal = context.audio?.seconds ?? context.pages ?? context.bookPages ?? 0;
     if (total <= 0 || hardcoverTotal <= 0) {
       return null;
     }
 
-    const scaledPages = Math.round((boundedCurrent / total) * hardcoverTotal);
+    const scaled = Math.round((boundedCurrent / total) * hardcoverTotal);
     if (boundedCurrent <= 0) {
       return 0;
     }
 
-    return Math.min(Math.max(scaledPages, 1), hardcoverTotal);
+    return Math.min(Math.max(scaled, 1), hardcoverTotal);
   }
 
   private normalizeNoteDedupCfi(cfi: string | null | undefined): string {
@@ -463,6 +481,7 @@ export class HardcoverClient {
       // never the book id (#4792).
       editionId: selectedEdition?.id ?? null,
       pages: selectedEdition?.pages ?? bookPages,
+      audio: this.userAudiobook(userBook),
       bookId: Number(row.id),
       bookPages,
       title: row.title ?? '',
@@ -555,6 +574,7 @@ export class HardcoverClient {
         return {
           editionId: selectedEdition?.id ?? edition.id,
           pages: selectedEdition?.pages ?? edition.pages,
+          audio: this.userAudiobook(userBook),
           bookId: edition.book.id,
           bookPages: edition.book.pages,
           title: edition.book.title || book.title || '',
@@ -677,27 +697,29 @@ export class HardcoverClient {
 
     const localPagesRead = Math.min(Math.max(current, 0), total);
     const percent = total > 0 ? (localPagesRead / total) * 100 : 0;
-    const progressPages = this.getHardcoverProgressPages(current, total, context);
-    if (progressPages === null) {
+    const progress = this.getHardcoverProgress(current, total, context);
+    if (progress === null) {
       // Nothing can be scaled onto Hardcover's pages, so nothing is sent; the
       // caller must not report (or remember) a sync that never happened.
       throw new HardcoverUnmatchedError('Hardcover has no page count for this book');
     }
+    const field = context.audio ? 'progress_seconds' : 'progress_pages';
+    const editionId = context.audio?.editionId ?? context.editionId;
     const activeRead = userBook.user_book_reads?.[0];
     const startedAt = this.formatDay(new Date(book.createdAt || Date.now()));
 
     if (activeRead?.id) {
-      await this.request(MUTATION_UPDATE_READ, {
+      await this.request(mutationUpdateRead(field), {
         id: activeRead.id,
-        progress_pages: progressPages,
-        edition_id: context.editionId,
+        [field]: progress,
+        edition_id: editionId,
         started_at: activeRead.started_at || startedAt,
       });
     } else {
-      await this.request(MUTATION_INSERT_READ, {
+      await this.request(mutationInsertRead(field), {
         user_book_id: userBook.id,
-        edition_id: context.editionId,
-        progress_pages: progressPages,
+        edition_id: editionId,
+        [field]: progress,
         started_at: startedAt,
       });
     }

@@ -1219,6 +1219,141 @@ describe('HardcoverClient', () => {
     const variables = updateReadCall?.[1] as { edition_id?: unknown };
     expect(variables.edition_id).toBeNull();
   });
+
+  describe('audiobook edition chosen on Hardcover (#7685)', () => {
+    const book = {
+      createdAt: 1711737600000,
+      title: 'Project Hail Mary',
+      author: 'Andy Weir',
+      metadata: { isbn: '9780593135204' },
+    } as unknown as Book;
+    const textEdition = { id: 101, pages: 476, reading_format_id: 4 };
+    const audioEdition = { id: 909, pages: null, reading_format_id: 2, audio_seconds: 58000 };
+    const bookRow = (userBook: Record<string, unknown>) => ({
+      id: 202,
+      title: 'Project Hail Mary',
+      pages: 476,
+      editions: [textEdition],
+      user_books: [{ id: 303, status_id: 2, edition: textEdition, ...userBook }],
+    });
+    const linked = { progress: [25, 100], hardcover: { bookId: 202, title: 'Project Hail Mary' } };
+
+    test('sends time listened on the read when it is on an audiobook edition', async () => {
+      respond({ me: { id: 1 } });
+      respond({
+        books: [
+          bookRow({
+            user_book_reads: [{ id: 505, started_at: '2026-11-01', edition: audioEdition }],
+          }),
+        ],
+      });
+      respond({ update_user_book_read: { id: 505, error: null } });
+
+      await client.pushProgress(book, linked as BookConfig);
+
+      const update = requestBodies().find((body) => body.query.includes('mutation UpdateRead'));
+      // 25% of 58000 s, and the read stays on the audiobook edition.
+      expect(update?.variables).toEqual({
+        id: 505,
+        edition_id: 909,
+        progress_seconds: 14500,
+        started_at: '2026-11-01',
+      });
+      expect(update?.query).toContain('progress_seconds: $progress_seconds');
+      expect(update?.query).not.toContain('progress_pages');
+      const getBooks = requestBodies().find((body) => body.query.includes('query GetBooks'));
+      expect(getBooks?.query).toMatch(/user_book_reads[\s\S]*audio_seconds/);
+    });
+
+    test('sends time listened on a new read when the shelf entry is an audiobook edition', async () => {
+      respond({ me: { id: 1 } });
+      respond({
+        editions: [
+          {
+            ...textEdition,
+            book: {
+              id: 202,
+              title: 'Project Hail Mary',
+              pages: 476,
+              user_books: [{ id: 303, status_id: 2, edition: audioEdition, user_book_reads: [] }],
+            },
+          },
+        ],
+      });
+      respond({ insert_user_book_read: { id: 505, error: null } });
+
+      await client.pushProgress(book, { progress: [100, 200] } as BookConfig);
+
+      const insert = requestBodies().find((body) => body.query.includes('mutation InsertRead'));
+      expect(insert?.variables).toEqual({
+        user_book_id: 303,
+        edition_id: 909,
+        progress_seconds: 29000,
+        started_at: '2024-03-29',
+      });
+      expect(insert?.query).toContain('progress_seconds: $progress_seconds');
+      const getEdition = requestBodies().find((body) => body.query.includes('query GetEdition'));
+      expect(getEdition?.query).toMatch(/user_books[\s\S]*audio_seconds/);
+    });
+
+    test('keeps notes on the text edition and its pages', async () => {
+      respond({ me: { id: 1 } });
+      respond({
+        books: [
+          {
+            ...bookRow({
+              user_book_reads: [{ id: 505, started_at: '2026-11-01', edition: audioEdition }],
+            }),
+            pages: 400,
+          },
+        ],
+      });
+      respond({ reading_journals: [] });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve([{ data: { insert_reading_journal: { id: 999 } } }]),
+      });
+      const note = { id: 'n1', type: 'annotation', text: 'Marley was dead', page: 450 };
+
+      await client.syncBookNotes(book, {
+        hardcover: linked.hardcover,
+        booknotes: [note],
+      } as unknown as BookConfig);
+
+      const journal = (fetchMock.mock.calls as FetchMockCall[])
+        .map((call) => JSON.parse(call[1]?.body ?? '{}'))
+        .find(Array.isArray)?.[0] as { variables: Record<string, unknown> };
+      expect(journal.variables).toMatchObject({ edition_id: 101, page: 450, possible: 476 });
+    });
+
+    test('keeps pages on a text edition when the audiobook edition has no length', async () => {
+      respond({ me: { id: 1 } });
+      respond({
+        books: [
+          bookRow({
+            user_book_reads: [
+              {
+                id: 505,
+                started_at: '2026-11-01',
+                edition: { ...audioEdition, audio_seconds: null },
+              },
+            ],
+          }),
+        ],
+      });
+      respond({ update_user_book_read: { id: 505, error: null } });
+
+      await client.pushProgress(book, linked as BookConfig);
+
+      const update = requestBodies().find((body) => body.query.includes('mutation UpdateRead'));
+      expect(update?.variables).toEqual({
+        id: 505,
+        edition_id: 101,
+        progress_pages: 119,
+        started_at: '2026-11-01',
+      });
+    });
+  });
 });
 
 describe('HardcoverClient journal batching', () => {
