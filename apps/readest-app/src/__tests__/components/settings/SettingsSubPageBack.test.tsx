@@ -51,6 +51,7 @@ vi.mock('@/components/settings/MiscPanel', () => ({ default: () => null }));
 const { default: Dialog } = await import('@/components/Dialog');
 const { default: SubPageHeader } = await import('@/components/settings/SubPageHeader');
 const { default: SettingsDialog } = await import('@/components/settings/SettingsDialog');
+const { useSettingsSubPageBack } = await import('@/components/settings/settingsSubPageBack');
 const { eventDispatcher } = await import('@/utils/event');
 
 /** Font → Voice Library → Custom service, as TTS nests its pages. */
@@ -70,6 +71,33 @@ const NestedPanel = () => {
       currentLabel='Custom service'
       onBack={() => setDepth(1)}
     />
+  );
+};
+
+/**
+ * A list page whose header stays mounted under a detail level, as ABSForm keeps
+ * its SubPageHeader above a server's detail: two levels registered at once.
+ */
+const ServerDetail = ({ onBack }: { onBack: () => void }) => {
+  useSettingsSubPageBack(onBack);
+  return <p>Server detail</p>;
+};
+const KeptHeaderPanel = () => {
+  const [page, setPage] = useState<'panel' | 'list' | 'detail'>('panel');
+  if (page === 'panel') return <button onClick={() => setPage('list')}>Audiobookshelf</button>;
+  return (
+    <div>
+      <SubPageHeader
+        parentLabel='Integrations'
+        currentLabel='Servers'
+        onBack={() => setPage('panel')}
+      />
+      {page === 'detail' ? (
+        <ServerDetail onBack={() => setPage('list')} />
+      ) : (
+        <button onClick={() => setPage('detail')}>My server</button>
+      )}
+    </div>
   );
 };
 
@@ -137,6 +165,28 @@ describe('Settings back stack', () => {
     expectSteppedBackThroughEveryLevel(() =>
       fireEvent.click(screen.getByRole('button', { name: 'Back' })),
     );
+  });
+
+  it('steps out of the deeper of two mounted levels first', () => {
+    fontPanel.render = () => <KeptHeaderPanel />;
+    render(<SettingsDialog bookKey='' />);
+    fireEvent.click(screen.getByText('Audiobookshelf'));
+    fireEvent.click(screen.getByText('My server'));
+    expect(screen.getByText('Server detail')).toBeTruthy();
+    const pressEscape = () => fireEvent.keyDown(window, { key: 'Escape' });
+
+    pressEscape();
+    expect(screen.queryByText('Server detail')).toBeNull();
+    expect(screen.getByText('My server')).toBeTruthy();
+
+    // The detail's handler is gone; the list header underneath answers next.
+    pressEscape();
+    expect(screen.queryByText('My server')).toBeNull();
+    expect(screen.getByText('Audiobookshelf')).toBeTruthy();
+    expect(settings.setSettingsDialogOpen).not.toHaveBeenCalled();
+
+    pressEscape();
+    expect(settings.setSettingsDialogOpen).toHaveBeenCalledWith(false);
   });
 
   it('closes straight away when no sub-page is open', () => {
