@@ -141,7 +141,7 @@ Commits, PR titles and descriptions, issues, and review replies are public. Neve
 
 ### Commit attribution
 
-Every commit you write must end with an attribution line that names both the coding agent and the model, e.g. `Co-Authored-By: Claude Code (Claude Opus 5.5) <noreply@anthropic.com>`. If your harness supplies a default line that names only one of them, rewrite it to name both. Commits without this line will be rejected; see [CONTRIBUTING.md](../../CONTRIBUTING.md#contributing-with-a-coding-agent).
+Every commit you write must end with an attribution line that names both the coding agent and the model, e.g. `Co-Authored-By: Claude Code (Claude Opus 5.5) <noreply@anthropic.com>`. If your harness supplies a default line that names only one of them, rewrite it to name both. In a PR from an outside contributor, a commit without this line makes the PR gate skip all CI; see [CONTRIBUTING.md](../../CONTRIBUTING.md#contributing-with-a-coding-agent).
 
 ### PR review workflow
 
