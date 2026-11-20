@@ -3,6 +3,7 @@ import type { VocabularyEntry, VocabularyState } from './types';
 export interface VocabularyFilter {
   state?: VocabularyState;
   bookHash?: string;
+  lang?: string;
   query?: string;
 }
 
@@ -24,7 +25,7 @@ const compareEntries: Record<VocabularySort, (a: VocabularyEntry, b: VocabularyE
 /** Live entries matching the filter, ordered by most recent lookup by default. */
 export const filterEntries = (
   entries: VocabularyEntry[],
-  { state, bookHash, query }: VocabularyFilter,
+  { state, bookHash, lang, query }: VocabularyFilter,
   sort: VocabularySort = 'recent',
 ): VocabularyEntry[] => {
   const q = query?.trim().toLowerCase();
@@ -33,6 +34,7 @@ export const filterEntries = (
       (e) =>
         !e.deletedAt &&
         (!state || e.state === state) &&
+        (!lang || e.lang === lang) &&
         (!bookHash || e.occurrences.some((o) => o.bookHash === bookHash)) &&
         (!q || e.word.toLowerCase().includes(q) || !!e.hint?.toLowerCase().includes(q)),
     )
@@ -52,3 +54,8 @@ export const listBooks = (entries: VocabularyEntry[]): { hash: string; title: st
     .map(([hash, title]) => ({ hash, title }))
     .sort((a, b) => a.title.localeCompare(b.title));
 };
+
+/** The languages live words are filed under, for the language filter. */
+export const listLanguages = (entries: VocabularyEntry[]): string[] => [
+  ...new Set(entries.filter((e) => !e.deletedAt).map((e) => e.lang)),
+];

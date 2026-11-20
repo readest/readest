@@ -3020,5 +3020,12 @@
   "Add {{voice}} to favorites": "Додати {{voice}} до обраного",
   "Remove from favorites": "Видалити з обраного",
   "Add to favorites": "Додати до обраного",
-  "Favorites": "Обране"
+  "Favorites": "Обране",
+  "Last Looked Up": "Останній пошук",
+  "Most Saved Sentences": "Найбільше збережених речень",
+  "Newest Added": "Нещодавно додані",
+  "Oldest Added": "Найдавніше додані",
+  "Alphabetical A-Z": "За алфавітом А-Я",
+  "Alphabetical Z-A": "За алфавітом Я-А",
+  "All Languages": "Усі мови"
 }

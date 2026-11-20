@@ -2801,5 +2801,12 @@
   "Add {{voice}} to favorites": "将 {{voice}} 加入收藏",
   "Remove from favorites": "移出收藏",
   "Add to favorites": "加入收藏",
-  "Favorites": "收藏"
+  "Favorites": "收藏",
+  "Last Looked Up": "最近查询",
+  "Most Saved Sentences": "保存例句最多",
+  "Newest Added": "最新添加",
+  "Oldest Added": "最早添加",
+  "Alphabetical A-Z": "字母顺序 A-Z",
+  "Alphabetical Z-A": "字母顺序 Z-A",
+  "All Languages": "所有语言"
 }

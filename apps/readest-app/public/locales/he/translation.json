@@ -2947,5 +2947,12 @@
   "Add {{voice}} to favorites": "הוספת {{voice}} למועדפים",
   "Remove from favorites": "הסרה מהמועדפים",
   "Add to favorites": "הוספה למועדפים",
-  "Favorites": "מועדפים"
+  "Favorites": "מועדפים",
+  "Last Looked Up": "חיפוש אחרון",
+  "Most Saved Sentences": "הכי הרבה משפטים שמורים",
+  "Newest Added": "נוספו לאחרונה",
+  "Oldest Added": "נוספו ראשונים",
+  "Alphabetical A-Z": "אלפביתי A-Z",
+  "Alphabetical Z-A": "אלפביתי Z-A",
+  "All Languages": "כל השפות"
 }

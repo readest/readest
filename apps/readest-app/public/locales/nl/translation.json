@@ -2874,5 +2874,12 @@
   "Add {{voice}} to favorites": "{{voice}} toevoegen aan favorieten",
   "Remove from favorites": "Verwijderen uit favorieten",
   "Add to favorites": "Toevoegen aan favorieten",
-  "Favorites": "Favorieten"
+  "Favorites": "Favorieten",
+  "Last Looked Up": "Laatst opgezocht",
+  "Most Saved Sentences": "Meeste opgeslagen zinnen",
+  "Newest Added": "Nieuwst toegevoegd",
+  "Oldest Added": "Oudst toegevoegd",
+  "Alphabetical A-Z": "Alfabetisch A-Z",
+  "Alphabetical Z-A": "Alfabetisch Z-A",
+  "All Languages": "Alle talen"
 }

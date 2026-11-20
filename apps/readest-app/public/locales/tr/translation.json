@@ -2874,5 +2874,12 @@
   "Add {{voice}} to favorites": "{{voice}} sesini favorilere ekle",
   "Remove from favorites": "Favorilerden kaldır",
   "Add to favorites": "Favorilere ekle",
-  "Favorites": "Favoriler"
+  "Favorites": "Favoriler",
+  "Last Looked Up": "Son aranan",
+  "Most Saved Sentences": "En çok kaydedilen cümle",
+  "Newest Added": "En yeni eklenen",
+  "Oldest Added": "En eski eklenen",
+  "Alphabetical A-Z": "Alfabetik A-Z",
+  "Alphabetical Z-A": "Alfabetik Z-A",
+  "All Languages": "Tüm diller"
 }

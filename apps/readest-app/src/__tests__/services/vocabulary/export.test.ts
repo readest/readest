@@ -77,7 +77,7 @@ describe('toCsv', () => {
     const csv = toCsv([entry()]);
     expect(csv.startsWith('﻿')).toBe(true);
     expect(csv.slice(1).split('\r\n')[0]).toBe(
-      'word,state,hint,latest sentence,all sentences,book,author,first looked up,last looked up,lookup count',
+      'word,state,hint,latest sentence,all sentences,book,author,first looked up,last looked up,lookup count,language',
     );
   });
 
@@ -96,6 +96,7 @@ describe('toCsv', () => {
         '2026-10-01',
         '2026-10-30',
         '2',
+        'en',
       ].join(','),
     );
   });

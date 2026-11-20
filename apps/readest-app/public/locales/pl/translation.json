@@ -3020,5 +3020,12 @@
   "Add {{voice}} to favorites": "Dodaj {{voice}} do ulubionych",
   "Remove from favorites": "Usuń z ulubionych",
   "Add to favorites": "Dodaj do ulubionych",
-  "Favorites": "Ulubione"
+  "Favorites": "Ulubione",
+  "Last Looked Up": "Ostatnio wyszukane",
+  "Most Saved Sentences": "Najwięcej zapisanych zdań",
+  "Newest Added": "Najnowsze",
+  "Oldest Added": "Najstarsze",
+  "Alphabetical A-Z": "Alfabetycznie A-Z",
+  "Alphabetical Z-A": "Alfabetycznie Z-A",
+  "All Languages": "Wszystkie języki"
 }

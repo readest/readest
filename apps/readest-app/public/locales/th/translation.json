@@ -2801,5 +2801,12 @@
   "Add {{voice}} to favorites": "เพิ่ม {{voice}} ในรายการโปรด",
   "Remove from favorites": "นำออกจากรายการโปรด",
   "Add to favorites": "เพิ่มในรายการโปรด",
-  "Favorites": "รายการโปรด"
+  "Favorites": "รายการโปรด",
+  "Last Looked Up": "ค้นหาล่าสุด",
+  "Most Saved Sentences": "ประโยคที่บันทึกมากที่สุด",
+  "Newest Added": "เพิ่มล่าสุด",
+  "Oldest Added": "เพิ่มเก่าสุด",
+  "Alphabetical A-Z": "ตามตัวอักษร A-Z",
+  "Alphabetical Z-A": "ตามตัวอักษร Z-A",
+  "All Languages": "ทุกภาษา"
 }

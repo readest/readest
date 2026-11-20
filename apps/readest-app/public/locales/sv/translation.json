@@ -2874,5 +2874,12 @@
   "Add {{voice}} to favorites": "Lägg till {{voice}} i favoriter",
   "Remove from favorites": "Ta bort från favoriter",
   "Add to favorites": "Lägg till i favoriter",
-  "Favorites": "Favoriter"
+  "Favorites": "Favoriter",
+  "Last Looked Up": "Senast uppslagna",
+  "Most Saved Sentences": "Flest sparade meningar",
+  "Newest Added": "Senast tillagda",
+  "Oldest Added": "Först tillagda",
+  "Alphabetical A-Z": "Alfabetisk A–Ö",
+  "Alphabetical Z-A": "Alfabetisk Ö–A",
+  "All Languages": "Alla språk"
 }

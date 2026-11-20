@@ -3020,5 +3020,12 @@
   "Add {{voice}} to favorites": "Добавить {{voice}} в избранное",
   "Remove from favorites": "Удалить из избранного",
   "Add to favorites": "Добавить в избранное",
-  "Favorites": "Избранное"
+  "Favorites": "Избранное",
+  "Last Looked Up": "Последний поиск",
+  "Most Saved Sentences": "Больше всего сохранённых предложений",
+  "Newest Added": "Недавно добавленные",
+  "Oldest Added": "Давно добавленные",
+  "Alphabetical A-Z": "По алфавиту А-Я",
+  "Alphabetical Z-A": "По алфавиту Я-А",
+  "All Languages": "Все языки"
 }
