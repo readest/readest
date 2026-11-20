@@ -406,10 +406,21 @@ export class TTSController extends EventTarget {
   // still switch engines after init(), and a start stopped before it speaks
   // must not bring the element back.
   #syncSilentAudio() {
-    if (getOSPlatform() === 'ios' && !this.appService?.isIOSApp) {
+    if (this.#releasesSilentAudio()) {
       if (this.ttsClient === this.ttsWebClient) releaseUnblockAudio();
       else unblockAudio();
     }
+  }
+
+  // For the tap that changes the voice, before it awaits anything: start()
+  // runs after those awaits, where the browser may refuse to play an element
+  // it creates. Only needed where #syncSilentAudio() releases the element.
+  unblockSilentAudio() {
+    if (this.#releasesSilentAudio()) unblockAudio();
+  }
+
+  #releasesSilentAudio() {
+    return getOSPlatform() === 'ios' && !this.appService?.isIOSApp;
   }
 
   // Keep the hidden WebView schedulable, in the two cases where it would

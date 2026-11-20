@@ -293,6 +293,24 @@ describe('TTSController', () => {
       expect(unblock, 'the silent audio is restored for Edge').toHaveBeenCalledTimes(1);
     });
 
+    test('plays the silent audio for a voice change only in the browser on iOS', () => {
+      controller.unblockSilentAudio();
+      expect(unblock, 'played in the browser on iOS').toHaveBeenCalledTimes(1);
+
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      );
+      controller.unblockSilentAudio();
+      expect(unblock, 'left alone on Windows').toHaveBeenCalledTimes(1);
+
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)',
+      );
+      const iosApp = new TTSController(createMockAppService(false, true), mockView, false);
+      iosApp.unblockSilentAudio();
+      expect(unblock, 'left alone in the iOS app').toHaveBeenCalledTimes(1);
+    });
+
     test('leaves the silent audio alone for Web TTS on Windows', async () => {
       vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',

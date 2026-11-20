@@ -1358,6 +1358,12 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       const ttsController = ttsControllerRef.current;
       if (ttsController) {
         if (ttsController.state === 'playing' || resume) {
+          // In the browser on iOS the silent element is released while Web
+          // Speech reads, and the start() below, after these awaits, may be
+          // too late for the browser to let a new one play. Play it now, still
+          // inside the tap when the throttle runs this at once. start()
+          // releases it again if the new voice is Web Speech.
+          ttsController.unblockSilentAudio();
           await ttsController.stop();
           await ttsController.setVoice(voice, lang);
           await ttsController.start();

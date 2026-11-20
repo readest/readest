@@ -174,6 +174,7 @@ vi.mock('@/services/tts', () => ({
       startFromRange: vi.fn().mockReturnValue('<speak>hello</speak>'),
       stop: vi.fn().mockResolvedValue(undefined),
       shutdown: vi.fn().mockResolvedValue(undefined),
+      unblockSilentAudio: vi.fn(),
       forward: vi.fn().mockResolvedValue(undefined),
       backward: vi.fn().mockResolvedValue(undefined),
       getVoices: vi.fn().mockResolvedValue([]),
@@ -473,6 +474,38 @@ describe('useTTSControl changing the voice', () => {
     });
     expect(controller.setVoice).toHaveBeenCalledWith('edge:en-US-GuyNeural', 'en');
     await waitFor(() => expect(controller.start).toHaveBeenCalled());
+  });
+
+  it('plays the silent audio inside the tap, before stopping to switch voices', async () => {
+    render(<ApiHarness />);
+    await act(async () => {
+      const started = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await started;
+    });
+    const controller = ttsControllerInstances.at(-1) as {
+      state: string;
+      stop: ReturnType<typeof vi.fn>;
+      unblockSilentAudio: ReturnType<typeof vi.fn>;
+    };
+    controller.state = 'playing';
+    const calls: string[] = [];
+    controller.unblockSilentAudio.mockImplementation(() => calls.push('unblock'));
+    controller.stop.mockImplementation(async () => {
+      calls.push('stop');
+    });
+    // What runs before the first await is what runs inside the tap.
+    let beforeAwait: string[] = [];
+    await act(async () => {
+      const switching = hookApi!.handleSetVoice('edge:en-US-AvaNeural', 'en');
+      beforeAwait = [...calls];
+      await switching;
+    });
+    expect(beforeAwait, 'the silent audio plays before the switch leaves the tap').toEqual([
+      'unblock',
+      'stop',
+    ]);
   });
 });
 
