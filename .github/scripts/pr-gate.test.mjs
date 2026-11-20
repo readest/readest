@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { findProblems, hasAttribution } from './pr-gate.mjs';
 
-const outside = { author_association: 'CONTRIBUTOR', user: { type: 'User' } };
+const outside = { author_association: 'CONTRIBUTOR', user: { type: 'User' }, commits: 1 };
 const commit = (sha, message, parents = 1) => ({
   sha,
   commit: { message },
@@ -26,7 +26,7 @@ test('rejects a line naming only one of them, or no line', () => {
 
 test('an outside PR with a linked issue and attributed commits passes', () => {
   const problems = findProblems(outside, [commit('a'.repeat(40), attributed)], 1);
-  assert.deepEqual(problems, { missingIssue: false, unattributed: [] });
+  assert.deepEqual(problems, { missingIssue: false, unattributed: [], truncated: false });
 });
 
 test('an outside PR without a linked issue fails', () => {
@@ -44,7 +44,13 @@ test('lists every unattributed commit and skips merge commits', () => {
     ],
     1,
   );
+  assert.equal(problems.truncated, false);
   assert.deepEqual(problems.unattributed, ['1111111', '4444444']);
+});
+
+test('fails when the API returned fewer commits than the PR has (250 cap)', () => {
+  const problems = findProblems({ ...outside, commits: 251 }, [commit('a'.repeat(40), attributed)], 1);
+  assert.equal(problems.truncated, true);
 });
 
 test('owners, members, collaborators and bots are exempt', () => {

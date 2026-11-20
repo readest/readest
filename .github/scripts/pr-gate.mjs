@@ -27,10 +27,12 @@ export function findProblems(pr, commits, linkedIssues) {
     unattributed: commits
       .filter((c) => c.parents.length < 2 && !hasAttribution(c.commit.message))
       .map((c) => c.sha.slice(0, 7)),
+    // The API lists at most 250 commits; fail closed on the rest.
+    truncated: commits.length < pr.commits,
   };
 }
 
-const failed = (p) => p && (p.missingIssue || p.unattributed.length > 0);
+const failed = (p) => p && (p.missingIssue || p.unattributed.length > 0 || p.truncated);
 
 function commentBody(p) {
   const lines = [MARKER, 'Thanks for the PR! Before CI runs, it needs:', ''];
@@ -43,6 +45,9 @@ function commentBody(p) {
     lines.push(
       `- **An attribution line in every commit** naming both the coding agent and the model, e.g. \`Co-Authored-By: Claude Code (Claude Opus 5.5) <noreply@anthropic.com>\`. Missing in: ${p.unattributed.join(', ')}. Amend the commits and force-push.`,
     );
+  }
+  if (p.truncated) {
+    lines.push('- **At most 250 commits.** GitHub only lists the first 250, so the rest can\'t be checked. Squash them.');
   }
   lines.push('', `CI is skipped until these are fixed. See [CONTRIBUTING.md](${GUIDE}).`);
   return lines.join('\n');
@@ -99,14 +104,15 @@ async function main() {
       if (existing) await api(`/repos/${repo}/issues/comments/${existing.id}`, { method: 'PATCH', body });
       else await api(`${issue}/comments`, { method: 'POST', body });
     } else if (existing) {
-      await api(`/repos/${repo}/issues/comments/${existing.id}`, { method: 'DELETE' });
       // Linking an issue doesn't trigger CI, so re-run the jobs the gate skipped.
+      // The comment goes last: if a re-run fails, the next event retries it.
       const { workflow_runs } = await api(
         `/repos/${repo}/actions/runs?event=pull_request&head_sha=${pr.head.sha}`,
       );
       for (const run of workflow_runs.filter((r) => r.conclusion === 'failure')) {
         await api(`/repos/${repo}/actions/runs/${run.id}/rerun-failed-jobs`, { method: 'POST' });
       }
+      await api(`/repos/${repo}/issues/comments/${existing.id}`, { method: 'DELETE' });
     }
   }
 
