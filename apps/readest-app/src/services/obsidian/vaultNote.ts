@@ -1,7 +1,10 @@
+import { toDateKey } from '@/services/statistics/readingStats';
+
 // One Markdown note per book in an Obsidian vault, kept in step with the
 // book's highlights (#7061).
 //
-// Each highlight is a quote callout followed by an Obsidian block id line
+// Each highlight is a quote callout (headed by its chapter and the day it was
+// made) followed by an Obsidian block id line
 // (`^rd-<noteId>`), so a highlight is found again by id wherever the user moved
 // it, and can be linked to from other notes. A block is rewritten or removed
 // only while it still hashes to what this device last wrote (`written`); a
@@ -26,6 +29,8 @@ export interface VaultHighlight {
   color: string;
   chapter: string | null;
   url: string;
+  /** When the highlight was made, in ms; shown as its local day. */
+  createdAt: number;
   deleted: boolean;
 }
 
@@ -52,7 +57,14 @@ const quote = (text: string, prefix: string) =>
     .split('\n')
     .map((line) => (line ? `${prefix} ${line}` : prefix));
 
-export const renderHighlight = (highlight: VaultHighlight, bookTitle: string): string => {
+const SHOWN_DAY = / · (\d{4}-\d{2}-\d{2})$/;
+
+/** `day` defaults to the local day the highlight was made; '' leaves it out. */
+export const renderHighlight = (
+  highlight: VaultHighlight,
+  bookTitle: string,
+  day = highlight.createdAt ? toDateKey(new Date(highlight.createdAt)) : '',
+): string => {
   const color = highlight.color.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'yellow';
   const label = (highlight.chapter || bookTitle)
     .replace(/\s+/g, ' ')
@@ -62,7 +74,8 @@ export const renderHighlight = (highlight: VaultHighlight, bookTitle: string): s
     /[()]/g,
     (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
   );
-  const lines = [`> [!quote|${color}] [${label}](${url})`, ...quote(highlight.text, '>')];
+  const date = day ? ` · ${day}` : '';
+  const lines = [`> [!quote|${color}] [${label}](${url})${date}`, ...quote(highlight.text, '>')];
   if (highlight.note.trim()) lines.push('>', '> > [!note]', ...quote(highlight.note, '> >'));
   return lines.join('\n');
 };
@@ -155,12 +168,22 @@ export const mergeVaultNote = (
   if (cursor === Infinity) cursor = heading >= 0 ? heading + 1 : lines.length;
 
   for (const highlight of active) {
-    const rendered = renderHighlight(highlight, book.title);
     const unit = findUnit(lines, highlight.id);
+    // A block this device owns keeps the day it shows, so moving to another
+    // time zone doesn't rewrite it. Any other block is dated by this device,
+    // so a date the user edited never matches.
+    const shownDay =
+      unit && untouched(highlight.id, unit)
+        ? SHOWN_DAY.exec(unit.callout.split('\n')[0]!)?.[1]
+        : undefined;
+    const rendered = renderHighlight(highlight, book.title, shownDay);
     if (unit) {
+      // A block written before highlights had dates is adopted like a matching one.
+      const undated =
+        !written[highlight.id] && unit.callout === renderHighlight(highlight, book.title, '');
       if (unit.callout === rendered) {
         written[highlight.id] = hash(rendered);
-      } else if (untouched(highlight.id, unit)) {
+      } else if (undated || untouched(highlight.id, unit)) {
         const replacement = unitLines(rendered, highlight.id);
         lines.splice(unit.start, unit.idLine - unit.start + 1, ...replacement);
         written[highlight.id] = hash(rendered);

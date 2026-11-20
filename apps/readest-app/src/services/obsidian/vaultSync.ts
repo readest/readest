@@ -84,6 +84,7 @@ export const toVaultHighlights = (
       color: note.color ?? 'yellow',
       chapter: chapterForNote(note),
       url: buildAnnotationWebUrl({ bookHash, noteId: note.id, cfi: note.cfi }),
+      createdAt: note.createdAt,
       deleted: !!note.deletedAt || !note.text,
     }));
 

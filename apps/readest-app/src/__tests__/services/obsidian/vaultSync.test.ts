@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
-import { syncBookToVault } from '@/services/obsidian/vaultSync';
+import { syncBookToVault, toVaultHighlights } from '@/services/obsidian/vaultSync';
 import type { VaultHighlight } from '@/services/obsidian/vaultNote';
-import type { Book } from '@/types/book';
+import type { Book, BookNote } from '@/types/book';
 import type { AppService } from '@/types/system';
 
 const FOLDER = '/vault/Readest';
@@ -15,6 +15,7 @@ const highlight = (id: string, patch: Partial<VaultHighlight> = {}): VaultHighli
   color: 'yellow',
   chapter: null,
   url: `https://example.com/${id}`,
+  createdAt: 0,
   deleted: false,
   ...patch,
 });
@@ -58,5 +59,21 @@ describe('syncBookToVault', () => {
 
   it('reports nothing for a book with no highlights', async () => {
     expect(await syncBookToVault(memoryAppService(), FOLDER, book, undefined, [])).toBe(0);
+  });
+});
+
+describe('toVaultHighlights', () => {
+  it('carries when each highlight was made', () => {
+    const createdAt = new Date(2026, 10, 4, 9, 15).getTime();
+    const note = {
+      id: 'n1',
+      type: 'annotation',
+      cfi: 'epubcfi(/6/4!/4/2,/1:0,/1:5)',
+      text: 'quoted',
+      note: '',
+      createdAt,
+      updatedAt: createdAt,
+    } as BookNote;
+    expect(toVaultHighlights('h1', [note], () => null)[0]!.createdAt).toBe(createdAt);
   });
 });

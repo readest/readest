@@ -16,6 +16,8 @@ const book: VaultBook = {
   cover: 'bookhash1.png',
 };
 
+const CREATED = new Date(2026, 10, 4, 23, 30).getTime();
+
 const hl = (id: string, patch: Partial<VaultHighlight> = {}): VaultHighlight => ({
   id,
   text: `text ${id}`,
@@ -23,6 +25,7 @@ const hl = (id: string, patch: Partial<VaultHighlight> = {}): VaultHighlight => 
   color: 'yellow',
   chapter: 'Chapter 1',
   url: `https://web.readest.com/o/book/bookhash1/annotation/${id}`,
+  createdAt: CREATED,
   deleted: false,
   ...patch,
 });
@@ -63,7 +66,7 @@ describe('renderHighlight', () => {
       renderHighlight(hl('a1', { text: 'line one\n\nline two', note: 'my\nthought' }), 'T'),
     ).toBe(
       [
-        '> [!quote|yellow] [Chapter 1](https://web.readest.com/o/book/bookhash1/annotation/a1)',
+        '> [!quote|yellow] [Chapter 1](https://web.readest.com/o/book/bookhash1/annotation/a1) · 2026-11-04',
         '> line one',
         '>',
         '> line two',
@@ -81,14 +84,29 @@ describe('renderHighlight', () => {
       'A [Book]',
     );
     expect(out.split('\n')[0]).toBe(
-      '> [!quote|ff00aa] [A \\[Book\\]](https://x/a?cfi=epubcfi%28%2F6%29)',
+      '> [!quote|ff00aa] [A \\[Book\\]](https://x/a?cfi=epubcfi%28%2F6%29) · 2026-11-04',
     );
   });
 
   it('keeps a multi-line chapter label on the callout line and escapes backslashes', () => {
     const out = renderHighlight(hl('a1', { chapter: ' Part One\n  C:\\ Two ' }), 'T');
     expect(out.split('\n')[0]).toBe(
-      '> [!quote|yellow] [Part One C:\\\\ Two](https://web.readest.com/o/book/bookhash1/annotation/a1)',
+      '> [!quote|yellow] [Part One C:\\\\ Two](https://web.readest.com/o/book/bookhash1/annotation/a1) · 2026-11-04',
+    );
+  });
+
+  it('dates the highlight by the local day it was made', () => {
+    // Away from UTC, one of these two falls on another day in UTC.
+    const header = (createdAt: number) =>
+      renderHighlight(hl('a1', { createdAt }), 'T').split('\n')[0];
+    expect(header(new Date(2026, 1, 1, 0, 30).getTime())).toMatch(/\) · 2026-02-01$/);
+    expect(header(new Date(2026, 0, 31, 23, 30).getTime())).toMatch(/\) · 2026-01-31$/);
+  });
+
+  it('leaves the date out when the highlight has none', () => {
+    const out = renderHighlight(hl('a1', { createdAt: 0 }), 'T');
+    expect(out.split('\n')[0]).toBe(
+      '> [!quote|yellow] [Chapter 1](https://web.readest.com/o/book/bookhash1/annotation/a1)',
     );
   });
 });
@@ -130,6 +148,57 @@ describe('mergeVaultNote', () => {
     const { text } = sync(first.text, [hl('a1', { note: 'added later' })], first.written);
     expect(text).toContain('> > added later\n\n^rd-a1');
     expect(text).not.toContain('> text a1\n\n^rd-a1');
+  });
+
+  it('adds the date to a block written without one, unless the user edited it', () => {
+    const undated = sync(createVaultNote(book), [
+      hl('a1', { createdAt: 0 }),
+      hl('a2', { createdAt: 0 }),
+    ]);
+    const edited = undated.text.replace('> text a2', '> text a2 (mine)');
+    const { text } = sync(edited, [hl('a1'), hl('a2')], undated.written);
+    expect(text).toContain('/annotation/a1) · 2026-11-04\n> text a1\n');
+    expect(text).toContain('/annotation/a2)\n> text a2 (mine)\n');
+  });
+
+  it('adopts an undated block on a device with no record of it, unless the user edited it', () => {
+    const undated = sync(createVaultNote(book), [
+      hl('a1', { createdAt: 0 }),
+      hl('a2', { createdAt: 0 }),
+    ]);
+    const edited = undated.text.replace('> text a2', '> text a2 (mine)');
+    const { text, written } = sync(edited, [hl('a1'), hl('a2')], {});
+    expect(text).toContain('/annotation/a1) · 2026-11-04\n> text a1\n');
+    expect(text).toContain('/annotation/a2)\n> text a2 (mine)\n');
+    expect(Object.keys(written)).toEqual(['a1']);
+  });
+
+  it('keeps the day of a block it owns when this device would date it differently', () => {
+    // Same highlight, seen from a time zone where it falls on the day before.
+    const elsewhere = { createdAt: new Date(2026, 10, 3, 23, 30).getTime() };
+    const first = sync(createVaultNote(book), [hl('a1')]);
+
+    const moved = sync(first.text, [hl('a1', { ...elsewhere, note: 'n' })], first.written);
+    expect(moved.text).toContain('/annotation/a1) · 2026-11-04\n> text a1\n');
+    expect(moved.text).toContain('> > n\n\n^rd-a1');
+
+    // A device with no record leaves it to the device that wrote it.
+    const other = sync(first.text, [hl('a1', elsewhere)], {});
+    expect(other.text).toBe(first.text);
+    expect(other.written).toEqual({});
+  });
+
+  it('leaves a block whose date the user edited through updates and deletes', () => {
+    const first = sync(createVaultNote(book), [hl('a1')]);
+    const edited = first.text.replace(' · 2026-11-04', ' · 2026-11-05');
+    expect(edited).not.toBe(first.text);
+
+    const opened = sync(edited, [hl('a1')], first.written);
+    expect(opened.text).toBe(edited);
+    const updated = sync(edited, [hl('a1', { note: 'n' })], opened.written);
+    expect(updated.text).toBe(edited);
+    const deleted = sync(edited, [hl('a1', { deleted: true })], updated.written);
+    expect(deleted.text).toBe(edited);
   });
 
   it('leaves a block the user edited', () => {
