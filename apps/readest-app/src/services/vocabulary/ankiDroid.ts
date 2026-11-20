@@ -73,7 +73,11 @@ export const ankiReadDeck = async (
 /** Add notes to their decks (created if missing); resolves with how many were added. */
 export const ankiAddNotes = async (notes: AnkiOutgoingNote[]): Promise<number> => {
   const byDeck = new Map<string, Omit<AnkiOutgoingNote, 'deck'>[]>();
-  for (const { deck, ...note } of notes) byDeck.set(deck, [...(byDeck.get(deck) ?? []), note]);
+  for (const { deck, ...note } of notes) {
+    const group = byDeck.get(deck);
+    if (group) group.push(note);
+    else byDeck.set(deck, [note]);
+  }
   let added = 0;
   for (const [deckName, group] of byDeck) {
     added +=
