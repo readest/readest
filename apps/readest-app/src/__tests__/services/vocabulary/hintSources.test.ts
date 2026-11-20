@@ -101,6 +101,13 @@ describe('hintFromDictionary', () => {
     expect(hint).toBe('An unsought, unintended discovery');
   });
 
+  it('takes the first list item of other dictionaries, even before an ordered example', async () => {
+    const hint = await hintFromDictionary('luck', 'en', [
+      htmlProvider('<ul><li>good fortune<ol><li>She had good luck.</li></ol></li></ul>'),
+    ]);
+    expect(hint).toBe('good fortune');
+  });
+
   it('splits block elements into lines when there is no list', async () => {
     const hint = await hintFromDictionary('luck', 'en', [
       htmlProvider('<div>luck</div><div>n. good fortune</div>'),

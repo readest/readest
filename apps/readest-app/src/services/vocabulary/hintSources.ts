@@ -97,11 +97,11 @@ const isNumberedSense = (el: Element) => {
   );
 };
 
-// The first sense (its own text, without nested examples): the first numbered
-// one, else the first list item. Searches open shadow roots too.
-const firstDefinition = (root: Element | ShadowRoot): string => {
+// The first sense (its own text, without nested examples): for Wiktionary the
+// first numbered one, else the first list item. Searches open shadow roots too.
+const firstDefinition = (root: Element | ShadowRoot, numbered: boolean): string => {
   const item =
-    Array.from(root.querySelectorAll('ol > li, dd')).find(isNumberedSense) ??
+    (numbered ? Array.from(root.querySelectorAll('ol > li, dd')).find(isNumberedSense) : null) ??
     root.querySelector('li');
   if (item) {
     const own = item.cloneNode(true) as Element;
@@ -110,7 +110,7 @@ const firstDefinition = (root: Element | ShadowRoot): string => {
   }
   for (const el of root.querySelectorAll('*')) {
     if (el.shadowRoot) {
-      const found = firstDefinition(el.shadowRoot);
+      const found = firstDefinition(el.shadowRoot, numbered);
       if (found) return found;
     }
   }
@@ -133,7 +133,8 @@ export const hintFromDictionary = async (
       await provider.init?.();
       const outcome = await provider.lookup(word, { lang, signal, container });
       if (!outcome.ok) continue;
-      const sense = firstSense(firstDefinition(container) || textOf(container), word);
+      const numbered = provider.id === BUILTIN_PROVIDER_IDS.wiktionary;
+      const sense = firstSense(firstDefinition(container, numbered) || textOf(container), word);
       if (sense) return sense;
     } catch (err) {
       console.warn('[vocabulary] dictionary hint failed', provider.id, err);
