@@ -119,12 +119,16 @@ const renderWiktionary = async (
   }
   const json = await response.json();
   if (signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
-  const results: Result[] | undefined = language
+  const group: Result[] | undefined = language
     ? json[language] || json['en']
     : json[Object.keys(json)[0]!];
-  if (!results || results.length === 0) {
+  if (!group || group.length === 0) {
     return { ok: false, reason: 'empty' };
   }
+  // The `en` group also holds Translingual entries (ISO codes, symbols), listed
+  // first for words like "run"; put the language's own entries first (#7707).
+  const isTranslingual = (r: Result) => r.language === 'Translingual';
+  const results = [...group.filter((r) => !isTranslingual(r)), ...group.filter(isTranslingual)];
 
   const hgroup = document.createElement('hgroup');
   const h1 = document.createElement('h1');
