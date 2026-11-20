@@ -1296,6 +1296,36 @@ describe('HardcoverClient', () => {
       expect(getEdition?.query).toMatch(/user_books[\s\S]*audio_seconds/);
     });
 
+    test('keeps notes on the text edition and its pages', async () => {
+      respond({ me: { id: 1 } });
+      respond({
+        books: [
+          {
+            ...bookRow({
+              user_book_reads: [{ id: 505, started_at: '2026-11-01', edition: audioEdition }],
+            }),
+            pages: 400,
+          },
+        ],
+      });
+      respond({ reading_journals: [] });
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve([{ data: { insert_reading_journal: { id: 999 } } }]),
+      });
+      const note = { id: 'n1', type: 'annotation', text: 'Marley was dead', page: 450 };
+
+      await client.syncBookNotes(book, {
+        hardcover: linked.hardcover,
+        booknotes: [note],
+      } as unknown as BookConfig);
+
+      const journal = (fetchMock.mock.calls as FetchMockCall[])
+        .map((call) => JSON.parse(call[1]?.body ?? '{}'))
+        .find(Array.isArray)?.[0] as { variables: Record<string, unknown> };
+      expect(journal.variables).toMatchObject({ edition_id: 101, page: 450, possible: 476 });
+    });
+
     test('keeps pages on a text edition when the audiobook edition has no length', async () => {
       respond({ me: { id: 1 } });
       respond({
