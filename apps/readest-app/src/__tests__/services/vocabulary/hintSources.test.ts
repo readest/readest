@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { firstSense, hintFromDictionary } from '@/services/vocabulary/hintSources';
+import { wiktionaryProvider } from '@/services/dictionaries/providers/wiktionaryProvider';
 import type { DictionaryProvider } from '@/services/dictionaries/types';
 
 describe('firstSense', () => {
@@ -184,5 +185,82 @@ describe('hintFromDictionary', () => {
 
   it('returns an empty string when no dictionary has it', async () => {
     expect(await hintFromDictionary('luck', 'en', [provider('a', null)])).toBe('');
+  });
+});
+
+// Pages shaped like the live entries in #7707, through the real Wiktionary provider.
+describe('hintFromDictionary from Wiktionary', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const respond = (body: unknown) =>
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => body }) as Response),
+    );
+  const nativePage = (title: string, html: string) =>
+    respond({ parse: { title, text: `<div class="mw-parser-output">${html}</div>` } });
+  const heading = (level: number, text: string) =>
+    `<div class="mw-heading mw-heading${level}"><h${level}>${text}</h${level}></div>`;
+
+  it('takes the English sense, not the Translingual code listed first', async () => {
+    respond({
+      en: [
+        {
+          partOfSpeech: 'Symbol',
+          language: 'Translingual',
+          definitions: [{ definition: 'ISO 639-2 &amp; ISO 639-3 language code for Kirundi.' }],
+        },
+        {
+          partOfSpeech: 'Verb',
+          language: 'English',
+          definitions: [
+            { definition: 'To move swiftly.', examples: ['Run, and you might catch it!'] },
+          ],
+        },
+      ],
+    });
+    expect(await hintFromDictionary('run', 'en', [wiktionaryProvider])).toBe('To move swiftly');
+  });
+
+  it("takes German Wiktionary's first numbered meaning", async () => {
+    nativePage(
+      'Glück',
+      heading(2, 'Glück (Deutsch)') +
+        heading(3, 'Substantiv, n') +
+        '<p>Worttrennung:</p><dl><dd>Glück, kein Plural</dd></dl>' +
+        '<p>Bedeutungen:</p><ul><li>Plural selten:</li></ul>' +
+        '<dl><dd>[1] sich positiv auswirkender Zufall</dd><dd>[2] Fortuna</dd></dl>',
+    );
+    expect(await hintFromDictionary('Glück', 'de', [wiktionaryProvider])).toBe(
+      'sich positiv auswirkender Zufall',
+    );
+  });
+
+  it("takes Spanish Wiktionary's numbered meaning, not its notes", async () => {
+    nativePage(
+      'suerte',
+      heading(2, 'Español') +
+        heading(3, 'Etimología 1') +
+        '<p>Del latín <i>sors</i>.</p>' +
+        heading(4, 'Sustantivo femenino') +
+        '<dl><dt>1</dt><dd>Causa supuesta de una consecución de sucesos no previsibles.' +
+        '<ul><li>Sinónimos: fortuna, hado, destino.</li></ul></dd></dl>',
+    );
+    expect(await hintFromDictionary('suerte', 'es', [wiktionaryProvider])).toBe(
+      'Causa supuesta de una consecución de',
+    );
+  });
+
+  it("takes Japanese Wiktionary's ordered meaning, not the accent notes before it", async () => {
+    nativePage(
+      '猫',
+      heading(2, '日本語') +
+        '<p>アクセント</p><ul><li>(東京式) ねこ [néꜜkò] (頭高型 – [1])</li></ul>' +
+        heading(3, '名詞') +
+        '<ol><li>ネコ科を構成する小型の哺乳類。</li></ol>',
+    );
+    expect(await hintFromDictionary('猫', 'ja', [wiktionaryProvider])).toBe(
+      'ネコ科を構成する小型の哺乳類。',
+    );
   });
 });

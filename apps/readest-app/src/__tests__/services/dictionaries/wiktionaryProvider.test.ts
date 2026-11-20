@@ -60,6 +60,45 @@ describe('wiktionary provider', () => {
     expect(container.querySelector('ol li')?.textContent).toContain('is a small animal');
   });
 
+  it('lists the language entries before the Translingual ones that share their group', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        en: [
+          {
+            partOfSpeech: 'Symbol',
+            language: 'Translingual',
+            definitions: [{ definition: 'ISO 639-2 &amp; ISO 639-3 language code for Kirundi.' }],
+          },
+          {
+            partOfSpeech: 'Verb',
+            language: 'English',
+            definitions: [{ definition: 'To move swiftly.' }],
+          },
+          {
+            partOfSpeech: 'Noun',
+            language: 'English',
+            definitions: [{ definition: 'Act of running.' }],
+          },
+        ],
+      }),
+    } as Response);
+    const container = document.createElement('div');
+
+    await wiktionaryProvider.lookup('run', {
+      lang: 'en',
+      signal: new AbortController().signal,
+      container,
+    });
+
+    expect(container.querySelector('hgroup p')?.textContent).toBe('English');
+    expect(Array.from(container.querySelectorAll('h2')).map((h) => h.textContent)).toEqual([
+      'Verb',
+      'Noun',
+      'Symbol',
+    ]);
+  });
+
   it('rewires WikiLinks to call onNavigate instead of following the href', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,

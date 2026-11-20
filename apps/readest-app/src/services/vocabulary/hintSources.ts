@@ -31,7 +31,7 @@ export const firstSense = (text: string, word: string): string => {
     if (line.toLowerCase().startsWith(headword)) line = line.slice(headword.length).trim();
     if (!line || PRONUNCIATION.test(line)) continue;
     line = line
-      .replace(/^\d+[.)]\s*/, '') // sense number
+      .replace(/^(?:\d+[.)]|\[\d+\])\s*/, '') // sense number: 1. or [1]
       .replace(/^\([^)]*\)\s*/, '') // (noun)
       .replace(/^[a-z]{1,6}\.\s+/i, '') // n. / vt.
       .split(SENSE_BREAK)[0]!
@@ -85,12 +85,26 @@ const textOf = (node: Node): string => {
   return parts.join('') + (node instanceof Element && BLOCK_TAGS.has(node.tagName) ? '\n' : '');
 };
 
-// The first definition list item (its own text, without nested examples),
-// searching open shadow roots too.
+// A numbered sense: an <ol> item, or a <dd> numbered by its own `[1]` (German
+// Wiktionary) or by the <dt> before it (Spanish Wiktionary). Unordered lists
+// hold notes and examples (#7707).
+const isNumberedSense = (el: Element) => {
+  if (el.matches('ol > li')) return true;
+  const dt = el.previousElementSibling;
+  return (
+    /^\s*\[\d+\]/.test(el.textContent ?? '') ||
+    (!!dt && dt.matches('dt') && /^\s*\d/.test(dt.textContent ?? ''))
+  );
+};
+
+// The first sense (its own text, without nested examples): the first numbered
+// one, else the first list item. Searches open shadow roots too.
 const firstDefinition = (root: Element | ShadowRoot): string => {
-  const li = root.querySelector('li');
-  if (li) {
-    const own = li.cloneNode(true) as Element;
+  const item =
+    Array.from(root.querySelectorAll('ol > li, dd')).find(isNumberedSense) ??
+    root.querySelector('li');
+  if (item) {
+    const own = item.cloneNode(true) as Element;
     own.querySelectorAll(`ul, ol, ${NON_TEXT}`).forEach((el) => el.remove());
     return own.textContent?.replace(/\s+/g, ' ').trim() ?? '';
   }
