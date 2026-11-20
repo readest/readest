@@ -197,11 +197,6 @@ const IntegrationsPanel: React.FC = () => {
     void useABSServerStore.getState().loadABSServers(envConfig);
   }, [envConfig]);
 
-  // Android Back / Esc: each integrations sub-page (KOSync, WebDAV, Readwise,
-  // Hardcover, OPDS, Send-to-Readest…) registers itself on the Settings back
-  // stack through its SubPageHeader, so the dialog steps back to the list
-  // instead of closing. See settingsSubPageBack.tsx.
-
   const toggleDiscordPresence = () => {
     const discordRichPresenceEnabled = !settings.discordRichPresenceEnabled;
     saveSysSettings(envConfig, 'discordRichPresenceEnabled', discordRichPresenceEnabled);

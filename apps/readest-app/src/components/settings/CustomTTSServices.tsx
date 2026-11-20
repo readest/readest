@@ -21,9 +21,6 @@ const CustomTTSServices: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     ensureCustomTTSServicesLoaded(envConfig);
   }, [envConfig]);
 
-  // Esc / Android Back steps out of the editor before leaving this sub-page:
-  // the editor registers its own header on the Settings back stack.
-
   if (editing !== undefined) {
     return (
       <CustomTTSServiceEditor

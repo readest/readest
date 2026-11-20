@@ -94,10 +94,6 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
     translateTargetLang,
   );
 
-  // Android Back / Esc: when a sub-page is open, the sub-page header registers
-  // itself on the Settings back stack and the dialog steps back here instead of
-  // closing. See settingsSubPageBack.tsx.
-
   // Deep-link: callers (e.g. the dictionary popup's manage icon) can set
   // activeSettingsItemId to `'settings.language.dictionaries.manage'` to
   // jump straight into the Manage Dictionaries sub-page on open. Clear the

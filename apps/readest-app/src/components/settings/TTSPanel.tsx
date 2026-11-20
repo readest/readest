@@ -148,9 +148,6 @@ const TTSPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsSkipInlineAnnotations]);
 
-  // Android Back / Esc steps back to this panel instead of closing Settings:
-  // each sub-page header registers itself on the Settings back stack.
-
   // Every engine's voices, for the Voices page and to name the default here.
   useEffect(() => {
     let current = true;

@@ -277,8 +277,8 @@ const ABSServerDetail: React.FC<ABSServerDetailProps> = ({
   onRemoved,
 }) => {
   const _ = useTranslation();
-  // Escape / Android Back goes back to the server list, not out of Settings;
-  // the list's own SubPageHeader sits above this level on the back stack.
+  // Escape / Android Back goes back to the server list, not out of Settings.
+  // The page's SubPageHeader registered first, so this level sits on top of it.
   useSettingsSubPageBack(onBack);
   const [name, setName] = useState(server.name);
   const [libraries, setLibraries] = useState<ABSLibrary[] | null>(null);
