@@ -70,10 +70,22 @@ export const ankiReadDeck = async (
   return { notes: res.notes ?? [], cards: res.cards };
 };
 
-/** Add notes to a deck (created if missing); resolves with how many were added. */
-export const ankiAddNotes = async (deckName: string, notes: AnkiOutgoingNote[]): Promise<number> =>
-  (await call<{ added?: number; error?: string }>('anki_add_notes', { deckName, notes })).added ??
-  0;
+/** Add notes to their decks (created if missing); resolves with how many were added. */
+export const ankiAddNotes = async (notes: AnkiOutgoingNote[]): Promise<number> => {
+  const byDeck = new Map<string, Omit<AnkiOutgoingNote, 'deck'>[]>();
+  for (const { deck, ...note } of notes) {
+    const group = byDeck.get(deck);
+    if (group) group.push(note);
+    else byDeck.set(deck, [note]);
+  }
+  let added = 0;
+  for (const [deckName, group] of byDeck) {
+    added +=
+      (await call<{ added?: number; error?: string }>('anki_add_notes', { deckName, notes: group }))
+        .added ?? 0;
+  }
+  return added;
+};
 
 /** Replace the tags of existing notes; resolves with how many were updated. */
 export const ankiUpdateTags = async (notes: AnkiTagUpdate[]): Promise<number> =>

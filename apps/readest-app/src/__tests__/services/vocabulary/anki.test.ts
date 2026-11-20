@@ -4,6 +4,7 @@ import {
   type AnkiImportNote,
   ankiHintOf,
   ankiLangOf,
+  ankiDeckName,
   ankiLangTag,
   ankiWordOf,
   cleanAnkiField,
@@ -285,9 +286,22 @@ describe('ankiNotesToSend', () => {
     const card = ankiCardOf(spice);
     expect(ankiNotesToSend([spice], [])).toEqual([
       {
+        deck: 'Readest Vocabulary::English',
         fields: [card.front, card.back],
         tags: [...card.tags, 'readest::lang::en', 'readest::learning'],
       },
+    ]);
+  });
+
+  it('files each word under its language subdeck, and unknown ones in the parent', () => {
+    const decks = ankiNotesToSend(
+      [entry('pain', { lang: 'fr' }), entry('hola', { lang: 'es' }), entry('x', { lang: 'und' })],
+      [],
+    ).map((n) => n.deck);
+    expect(decks).toEqual([
+      'Readest Vocabulary::French',
+      'Readest Vocabulary::Spanish',
+      'Readest Vocabulary',
     ]);
   });
 
@@ -342,6 +356,20 @@ describe('ankiNotesToSend', () => {
 
   it('never sends a deleted word', () => {
     expect(ankiNotesToSend([entry('gone', { deletedAt: 3 })], [])).toEqual([]);
+  });
+});
+
+describe('ankiDeckName', () => {
+  it('names the subdeck in English, whatever the UI language, with one name per language', () => {
+    expect(ankiDeckName('en')).toBe('Readest Vocabulary::English');
+    expect(ankiDeckName('el')).toBe('Readest Vocabulary::Greek');
+    expect(ankiDeckName('nl')).toBe('Readest Vocabulary::Dutch');
+    expect(ankiDeckName('ro')).toBe('Readest Vocabulary::Romanian');
+    expect(ankiDeckName('zh')).toBe('Readest Vocabulary::Chinese');
+  });
+
+  it('keeps words of unknown language in the parent deck', () => {
+    expect(ankiDeckName('und')).toBe('Readest Vocabulary');
   });
 });
 
