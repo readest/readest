@@ -113,9 +113,35 @@ const MAX_AHEAD_SEC = 60;
 
 let sharedContext: TTSAudioContext | null = null;
 
+// On Android, Chromium puts a default ('interactive') context on the low-latency
+// MMAP output, which bypasses the mixer's effects stage. On OEM devices that
+// stage carries the vendor loudness/EQ processing, so TTS read noticeably
+// quieter over the speaker than the same voice previewed through an <audio>
+// element (deep-buffer path) at the same system volume. 'playback' asks for the
+// deep-buffer path the media pipeline uses instead. Verified on device by
+// checking which output `dumpsys media.audio_policy` assigns the TTS track.
+//
+// Read the UA directly instead of getOSPlatform(): this module is imported by
+// tests that mock '@/utils/misc', and a mocked platform answer must not change
+// which audio path the scheduler builds.
+const isAndroidUA = (): boolean =>
+  typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
+
+const createAudioContext = (): AudioContext => {
+  if (isAndroidUA()) {
+    try {
+      return new AudioContext({ latencyHint: 'playback' });
+    } catch (err) {
+      // Old WebViews can reject the options bag; the default path still works.
+      console.warn('[TTS] audio context latencyHint unsupported', err);
+    }
+  }
+  return new AudioContext();
+};
+
 const getSharedContext = (): TTSAudioContext => {
   if (!sharedContext) {
-    sharedContext = new AudioContext() as unknown as TTSAudioContext;
+    sharedContext = createAudioContext() as unknown as TTSAudioContext;
   }
   return sharedContext;
 };
@@ -166,7 +192,7 @@ export const startAudioKeepAlive = (): void => {
     // shared context to pause (WebAudioPlayer.pauseContext), which would
     // silence the tone exactly when a paused session needs it — and resuming
     // that context to feed the tone would un-pause the speech.
-    if (!keepAliveCtx) keepAliveCtx = new AudioContext();
+    if (!keepAliveCtx) keepAliveCtx = createAudioContext();
     const ctx = keepAliveCtx;
     // TTS only ever starts from a user gesture, so the page has sticky
     // activation and the context comes up running; nudge it best-effort in
