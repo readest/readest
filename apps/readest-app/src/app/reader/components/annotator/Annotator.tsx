@@ -2041,16 +2041,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         word,
         rect ? { rect, style: style ?? undefined } : undefined,
       );
-      // A marked word keeps its sentences with saving off (#7691).
       const capture = getDictionaryCapture();
-      const vocabulary = useVocabularyStore.getState();
-      if (
-        capture?.occurrence &&
-        (dictSettings.saveLookupsToVocabulary !== false || vocabulary.isMarked(word, capture.lang))
-      ) {
+      if (capture?.occurrence) {
         const { lang, occurrence } = capture;
+        const saveLookups = dictSettings.saveLookupsToVocabulary !== false;
         void lookup.then((launched) => {
-          if (launched) vocabulary.recordLookup({ word, lang, occurrence });
+          // A marked word keeps its sentences with saving off (#7691); read
+          // the mark once launched, after any change made in the meantime.
+          const vocabulary = useVocabularyStore.getState();
+          if (launched && (saveLookups || vocabulary.isMarked(word, lang))) {
+            vocabulary.recordLookup({ word, lang, occurrence });
+          }
         });
       }
       handleDismissPopupAndSelection();

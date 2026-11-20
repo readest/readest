@@ -449,6 +449,26 @@ test.each([
   }
 });
 
+// With saving off, a word unmarked or removed (e.g. by a sync) while the OS
+// lookup launches must not be saved back.
+test('system dictionary rechecks the mark once the lookup launches', async () => {
+  h.lookupSettings.providerEnabled = { 'builtin:system': true };
+  h.lookupSettings.saveLookupsToVocabulary = false;
+  h.wordMarked = true;
+  let launch: (launched: boolean) => void = () => {};
+  h.invokeSystemDictionary.mockReturnValue(new Promise<boolean>((r) => (launch = r)));
+  render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  await selectText('serendipity');
+
+  await act(async () => {
+    h.actions?.['onDictionarySelection']?.();
+  });
+  h.wordMarked = false;
+  await act(async () => launch(true));
+
+  expect(h.recordLookup).not.toHaveBeenCalled();
+});
+
 // #7691: the footnote popup reports a Word Lens hint tap as a popup selection
 // over the hinted word; it opens the dictionary like a hint tap in the book.
 test('a Word Lens hint tapped in the footnote popup opens the dictionary', async () => {
