@@ -2552,6 +2552,11 @@ export class TTSController extends EventTarget {
     // Remembered for the book's language too, so it reads that language next time.
     TTSUtils.setPreferredClient(this.ttsClient.name, this.ttsLang);
     TTSUtils.setPreferredVoice(this.ttsClient.name, lang, voiceId);
+    // A multilingual voice reads any language, but a voice picked earlier for
+    // the book's language comes first: replace that one too (#7430).
+    if (lang === MULTILINGUAL_LANG) {
+      TTSUtils.setPreferredVoice(this.ttsClient.name, this.ttsLang, voiceId);
+    }
     await this.ttsClient.setVoice(voiceId);
     // A different voice speaks at a different pace: re-estimate the timeline
     // under the new voice (measured durations are keyed per voice already).
