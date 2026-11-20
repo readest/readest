@@ -261,6 +261,12 @@ describe('VocabularyView', () => {
     act(() => useVocabularyStore.getState().remove('de:haus'));
     expect(screen.queryByRole('combobox', { name: 'Language' })).toBeNull();
     expect(listWords()).toEqual(['sandworm']);
+    // A German word coming back (a Sync pull) doesn't turn the filter back on.
+    act(() => useVocabularyStore.getState().importWords([{ word: 'baum', lang: 'de' }]));
+    expect((screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).value).toBe(
+      '',
+    );
+    expect(listWords()).toEqual(expect.arrayContaining(['sandworm', 'baum']));
   });
 
   it('exports only the words the filters show', async () => {

@@ -122,16 +122,13 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
         .sort((a, b) => a.label.localeCompare(b.label)),
     [all, _],
   );
-  // Deleting a language's last word drops it from the list, and the filter with it.
-  const activeLang = languages.some((l) => l.value === lang) ? lang : '';
+  // Deleting a language's last word drops it from the list, and the filter with
+  // it; the language coming back later doesn't turn the filter on again.
+  if (lang && !languages.some((l) => l.value === lang)) setLang('');
   const byBook = useMemo(
     () =>
-      filterEntries(
-        all,
-        { bookHash: bookHash || undefined, lang: activeLang || undefined, query },
-        sort,
-      ),
-    [all, bookHash, activeLang, query, sort],
+      filterEntries(all, { bookHash: bookHash || undefined, lang: lang || undefined, query }, sort),
+    [all, bookHash, lang, query, sort],
   );
   const shown = useMemo(
     () => (state ? byBook.filter((e) => e.state === state) : byBook),
@@ -334,7 +331,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
           <FilterChip
             icon={PiGlobe}
             label={_('Language')}
-            value={activeLang}
+            value={lang}
             onChange={setLang}
             options={[{ value: '', label: _('All Languages') }, ...languages]}
           />
