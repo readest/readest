@@ -38,6 +38,7 @@ query GetEdition($isbn: [String!]!, $user_id: Int!) {
           id
           pages
           reading_format_id
+          audio_seconds
         }
         user_book_reads(
           where: { finished_at: { _is_null: true } }
@@ -50,6 +51,7 @@ query GetEdition($isbn: [String!]!, $user_id: Int!) {
             id
             pages
             reading_format_id
+            audio_seconds
           }
         }
       }
@@ -91,6 +93,7 @@ query GetBooks($ids: [Int!]!, $user_id: Int!) {
         id
         pages
         reading_format_id
+        audio_seconds
       }
       user_book_reads(
         where: { finished_at: { _is_null: true } }
@@ -103,6 +106,7 @@ query GetBooks($ids: [Int!]!, $user_id: Int!) {
           id
           pages
           reading_format_id
+          audio_seconds
         }
       }
     }
@@ -148,27 +152,30 @@ mutation UpdateUserBook($user_book_id: Int!, $object: UserBookUpdateInput!) {
 }
 `;
 
-export const MUTATION_INSERT_READ = `
-mutation InsertRead($user_book_id: Int!, $edition_id: Int, $progress_pages: Int!, $started_at: date!) {
+// A read on an audiobook edition records seconds listened; any other edition, pages.
+export type ReadProgressField = 'progress_pages' | 'progress_seconds';
+
+export const mutationInsertRead = (field: ReadProgressField) => `
+mutation InsertRead($user_book_id: Int!, $edition_id: Int, $${field}: Int!, $started_at: date!) {
   insert_user_book_read(
     user_book_id: $user_book_id
     user_book_read: {
       edition_id: $edition_id
-      progress_pages: $progress_pages
+      ${field}: $${field}
       started_at: $started_at
     }
   ) { id error }
 }
 `;
 
-export const MUTATION_UPDATE_READ = `
-mutation UpdateRead($id: Int!, $progress_pages: Int!, $edition_id: Int, $started_at: date!) {
+export const mutationUpdateRead = (field: ReadProgressField) => `
+mutation UpdateRead($id: Int!, $${field}: Int!, $edition_id: Int, $started_at: date!) {
   update_user_book_read(
     id: $id
     object: {
       edition_id: $edition_id
       started_at: $started_at
-      progress_pages: $progress_pages
+      ${field}: $${field}
     }
   ) { id error }
 }
