@@ -1,7 +1,10 @@
+import { toDateKey } from '@/services/statistics/readingStats';
+
 // One Markdown note per book in an Obsidian vault, kept in step with the
 // book's highlights (#7061).
 //
-// Each highlight is a quote callout followed by an Obsidian block id line
+// Each highlight is a quote callout (headed by its chapter and the day it was
+// made) followed by an Obsidian block id line
 // (`^rd-<noteId>`), so a highlight is found again by id wherever the user moved
 // it, and can be linked to from other notes. A block is rewritten or removed
 // only while it still hashes to what this device last wrote (`written`); a
@@ -26,6 +29,8 @@ export interface VaultHighlight {
   color: string;
   chapter: string | null;
   url: string;
+  /** When the highlight was made, in ms; shown as its local day. */
+  createdAt: number;
   deleted: boolean;
 }
 
@@ -62,7 +67,8 @@ export const renderHighlight = (highlight: VaultHighlight, bookTitle: string): s
     /[()]/g,
     (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
   );
-  const lines = [`> [!quote|${color}] [${label}](${url})`, ...quote(highlight.text, '>')];
+  const date = highlight.createdAt ? ` · ${toDateKey(new Date(highlight.createdAt))}` : '';
+  const lines = [`> [!quote|${color}] [${label}](${url})${date}`, ...quote(highlight.text, '>')];
   if (highlight.note.trim()) lines.push('>', '> > [!note]', ...quote(highlight.note, '> >'));
   return lines.join('\n');
 };
