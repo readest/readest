@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   applyCustomTheme,
   CustomTheme,
-  generateDarkPalette,
-  generateLightPalette,
+  customThemeToTheme,
   Theme,
   themes,
   ThemeScope,
@@ -483,17 +482,7 @@ const ThemePanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset
 
   useEffect(() => {
     const customThemes = settings.globalReadSettings.customThemes ?? [];
-    setCustomThemes(
-      customThemes.map((customTheme) => ({
-        name: customTheme.name,
-        label: customTheme.label,
-        colors: {
-          light: generateLightPalette(customTheme.colors.light),
-          dark: generateDarkPalette(customTheme.colors.dark),
-        },
-        isCustomizable: true,
-      })),
-    );
+    setCustomThemes(customThemes.map(customThemeToTheme));
   }, [settings]);
 
   const handleSaveCustomTheme = (customTheme: CustomTheme) => {
