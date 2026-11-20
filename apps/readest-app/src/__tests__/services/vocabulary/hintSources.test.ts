@@ -41,6 +41,13 @@ describe('firstSense', () => {
 
   it('keeps a sense that starts with a bracketed label', () => {
     expect(firstSense('[计] 发自', 'originate')).toBe('[计] 发自');
+    expect(firstSense('[数学] 区间 [0, 1]。', 'interval')).toBe('[数学] 区间 [0, 1]。');
+  });
+
+  it('skips a line of two pronunciations', () => {
+    expect(firstSense('happy\n/ˈhæpi/ /ˈhæpi/\nadj. feeling pleasure', 'happy')).toBe(
+      'feeling pleasure',
+    );
   });
 
   it('returns an empty string when only the headword is there', () => {

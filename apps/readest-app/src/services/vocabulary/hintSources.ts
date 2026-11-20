@@ -9,8 +9,9 @@ import type { VocabularyOccurrence } from './types';
 // (#6613): the reader's own dictionaries, or the AI context dictionary.
 
 const MAX_HINT_LEN = 40;
-// A pronunciation, with any marks after it but no words (ECDICT: `[ә'ridʒineit] - ★★`).
-const PRONUNCIATION = /^[/[].*[/\]][^\p{L}]*$/u;
+// One or more /…/ or […] pronunciations with only marks between and after them
+// (ECDICT: `[ә'ridʒineit] - ★★`). `[数学] 区间 [0, 1]` has words between, so it's a sense.
+const PRONUNCIATION = /^(?:(?:\/[^/]*\/|\[[^\]]*\])[^\p{L}/[]*)+$/u;
 const SENSE_BREAK = /[;；]|\.(?:\s|$)/;
 
 const capAtWord = (s: string) => {
