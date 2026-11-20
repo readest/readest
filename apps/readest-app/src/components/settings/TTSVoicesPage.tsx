@@ -193,6 +193,7 @@ const TTSVoicesPage: React.FC<TTSVoicesPageProps> = ({
             key={activeSection}
             groups={shownGroups}
             query={query}
+            showFavorites={!activeSection}
             selected={defaultVoice}
             onSelect={handleSelect}
             onUpgrade={handleUpgrade}

@@ -36,11 +36,31 @@ const GROUPS: TTSVoicesGroup[] = [
   },
 ];
 
-const renderList = (onSelect = vi.fn()) => {
+// A narrated book's own recording, as TTSController.getVoices puts it first.
+const NARRATION: TTSVoicesGroup = {
+  id: 'media-overlay',
+  name: 'Narration',
+  engine: 'media-overlay',
+  voices: [{ id: 'media-overlay', name: 'Jim Dale', lang: 'en' }],
+};
+
+const renderList = (
+  onSelect = vi.fn(),
+  {
+    groups = GROUPS,
+    selected = null,
+    showFavorites = true,
+  }: {
+    groups?: TTSVoicesGroup[];
+    selected?: { engine?: string; voiceId: string } | null;
+    showFavorites?: boolean;
+  } = {},
+) => {
   render(
     <VoiceList
-      groups={GROUPS}
-      selected={null}
+      groups={groups}
+      selected={selected}
+      showFavorites={showFavorites}
       onSelect={onSelect}
       onUpgrade={vi.fn()}
       preview={{ toggle: vi.fn(), statusOf: () => null }}
@@ -69,9 +89,8 @@ describe('VoiceList favorites', () => {
   });
 
   it('puts a favorited voice in a Favorites section above every engine group', () => {
+    TTSUtils.toggleFavoriteVoice('edge-tts', 'en-GB-RyanNeural');
     renderList();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Add Ryan to favorites' }));
 
     const titles = sectionTitles();
     expect(titles[0]).toBe('Favorites');
@@ -92,15 +111,37 @@ describe('VoiceList favorites', () => {
     expect(screen.getAllByRole('button', { name: 'Remove Aria from favorites' })).toHaveLength(2);
   });
 
-  it('removes a favorite, and the section when none are left', () => {
+  // Rows that came or went above the one being tapped would move it from
+  // under the finger, so the Favorites list changes only on the next open.
+  it('keeps the rows in place while the list is open', () => {
     renderList();
-    fireEvent.click(screen.getByRole('button', { name: 'Add Heart to favorites' }));
-    expect(screen.getByText('Favorites')).toBeTruthy();
-
-    fireEvent.click(screen.getAllByRole('button', { name: 'Remove Heart from favorites' })[0]!);
+    const heart = screen.getByRole('button', { name: 'Add Ryan to favorites' });
+    fireEvent.click(heart);
 
     expect(screen.queryByText('Favorites')).toBeNull();
+    expect(heart.getAttribute('aria-label')).toBe('Remove Ryan from favorites');
+    expect(TTSUtils.getFavoriteVoices()).toEqual([
+      TTSUtils.favoriteVoiceKey('edge-tts', 'en-GB-RyanNeural'),
+    ]);
+  });
+
+  it('removes a favorite, keeping its row and focus until the next open', () => {
+    TTSUtils.toggleFavoriteVoice('readest-tts', 'kokoro:af_heart');
+    renderList();
+    const favorites = screen.getByText('Favorites').parentElement!;
+    const heart = within(favorites).getByRole('button', { name: 'Remove Heart from favorites' });
+    heart.focus();
+
+    fireEvent.click(heart);
+
+    expect(heart.isConnected).toBe(true);
+    expect(document.activeElement).toBe(heart);
+    expect(screen.getAllByRole('button', { name: 'Add Heart to favorites' })).toHaveLength(2);
     expect(TTSUtils.getFavoriteVoices()).toEqual([]);
+
+    cleanup();
+    renderList();
+    expect(screen.queryByText('Favorites')).toBeNull();
   });
 
   it('chooses a voice from the Favorites section with its own group', () => {
@@ -120,9 +161,35 @@ describe('VoiceList favorites', () => {
   it('hides favorites the gender filter excludes', () => {
     TTSUtils.toggleFavoriteVoice('edge-tts', 'en-GB-RyanNeural');
     renderList();
+    expect(screen.getByText('Favorites')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('radio', { name: 'Female' }));
 
     expect(screen.queryByText('Favorites')).toBeNull();
+  });
+
+  it('shows no Favorites section while one engine is picked', () => {
+    TTSUtils.toggleFavoriteVoice('edge-tts', 'en-GB-RyanNeural');
+    renderList(vi.fn(), { showFavorites: false });
+
+    expect(screen.queryByText('Favorites')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Remove Ryan from favorites' })).toBeTruthy();
+  });
+
+  it("keeps the book's narrator first, with no heart", () => {
+    TTSUtils.toggleFavoriteVoice('edge-tts', 'en-GB-RyanNeural');
+    renderList(vi.fn(), { groups: [NARRATION, ...GROUPS] });
+
+    expect(sectionTitles()).toEqual(['Narration', 'Favorites', 'Readest Voice', 'Edge TTS']);
+    expect(screen.queryByRole('button', { name: /^(Add|Remove) Jim Dale/ })).toBeNull();
+  });
+
+  it('marks the voice in use as current once', () => {
+    TTSUtils.toggleFavoriteVoice('edge-tts', 'en-GB-RyanNeural');
+    renderList(vi.fn(), { selected: { engine: 'edge-tts', voiceId: 'en-GB-RyanNeural' } });
+
+    const favorites = screen.getByText('Favorites').parentElement!;
+    expect(document.querySelectorAll('[aria-current]')).toHaveLength(1);
+    expect(favorites.querySelector('[aria-current]')).toBeNull();
   });
 });

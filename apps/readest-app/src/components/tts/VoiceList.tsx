@@ -5,6 +5,7 @@ import { PiSpinner } from 'react-icons/pi';
 import { BoxedList, SettingLabel } from '@/components/settings/primitives';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { VoicePreviewStatus } from '@/hooks/useVoicePreview';
+import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
 import type { TTSVoice, TTSVoicesGroup } from '@/services/tts/types';
 import { TTSUtils } from '@/services/tts/TTSUtils';
 import { canPreviewEngine } from '@/services/tts/voicePreview';
@@ -41,15 +42,23 @@ interface VoiceListProps {
   // Only the voices whose name or language contains it, in any case; the
   // gender tab narrows them further.
   query?: string;
+  // Off while one engine is picked: its favorites are in the list below.
+  showFavorites: boolean;
 }
 
-// Groups without an engine (system voices) are told apart by their id.
+// Every group names its engine, though the type leaves it optional.
+const engineOf = (group: TTSVoicesGroup) => group.engine ?? group.id;
 const favoriteKeyOf = (group: TTSVoicesGroup, voice: TTSVoice) =>
-  TTSUtils.favoriteVoiceKey(group.engine ?? group.id, voice.id);
+  TTSUtils.favoriteVoiceKey(engineOf(group), voice.id);
+
+// The book's own recording. It leads the list (TTSController.getVoices) and
+// has no heart: its id is the same in every narrated book.
+const isNarration = (voice: TTSVoice) => voice.id === MEDIA_OVERLAY_VOICE_ID;
 
 // Voices by engine, one boxed list each, filterable by gender, with the
-// favorited ones repeated in a Favorites list on top. A row's round button
-// previews the voice and its heart favorites it; the rest of the row picks it.
+// favorited ones repeated in a Favorites list above the engines. A row's round
+// button previews the voice and its heart favorites it; the rest of the row
+// picks it.
 const VoiceList: React.FC<VoiceListProps> = ({
   groups,
   selected,
@@ -57,10 +66,15 @@ const VoiceList: React.FC<VoiceListProps> = ({
   onUpgrade,
   preview,
   query = '',
+  showFavorites,
 }) => {
   const _ = useTranslation();
   const [gender, setGender] = useState<GenderFilter>('all');
   const [favorites, setFavorites] = useState(() => TTSUtils.getFavoriteVoices());
+  // The Favorites list keeps the voices it opened with: a row coming or going
+  // above the heart being tapped would move the rows under the finger. Hearts
+  // still show each change at once, and the list catches up on the next open.
+  const [listed] = useState(favorites);
   // A name a user's own service gave is shown as is; built-in names are UI strings.
   const nameOf = (item: TTSVoice | TTSVoicesGroup) => (item.literalName ? item.name : _(item.name));
   const hasGenders = groups.some((group) => group.voices.some((voice) => voice.gender));
@@ -81,17 +95,21 @@ const VoiceList: React.FC<VoiceListProps> = ({
   const shown = groups
     .map((group) => ({ group, voices: group.voices.filter(matches) }))
     .filter(({ voices }) => voices.length > 0);
-  const favoriteRows = shown.flatMap(({ group, voices }) =>
-    voices
-      .filter((voice) => favorites.includes(favoriteKeyOf(group, voice)))
-      .map((voice) => ({ group, voice })),
-  );
+  const favoriteRows = showFavorites
+    ? shown.flatMap(({ group, voices }) =>
+        voices
+          .filter((voice) => listed.includes(favoriteKeyOf(group, voice)))
+          .map((voice) => ({ group, voice })),
+      )
+    : [];
+  const narration = shown.filter(({ voices }) => voices.some(isNarration));
+  const engines = shown.filter(({ voices }) => !voices.some(isNarration));
 
   const genderLabel = (value: TTSVoice['gender'] | GenderFilter) =>
     value === 'female' ? _('Female') : value === 'male' ? _('Male') : _('All');
 
   const toggleFavorite = (group: TTSVoicesGroup, voice: TTSVoice) => {
-    TTSUtils.toggleFavoriteVoice(group.engine ?? group.id, voice.id);
+    TTSUtils.toggleFavoriteVoice(engineOf(group), voice.id);
     setFavorites(TTSUtils.getFavoriteVoices());
   };
 
@@ -139,7 +157,8 @@ const VoiceList: React.FC<VoiceListProps> = ({
         <button
           type='button'
           disabled={voice.disabled && !locked}
-          aria-current={isSelected || undefined}
+          // The Favorites copy shows the check too, but only one row is current.
+          aria-current={(isSelected && section !== 'favorites') || undefined}
           onClick={() => (locked ? onUpgrade() : onSelect(group, voice))}
           className='flex min-w-0 flex-1 items-center gap-2 self-stretch py-2 text-start disabled:cursor-not-allowed'
         >
@@ -175,31 +194,41 @@ const VoiceList: React.FC<VoiceListProps> = ({
             {isSelected && <MdCheck className='h-5 w-5' aria-hidden='true' />}
           </span>
         </button>
-        <button
-          type='button'
-          aria-label={
-            isFavorite
-              ? _('Remove {{voice}} from favorites', { voice: nameOf(voice) })
-              : _('Add {{voice}} to favorites', { voice: nameOf(voice) })
-          }
-          title={isFavorite ? _('Remove from favorites') : _('Add to favorites')}
-          aria-pressed={isFavorite}
-          onClick={() => toggleFavorite(group, voice)}
-          className={clsx(
-            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-150',
-            'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
-            isFavorite ? 'text-base-content' : 'text-base-content/50 hover:text-base-content',
-          )}
-        >
-          {isFavorite ? (
-            <MdFavorite className='h-5 w-5' aria-hidden='true' />
-          ) : (
-            <MdFavoriteBorder className='h-5 w-5' aria-hidden='true' />
-          )}
-        </button>
+        {isNarration(voice) ? (
+          // Keeps the check at the same place as in the rows with a heart.
+          <span className='w-10 shrink-0' aria-hidden='true' />
+        ) : (
+          <button
+            type='button'
+            aria-label={
+              isFavorite
+                ? _('Remove {{voice}} from favorites', { voice: nameOf(voice) })
+                : _('Add {{voice}} to favorites', { voice: nameOf(voice) })
+            }
+            title={isFavorite ? _('Remove from favorites') : _('Add to favorites')}
+            onClick={() => toggleFavorite(group, voice)}
+            className={clsx(
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-150',
+              'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
+              isFavorite ? 'text-base-content' : 'text-base-content/50 hover:text-base-content',
+            )}
+          >
+            {isFavorite ? (
+              <MdFavorite className='h-5 w-5' aria-hidden='true' />
+            ) : (
+              <MdFavoriteBorder className='h-5 w-5' aria-hidden='true' />
+            )}
+          </button>
+        )}
       </div>
     );
   };
+
+  const renderGroup = ({ group, voices }: (typeof shown)[number]) => (
+    <BoxedList key={group.id} title={nameOf(group)}>
+      {voices.map((voice) => renderRow(group, voice, 'group'))}
+    </BoxedList>
+  );
 
   return (
     <div className='flex w-full flex-col gap-4'>
@@ -236,16 +265,13 @@ const VoiceList: React.FC<VoiceListProps> = ({
             : _('No voices match this filter')}
         </p>
       )}
+      {narration.map(renderGroup)}
       {favoriteRows.length > 0 && (
         <BoxedList title={_('Favorites')}>
           {favoriteRows.map(({ group, voice }) => renderRow(group, voice, 'favorites'))}
         </BoxedList>
       )}
-      {shown.map(({ group, voices }) => (
-        <BoxedList key={group.id} title={nameOf(group)}>
-          {voices.map((voice) => renderRow(group, voice, 'group'))}
-        </BoxedList>
-      ))}
+      {engines.map(renderGroup)}
     </div>
   );
 };

@@ -93,7 +93,12 @@ export class TTSUtils {
     const favorites = this.getFavoriteVoices();
     const isFavorite = !favorites.includes(key);
     const next = isFavorite ? [...favorites, key] : favorites.filter((k) => k !== key);
-    localStorage.setItem(this.FAVORITE_VOICES_KEY, JSON.stringify(next));
+    try {
+      localStorage.setItem(this.FAVORITE_VOICES_KEY, JSON.stringify(next));
+    } catch {
+      // Storage full or blocked: nothing changed.
+      return !isFavorite;
+    }
     return isFavorite;
   }
 

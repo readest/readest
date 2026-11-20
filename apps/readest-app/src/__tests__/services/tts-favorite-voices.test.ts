@@ -1,10 +1,13 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TTSUtils } from '@/services/tts/TTSUtils';
 
 describe('TTSUtils favorite voices', () => {
   beforeEach(() => {
     localStorage.clear();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('starts with no favorites', () => {
@@ -42,5 +45,18 @@ describe('TTSUtils favorite voices', () => {
     localStorage.setItem('ttsFavoriteVoices', '{not json');
     expect(TTSUtils.getFavoriteVoices()).toEqual([]);
     expect(TTSUtils.toggleFavoriteVoice('edge-tts', 'x')).toBe(true);
+  });
+
+  it('leaves the favorites as they were when storage refuses the write', () => {
+    TTSUtils.toggleFavoriteVoice('edge-tts', 'en-US-AriaNeural');
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+
+    expect(TTSUtils.toggleFavoriteVoice('edge-tts', 'en-US-GuyNeural')).toBe(false);
+    expect(TTSUtils.toggleFavoriteVoice('edge-tts', 'en-US-AriaNeural')).toBe(true);
+    expect(TTSUtils.getFavoriteVoices()).toEqual([
+      TTSUtils.favoriteVoiceKey('edge-tts', 'en-US-AriaNeural'),
+    ]);
   });
 });
