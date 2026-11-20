@@ -10,12 +10,16 @@ type CachedResponseWillBeUsed = (options: {
   cachedResponse?: Response;
   event: unknown;
 }) => Promise<Response | null | undefined>;
+type CacheKeyWillBeUsed = (options: { request: Request; mode: string }) => Promise<string>;
 type Route = {
   matcher: (options: { url: URL; request: Pick<Request, 'mode'> }) => boolean;
   handler: {
     options: {
       cacheName?: string;
-      plugins?: { cachedResponseWillBeUsed?: CachedResponseWillBeUsed }[];
+      plugins?: {
+        cachedResponseWillBeUsed?: CachedResponseWillBeUsed;
+        cacheKeyWillBeUsed?: CacheKeyWillBeUsed;
+      }[];
     };
   };
 };
@@ -175,6 +179,7 @@ describe('service worker page cache', () => {
     const general = await caches.open('offline-cache');
     await general.put(`${ORIGIN}/reader/a1b2`, saved('reader'));
     await general.put(`${ORIGIN}/_next/static/chunks/app.js`, saved('chunk'));
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
     registration.active = {};
 
     await fire('install');
@@ -204,8 +209,37 @@ describe('service worker page cache', () => {
     expect(await savedBody('/library'), 'the open page is saved from the new build').toBe(
       'new /library',
     );
-    expect(await savedBody('/reader/a1b2'), 'a page not open stays cleared').toBeUndefined();
+    expect(
+      await savedBody('/reader/a1b2'),
+      'the old copy of a page not open stays cleared',
+    ).toBeUndefined();
     expect(await savedBody('/user'), 'only the app pages are saved').toBeUndefined();
+  });
+
+  // A window reports the URL it loaded, so a tab that opened a book from the
+  // library inside the app looks like the library to the worker.
+  test('saves the reader again when it was saved, for every book', async () => {
+    const pages = await caches.open(PAGES_CACHE_NAME.html);
+    await pages.put(`${ORIGIN}/library`, saved('old library'));
+    await pages.put(`${ORIGIN}/reader/a1b2`, saved('old reader'));
+    openWindows = [{ url: `${ORIGIN}/library` }];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async (url) => new Response(`new ${new URL(String(url)).pathname}`),
+    );
+    registration.active = {};
+
+    await fire('install');
+    await fire('activate');
+
+    const cacheKey = routeFor('/reader/c3d4')?.handler.options.plugins?.find(
+      (plugin) => plugin.cacheKeyWillBeUsed,
+    )?.cacheKeyWillBeUsed;
+    const key = await cacheKey!({ request: new Request(`${ORIGIN}/reader/c3d4`), mode: 'read' });
+    expect(
+      await (await (await caches.open(PAGES_CACHE_NAME.html)).match(key))?.text(),
+      'a book opens offline from the reader saved from the new build',
+    ).toBe('new /reader');
+    expect(await savedBody('/'), 'a kind of page not saved before stays unsaved').toBeUndefined();
   });
 
   test('keeps the saved pages on a first install', async () => {
