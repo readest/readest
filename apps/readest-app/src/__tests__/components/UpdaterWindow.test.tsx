@@ -210,6 +210,37 @@ describe('UpdaterContent — auto-translated changelog', () => {
     expect(consoleError).toHaveBeenCalledWith('Failed to download and install update:', failure);
   });
 
+  it('keeps the update on screen after a failed download and lets the reader retry', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    // download_file's read timeout ending a stalled transfer.
+    mockInstallNightlyUpdate.mockRejectedValueOnce('error sending request: operation timed out');
+
+    render(
+      <UpdaterContent
+        latestVersion='0.11.20'
+        nightlyUpdate={{
+          endpoint: 'https://example.com/nightly.json',
+          version: '0.11.20',
+          platformKey: 'windows-x86_64',
+          url: 'https://example.com/readest.exe',
+          signature: 'signature',
+        }}
+      />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+
+    expect(await screen.findByText('Failed to download and install update')).toBeTruthy();
+    expect(screen.getByText('A new version of Readest is available!')).toBeTruthy();
+    expect(screen.queryByText(/Downloading/)).toBeNull();
+    const button = screen.getByRole('button', { name: 'DOWNLOAD & INSTALL' });
+    expect(button.className).not.toContain('btn-disabled');
+
+    mockInstallNightlyUpdate.mockImplementationOnce(() => new Promise<void>(() => {}));
+    fireEvent.click(button);
+    await waitFor(() => expect(mockInstallNightlyUpdate).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText('Failed to download and install update')).toBeNull();
+  });
+
   it('shows a "Show original" toggle that swaps the translation for the source English', async () => {
     mockLocale = 'zh-CN';
     render(<UpdaterContent checkUpdate={false} latestVersion='0.11.18' lastVersion='0.11.0' />);

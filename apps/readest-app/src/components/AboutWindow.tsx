@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { invoke } from '@tauri-apps/api/core';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { checkForAppUpdates, checkAppReleaseNotes } from '@/helpers/updater';
+import { CHECK_UPDATE_TIMEOUT_MS, UPDATE_ERROR_DISPLAY_MS } from '@/services/constants';
 import { isTauriAppPlatform } from '@/services/environment';
 import { parseWebViewInfo } from '@/utils/ua';
 import { getAppVersion } from '@/utils/version';
@@ -34,6 +35,9 @@ export const AboutWindow = () => {
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [browserInfo, setBrowserInfo] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  // Closing the dialog abandons a running check: only the latest check may
+  // change the status.
+  const checkIdRef = useRef(0);
 
   useEffect(() => {
     setBrowserInfo(parseWebViewInfo(appService));
@@ -75,17 +79,32 @@ export const AboutWindow = () => {
   }, []);
 
   const handleCheckUpdate = async () => {
+    const checkId = ++checkIdRef.current;
     setUpdateStatus('checking');
+    // The manifest requests have no read timeout, so bound the wait here.
+    let deadline: ReturnType<typeof setTimeout> | undefined;
     try {
-      const hasUpdate = await checkForAppUpdates(_, false, settings.updateChannel);
+      const hasUpdate = await Promise.race([
+        checkForAppUpdates(_, false, settings.updateChannel),
+        new Promise<never>((_resolve, reject) => {
+          deadline = setTimeout(
+            () => reject(new Error('Update check timed out')),
+            CHECK_UPDATE_TIMEOUT_MS,
+          );
+        }),
+      ]);
+      if (checkId !== checkIdRef.current) return;
       if (hasUpdate) {
         handleClose();
       } else {
         setUpdateStatus('updated');
       }
     } catch (error) {
+      if (checkId !== checkIdRef.current) return;
       console.info('Error checking for updates:', error);
       setUpdateStatus('error');
+    } finally {
+      clearTimeout(deadline);
     }
   };
 
@@ -98,7 +117,16 @@ export const AboutWindow = () => {
     }
   };
 
+  // The status line holds one line: show the error, then bring the button
+  // back so the check can be retried without reopening the dialog.
+  useEffect(() => {
+    if (updateStatus !== 'error') return;
+    const timer = setTimeout(() => setUpdateStatus(null), UPDATE_ERROR_DISPLAY_MS);
+    return () => clearTimeout(timer);
+  }, [updateStatus]);
+
   const handleClose = () => {
+    checkIdRef.current++;
     setIsOpen(false);
     setUpdateStatus(null);
   };
