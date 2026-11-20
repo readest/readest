@@ -31,6 +31,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
   pickerPosition = 'left',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,6 +55,25 @@ const ColorInput: React.FC<ColorInputProps> = ({
     onChange(colorResultHex);
   };
 
+  // The settings dialog claims Escape on the <dialog> element (and on window) to
+  // mean "step back one level", so while the picker is open Escape would cancel
+  // the whole page — in the theme editor that drops the entire unsaved draft when
+  // the user only meant to put the picker away. Claim the key for as long as the
+  // picker is open. Listen on the wrapper, not the popup: the picker is opened
+  // from the swatch, so focus usually sits on a button outside `pickerRef`.
+  // Closing this way is a dismissal, not "done choosing", so onCommit stays out.
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!isOpen || !wrapper) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.stopPropagation();
+      setIsOpen(false);
+    };
+    wrapper.addEventListener('keydown', handleKeyDown);
+    return () => wrapper.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   // Anchored positioning only applies from `sm` up; below that the popup is
   // rendered as a centered floating card (see the popup container classes) so
   // it can never overflow the panel and cause horizontal scrolling.
@@ -67,7 +87,7 @@ const ColorInput: React.FC<ColorInputProps> = ({
   };
 
   return (
-    <div className='relative flex items-center gap-1.5'>
+    <div ref={wrapperRef} className='relative flex items-center gap-1.5'>
       <button
         type='button'
         onClick={() => setIsOpen(!isOpen)}
