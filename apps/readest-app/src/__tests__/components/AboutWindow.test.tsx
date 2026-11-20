@@ -81,7 +81,14 @@ vi.mock('@/components/Link', () => ({
   default: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }));
 vi.mock('@/components/Dialog', () => ({
-  default: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  default: ({ children, onClose }: { children: ReactNode; onClose: () => void }) => (
+    <div>
+      <button type='button' onClick={onClose}>
+        Close dialog
+      </button>
+      {children}
+    </div>
+  ),
 }));
 
 import { AboutWindow, setAboutDialogVisible } from '@/components/AboutWindow';
@@ -205,6 +212,36 @@ describe('AboutWindow check update error auto-revert', () => {
     });
     expect(screen.queryByText('Error checking for updates')).toBeNull();
     expect(screen.getByRole('button', { name: 'Check Update' })).toBeTruthy();
+  });
+
+  it('ignores a check that was abandoned by closing the dialog', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    mockCheckForAppUpdates.mockImplementation(() => new Promise(() => {}));
+    await openDialog();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check Update' }));
+    expect(await screen.findByText('Checking for updates...')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close dialog' }));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+      setAboutDialogVisible(true);
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Check Update' }));
+    expect(await screen.findByText('Checking for updates...')).toBeTruthy();
+
+    // The abandoned check's deadline passes while the new check still runs.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(screen.getByText('Checking for updates...')).toBeTruthy();
+    expect(screen.queryByText('Error checking for updates')).toBeNull();
+
+    // The new check's own deadline still reports.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+    expect(screen.getByText('Error checking for updates')).toBeTruthy();
   });
 
   it('turns a hung check into the error state after the deadline', async () => {

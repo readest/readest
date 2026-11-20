@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { invoke } from '@tauri-apps/api/core';
 import { useEnv } from '@/context/EnvContext';
@@ -35,6 +35,9 @@ export const AboutWindow = () => {
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [browserInfo, setBrowserInfo] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  // Closing the dialog abandons a running check: only the latest check may
+  // change the status.
+  const checkIdRef = useRef(0);
 
   useEffect(() => {
     setBrowserInfo(parseWebViewInfo(appService));
@@ -76,6 +79,7 @@ export const AboutWindow = () => {
   }, []);
 
   const handleCheckUpdate = async () => {
+    const checkId = ++checkIdRef.current;
     setUpdateStatus('checking');
     // The manifest requests have no read timeout, so bound the wait here.
     let deadline: ReturnType<typeof setTimeout> | undefined;
@@ -89,12 +93,14 @@ export const AboutWindow = () => {
           );
         }),
       ]);
+      if (checkId !== checkIdRef.current) return;
       if (hasUpdate) {
         handleClose();
       } else {
         setUpdateStatus('updated');
       }
     } catch (error) {
+      if (checkId !== checkIdRef.current) return;
       console.info('Error checking for updates:', error);
       setUpdateStatus('error');
     } finally {
@@ -120,6 +126,7 @@ export const AboutWindow = () => {
   }, [updateStatus]);
 
   const handleClose = () => {
+    checkIdRef.current++;
     setIsOpen(false);
     setUpdateStatus(null);
   };
