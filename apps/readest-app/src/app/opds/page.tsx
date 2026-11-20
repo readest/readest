@@ -749,7 +749,9 @@ export default function BrowserPage() {
             if (book) {
               queueOPDSBookUploads(!!user, useSettingsStore.getState().settings, [book]);
             }
-            setLibrary(library);
+            // importBook appended to the store's own array: hand back a new
+            // one so useLibraryFileSync sees the import (#7464).
+            setLibrary([...library]);
             appService.saveLibraryBooks(library);
             return book;
           } catch (importError) {
