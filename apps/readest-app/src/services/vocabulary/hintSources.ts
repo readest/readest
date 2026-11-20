@@ -10,8 +10,9 @@ import type { VocabularyOccurrence } from './types';
 
 const MAX_HINT_LEN = 40;
 // One or more /…/ or […] pronunciations with only marks between and after them
-// (ECDICT: `[ә'ridʒineit] - ★★`). `[数学] 区间 [0, 1]` has words between, so it's a sense.
-const PRONUNCIATION = /^(?:(?:\/[^/]*\/|\[[^\]]*\])[^\p{L}/[]*)+$/u;
+// (ECDICT: `[ә'ridʒineit] - ★★`). Words or numbers after a bracket make it a
+// sense: `[数学] 区间 [0, 1]`, `[数学] 0, 1`.
+const PRONUNCIATION = /^(?:(?:\/[^/]*\/|\[[^\]]*\])[^\p{L}\p{N}/[]*)+$/u;
 const SENSE_BREAK = /[;；]|\.(?:\s|$)/;
 
 const capAtWord = (s: string) => {

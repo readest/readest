@@ -42,6 +42,7 @@ describe('firstSense', () => {
   it('keeps a sense that starts with a bracketed label', () => {
     expect(firstSense('[计] 发自', 'originate')).toBe('[计] 发自');
     expect(firstSense('[数学] 区间 [0, 1]。', 'interval')).toBe('[数学] 区间 [0, 1]。');
+    expect(firstSense('[数学] 0, 1。', 'interval')).toBe('[数学] 0, 1。');
   });
 
   it('skips a line of two pronunciations', () => {
@@ -62,7 +63,10 @@ describe('hintFromDictionary', () => {
     label: id,
     lookup: async (_word, ctx) => {
       if (text === null) return { ok: false, reason: 'empty' };
-      ctx.container.textContent = text;
+      // Plain-text entries render in a <pre>, as the StarDict/DICT/slob providers do.
+      const pre = document.createElement('pre');
+      pre.textContent = text;
+      ctx.container.append(pre);
       return { ok: true };
     },
   });
