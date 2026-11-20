@@ -94,17 +94,16 @@ const TOCItemView = React.memo<{
   flatItem: FlatTOCItem;
   itemSize?: number;
   isActive: boolean;
+  screenPage?: number;
   onToggleExpand: (item: TOCItem) => void;
   onItemClick: (item: TOCItem) => void;
-}>(({ id, isFocused, flatItem, itemSize, isActive, onToggleExpand, onItemClick }) => {
+}>(({ id, isFocused, flatItem, itemSize, isActive, screenPage, onToggleExpand, onItemClick }) => {
   const { item, depth } = flatItem;
   const expandable = !!item.subitems || !!flatItem.hasPages;
 
-  const pageNumber = item.location
-    ? item.location.current + 1
-    : item.index !== undefined
-      ? item.index + 1
-      : null;
+  const pageNumber =
+    screenPage ??
+    (item.location ? item.location.current + 1 : item.index !== undefined ? item.index + 1 : null);
   const ariaLabel = item.label
     ? pageNumber !== null
       ? `${item.label}, ${pageNumber}`
@@ -166,12 +165,12 @@ const TOCItemView = React.memo<{
         </button>
       )}
       <div className='ms-2 min-w-0 break-words'>{item.label}</div>
-      {(item.location || item.index !== undefined) && (
+      {pageNumber !== null && (
         <div
           aria-hidden='true'
           className='text-base-content/50 ms-auto shrink-0 ps-1 text-xs sm:pe-1'
         >
-          {item.location ? item.location.current + 1 : item.index + 1}
+          {pageNumber}
         </div>
       )}
     </div>
@@ -187,6 +186,8 @@ interface ListRowProps {
   flatItem: FlatTOCItem;
   itemSize?: number;
   activeHref: string | null;
+  /** The screen page the item starts on, with Stable Page Numbers off. */
+  screenPage?: number;
   onToggleExpand: (item: TOCItem) => void;
   onItemClick: (item: TOCItem) => void;
 }
@@ -198,6 +199,7 @@ export const StaticListRow: React.FC<ListRowProps> = ({
   flatItem,
   itemSize,
   activeHref,
+  screenPage,
   onToggleExpand,
   onItemClick,
 }) => {
@@ -218,6 +220,7 @@ export const StaticListRow: React.FC<ListRowProps> = ({
         flatItem={flatItem}
         itemSize={itemSize}
         isActive={isActive}
+        screenPage={screenPage}
         onToggleExpand={onToggleExpand}
         onItemClick={onItemClick}
       />

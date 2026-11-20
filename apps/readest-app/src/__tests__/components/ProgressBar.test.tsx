@@ -21,10 +21,14 @@ let currentBookData: {
   bookDoc?: {
     metadata?: Record<string, unknown>;
     toc?: TOCItem[];
-    sections?: { location?: { current: number; next: number; total: number }; size?: number }[];
+    sections?: {
+      location?: { current: number; next: number; total: number };
+      size?: number;
+      linear?: string;
+    }[];
   };
 } | null;
-let currentRenderer: { page: number; pages: number };
+let currentRenderer: { page: number; pages: number; atEnd?: boolean };
 let currentSectionFractions: number[] = [];
 let currentTocHrefIndex: Record<string, number> = {};
 
@@ -197,7 +201,7 @@ describe('ProgressBar — percent readout', () => {
 describe('ProgressBar — calibrated page pair', () => {
   const setupFraction = (opts?: {
     fraction?: number;
-    sections?: { size?: number }[];
+    sections?: { size?: number; linear?: string }[];
     scrolled?: boolean;
     stablePageNumbers?: boolean;
   }) => {
@@ -240,14 +244,15 @@ describe('ProgressBar — calibrated page pair', () => {
     expect(container.querySelector('.progress-info-label')?.textContent).toBe('6 / 12');
   });
 
-  it('opens on the byte-grid estimate before any chapter is measured', () => {
-    // 7000 bytes at 1500 bytes/screen -> 4.67 total; base 2 + page 1.
+  it('estimates whole screens from bytes before any chapter is measured', () => {
+    // At 1500 bytes/screen the chapters fill 1, 2 and 3 screens (their last
+    // one partly); base 3 + page 1.
     setupFraction({ sections: [{ size: 1000 }, { size: 2000 }, { size: 4000 }] });
     currentRenderer = { page: 1, pages: 3 };
 
     const { container } = renderProgressBar();
 
-    expect(container.querySelector('.progress-info-label')?.textContent).toBe('4 / 5');
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('5 / 6');
   });
 
   it('keeps chunked chapters smooth via the byte-domain fraction', () => {
@@ -261,7 +266,35 @@ describe('ProgressBar — calibrated page pair', () => {
 
     const { container } = renderProgressBar();
 
-    expect(container.querySelector('.progress-info-label')?.textContent).toBe('503 / 1002');
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('504 / 1004');
+  });
+
+  it('reads total / total on the last screen when the book ends with a non-linear item (#7453)', () => {
+    setupFraction({ sections: [{ size: 3000 }, { size: 3000 }, { size: 1500, linear: 'no' }] });
+    currentProgress = { ...makeProgress(1, 3), fraction: 0.99 } as BookProgress;
+    recordChapterScreens('book-1', 0, 2);
+    recordChapterScreens('book-1', 1, 2);
+    currentRenderer = { page: 1, pages: 2 };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('4 / 4');
+  });
+
+  it('reads total / total on the last screen when a short last chapter shares it', () => {
+    // Two columns: "About the Author" ends on the left page and the one-column
+    // last chapter fills the right one. The spread's primary chapter is the
+    // first, so the last chapter's screen is never counted as reached.
+    setupFraction({ sections: [{ size: 3000 }, { size: 3000 }, { size: 1000 }] });
+    currentProgress = { ...makeProgress(1, 3), fraction: 0.9 } as BookProgress;
+    recordChapterScreens('book-1', 0, 2);
+    recordChapterScreens('book-1', 1, 2);
+    recordChapterScreens('book-1', 2, 1);
+    currentRenderer = { page: 1, pages: 2, atEnd: true };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('5 / 5');
   });
 
   it('falls back to the book-level pair in scrolled mode', () => {
