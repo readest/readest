@@ -13,6 +13,7 @@ import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
 import { useAvailablePlans } from '@/hooks/useAvailablePlans';
+import { useEscapeToGoBack } from '@/hooks/useEscapeToGoBack';
 import type { PlanType } from '@/types/quota';
 import { navigateBackFromProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
@@ -135,6 +136,7 @@ const ProfilePage = () => {
       navigateBackFromProfile(router, searchParams?.get('redirect'), readerBeneath);
     }
   };
+  useEscapeToGoBack(handleGoBack);
 
   const handleStripeSubscribe = async (productId?: string, planType: PlanType = 'subscription') => {
     if (!productId) return;

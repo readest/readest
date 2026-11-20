@@ -12,6 +12,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
+import { useEscapeToGoBack } from '@/hooks/useEscapeToGoBack';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -263,6 +264,7 @@ export default function AuthPage() {
       router.back();
     }
   };
+  useEscapeToGoBack(handleGoBack);
 
   useEffect(() => {
     if (!isTauriAppPlatform()) return;

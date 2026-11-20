@@ -121,6 +121,16 @@ describe('AuthPage back arrow', () => {
     expect(mocks.router.push).not.toHaveBeenCalled();
     expect(mocks.router.back).not.toHaveBeenCalled();
   });
+
+  it('closes the login page on Escape', () => {
+    mocks.viewStates = { 'book1-abc': {} };
+    openLoginPage(READER);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(mocks.router.back).toHaveBeenCalledTimes(1);
+    expect(mocks.router.replace).not.toHaveBeenCalled();
+  });
 });
 
 describe('AuthPage after signing in', () => {

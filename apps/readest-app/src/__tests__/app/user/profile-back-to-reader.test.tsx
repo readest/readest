@@ -89,3 +89,25 @@ it('reports no book beneath when none is open', () => {
 
   expect(navigateBackFromProfile).toHaveBeenCalledWith(mocks.router, '/reader?ids=book1', false);
 });
+
+it('closes the account page on Escape', () => {
+  mocks.viewStates = { 'book1-1': {} };
+  render(<ProfilePage />);
+
+  fireEvent.keyDown(window, { key: 'Escape' });
+
+  expect(navigateBackFromProfile).toHaveBeenCalledWith(mocks.router, '/reader?ids=book1', true);
+});
+
+it('lets an open dialog keep Escape instead of leaving the account page', () => {
+  render(
+    <>
+      <ProfilePage />
+      <div role='dialog'>Confirm deletion</div>
+    </>,
+  );
+
+  fireEvent.keyDown(window, { key: 'Escape' });
+
+  expect(navigateBackFromProfile).not.toHaveBeenCalled();
+});
