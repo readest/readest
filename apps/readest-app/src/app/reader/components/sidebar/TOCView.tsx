@@ -1,4 +1,12 @@
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useOverlayScrollbars } from 'overlayscrollbars-react';
 import 'overlayscrollbars/overlayscrollbars.css';
@@ -7,9 +15,16 @@ import { BookDoc, TOCItem } from '@/libs/document';
 import { BookProgress } from '@/types/book';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
+import { useBookDataStore } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
+import { getChapterScreensVersion, subscribeChapterScreens } from '@/utils/chapterScreens';
+import {
+  getLocationScreenPages,
+  getScreenPageInfo,
+  usesScreenPages,
+} from '../../utils/screenPages';
 import { useTextTranslation } from '../../hooks/useTextTranslation';
 import {
   buildTOCDisplayItems,
@@ -247,11 +262,24 @@ const TOCView: React.FC<{
     () => buildTOCListItems(toc, expandedItems, pageRanges, totalPages, thumbnailsPerRow),
     [toc, expandedItems, pageRanges, totalPages, thumbnailsPerRow],
   );
+  // With Stable Page Numbers off, items and the current position count the
+  // screen pages the footer shows.
+  const isFixedLayout = useBookDataStore((s) => !!s.getBookData(bookKey)?.isFixedLayout);
+  const screenPages = usesScreenPages(viewSettings, isFixedLayout, bookDoc.sections);
+  const screensVersion = useSyncExternalStore(subscribeChapterScreens, getChapterScreensVersion);
+  const locationScreenPages = useMemo(
+    () => (screenPages ? getLocationScreenPages(bookKey, bookDoc.sections) : null),
+    [screenPages, bookKey, bookDoc.sections, screensVersion],
+  );
+  const currentPageNumber =
+    screenPages && progress
+      ? getScreenPageInfo(bookKey, getView(bookKey), bookDoc.sections, progress).current + 1
+      : progress?.page;
   // Inject a "current position" row under the active item showing the current
   // reading page.
   const displayItems = useMemo(
-    () => buildTOCDisplayItems(flatItems, activeHref, progress?.page),
-    [flatItems, activeHref, progress?.page],
+    () => buildTOCDisplayItems(flatItems, activeHref, currentPageNumber),
+    [flatItems, activeHref, currentPageNumber],
   );
   // Keep the refs read by the OverlayScrollbars `initialized` callback current.
   activeHrefRef.current = activeHref;
@@ -487,6 +515,9 @@ const TOCView: React.FC<{
                 bookKey={bookKey}
                 flatItem={row}
                 activeHref={activeHref}
+                screenPage={
+                  row.item.location ? locationScreenPages?.get(row.item.location) : undefined
+                }
                 onToggleExpand={handleToggleExpand}
                 onItemClick={handleItemClick}
               />

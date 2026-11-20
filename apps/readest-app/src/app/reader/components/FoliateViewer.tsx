@@ -312,6 +312,68 @@ const FoliateViewer: React.FC<{
     relocateRafRef.current = null;
     cancelAnimationFrame(id);
   }, []);
+  const sampleChapterScreens = useCallback(
+    (sampledSpine: number | undefined) => {
+      // Sample the section's measured spread count as it becomes primary: the
+      // session map calibrates the book-level page pair (chapterScreens.ts).
+      // Chunked sections report chunk-local counts, so they stay byte-estimated.
+      // getBookData is re-read here, not captured: this callback is memoized
+      // without bookData, and the book document loads after the first render.
+      const spineChanged = sampledSpine != null && sampledSpine !== lastSampledSpineRef.current;
+      if (spineChanged) {
+        lastSampledSpineRef.current = sampledSpine;
+        const sectionSize = getBookData(bookKey)?.bookDoc?.sections?.[sampledSpine]?.size;
+        if (
+          (sectionSize ?? 0) <= CHUNKED_SECTION_THRESHOLD &&
+          !getMeasuredChapterScreens(bookKey)?.has(sampledSpine)
+        ) {
+          const measuredPages = viewRef.current?.renderer?.pages;
+          if (measuredPages && measuredPages > 0) {
+            recordChapterScreens(bookKey, sampledSpine, measuredPages);
+          }
+        }
+      }
+      // Harvest every loaded section's measured count (primary, preloaded
+      // neighbors, rendered chunks): with readest/foliate-js#133 the whole
+      // preloaded window is exact, not just the current chapter. No-op on
+      // foliate builds without the exposed contentPages. contentPages counts
+      // columns; the paginator exposes its real column count as a public
+      // property, so convert per section to spreads with ceil for the partial
+      // final screen. Deriving the ratio from renderer.pages instead would be
+      // wrong — that getter rounds, so e.g. 3 columns / 2 per screen reads 1.5.
+      const loadedContents = viewRef.current?.renderer?.getContents?.();
+      const columnCount = viewRef.current?.renderer?.columnCount ?? 0;
+      if (loadedContents?.length && columnCount > 0) {
+        // Chunked sections stay out of the harvest: getContents() lists one
+        // entry per rendered chunk, so a spine sum is only a partial count that
+        // grows as later chunks render - freezing it as the chapter's measured
+        // weight would understate it. They keep the byte estimate (the primary
+        // item above still contributes its column ratio even when chunked).
+        const sectionSizes = getBookData(bookKey)?.bookDoc?.sections;
+        harvestLoadedChapterScreens(
+          bookKey,
+          loadedContents
+            .filter(
+              (c) =>
+                (c.index == null ? 0 : (sectionSizes?.[c.index]?.size ?? 0)) <=
+                CHUNKED_SECTION_THRESHOLD,
+            )
+            .map((c) => ({
+              index: c.index,
+              contentPages: Math.ceil((c.contentPages ?? 0) / columnCount),
+            })),
+        );
+      }
+      if (spineChanged) {
+        // Freeze the readout weights at chapter entry: the snapshot adopts this
+        // chapter's fresh measurement plus everything harvested since the last
+        // entry, so estimate corrections land at chapter boundaries - never
+        // mid-chapter, where they would break the one-page-per-turn cadence.
+        snapshotChapterScreens(bookKey);
+      }
+    },
+    [bookKey],
+  );
   const { isWipeAhead } = autoScroll;
   const commitRelocate = useCallback(() => {
     cancelRelocateScheduled();
@@ -346,65 +408,8 @@ const FoliateViewer: React.FC<{
     // Stable page numbers (the default) keep the byte-grid pair and need no
     // measurements; only the screen-counted readout samples chapters.
     if (getViewSettings(bookKey)?.stablePageNumbers !== false) return;
-    // Sample the section's measured spread count as it becomes primary: the
-    // session map calibrates the book-level page pair (chapterScreens.ts).
-    // Chunked sections report chunk-local counts, so they stay byte-estimated.
-    // getBookData is re-read here, not captured: this callback is memoized
-    // without bookData, and the book document loads after the first render.
-    const sampledSpine = detail.section?.current;
-    const spineChanged = sampledSpine != null && sampledSpine !== lastSampledSpineRef.current;
-    if (spineChanged) {
-      lastSampledSpineRef.current = sampledSpine;
-      const sectionSize = getBookData(bookKey)?.bookDoc?.sections?.[sampledSpine]?.size;
-      if (
-        (sectionSize ?? 0) <= CHUNKED_SECTION_THRESHOLD &&
-        !getMeasuredChapterScreens(bookKey)?.has(sampledSpine)
-      ) {
-        const measuredPages = viewRef.current?.renderer?.pages;
-        if (measuredPages && measuredPages > 0) {
-          recordChapterScreens(bookKey, sampledSpine, measuredPages);
-        }
-      }
-    }
-    // Harvest every loaded section's measured count (primary, preloaded
-    // neighbors, rendered chunks): with readest/foliate-js#133 the whole
-    // preloaded window is exact, not just the current chapter. No-op on
-    // foliate builds without the exposed contentPages. contentPages counts
-    // columns; the paginator exposes its real column count as a public
-    // property, so convert per section to spreads with ceil for the partial
-    // final screen. Deriving the ratio from renderer.pages instead would be
-    // wrong — that getter rounds, so e.g. 3 columns / 2 per screen reads 1.5.
-    const loadedContents = viewRef.current?.renderer?.getContents?.();
-    const columnCount = viewRef.current?.renderer?.columnCount ?? 0;
-    if (loadedContents?.length && columnCount > 0) {
-      // Chunked sections stay out of the harvest: getContents() lists one
-      // entry per rendered chunk, so a spine sum is only a partial count that
-      // grows as later chunks render - freezing it as the chapter's measured
-      // weight would understate it. They keep the byte estimate (the primary
-      // item above still contributes its column ratio even when chunked).
-      const sectionSizes = getBookData(bookKey)?.bookDoc?.sections;
-      harvestLoadedChapterScreens(
-        bookKey,
-        loadedContents
-          .filter(
-            (c) =>
-              (c.index == null ? 0 : (sectionSizes?.[c.index]?.size ?? 0)) <=
-              CHUNKED_SECTION_THRESHOLD,
-          )
-          .map((c) => ({
-            index: c.index,
-            contentPages: Math.ceil((c.contentPages ?? 0) / columnCount),
-          })),
-      );
-    }
-    if (spineChanged) {
-      // Freeze the readout weights at chapter entry: the snapshot adopts this
-      // chapter's fresh measurement plus everything harvested since the last
-      // entry, so estimate corrections land at chapter boundaries - never
-      // mid-chapter, where they would break the one-page-per-turn cadence.
-      snapshotChapterScreens(bookKey);
-    }
-  }, [bookKey, setProgress, cancelRelocateScheduled, isWipeAhead]);
+    sampleChapterScreens(detail.section?.current);
+  }, [bookKey, setProgress, cancelRelocateScheduled, isWipeAhead, sampleChapterScreens]);
 
   const progressRelocateHandler = (event: Event) => {
     // Foliate can emit a late relocation after close() clears its progress
@@ -482,6 +487,14 @@ const FoliateViewer: React.FC<{
   useEffect(() => {
     invalidateChapterScreens();
   }, [bookKey, invalidateChapterScreens, settingsFingerprint]);
+  // Turning Stable Page Numbers off lays nothing out again, so no relocate
+  // follows: measure the loaded chapters now, or the readouts keep byte-grid
+  // numbers until the next page turn (#7445). Runs after the drop above.
+  const stablePageNumbers = viewSettings?.stablePageNumbers;
+  useEffect(() => {
+    if (stablePageNumbers !== false) return;
+    sampleChapterScreens(viewRef.current?.renderer?.primaryIndex);
+  }, [stablePageNumbers, sampleChapterScreens]);
 
   // Same for container resizes (window, sidebar, orientation): the paginator
   // re-renders on resize, invalidating every measured count. The view element
