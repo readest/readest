@@ -400,14 +400,15 @@ export class TTSController extends EventTarget {
   }
 
   // In the browser on iOS, Web Speech is silent while the looping element from
-  // unblockAudio() plays, so the element goes while Web Speech reads and comes
-  // back for the other engines, which need it to play with the mute switch on.
+  // unblockAudio() plays, so the element goes while a direct-speak engine (the
+  // OS renders its audio; Web Speech there) reads and comes back for the other
+  // engines, which need it to play with the mute switch on.
   // Synced when reading starts, not where the engine is chosen: setLang() can
   // still switch engines after init(), and a start stopped before it speaks
   // must not bring the element back.
   #syncSilentAudio() {
     if (this.#releasesSilentAudio()) {
-      if (this.ttsClient === this.ttsWebClient) releaseUnblockAudio();
+      if (this.ttsClient.getCapabilities().mediaClock === false) releaseUnblockAudio();
       else unblockAudio();
     }
   }
