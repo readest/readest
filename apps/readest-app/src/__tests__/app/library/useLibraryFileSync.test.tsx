@@ -9,8 +9,9 @@ import type { Book } from '@/types/book';
  * it no longer builds an engine or talks to a backend itself, it only decides
  * WHEN to call `runFileLibrarySyncPass` (Task 7's shared pass, which owns
  * device ids, strategy, progress, lastSyncedAt, per-backend failure isolation
- * and the mutex). These tests cover the three things left in the hook's remit:
+ * and the mutex). These tests cover what is left in the hook's remit:
  *   - it debounces bursts of library changes into a single pass call
+ *   - leaving the screen runs a waiting pass rather than dropping it (#7464)
  *   - it never fires when no third-party backend is active
  *   - it never fires before the library has loaded from disk
  */
@@ -95,6 +96,31 @@ describe('useLibraryFileSync trigger (issue #5062 Task 8)', () => {
       vi.advanceTimersByTime(5_000);
     });
 
+    expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs a waiting pass when the screen unmounts instead of dropping it (#7464)', async () => {
+    routing.backends = ['webdav'];
+
+    const { rerender, unmount } = renderHook(() => useLibraryFileSync());
+
+    // A book is imported, then the user leaves the screen (opens the book,
+    // goes back from the OPDS catalog) before the quiet window ends.
+    act(() => {
+      useLibraryStore.setState({ library: [book('a')], libraryLoaded: true });
+    });
+    rerender();
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    expect(runFileLibrarySyncPass).not.toHaveBeenCalled();
+
+    unmount();
+    expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      vi.advanceTimersByTime(10_000);
+    });
     expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(1);
   });
 

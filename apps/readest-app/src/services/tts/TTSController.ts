@@ -34,7 +34,8 @@ import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDow
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { startAudioKeepAlive, stopAudioKeepAlive } from './WebAudioPlayer';
-import { releaseUnblockAudio } from './ttsMediaBridge';
+import { releaseUnblockAudio, unblockAudio } from './ttsMediaBridge';
+import { getOSPlatform } from '@/utils/misc';
 import { isSameLang, isValidLang } from '@/utils/lang';
 import { normalizeLyricText } from '@/utils/ttsLyrics';
 import {
@@ -396,6 +397,35 @@ export class TTSController extends EventTarget {
     queueMicrotask(() => {
       this.dispatchEvent(new CustomEvent('tts-session-ended', { detail: { reason } }));
     });
+  }
+
+  // In the browser on iOS, Web Speech is silent while the looping element from
+  // unblockAudio() plays, so the element goes while a direct-speak engine (the
+  // OS renders its audio; Web Speech there) reads and comes back for the other
+  // engines, which need it to play with the mute switch on.
+  // Synced when reading starts, not where the engine is chosen: setLang() can
+  // still switch engines after init(), and a start stopped before it speaks
+  // must not bring the element back.
+  #syncSilentAudio() {
+    if (this.#releasesSilentAudio()) {
+      if (this.ttsClient.getCapabilities().mediaClock === false) releaseUnblockAudio();
+      else unblockAudio();
+    }
+  }
+
+  // For the tap that changes the voice, before it awaits anything: start()
+  // runs after those awaits, where the browser may refuse to play an element
+  // it creates. Only needed where #syncSilentAudio() releases the element.
+  unblockSilentAudio() {
+    if (this.#releasesSilentAudio()) unblockAudio();
+  }
+
+  // iPadOS Safari sends a desktop ("Macintosh") user agent; touch points give
+  // it away.
+  #releasesSilentAudio() {
+    const os = getOSPlatform();
+    const iOS = os === 'ios' || (os === 'macos' && navigator.maxTouchPoints > 1);
+    return iOS && !this.appService?.isIOSApp;
   }
 
   // Keep the hidden WebView schedulable, in the two cases where it would
@@ -2219,6 +2249,7 @@ export class TTSController extends EventTarget {
   }
 
   async speak(ssml: string | Promise<string>, oneTime = false, oneTimeCallback?: () => void) {
+    this.#syncSilentAudio();
     await this.initViewTTS();
     this.#speak(ssml, oneTime)
       .then(() => {
@@ -2239,6 +2270,7 @@ export class TTSController extends EventTarget {
   }
 
   async start() {
+    this.#syncSilentAudio();
     await this.initViewTTS();
     // Always resume from the current list position instead of calling tts.start().
     // tts.start() resets the TTS list to position 0 (section beginning), which is
