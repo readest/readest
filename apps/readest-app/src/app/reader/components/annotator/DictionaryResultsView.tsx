@@ -572,6 +572,8 @@ interface DictionaryResultsHeaderProps {
   /** Shows the Learning / Mastered chips for `currentWord` in this language. */
   vocabularyLang?: string;
   manualVocabularyOccurrence?: VocabularyOccurrence;
+  /** Pointer handlers that make the title row a handle for moving the popup (#7713). */
+  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
 }
 
 export const VocabularyChips: React.FC<{
@@ -685,11 +687,18 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   speaking,
   vocabularyLang,
   manualVocabularyOccurrence,
+  dragHandleProps,
 }) => {
   const _ = useTranslation();
   return (
     <div className={clsx('w-full', headerClassName)}>
-      <div className='flex h-8 w-full items-center justify-between px-2'>
+      <div
+        {...dragHandleProps}
+        className={clsx(
+          'flex h-8 w-full items-center justify-between px-2',
+          dragHandleProps && 'cursor-move touch-none select-none',
+        )}
+      >
         <div className='flex h-8 w-8 items-center justify-center'>
           {canGoBack ? (
             <button

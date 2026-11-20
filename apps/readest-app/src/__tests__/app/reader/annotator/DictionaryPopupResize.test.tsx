@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 /**
  * The desktop / tablet dictionary popup can be resized from a corner grip
- * (#7344). The size lasts for the lookup only: the next lookup opens at the
- * default responsive size again.
+ * (#7344) and moved by its title row (#7713). The box lasts for the lookup
+ * only: the next lookup opens at the default responsive size again.
  */
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
@@ -15,7 +15,16 @@ vi.mock('@/hooks/useKeyDownActions', () => ({
 }));
 vi.mock('@/app/reader/components/annotator/DictionaryResultsView', () => ({
   useDictionaryResults: () => ({}),
-  DictionaryResultsHeader: () => <div>header</div>,
+  DictionaryResultsHeader: ({
+    dragHandleProps,
+  }: {
+    dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
+  }) => (
+    <div data-testid='title-row' {...dragHandleProps}>
+      <button type='button'>back</button>
+      header
+    </div>
+  ),
   DictionaryResultsBody: () => <div>body</div>,
 }));
 
@@ -50,7 +59,8 @@ const renderPopup = () => {
   });
   const grip = container.querySelector<HTMLElement>('[data-dictionary-popup-resize]');
   expect(grip, 'the popup has a resize grip').not.toBeNull();
-  return { container, popup, grip: grip! };
+  const titleRow = container.querySelector<HTMLElement>('[data-testid="title-row"]')!;
+  return { container, popup, grip: grip!, titleRow };
 };
 
 const drag = (grip: HTMLElement, dx: number, dy: number) => {
@@ -128,5 +138,71 @@ describe('DictionaryPopup resize grip', () => {
     expect(popup.style.height).toBe('360px');
     expect(setItem).not.toHaveBeenCalled();
     setItem.mockRestore();
+  });
+});
+
+describe('DictionaryPopup title-row move', () => {
+  beforeAll(() => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+  });
+  afterEach(cleanup);
+  afterAll(() => vi.unstubAllGlobals());
+
+  it('moves with the pointer at its size and lets go of the word', () => {
+    const { container, popup, titleRow } = renderPopup();
+
+    drag(titleRow, -200, 150);
+    expect(boxOf(popup)).toEqual({ x: 100, y: 250, w: 480, h: 360 });
+    expect(container.querySelector('.popup-triangle-inner')).toBeNull();
+    expect(container.querySelector('.popup-triangle-outer')).toBeNull();
+  });
+
+  it('stays inside the book cell', () => {
+    const { popup, titleRow } = renderPopup();
+
+    drag(titleRow, 5000, 5000);
+    expect(boxOf(popup)).toEqual({
+      x: CELL.w - PADDING - 480,
+      y: CELL.h - PADDING - 360,
+      w: 480,
+      h: 360,
+    });
+
+    drag(titleRow, -5000, -5000);
+    expect(boxOf(popup)).toEqual({ x: PADDING, y: PADDING, w: 480, h: 360 });
+  });
+
+  it('stays on the word after a press with no real travel, like a tap', () => {
+    const { container, popup, titleRow } = renderPopup();
+
+    drag(titleRow, 2, -2);
+    expect(boxOf(popup)).toEqual({ x: 300, y: 100, w: 480, h: 360 });
+    expect(container.querySelector('.popup-triangle-inner')).toBeTruthy();
+  });
+
+  it('leaves presses on the title row buttons to the buttons', () => {
+    const { container, popup, titleRow } = renderPopup();
+
+    drag(titleRow.querySelector('button')!, -200, 150);
+    expect(boxOf(popup)).toEqual({ x: 300, y: 100, w: 480, h: 360 });
+    expect(container.querySelector('.popup-triangle-inner')).toBeTruthy();
+  });
+
+  it('widens after moving away from the cell edge it opened against', () => {
+    const { popup, grip, titleRow } = renderPopup();
+    // A word near the end edge: the grip has no room left to drag outward.
+    drag(titleRow, 5000, 0);
+    expect(boxOf(popup)).toMatchObject({ x: CELL.w - PADDING - 480, w: 480 });
+
+    drag(titleRow, -400, 0);
+    drag(grip, 300, 0);
+    expect(boxOf(popup)).toMatchObject({ x: CELL.w - PADDING - 880, w: 780 });
   });
 });
