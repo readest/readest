@@ -9,7 +9,8 @@ import type { VocabularyOccurrence } from './types';
 // (#6613): the reader's own dictionaries, or the AI context dictionary.
 
 const MAX_HINT_LEN = 40;
-const PRONUNCIATION = /^[/[].*[/\]]$/;
+// A pronunciation, with any marks after it but no words (ECDICT: `[ә'ridʒineit] - ★★`).
+const PRONUNCIATION = /^[/[].*[/\]][^\p{L}]*$/u;
 const SENSE_BREAK = /[;；]|\.(?:\s|$)/;
 
 const capAtWord = (s: string) => {
@@ -63,12 +64,20 @@ const BLOCK_TAGS = new Set([
   'BR',
 ]);
 
+// Stylesheets and scripts a dictionary renders hold no definition text (#7446).
+const NON_TEXT = 'style, script';
+
 // Text of a rendered entry, one line per block, including the open shadow
 // roots MDict renders into. The container is detached, so block boundaries
 // come from tag names (computed styles don't exist off-document).
 const textOf = (node: Node): string => {
+  if (node instanceof Element && node.matches(NON_TEXT)) return '';
   if (node instanceof Element && node.shadowRoot) return textOf(node.shadowRoot);
-  if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? '';
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent ?? '';
+    // Line breaks in HTML source show as spaces; a plain-text entry's <pre> keeps them.
+    return node.parentElement?.closest('pre') ? text : text.replace(/\s+/g, ' ');
+  }
   const parts: string[] = [];
   for (const child of node.childNodes) parts.push(textOf(child));
   return parts.join('') + (node instanceof Element && BLOCK_TAGS.has(node.tagName) ? '\n' : '');
@@ -80,7 +89,7 @@ const firstDefinition = (root: Element | ShadowRoot): string => {
   const li = root.querySelector('li');
   if (li) {
     const own = li.cloneNode(true) as Element;
-    own.querySelectorAll('ul, ol').forEach((list) => list.remove());
+    own.querySelectorAll(`ul, ol, ${NON_TEXT}`).forEach((el) => el.remove());
     return own.textContent?.replace(/\s+/g, ' ').trim() ?? '';
   }
   for (const el of root.querySelectorAll('*')) {
