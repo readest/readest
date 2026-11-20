@@ -16,7 +16,8 @@ import { runFileLibrarySyncPass } from '@/services/sync/file/runLibrarySync';
  * reading, but never touches the shared `library.json` index. This hook fills
  * that gap: it runs a sync pass whenever the library changes — importing,
  * deleting, or closing a book all mutate the library array — so `library.json`
- * (book metadata + tombstones) stays current on every mirror.
+ * (book metadata + tombstones) stays current on every mirror. The OPDS browser
+ * mounts it too, since a catalog download imports a book off this screen.
  *
  * All the execution (engine construction, transport readiness, device ids,
  * strategy, progress, per-backend failure isolation, the held mutex) lives in
@@ -45,7 +46,10 @@ export const useLibraryFileSync = () => {
   const passRef = useRef<() => void>(() => {});
   passRef.current = () => void runFileLibrarySyncPass(envConfig, _);
   const debouncedSync = useMemo(() => debounce(() => passRef.current(), SYNC_DEBOUNCE_MS), []);
-  useEffect(() => () => debouncedSync.cancel(), [debouncedSync]);
+  // Leaving the screen inside the quiet window (opening a book right after an
+  // import) runs the waiting pass now. Cancelling it kept a new book out of
+  // library.json until the user next sat on this screen for 5 s (#7464).
+  useEffect(() => () => debouncedSync.flush(), [debouncedSync]);
 
   // Library changes — import (adds a row), delete (sets deletedAt), book close
   // (bumps updatedAt) — all mutate `library`, so this single effect covers them
