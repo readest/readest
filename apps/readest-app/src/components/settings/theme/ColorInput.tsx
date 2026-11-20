@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HexColorInput, HexColorPicker } from 'react-colorful';
 import { CgColorPicker } from 'react-icons/cg';
+import { eventDispatcher } from '@/utils/event';
 
 type ColorInputProps = {
   label: string;
@@ -77,6 +78,10 @@ const ColorInput: React.FC<ColorInputProps> = ({
   // popup can stay open while focus moves elsewhere (Shift+Tab never fires the
   // mousedown that closes it), and the key has to be claimed before the dialog's
   // listeners see it.
+  //
+  // Android Back takes the same way out. Sync `native-key-down` listeners run
+  // newest first and the dialog's registered when it opened, so the most recently
+  // opened picker answers before the dialog or any picker opened earlier.
   useEffect(() => {
     if (!isOpen) return;
     const close = () => {
@@ -94,9 +99,16 @@ const ColorInput: React.FC<ColorInputProps> = ({
       event.stopPropagation();
       close();
     };
+    const handleBackKey = (event: CustomEvent) => {
+      if (event.detail?.keyName !== 'Back') return false;
+      close();
+      return true;
+    };
     document.addEventListener('keydown', handleKeyDown, true);
+    eventDispatcher.onSync('native-key-down', handleBackKey);
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true);
+      eventDispatcher.offSync('native-key-down', handleBackKey);
       const index = openPickers.indexOf(close);
       if (index !== -1) openPickers.splice(index, 1);
     };

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { userEvent } from 'vitest/browser';
 import ColorInput from '@/components/settings/theme/ColorInput';
+import { eventDispatcher } from '@/utils/event';
 
 await import('@/styles/globals.css');
 
@@ -148,6 +149,31 @@ describe('ColorInput', () => {
 
     expect(onDialogKey).toHaveBeenCalledWith('Escape');
     expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it('closes only the picker on Android Back, and not the page behind it', async () => {
+    // Stands in for the settings dialog's Back listener, which registers when
+    // the dialog opens and so before any picker does.
+    const onDialogBack = vi.fn(() => true);
+    eventDispatcher.onSync('native-key-down', onDialogBack);
+    const onCommit = vi.fn();
+    const pressBack = () => eventDispatcher.dispatchSync('native-key-down', { keyName: 'Back' });
+    try {
+      render(<InDialog onDialogKey={vi.fn()} onCommit={onCommit} />);
+      await userEvent.click(swatch());
+      expect(pickerOpen()).toBe(true);
+
+      expect(pressBack()).toBe(true);
+      await expect.poll(pickerOpen).toBe(false);
+      expect(onDialogBack).not.toHaveBeenCalled();
+      expect(onCommit).toHaveBeenCalledTimes(1);
+
+      // With the picker closed, Back belongs to the page again.
+      pressBack();
+      expect(onDialogBack).toHaveBeenCalledTimes(1);
+    } finally {
+      eventDispatcher.offSync('native-key-down', onDialogBack);
+    }
   });
 
   it('closes one picker per Escape when two are open', async () => {
