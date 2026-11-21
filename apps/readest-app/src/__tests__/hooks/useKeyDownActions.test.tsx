@@ -28,6 +28,25 @@ describe('useKeyDownActions', () => {
     expect(first.onCancel).not.toHaveBeenCalled();
   });
 
+  // With focus in the book, Escape arrives as an `iframe-keydown` message: a
+  // popup opened from the book (the instant dictionary) must still close.
+  // Enter typed in the book must not confirm anything, such as an Alert.
+  it('cancels on Escape typed in the book, and ignores Enter from it', () => {
+    const onCancel = vi.fn();
+    const onConfirm = vi.fn();
+    renderHook(() => useKeyDownActions({ onCancel, onConfirm }));
+    const fromBook = (key: string) =>
+      window.dispatchEvent(
+        new MessageEvent('message', { data: { type: 'iframe-keydown', bookKey: 'b', key } }),
+      );
+
+    fromBook('Enter');
+    fromBook('Escape');
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
+
   // Popup and Menu pass their container as elementRef. Each time the effect
   // runs (StrictMode in dev, or `enabled` turning off and on), the container
   // must end with one listener, and none while disabled.
