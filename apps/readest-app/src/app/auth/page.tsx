@@ -54,7 +54,8 @@ export default function AuthPage() {
   const [isMounted, setIsMounted] = useState(false);
   const isOAuthServerRunning = useRef(false);
   const useCustomeOAuth = useRef(false);
-  // Go Back waits for a save; a second press meanwhile would go back twice.
+  // Go Back waits for a save; a second press or a sign-in meanwhile would go
+  // back twice.
   const isLeaving = useRef(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
@@ -296,7 +297,8 @@ export default function AuthPage() {
         const lastRedirectAt = parseInt(localStorage.getItem(lastRedirectAtKey) || '0', 10);
         const now = Date.now();
         localStorage.setItem(lastRedirectAtKey, now.toString());
-        if (now - lastRedirectAt > 3000) {
+        if (now - lastRedirectAt > 3000 && !isLeaving.current) {
+          isLeaving.current = true;
           // Same as handleGoBack: never leave /auth on the history stack.
           if (redirectTo && isReaderBeneath()) {
             router.back();

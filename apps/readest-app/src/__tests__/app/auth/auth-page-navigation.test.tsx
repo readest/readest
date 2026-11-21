@@ -165,6 +165,23 @@ describe('AuthPage back arrow', () => {
     await waitFor(() => expect(mocks.router.back).toHaveBeenCalled());
     expect(mocks.router.back).toHaveBeenCalledTimes(1);
   });
+
+  it('goes back once when sign-in completes while saving', async () => {
+    let finishSave = () => {};
+    mocks.saveSettings.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    mocks.viewStates = { 'book1-abc': {} };
+    openLoginPage(READER);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+    await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalled());
+    signIn();
+
+    await act(async () => finishSave());
+    await waitFor(() => expect(mocks.router.back).toHaveBeenCalled());
+    expect(mocks.router.back).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('AuthPage after signing in', () => {
