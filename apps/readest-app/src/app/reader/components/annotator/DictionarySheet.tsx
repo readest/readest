@@ -54,7 +54,9 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
           manualVocabularyOccurrence={state.manualVocabularyOccurrence}
         />
       }
-      contentClassName='px-0! mt-0!'
+      // The sheet renders inside the `select-none` reader page; let its
+      // definitions be selected and copied, as in DictionaryPopup (#7731).
+      contentClassName='px-0! mt-0! select-text'
       onClose={onDismiss}
     >
       <DictionaryResultsBody {...state} />

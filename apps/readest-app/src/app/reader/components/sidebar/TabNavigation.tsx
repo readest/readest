@@ -68,6 +68,7 @@ const TabNavigation: React.FC<{
           }}
           title={getTabLabel(tab)}
           aria-label={getTabLabel(tab)}
+          aria-pressed={activeTab === tab}
         >
           <div className={clsx('flex h-6 items-center p-0', isMobile ? 'm-0.5' : 'm-0')}>
             {tab === 'toc' ? (

@@ -566,6 +566,28 @@ describe('DictionarySheet — expand / collapse', () => {
     expect(card()?.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('stays open when the click ends a text selection in the card (#7731)', async () => {
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: 'hello' });
+
+    await waitFor(() => screen.getByText('CMU American English spelling'));
+    const expanded = () => screen.getByTestId('dict-card').getAttribute('aria-expanded');
+    await waitFor(() => expect(expanded()).toBe('true'));
+
+    // Releasing a drag that selected part of the definition fires a click.
+    const content = screen.getByTestId('dict-card').querySelector('[data-dict-content]')!;
+    document.getSelection()!.selectAllChildren(content);
+    fireEvent.click(content, { detail: 1 });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(expanded()).toBe('true');
+    expect(document.getSelection()!.toString()).not.toBe('');
+
+    // A plain tap still collapses it.
+    document.getSelection()!.removeAllRanges();
+    fireEvent.click(content, { detail: 1 });
+    await waitFor(() => expect(expanded()).toBe('false'));
+  });
+
   it('defaults to collapsed when more than 3 providers have results', async () => {
     // Four providers, all with content → > 3 → default-collapsed.
     const providers: DictionaryProvider[] = [];

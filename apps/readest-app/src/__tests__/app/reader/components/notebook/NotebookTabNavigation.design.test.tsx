@@ -25,17 +25,43 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('NotebookTabNavigation design regression', () => {
-  it('does not reserve an empty footer when AI is disabled', () => {
-    const { container } = render(<NotebookTabNavigation activeTab='notes' onTabChange={vi.fn()} />);
+  const tabNames = () => screen.getAllByRole('button').map((tab) => tab.getAttribute('aria-label'));
 
-    expect(container.querySelector('.bottom-tab')).toBeNull();
+  // The Dictionary tab keeps the latest lookup beside the notes (#7730), so the
+  // footer always has two tabs to switch between.
+  it('shows the Notes and Dictionary tabs when AI is disabled', () => {
+    render(<NotebookTabNavigation activeTab='notes' onTabChange={vi.fn()} />);
+
+    expect(tabNames()).toEqual(['Notes', 'Dictionary']);
   });
 
-  it('shows the Notes and AI tabs when AI is enabled', () => {
+  it('shows the Notes, AI and Dictionary tabs when AI is enabled', () => {
     h.aiEnabled = true;
     render(<NotebookTabNavigation activeTab='notes' onTabChange={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: 'Notes' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'AI' })).toBeTruthy();
+    expect(tabNames()).toEqual(['Notes', 'AI', 'Dictionary']);
+  });
+
+  // The active tab is shown by its background alone; screen readers need the
+  // state too.
+  it('marks only the active tab as pressed', () => {
+    render(<NotebookTabNavigation activeTab='dictionary' onTabChange={vi.fn()} />);
+
+    const pressed = screen
+      .getAllByRole('button')
+      .map((tab) => [tab.getAttribute('aria-label'), tab.getAttribute('aria-pressed')]);
+    expect(pressed).toEqual([
+      ['Notes', 'false'],
+      ['Dictionary', 'true'],
+    ]);
+  });
+
+  it('switches to the Dictionary tab', () => {
+    const onTabChange = vi.fn();
+    render(<NotebookTabNavigation activeTab='notes' onTabChange={onTabChange} />);
+
+    screen.getByRole('button', { name: 'Dictionary' }).click();
+
+    expect(onTabChange).toHaveBeenCalledWith('dictionary');
   });
 });
