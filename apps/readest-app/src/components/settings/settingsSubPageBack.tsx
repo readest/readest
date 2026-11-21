@@ -76,6 +76,8 @@ const setTop = (top: number) => {
 
 /** The page being returned to may still be loading: wait until it can take the offset. */
 const restoreTop = (top: number, deadline = performance.now() + 1000) => {
+  // A newer restore replaces one still waiting, never the other way round.
+  cancelAnimationFrame(restoreFrame);
   const el = scroller;
   if (!el) return;
   if (el.scrollHeight - el.clientHeight < top && performance.now() < deadline) {

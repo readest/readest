@@ -59,6 +59,7 @@ vi.mock('@/components/settings/IntegrationsPanel', () => ({ default: () => null 
 vi.mock('@/components/settings/MiscPanel', () => ({ default: () => null }));
 
 const { default: SubPageHeader } = await import('@/components/settings/SubPageHeader');
+const { useSettingsSubPageBack } = await import('@/components/settings/settingsSubPageBack');
 const { default: SettingsDialog, resetSettingsScrollPosition } = await import(
   '@/components/settings/SettingsDialog'
 );
@@ -199,6 +200,41 @@ const LoadingPanel = () => {
   );
 };
 
+/**
+ * Audiobookshelf: the server list keeps its header above a server's detail,
+ * and both the panel and the list load their rows late.
+ */
+const ServerDetail = ({ onBack }: { onBack: () => void }) => {
+  useSettingsSubPageBack(onBack);
+  return <Block h={200}>Server detail</Block>;
+};
+const ServerList = ({ onBack }: { onBack: () => void }) => {
+  const [detail, setDetail] = useState(false);
+  return (
+    <div>
+      <SubPageHeader parentLabel='Integrations' currentLabel='Audiobookshelf' onBack={onBack} />
+      {detail ? (
+        <ServerDetail onBack={() => setDetail(false)} />
+      ) : (
+        <>
+          <button onClick={() => setDetail(true)}>My server</button>
+          <LoadingRows />
+        </>
+      )}
+    </div>
+  );
+};
+const KeptHeaderLoadingPanel = () => {
+  const [open, setOpen] = useState(false);
+  if (open) return <ServerList onBack={() => setOpen(false)} />;
+  return (
+    <div>
+      <button onClick={() => setOpen(true)}>Audiobookshelf</button>
+      <LoadingRows />
+    </div>
+  );
+};
+
 beforeEach(() => {
   vi.stubGlobal(
     'ResizeObserver',
@@ -294,6 +330,28 @@ describe('Settings sub-page scroll position', () => {
     expect(viewport.scrollHeight).toBe(100);
     await waitFor(() => expect(viewport.scrollHeight).toBe(1400));
     await waitFor(() => expect(viewport.scrollTop).toBe(700));
+  });
+
+  it('lets the latest Back win while both pages are still loading', async () => {
+    panels.font = () => <KeptHeaderLoadingPanel />;
+    render(<SettingsDialog bookKey='' />);
+    const viewport = fakeViewport();
+    await waitFor(() => expect(viewport.scrollHeight).toBe(1400));
+    userScroll(viewport, 900);
+
+    fireEvent.click(screen.getByText('Audiobookshelf'));
+    await waitFor(() => expect(viewport.scrollHeight).toBe(1400));
+    userScroll(viewport, 300);
+    fireEvent.click(screen.getByText('My server'));
+
+    // Back twice, as two separate key presses, before either page's rows load.
+    back();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    back();
+    expect(screen.getByRole('button', { name: 'Audiobookshelf' })).toBeTruthy();
+    await waitFor(() => expect(viewport.scrollHeight).toBe(1400));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(viewport.scrollTop).toBe(900);
   });
 
   it("doesn't carry a sub-page's way back into another tab", async () => {
