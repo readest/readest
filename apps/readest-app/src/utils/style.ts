@@ -313,15 +313,18 @@ const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: Theme
       : viewSettings.dialogueHighlightWeight === 'bold'
         ? '\n    font-weight: bold !important;'
         : '';
+  // Without a background the clone repeats nothing, and iOS 16's WebKit
+  // stops wrapping a line that holds a cloned inline (#7765).
+  const clone = bgBase
+    ? '\n    box-decoration-break: clone;\n    -webkit-box-decoration-break: clone;'
+    : '';
   return `
   /* Dialogue lines tinted with the custom color or, by default, the theme's
      primary color. !important so the tint survives "Override Book Color",
      which repaints spans/paragraphs with the theme background at the same
      importance level but lower specificity. */
   .readest-dialogue {${bgDecl(22)}${text}${weight}
-    border-radius: 0.2em;
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
+    border-radius: 0.2em;${clone}
   }
   .readest-dialogue-block {${bgDecl(12)}${text}${weight}
     border-radius: 0.3em;
@@ -331,9 +334,7 @@ const getDialogueHighlightStyles = (viewSettings: ViewSettings, themeCode: Theme
   /* Italic runs marked like quoted dialogue; nested marks drop their own
      tint so overlapping translucent backgrounds don't stack. */
   :is(i, em) {${bgDecl(22)}${text}${weight}
-    border-radius: 0.2em;
-    box-decoration-break: clone;
-    -webkit-box-decoration-break: clone;
+    border-radius: 0.2em;${clone}
   }
   :is(i, em) :is(i, em, .readest-dialogue), .readest-dialogue :is(i, em) {
     background-color: transparent !important;
