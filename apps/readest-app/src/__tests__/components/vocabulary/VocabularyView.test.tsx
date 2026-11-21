@@ -355,6 +355,26 @@ describe('VocabularyView Anki link', () => {
     dispatch.mockRestore();
   });
 
+  it('reads the deck again after the prompt, which asks to sync AnkiDroid first', async () => {
+    anki.ankiNoteTypeOutdated.mockResolvedValue(true);
+    renderWithMenu();
+    fireEvent.click(await syncButton());
+    const prompt = await screen.findByRole('region', { name: 'Add Audio to Anki Cards' });
+    // While the prompt was open, AnkiWeb brought in spice's note from another device.
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: [{ id: 9, fields: ['<div>spice</div>', 'a drug'], tags: 'readest readest::lang::en' }],
+      cards: [],
+    });
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Add Audio' }));
+    await waitFor(() =>
+      expect(anki.ankiUpgradeNoteType).toHaveBeenCalledWith([
+        { id: 9, word: 'spice', language: 'en_US' },
+      ]),
+    );
+    await waitFor(() => expect(anki.ankiUpdateTags).toHaveBeenCalled());
+    expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+  });
+
   it('syncs without audio on Not now, stops asking, and offers it again from the menu', async () => {
     anki.ankiNoteTypeOutdated.mockResolvedValue(true);
     renderWithMenu();

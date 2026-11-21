@@ -206,21 +206,18 @@ export const useAnkiLink = () => {
   /**
    * A note type from before #7729 gets its audio fields only when the reader
    * agrees, once: adding fields makes AnkiDroid's next AnkiWeb sync a full one.
-   * Resolves with how many existing notes got audio.
+   * Resolves with the answer, or null when there was nothing to ask.
    */
-  const upgradeNoteType = async (notes: AnkiNoteRow[]): Promise<number> => {
+  const askAudio = async (): Promise<boolean | null> => {
     if (!(await ankiNoteTypeOutdated())) {
       declineAudio(false);
-      return 0;
+      return null;
     }
-    if (readAudioDeclined()) return 0;
+    if (readAudioDeclined()) return null;
     const add = await new Promise<boolean>((resolve) => setAudioPrompt(() => resolve));
     setAudioPrompt(null);
-    if (!add) {
-      declineAudio(true);
-      return 0;
-    }
-    return ankiUpgradeNoteType(ankiNoteFills(notes));
+    if (!add) declineAudio(true);
+    return add;
   };
 
   /** Pull, then add Learning words the deck lacks, then bring mark tags in step. */
@@ -229,8 +226,11 @@ export const useAnkiLink = () => {
     setSyncing(true);
     try {
       if (!(await ready())) return;
-      const { notes, lang, plan, cardsRead } = await pull();
-      const voiced = await upgradeNoteType(notes);
+      const first = await pull();
+      const add = await askAudio();
+      // The prompt asks the reader to sync AnkiDroid first, which can bring in notes.
+      const { notes, lang, plan, cardsRead } = add === null ? first : await pull();
+      const voiced = add ? await ankiUpgradeNoteType(ankiNoteFills(notes)) : 0;
       const { entries } = useVocabularyStore.getState();
       // Words with no sentence came in from Anki, so they're already there.
       const learning = Object.values(entries).filter(
@@ -243,7 +243,15 @@ export const useAnkiLink = () => {
       const parts = [
         ...(voiced ? [_('Added audio to {{count}} cards', { count: voiced })] : []),
         ...(sent ? [_('Added {{count}} words to Anki', { count: sent })] : []),
-        ...pullSummary(plan),
+        ...pullSummary(
+          plan === first.plan
+            ? plan
+            : {
+                ...plan,
+                added: first.plan.added + plan.added,
+                mastered: first.plan.mastered + plan.mastered,
+              },
+        ),
       ];
       if (!cardsRead) parts.push(_('Update AnkiDroid to bring back mastered words.'));
       toast('success', parts.length ? parts.join(' · ') : _('In sync with Anki'));
