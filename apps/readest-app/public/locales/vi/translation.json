@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards": "Từ điển cho thẻ Anki",
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Đồng bộ với Anki sẽ đặt mục từ của từ điển này ở mặt sau mỗi thẻ, tối đa 30 thẻ mỗi lần đồng bộ",
   "Added dictionary entries to {{count}} cards_other": "Đã thêm mục từ điển vào {{count}} thẻ",
-  "Dictionary for Anki Cards...": "Từ điển cho thẻ Anki..."
+  "Dictionary for Anki Cards...": "Từ điển cho thẻ Anki...",
+  "Cover only": "Chỉ ảnh bìa"
 }

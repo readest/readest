@@ -2969,5 +2969,6 @@
   "Added dictionary entries to {{count}} cards_one": "Intrări de dicționar adăugate la carduri: {{count}}",
   "Added dictionary entries to {{count}} cards_few": "Intrări de dicționar adăugate la carduri: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Intrări de dicționar adăugate la carduri: {{count}}",
-  "Dictionary for Anki Cards...": "Dicționar pentru cardurile Anki..."
+  "Dictionary for Anki Cards...": "Dicționar pentru cardurile Anki...",
+  "Cover only": "Doar coperți"
 }

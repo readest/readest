@@ -2894,5 +2894,6 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki සමඟ සමමුහුර්තය එක් එක් කාඩ්පතේ පිටුපසට මෙම ශබ්දකෝෂයේ ඇතුළත් කිරීම එක් කරයි, එක් සමමුහුර්තයකට කාඩ්පත් 30ක් දක්වා",
   "Added dictionary entries to {{count}} cards_one": "කාඩ්පත් {{count}} කට ශබ්දකෝෂ ඇතුළත් කිරීම් එක් කරන ලදී",
   "Added dictionary entries to {{count}} cards_other": "කාඩ්පත් {{count}} කට ශබ්දකෝෂ ඇතුළත් කිරීම් එක් කරන ලදී",
-  "Dictionary for Anki Cards...": "Anki කාඩ්පත් සඳහා ශබ්දකෝෂය..."
+  "Dictionary for Anki Cards...": "Anki කාඩ්පත් සඳහා ශබ්දකෝෂය...",
+  "Cover only": "කවර පමණි"
 }

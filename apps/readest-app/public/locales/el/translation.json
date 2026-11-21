@@ -2894,5 +2894,6 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Ο συγχρονισμός με το Anki βάζει το λήμμα αυτού του λεξικού στο πίσω μέρος κάθε κάρτας, για έως 30 κάρτες ανά συγχρονισμό",
   "Added dictionary entries to {{count}} cards_one": "Προστέθηκαν λήμματα λεξικού σε κάρτες: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Προστέθηκαν λήμματα λεξικού σε κάρτες: {{count}}",
-  "Dictionary for Anki Cards...": "Λεξικό για κάρτες Anki..."
+  "Dictionary for Anki Cards...": "Λεξικό για κάρτες Anki...",
+  "Cover only": "Μόνο εξώφυλλα"
 }

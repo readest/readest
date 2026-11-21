@@ -2894,5 +2894,6 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki bilan sinxronlash har bir kartaning orqa tomoniga ushbu lug'at maqolasini qo'yadi, har bir sinxronlashda 30 tagacha karta",
   "Added dictionary entries to {{count}} cards_one": "{{count}} ta kartaga lug'at maqolasi qo'shildi",
   "Added dictionary entries to {{count}} cards_other": "{{count}} ta kartaga lug'at maqolasi qo'shildi",
-  "Dictionary for Anki Cards...": "Anki kartalari uchun lug'at..."
+  "Dictionary for Anki Cards...": "Anki kartalari uchun lug'at...",
+  "Cover only": "Faqat muqovalar"
 }

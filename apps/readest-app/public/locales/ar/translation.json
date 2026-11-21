@@ -3194,5 +3194,6 @@
   "Added dictionary entries to {{count}} cards_few": "أُضيفت مدخلات القاموس إلى البطاقات: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "أُضيفت مدخلات القاموس إلى البطاقات: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "أُضيفت مدخلات القاموس إلى البطاقات: {{count}}",
-  "Dictionary for Anki Cards...": "قاموس بطاقات Anki..."
+  "Dictionary for Anki Cards...": "قاموس بطاقات Anki...",
+  "Cover only": "الأغلفة فقط"
 }

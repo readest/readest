@@ -11,7 +11,9 @@ vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (text: string) => text }));
 vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (n: number) => n }));
 vi.mock('@/components/BookCover', () => ({ default: () => <div data-testid='book-cover' /> }));
-vi.mock('@/app/library/components/ReadingProgress', () => ({ default: () => null }));
+vi.mock('@/app/library/components/ReadingProgress', () => ({
+  default: () => <div data-testid='reading-progress' />,
+}));
 
 const BookItem = (await import('@/app/library/components/BookItem')).default;
 
@@ -25,14 +27,15 @@ const book: Book = {
   progress: [10, 100],
 };
 
-const renderBook = (mode: 'grid' | 'list', libraryCoverOnly: boolean) => {
+const renderBook = (coverOnly: boolean) => {
   useSettingsStore.setState({
-    settings: { libraryCoverOnly, librarySkeuomorphicCovers: false } as SystemSettings,
+    settings: { librarySkeuomorphicCovers: false } as SystemSettings,
   });
   return render(
     <BookItem
       book={book}
-      mode={mode}
+      mode='grid'
+      coverOnly={coverOnly}
       coverFit='crop'
       isSelectMode={false}
       bookSelected={false}
@@ -48,22 +51,21 @@ const renderBook = (mode: 'grid' | 'list', libraryCoverOnly: boolean) => {
 afterEach(cleanup);
 
 describe('BookItem Cover only mode (#7746)', () => {
-  it('hides title and footer metadata in grid mode when libraryCoverOnly is enabled', () => {
-    const { container } = renderBook('grid', true);
+  it('hides title and footer metadata in grid mode when cover only', () => {
+    const { container } = renderBook(true);
     expect(screen.getByTestId('book-cover')).toBeTruthy();
     expect(screen.queryByText('Dune')).toBeNull();
+    expect(screen.queryByTestId('reading-progress')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show Book Details' })).toBeNull();
     const main = container.querySelector('.bookitem-main');
     expect(main?.getAttribute('title')).toBe('Dune');
     expect(main?.className).toContain('rounded-none');
   });
 
-  it('shows title in grid mode when libraryCoverOnly is disabled', () => {
-    renderBook('grid', false);
+  it('shows title and footer metadata in grid mode otherwise', () => {
+    renderBook(false);
     expect(screen.getByText('Dune')).toBeTruthy();
-  });
-
-  it('always shows title in list mode even when libraryCoverOnly is enabled', () => {
-    renderBook('list', true);
-    expect(screen.getByText('Dune')).toBeTruthy();
+    expect(screen.getByTestId('reading-progress')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Show Book Details' })).toBeTruthy();
   });
 });

@@ -14,6 +14,7 @@ interface GroupItemProps {
   group: BooksGroup;
   coverFit?: LibraryCoverFitType;
   skeuomorphicCovers?: boolean;
+  coverOnly?: boolean;
   isSelectMode: boolean;
   groupSelected: boolean;
 }
@@ -23,6 +24,7 @@ const GroupItem: React.FC<GroupItemProps> = ({
   group,
   coverFit,
   skeuomorphicCovers,
+  coverOnly = false,
   isSelectMode,
   groupSelected,
 }) => {
@@ -32,7 +34,6 @@ const GroupItem: React.FC<GroupItemProps> = ({
   // groups carry user-authored text that must never be translated.
   const groupLabel = group.localized ? _(group.displayName) : group.displayName;
   const { settings } = useSettingsStore();
-  const coverOnly = mode === 'grid' && !!settings.libraryCoverOnly;
   const iconSize15 = useResponsiveSize(15);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);

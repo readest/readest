@@ -95,9 +95,11 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     showSeriesIndex,
     showTimeRemaining,
     dragEnabled,
+    coverOnly,
   }: {
     item: Book | BooksGroup;
     dragEnabled?: boolean;
+    coverOnly?: boolean;
     toggleSelection: (id: string) => void;
     itemSelected: boolean;
     coverFit: string;
@@ -127,6 +129,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
         data-show-series-index={showSeriesIndex}
         data-show-time-remaining={showTimeRemaining}
         data-drag-enabled={dragEnabled}
+        data-cover-only={coverOnly}
         aria-pressed={itemSelected}
         onClick={onClick}
       >
@@ -141,8 +144,10 @@ vi.mock('@/app/library/components/BookshelfStream', () => ({
     sections,
     renderItem,
     importAction,
+    coverOnly,
   }: {
     sections: ShelfSection[];
+    coverOnly?: boolean;
     renderItem: (
       item: Book | BooksGroup,
       layout: 'list' | 'grid',
@@ -156,6 +161,7 @@ vi.mock('@/app/library/components/BookshelfStream', () => ({
           key={s.definition.id}
           data-testid={s.definition.id}
           data-layout={s.definition.layout}
+          data-cover-only={coverOnly}
         >
           {s.items.map((item) => (
             <div key={'hash' in item ? item.hash : item.id}>
@@ -1195,6 +1201,28 @@ describe('library bookshelf integration', () => {
       }
       expect(screen.getByTestId(carousel.id).getAttribute('data-layout')).toBe('carousel');
       expect(screen.getByTestId(carousel.id).querySelectorAll('button')).toHaveLength(20);
+    }
+  });
+  it('applies Cover only to every shelf in Grid View and to none in List View (#7746)', () => {
+    const carousel = createBookshelf('Carousel');
+    configure([carousel, ...defaultBookshelves(DEFAULT_SYSTEM_SETTINGS)]);
+    render(<Bookshelf {...props} />);
+    for (const mode of ['grid', 'list'] as const) {
+      act(() =>
+        useSettingsStore.setState({
+          settings: {
+            ...useSettingsStore.getState().settings,
+            libraryViewMode: mode,
+            libraryCoverOnly: true,
+          },
+        }),
+      );
+      const expected = String(mode === 'grid');
+      for (const id of [carousel.id, 'default']) {
+        const shelf = screen.getByTestId(id);
+        expect(shelf.getAttribute('data-cover-only')).toBe(expected);
+        expect(shelf.querySelector('button')?.getAttribute('data-cover-only')).toBe(expected);
+      }
     }
   });
   it('uses the global search layout even when Default remains a carousel', () => {

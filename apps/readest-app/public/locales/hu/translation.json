@@ -2894,5 +2894,6 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Az Anki-szinkronizálás ennek a szótárnak a szócikkét teszi minden kártya hátoldalára, szinkronizálásonként legfeljebb 30 kártyára",
   "Added dictionary entries to {{count}} cards_one": "Szótári szócikk hozzáadva {{count}} kártyához",
   "Added dictionary entries to {{count}} cards_other": "Szótári szócikk hozzáadva {{count}} kártyához",
-  "Dictionary for Anki Cards...": "Szótár az Anki-kártyákhoz..."
+  "Dictionary for Anki Cards...": "Szótár az Anki-kártyákhoz...",
+  "Cover only": "Csak borítók"
 }

@@ -200,6 +200,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   );
   const defaultShelf = definitions.find((s) => s.id === 'default')!;
   const viewMode = searchParams?.get('view') || settings.libraryViewMode;
+  // Carousel shelves keep grid tiles in List View, so gate on the view, not the item mode.
+  const coverOnly = !!settings.libraryCoverOnly && viewMode !== 'list';
   const globalGroupBy = ensureLibraryGroupByType(
     searchParams?.get('groupBy'),
     settings.libraryGroupBy,
@@ -1161,6 +1163,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           coverFit={shelf.coverFit || 'crop'}
           skeuomorphicCovers={shelf.skeuomorphicCovers}
           showPageCount={shelf.showPageCount}
+          coverOnly={coverOnly}
           isSelectMode={isSelectMode}
           itemSelected={
             'hash' in item
@@ -1204,7 +1207,6 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       dragDisabled,
     ],
   );
-  const coverOnly = !!settings.libraryCoverOnly;
   const lastShelf = sections.at(-1)?.definition;
   const importTile =
     visibleBooks.length > 0 && lastShelf?.layout === 'grid' ? (

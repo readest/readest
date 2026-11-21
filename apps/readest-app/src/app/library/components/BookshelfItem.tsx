@@ -91,6 +91,7 @@ interface BookshelfItemProps {
   coverFit: LibraryCoverFitType;
   skeuomorphicCovers?: boolean;
   showPageCount?: boolean;
+  coverOnly?: boolean;
   isSelectMode: boolean;
   itemSelected: boolean;
   transferProgress: number | null;
@@ -118,6 +119,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   coverFit,
   skeuomorphicCovers,
   showPageCount,
+  coverOnly = false,
   isSelectMode,
   itemSelected,
   transferProgress,
@@ -148,7 +150,6 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
       pressWasDragged.current = true;
   }, [dragActive]);
   const { settings } = useSettingsStore();
-  const coverOnly = mode === 'grid' && !!settings.libraryCoverOnly;
   const { openBook } = useOpenBook({ setLoading, handleBookDownload });
 
   const showBookDetailsModal = useCallback(async (book: Book) => {
@@ -535,6 +536,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               book={item}
               coverFit={coverFit}
               skeuomorphicCovers={skeuomorphicCovers}
+              coverOnly={coverOnly}
               isSelectMode={isSelectMode}
               bookSelected={itemSelected}
               transferProgress={transferProgress}
@@ -551,6 +553,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               group={item}
               coverFit={coverFit}
               skeuomorphicCovers={skeuomorphicCovers}
+              coverOnly={coverOnly}
               isSelectMode={isSelectMode}
               groupSelected={itemSelected}
             />

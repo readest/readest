@@ -32,6 +32,7 @@ interface BookItemProps {
   mode: LibraryViewModeType;
   coverFit: LibraryCoverFitType;
   skeuomorphicCovers?: boolean;
+  coverOnly?: boolean;
   isSelectMode: boolean;
   bookSelected: boolean;
   transferProgress: number | null;
@@ -50,6 +51,7 @@ const BookItem: React.FC<BookItemProps> = ({
   mode,
   coverFit,
   skeuomorphicCovers,
+  coverOnly = false,
   isSelectMode,
   bookSelected,
   transferProgress,
@@ -66,7 +68,6 @@ const BookItem: React.FC<BookItemProps> = ({
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const showSpine = skeuomorphicCovers ?? settings.librarySkeuomorphicCovers;
-  const coverOnly = mode === 'grid' && !!settings.libraryCoverOnly;
   const iconSize15 = useResponsiveSize(15);
 
   // Reset during render, not in an effect: a cached cover reports its size
