@@ -33,7 +33,11 @@ import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 import AIPanel from './AIPanel';
 import TTSPanel from './TTSPanel';
-import { SettingsSubPageBackScope, stepBackSettingsSubPage } from './settingsSubPageBack';
+import {
+  SettingsSubPageBackScope,
+  stepBackSettingsSubPage,
+  trackSettingsScroll,
+} from './settingsSubPageBack';
 
 export type SettingsPanelType =
   | 'Font'
@@ -178,8 +182,10 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       observer = new MutationObserver(apply);
       observer.observe(scroller, { attributeFilter: ['data-overlayscrollbars-viewport'] });
     }
+    const untrackSubPages = trackSettingsScroll(scroller);
 
     return () => {
+      untrackSubPages();
       if (observer) observer.disconnect();
       else savedScroll = { panel: activePanel, top: scroller.scrollTop };
       panel.style.visibility = '';
