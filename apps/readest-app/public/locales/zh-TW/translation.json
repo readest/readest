@@ -1039,8 +1039,6 @@
   "Select Backup": "選擇備份",
   "Restore failed: {{error}}": "還原失敗：{{error}}",
   "Backup & Restore": "備份與還原",
-  "Backup Library": "備份書庫",
-  "Restore Library": "還原書庫",
   "Creating backup...": "正在建立備份...",
   "Restoring library...": "正在還原書庫...",
   "{{current}} of {{total}} items": "{{current}} / {{total}} 項",
@@ -1399,7 +1397,6 @@
   "Highlight Word": "高亮整詞",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "建立您的書庫與設定的備份，或從先前的備份還原。還原將與您目前的書庫合併。",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "包含帳戶憑證（同步權杖、密碼）。備份檔案未加密。",
-  "Your library and settings have been saved to the selected location.": "您的書庫與設定已儲存至所選位置。",
   "Settings have been restored.": "設定已還原。",
   "Could not fetch this page": "無法取得此頁面",
   "Send to Readest": "傳送到 Readest",
@@ -2820,5 +2817,8 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "與 Anki 同步時，會把此辭典的詞條放到每張卡片的背面，每次同步最多 30 張",
   "Added dictionary entries to {{count}} cards_other": "已為 {{count}} 張卡片加入辭典詞條",
   "Dictionary for Anki Cards...": "Anki 卡片辭典...",
+  "Create Backup": "建立備份",
+  "Restore from Backup": "從備份還原",
+  "Your backup has been saved to the selected location.": "備份已儲存至所選位置。",
   "Cover only": "僅顯示封面"
 }

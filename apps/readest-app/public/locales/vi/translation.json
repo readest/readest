@@ -1024,8 +1024,6 @@
   "Select Backup": "Chọn bản sao lưu",
   "Restore failed: {{error}}": "Khôi phục thất bại: {{error}}",
   "Backup & Restore": "Sao lưu & Khôi phục",
-  "Backup Library": "Sao lưu thư viện",
-  "Restore Library": "Khôi phục thư viện",
   "Creating backup...": "Đang tạo bản sao lưu...",
   "Restoring library...": "Đang khôi phục thư viện...",
   "{{current}} of {{total}} items": "{{current}} / {{total}} mục",
@@ -1384,7 +1382,6 @@
   "Highlight Word": "Tô sáng từ",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Tạo bản sao lưu thư viện và cài đặt của bạn hoặc khôi phục từ bản sao lưu trước đó. Việc khôi phục sẽ hợp nhất với thư viện hiện tại của bạn.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Bao gồm thông tin đăng nhập tài khoản (mã thông báo đồng bộ, mật khẩu). Tệp sao lưu không được mã hóa.",
-  "Your library and settings have been saved to the selected location.": "Thư viện và cài đặt của bạn đã được lưu vào vị trí đã chọn.",
   "Settings have been restored.": "Đã khôi phục cài đặt.",
   "Could not fetch this page": "Không thể tải trang này",
   "Send to Readest": "Gửi đến Readest",
@@ -2820,5 +2817,8 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Đồng bộ với Anki sẽ đặt mục từ của từ điển này ở mặt sau mỗi thẻ, tối đa 30 thẻ mỗi lần đồng bộ",
   "Added dictionary entries to {{count}} cards_other": "Đã thêm mục từ điển vào {{count}} thẻ",
   "Dictionary for Anki Cards...": "Từ điển cho thẻ Anki...",
+  "Create Backup": "Tạo bản sao lưu",
+  "Restore from Backup": "Khôi phục từ bản sao lưu",
+  "Your backup has been saved to the selected location.": "Bản sao lưu của bạn đã được lưu vào vị trí đã chọn.",
   "Cover only": "Chỉ ảnh bìa"
 }

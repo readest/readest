@@ -1024,8 +1024,6 @@
   "Select Backup": "Pilih Cadangan",
   "Restore failed: {{error}}": "Pemulihan gagal: {{error}}",
   "Backup & Restore": "Cadangkan & Pulihkan",
-  "Backup Library": "Cadangkan Perpustakaan",
-  "Restore Library": "Pulihkan Perpustakaan",
   "Creating backup...": "Membuat cadangan...",
   "Restoring library...": "Memulihkan perpustakaan...",
   "{{current}} of {{total}} items": "{{current}} dari {{total}} item",
@@ -1384,7 +1382,6 @@
   "Highlight Word": "Sorot Kata",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Buat cadangan pustaka dan pengaturan Anda atau pulihkan dari cadangan sebelumnya. Pemulihan akan digabungkan dengan pustaka Anda saat ini.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Sertakan kredensial akun (token sinkronisasi, kata sandi). File cadangan tidak dienkripsi.",
-  "Your library and settings have been saved to the selected location.": "Pustaka dan pengaturan Anda telah disimpan ke lokasi yang dipilih.",
   "Settings have been restored.": "Pengaturan telah dipulihkan.",
   "Could not fetch this page": "Tidak dapat mengambil halaman ini",
   "Send to Readest": "Kirim ke Readest",
@@ -2820,5 +2817,8 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Sinkronisasi dengan Anki menaruh entri kamus ini di balik setiap kartu, hingga 30 kartu per sinkronisasi",
   "Added dictionary entries to {{count}} cards_other": "Entri kamus ditambahkan ke {{count}} kartu",
   "Dictionary for Anki Cards...": "Kamus untuk Kartu Anki...",
+  "Create Backup": "Buat Cadangan",
+  "Restore from Backup": "Pulihkan dari Cadangan",
+  "Your backup has been saved to the selected location.": "Cadangan Anda telah disimpan ke lokasi yang dipilih.",
   "Cover only": "Hanya sampul"
 }

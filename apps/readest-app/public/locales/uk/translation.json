@@ -1060,8 +1060,6 @@
   "Select Backup": "Обрати резервну копію",
   "Restore failed: {{error}}": "Помилка відновлення: {{error}}",
   "Backup & Restore": "Резервне копіювання та відновлення",
-  "Backup Library": "Резервна копія бібліотеки",
-  "Restore Library": "Відновити бібліотеку",
   "Creating backup...": "Створення резервної копії...",
   "Restoring library...": "Відновлення бібліотеки...",
   "{{current}} of {{total}} items": "{{current}} з {{total}} елементів",
@@ -1468,7 +1466,6 @@
   "Highlight Word": "Підсвічування слова",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Створіть резервну копію вашої бібліотеки та налаштувань або відновіть із попередньої резервної копії. Відновлення буде об’єднано з вашою поточною бібліотекою.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Включити облікові дані акаунта (токени синхронізації, паролі). Файл резервної копії не зашифровано.",
-  "Your library and settings have been saved to the selected location.": "Вашу бібліотеку та налаштування збережено у вибраному місці.",
   "Settings have been restored.": "Налаштування відновлено.",
   "Could not fetch this page": "Не вдалося завантажити цю сторінку",
   "Send to Readest": "Надіслати до Readest",
@@ -3045,5 +3042,8 @@
   "Added dictionary entries to {{count}} cards_many": "Словникові статті додано до карток: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Словникові статті додано до карток: {{count}}",
   "Dictionary for Anki Cards...": "Словник для карток Anki...",
+  "Create Backup": "Створити резервну копію",
+  "Restore from Backup": "Відновити з резервної копії",
+  "Your backup has been saved to the selected location.": "Резервну копію збережено у вибраному місці.",
   "Cover only": "Лише обкладинки"
 }

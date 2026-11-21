@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import {
   RiCheckboxCircleFill,
@@ -36,6 +37,7 @@ interface BackupResult {
   type: 'backup' | 'restore';
   booksAdded?: number;
   booksUpdated?: number;
+  libraryRestored?: boolean;
   settingsRestored?: boolean;
 }
 
@@ -53,6 +55,8 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
   const [progress, setProgress] = useState<BackupProgress>({ current: 0, total: 0 });
   const [errorMessage, setErrorMessage] = useState('');
   const [result, setResult] = useState<BackupResult | null>(null);
+  const [includeLibrary, setIncludeLibrary] = useState(true);
+  const [includeSettings, setIncludeSettings] = useState(true);
   const [includeCredentials, setIncludeCredentials] = useState(false);
 
   const isProcessing = status === 'backing-up' || status === 'restoring';
@@ -65,6 +69,8 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
     setProgress({ current: 0, total: 0 });
     setErrorMessage('');
     setResult(null);
+    setIncludeLibrary(true);
+    setIncludeSettings(true);
     setIncludeCredentials(false);
   };
 
@@ -101,7 +107,11 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
       const saved = await saveBackupFile(
         appService,
         filename,
-        { includeCredentials },
+        {
+          includeLibrary,
+          includeSettings,
+          includeCredentials: includeSettings && includeCredentials,
+        },
         (current, total, currentFile) => {
           setProgress({ current, total, currentFile });
         },
@@ -139,14 +149,15 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
         ? result.files[0].file
         : await appService.openFile(result.files[0]!.path!, 'None');
 
-      const { booksAdded, booksUpdated, settingsRestored } = await restoreFromBackupZip(
-        appService,
-        zipFile,
-        (current, total, currentFile) => {
-          setProgress({ current, total, currentFile });
-        },
-        result.files[0]?.path,
-      );
+      const { booksAdded, booksUpdated, libraryRestored, settingsRestored } =
+        await restoreFromBackupZip(
+          appService,
+          zipFile,
+          (current, total, currentFile) => {
+            setProgress({ current, total, currentFile });
+          },
+          result.files[0]?.path,
+        );
 
       const newLibrary = await appService.loadLibraryBooks();
       const booksCount = newLibrary.reduce((sum, book) => sum + (book.deletedAt ? 0 : 1), 0);
@@ -155,6 +166,7 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
         type: 'restore',
         booksAdded: Math.min(booksAdded, booksCount),
         booksUpdated: Math.min(booksUpdated, booksCount),
+        libraryRestored,
         settingsRestored,
       });
       setStatus('completed');
@@ -183,7 +195,7 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
       isOpen={isOpen}
       title={_('Backup & Restore')}
       onClose={handleClose}
-      snapHeight={appService?.isMobile ? 0.45 : undefined}
+      snapHeight={appService?.isMobile ? 0.65 : undefined}
       dismissible={!isProcessing}
       boxClassName='sm:w-[520px]! sm:max-w-(--breakpoint-sm)! sm:h-auto'
     >
@@ -198,28 +210,58 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
                 )}
               </p>
 
-              <label className='flex cursor-pointer items-start gap-2'>
-                <input
-                  type='checkbox'
-                  checked={includeCredentials}
-                  onChange={(e) => setIncludeCredentials(e.target.checked)}
-                  className='checkbox checkbox-sm mt-0.5 shrink-0'
-                />
-                <span className='text-base-content/70 text-sm'>
-                  {_(
-                    'Include account credentials (sync tokens, passwords). The backup file is not encrypted.',
+              <div className='space-y-2'>
+                <label className='flex cursor-pointer items-center gap-2'>
+                  <input
+                    type='checkbox'
+                    checked={includeLibrary}
+                    onChange={(e) => setIncludeLibrary(e.target.checked)}
+                    className='checkbox checkbox-sm shrink-0'
+                  />
+                  <span className='text-sm'>{_('Library')}</span>
+                </label>
+                <label className='flex cursor-pointer items-center gap-2'>
+                  <input
+                    type='checkbox'
+                    checked={includeSettings}
+                    onChange={(e) => setIncludeSettings(e.target.checked)}
+                    className='checkbox checkbox-sm shrink-0'
+                  />
+                  <span className='text-sm'>{_('Settings')}</span>
+                </label>
+                <label
+                  className={clsx(
+                    'ms-6 flex items-start gap-2',
+                    includeSettings ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                   )}
-                </span>
-              </label>
+                >
+                  <input
+                    type='checkbox'
+                    checked={includeSettings && includeCredentials}
+                    disabled={!includeSettings}
+                    onChange={(e) => setIncludeCredentials(e.target.checked)}
+                    className='checkbox checkbox-sm mt-0.5 shrink-0'
+                  />
+                  <span className='text-base-content/70 text-sm'>
+                    {_(
+                      'Include account credentials (sync tokens, passwords). The backup file is not encrypted.',
+                    )}
+                  </span>
+                </label>
+              </div>
 
-              <button className='btn btn-outline w-full gap-2' onClick={handleBackup}>
+              <button
+                className='btn btn-outline w-full gap-2'
+                onClick={handleBackup}
+                disabled={!includeLibrary && !includeSettings}
+              >
                 <RiUploadCloud2Line className='h-5 w-5' />
-                {_('Backup Library')}
+                {_('Create Backup')}
               </button>
 
               <button className='btn btn-outline w-full gap-2' onClick={handleRestore}>
                 <RiDownloadCloud2Line className='h-5 w-5' />
-                {_('Restore Library')}
+                {_('Restore from Backup')}
               </button>
             </div>
           )}
@@ -279,11 +321,17 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
               <div className='bg-success/10 border-success/20 rounded-lg border p-3'>
                 <p className='text-success/80 text-sm'>
                   {result.type === 'backup'
-                    ? _('Your library and settings have been saved to the selected location.')
-                    : _('{{added}} books added, {{updated}} books updated.', {
-                        added: result.booksAdded ?? 0,
-                        updated: result.booksUpdated ?? 0,
-                      }) + (result.settingsRestored ? ' ' + _('Settings have been restored.') : '')}
+                    ? _('Your backup has been saved to the selected location.')
+                    : [
+                        result.libraryRestored &&
+                          _('{{added}} books added, {{updated}} books updated.', {
+                            added: result.booksAdded ?? 0,
+                            updated: result.booksUpdated ?? 0,
+                          }),
+                        result.settingsRestored && _('Settings have been restored.'),
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
                 </p>
               </div>
             </div>

@@ -1048,8 +1048,6 @@
   "Select Backup": "Seleziona backup",
   "Restore failed: {{error}}": "Ripristino fallito: {{error}}",
   "Backup & Restore": "Backup e ripristino",
-  "Backup Library": "Backup libreria",
-  "Restore Library": "Ripristina libreria",
   "Creating backup...": "Creazione backup...",
   "Restoring library...": "Ripristino libreria...",
   "{{current}} of {{total}} items": "{{current}} di {{total}} elementi",
@@ -1440,7 +1438,6 @@
   "Highlight Word": "Evidenzia parola",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Crea un backup della tua libreria e delle impostazioni o ripristina da un backup precedente. Il ripristino verrà unito alla tua libreria attuale.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Includi le credenziali dell’account (token di sincronizzazione, password). Il file di backup non è crittografato.",
-  "Your library and settings have been saved to the selected location.": "La tua libreria e le impostazioni sono state salvate nel percorso selezionato.",
   "Settings have been restored.": "Le impostazioni sono state ripristinate.",
   "Could not fetch this page": "Impossibile recuperare questa pagina",
   "Send to Readest": "Invia a Readest",
@@ -2970,5 +2967,8 @@
   "Added dictionary entries to {{count}} cards_many": "Voci di dizionario aggiunte alle schede: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Voci di dizionario aggiunte alle schede: {{count}}",
   "Dictionary for Anki Cards...": "Dizionario per le schede Anki...",
+  "Create Backup": "Crea backup",
+  "Restore from Backup": "Ripristina da backup",
+  "Your backup has been saved to the selected location.": "Il backup è stato salvato nella posizione selezionata.",
   "Cover only": "Solo copertine"
 }

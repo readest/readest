@@ -51,8 +51,6 @@
   "Select Backup": "Selectați Backup",
   "Restore failed: {{error}}": "Restaurarea a eșuat: {{error}}",
   "Backup & Restore": "Backup și restaurare",
-  "Backup Library": "Bibliotecă de rezervă",
-  "Restore Library": "Restaurați biblioteca",
   "Creating backup...": "Se creează backup...",
   "Restoring library...": "Se restaurează biblioteca...",
   "{{current}} of {{total}} items": "{{current}} din {{total}} articole",
@@ -1440,7 +1438,6 @@
   "Highlight Word": "Evidențiere cuvânt",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Creează o copie de rezervă a bibliotecii și a setărilor tale sau restaurează dintr-o copie de rezervă anterioară. Restaurarea se va îmbina cu biblioteca ta curentă.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Include datele de autentificare ale contului (jetoane de sincronizare, parole). Fișierul de rezervă nu este criptat.",
-  "Your library and settings have been saved to the selected location.": "Biblioteca și setările tale au fost salvate în locația selectată.",
   "Settings have been restored.": "Setările au fost restaurate.",
   "Could not fetch this page": "Pagina nu a putut fi preluată",
   "Send to Readest": "Trimite către Readest",
@@ -2970,5 +2967,8 @@
   "Added dictionary entries to {{count}} cards_few": "Intrări de dicționar adăugate la carduri: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Intrări de dicționar adăugate la carduri: {{count}}",
   "Dictionary for Anki Cards...": "Dicționar pentru cardurile Anki...",
+  "Create Backup": "Creează copie de rezervă",
+  "Restore from Backup": "Restaurează din copie de rezervă",
+  "Your backup has been saved to the selected location.": "Copia de rezervă a fost salvată în locația selectată.",
   "Cover only": "Doar coperți"
 }
