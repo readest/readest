@@ -237,8 +237,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
       {/* Group By - Collapsible */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem label={_('Group by...')} detailsOpen={true} buttonClass='py-1!'>
-        <ul className='ms-0 flex flex-col ps-0 before:hidden'>
+      <MenuItem label={_('Group by...')} detailsOpen={false} buttonClass='py-1!'>
+        <ul className='flex flex-col'>
           {groupByOptions.map((option) => (
             <MenuItem
               key={option.value}
@@ -255,7 +255,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
       {/* Sort By - Collapsible */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Sort by...')} detailsOpen={false} buttonClass='py-1!'>
-        <ul className='ms-0 flex flex-col ps-0 before:hidden'>
+        <ul className='flex flex-col'>
           {sortByOptions.map((option) => {
             const isImplicit = primaryIsImplicit && option.value === primaryEffective;
             const toggled = isImplicit || (!primaryIsImplicit && sortBy === option.value);
@@ -293,7 +293,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
         detailsOpen={false}
         buttonClass='py-1!'
       >
-        <ul className='ms-0 flex flex-col ps-0 before:hidden'>
+        <ul className='flex flex-col'>
           {thenSortByOptions.map((option) => {
             const isImplicit = secondaryIsImplicit && option.value === secondaryEffective;
             const isExplicit = thenSortBy === option.value;
