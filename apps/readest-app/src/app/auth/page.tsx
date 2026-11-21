@@ -54,6 +54,8 @@ export default function AuthPage() {
   const [isMounted, setIsMounted] = useState(false);
   const isOAuthServerRunning = useRef(false);
   const useCustomeOAuth = useRef(false);
+  // Go Back waits for a save; a second press meanwhile would go back twice.
+  const isLeaving = useRef(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -236,6 +238,8 @@ export default function AuthPage() {
   };
 
   const handleGoBack = async () => {
+    if (isLeaving.current) return;
+    isLeaving.current = true;
     // Keep login false to avoid infinite loop to redirect to the login page.
     // Leave only once it is saved: the library reads settings from disk when it
     // mounts, and an unfinished write opened this page once more (#7726).

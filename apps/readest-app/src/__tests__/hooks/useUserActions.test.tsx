@@ -11,6 +11,7 @@ import { useUserActions } from '@/hooks/useUserActions';
 const mocks = vi.hoisted(() => ({
   calls: [] as string[],
   finishSave: () => {},
+  failSave: (_error: Error) => {},
 }));
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({}) }));
@@ -26,7 +27,10 @@ vi.mock('@/context/AuthContext', () => ({
 vi.mock('@/helpers/settings', () => ({
   saveSysSettings: (_envConfig: unknown, key: string, value: unknown) => {
     mocks.calls.push(`${key}=${value}`);
-    return new Promise<void>((resolve) => (mocks.finishSave = resolve));
+    return new Promise<void>((resolve, reject) => {
+      mocks.finishSave = resolve;
+      mocks.failSave = reject;
+    });
   },
 }));
 vi.mock('@/utils/nav', () => ({
@@ -56,6 +60,24 @@ describe('useUserActions sign out', () => {
       mocks.finishSave();
       await signingOut;
     });
+    expect(mocks.calls).toEqual(['sign out', 'keepLogin=false', 'open library']);
+  });
+
+  // A failed write must not leave the profile page on "Loading profile..."
+  // with the hand-off to the login page turned off.
+  it('opens the library even when saving keepLogin fails', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result } = renderHook(() => useUserActions());
+
+    let signingOut: Promise<void> | void;
+    act(() => {
+      signingOut = result.current.handleLogout();
+    });
+    await act(async () => {
+      mocks.failSave(new Error('disk full'));
+      await Promise.resolve(signingOut).catch(() => {});
+    });
+    error.mockRestore();
     expect(mocks.calls).toEqual(['sign out', 'keepLogin=false', 'open library']);
   });
 });

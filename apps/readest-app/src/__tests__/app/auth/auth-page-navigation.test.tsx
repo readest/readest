@@ -146,6 +146,25 @@ describe('AuthPage back arrow', () => {
     await act(async () => finishSave());
     expect(mocks.router.back).toHaveBeenCalledTimes(1);
   });
+
+  // A second press while the save is pending would go back past the reader.
+  it('goes back once when pressed again while saving', async () => {
+    let finishSave = () => {};
+    mocks.saveSettings.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    mocks.viewStates = { 'book1-abc': {} };
+    openLoginPage(null);
+
+    const goBack = screen.getAllByRole('button', { name: 'Go Back' })[0]!;
+    fireEvent.click(goBack);
+    fireEvent.click(goBack);
+    await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalled());
+
+    await act(async () => finishSave());
+    await waitFor(() => expect(mocks.router.back).toHaveBeenCalled());
+    expect(mocks.router.back).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('AuthPage after signing in', () => {

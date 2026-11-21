@@ -20,8 +20,11 @@ export const useUserActions = () => {
     setSigningOut(true);
     logout();
     // The library sends a signed-out user to the login page when keepLogin is
-    // set, so leave only once it is cleared on disk (#7726).
-    await saveSysSettings(envConfig, 'keepLogin', false);
+    // set, so leave only once it is cleared on disk (#7726). Leave on a failed
+    // write too: the page can't show a signed-out profile.
+    await saveSysSettings(envConfig, 'keepLogin', false).catch((error) =>
+      console.error('Failed to clear keepLogin:', error),
+    );
     navigateToLibrary(router);
   };
 
