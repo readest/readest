@@ -1,10 +1,15 @@
 import { Book, BooksGroup } from '@/types/book';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { md5Fingerprint } from '@/utils/md5';
-import { LibraryGroupByType, LibrarySortByType, type SystemSettings } from '@/types/settings';
+import {
+  LibraryGroupByType,
+  LibrarySortByType,
+  type LibrarySortCriterion,
+  type SystemSettings,
+} from '@/types/settings';
 import type { BookshelfResult } from './evaluate';
 import { resolveBookshelfGroupBy } from './grouping';
-import { resolveBookshelfMetadataSort } from './sorting';
+import { resolveBookshelfMetadataSort, resolveBookshelfSortOrder } from './sorting';
 import { bookshelfOrderScope, orderBookshelfItems } from './ordering';
 import {
   createBookGroups,
@@ -86,6 +91,7 @@ export const presentBookshelf = (
   pageDurations?: Readonly<Record<string, number>>,
   groupId = '',
   manualGroupName?: string,
+  globalSortOrder?: LibrarySortCriterion[],
 ): (Book | BooksGroup)[] => {
   const groupBy = resolveBookshelfGroupBy(
     result.definition,
@@ -93,6 +99,7 @@ export const presentBookshelf = (
   );
   const custom = result.definition.sort.by === LibrarySortByType.Custom;
   const { by, ascending, thenBy, thenAscending } = resolveBookshelfMetadataSort(result.definition);
+  const order = resolveBookshelfSortOrder(result.definition, globalSortOrder);
   const finish = <T extends Book | BooksGroup>(items: T[]) =>
     custom
       ? orderBookshelfItems(
@@ -134,6 +141,7 @@ export const presentBookshelf = (
       thenSortBy,
       thenSortAscending,
       pageDurations,
+      order,
     ),
   );
   groups.forEach((group) => {
@@ -151,6 +159,7 @@ export const presentBookshelf = (
     sortAscending,
     thenSortAscending,
     pageDurations,
+    order,
   );
   if (groupId && groupBy !== LibraryGroupByType.Group && groupBy !== LibraryGroupByType.None) {
     ungroupedBooks.sort(withinGroupSorter);

@@ -42,6 +42,16 @@ export type LibrarySortByType = (typeof LibrarySortByType)[keyof typeof LibraryS
  */
 export type LibrarySecondarySortByType = LibrarySortByType | 'none';
 
+export type LibraryMetadataSortByType = Exclude<
+  LibrarySortByType,
+  typeof LibrarySortByType.Custom | typeof LibrarySortByType.Size
+>;
+
+export interface LibrarySortCriterion {
+  by: LibraryMetadataSortByType;
+  ascending: boolean;
+}
+
 export type LibraryCoverFitType = 'crop' | 'fit';
 
 export const LibraryGroupByType = {
@@ -570,6 +580,8 @@ export interface SystemSettings {
   libraryThenSortBy: LibrarySecondarySortByType;
   /** Sort order of the secondary ("Then by") key, independent of `librarySortAscending` (#5119). */
   libraryThenSortAscending: boolean;
+  /** Ordered list of unique metadata sort criteria (highest priority first) with per-criterion direction. */
+  librarySortOrder?: LibrarySortCriterion[];
   libraryGroupBy: LibraryGroupByType;
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;

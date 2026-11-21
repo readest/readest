@@ -1,0 +1,239 @@
+import clsx from 'clsx';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { MdDragIndicator } from 'react-icons/md';
+import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useTranslation } from '@/hooks/useTranslation';
+import type { LibraryMetadataSortByType, LibrarySortCriterion } from '@/types/settings';
+
+interface SortPriorityListProps {
+  items: LibrarySortCriterion[];
+  labels: Record<LibraryMetadataSortByType, string>;
+  dimmed?: boolean;
+  primaryAutoLabel?: string;
+  onReorder: (next: LibrarySortCriterion[]) => void;
+  onToggleDirection: (by: LibraryMetadataSortByType) => void;
+}
+
+interface SortableSortRowProps {
+  item: LibrarySortCriterion;
+  index: number;
+  label: string;
+  dimmed?: boolean;
+  isAnyDragging?: boolean;
+  isJustDropped?: boolean;
+  primaryAutoLabel?: string;
+  onToggleDirection: (by: LibraryMetadataSortByType) => void;
+}
+
+const SortableSortRow: React.FC<SortableSortRowProps> = ({
+  item,
+  index,
+  label,
+  dimmed = false,
+  isAnyDragging = false,
+  isJustDropped = false,
+  primaryAutoLabel,
+  onToggleDirection,
+}) => {
+  const _ = useTranslation();
+  const iconSize = useResponsiveSize(16);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.by,
+  });
+
+  // Restrict to vertical translation so Dropdown's horizontal viewport clamp never offsets drags.
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform ? { ...transform, x: 0 } : null),
+    transition,
+  };
+
+  const isPrimary = index === 0 && !dimmed;
+  const displayLabel = index === 0 && primaryAutoLabel ? `${label} (${primaryAutoLabel})` : label;
+
+  return (
+    <div
+      ref={setNodeRef}
+      role='listitem'
+      style={style}
+      className={clsx(
+        'text-base-content flex min-h-8 w-full min-w-0 flex-row items-center rounded-md p-1 transition-colors duration-200',
+        isDragging
+          ? 'bg-base-300 z-10 shadow-sm'
+          : isJustDropped
+            ? 'bg-base-300/80'
+            : !isAnyDragging && '[@media(hover:hover)]:hover:bg-base-300',
+        dimmed && 'opacity-50',
+      )}
+    >
+      <button
+        type='button'
+        style={{ minWidth: `${iconSize}px` }}
+        className='text-base-content/45 hover:text-base-content flex shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing'
+        aria-label={_('Drag to reorder {{label}}', { label })}
+        title={_('Drag to reorder')}
+        {...attributes}
+        {...listeners}
+      >
+        <MdDragIndicator size={iconSize} aria-hidden='true' />
+      </button>
+      <button
+        type='button'
+        role='menuitem'
+        onClick={() => onToggleDirection(item.by)}
+        aria-label={`${label} (${item.ascending ? _('Ascending') : _('Descending')})`}
+        className='flex min-w-0 flex-1 items-center justify-between text-start'
+      >
+        <span
+          className={clsx(
+            'mx-2 flex-1 break-words text-pretty text-start text-base sm:text-sm',
+            isPrimary ? 'font-semibold' : 'font-normal',
+          )}
+          style={{ minWidth: 0 }}
+        >
+          {displayLabel}
+        </span>
+        <span
+          aria-hidden='true'
+          style={{ minWidth: `${iconSize}px` }}
+          className={clsx(
+            'shrink-0 text-center text-sm',
+            isPrimary ? 'text-base-content font-bold' : 'text-base-content/85 font-normal',
+          )}
+        >
+          {item.ascending ? '↑' : '↓'}
+        </span>
+      </button>
+    </div>
+  );
+};
+
+/**
+ * Priority-ordered sort list supporting mouse, touch-handle drag, and keyboard reordering.
+ * Only the left drag handle claims `touch-none` so vertical swipes over row labels still scroll the menu.
+ */
+const SortPriorityList: React.FC<SortPriorityListProps> = ({
+  items,
+  labels,
+  dimmed = false,
+  primaryAutoLabel,
+  onReorder,
+  onToggleDirection,
+}) => {
+  const [localItems, setLocalItems] = useState<LibrarySortCriterion[]>(items);
+  const [activeId, setActiveId] = useState<LibraryMetadataSortByType | null>(null);
+  const [justDroppedId, setJustDroppedId] = useState<LibraryMetadataSortByType | null>(null);
+  const dropTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const itemsSignature = items.map((item) => `${item.by}:${item.ascending ? 1 : 0}`).join(',');
+  useEffect(() => {
+    setLocalItems(items);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsSignature]);
+
+  useEffect(
+    () => () => {
+      if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+    },
+    [],
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const itemIds = useMemo(() => localItems.map((item) => item.by), [localItems]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+    setJustDroppedId(null);
+    setActiveId(event.active.id as LibraryMetadataSortByType);
+  };
+
+  const finishDrag = (droppedId: LibraryMetadataSortByType | null) => {
+    setActiveId(null);
+    if (droppedId) {
+      setJustDroppedId(droppedId);
+      if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+      dropTimerRef.current = setTimeout(() => {
+        setJustDroppedId(null);
+      }, 350);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    const draggedKey = active.id as LibraryMetadataSortByType;
+    finishDrag(draggedKey);
+    if (!over || active.id === over.id) return;
+    const oldIndex = localItems.findIndex((item) => item.by === active.id);
+    const newIndex = localItems.findIndex((item) => item.by === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const next = arrayMove(localItems, oldIndex, newIndex);
+    setLocalItems(next);
+    onReorder(next);
+  };
+
+  const handleDragCancel = () => {
+    finishDrag(null);
+  };
+
+  const handleToggleRowDirection = (by: LibraryMetadataSortByType) => {
+    setLocalItems((prev) =>
+      prev.map((criterion) =>
+        criterion.by === by ? { ...criterion, ascending: !criterion.ascending } : criterion,
+      ),
+    );
+    onToggleDirection(by);
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+        <div role='list' className='flex min-w-0 flex-1 flex-col'>
+          {localItems.map((item, index) => (
+            <SortableSortRow
+              key={item.by}
+              item={item}
+              index={index}
+              label={labels[item.by]}
+              dimmed={dimmed}
+              isAnyDragging={activeId !== null}
+              isJustDropped={justDroppedId === item.by}
+              primaryAutoLabel={primaryAutoLabel}
+              onToggleDirection={handleToggleRowDirection}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+};
+
+export default SortPriorityList;
