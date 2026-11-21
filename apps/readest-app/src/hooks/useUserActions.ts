@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -12,10 +13,15 @@ export const useUserActions = () => {
   const router = useRouter();
   const { envConfig, appService } = useEnv();
   const { logout } = useAuth();
+  // Lets the profile page skip its hand-off to the login page while it leaves.
+  const [signingOut, setSigningOut] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    setSigningOut(true);
     logout();
-    saveSysSettings(envConfig, 'keepLogin', false);
+    // The library sends a signed-out user to the login page when keepLogin is
+    // set, so leave only once it is cleared on disk (#7726).
+    await saveSysSettings(envConfig, 'keepLogin', false);
     navigateToLibrary(router);
   };
 
@@ -59,6 +65,7 @@ export const useUserActions = () => {
   };
 
   return {
+    signingOut,
     handleLogout,
     handleUpdateEmail,
     handleResetPassword,

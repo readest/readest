@@ -235,23 +235,23 @@ export default function AuthPage() {
     }
   };
 
-  const handleGoBack = () => {
+  const handleGoBack = async () => {
     // Keep login false to avoid infinite loop to redirect to the login page.
+    // Leave only once it is saved: the library reads settings from disk when it
+    // mounts, and an unfinished write opened this page once more (#7726).
     // On a cold load the store is still an empty object, so read through to
     // disk first: persisting that would overwrite the real settings file with
     // a lone `keepLogin`. Building a new object rather than mutating in place
     // also keeps the settingsStore subscriber's identity check meaningful.
-    void (async () => {
-      try {
-        const appService = await envConfig.getAppService();
-        const current = settingsLoaded ? settings : await appService.loadSettings();
-        const next = { ...current, keepLogin: false };
-        setSettings(next);
-        await saveSettings(envConfig, next);
-      } catch (error) {
-        console.error('Failed to clear keepLogin:', error);
-      }
-    })();
+    try {
+      const appService = await envConfig.getAppService();
+      const current = settingsLoaded ? settings : await appService.loadSettings();
+      const next = { ...current, keepLogin: false };
+      setSettings(next);
+      await saveSettings(envConfig, next);
+    } catch (error) {
+      console.error('Failed to clear keepLogin:', error);
+    }
     const redirectTo = new URLSearchParams(window.location.search).get('redirect');
     // Go back to the reader rather than pushing the redirect over /auth: a
     // pushed entry leaves /auth in the history, and the reader's Android back
