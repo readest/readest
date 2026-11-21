@@ -5,6 +5,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { throttle } from '@/utils/throttle';
 import { getCoverFilename, getLocalBookFilename } from '@/utils/book';
+import { renderFallbackCover } from '@/utils/cover';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
 
@@ -34,7 +35,20 @@ export const useBookCoverAutoSave = (bookKey: string) => {
                 lastCoverFilename,
                 useBuiltinDest ? null : savedCoverPath,
               );
-              if (!wroteFullCover) {
+              if (!wroteFullCover && !(await appService.exists(getCoverFilename(book), 'Books'))) {
+                // The book has no cover at all: save the library's title and
+                // author placeholder instead of leaving the lock screen blank.
+                const fallback = await renderFallbackCover(book);
+                if (useBuiltinDest) {
+                  await appService.writeFile(lastCoverFilename, 'Images', fallback);
+                } else {
+                  await appService.writeFile(
+                    `${savedCoverPath}/${lastCoverFilename}`,
+                    'None',
+                    fallback,
+                  );
+                }
+              } else if (!wroteFullCover) {
                 // Fallback: copy the on-disk thumbnail (still a valid PNG/JPEG
                 // payload — webview / system image loaders sniff by header).
                 const coverPath = await appService.resolveFilePath(getCoverFilename(book), 'Books');
