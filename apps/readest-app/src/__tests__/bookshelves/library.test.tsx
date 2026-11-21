@@ -144,10 +144,8 @@ vi.mock('@/app/library/components/BookshelfStream', () => ({
     sections,
     renderItem,
     importAction,
-    coverOnly,
   }: {
     sections: ShelfSection[];
-    coverOnly?: boolean;
     renderItem: (
       item: Book | BooksGroup,
       layout: 'list' | 'grid',
@@ -161,7 +159,6 @@ vi.mock('@/app/library/components/BookshelfStream', () => ({
           key={s.definition.id}
           data-testid={s.definition.id}
           data-layout={s.definition.layout}
-          data-cover-only={coverOnly}
         >
           {s.items.map((item) => (
             <div key={'hash' in item ? item.hash : item.id}>
@@ -1203,26 +1200,28 @@ describe('library bookshelf integration', () => {
       expect(screen.getByTestId(carousel.id).querySelectorAll('button')).toHaveLength(20);
     }
   });
-  it('applies Cover only to every shelf in Grid View and to none in List View (#7746)', () => {
-    const carousel = createBookshelf('Carousel');
-    configure([carousel, ...defaultBookshelves(DEFAULT_SYSTEM_SETTINGS)]);
+  it('applies Cover only per shelf, to grid and carousel tiles but not list rows (#7746)', () => {
+    const carousel = { ...createBookshelf('Carousel'), coverOnly: true };
+    const plain = createBookshelf('Plain');
+    configure([
+      carousel,
+      plain,
+      ...defaultBookshelves(DEFAULT_SYSTEM_SETTINGS).map((s) =>
+        s.id === 'default' ? { ...s, layout: 'grid' as const, coverOnly: true } : s,
+      ),
+    ]);
     render(<Bookshelf {...props} />);
     for (const mode of ['grid', 'list'] as const) {
       act(() =>
         useSettingsStore.setState({
-          settings: {
-            ...useSettingsStore.getState().settings,
-            libraryViewMode: mode,
-            libraryCoverOnly: true,
-          },
+          settings: { ...useSettingsStore.getState().settings, libraryViewMode: mode },
         }),
       );
-      const expected = String(mode === 'grid');
-      for (const id of [carousel.id, 'default']) {
-        const shelf = screen.getByTestId(id);
-        expect(shelf.getAttribute('data-cover-only')).toBe(expected);
-        expect(shelf.querySelector('button')?.getAttribute('data-cover-only')).toBe(expected);
-      }
+      const coverOnly = (id: string) =>
+        screen.getByTestId(id).querySelector('button')?.getAttribute('data-cover-only');
+      expect(coverOnly(carousel.id)).toBe('true');
+      expect(coverOnly(plain.id)).toBe('false');
+      expect(coverOnly('default')).toBe(String(mode === 'grid'));
     }
   });
   it('uses the global search layout even when Default remains a carousel', () => {

@@ -71,6 +71,16 @@ describe('bookshelf validation boundaries', () => {
       readBookshelves(settings).find((s) => s.id === row.replica_id)?.plainPlaceholderCovers,
     ).toBe(true);
   });
+  it('round-trips the Cover only choice through synced definitions (#7746)', () => {
+    const row = makeRow();
+    row.fields_jsonb['definition']!.v = {
+      ...createBookshelf('Covers', row.replica_id),
+      coverOnly: true,
+    };
+    const settings = { bookshelves: { rows: { [row.replica_id]: row } } };
+    expect(validateRow(row).ok).toBe(true);
+    expect(readBookshelves(settings).find((s) => s.id === row.replica_id)?.coverOnly).toBe(true);
+  });
   it('round-trips relative date filters through synced definitions', () => {
     const row = makeRow();
     const definition = createBookshelf('Recent additions', row.replica_id);

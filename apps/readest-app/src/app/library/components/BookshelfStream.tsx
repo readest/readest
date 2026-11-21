@@ -50,8 +50,6 @@ interface StreamProps {
   navigationBottomInset?: number;
   /** Identifies the shelf view; its scroll state survives remounts (open a book, come back). */
   scrollKey?: string;
-  /** Removes grid spacing and horizontal padding when rendering covers edge-to-edge. */
-  coverOnly?: boolean;
 }
 // Module-scoped so the position outlives the library page while the reader is open.
 // Virtuoso's measured sizes are per row index, so a snapshot is kept with the
@@ -132,14 +130,12 @@ export const BookshelfCarousel = ({
   width,
   renderItem,
   hidePageButtons = false,
-  coverOnly = false,
 }: {
   section: ShelfSection;
   columns: number;
   width: number;
   renderItem: StreamProps['renderItem'];
   hidePageButtons?: boolean;
-  coverOnly?: boolean;
 }) => {
   const _ = useTranslation();
   const scroller = useRef<HTMLDivElement>(null);
@@ -147,6 +143,7 @@ export const BookshelfCarousel = ({
   const [viewportWidth, setViewportWidth] = useState(0);
   const [coverCenter, setCoverCenter] = useState<number | null>(null);
   const compact = typeof window !== 'undefined' && window.innerWidth < 640;
+  const coverOnly = !!section.definition.coverOnly;
   const gap = coverOnly ? 0 : compact ? 16 : 0;
   const itemWidth = Math.max(40, (width - (coverOnly ? 0 : compact ? 32 : 16) + gap) / columns);
   // Clamped to the list: a shelf that shrinks while scrolled to the end would
@@ -312,7 +309,6 @@ export default function BookshelfStream({
   hidePageButtons = false,
   navigationBottomInset = 0,
   scrollKey,
-  coverOnly = false,
 }: StreamProps) {
   const _ = useTranslation();
   const root = useRef<HTMLDivElement>(null);
@@ -441,7 +437,6 @@ export default function BookshelfStream({
                       width={width / scale}
                       renderItem={renderItem}
                       hidePageButtons={hidePageButtons}
-                      coverOnly={coverOnly}
                     />
                   </div>
                 );
@@ -453,7 +448,7 @@ export default function BookshelfStream({
                       'bookshelf-items transform-wrapper grid',
                       // List rows carry their own responsive side padding.
                       definition.layout === 'grid' &&
-                        (coverOnly ? 'gap-0 px-0' : 'gap-x-4 px-4 sm:gap-x-0 sm:px-2'),
+                        (definition.coverOnly ? 'gap-0 px-0' : 'gap-x-4 px-4 sm:gap-x-0 sm:px-2'),
                     )}
                     style={{
                       gridTemplateColumns: `repeat(${definition.layout === 'grid' ? columns : 1}, minmax(0, 1fr))`,

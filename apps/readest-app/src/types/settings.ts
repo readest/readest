@@ -581,8 +581,6 @@ export interface SystemSettings {
    * visible to others.
    */
   libraryHideCovers: boolean;
-  /** When true, Grid View renders only book covers without titles or footer metadata underneath. */
-  libraryCoverOnly: boolean;
   /** Show the recently-read carousel at the top of the library (issue #3797). */
   libraryRecentShelfEnabled: boolean;
   /**
