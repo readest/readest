@@ -26,10 +26,31 @@ object AnkiDroidLink {
      */
     val NOTE_FIELDS = listOf("Front", "Back", "Word", "Language", "Entry")
 
-    /** The answer side, reading the word aloud in its language when both are set. */
-    const val ANSWER_FORMAT =
-        "{{FrontSide}}<hr id=answer>{{Back}}" +
-            "{{#Language}}{{#Word}}<br>[anki:tts lang={{Language}}]{{Word}}[/anki:tts]{{/Word}}{{/Language}}"
+    /** Reads the word aloud in its language when both are set. */
+    private const val AUDIO =
+        "{{#Language}}{{#Word}}<br>[anki:tts lang={{Language}}]{{Word}}[/anki:tts]{{/Word}}{{/Language}}"
+
+    /**
+     * The question and answer templates for a note type with these field
+     * [names]: its own first two fields, so a reader who renamed Front and
+     * Back keeps a card that renders them, then the audio.
+     */
+    fun templates(names: List<String>): Pair<String, String> =
+        "{{${names[0]}}}" to "{{FrontSide}}<hr id=answer>{{${names[1]}}}$AUDIO"
+
+    /**
+     * True until the note type has every field and the audio template. An
+     * upgrade that stopped after adding the fields is still outdated, so the
+     * next one finishes it.
+     */
+    fun outdated(names: List<String>, answerFormat: String): Boolean =
+        missingFields(names).isNotEmpty() || AUDIO !in answerFormat
+
+    /**
+     * The fields after Front and Back that a note type lacks. Its first two
+     * fields are Front and Back whatever the reader renamed them to.
+     */
+    fun missingFields(names: List<String>): List<String> = NOTE_FIELDS.drop(2).filter { it !in names }
 
     private const val FIELD_SEPARATOR = "\u001f"
     /** Notes per bulkInsert: one Binder transaction carries at most about 1 MB. */
@@ -160,17 +181,23 @@ object AnkiDroidLink {
             )
         }.firstOrNull { it.second == NOTE_TYPE_NAME }?.let { it.first to splitFields(it.third) }
 
-    /** True when the note type exists but predates a field in [NOTE_FIELDS]. */
-    fun noteTypeOutdated(cr: ContentResolver): Boolean =
-        findNoteType(cr)?.let { (_, names) -> NOTE_FIELDS.any { it !in names } } ?: false
+    /** True when the note type exists and isn't fully upgraded (see [outdated]). */
+    fun noteTypeOutdated(cr: ContentResolver): Boolean {
+        val (mid, names) = findNoteType(cr) ?: return false
+        val answer = cr.query(uri("models/$mid/templates/0"), arrayOf("answer_format"), null, null, null).rows {
+            it.getString(it.getColumnIndexOrThrow("answer_format")) ?: ""
+        }.firstOrNull() ?: ""
+        return outdated(names, answer)
+    }
 
     // AnkiDroid's generated back template carries a literal "\n"; set both sides.
-    private fun setTemplate(cr: ContentResolver, mid: Long) {
+    private fun setTemplate(cr: ContentResolver, mid: Long, names: List<String>) {
+        val (question, answer) = templates(names)
         cr.update(
             uri("models/$mid/templates/0"),
             ContentValues().apply {
-                put("question_format", "{{Front}}")
-                put("answer_format", ANSWER_FORMAT)
+                put("question_format", question)
+                put("answer_format", answer)
             },
             null,
             null,
@@ -187,26 +214,26 @@ object AnkiDroidLink {
             put("css", CARD_CSS)
         }
         val mid = cr.insert(uri("models"), values)!!.lastPathSegment!!.toLong()
-        setTemplate(cr, mid)
+        setTemplate(cr, mid, NOTE_FIELDS)
         return mid to NOTE_FIELDS
     }
 
     /**
      * Add the fields a note type from before #7729 lacks, switch its template to
      * the one with audio, and fill Word and Language on the notes Sync added
-     * before ([fills]: note id, word, language). Adding a field changes Anki's
-     * schema, so AnkiDroid's next AnkiWeb sync is a full one. Resolves with how
-     * many notes were filled.
+     * before ([fills]: note id, word, language). Repeatable: fields that exist
+     * and values already set are kept. Adding a field changes Anki's schema, so
+     * AnkiDroid's next AnkiWeb sync is a full one. Resolves with how many notes
+     * were filled.
      */
     fun upgradeNoteType(cr: ContentResolver, fills: List<Triple<Long, String, String>>): Int {
         val (mid, names) = findOrCreateNoteType(cr)
-        val missing = NOTE_FIELDS.filter { it !in names }
+        val missing = missingFields(names)
         missing.forEach { name ->
             cr.insert(uri("models/$mid/fields"), ContentValues().apply { put("field_name", name) })
         }
-        setTemplate(cr, mid)
         val all = names + missing
-        return fills.sumOf { (id, word, language) ->
+        val filled = fills.sumOf { (id, word, language) ->
             val note = cr.query(uri("notes/$id"), arrayOf("mid", "flds"), null, null, null).rows {
                 it.getLong(it.getColumnIndexOrThrow("mid")) to (it.getString(it.getColumnIndexOrThrow("flds")) ?: "")
             }.firstOrNull()
@@ -216,6 +243,10 @@ object AnkiDroidLink {
             if (flds == note.second) 0
             else cr.update(uri("notes/$id"), ContentValues().apply { put("flds", flds) }, null, null)
         }
+        // Last: until the template has the audio, the note type reads as
+        // outdated, so an upgrade that stopped early is finished next Sync.
+        setTemplate(cr, mid, all)
+        return filled
     }
 
     /** Add notes to the named deck, creating the deck and note type as needed. */

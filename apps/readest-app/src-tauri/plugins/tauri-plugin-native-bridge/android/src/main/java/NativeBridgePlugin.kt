@@ -2249,7 +2249,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         }
     }
 
-    /** Whether the Readest note type predates its audio fields (#7729). */
+    /** Whether the Readest note type still lacks its audio fields or template (#7729). */
     @Command
     fun anki_note_type(invoke: Invoke) = ankiCall(invoke) { cr ->
         JSObject().apply { put("outdated", AnkiDroidLink.noteTypeOutdated(cr)) }

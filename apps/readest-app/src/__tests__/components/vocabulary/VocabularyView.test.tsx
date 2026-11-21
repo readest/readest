@@ -375,6 +375,26 @@ describe('VocabularyView Anki link', () => {
     await screen.findByRole('region', { name: 'Add Audio to Anki Cards' });
   });
 
+  it('offers Add Audio only while no Sync is running', async () => {
+    localStorage.setItem('readest-anki-audio-declined', '1');
+    renderWithMenu();
+    const sync = await syncButton();
+    await waitFor(() => expect(anki.ankiReadDeck).toHaveBeenCalledTimes(1));
+    let finish = () => {};
+    anki.ankiReadDeck.mockImplementation(
+      () => new Promise((resolve) => (finish = () => resolve({ notes: [], cards: [] }))),
+    );
+    fireEvent.click(sync);
+    await waitFor(() => expect(anki.ankiReadDeck).toHaveBeenCalledTimes(2));
+    openMenu('More');
+    const item = screen.getByText('Add Audio to Anki Cards').closest('button')!;
+    expect(item.disabled).toBe(true);
+    fireEvent.click(item);
+    expect(localStorage.getItem('readest-anki-audio-declined')).toBe('1');
+    finish();
+    await waitFor(() => expect(sync.hasAttribute('disabled')).toBe(false));
+  });
+
   it('pulls before pushing: a mature card makes a word Mastered and a deck-only note comes in', async () => {
     const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
     renderWithMenu();

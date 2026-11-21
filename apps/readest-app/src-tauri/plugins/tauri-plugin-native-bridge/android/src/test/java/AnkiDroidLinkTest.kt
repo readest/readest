@@ -88,4 +88,37 @@ class AnkiDroidLinkTest {
             AnkiDroidLink.fillFields(listOf("f", "b", "mine", "", "x"), names, "haus", "de_DE"),
         )
     }
+
+    @Test
+    fun templates_keepRenamedFrontAndBack() {
+        // A reader who renamed Front and Back keeps a card that renders them.
+        val (question, answer) = AnkiDroidLink.templates(listOf("Wort", "Hinweis", "Word", "Language", "Entry"))
+        assertEquals("{{Wort}}", question)
+        assertEquals(
+            "{{FrontSide}}<hr id=answer>{{Hinweis}}" +
+                "{{#Language}}{{#Word}}<br>[anki:tts lang={{Language}}]{{Word}}[/anki:tts]{{/Word}}{{/Language}}",
+            answer,
+        )
+    }
+
+    @Test
+    fun outdated_untilTheFieldsAndTheAudioTemplateAreBothThere() {
+        val all = AnkiDroidLink.NOTE_FIELDS
+        val (_, audio) = AnkiDroidLink.templates(all)
+        assertEquals(true, AnkiDroidLink.outdated(listOf("Front", "Back"), "{{FrontSide}}<hr id=answer>{{Back}}"))
+        // Fields added but the upgrade stopped before the template: still to finish.
+        assertEquals(true, AnkiDroidLink.outdated(all, "{{FrontSide}}<hr id=answer>{{Back}}"))
+        assertEquals(false, AnkiDroidLink.outdated(all, audio))
+        // Renamed Front and Back are not missing fields.
+        assertEquals(false, AnkiDroidLink.outdated(listOf("Wort", "Hinweis", "Word", "Language", "Entry"), audio))
+    }
+
+    @Test
+    fun missingFields_leaveRenamedFrontAndBackAlone() {
+        assertEquals(
+            listOf("Word", "Language", "Entry"),
+            AnkiDroidLink.missingFields(listOf("Wort", "Hinweis")),
+        )
+        assertEquals(listOf("Entry"), AnkiDroidLink.missingFields(listOf("Front", "Back", "Word", "Language")))
+    }
 }

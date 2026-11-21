@@ -91,7 +91,7 @@ export const ankiAddNotes = async (notes: AnkiOutgoingNote[]): Promise<number> =
 export const ankiUpdateTags = async (notes: AnkiTagUpdate[]): Promise<number> =>
   (await call<{ updated?: number; error?: string }>('anki_update_tags', { notes })).updated ?? 0;
 
-/** Whether the Readest note type predates its audio fields (#7729). */
+/** Whether the Readest note type still lacks its audio fields or template (#7729). */
 export const ankiNoteTypeOutdated = async (): Promise<boolean> =>
   !!(await call<{ outdated?: boolean; error?: string }>('anki_note_type')).outdated;
 

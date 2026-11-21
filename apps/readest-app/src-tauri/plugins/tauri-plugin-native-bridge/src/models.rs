@@ -1050,7 +1050,7 @@ pub struct AnkiUpdateTagsResponse {
     pub error: Option<String>,
 }
 
-/// Whether the Readest note type predates its audio fields (#7729).
+/// Whether the Readest note type still lacks its audio fields or template (#7729).
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnkiNoteTypeResponse {

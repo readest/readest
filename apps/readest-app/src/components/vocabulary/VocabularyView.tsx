@@ -304,6 +304,8 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
                 label={_('Add Audio to Anki Cards')}
                 Icon={PiSpeakerHigh}
                 transient
+                // Its Sync would run alongside the one in progress.
+                disabled={anki.syncing}
                 onClick={anki.addAudio}
               />
             )}
