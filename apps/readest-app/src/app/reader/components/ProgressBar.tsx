@@ -168,8 +168,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         ? formatProgress(calibratedPair.current, calibratedPair.total, template, localize, lang)
         : formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
-  // Sticky progress bar is horizontal-only; vertical mode keeps its side footer.
-  const stickyBarActive = viewSettings.showStickyProgressBar && !isVertical;
+  const stickyBarActive = !!viewSettings.showStickyProgressBar;
   // The info sits on a reserved bottom band (paginated, sticky bar, or Solid
   // Footer in scrolled mode, #6793) rather than over the text.
   const bandReserved = footerReservesBand(viewSettings) && !isVertical;
@@ -364,7 +363,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         bookData?.isFixedLayout && !isEink && !pillClass && !isChromeStyled(viewSettings)
           ? 'text-white/75 mix-blend-difference'
           : 'text-base-content',
-        isVertical ? 'writing-vertical-rl' : 'w-full',
+        isVertical ? 'writing-vertical-rl leading-tight' : 'w-full',
         hidden && 'invisible',
       )}
       aria-label={[
@@ -386,11 +385,11 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         ...(isVertical
           ? {
               top: `${gridInsets.top + (contentInsets.top - gridInsets.top) * 1.5}px`,
-              bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
+              bottom: `${gridInsets.bottom + (contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
               left: showDoubleBorder
                 ? `calc(${contentInsets.left}px)`
-                : `calc(${Math.max(0, contentInsets.left - 32)}px)`,
-              width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
+                : `calc(${Math.max(0, Math.max(16, contentInsets.left) - 32)}px)`,
+              width: showDoubleBorder ? '32px' : `${Math.max(16, contentInsets.left)}px`,
             }
           : {
               ...(isIPhoneDuo
@@ -436,18 +435,19 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           // repaint a partly visible footer. Showing may still fade in.
           !isEink && !dismissed && 'transition-opacity duration-300',
           isVertical ? 'h-full' : 'w-full',
-          // Sticky bar grows on the left; the info widgets pack to the right
-          // with even gaps. Without it, keep the 3-zone left/center/right row.
-          stickyBarActive ? 'gap-x-3' : 'justify-between gap-x-2',
+          // Sticky bar grows on the start side; the info widgets pack to the
+          // end side with even gaps. Without it, keep the 3-zone row/column.
+          stickyBarActive ? (isVertical ? 'gap-3' : 'gap-x-3') : 'justify-between gap-x-2',
         )}
         style={isVertical ? {} : { height: `${viewSettings.marginBottomPx}px` }}
       >
         {stickyBarActive && (
           <StickyProgressBar
-            className='h-3 flex-1'
+            className={isVertical ? 'w-3 flex-1' : 'h-3 flex-1'}
             fraction={fillFraction}
             tickFractions={tickFractions}
             rtl={viewSettings.rtl}
+            vertical={isVertical}
             isEink={isEink}
           />
         )}
@@ -455,7 +455,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           <div
             className={clsx(
               'remaining-info text-start truncate tabular-nums',
-              !stickyBarActive && 'flex-1 min-w-0',
+              !stickyBarActive && clsx('flex-1', isVertical ? 'min-h-0' : 'min-w-0'),
             )}
           >
             {showBothRemaining ? (
@@ -519,7 +519,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         <div
           className={clsx(
             'progress-readout items-center text-end tabular-nums truncate',
-            !stickyBarActive && 'flex-1 min-w-0',
+            !stickyBarActive && clsx('flex-1', isVertical ? 'min-h-0' : 'min-w-0'),
           )}
         >
           {viewSettings.showProgressInfo && (

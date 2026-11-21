@@ -1236,12 +1236,14 @@ const FoliateViewer: React.FC<{
     const showDoubleBorderHeader = showDoubleBorder && viewSettings.showHeader;
     const showDoubleBorderFooter = showDoubleBorder && viewSettings.showFooter;
     const showTopHeader = viewSettings.showHeader && !viewSettings.vertical;
+    const showRightHeader = viewSettings.showHeader && viewSettings.vertical;
     // The bottom band is reserved only while the footer displays something
     // there (and in scrolled mode only with Solid Footer on; otherwise the
     // info floats in pills) — see footerReservesBand. Otherwise the empty
     // reservation shows as a full-width blank bar that steals space from the
     // book text.
     const showBottomFooter = footerReservesBand(viewSettings) && !viewSettings.vertical;
+    const showLeftFooter = footerReservesBand(viewSettings) && viewSettings.vertical;
     const moreTopInset = showTopHeader ? Math.max(0, 16 - insets.top) : 0;
     // Only the persistent 'minimal' card reserves a band; the 'full' one
     // auto-hides with the toolbar and overlaps instead (#5310).
@@ -1251,15 +1253,26 @@ const FoliateViewer: React.FC<{
     const moreBottomInset = showBottomFooter
       ? Math.max(0, Math.max(miniPlayerClearance, 16) - insets.bottom)
       : Math.max(0, miniPlayerClearance);
-    const moreRightInset = showDoubleBorderHeader ? 32 : 0;
-    const moreLeftInset = showDoubleBorderFooter ? 32 : 0;
+    const baseRightInset = isIPhoneDuo ? viewInsets.right : insets.right;
+    const baseLeftInset = isIPhoneDuo ? viewInsets.left : insets.left;
+    const moreRightInset = showDoubleBorderHeader
+      ? 32
+      : showRightHeader
+        ? Math.max(0, 16 - baseRightInset)
+        : 0;
+    const moreLeftInset = showDoubleBorderFooter
+      ? 32
+      : showLeftFooter
+        ? Math.max(0, 16 - baseLeftInset)
+        : 0;
     // The drawing dock stays up for the whole drawing session, so the text
     // makes room for it instead of running underneath.
     const drawingDock = viewState?.drawingEnabled ? getDrawingDockClearance(gridInsets) : null;
-    // Vertical mode cannot scroll lines vertically out from under a top safe-area
-    // inset (Dynamic Island/notch). Preserve gridInsets.top while dividing out
-    // foliate-js's 1.5x vertical marginTop multiplier so effective padding-top is
-    // gridInsets.top + viewInsets.top * 1.5, leaving horizontal mode unchanged.
+    // Vertical mode cannot scroll lines vertically out from under top/bottom
+    // safe-area insets (Dynamic Island/notch, home indicator/rounded corners).
+    // Preserve gridInsets.top and gridInsets.bottom while dividing out
+    // foliate-js's 1.5x vertical margin multiplier so effective padding is
+    // gridInsets + viewInsets * 1.5, leaving horizontal mode unchanged.
     const topMargin = viewSettings.vertical
       ? gridInsets.top / 1.5 + viewInsets.top
       : (showTopHeader ? insets.top : viewInsets.top) + moreTopInset;
@@ -1268,12 +1281,16 @@ const FoliateViewer: React.FC<{
     // the paginator treats a horizontal margin as a gutter and puts only half
     // of it (a quarter in two-column mode) on the outer edge, which left text
     // under the side status strip (#6307). Elsewhere they stay in the margins.
-    const rightMargin = (isIPhoneDuo ? viewInsets.right : insets.right) + moreRightInset;
+    const rightMargin = baseRightInset + moreRightInset;
     const bottomMargin = Math.max(
-      (showBottomFooter ? insets.bottom : viewInsets.bottom) + moreBottomInset,
+      (viewSettings.vertical
+        ? gridInsets.bottom / 1.5 + viewInsets.bottom
+        : showBottomFooter
+          ? insets.bottom
+          : viewInsets.bottom) + moreBottomInset,
       drawingDock?.bottom ?? 0,
     );
-    const leftMargin = (isIPhoneDuo ? viewInsets.left : insets.left) + moreLeftInset;
+    const leftMargin = baseLeftInset + moreLeftInset;
     viewRef.current?.renderer.setAttribute('margin-top', `${topMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-right', `${rightMargin}px`);
     viewRef.current?.renderer.setAttribute('margin-bottom', `${bottomMargin}px`);

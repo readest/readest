@@ -9,6 +9,7 @@ const { readerState, openGate, bookDataState, attrs, viewSettings } = vi.hoisted
     showHeader: true,
     vertical: false,
     compactMarginTopPx: 16,
+    compactMarginBottomPx: 16,
   };
   return {
     attrs: new Map<string, string>(),
@@ -127,6 +128,7 @@ afterEach(() => {
   viewSettings.vertical = false;
   viewSettings.showHeader = true;
   viewSettings.compactMarginTopPx = 16;
+  viewSettings.compactMarginBottomPx = 16;
   cleanup();
 });
 
@@ -165,9 +167,38 @@ it('preserves gridInsets.top / 1.5 + viewInsets.top in vertical mode (#7389)', a
   viewSettings.showHeader = false;
   openGate.pending = Promise.resolve();
   openGate.started = false;
-  render(<FoliateViewer {...props(75, 59)} />);
+  render(
+    <FoliateViewer
+      {...({
+        ...props(75, 59),
+        gridInsets: { top: 59, right: 0, bottom: 34, left: 0 },
+        contentInsets: { top: 75, right: 0, bottom: 50, left: 0 },
+      } as unknown as ComponentProps<typeof FoliateViewer>)}
+    />,
+  );
   await waitFor(() => expect(attrs.has('margin-top')).toBe(true));
   expect(attrs.get('margin-top')).toBe(`${59 / 1.5 + 16}px`);
+  expect(attrs.get('margin-bottom')).toBe(`${34 / 1.5 + 16}px`);
+});
+
+it('floors vertical header/footer side margins at 16px when side margins are 0px', async () => {
+  attrs.clear();
+  viewSettings.vertical = true;
+  viewSettings.showHeader = true;
+  Object.assign(viewSettings, {
+    showFooter: true,
+    showProgressInfo: true,
+    marginLeftPx: 0,
+    marginRightPx: 0,
+    compactMarginLeftPx: 0,
+    compactMarginRightPx: 0,
+  });
+  openGate.pending = Promise.resolve();
+  openGate.started = false;
+  render(<FoliateViewer {...props(75, 59)} />);
+  await waitFor(() => expect(attrs.has('margin-left')).toBe(true));
+  expect(attrs.get('margin-left')).toBe('16px');
+  expect(attrs.get('margin-right')).toBe('16px');
 });
 
 it('keeps horizontal mode edge-to-edge when header is hidden (#5565)', async () => {
