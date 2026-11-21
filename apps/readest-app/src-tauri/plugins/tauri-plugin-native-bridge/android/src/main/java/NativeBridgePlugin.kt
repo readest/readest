@@ -177,6 +177,18 @@ class AnkiUpdateTagsArgs {
 }
 
 @InvokeArg
+class AnkiNoteFillArg {
+    var id: Long = 0
+    var word: String = ""
+    var language: String = ""
+}
+
+@InvokeArg
+class AnkiUpgradeNoteTypeArgs {
+    var notes: Array<AnkiNoteFillArg> = emptyArray()
+}
+
+@InvokeArg
 class SetLookupAppArgs {
     var packageName: String? = null
     var className: String? = null
@@ -2234,6 +2246,21 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         ankiCall(invoke) { cr ->
             val notes = args.notes.map { it.id to it.tags.toList() }
             JSObject().apply { put("updated", AnkiDroidLink.updateTags(cr, notes)) }
+        }
+    }
+
+    /** Whether the Readest note type predates its audio fields (#7729). */
+    @Command
+    fun anki_note_type(invoke: Invoke) = ankiCall(invoke) { cr ->
+        JSObject().apply { put("outdated", AnkiDroidLink.noteTypeOutdated(cr)) }
+    }
+
+    @Command
+    fun anki_upgrade_note_type(invoke: Invoke) {
+        val args = invoke.parseArgs(AnkiUpgradeNoteTypeArgs::class.java)
+        ankiCall(invoke) { cr ->
+            val fills = args.notes.map { Triple(it.id, it.word, it.language) }
+            JSObject().apply { put("updated", AnkiDroidLink.upgradeNoteType(cr, fills)) }
         }
     }
 

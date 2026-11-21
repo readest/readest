@@ -57,4 +57,35 @@ class AnkiDroidLinkTest {
             AnkiDroidLink.insertInChunks((1..10).toList(), 200) { 0 }
         }
     }
+
+    @Test
+    fun arrangeFields_keepsANoteTypeWithoutTheNewFieldsWorking() {
+        // A note type from before the upgrade still takes Front and Back.
+        val values = listOf("front", "back", "word", "en_US", "")
+        assertEquals(listOf("front", "back"), AnkiDroidLink.arrangeFields(values, listOf("Front", "Back")))
+    }
+
+    @Test
+    fun arrangeFields_placesTheNewFieldsByName() {
+        val values = listOf("front", "back", "word", "en_US", "entry")
+        val names = listOf("Front", "Back", "Extra", "Word", "Language", "Entry")
+        assertEquals(
+            listOf("front", "back", "", "word", "en_US", "entry"),
+            AnkiDroidLink.arrangeFields(values, names),
+        )
+    }
+
+    @Test
+    fun fillFields_setsOnlyEmptyWordAndLanguage() {
+        val names = listOf("Front", "Back", "Word", "Language", "Entry")
+        assertEquals(
+            listOf("f", "b", "haus", "de_DE", ""),
+            AnkiDroidLink.fillFields(listOf("f", "b"), names, "haus", "de_DE"),
+        )
+        // A Word the reader edited in Anki stays.
+        assertEquals(
+            listOf("f", "b", "mine", "de_DE", "x"),
+            AnkiDroidLink.fillFields(listOf("f", "b", "mine", "", "x"), names, "haus", "de_DE"),
+        )
+    }
 }

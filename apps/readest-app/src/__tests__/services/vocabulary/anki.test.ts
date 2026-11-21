@@ -9,8 +9,10 @@ import {
   ankiWordOf,
   cleanAnkiField,
   defaultImportLang,
+  ankiNoteFills,
   ankiNotesToSend,
   ankiTagUpdates,
+  ankiTtsLang,
   withNoteLangs,
   importLanguageOptions,
   planAnkiImport,
@@ -287,10 +289,19 @@ describe('ankiNotesToSend', () => {
     expect(ankiNotesToSend([spice], [])).toEqual([
       {
         deck: 'Readest Vocabulary::English',
-        fields: [card.front, card.back],
+        fields: [card.front, card.back, 'spice', 'en_US', ''],
         tags: [...card.tags, 'readest::lang::en', 'readest::learning'],
       },
     ]);
+  });
+
+  it('gives the audio the word alone, as HTML, and no voice for an unknown language', () => {
+    const [ampersand, unknown] = ankiNotesToSend(
+      [entry('R&D', { lang: 'en' }), entry('x', { lang: 'und' })],
+      [],
+    );
+    expect(ampersand!.fields.slice(2)).toEqual(['R&amp;D', 'en_US', '']);
+    expect(unknown!.fields.slice(2)).toEqual(['x', '', '']);
   });
 
   it('files each word under its language subdeck, and unknown ones in the parent', () => {
@@ -356,6 +367,35 @@ describe('ankiNotesToSend', () => {
 
   it('never sends a deleted word', () => {
     expect(ankiNotesToSend([entry('gone', { deletedAt: 3 })], [])).toEqual([]);
+  });
+});
+
+describe('ankiTtsLang', () => {
+  it("names the locale Anki's TTS needs: a bare language code finds no voice", () => {
+    expect(['en', 'de', 'pt', 'zh', 'ja'].map(ankiTtsLang)).toEqual([
+      'en_US',
+      'de_DE',
+      'pt_BR',
+      'zh_CN',
+      'ja_JP',
+    ]);
+  });
+
+  it('gives no voice for an unknown language', () => {
+    expect(ankiTtsLang('und')).toBe('');
+  });
+});
+
+describe('ankiNoteFills', () => {
+  it("fills a note's Word and Language from its first field and language tag", () => {
+    const front = '<div style="font-size:1.6em">R&amp;D</div><div>Our <b>R&amp;D</b> team.</div>';
+    expect(
+      ankiNoteFills([{ id: 7, fields: [front, 'hint'], tags: 'readest readest::lang::en' }]),
+    ).toEqual([{ id: 7, word: 'R&amp;D', language: 'en_US' }]);
+  });
+
+  it('leaves out notes with no word', () => {
+    expect(ankiNoteFills([{ id: 7, fields: ['<img src="a.png">'], tags: '' }])).toEqual([]);
   });
 });
 

@@ -1049,3 +1049,27 @@ pub struct AnkiUpdateTagsResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
+
+/// Whether the Readest note type predates its audio fields (#7729).
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiNoteTypeResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub outdated: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiNoteFill {
+    pub id: i64,
+    pub word: String,
+    pub language: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiUpgradeNoteTypeRequest {
+    pub notes: Vec<AnkiNoteFill>,
+}

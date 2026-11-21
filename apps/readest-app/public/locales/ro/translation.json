@@ -2956,5 +2956,12 @@
   "Alphabetical Z-A": "Alfabetic Z-A",
   "All Languages": "Toate limbile",
   "Pin to Notebook": "Fixează în carnețel",
-  "Look up a word to see its definitions here.": "Caută un cuvânt pentru a-i vedea aici definițiile."
+  "Look up a word to see its definitions here.": "Caută un cuvânt pentru a-i vedea aici definițiile.",
+  "Add Audio to Anki Cards": "Adaugă audio la cardurile Anki",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Fiecare card își poate citi cuvântul cu voce tare folosind sinteza vocală a dispozitivului. Readest adaugă câmpuri noi la tipul său de notă și le completează pe cardurile pe care le-a adăugat deja.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Sincronizează AnkiDroid cu AnkiWeb înainte de a continua. După această modificare, următoarea sincronizare AnkiDroid va cere să încarci sau să descarci întreaga colecție: alege Încarcă.",
+  "Add Audio": "Adaugă audio",
+  "Added audio to {{count}} cards_one": "Audio adăugat la carduri: {{count}}",
+  "Added audio to {{count}} cards_few": "Audio adăugat la carduri: {{count}}",
+  "Added audio to {{count}} cards_other": "Audio adăugat la carduri: {{count}}"
 }

@@ -2956,5 +2956,12 @@
   "Alphabetical Z-A": "Alfabético Z-A",
   "All Languages": "Todos los idiomas",
   "Pin to Notebook": "Anclar al cuaderno",
-  "Look up a word to see its definitions here.": "Busca una palabra para ver aquí sus definiciones."
+  "Look up a word to see its definitions here.": "Busca una palabra para ver aquí sus definiciones.",
+  "Add Audio to Anki Cards": "Añadir audio a las tarjetas de Anki",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Cada tarjeta puede leer su palabra en voz alta con la síntesis de voz de tu dispositivo. Readest añade campos nuevos a su tipo de nota y los rellena en las tarjetas que ya añadió.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Sincroniza AnkiDroid con AnkiWeb antes de continuar. Tras este cambio, la próxima sincronización de AnkiDroid te pedirá subir o descargar toda la colección: elige Subir.",
+  "Add Audio": "Añadir audio",
+  "Added audio to {{count}} cards_one": "Audio añadido a tarjetas: {{count}}",
+  "Added audio to {{count}} cards_many": "Audio añadido a tarjetas: {{count}}",
+  "Added audio to {{count}} cards_other": "Audio añadido a tarjetas: {{count}}"
 }

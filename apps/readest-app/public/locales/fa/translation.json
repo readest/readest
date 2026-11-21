@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "الفبایی Z تا A",
   "All Languages": "همه زبان‌ها",
   "Pin to Notebook": "سنجاق به دفترچه یادداشت",
-  "Look up a word to see its definitions here.": "یک واژه را جست‌وجو کنید تا تعریف‌هایش اینجا نمایش داده شود."
+  "Look up a word to see its definitions here.": "یک واژه را جست‌وجو کنید تا تعریف‌هایش اینجا نمایش داده شود.",
+  "Add Audio to Anki Cards": "افزودن صدا به کارت‌های Anki",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "هر کارت می‌تواند واژه‌اش را با تبدیل متن به گفتار دستگاه شما بلند بخواند. Readest فیلدهای تازه‌ای به نوع یادداشت خود اضافه می‌کند و آن‌ها را در کارت‌هایی که پیش‌تر افزوده پر می‌کند.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "پیش از ادامه، AnkiDroid را با AnkiWeb همگام کنید. پس از این تغییر، همگام‌سازی بعدی AnkiDroid می‌پرسد که کل مجموعه بارگذاری شود یا بارگیری: بارگذاری (Upload) را انتخاب کنید.",
+  "Add Audio": "افزودن صدا",
+  "Added audio to {{count}} cards_one": "صدا به کارت‌ها افزوده شد: {{count}}",
+  "Added audio to {{count}} cards_other": "صدا به کارت‌ها افزوده شد: {{count}}"
 }

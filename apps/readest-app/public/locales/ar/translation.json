@@ -3175,5 +3175,15 @@
   "Alphabetical Z-A": "أبجديًا Z-A",
   "All Languages": "كل اللغات",
   "Pin to Notebook": "تثبيت في المفكرة",
-  "Look up a word to see its definitions here.": "ابحث عن كلمة لترى تعريفاتها هنا."
+  "Look up a word to see its definitions here.": "ابحث عن كلمة لترى تعريفاتها هنا.",
+  "Add Audio to Anki Cards": "إضافة صوت إلى بطاقات Anki",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "يمكن لكل بطاقة نطق كلمتها بصوت عالٍ باستخدام تحويل النص إلى كلام على جهازك. يضيف Readest حقولًا جديدة إلى نوع ملاحظاته ويملؤها في البطاقات التي أضافها من قبل.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "زامن AnkiDroid مع AnkiWeb قبل المتابعة. بعد هذا التغيير، ستطلب المزامنة التالية في AnkiDroid رفع المجموعة كاملة أو تنزيلها: اختر الرفع (Upload).",
+  "Add Audio": "إضافة صوت",
+  "Added audio to {{count}} cards_zero": "أُضيف الصوت إلى البطاقات: {{count}}",
+  "Added audio to {{count}} cards_one": "أُضيف الصوت إلى البطاقات: {{count}}",
+  "Added audio to {{count}} cards_two": "أُضيف الصوت إلى البطاقات: {{count}}",
+  "Added audio to {{count}} cards_few": "أُضيف الصوت إلى البطاقات: {{count}}",
+  "Added audio to {{count}} cards_many": "أُضيف الصوت إلى البطاقات: {{count}}",
+  "Added audio to {{count}} cards_other": "أُضيف الصوت إلى البطاقات: {{count}}"
 }

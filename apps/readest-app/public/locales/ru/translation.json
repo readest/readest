@@ -3029,5 +3029,13 @@
   "Alphabetical Z-A": "По алфавиту Я-А",
   "All Languages": "Все языки",
   "Pin to Notebook": "Закрепить в блокноте",
-  "Look up a word to see its definitions here.": "Найдите слово, чтобы увидеть здесь его определения."
+  "Look up a word to see its definitions here.": "Найдите слово, чтобы увидеть здесь его определения.",
+  "Add Audio to Anki Cards": "Добавить аудио в карточки Anki",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Каждая карточка сможет произносить своё слово с помощью синтеза речи на устройстве. Readest добавляет новые поля в свой тип записей и заполняет их в уже добавленных карточках.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Перед продолжением синхронизируйте AnkiDroid с AnkiWeb. После этого изменения при следующей синхронизации AnkiDroid спросит, загрузить или скачать всю коллекцию: выберите «Загрузить».",
+  "Add Audio": "Добавить аудио",
+  "Added audio to {{count}} cards_one": "Аудио добавлено в карточки: {{count}}",
+  "Added audio to {{count}} cards_few": "Аудио добавлено в карточки: {{count}}",
+  "Added audio to {{count}} cards_many": "Аудио добавлено в карточки: {{count}}",
+  "Added audio to {{count}} cards_other": "Аудио добавлено в карточки: {{count}}"
 }

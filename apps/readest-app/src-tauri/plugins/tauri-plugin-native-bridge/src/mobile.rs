@@ -368,6 +368,21 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 
+    pub fn anki_note_type(&self) -> crate::Result<AnkiNoteTypeResponse> {
+        self.0
+            .run_mobile_plugin("anki_note_type", ())
+            .map_err(Into::into)
+    }
+
+    pub fn anki_upgrade_note_type(
+        &self,
+        payload: AnkiUpgradeNoteTypeRequest,
+    ) -> crate::Result<AnkiUpdateTagsResponse> {
+        self.0
+            .run_mobile_plugin("anki_upgrade_note_type", payload)
+            .map_err(Into::into)
+    }
+
     pub fn set_lookup_app(&self, payload: SetLookupAppRequest) -> crate::Result<()> {
         self.0
             .run_mobile_plugin("set_lookup_app", payload)

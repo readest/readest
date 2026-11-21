@@ -17,6 +17,20 @@ object AnkiDroidLink {
     const val PERMISSION = "com.ichi2.anki.permission.READ_WRITE_DATABASE"
     const val NOTE_TYPE_NAME = "Readest Vocabulary"
 
+    /**
+     * The note type's fields. Sync matches notes on Front and reads hints from
+     * Back, so new fields only ever go after them. Word and Language give the
+     * card its audio (#7729); Entry is kept for the dictionary entry (#7728),
+     * added now because every field added to an existing note type costs the
+     * reader a full AnkiWeb sync.
+     */
+    val NOTE_FIELDS = listOf("Front", "Back", "Word", "Language", "Entry")
+
+    /** The answer side, reading the word aloud in its language when both are set. */
+    const val ANSWER_FORMAT =
+        "{{FrontSide}}<hr id=answer>{{Back}}" +
+            "{{#Language}}{{#Word}}<br>[anki:tts lang={{Language}}]{{Word}}[/anki:tts]{{/Word}}{{/Language}}"
+
     private const val FIELD_SEPARATOR = "\u001f"
     /** Notes per bulkInsert: one Binder transaction carries at most about 1 MB. */
     private const val INSERT_CHUNK = 200
@@ -32,6 +46,29 @@ object AnkiDroidLink {
     fun joinFields(fields: List<String>): String = fields.joinToString(FIELD_SEPARATOR)
 
     fun splitFields(flds: String): List<String> = flds.split(FIELD_SEPARATOR)
+
+    /**
+     * [values] (in [NOTE_FIELDS] order) laid out for a note type with these
+     * field [names]: Front and Back by position, as Sync has always read them,
+     * the new fields by name, and any field the reader added left empty.
+     */
+    fun arrangeFields(values: List<String>, names: List<String>): List<String> =
+        names.mapIndexed { i, name ->
+            val k = if (i < 2) i else NOTE_FIELDS.indexOf(name).takeIf { it >= 2 } ?: -1
+            values.getOrElse(k) { "" }
+        }
+
+    /** A note's [current] fields with an empty Word and Language filled in. */
+    fun fillFields(current: List<String>, names: List<String>, word: String, language: String): List<String> =
+        names.mapIndexed { i, name ->
+            val value = current.getOrElse(i) { "" }
+            when {
+                value.isNotEmpty() -> value
+                name == "Word" -> word
+                name == "Language" -> language
+                else -> value
+            }
+        }
 
     /** A note's tags column: tags separated by spaces. */
     fun joinTags(tags: List<String>): String = tags.joinToString(" ")
@@ -113,41 +150,83 @@ object AnkiDroidLink {
             ?: cr.insert(uri("decks"), ContentValues().apply { put("deck_name", name) })!!
                 .lastPathSegment!!.toLong()
 
-    private fun findOrCreateNoteType(cr: ContentResolver): Long {
-        cr.query(uri("models"), arrayOf("_id", "name"), null, null, null).rows {
-            it.getString(it.getColumnIndexOrThrow("name")) to it.getLong(it.getColumnIndexOrThrow("_id"))
-        }.firstOrNull { it.first == NOTE_TYPE_NAME }?.let { return it.second }
+    /** The Readest note type's id and field names, or null before Sync first created it. */
+    fun findNoteType(cr: ContentResolver): Pair<Long, List<String>>? =
+        cr.query(uri("models"), arrayOf("_id", "name", "field_names"), null, null, null).rows {
+            Triple(
+                it.getLong(it.getColumnIndexOrThrow("_id")),
+                it.getString(it.getColumnIndexOrThrow("name")),
+                it.getString(it.getColumnIndexOrThrow("field_names")) ?: "",
+            )
+        }.firstOrNull { it.second == NOTE_TYPE_NAME }?.let { it.first to splitFields(it.third) }
 
+    /** True when the note type exists but predates a field in [NOTE_FIELDS]. */
+    fun noteTypeOutdated(cr: ContentResolver): Boolean =
+        findNoteType(cr)?.let { (_, names) -> NOTE_FIELDS.any { it !in names } } ?: false
+
+    // AnkiDroid's generated back template carries a literal "\n"; set both sides.
+    private fun setTemplate(cr: ContentResolver, mid: Long) {
+        cr.update(
+            uri("models/$mid/templates/0"),
+            ContentValues().apply {
+                put("question_format", "{{Front}}")
+                put("answer_format", ANSWER_FORMAT)
+            },
+            null,
+            null,
+        )
+    }
+
+    private fun findOrCreateNoteType(cr: ContentResolver): Pair<Long, List<String>> {
+        findNoteType(cr)?.let { return it }
         val values = ContentValues().apply {
             put("name", NOTE_TYPE_NAME)
-            put("field_names", joinFields(listOf("Front", "Back")))
+            put("field_names", joinFields(NOTE_FIELDS))
             put("num_cards", 1)
             put("sort_field_index", 0)
             put("css", CARD_CSS)
         }
         val mid = cr.insert(uri("models"), values)!!.lastPathSegment!!.toLong()
-        // AnkiDroid's generated back template carries a literal "\n"; set both sides.
-        cr.update(
-            uri("models/$mid/templates/0"),
-            ContentValues().apply {
-                put("question_format", "{{Front}}")
-                put("answer_format", "{{FrontSide}}<hr id=answer>{{Back}}")
-            },
-            null,
-            null,
-        )
-        return mid
+        setTemplate(cr, mid)
+        return mid to NOTE_FIELDS
+    }
+
+    /**
+     * Add the fields a note type from before #7729 lacks, switch its template to
+     * the one with audio, and fill Word and Language on the notes Sync added
+     * before ([fills]: note id, word, language). Adding a field changes Anki's
+     * schema, so AnkiDroid's next AnkiWeb sync is a full one. Resolves with how
+     * many notes were filled.
+     */
+    fun upgradeNoteType(cr: ContentResolver, fills: List<Triple<Long, String, String>>): Int {
+        val (mid, names) = findOrCreateNoteType(cr)
+        val missing = NOTE_FIELDS.filter { it !in names }
+        missing.forEach { name ->
+            cr.insert(uri("models/$mid/fields"), ContentValues().apply { put("field_name", name) })
+        }
+        setTemplate(cr, mid)
+        val all = names + missing
+        return fills.sumOf { (id, word, language) ->
+            val note = cr.query(uri("notes/$id"), arrayOf("mid", "flds"), null, null, null).rows {
+                it.getLong(it.getColumnIndexOrThrow("mid")) to (it.getString(it.getColumnIndexOrThrow("flds")) ?: "")
+            }.firstOrNull()
+            // Only Readest's own notes: the deck can hold notes of any type.
+            if (note == null || note.first != mid) return@sumOf 0
+            val flds = joinFields(fillFields(splitFields(note.second), all, word, language))
+            if (flds == note.second) 0
+            else cr.update(uri("notes/$id"), ContentValues().apply { put("flds", flds) }, null, null)
+        }
     }
 
     /** Add notes to the named deck, creating the deck and note type as needed. */
     fun addNotes(cr: ContentResolver, deckName: String, notes: List<Pair<List<String>, List<String>>>): Int {
         if (notes.isEmpty()) return 0
         val deckId = findOrCreateDeck(cr, deckName)
-        val mid = findOrCreateNoteType(cr)
+        val (mid, names) = findOrCreateNoteType(cr)
         val rows = notes.map { (fields, tags) ->
             ContentValues().apply {
                 put("mid", mid)
-                put("flds", joinFields(fields))
+                put("flds", joinFields(arrangeFields(fields, names)))
                 put("tags", joinTags(tags))
             }
         }

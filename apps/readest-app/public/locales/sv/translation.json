@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "Alfabetisk Ö–A",
   "All Languages": "Alla språk",
   "Pin to Notebook": "Fäst i anteckningsboken",
-  "Look up a word to see its definitions here.": "Slå upp ett ord för att se dess definitioner här."
+  "Look up a word to see its definitions here.": "Slå upp ett ord för att se dess definitioner här.",
+  "Add Audio to Anki Cards": "Lägg till ljud på Anki-kort",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Varje kort kan läsa upp sitt ord med enhetens talsyntes. Readest lägger till nya fält i sin anteckningstyp och fyller i dem på de kort det redan har lagt till.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Synkronisera AnkiDroid med AnkiWeb innan du fortsätter. Efter den här ändringen frågar AnkiDroids nästa synkronisering om hela samlingen ska laddas upp eller ned: välj Ladda upp.",
+  "Add Audio": "Lägg till ljud",
+  "Added audio to {{count}} cards_one": "Ljud tillagt på kort: {{count}}",
+  "Added audio to {{count}} cards_other": "Ljud tillagt på kort: {{count}}"
 }

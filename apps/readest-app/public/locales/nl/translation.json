@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "Alfabetisch Z-A",
   "All Languages": "Alle talen",
   "Pin to Notebook": "Vastmaken aan notitieblok",
-  "Look up a word to see its definitions here.": "Zoek een woord op om hier de definities te zien."
+  "Look up a word to see its definitions here.": "Zoek een woord op om hier de definities te zien.",
+  "Add Audio to Anki Cards": "Audio toevoegen aan Anki-kaarten",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Elke kaart kan zijn woord voorlezen met de tekst-naar-spraak van je apparaat. Readest voegt nieuwe velden toe aan zijn notitietype en vult ze in op de kaarten die het al heeft toegevoegd.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Synchroniseer AnkiDroid met AnkiWeb voordat je doorgaat. Na deze wijziging vraagt de volgende synchronisatie van AnkiDroid of de hele collectie moet worden geüpload of gedownload: kies Uploaden.",
+  "Add Audio": "Audio toevoegen",
+  "Added audio to {{count}} cards_one": "Audio toegevoegd aan kaarten: {{count}}",
+  "Added audio to {{count}} cards_other": "Audio toegevoegd aan kaarten: {{count}}"
 }

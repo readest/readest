@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "Αλφαβητικά Ω-Α",
   "All Languages": "Όλες οι γλώσσες",
   "Pin to Notebook": "Καρφίτσωμα στο σημειωματάριο",
-  "Look up a word to see its definitions here.": "Αναζητήστε μια λέξη για να δείτε εδώ τους ορισμούς της."
+  "Look up a word to see its definitions here.": "Αναζητήστε μια λέξη για να δείτε εδώ τους ορισμούς της.",
+  "Add Audio to Anki Cards": "Προσθήκη ήχου στις κάρτες Anki",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Κάθε κάρτα μπορεί να εκφωνεί τη λέξη της με τη σύνθεση ομιλίας της συσκευής σας. Το Readest προσθέτει νέα πεδία στον τύπο σημείωσής του και τα συμπληρώνει στις κάρτες που έχει ήδη προσθέσει.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Συγχρονίστε το AnkiDroid με το AnkiWeb πριν συνεχίσετε. Μετά από αυτή την αλλαγή, ο επόμενος συγχρονισμός του AnkiDroid θα ζητήσει μεταφόρτωση ή λήψη ολόκληρης της συλλογής: επιλέξτε Μεταφόρτωση.",
+  "Add Audio": "Προσθήκη ήχου",
+  "Added audio to {{count}} cards_one": "Προστέθηκε ήχος σε κάρτες: {{count}}",
+  "Added audio to {{count}} cards_other": "Προστέθηκε ήχος σε κάρτες: {{count}}"
 }

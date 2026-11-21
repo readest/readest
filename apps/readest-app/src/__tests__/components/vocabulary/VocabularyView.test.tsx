@@ -21,6 +21,8 @@ const anki = vi.hoisted(() => ({
   ankiReadDeck: vi.fn(),
   ankiAddNotes: vi.fn(),
   ankiUpdateTags: vi.fn(),
+  ankiNoteTypeOutdated: vi.fn(),
+  ankiUpgradeNoteType: vi.fn(),
 }));
 const account = vi.hoisted(() => ({
   user: { id: 'u1' } as { id: string } | null,
@@ -103,6 +105,8 @@ beforeEach(() => {
   anki.ankiReadDeck.mockReset().mockResolvedValue({ notes: [], cards: [] });
   anki.ankiAddNotes.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
   anki.ankiUpdateTags.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
+  anki.ankiNoteTypeOutdated.mockReset().mockResolvedValue(false);
+  anki.ankiUpgradeNoteType.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
 });
 afterEach(() => cleanup());
 
@@ -324,6 +328,51 @@ describe('VocabularyView Anki link', () => {
     expect(notes[0]!.tags).toEqual(
       expect.arrayContaining(['readest::lang::en', 'readest::learning']),
     );
+  });
+
+  it('asks before giving an old note type its audio, then fills the notes Sync added', async () => {
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    anki.ankiNoteTypeOutdated.mockResolvedValue(true);
+    anki.ankiReadDeck.mockResolvedValue({
+      notes: [{ id: 1, fields: ['<div>spice</div>', 'a drug'], tags: 'readest readest::lang::en' }],
+      cards: [],
+    });
+    renderWithMenu();
+    fireEvent.click(await syncButton());
+    const prompt = await screen.findByRole('region', { name: 'Add Audio to Anki Cards' });
+    expect(anki.ankiUpgradeNoteType).not.toHaveBeenCalled();
+    expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Add Audio' }));
+    await waitFor(() =>
+      expect(anki.ankiUpgradeNoteType).toHaveBeenCalledWith([
+        { id: 1, word: 'spice', language: 'en_US' },
+      ]),
+    );
+    await waitFor(() =>
+      expect(dispatch).toHaveBeenCalledWith(...toastOf('Added audio to {{count}} cards')),
+    );
+    expect(screen.queryByRole('region', { name: 'Add Audio to Anki Cards' })).toBeNull();
+    dispatch.mockRestore();
+  });
+
+  it('syncs without audio on Not now, stops asking, and offers it again from the menu', async () => {
+    anki.ankiNoteTypeOutdated.mockResolvedValue(true);
+    renderWithMenu();
+    const sync = await syncButton();
+    fireEvent.click(sync);
+    const prompt = await screen.findByRole('region', { name: 'Add Audio to Anki Cards' });
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Not now' }));
+    await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalledTimes(1));
+    expect(anki.ankiUpgradeNoteType).not.toHaveBeenCalled();
+
+    fireEvent.click(sync);
+    await waitFor(() => expect(anki.ankiNoteTypeOutdated).toHaveBeenCalledTimes(2));
+    await settle();
+    expect(screen.queryByRole('region', { name: 'Add Audio to Anki Cards' })).toBeNull();
+
+    openMenu('More');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Add Audio to Anki Cards' }));
+    await screen.findByRole('region', { name: 'Add Audio to Anki Cards' });
   });
 
   it('pulls before pushing: a mature card makes a word Mastered and a deck-only note comes in', async () => {

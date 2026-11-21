@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "বর্ণানুক্রমে Z-A",
   "All Languages": "সব ভাষা",
   "Pin to Notebook": "নোটবুকে পিন করুন",
-  "Look up a word to see its definitions here.": "এখানে সংজ্ঞা দেখতে একটি শব্দ খুঁজুন।"
+  "Look up a word to see its definitions here.": "এখানে সংজ্ঞা দেখতে একটি শব্দ খুঁজুন।",
+  "Add Audio to Anki Cards": "Anki কার্ডে অডিও যোগ করুন",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "প্রতিটি কার্ড আপনার ডিভাইসের টেক্সট-টু-স্পিচ দিয়ে তার শব্দটি উচ্চস্বরে পড়তে পারে। Readest তার নোট টাইপে নতুন ফিল্ড যোগ করে এবং আগে যোগ করা কার্ডগুলিতে সেগুলি পূরণ করে।",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "চালিয়ে যাওয়ার আগে AnkiDroid-কে AnkiWeb-এর সাথে সিঙ্ক করুন। এই পরিবর্তনের পরে, AnkiDroid-এর পরবর্তী সিঙ্ক পুরো সংগ্রহ আপলোড বা ডাউনলোড করতে বলবে: Upload বেছে নিন।",
+  "Add Audio": "অডিও যোগ করুন",
+  "Added audio to {{count}} cards_one": "{{count}}টি কার্ডে অডিও যোগ হয়েছে",
+  "Added audio to {{count}} cards_other": "{{count}}টি কার্ডে অডিও যোগ হয়েছে"
 }

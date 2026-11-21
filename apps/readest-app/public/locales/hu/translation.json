@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "Betűrendben Z–A",
   "All Languages": "Minden nyelv",
   "Pin to Notebook": "Rögzítés a jegyzetfüzetben",
-  "Look up a word to see its definitions here.": "Keress rá egy szóra, hogy itt lásd a jelentéseit."
+  "Look up a word to see its definitions here.": "Keress rá egy szóra, hogy itt lásd a jelentéseit.",
+  "Add Audio to Anki Cards": "Hang hozzáadása az Anki-kártyákhoz",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Minden kártya felolvashatja a szavát az eszköz szövegfelolvasójával. A Readest új mezőket ad a jegyzettípusához, és kitölti őket a már hozzáadott kártyákon.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "A folytatás előtt szinkronizáld az AnkiDroidot az AnkiWebbel. A módosítás után az AnkiDroid következő szinkronizálása megkérdezi, hogy feltöltse vagy letöltse a teljes gyűjteményt: válaszd a Feltöltést.",
+  "Add Audio": "Hang hozzáadása",
+  "Added audio to {{count}} cards_one": "Hang hozzáadva {{count}} kártyához",
+  "Added audio to {{count}} cards_other": "Hang hozzáadva {{count}} kártyához"
 }

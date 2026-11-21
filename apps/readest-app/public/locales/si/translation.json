@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "අකාරාදී Z-A",
   "All Languages": "සියලු භාෂා",
   "Pin to Notebook": "සටහන් පොතට අමුණන්න",
-  "Look up a word to see its definitions here.": "මෙහි අර්ථ දැක්වීම් බැලීමට වචනයක් සොයන්න."
+  "Look up a word to see its definitions here.": "මෙහි අර්ථ දැක්වීම් බැලීමට වචනයක් සොයන්න.",
+  "Add Audio to Anki Cards": "Anki කාඩ්පත්වලට ශ්‍රව්‍ය එක් කරන්න",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "සෑම කාඩ්පතකටම ඔබගේ උපාංගයේ පෙළ-කථන මගින් එහි වචනය හඬ නඟා කියවිය හැක. Readest එහි සටහන් වර්ගයට නව ක්ෂේත්‍ර එක් කර දැනටමත් එක් කළ කාඩ්පත්වල ඒවා පුරවයි.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "ඉදිරියට යාමට පෙර AnkiDroid AnkiWeb සමඟ සමමුහුර්ත කරන්න. මෙම වෙනසෙන් පසු, AnkiDroid හි ඊළඟ සමමුහුර්තය සම්පූර්ණ එකතුව උඩුගත කිරීමට හෝ බාගැනීමට අසයි: Upload තෝරන්න.",
+  "Add Audio": "ශ්‍රව්‍ය එක් කරන්න",
+  "Added audio to {{count}} cards_one": "කාඩ්පත් {{count}} කට ශ්‍රව්‍ය එක් කරන ලදී",
+  "Added audio to {{count}} cards_other": "කාඩ්පත් {{count}} කට ශ්‍රව්‍ය එක් කරන ලදී"
 }

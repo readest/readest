@@ -307,6 +307,19 @@ pub(crate) async fn anki_update_tags<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn anki_note_type<R: Runtime>(app: AppHandle<R>) -> Result<AnkiNoteTypeResponse> {
+    app.native_bridge().anki_note_type()
+}
+
+#[command]
+pub(crate) async fn anki_upgrade_note_type<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiUpgradeNoteTypeRequest,
+) -> Result<AnkiUpdateTagsResponse> {
+    app.native_bridge().anki_upgrade_note_type(payload)
+}
+
+#[command]
 pub(crate) async fn select_directory<R: Runtime>(
     app: AppHandle<R>,
     callback_state: State<'_, DirectoryCallbackState<R>>,

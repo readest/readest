@@ -2956,5 +2956,12 @@
   "Alphabetical Z-A": "אלפביתי Z-A",
   "All Languages": "כל השפות",
   "Pin to Notebook": "הצמדה למחברת",
-  "Look up a word to see its definitions here.": "חפשו מילה כדי לראות כאן את ההגדרות שלה."
+  "Look up a word to see its definitions here.": "חפשו מילה כדי לראות כאן את ההגדרות שלה.",
+  "Add Audio to Anki Cards": "הוספת שמע לכרטיסי Anki",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "כל כרטיס יכול להקריא את המילה שלו בעזרת המרת הטקסט לדיבור של המכשיר. Readest מוסיף שדות חדשים לסוג ההערה שלו וממלא אותם בכרטיסים שכבר הוסיף.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "סנכרנו את AnkiDroid עם AnkiWeb לפני שתמשיכו. אחרי השינוי הזה, הסנכרון הבא של AnkiDroid ישאל אם להעלות או להוריד את כל האוסף: בחרו העלאה.",
+  "Add Audio": "הוספת שמע",
+  "Added audio to {{count}} cards_one": "נוסף שמע לכרטיסים: {{count}}",
+  "Added audio to {{count}} cards_two": "נוסף שמע לכרטיסים: {{count}}",
+  "Added audio to {{count}} cards_other": "נוסף שמע לכרטיסים: {{count}}"
 }

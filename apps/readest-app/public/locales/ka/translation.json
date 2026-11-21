@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "ანბანით Z-A",
   "All Languages": "ყველა ენა",
   "Pin to Notebook": "რვეულში ჩამაგრება",
-  "Look up a word to see its definitions here.": "მოძებნეთ სიტყვა, რომ აქ ნახოთ მისი განმარტებები."
+  "Look up a word to see its definitions here.": "მოძებნეთ სიტყვა, რომ აქ ნახოთ მისი განმარტებები.",
+  "Add Audio to Anki Cards": "აუდიოს დამატება Anki-ის ბარათებზე",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "თითოეულ ბარათს შეუძლია თავისი სიტყვის ხმამაღლა წაკითხვა თქვენი მოწყობილობის ტექსტის მეტყველებად გარდაქმნით. Readest თავის ჩანაწერის ტიპს ახალ ველებს უმატებს და ავსებს მათ უკვე დამატებულ ბარათებზე.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "გაგრძელებამდე დაასინქრონეთ AnkiDroid AnkiWeb-თან. ამ ცვლილების შემდეგ AnkiDroid-ის შემდეგი სინქრონიზაცია მთელი კოლექციის ატვირთვას ან ჩამოტვირთვას მოითხოვს: აირჩიეთ ატვირთვა (Upload).",
+  "Add Audio": "აუდიოს დამატება",
+  "Added audio to {{count}} cards_one": "აუდიო დაემატა ბარათებს: {{count}}",
+  "Added audio to {{count}} cards_other": "აუდიო დაემატა ბარათებს: {{count}}"
 }
