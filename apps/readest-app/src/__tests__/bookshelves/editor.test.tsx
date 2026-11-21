@@ -939,6 +939,26 @@ describe('bookshelf editor', () => {
       expect(JSON.parse(JSON.stringify(saved))).not.toHaveProperty('plainPlaceholderCovers');
     });
   });
+  it('saves Cover only for the selected shelf and drops the key when off (#7746)', async () => {
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Cover only'));
+    await waitFor(() =>
+      expect(
+        save.mock.calls.at(-1)?.[2].find((s: BookshelfDefinition) => s.id === 'default'),
+      ).toMatchObject({ coverOnly: true }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^Recently read/ }));
+    expect((screen.getByLabelText('Cover only') as HTMLInputElement).checked).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Cover only'));
+    await waitFor(() => {
+      const saved = save.mock.calls
+        .at(-1)?.[2]
+        .find((s: BookshelfDefinition) => s.id === 'default');
+      expect(JSON.parse(JSON.stringify(saved))).not.toHaveProperty('coverOnly');
+    });
+  });
   it('uses the library language for preview sorting', async () => {
     localStorage.setItem('i18nextLng', 'sv');
     useLibraryStore.setState({

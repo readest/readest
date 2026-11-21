@@ -3044,5 +3044,6 @@
   "Added dictionary entries to {{count}} cards_few": "Словникові статті додано до карток: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Словникові статті додано до карток: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Словникові статті додано до карток: {{count}}",
-  "Dictionary for Anki Cards...": "Словник для карток Anki..."
+  "Dictionary for Anki Cards...": "Словник для карток Anki...",
+  "Cover only": "Лише обкладинки"
 }

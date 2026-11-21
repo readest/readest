@@ -3044,5 +3044,6 @@
   "Added dictionary entries to {{count}} cards_two": "Slovarska gesla dodana karticam: {{count}}",
   "Added dictionary entries to {{count}} cards_few": "Slovarska gesla dodana karticam: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Slovarska gesla dodana karticam: {{count}}",
-  "Dictionary for Anki Cards...": "Slovar za kartice Anki..."
+  "Dictionary for Anki Cards...": "Slovar za kartice Anki...",
+  "Cover only": "Samo naslovnice"
 }

@@ -2969,5 +2969,6 @@
   "Added dictionary entries to {{count}} cards_one": "Entrées de dictionnaire ajoutées aux cartes : {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Entrées de dictionnaire ajoutées aux cartes : {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Entrées de dictionnaire ajoutées aux cartes : {{count}}",
-  "Dictionary for Anki Cards...": "Dictionnaire des cartes Anki..."
+  "Dictionary for Anki Cards...": "Dictionnaire des cartes Anki...",
+  "Cover only": "Couvertures seules"
 }

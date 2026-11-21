@@ -3044,5 +3044,6 @@
   "Added dictionary entries to {{count}} cards_few": "Dodano hasła słownikowe do kart: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Dodano hasła słownikowe do kart: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Dodano hasła słownikowe do kart: {{count}}",
-  "Dictionary for Anki Cards...": "Słownik dla kart Anki..."
+  "Dictionary for Anki Cards...": "Słownik dla kart Anki...",
+  "Cover only": "Tylko okładki"
 }

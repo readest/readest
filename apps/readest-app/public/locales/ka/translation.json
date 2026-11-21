@@ -2894,5 +2894,6 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki-სთან სინქრონიზაცია ამ ლექსიკონის სტატიას თითოეული ბარათის უკანა მხარეს ათავსებს, თითო სინქრონიზაციაზე მაქსიმუმ 30 ბარათზე",
   "Added dictionary entries to {{count}} cards_one": "ლექსიკონის სტატიები დაემატა ბარათებს: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "ლექსიკონის სტატიები დაემატა ბარათებს: {{count}}",
-  "Dictionary for Anki Cards...": "ლექსიკონი Anki-ის ბარათებისთვის..."
+  "Dictionary for Anki Cards...": "ლექსიკონი Anki-ის ბარათებისთვის...",
+  "Cover only": "მხოლოდ ყდები"
 }

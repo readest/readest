@@ -2894,5 +2894,6 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki-এর সাথে সিঙ্ক প্রতিটি কার্ডের পেছনে এই অভিধানের ভুক্তি যোগ করে, প্রতি সিঙ্কে সর্বোচ্চ 30টি কার্ডে",
   "Added dictionary entries to {{count}} cards_one": "{{count}}টি কার্ডে অভিধানের ভুক্তি যোগ হয়েছে",
   "Added dictionary entries to {{count}} cards_other": "{{count}}টি কার্ডে অভিধানের ভুক্তি যোগ হয়েছে",
-  "Dictionary for Anki Cards...": "Anki কার্ডের অভিধান..."
+  "Dictionary for Anki Cards...": "Anki কার্ডের অভিধান...",
+  "Cover only": "শুধু প্রচ্ছদ"
 }

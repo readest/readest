@@ -143,8 +143,9 @@ export const BookshelfCarousel = ({
   const [viewportWidth, setViewportWidth] = useState(0);
   const [coverCenter, setCoverCenter] = useState<number | null>(null);
   const compact = typeof window !== 'undefined' && window.innerWidth < 640;
-  const gap = compact ? 16 : 0;
-  const itemWidth = Math.max(40, (width - (compact ? 32 : 16) + gap) / columns);
+  const coverOnly = !!section.definition.coverOnly;
+  const gap = coverOnly ? 0 : compact ? 16 : 0;
+  const itemWidth = Math.max(40, (width - (coverOnly ? 0 : compact ? 32 : 16) + gap) / columns);
   // Clamped to the list: a shelf that shrinks while scrolled to the end would
   // otherwise leave `start` past `end` and render no cards.
   const windowStart = (value: number) =>
@@ -186,7 +187,10 @@ export const BookshelfCarousel = ({
   };
   return (
     <ShelfCovers definition={section.definition}>
-      <div className='group/carousel relative px-4 sm:px-2' data-shelf-layout='carousel'>
+      <div
+        className={clsx('group/carousel relative', coverOnly ? 'px-0' : 'px-4 sm:px-2')}
+        data-shelf-layout='carousel'
+      >
         <div
           ref={scroller}
           onScroll={(e) => {
@@ -443,7 +447,8 @@ export default function BookshelfStream({
                     className={clsx(
                       'bookshelf-items transform-wrapper grid',
                       // List rows carry their own responsive side padding.
-                      definition.layout === 'grid' && 'gap-x-4 px-4 sm:gap-x-0 sm:px-2',
+                      definition.layout === 'grid' &&
+                        (definition.coverOnly ? 'gap-0 px-0' : 'gap-x-4 px-4 sm:gap-x-0 sm:px-2'),
                     )}
                     style={{
                       gridTemplateColumns: `repeat(${definition.layout === 'grid' ? columns : 1}, minmax(0, 1fr))`,

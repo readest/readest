@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards": "Anki 卡片词典",
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "与 Anki 同步时，会把此词典的词条放到每张卡片的背面，每次同步最多 30 张",
   "Added dictionary entries to {{count}} cards_other": "已为 {{count}} 张卡片添加词典词条",
-  "Dictionary for Anki Cards...": "Anki 卡片词典..."
+  "Dictionary for Anki Cards...": "Anki 卡片词典...",
+  "Cover only": "仅显示封面"
 }
