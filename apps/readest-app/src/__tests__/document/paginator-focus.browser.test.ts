@@ -117,7 +117,7 @@ describe('Paginator focus (browser)', () => {
     expect(focused.contains(walker.nextNode())).toBe(true);
   });
 
-  it('keeps a focused link in the tab order', async () => {
+  it('keeps a focused link in the tab order, with its focus ring', async () => {
     await setup();
     outside.focus();
     let link!: HTMLAnchorElement;
@@ -139,6 +139,7 @@ describe('Paginator focus (browser)', () => {
     await settle();
     expect(primaryDoc().activeElement).toBe(link);
     expect(link.tabIndex).toBe(0);
+    expect(link.style.outline).toBe('');
   });
 
   it('focuses the start of a short section, not the next one, when scrolled', async () => {
