@@ -301,11 +301,12 @@ describe('Paginator chunked section (browser)', () => {
       const { index, range } = relocations.at(-1)!;
       seen.push(`${index}:${range.toString().trim().slice(0, 12)}`);
     }
-    // back from the next section (whose page shares the closing paragraph)
-    // straight into the end of the wrapped text: the empty chunks are neither
-    // shown nor rendered
+    // back from the next section, which starts a spread of its own, to the
+    // closing paragraph's spread (the wrapped text may end on its first page),
+    // then straight into the end of the wrapped text: the empty chunks are
+    // neither shown nor rendered
     expect(seen).toEqual([
-      expect.stringMatching(/^1:44\d\d\./),
+      expect.stringMatching(/^1:(End|44\d\d\.)/),
       expect.stringMatching(/^1:44\d\d\./),
       expect.stringMatching(/^1:44\d\d\./),
     ]);
