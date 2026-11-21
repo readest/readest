@@ -17,7 +17,8 @@ export const bookshelfFieldsSchema = z
     itemOrder: envelope.extend({ v: bookshelfItemOrderSchema }).optional(),
     itemOrderMode: envelope.extend({ v: bookshelfOrderModeSchema }).optional(),
   })
-  .strict();
+  // A field from a newer version is kept as long as it is a stamped envelope.
+  .catchall(envelope);
 export const bookshelfReplicaSchema: z.ZodType<ReplicaRow> = z
   .object({
     user_id: z.string(),

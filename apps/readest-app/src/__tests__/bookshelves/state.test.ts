@@ -186,43 +186,85 @@ describe('bookshelf draft operations', () => {
       false,
     );
   });
-  // The wire schemas are strict, so a row written by a newer client is dropped
-  // whole rather than partially applied; a full pull refetches it after upgrade.
-  it('drops rows from a newer client and falls back to the built-in definition', () => {
-    const base = defaults();
-    const renamed = () =>
-      save(
-        empty(),
-        base,
-        base.map((s) => (s.id === 'default' ? { ...s, name: 'Main' } : s)),
-      ).state;
-    expect(readBookshelves({ bookshelves: renamed() }).find((s) => s.id === 'default')?.name).toBe(
-      'Main',
-    );
-    const unknownField = renamed();
-    unknownField.rows['default']!.fields_jsonb['color'] = {
-      v: 'red',
-      t: clock.next(),
-      s: 'newer',
+  // Devices update at different times: a shelf written by a newer app version
+  // must stay visible here, and an edit here must not strip what it added.
+  it('keeps shelves from a newer client that adds fields, and its fields through an edit here', () => {
+    const custom = {
+      ...createBookshelf('Fiction'),
+      layout: 'grid' as const,
+      filters: {
+        type: 'group' as const,
+        match: 'all' as const,
+        children: [
+          {
+            type: 'rule' as const,
+            field: 'title',
+            kind: 'text' as const,
+            operator: 'contains' as const,
+            value: 'a',
+          },
+        ],
+      },
     };
-    const unknownProperty = renamed();
-    (unknownProperty.rows['default']!.fields_jsonb['definition']!.v as Record<string, unknown>)[
-      'color'
-    ] = 'red';
-    const newerSchema = renamed();
-    newerSchema.rows['default']!.schema_version = 2;
-    for (const state of [unknownField, unknownProperty, newerSchema]) {
-      expect(mergeBookshelfStates(state).rows['default']).toBeUndefined();
+    const base = [...defaults(), custom];
+    const renamed = save(
+      empty(),
+      defaults(),
+      base.map((s) => (s.id === 'default' ? { ...s, name: 'Main' } : s)),
+    ).state;
+    const newer = (id: string) => {
+      const row = renamed.rows[id]!;
+      row.fields_jsonb['color'] = { v: 'red', t: clock.next(), s: 'newer' };
+      const definition = row.fields_jsonb['definition']!.v as Record<string, unknown> & {
+        sort: Record<string, unknown>;
+        filters: Record<string, unknown> & { children: Record<string, unknown>[] };
+      };
+      definition['tint'] = 'red';
+      definition.sort['nulls'] = 'last';
+      definition.filters['note'] = 'x';
+      const [rule] = definition.filters.children;
+      if (rule) rule['caseSensitive'] = true;
+    };
+    newer('default');
+    newer(custom.id);
+    for (const state of [renamed, mergeBookshelfStates(renamed)]) {
       const shelves = readBookshelves({ bookshelves: state });
-      expect(shelves.map((s) => s.id)).toEqual([
-        'recent',
-        'audiobooks',
-        'podcasts',
-        'default',
-        'finished',
-      ]);
-      expect(shelves.find((s) => s.id === 'default')?.name).toBe('');
+      expect(shelves.find((s) => s.id === 'default')?.name).toBe('Main');
+      expect(shelves.find((s) => s.id === custom.id)?.name).toBe('Fiction');
     }
+    const read = readBookshelves({ bookshelves: renamed });
+    const edited = save(
+      renamed,
+      read,
+      read.map((s) => ({ ...s, name: s.id === 'default' ? 'Library' : 'Novels' })),
+    ).state;
+    for (const id of ['default', custom.id]) {
+      const row = edited.rows[id]!;
+      expect(row.fields_jsonb['color']?.v).toBe('red');
+      expect(row.fields_jsonb['definition']!.v).toMatchObject({
+        tint: 'red',
+        sort: { nulls: 'last' },
+        filters: { note: 'x' },
+      });
+    }
+    expect(edited.rows[custom.id]!.fields_jsonb['definition']!.v).toMatchObject({
+      filters: { children: [{ caseSensitive: true }] },
+    });
+    const after = readBookshelves({ bookshelves: edited });
+    expect(after.find((s) => s.id === 'default')?.name).toBe('Library');
+    expect(after.find((s) => s.id === custom.id)?.name).toBe('Novels');
+  });
+  // A new schema_version marks an incompatible row; it falls back until upgrade.
+  it('drops rows with a newer schema version and falls back to the built-in definition', () => {
+    const base = defaults();
+    const state = save(
+      empty(),
+      base,
+      base.map((s) => (s.id === 'default' ? { ...s, name: 'Main' } : s)),
+    ).state;
+    state.rows['default']!.schema_version = 2;
+    expect(mergeBookshelfStates(state).rows['default']).toBeUndefined();
+    expect(readBookshelves({ bookshelves: state }).find((s) => s.id === 'default')?.name).toBe('');
   });
   it('keeps the saved order once repeated moves exhaust the numeric gap', () => {
     const a = createBookshelf('A', '00000000-0000-4000-8000-00000000000a');
