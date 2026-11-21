@@ -92,6 +92,75 @@ describe('Paginator focus (browser)', () => {
     expect(primaryDoc().activeElement?.localName).toBe('p');
   });
 
+  // A TOC entry for a chapter's start has no fragment: its anchor is 0.
+  it.each([
+    false,
+    true,
+  ])('moves focus to the start of a section when asked (scrolled: %s)', async (scrolled) => {
+    await setup();
+    if (scrolled) {
+      paginator.setAttribute('flow', 'scrolled');
+      await settle();
+    }
+    outside.focus();
+    await paginator.goTo({ index: CHAPTER + 2, focus: true });
+    await settle();
+    expect(document.activeElement).toBe(paginator);
+    const doc = primaryDoc();
+    const focused = doc.activeElement as HTMLElement;
+    expect(focused).not.toBe(doc.body);
+    // The focused element is where the section starts: its first text.
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) =>
+        n.textContent!.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
+    });
+    expect(focused.contains(walker.nextNode())).toBe(true);
+  });
+
+  it('keeps a focused link in the tab order, with its focus ring', async () => {
+    await setup();
+    outside.focus();
+    let link!: HTMLAnchorElement;
+    await paginator.goTo({
+      index: CHAPTER,
+      anchor: (doc: Document) => {
+        const p = doc.querySelectorAll('p')[3]!;
+        link = doc.createElement('a');
+        link.href = '#here';
+        link.textContent = 'a link';
+        p.prepend(link);
+        // a Range starting in the link, as a CFI to it resolves
+        const range = doc.createRange();
+        range.setStart(link.firstChild!, 0);
+        return range;
+      },
+      focus: true,
+    });
+    await settle();
+    expect(primaryDoc().activeElement).toBe(link);
+    expect(link.tabIndex).toBe(0);
+    expect(link.style.outline).toBe('');
+  });
+
+  it('focuses the start of a short section, not the next one, when scrolled', async () => {
+    await setup();
+    paginator.setAttribute('flow', 'scrolled');
+    // Tall enough that "About" fills well under half of it
+    paginator.style.height = '2400px';
+    // Load "About" and the sections after it first, so the next one is
+    // already rendered below it when the jump lands.
+    await paginator.goTo({ index: 2 });
+    await settle(1500);
+    outside.focus();
+    // "About" is far shorter than the viewport; the next section is preloaded
+    // below it and covers the viewport's centre.
+    await paginator.goTo({ index: 1, focus: true });
+    await settle(600);
+    const about = paginator.getContents().find((c) => c.index === 1)!;
+    expect(document.activeElement).toBe(paginator);
+    expect(about.doc.activeElement).not.toBe(about.doc.body);
+  });
+
   it('keeps a field the user focused while a navigation that asks for focus ran', async () => {
     await setup();
     outside.focus();
