@@ -606,6 +606,18 @@ const getPageLayoutStyles = (
   body.paginated-mode > .main.vrtl.height-100per {
     height: calc(var(--available-height) * 1px) !important;
   }
+  /* EBPAJ cover pages put a single img.fit inside body.p-cover > .main > p
+     with no block-axis centering, so a width-constrained cover on a portrait
+     screen sticks to the top edge (and under the notch when the header is off). */
+  body.paginated-mode:is(.p-cover, [epub|type~="cover"]) > .main:has(> p:only-child > img.fit:only-child) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: calc(var(--available-height) * 1px);
+  }
+  body.paginated-mode:is(.p-cover, [epub|type~="cover"]) > .main:has(> p:only-child > img.fit:only-child) > p {
+    margin-block: 0 !important;
+  }
   body {
     overflow: unset;
     zoom: ${zoomLevel};

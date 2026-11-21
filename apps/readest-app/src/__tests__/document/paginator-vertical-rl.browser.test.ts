@@ -174,6 +174,62 @@ describe('Vertical-rl pagination (browser)', () => {
     }
   });
 
+  it('vertically centers an EBPAJ cover page (p-cover > .main > p > img.fit) even when header is off', async () => {
+    const coverSvg =
+      'data:image/svg+xml;utf8,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#1b2838"/></svg>',
+      );
+    const source = URL.createObjectURL(
+      new Blob(
+        [
+          '<!doctype html><html class="hltr" lang="ja"><head><style>' +
+            'img.fit { display: inline-block; max-width: 100%; max-height: 100%; }' +
+            '</style></head>' +
+            '<body class="p-cover"><div class="main">' +
+            `<p><img id="cover-img" class="fit" src="${coverSvg}" alt=""/></p>` +
+            '</div></body></html>',
+        ],
+        { type: 'text/html' },
+      ),
+    );
+    try {
+      paginator = createPaginator();
+      Object.assign(paginator.style, { width: '393px', height: '852px' });
+      paginator.setAttribute('margin-top', '16px');
+      paginator.setAttribute('margin-bottom', '16px');
+      paginator.setAttribute('max-column-count', '1');
+      paginator.setStyles?.(
+        getStyles({
+          ...DEFAULT_BOOK_FONT,
+          ...DEFAULT_BOOK_LAYOUT,
+          ...DEFAULT_BOOK_STYLE,
+          vertical: false,
+          writingMode: 'auto',
+        } as ViewSettings),
+      );
+      paginator.addEventListener('load', (event) => {
+        applyScrollModeClass((event as CustomEvent<{ doc: Document }>).detail.doc, false);
+      });
+      paginator.open({
+        dir: 'rtl',
+        sections: [{ id: 'cover', load: async () => source }],
+      } as unknown as BookDoc);
+      const stabilized = waitForStabilized(paginator);
+      await paginator.goTo({ index: 0 });
+      await stabilized;
+
+      const { doc } = paginator.getContents()[0]!;
+      const imgRect = doc.getElementById('cover-img')!.getBoundingClientRect();
+      // 393px wide page with 400x300 cover -> image height is < 300px inside an 820px available height;
+      // centered vertically, its top sits well below the 59px Dynamic Island instead of sticking to y=16px.
+      expect(imgRect.top).toBeGreaterThan(200);
+      expect(Math.abs(imgRect.top + imgRect.bottom - 852)).toBeLessThan(8);
+    } finally {
+      URL.revokeObjectURL(source);
+    }
+  });
+
   const makeTouch = (x: number, y: number) =>
     new Touch({ identifier: 1, target: paginator, screenX: x, screenY: y, clientX: x, clientY: y });
 

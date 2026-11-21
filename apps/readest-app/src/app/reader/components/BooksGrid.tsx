@@ -251,7 +251,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
               <div
                 className='bg-base-100 absolute left-0 top-0 h-full'
                 style={{
-                  width: `calc(${contentInsets.left + (viewSettings.doubleBorder ? 32 : 0)}px)`,
+                  width: `calc(${Math.max(showFooter ? 16 : 0, contentInsets.left) + (viewSettings.doubleBorder ? 32 : 0)}px)`,
                   height: `calc(100%)`,
                 }}
               />
@@ -260,7 +260,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
               <div
                 className='bg-base-100 absolute right-0 top-0 h-full'
                 style={{
-                  width: `calc(${contentInsets.right + (viewSettings.doubleBorder ? 32 : 0)}px)`,
+                  width: `calc(${Math.max(showHeader ? 16 : 0, contentInsets.right) + (viewSettings.doubleBorder ? 32 : 0)}px)`,
                   height: `calc(100%)`,
                 }}
               />
@@ -273,7 +273,11 @@ const BookCellInner: React.FC<BookCellProps> = ({
             showFooter={showFooter}
             borderColor={viewSettings.borderColor}
             horizontalGap={horizontalGapPercent}
-            insets={{ ...viewInsets, top: gridInsets.top + viewInsets.top }}
+            insets={{
+              ...viewInsets,
+              top: gridInsets.top + viewInsets.top,
+              bottom: gridInsets.bottom + viewInsets.bottom,
+            }}
           />
         )}
         {showHeader && (

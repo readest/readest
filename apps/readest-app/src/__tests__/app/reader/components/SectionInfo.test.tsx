@@ -258,30 +258,36 @@ describe('SectionInfo book metadata data attributes (#5776)', () => {
   });
 });
 
-describe('SectionInfo vertical safe-area top (#7389)', () => {
-  it('anchors the vertical section title below gridInsets.top plus 1.5x margin', () => {
+describe('SectionInfo vertical safe-area and 0px margin floor (#7389)', () => {
+  it('anchors the vertical section title within gridInsets.top and gridInsets.bottom plus 1.5x margins', () => {
     const { container } = render(
       <SectionInfo
         {...baseProps}
         isVertical
-        gridInsets={{ top: 59, right: 0, bottom: 0, left: 0 }}
-        contentInsets={{ top: 75, right: 0, bottom: 0, left: 0 }}
+        gridInsets={{ top: 59, right: 0, bottom: 34, left: 0 }}
+        contentInsets={{ top: 75, right: 0, bottom: 50, left: 0 }}
       />,
     );
     const info = container.querySelector('.sectioninfo') as HTMLElement;
     expect(info.style.top).toBe('83px');
+    expect(info.style.bottom).toBe('58px');
+    expect(info.style.right).toBe('calc(0px)');
+    expect(info.style.width).toBe('16px');
   });
 
-  it('keeps the 1.5x vertical margin when gridInsets.top is zero', () => {
+  it('keeps the 1.5x vertical margins and 16px width floor when gridInsets and right margin are zero', () => {
     const { container } = render(
       <SectionInfo
         {...baseProps}
         isVertical
         gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
-        contentInsets={{ top: 16, right: 0, bottom: 0, left: 0 }}
+        contentInsets={{ top: 16, right: 0, bottom: 16, left: 0 }}
       />,
     );
     const info = container.querySelector('.sectioninfo') as HTMLElement;
     expect(info.style.top).toBe('24px');
+    expect(info.style.bottom).toBe('24px');
+    expect(info.style.right).toBe('calc(0px)');
+    expect(info.style.width).toBe('16px');
   });
 });
