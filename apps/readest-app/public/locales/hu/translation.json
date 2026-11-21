@@ -2891,7 +2891,7 @@
   "Added audio to {{count}} cards_one": "Hang hozzáadva {{count}} kártyához",
   "Added audio to {{count}} cards_other": "Hang hozzáadva {{count}} kártyához",
   "Dictionary for Anki Cards": "Szótár az Anki-kártyákhoz",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Az Anki-szinkronizálás ennek a szótárnak a szócikkét teszi minden kártya hátoldalára, szinkronizálásonként legfeljebb 30 kártyára.",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Az Anki-szinkronizálás ennek a szótárnak a szócikkét teszi minden kártya hátoldalára, szinkronizálásonként legfeljebb 30 kártyára",
   "Added dictionary entries to {{count}} cards_one": "Szótári szócikk hozzáadva {{count}} kártyához",
   "Added dictionary entries to {{count}} cards_other": "Szótári szócikk hozzáadva {{count}} kártyához",
   "Dictionary for Anki Cards...": "Szótár az Anki-kártyákhoz..."

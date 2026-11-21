@@ -38,6 +38,7 @@ import {
 } from '@/services/vocabulary/ankiDroid';
 import { lookupEntry } from '@/services/vocabulary/ankiEntry';
 import { hintProviders } from '@/services/vocabulary/hintSources';
+import type { VocabularyEntry } from '@/services/vocabulary/types';
 import { isAnkiAllowed } from '@/utils/access';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
@@ -287,11 +288,10 @@ export const useAnkiLink = () => {
       // The prompt asks the reader to sync AnkiDroid first, which can bring in notes.
       const { notes, lang, plan, cardsRead } = add === null ? first : await pull();
       const voiced = add ? await ankiUpgradeNoteType(ankiNoteFills(notes)) : 0;
-      const { entries } = useVocabularyStore.getState();
       // Words with no sentence came in from Anki, so they're already there.
-      const learning = Object.values(entries).filter(
-        (e) => e.state === 'learning' && e.occurrences.length,
-      );
+      const learningOf = (all: Record<string, VocabularyEntry>) =>
+        Object.values(all).filter((e) => e.state === 'learning' && e.occurrences.length);
+      const learning = learningOf(useVocabularyStore.getState().entries);
       // Dictionary entries (#7728): the cards about to be added first, then
       // older cards without one, within the lookup budget.
       const noteType = await ankiNoteType();
@@ -312,7 +312,9 @@ export const useAnkiLink = () => {
         }
         if (gaps.length) saveEntryAfter(gaps[gaps.length - 1]!.id);
       }
-      const outgoing = ankiNotesToSend(learning, notes, looked);
+      // The lookups take a while: send and tag what the list holds now.
+      const { entries } = useVocabularyStore.getState();
+      const outgoing = ankiNotesToSend(learningOf(entries), notes, looked);
       const sent = outgoing.length ? await ankiAddNotes(outgoing) : 0;
       const entered =
         Object.values(looked).filter(Boolean).length +
@@ -393,8 +395,13 @@ export const useAnkiLink = () => {
   const saveEntryPicker = async (id: string) => {
     const store = useCustomDictionaryStore.getState();
     store.setAnkiEntryProviderId(id || undefined);
-    await store.saveCustomDictionaries(envConfig);
-    setEntryPicker(null);
+    try {
+      await store.saveCustomDictionaries(envConfig);
+      setEntryPicker(null);
+    } catch (err) {
+      console.warn('[anki] saving the card dictionary failed', err);
+      toast('error', _("Couldn't save"));
+    }
   };
 
   return {

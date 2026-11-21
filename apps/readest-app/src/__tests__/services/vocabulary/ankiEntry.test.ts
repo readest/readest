@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MAX_ENTRY_LENGTH, entryHtml, lookupEntry } from '@/services/vocabulary/ankiEntry';
 import type { DictionaryProvider } from '@/services/dictionaries/types';
 
@@ -55,6 +55,23 @@ describe('entryHtml', () => {
     expect(html).toBe(sense.repeat(2));
   });
 
+  it('cuts a long list after its last whole item', () => {
+    const item = `<li>${'y'.repeat(MAX_ENTRY_LENGTH / 4)}</li>`;
+    expect(entryHtml(render(`<p>senses</p><ol>${item.repeat(6)}</ol>`))).toBe(
+      `<p>senses</p><ol>${item.repeat(3)}</ol>`,
+    );
+  });
+
+  it('keeps the start of a first block too long to fit whole', () => {
+    expect(entryHtml(render(`<div>${'x'.repeat(MAX_ENTRY_LENGTH + 1)}</div>`))).toBe(
+      `<div>${'x'.repeat(MAX_ENTRY_LENGTH - '<div></div>'.length)}</div>`,
+    );
+    // Escaped characters count at their escaped length, and none is cut in half.
+    const html = entryHtml(render(`<p>${'&amp;'.repeat(MAX_ENTRY_LENGTH)}</p>`));
+    expect(html.length).toBeLessThanOrEqual(MAX_ENTRY_LENGTH);
+    expect(html).toMatch(/^<p>(&amp;)+<\/p>$/);
+  });
+
   it('is empty for an entry with no text', () => {
     expect(entryHtml(render('<div><img src="a.png"></div>'))).toBe('');
   });
@@ -76,6 +93,24 @@ describe('lookupEntry', () => {
     await expect(lookupEntry('spice', 'en', provider('<p>a <a>drug</a></p>'))).resolves.toBe(
       '<p>a drug</p>',
     );
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it('gives up on a dictionary that does not answer, and cancels its request', async () => {
+    vi.useFakeTimers();
+    let signal: AbortSignal | undefined;
+    const stalled: DictionaryProvider = {
+      ...provider(''),
+      lookup: (_word, ctx) => {
+        signal = ctx.signal;
+        return new Promise(() => {});
+      },
+    };
+    const entry = lookupEntry('spice', 'en', stalled);
+    await vi.advanceTimersByTimeAsync(15_000);
+    await expect(entry).resolves.toBe('');
+    expect(signal?.aborted).toBe(true);
   });
 
   it('is empty when the dictionary has no entry or fails', async () => {

@@ -439,6 +439,22 @@ describe('customDictionaryStore — web search CRUD', () => {
   });
 });
 
+describe('customDictionaryStore — saveCustomDictionaries write (#7728)', () => {
+  it('rejects when the settings write fails, so a caller can keep its form open', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: { customDictionaries: [] } as unknown as SettingsState['settings'],
+      setSettings: (s: SettingsState['settings']) => useSettingsStore.setState({ settings: s }),
+      saveSettings: vi.fn().mockRejectedValue(new Error('disk full')),
+    } as unknown as SettingsState);
+    await expect(
+      useCustomDictionaryStore
+        .getState()
+        .saveCustomDictionaries({ name: 'env' } as unknown as EnvConfigType),
+    ).rejects.toThrow('disk full');
+  });
+});
+
 describe('customDictionaryStore — saveCustomDictionaries reference identity (PR 6)', () => {
   it('replaces useSettingsStore.settings with a NEW reference so subscribers fire', async () => {
     // Seed the settings store with a real reducer so setSettings actually

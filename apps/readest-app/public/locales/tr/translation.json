@@ -2891,7 +2891,7 @@
   "Added audio to {{count}} cards_one": "{{count}} karta ses eklendi",
   "Added audio to {{count}} cards_other": "{{count}} karta ses eklendi",
   "Dictionary for Anki Cards": "Anki kartları için sözlük",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Anki ile eşitleme, bu sözlüğün maddesini her kartın arka yüzüne koyar; her eşitlemede en fazla 30 kart.",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki ile eşitleme, bu sözlüğün maddesini her kartın arka yüzüne koyar; her eşitlemede en fazla 30 kart",
   "Added dictionary entries to {{count}} cards_one": "{{count}} karta sözlük maddesi eklendi",
   "Added dictionary entries to {{count}} cards_other": "{{count}} karta sözlük maddesi eklendi",
   "Dictionary for Anki Cards...": "Anki kartları için sözlük..."

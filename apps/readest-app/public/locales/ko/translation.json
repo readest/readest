@@ -2817,7 +2817,7 @@
   "Add Audio": "오디오 추가",
   "Added audio to {{count}} cards_other": "카드 {{count}}개에 오디오를 추가함",
   "Dictionary for Anki Cards": "Anki 카드용 사전",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Anki와 동기화하면 이 사전의 항목을 각 카드 뒷면에 넣습니다. 동기화 한 번에 최대 30장까지입니다.",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki와 동기화하면 이 사전의 항목을 각 카드 뒷면에 넣습니다. 동기화 한 번에 최대 30장까지입니다",
   "Added dictionary entries to {{count}} cards_other": "카드 {{count}}장에 사전 항목을 추가함",
   "Dictionary for Anki Cards...": "Anki 카드용 사전..."
 }

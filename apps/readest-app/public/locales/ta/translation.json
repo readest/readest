@@ -2891,7 +2891,7 @@
   "Added audio to {{count}} cards_one": "{{count}} அட்டைகளில் ஒலி சேர்க்கப்பட்டது",
   "Added audio to {{count}} cards_other": "{{count}} அட்டைகளில் ஒலி சேர்க்கப்பட்டது",
   "Dictionary for Anki Cards": "Anki அட்டைகளுக்கான அகராதி",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Anki உடன் ஒத்திசைவு ஒவ்வொரு அட்டையின் பின்புறத்திலும் இந்த அகராதியின் பதிவைச் சேர்க்கிறது, ஒரு ஒத்திசைவுக்கு அதிகபட்சம் 30 அட்டைகள்.",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki உடன் ஒத்திசைவு ஒவ்வொரு அட்டையின் பின்புறத்திலும் இந்த அகராதியின் பதிவைச் சேர்க்கிறது, ஒரு ஒத்திசைவுக்கு அதிகபட்சம் 30 அட்டைகள்",
   "Added dictionary entries to {{count}} cards_one": "{{count}} அட்டைகளில் அகராதிப் பதிவுகள் சேர்க்கப்பட்டன",
   "Added dictionary entries to {{count}} cards_other": "{{count}} அட்டைகளில் அகராதிப் பதிவுகள் சேர்க்கப்பட்டன",
   "Dictionary for Anki Cards...": "Anki அட்டைகளுக்கான அகராதி..."

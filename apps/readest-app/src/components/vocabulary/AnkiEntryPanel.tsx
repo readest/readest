@@ -16,7 +16,8 @@ const AnkiEntryPanel: React.FC<AnkiEntryPanelProps> = ({
   onCancel,
 }) => {
   const _ = useTranslation();
-  const [id, setId] = useState(selected);
+  // A saved dictionary that is no longer enabled shows, and saves, as None.
+  const [id, setId] = useState(providers.some((p) => p.id === selected) ? selected : '');
   const [busy, setBusy] = useState(false);
 
   const save = async () => {
@@ -31,8 +32,14 @@ const AnkiEntryPanel: React.FC<AnkiEntryPanelProps> = ({
   return (
     <section
       aria-label={_('Dictionary for Anki Cards')}
-      className='mx-auto flex w-full max-w-md flex-col gap-4 p-4'
+      className='mx-auto flex w-full max-w-md flex-col gap-3 p-4 text-start'
     >
+      <h3 className='text-base font-medium'>{_('Dictionary for Anki Cards')}</h3>
+      <p className='text-sm'>
+        {_(
+          "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync",
+        )}
+      </p>
       <label className='flex flex-col gap-1.5 text-sm'>
         <span className='font-medium'>{_('Dictionary')}</span>
         <select
@@ -49,11 +56,6 @@ const AnkiEntryPanel: React.FC<AnkiEntryPanelProps> = ({
           ))}
         </select>
       </label>
-      <p className='not-eink:opacity-60 text-xs'>
-        {_(
-          "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.",
-        )}
-      </p>
       <div className='flex justify-end gap-2'>
         <button type='button' className='btn btn-ghost btn-sm' onClick={onCancel}>
           {_('Cancel')}

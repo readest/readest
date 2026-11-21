@@ -2817,7 +2817,7 @@
   "Add Audio": "Tambahkan Audio",
   "Added audio to {{count}} cards_other": "Audio ditambahkan ke {{count}} kartu",
   "Dictionary for Anki Cards": "Kamus untuk Kartu Anki",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Sinkronisasi dengan Anki menaruh entri kamus ini di balik setiap kartu, hingga 30 kartu per sinkronisasi.",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Sinkronisasi dengan Anki menaruh entri kamus ini di balik setiap kartu, hingga 30 kartu per sinkronisasi",
   "Added dictionary entries to {{count}} cards_other": "Entri kamus ditambahkan ke {{count}} kartu",
   "Dictionary for Anki Cards...": "Kamus untuk Kartu Anki..."
 }

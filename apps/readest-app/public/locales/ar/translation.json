@@ -3187,7 +3187,7 @@
   "Added audio to {{count}} cards_many": "أُضيف الصوت إلى البطاقات: {{count}}",
   "Added audio to {{count}} cards_other": "أُضيف الصوت إلى البطاقات: {{count}}",
   "Dictionary for Anki Cards": "قاموس بطاقات Anki",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "تضع المزامنة مع Anki مدخل هذا القاموس على ظهر كل بطاقة، لما يصل إلى 30 بطاقة في كل مزامنة.",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "تضع المزامنة مع Anki مدخل هذا القاموس على ظهر كل بطاقة، لما يصل إلى 30 بطاقة في كل مزامنة",
   "Added dictionary entries to {{count}} cards_zero": "أُضيفت مدخلات القاموس إلى البطاقات: {{count}}",
   "Added dictionary entries to {{count}} cards_one": "أُضيفت مدخلات القاموس إلى البطاقات: {{count}}",
   "Added dictionary entries to {{count}} cards_two": "أُضيفت مدخلات القاموس إلى البطاقات: {{count}}",

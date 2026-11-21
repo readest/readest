@@ -2891,7 +2891,7 @@
   "Added audio to {{count}} cards_one": "Ljud tillagt på kort: {{count}}",
   "Added audio to {{count}} cards_other": "Ljud tillagt på kort: {{count}}",
   "Dictionary for Anki Cards": "Ordbok för Anki-kort",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Synkronisering med Anki lägger den här ordbokens uppslag på baksidan av varje kort, för upp till 30 kort per synkronisering.",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Synkronisering med Anki lägger den här ordbokens uppslag på baksidan av varje kort, för upp till 30 kort per synkronisering",
   "Added dictionary entries to {{count}} cards_one": "Ordboksuppslag tillagda på kort: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Ordboksuppslag tillagda på kort: {{count}}",
   "Dictionary for Anki Cards...": "Ordbok för Anki-kort..."

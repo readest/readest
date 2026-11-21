@@ -2891,7 +2891,7 @@
   "Added audio to {{count}} cards_one": "{{count}} कार्ड में ऑडियो जोड़ा गया",
   "Added audio to {{count}} cards_other": "{{count}} कार्ड में ऑडियो जोड़ा गया",
   "Dictionary for Anki Cards": "Anki कार्ड के लिए शब्दकोश",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Anki के साथ सिंक हर कार्ड के पीछे इस शब्दकोश की प्रविष्टि जोड़ता है, हर सिंक में अधिकतम 30 कार्ड तक।",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki के साथ सिंक हर कार्ड के पीछे इस शब्दकोश की प्रविष्टि जोड़ता है, हर सिंक में अधिकतम 30 कार्ड तक",
   "Added dictionary entries to {{count}} cards_one": "{{count}} कार्ड में शब्दकोश प्रविष्टि जोड़ी गई",
   "Added dictionary entries to {{count}} cards_other": "{{count}} कार्ड में शब्दकोश प्रविष्टि जोड़ी गई",
   "Dictionary for Anki Cards...": "Anki कार्ड के लिए शब्दकोश..."

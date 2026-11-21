@@ -2817,7 +2817,7 @@
   "Add Audio": "加入音訊",
   "Added audio to {{count}} cards_other": "已為 {{count}} 張卡片加入音訊",
   "Dictionary for Anki Cards": "Anki 卡片辭典",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "與 Anki 同步時，會把此辭典的詞條放到每張卡片的背面，每次同步最多 30 張。",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "與 Anki 同步時，會把此辭典的詞條放到每張卡片的背面，每次同步最多 30 張",
   "Added dictionary entries to {{count}} cards_other": "已為 {{count}} 張卡片加入辭典詞條",
   "Dictionary for Anki Cards...": "Anki 卡片辭典..."
 }

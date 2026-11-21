@@ -2817,7 +2817,7 @@
   "Add Audio": "เพิ่มเสียง",
   "Added audio to {{count}} cards_other": "เพิ่มเสียงในการ์ด {{count}} ใบแล้ว",
   "Dictionary for Anki Cards": "พจนานุกรมสำหรับการ์ด Anki",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "การซิงค์กับ Anki จะใส่คำอธิบายจากพจนานุกรมนี้ไว้ด้านหลังการ์ดแต่ละใบ สูงสุด 30 ใบต่อการซิงค์หนึ่งครั้ง",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "การซิงค์กับ Anki จะใส่คำอธิบายจากพจนานุกรมนี้ไว้ด้านหลังการ์ดแต่ละใบ สูงสุด 30 ใบต่อการซิงค์หนึ่งครั้ง",
   "Added dictionary entries to {{count}} cards_other": "เพิ่มคำอธิบายจากพจนานุกรมในการ์ด {{count}} ใบแล้ว",
   "Dictionary for Anki Cards...": "พจนานุกรมสำหรับการ์ด Anki..."
 }

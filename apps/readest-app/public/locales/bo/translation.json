@@ -2817,7 +2817,7 @@
   "Add Audio": "སྒྲ་ཁ་སྣོན།",
   "Added audio to {{count}} cards_other": "ཤོག་བྱང་ {{count}} ལ་སྒྲ་ཁ་སྣོན་བྱས།",
   "Dictionary for Anki Cards": "Anki ཤོག་བྱང་གི་ཚིག་མཛོད།",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Anki དང་མཉམ་སྡེབ་ཀྱིས་ཤོག་བྱང་རེ་རེའི་རྒྱབ་ངོས་སུ་ཚིག་མཛོད་འདིའི་འགྲེལ་བཤད་འཇོག མཉམ་སྡེབ་རེ་རེར་ཤོག་བྱང་ 30 བར།",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki དང་མཉམ་སྡེབ་ཀྱིས་ཤོག་བྱང་རེ་རེའི་རྒྱབ་ངོས་སུ་ཚིག་མཛོད་འདིའི་འགྲེལ་བཤད་འཇོག མཉམ་སྡེབ་རེ་རེར་ཤོག་བྱང་ 30 བར།",
   "Added dictionary entries to {{count}} cards_other": "ཤོག་བྱང་ {{count}} ལ་ཚིག་མཛོད་ཀྱི་འགྲེལ་བཤད་ཁ་སྣོན་བྱས།",
   "Dictionary for Anki Cards...": "Anki ཤོག་བྱང་གི་ཚིག་མཛོད།..."
 }

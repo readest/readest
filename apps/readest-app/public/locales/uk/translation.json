@@ -3039,7 +3039,7 @@
   "Added audio to {{count}} cards_many": "Аудіо додано до карток: {{count}}",
   "Added audio to {{count}} cards_other": "Аудіо додано до карток: {{count}}",
   "Dictionary for Anki Cards": "Словник для карток Anki",
-  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Синхронізація з Anki додає статтю з цього словника на зворот кожної картки, до 30 карток за синхронізацію.",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Синхронізація з Anki додає статтю з цього словника на зворот кожної картки, до 30 карток за синхронізацію",
   "Added dictionary entries to {{count}} cards_one": "Словникові статті додано до карток: {{count}}",
   "Added dictionary entries to {{count}} cards_few": "Словникові статті додано до карток: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Словникові статті додано до карток: {{count}}",

@@ -6,6 +6,9 @@ import type { DictionaryProvider } from '@/services/dictionaries/types';
 /** Longest entry HTML kept on a card; longer ones stop at a block boundary. */
 export const MAX_ENTRY_LENGTH = 8000;
 
+/** A lookup that takes longer gives no entry, so a stalled dictionary can't hold up Sync. */
+const LOOKUP_TIMEOUT_MS = 15_000;
+
 // Formatting kept as is (without attributes).
 const KEEP = new Set([
   'P',
@@ -89,9 +92,22 @@ const clean = (node: Node, into: Node) => {
 const html = (node: Node) =>
   node instanceof Element ? node.outerHTML : new XMLSerializer().serializeToString(node);
 
+// The longest start of `text` whose escaped HTML fits in `budget` characters.
+const cappedText = (text: string, budget: number): string => {
+  let n = Math.min(text.length, budget);
+  let part = html(document.createTextNode(text.slice(0, n)));
+  while (part.length > budget) {
+    n -= Math.max(1, Math.ceil((part.length - budget) / 5));
+    part = html(document.createTextNode(text.slice(0, n)));
+  }
+  return part;
+};
+
 // The nodes' HTML up to `budget` characters: whole nodes, then the start of
-// the first one that doesn't fit, if any of it does.
-const capped = (nodes: NodeListOf<ChildNode>, budget: number): string => {
+// the first one that doesn't fit, cut at a child boundary. Text is cut only
+// when nothing is kept before it (`kept`), so an entry ends between blocks
+// unless its first block alone is too long.
+const capped = (nodes: NodeListOf<ChildNode>, budget: number, kept = false): string => {
   let out = '';
   for (const node of nodes) {
     const whole = html(node);
@@ -99,10 +115,12 @@ const capped = (nodes: NodeListOf<ChildNode>, budget: number): string => {
       out += whole;
       continue;
     }
-    if (node instanceof Element && !node.matches('br, hr')) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (!kept && !out) out = cappedText(node.textContent ?? '', budget);
+    } else if (node instanceof Element && !node.matches('br, hr')) {
       const tag = node.tagName.toLowerCase();
       const wrap = `<${tag}></${tag}>`.length;
-      const inner = capped(node.childNodes, budget - out.length - wrap);
+      const inner = capped(node.childNodes, budget - out.length - wrap, kept || !!out);
       if (inner) out += `<${tag}>${inner}</${tag}>`;
     }
     break;
@@ -118,20 +136,35 @@ export const entryHtml = (container: Element): string => {
   return capped(out.childNodes, MAX_ENTRY_LENGTH);
 };
 
-/** The word's entry in `provider`, cleaned for a card; empty when it has none. */
+/**
+ * The word's entry in `provider`, cleaned for a card; empty when it has none,
+ * fails, or takes longer than LOOKUP_TIMEOUT_MS (the request is then aborted).
+ */
 export const lookupEntry = async (
   word: string,
   lang: string,
   provider: DictionaryProvider,
-  signal: AbortSignal = new AbortController().signal,
 ): Promise<string> => {
   const container = document.createElement('div');
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error('timed out'));
+    }, LOOKUP_TIMEOUT_MS);
+  });
   try {
-    await provider.init?.();
-    const outcome = await provider.lookup(word, { lang, signal, container });
+    const lookup = (async () => {
+      await provider.init?.();
+      return provider.lookup(word, { lang, signal: controller.signal, container });
+    })();
+    const outcome = await Promise.race([lookup, timeout]);
     return outcome.ok ? entryHtml(container) : '';
   } catch (err) {
     console.warn('[vocabulary] Anki entry lookup failed', provider.id, err);
     return '';
+  } finally {
+    clearTimeout(timer);
   }
 };

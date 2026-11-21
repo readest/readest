@@ -550,6 +550,67 @@ describe('VocabularyView Anki link', () => {
       expect(anki.ankiSetEntries).not.toHaveBeenCalled();
     });
 
+    it("doesn't send a word deleted while its entry was being looked up", async () => {
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      choose('stardict:collins');
+      const deleting: DictionaryProvider = {
+        ...collins,
+        lookup: async (word, ctx) => {
+          const { entries, remove } = useVocabularyStore.getState();
+          remove(Object.values(entries).find((e) => e.word === word)!.id);
+          return collins.lookup(word, ctx);
+        },
+      };
+      dicts.providers = [deleting];
+      renderWithMenu();
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(dispatch).toHaveBeenCalledWith('toast', expect.anything()));
+      expect(lookups).toEqual(['spice']);
+      expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+      dispatch.mockRestore();
+    });
+
+    it('opens on None when the saved dictionary is no longer enabled', async () => {
+      choose('stardict:removed');
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Dictionary for Anki Cards/ }));
+      const panel = await screen.findByRole('region', { name: 'Dictionary for Anki Cards' });
+      expect(
+        within(panel).getByRole('heading', { name: 'Dictionary for Anki Cards' }),
+      ).toBeTruthy();
+      expect(
+        (within(panel).getByRole('combobox', { name: 'Dictionary' }) as HTMLSelectElement).value,
+      ).toBe('');
+      fireEvent.click(within(panel).getByRole('button', { name: 'Save' }));
+      await waitFor(() =>
+        expect(useCustomDictionaryStore.getState().settings.ankiEntryProviderId).toBeUndefined(),
+      );
+    });
+
+    it('keeps the panel open when the choice could not be saved', async () => {
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      const save = vi
+        .spyOn(useCustomDictionaryStore.getState(), 'saveCustomDictionaries')
+        .mockRejectedValue(new Error('disk full'));
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Dictionary for Anki Cards/ }));
+      const panel = await screen.findByRole('region', { name: 'Dictionary for Anki Cards' });
+      fireEvent.click(within(panel).getByRole('button', { name: 'Save' }));
+      await waitFor(() =>
+        expect(dispatch).toHaveBeenCalledWith(
+          'toast',
+          expect.objectContaining({ type: 'error', message: "Couldn't save" }),
+        ),
+      );
+      expect(screen.getByRole('region', { name: 'Dictionary for Anki Cards' })).toBeTruthy();
+      dispatch.mockRestore();
+      save.mockRestore();
+    });
+
     it('chooses the dictionary from the More menu', async () => {
       const save = vi
         .spyOn(useCustomDictionaryStore.getState(), 'saveCustomDictionaries')
