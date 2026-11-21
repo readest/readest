@@ -842,7 +842,6 @@ const TTSPlayerSheet = ({
           <VoiceList
             groups={shownGroups}
             query={voiceQuery}
-            showFavorites={!activeSection}
             selected={{ voiceId: selectedVoice }}
             onSelect={(_group, voice) => handleSelectVoice(voice.id, voice.lang)}
             onUpgrade={handleUpgrade}

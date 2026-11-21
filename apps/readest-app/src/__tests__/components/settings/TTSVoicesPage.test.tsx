@@ -210,6 +210,20 @@ describe('TTSVoicesPage', () => {
     expect(screen.getByText('Heart')).toBeTruthy();
   });
 
+  it('with one engine picked, its starred voices are listed under Favorites first', async () => {
+    TTSUtils.toggleFavoriteVoice('edge-tts', 'en-GB-RyanNeural');
+    renderPage();
+    await screen.findByText('Heart');
+
+    pickEngine('Edge TTS');
+    const titles = screen.queryAllByRole('heading').map((heading) => heading.textContent);
+    expect(titles).toEqual(['Favorites', 'Edge TTS']);
+    expect(screen.getAllByText('Ryan')).toHaveLength(2);
+
+    pickEngine('Readest Voice');
+    expect(screen.queryByText('Favorites')).toBeNull();
+  });
+
   it('offers each custom service on its own, by its name', async () => {
     renderPage({ library: customLibrary });
     await screen.findByText('Alloy');
