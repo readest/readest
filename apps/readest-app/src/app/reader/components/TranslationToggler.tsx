@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RiTranslate } from 'react-icons/ri';
+import { RiTranslate2 } from 'react-icons/ri';
 
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -44,7 +44,7 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
   return (
     <Button
       icon={
-        <RiTranslate
+        <RiTranslate2
           className={translationEnabled ? 'text-blue-500' : 'text-base-content'}
           size={iconSize20}
         />
