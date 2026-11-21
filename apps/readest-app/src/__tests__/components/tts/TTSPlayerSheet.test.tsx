@@ -118,6 +118,7 @@ vi.mock('@/app/reader/components/tts/TTSChaptersView', () => ({
 }));
 
 import TTSPlayerSheet from '@/app/reader/components/tts/TTSPlayerSheet';
+import { TTSUtils } from '@/services/tts/TTSUtils';
 
 const waitFor = <T,>(callback: () => T | Promise<T>) =>
   waitForWithOptions(callback, { interval: 1 });
@@ -220,6 +221,7 @@ describe('TTSPlayerSheet', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    localStorage.removeItem('ttsFavoriteVoices');
   });
 
   test('opened while the clients initialize, it loads the voices once they are ready', async () => {
@@ -678,6 +680,34 @@ describe('TTSPlayerSheet', () => {
     fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
     expect(screen.getByText('Guy')).toBeTruthy();
     expect(screen.queryByText('Aseng')).toBeNull();
+  });
+
+  test('with one engine picked, its starred voices are listed under Favorites first', async () => {
+    TTSUtils.toggleFavoriteVoice('edge-tts', 'guy');
+    const twoEngines = [
+      ...voiceGroups,
+      {
+        id: 'xunfei',
+        name: 'Xunfei Speech',
+        engine: 'xunfei-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    render(
+      <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
+    );
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Aseng'));
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+
+    fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
+    expect(screen.getByText('Favorites')).toBeTruthy();
+    expect(screen.getAllByText('Guy')).toHaveLength(2);
+
+    fireEvent.change(engineSelect!, { target: { value: 'xunfei-tts/xunfei' } });
+    expect(screen.queryByText('Favorites')).toBeNull();
   });
 
   test('the voice view opens on every engine, like the voice library', async () => {
