@@ -1,6 +1,7 @@
 import { Book } from '@/types/book';
 import { AppService } from '@/types/system';
 import { formatAuthors, formatTitle, getCoverFilename } from './book';
+import { getTextDirection } from './quoteCard';
 
 // Cover art keeps its color across themes and metadata edits. Keep this palette
 // and mapping stable so a synced book has the same cover on every device.
@@ -92,6 +93,8 @@ export const renderFallbackCover = async (book: Book): Promise<ArrayBuffer> => {
     const size = 52;
     const lineHeight = size * 1.35;
     ctx.font = `500 ${size}px serif`;
+    // Like the library's dir='auto': each block takes its own first strong letter.
+    ctx.direction = getTextDirection(author);
     const lines = wrapCoverText(author, textWidth, 2, (s) => ctx.measureText(s).width);
     lines.forEach((text, i) => {
       ctx.fillText(text, centerX, bottom - (lines.length - i - 0.5) * lineHeight);
@@ -107,6 +110,7 @@ export const renderFallbackCover = async (book: Book): Promise<ArrayBuffer> => {
   const lineHeight = size * 1.25;
   ctx.font = `500 ${size}px serif`;
   const title = formatTitle(book.title);
+  ctx.direction = getTextDirection(title);
   const lines = wrapCoverText(title, textWidth, 4, (s) => ctx.measureText(s).width);
   const top = pad + (bottom - pad - lines.length * lineHeight) / 2;
   lines.forEach((text, i) => {

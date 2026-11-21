@@ -45,6 +45,30 @@ describe('renderFallbackCover', () => {
     expect(inkInRows(image, 0, 110, background)).toBe(0);
   });
 
+  test('each block is drawn in its own text direction', async () => {
+    const drawn: { text: string; direction: string }[] = [];
+    const fillText = CanvasRenderingContext2D.prototype.fillText;
+    CanvasRenderingContext2D.prototype.fillText = function (text, ...rest) {
+      drawn.push({ text, direction: this.direction });
+      return fillText.call(this, text, ...rest);
+    };
+    try {
+      await renderFallbackCover({
+        hash: 'he',
+        title: 'שלום!',
+        author: 'Jane Doe',
+        format: 'TXT',
+      } as Book);
+    } finally {
+      CanvasRenderingContext2D.prototype.fillText = fillText;
+    }
+
+    expect(drawn).toEqual([
+      { text: 'Jane Doe', direction: 'ltr' },
+      { text: 'שלום!', direction: 'rtl' },
+    ]);
+  });
+
   test('a book without an author still gets a centered title', async () => {
     const book = { hash: 'x', title: '三体', author: '', format: 'TXT' } as Book;
     const image = await decode(await renderFallbackCover(book));
