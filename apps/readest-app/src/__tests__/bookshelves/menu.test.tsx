@@ -155,4 +155,23 @@ describe('bookshelf layouts from the View menu', () => {
     expect(readBookshelves(useSettingsStore.getState().settings)).toEqual(before);
     expect(readPendingBookshelves()).toEqual(pending);
   });
+
+  it('toggles Cover only in grid view and disables it in list view', async () => {
+    render(<ViewMenu />);
+    const toggle = screen.getByRole('menuitem', { name: /Cover only/i });
+    expect(toggle.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(toggle);
+    await waitFor(() => expect(useSettingsStore.getState().settings.libraryCoverOnly).toBe(true));
+
+    cleanup();
+    useSettingsStore.setState({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        libraryViewMode: 'list',
+        libraryCoverOnly: true,
+      } as SystemSettings,
+    });
+    render(<ViewMenu />);
+    expect(screen.getByText('Cover only').closest('button')?.hasAttribute('disabled')).toBe(true);
+  });
 });

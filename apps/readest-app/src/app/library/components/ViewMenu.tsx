@@ -47,6 +47,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const { settings } = useSettingsStore();
 
   const viewMode = searchParams?.get('view') || settings.libraryViewMode;
+  const coverOnly = settings.libraryCoverOnly ?? false;
   const autoColumns = settings.libraryAutoColumns;
   const columns = settings.libraryColumns;
   const groupBy = ensureLibraryGroupByType(searchParams?.get('groupBy'), settings.libraryGroupBy);
@@ -112,6 +113,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const handleToggleAutoColumns = async () => {
     const newValue = !settings.libraryAutoColumns;
     await saveSysSettings(envConfig, 'libraryAutoColumns', newValue);
+  };
+
+  const handleToggleCoverOnly = async () => {
+    await saveSysSettings(envConfig, 'libraryCoverOnly', !coverOnly);
   };
 
   const handleSetColumns = async (value: number) => {
@@ -206,6 +211,14 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           transient
         />
       ))}
+      <MenuItem
+        label={_('Cover only')}
+        buttonClass='min-h-8 py-1!'
+        toggled={coverOnly}
+        disabled={viewMode === 'list'}
+        onClick={handleToggleCoverOnly}
+        transient
+      />
 
       {/* Columns */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
