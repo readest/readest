@@ -270,7 +270,19 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         return super.onKeyDown(keyCode, event)
     }
 
+    companion object {
+        init {
+            System.loadLibrary("readestlib")
+        }
+
+        // Implemented in src-tauri/src/android/eink.rs.
+        @JvmStatic external fun isEinkDevice(): Boolean
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The manifest theme's dark window background shows until the WebView exists;
+        // on e-ink that dark-to-white flip is a full-panel flash (#7346).
+        if (isEinkDevice()) setTheme(R.style.Theme_readest_Eink)
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
