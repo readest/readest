@@ -7,6 +7,7 @@ import { DropdownProvider } from '@/context/DropdownContext';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { DictionaryProvider } from '@/services/dictionaries/types';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
 import type { Book } from '@/types/book';
@@ -570,6 +571,22 @@ describe('VocabularyView Anki link', () => {
       dispatch.mockRestore();
     });
 
+    it('tags a word with the mark it has after the entries are written', async () => {
+      choose('stardict:collins');
+      anki.ankiReadDeck.mockResolvedValue({ notes: [readNote(1, 'kettle')], cards: [] });
+      // The reader marks the word Mastered while Sync writes the entries.
+      anki.ankiSetEntries.mockImplementation(async (notes: unknown[]) => {
+        act(() => useVocabularyStore.getState().setState('en:kettle', 'mastered'));
+        return notes.length;
+      });
+      renderWithMenu();
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(anki.ankiUpdateTags).toHaveBeenCalled());
+      expect(anki.ankiUpdateTags).toHaveBeenCalledWith([
+        { id: 1, tags: ['readest', 'readest::lang::en', 'readest::mastered'] },
+      ]);
+    });
+
     it('opens on None when the saved dictionary is no longer enabled', async () => {
       choose('stardict:removed');
       renderWithMenu();
@@ -589,16 +606,23 @@ describe('VocabularyView Anki link', () => {
       );
     });
 
-    it('keeps the panel open when the choice could not be saved', async () => {
+    it('keeps the panel open and the old choice when the choice could not be saved', async () => {
       const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
-      const save = vi
-        .spyOn(useCustomDictionaryStore.getState(), 'saveCustomDictionaries')
-        .mockRejectedValue(new Error('disk full'));
+      type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+      const settingsStore = useSettingsStore.getState();
+      useSettingsStore.setState({
+        settings: { customDictionaries: [] } as unknown as SettingsState['settings'],
+        setSettings: (s: SettingsState['settings']) => useSettingsStore.setState({ settings: s }),
+        saveSettings: vi.fn().mockRejectedValue(new Error('disk full')),
+      } as unknown as SettingsState);
       renderWithMenu();
       await syncButton();
       openMenu('More');
       fireEvent.click(screen.getByRole('menuitem', { name: /Dictionary for Anki Cards/ }));
       const panel = await screen.findByRole('region', { name: 'Dictionary for Anki Cards' });
+      fireEvent.change(within(panel).getByRole('combobox', { name: 'Dictionary' }), {
+        target: { value: 'stardict:collins' },
+      });
       fireEvent.click(within(panel).getByRole('button', { name: 'Save' }));
       await waitFor(() =>
         expect(dispatch).toHaveBeenCalledWith(
@@ -607,8 +631,13 @@ describe('VocabularyView Anki link', () => {
         ),
       );
       expect(screen.getByRole('region', { name: 'Dictionary for Anki Cards' })).toBeTruthy();
+      // Neither store keeps the choice that wasn't saved, so Sync doesn't use it.
+      expect(useCustomDictionaryStore.getState().settings.ankiEntryProviderId).toBeUndefined();
+      expect(
+        useSettingsStore.getState().settings.dictionarySettings?.ankiEntryProviderId,
+      ).toBeUndefined();
+      useSettingsStore.setState(settingsStore);
       dispatch.mockRestore();
-      save.mockRestore();
     });
 
     it('chooses the dictionary from the More menu', async () => {

@@ -94,6 +94,7 @@ const html = (node: Node) =>
 
 // The longest start of `text` whose escaped HTML fits in `budget` characters.
 const cappedText = (text: string, budget: number): string => {
+  if (budget <= 0) return '';
   let n = Math.min(text.length, budget);
   let part = html(document.createTextNode(text.slice(0, n)));
   while (part.length > budget) {
@@ -109,18 +110,21 @@ const cappedText = (text: string, budget: number): string => {
 // unless its first block alone is too long.
 const capped = (nodes: NodeListOf<ChildNode>, budget: number, kept = false): string => {
   let out = '';
+  if (budget <= 0) return out;
   for (const node of nodes) {
     const whole = html(node);
     if (out.length + whole.length <= budget) {
       out += whole;
       continue;
     }
+    // Whitespace between tags isn't content kept.
+    const keptHere = kept || !!out.trim();
     if (node.nodeType === Node.TEXT_NODE) {
-      if (!kept && !out) out = cappedText(node.textContent ?? '', budget);
+      if (!keptHere) out += cappedText(node.textContent ?? '', budget - out.length);
     } else if (node instanceof Element && !node.matches('br, hr')) {
       const tag = node.tagName.toLowerCase();
       const wrap = `<${tag}></${tag}>`.length;
-      const inner = capped(node.childNodes, budget - out.length - wrap, kept || !!out);
+      const inner = capped(node.childNodes, budget - out.length - wrap, keptHere);
       if (inner) out += `<${tag}>${inner}</${tag}>`;
     }
     break;

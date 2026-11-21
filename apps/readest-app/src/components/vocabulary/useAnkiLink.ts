@@ -6,6 +6,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
 import {
@@ -319,7 +320,8 @@ export const useAnkiLink = () => {
       const entered =
         Object.values(looked).filter(Boolean).length +
         (gapEntries.length ? await ankiSetEntries(gapEntries) : 0);
-      const updates = ankiTagUpdates(notes, entries, lang);
+      // Read again: the reader may have changed a mark during the Anki calls.
+      const updates = ankiTagUpdates(notes, useVocabularyStore.getState().entries, lang);
       if (updates.length) await ankiUpdateTags(updates);
       const parts = [
         ...(voiced ? [_('Added audio to {{count}} cards', { count: voiced })] : []),
@@ -394,12 +396,20 @@ export const useAnkiLink = () => {
 
   const saveEntryPicker = async (id: string) => {
     const store = useCustomDictionaryStore.getState();
+    const previous = store.settings.ankiEntryProviderId;
     store.setAnkiEntryProviderId(id || undefined);
     try {
       await store.saveCustomDictionaries(envConfig);
       setEntryPicker(null);
     } catch (err) {
       console.warn('[anki] saving the card dictionary failed', err);
+      // Put the old choice back in both stores, so Sync doesn't use one that wasn't saved.
+      store.setAnkiEntryProviderId(previous);
+      const { settings, setSettings } = useSettingsStore.getState();
+      setSettings({
+        ...settings,
+        dictionarySettings: useCustomDictionaryStore.getState().settings,
+      });
       toast('error', _("Couldn't save"));
     }
   };

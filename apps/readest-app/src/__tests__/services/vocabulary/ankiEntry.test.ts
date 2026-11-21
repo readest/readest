@@ -72,6 +72,18 @@ describe('entryHtml', () => {
     expect(html).toMatch(/^<p>(&amp;)+<\/p>$/);
   });
 
+  it('cuts a long first block after leading whitespace too', () => {
+    expect(entryHtml(render(`\n<div>${'x'.repeat(MAX_ENTRY_LENGTH + 1)}</div>`))).toBe(
+      `\n<div>${'x'.repeat(MAX_ENTRY_LENGTH - '\n<div></div>'.length)}</div>`,
+    );
+  });
+
+  it('stops when wrappers alone use up the length', () => {
+    const depth = Math.ceil(MAX_ENTRY_LENGTH / '<blockquote></blockquote>'.length) + 1;
+    const html = `${'<blockquote>'.repeat(depth)}x${'</blockquote>'.repeat(depth)}`;
+    expect(entryHtml(render(html))).toBe('');
+  });
+
   it('is empty for an entry with no text', () => {
     expect(entryHtml(render('<div><img src="a.png"></div>'))).toBe('');
   });
