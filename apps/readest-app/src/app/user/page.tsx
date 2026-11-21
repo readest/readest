@@ -80,11 +80,21 @@ const ProfilePage = () => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const {
+    signingOut,
+    handleLogout,
+    handleResetPassword,
+    handleUpdateEmail,
+    handleConfirmDelete,
+    handleDeleteAllBooks,
+  } = useUserActions();
+
   useEffect(() => {
     if (!mounted) return;
 
     const isAuthenticated = user && token && appService;
-    if (isAuthenticated) return;
+    // Signing out opens the library, not the login page (#7726).
+    if (isAuthenticated || signingOut) return;
 
     const timer = setTimeout(() => {
       const redirect = searchParams?.get('redirect') || '/library';
@@ -93,18 +103,11 @@ const ProfilePage = () => {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [mounted, user, token, appService, router, searchParams]);
+  }, [mounted, user, token, appService, router, searchParams, signingOut]);
 
   useTheme({ systemUIVisible: false });
 
   const { quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
-  const {
-    handleLogout,
-    handleResetPassword,
-    handleUpdateEmail,
-    handleConfirmDelete,
-    handleDeleteAllBooks,
-  } = useUserActions();
 
   const { availablePlans, iapAvailable } = useAvailablePlans({
     hasIAP: appService?.hasIAP || false,

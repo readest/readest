@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AuthPage from '@/app/auth/page';
@@ -10,6 +10,7 @@ import AuthPage from '@/app/auth/page';
 
 const mocks = vi.hoisted(() => ({
   router: { push: vi.fn(), replace: vi.fn(), back: vi.fn() },
+  saveSettings: vi.fn(async (_envConfig: unknown, _settings: { keepLogin?: boolean }) => {}),
   viewStates: {} as Record<string, unknown>,
   onAuthStateChange: undefined as
     | ((event: string, session: { access_token: string; user: object } | null) => void)
@@ -48,7 +49,11 @@ vi.mock('@/store/themeStore', () => ({
   useThemeStore: () => ({ safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 } }),
 }));
 vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({ settings: {}, setSettings: vi.fn(), saveSettings: vi.fn() }),
+  useSettingsStore: () => ({
+    settings: {},
+    setSettings: vi.fn(),
+    saveSettings: mocks.saveSettings,
+  }),
 }));
 vi.mock('@/hooks/useEnsureSettingsLoaded', () => ({ useEnsureSettingsLoaded: () => true }));
 vi.mock('@/store/trafficLightStore', () => ({
@@ -101,25 +106,124 @@ afterEach(() => {
 });
 
 describe('AuthPage back arrow', () => {
-  it('goes back to the reader beneath when a book is open, leaving no /auth entry', () => {
+  it('goes back to the reader beneath when a book is open, leaving no /auth entry', async () => {
     mocks.viewStates = { 'book1-abc': {} };
     openLoginPage(READER);
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
 
-    expect(mocks.router.back).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mocks.router.back).toHaveBeenCalledTimes(1));
     expect(mocks.router.push).not.toHaveBeenCalled();
     expect(mocks.router.replace).not.toHaveBeenCalled();
   });
 
-  it('replaces /auth with the redirect when no book is open beneath', () => {
+  it('replaces /auth with the redirect when no book is open beneath', async () => {
     openLoginPage(READER);
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
 
-    expect(mocks.router.replace).toHaveBeenCalledWith(READER);
+    await waitFor(() => expect(mocks.router.replace).toHaveBeenCalledWith(READER));
     expect(mocks.router.push).not.toHaveBeenCalled();
     expect(mocks.router.back).not.toHaveBeenCalled();
+  });
+
+  // The library re-reads settings when it mounts and sends a user it should
+  // keep signed in back here. Leaving before keepLogin=false was on disk
+  // opened the login page a second time (#7726).
+  it('leaves only after keepLogin=false is saved', async () => {
+    let finishSave = () => {};
+    mocks.saveSettings.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    openLoginPage(null);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+
+    await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalledTimes(1));
+    expect(mocks.saveSettings.mock.calls[0]![1].keepLogin).toBe(false);
+    expect(mocks.router.back).not.toHaveBeenCalled();
+
+    await act(async () => finishSave());
+    expect(mocks.router.back).toHaveBeenCalledTimes(1);
+  });
+
+  // A second press while the save is pending would go back past the reader.
+  it('goes back once when pressed again while saving', async () => {
+    let finishSave = () => {};
+    mocks.saveSettings.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    mocks.viewStates = { 'book1-abc': {} };
+    openLoginPage(null);
+
+    const goBack = screen.getAllByRole('button', { name: 'Go Back' })[0]!;
+    fireEvent.click(goBack);
+    fireEvent.click(goBack);
+    await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalled());
+
+    await act(async () => finishSave());
+    await waitFor(() => expect(mocks.router.back).toHaveBeenCalled());
+    expect(mocks.router.back).toHaveBeenCalledTimes(1);
+  });
+
+  // Opened as the first history entry, Go Back has nowhere to go; a sign-in
+  // afterwards must still leave the login page.
+  it('still leaves after signing in when Go Back had nowhere to go', async () => {
+    openLoginPage(null);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+    await waitFor(() => expect(mocks.router.back).toHaveBeenCalledTimes(1));
+    signIn();
+
+    expect(mocks.router.replace).toHaveBeenCalledWith('/library');
+  });
+
+  // With nothing beneath and no redirect, Go Back's router.back() goes
+  // nowhere; the sign-in's own navigation must not be dropped.
+  it('leaves for the sign-in that completes while Go Back saves', async () => {
+    let finishSave = () => {};
+    mocks.saveSettings.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    openLoginPage(null);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+    await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalled());
+    signIn();
+    expect(mocks.router.replace).toHaveBeenCalledWith('/library');
+
+    await act(async () => finishSave());
+    expect(mocks.router.back).not.toHaveBeenCalled();
+    expect(mocks.router.replace).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not go back again when pressed after signing in', async () => {
+    mocks.viewStates = { 'book1-abc': {} };
+    openLoginPage(READER);
+
+    signIn();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+    await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalled());
+    await act(async () => {});
+
+    expect(mocks.router.back).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes back once when sign-in completes while saving', async () => {
+    let finishSave = () => {};
+    mocks.saveSettings.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    mocks.viewStates = { 'book1-abc': {} };
+    openLoginPage(READER);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+    await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalled());
+    signIn();
+
+    await act(async () => finishSave());
+    await waitFor(() => expect(mocks.router.back).toHaveBeenCalled());
+    expect(mocks.router.back).toHaveBeenCalledTimes(1);
   });
 });
 
