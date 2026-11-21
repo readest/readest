@@ -1210,7 +1210,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const importTile =
     visibleBooks.length > 0 && lastShelf?.layout === 'grid' ? (
       <div
-        className={clsx('bookshelf-import-item', coverOnly ? 'm-0' : 'mx-0 my-2 sm:mx-4 sm:my-4')}
+        className='bookshelf-import-item mx-0 my-2 sm:mx-4 sm:my-4'
         style={
           !coverOnly && lastShelf.coverFit === 'fit'
             ? { display: 'flex', paddingBottom: `${iconSize15 + 24}px` }
@@ -1222,8 +1222,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           aria-label={_('Import Books')}
           aria-haspopup='menu'
           className={clsx(
-            'bookitem-main eink-bordered bg-base-100/50 hover:bg-base-300/50 flex aspect-28/41 w-full items-center justify-center',
-            coverOnly ? 'rounded-none' : 'rounded-sm',
+            'bookitem-main eink-bordered bg-base-100/50 hover:bg-base-300/50 flex aspect-28/41 w-full items-center justify-center rounded-sm',
             'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
           )}
           onClick={(event) => handleImportBooks(event.currentTarget)}

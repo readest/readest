@@ -59,7 +59,15 @@ describe('BookItem Cover only mode (#7746)', () => {
     expect(screen.queryByRole('button', { name: 'Show Book Details' })).toBeNull();
     const main = container.querySelector('.bookitem-main');
     expect(main?.getAttribute('title')).toBe('Dune');
-    expect(main?.className).toContain('rounded-none');
+  });
+
+  it('keeps the cover tile itself unchanged, corners and shadow included', () => {
+    const coverClass = () => document.querySelector('.bookitem-main')?.className;
+    renderBook(true);
+    const on = coverClass();
+    cleanup();
+    renderBook(false);
+    expect(on).toBe(coverClass());
   });
 
   it('shows title and footer metadata in grid mode otherwise', () => {

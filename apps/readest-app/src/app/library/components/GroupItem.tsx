@@ -118,8 +118,7 @@ const GroupItem: React.FC<GroupItemProps> = ({
       <div
         title={coverOnly ? groupLabel : undefined}
         className={clsx(
-          'groupitem-main relative flex overflow-hidden',
-          coverOnly ? 'rounded-none' : 'rounded-sm',
+          'groupitem-main relative flex overflow-hidden rounded-sm',
           mode === 'grid' && 'bg-base-100 aspect-[28/41] items-center justify-center shadow-md',
           mode === 'list' && 'items-center justify-start gap-4 py-2',
         )}

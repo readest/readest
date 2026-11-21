@@ -144,8 +144,7 @@ const BookItem: React.FC<BookItemProps> = ({
       <div
         title={coverOnly ? book.title : undefined}
         className={clsx(
-          'bookitem-main relative flex justify-center overflow-hidden',
-          coverOnly ? 'rounded-none' : 'rounded-sm',
+          'bookitem-main relative flex justify-center overflow-hidden rounded-sm',
           !fitCoverInGrid && 'aspect-28/41',
           coverFit === 'crop' && 'shadow-md',
           mode === 'grid' && 'items-end',
@@ -158,7 +157,7 @@ const BookItem: React.FC<BookItemProps> = ({
           book={book}
           coverFit={coverFit}
           showSpine={showSpine}
-          imageClassName={clsx('shadow-md', showSpine || coverOnly ? 'rounded-none' : 'rounded-sm')}
+          imageClassName={clsx('shadow-md', showSpine ? 'rounded-none' : 'rounded-sm')}
           onAspectRatioChange={setCoverAspect}
         />
         {isTransferring && (
