@@ -92,7 +92,7 @@ export function useBooknotesNav(bookKey: string, toc: TOCItem[]) {
       const note = sortedBooknotes[index];
       if (note) {
         setBooknoteIndex(bookKey, index);
-        getView(bookKey)?.goTo(note.cfi);
+        getView(bookKey)?.goTo(note.cfi, { focus: true });
       }
     },
     [bookKey, sortedBooknotes, setBooknoteIndex, getView],
@@ -111,7 +111,7 @@ export function useBooknotesNav(bookKey: string, toc: TOCItem[]) {
 
       // Navigate to first booknote
       if (sorted.length > 0) {
-        getView(bookKey)?.goTo(sorted[0]!.cfi);
+        getView(bookKey)?.goTo(sorted[0]!.cfi, { focus: true });
       }
     },
     [allBooknotes, bookKey, setActiveBooknoteType, setBooknoteResults, setBooknoteIndex, getView],

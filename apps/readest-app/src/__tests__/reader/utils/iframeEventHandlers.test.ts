@@ -213,6 +213,40 @@ describe('iframeEventHandlers click gestures', () => {
       }),
     ).toBe(true);
   });
+
+  // #7732: a key typed in the book while a dialog is open (focus was taken
+  // from it) must not turn the page behind the dialog.
+  test('keys typed in the book do nothing while a dialog is open', async () => {
+    const { eventDispatcher } = await import('@/utils/event');
+    const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatchSync');
+    const { handleKeydown } = await importHandlers();
+    const dialog = document.createElement('dialog');
+    dialog.setAttribute('open', '');
+    document.body.appendChild(dialog);
+    const keyEvent = {
+      key: 'ArrowRight',
+      code: 'ArrowRight',
+      ctrlKey: false,
+      shiftKey: false,
+      altKey: false,
+      metaKey: false,
+      repeat: false,
+      target: null,
+      getModifierState: () => false,
+      preventDefault: vi.fn(),
+      stopImmediatePropagation: vi.fn(),
+    } as unknown as KeyboardEvent;
+    try {
+      handleKeydown('book-1', keyEvent);
+    } finally {
+      dialog.remove();
+    }
+    expect(dispatchSpy).not.toHaveBeenCalled();
+    expect(postedTypes(postSpy)).not.toContain('iframe-keydown');
+
+    handleKeydown('book-1', keyEvent);
+    expect(postedTypes(postSpy)).toContain('iframe-keydown');
+  });
 });
 
 describe('single-tap opens image gallery / table zoom in reflowable books (#4584)', () => {

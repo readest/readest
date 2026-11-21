@@ -414,7 +414,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         setCanGoBack(true);
         footnoteHandler.handle(bookDoc, e)?.catch((err) => {
           console.warn(err);
-          getView(bookKey)?.goTo(popupLinkDetail.href);
+          getView(bookKey)?.goTo(popupLinkDetail.href, { focus: true });
           flashLinkTarget(popupLinkDetail.href);
           setShowPopup(false);
         });
@@ -746,7 +746,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           setShowPopup(false);
         }
         const detail = (event as CustomEvent).detail;
-        view?.goTo(detail.href);
+        view?.goTo(detail.href, { focus: true });
         flashLinkTarget(detail.href);
       });
     } else if (!event.defaultPrevented) {
@@ -777,7 +777,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     const href = sourceHref;
     handleDismissPopup();
     if (!href) return;
-    view?.goTo(href);
+    view?.goTo(href, { focus: true });
     flashLinkTarget(href);
   };
 

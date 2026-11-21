@@ -6,6 +6,7 @@ import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from './brightnessGesture';
 import { hasScrollRoomY } from './wheelGesture';
 import { toParentViewportPoint } from './annotatorUtil';
 import { isTextAtPoint } from './crossDocSelection';
+import { hasReaderOverlay } from './readerOverlay';
 import {
   createTurnGestureIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
@@ -301,6 +302,9 @@ const getKeyStatus = (event?: MouseEvent | WheelEvent | TouchEvent) => {
 };
 
 export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
+  // A dialog or overlay above the book owns the keys, even when focus slipped
+  // into the book: they must not turn the page behind it (#7732).
+  if (hasReaderOverlay()) return;
   const target = event.target as HTMLElement | null;
   const interactiveTarget =
     !!target?.isContentEditable ||

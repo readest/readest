@@ -57,7 +57,11 @@ export interface Renderer extends HTMLElement {
   nextSection?: () => Promise<void>;
   prevSection?: () => Promise<void>;
   render?: () => Promise<void>;
-  goTo: (params: { index: number; anchor?: number | RangeAnchor }) => Promise<void>;
+  goTo: (params: {
+    index: number;
+    anchor?: number | RangeAnchor;
+    focus?: boolean;
+  }) => Promise<void>;
   setStyles?: (css: string) => void;
   primaryIndex: number;
   getContents: () => {
@@ -68,7 +72,8 @@ export interface Renderer extends HTMLElement {
     // absent on foliate builds older than the #133 squash (1a1cf1d).
     contentPages?: number;
   }[];
-  scrollToAnchor?: (anchor: number | Range, reason?: string, smooth?: boolean) => void;
+  scrollToAnchor?: (anchor: number | Range | Element, reason?: string, smooth?: boolean) => void;
+  focusView?: () => void;
   addEventListener: (
     type: string,
     listener: EventListener,
@@ -100,7 +105,10 @@ export interface FoliateView extends HTMLElement {
   open: (book: BookDoc) => Promise<void>;
   close: () => void;
   init: (options: { lastLocation: string }) => void;
-  goTo: (target: string | number) => void;
+  // `focus` moves focus to the destination: only for a navigation the user
+  // asked for (a TOC entry, a bookmark, a search result), never for one that
+  // runs on its own (restoring the position, sync, read aloud).
+  goTo: (target: string | number, options?: { focus?: boolean }) => void;
   goToFraction: (fraction: number) => void;
   getSectionFractions: () => number[];
   prev: (distance?: number) => Promise<void>;
@@ -170,11 +178,11 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
   // Foliate's runtime implementation returns a Promise. Returning a Promise
   // here is compatible with the void return type in TypeScript and lets callers
   // that know about the promise (e.g. tests, async handlers) await completion.
-  originalView.goTo = (target: string | number): Promise<void> => {
+  originalView.goTo = (target: string | number, options?: { focus?: boolean }): Promise<void> => {
     // Cross-section jumps can take seconds (the target section's images block
     // its iframe load); surface start/end so the viewer can show a spinner.
     originalView.dispatchEvent(new CustomEvent('navigate-start'));
-    return Promise.resolve(originalGoTo(target)).finally(() => {
+    return Promise.resolve(originalGoTo(target, options)).finally(() => {
       originalView.dispatchEvent(new CustomEvent('navigate-end'));
     });
   };

@@ -383,7 +383,7 @@ const LegacyAIAssistant = ({ bookKey }: AIAssistantProps) => {
   const handleSourceClick = useCallback(
     (source: SourceItem) => {
       if (!source.cfi) return;
-      getView(bookKey)?.goTo(source.cfi);
+      getView(bookKey)?.goTo(source.cfi, { focus: true });
     },
     [bookKey, getView],
   );
@@ -500,7 +500,7 @@ const ReedyAgentAssistantBridge = ({ bookKey }: AIAssistantProps) => {
 
   const handleNavigate = useCallback(
     (cfi: string) => {
-      getView(bookKey)?.goTo(cfi);
+      getView(bookKey)?.goTo(cfi, { focus: true });
     },
     [bookKey, getView],
   );
