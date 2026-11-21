@@ -179,6 +179,13 @@ const IntegrationsPanel: React.FC = () => {
     : undefined;
 
   const [subPage, setSubPage] = useState<SubPage>(null);
+  // Signed out goes straight to sign-in: /user would show "Loading profile..."
+  // before bouncing to /auth (#7755).
+  const openPremiumProvider = (page: SubPage) => {
+    if (isCloudSyncPremium) setSubPage(page);
+    else if (user) navigateToProfile(router);
+    else navigateToLogin(router);
+  };
   const flowConnectors = useFlowConnectors();
   const flowState = useFlowState();
 
@@ -801,9 +808,7 @@ const IntegrationsPanel: React.FC = () => {
                   isEnabled: !!settings.googleDrive?.enabled,
                 })}
                 onToggle={(next) => toggleCloudProvider('gdrive', next)}
-                onOpen={() =>
-                  isCloudSyncPremium ? setSubPage('gdrive') : navigateToProfile(router)
-                }
+                onOpen={() => openPremiumProvider('gdrive')}
                 toggleLabel={_('Sync with Google Drive')}
               />
             )}
@@ -819,7 +824,7 @@ const IntegrationsPanel: React.FC = () => {
                 isEnabled: !!settings.webdav?.enabled,
               })}
               onToggle={(next) => toggleCloudProvider('webdav', next)}
-              onOpen={() => (isCloudSyncPremium ? setSubPage('webdav') : navigateToProfile(router))}
+              onOpen={() => openPremiumProvider('webdav')}
               toggleLabel={_('Sync with WebDAV')}
             />
             <CloudProviderRow
@@ -834,7 +839,7 @@ const IntegrationsPanel: React.FC = () => {
                 isEnabled: !!settings.s3?.enabled,
               })}
               onToggle={(next) => toggleCloudProvider('s3', next)}
-              onOpen={() => (isCloudSyncPremium ? setSubPage('s3') : navigateToProfile(router))}
+              onOpen={() => openPremiumProvider('s3')}
               toggleLabel={_('Sync with S3')}
             />
             {(appService?.isDesktopApp ||
@@ -854,9 +859,7 @@ const IntegrationsPanel: React.FC = () => {
                   isEnabled: !!settings.onedrive?.enabled,
                 })}
                 onToggle={(next) => toggleCloudProvider('onedrive', next)}
-                onOpen={() =>
-                  isCloudSyncPremium ? setSubPage('onedrive') : navigateToProfile(router)
-                }
+                onOpen={() => openPremiumProvider('onedrive')}
                 toggleLabel={_('Sync with OneDrive')}
               />
             )}
@@ -873,9 +876,7 @@ const IntegrationsPanel: React.FC = () => {
                   isEnabled: !!settings.icloud?.enabled,
                 })}
                 onToggle={(next) => toggleCloudProvider('icloud', next)}
-                onOpen={() =>
-                  isCloudSyncPremium ? setSubPage('icloud') : navigateToProfile(router)
-                }
+                onOpen={() => openPremiumProvider('icloud')}
                 toggleLabel={_('Sync with iCloud')}
               />
             )}
