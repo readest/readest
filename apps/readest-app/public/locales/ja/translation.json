@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards": "Anki カード用の辞書",
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki との同期で、この辞書の項目を各カードの裏面に追加します。1 回の同期で最大 30 枚までです",
   "Added dictionary entries to {{count}} cards_other": "{{count}} 枚のカードに辞書の項目を追加しました",
-  "Dictionary for Anki Cards...": "Anki カード用の辞書..."
+  "Dictionary for Anki Cards...": "Anki カード用の辞書...",
+  "Priority": "優先度"
 }
