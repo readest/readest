@@ -47,7 +47,14 @@ export const useKeyDownActions = ({
       return false;
     };
 
+    // With focus in the book, its keys arrive as an `iframe-keydown` message.
+    // Escape there still dismisses; Enter there confirms nothing.
+    const handleBookKey = (msg: MessageEvent) => {
+      if (msg.data?.type === 'iframe-keydown' && msg.data.key === 'Escape') onCancelRef.current?.();
+    };
+
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('message', handleBookKey);
 
     const element = elementRef.current;
     element?.addEventListener('keydown', handleKeyDown);
@@ -59,6 +66,7 @@ export const useKeyDownActions = ({
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('message', handleBookKey);
       element?.removeEventListener('keydown', handleKeyDown);
 
       if (appService?.isAndroidApp) {

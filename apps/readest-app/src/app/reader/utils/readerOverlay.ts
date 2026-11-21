@@ -1,11 +1,19 @@
-// Shared HTML/ARIA state covers dialogs and menus that can stay open after
-// the reader toolbars hide, without subscribing to each popup's local state.
-const READER_OVERLAY_SELECTOR = [
+// Modal dialogs: open through the `open` attribute, ARIA, or daisyUI's class.
+const READER_MODAL_SELECTOR = [
   'dialog[open]',
   'dialog.modal-open',
   '[role="dialog"][aria-modal="true"]:not([aria-hidden="true"])',
   '[role="dialog"].modal-open',
   '[role="alertdialog"]:not([aria-hidden="true"])',
+].join(',');
+
+export const hasReaderModal = () =>
+  typeof document !== 'undefined' && document.querySelector(READER_MODAL_SELECTOR) !== null;
+
+// Shared HTML/ARIA state covers dialogs and menus that can stay open after
+// the reader toolbars hide, without subscribing to each popup's local state.
+const READER_OVERLAY_SELECTOR = [
+  READER_MODAL_SELECTOR,
   '[aria-haspopup][aria-expanded="true"]',
   '[role="menu"][data-state="open"]',
   '[role="listbox"][data-state="open"]',

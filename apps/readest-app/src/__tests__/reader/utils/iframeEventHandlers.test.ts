@@ -216,12 +216,18 @@ describe('iframeEventHandlers click gestures', () => {
 
   // #7732: a key typed in the book while a dialog is open (focus was taken
   // from it) must not turn the page behind the dialog.
-  test('keys typed in the book do nothing while a dialog is open', async () => {
+  // A modal shows it is open with the `open` attribute, or with daisyUI's
+  // `modal-open` class (the passphrase prompt, the app lock dialog).
+  test.each([
+    'open',
+    'modal-open',
+  ])('keys typed in the book do nothing while a dialog is open (%s)', async (how) => {
     const { eventDispatcher } = await import('@/utils/event');
     const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatchSync');
     const { handleKeydown } = await importHandlers();
     const dialog = document.createElement('dialog');
-    dialog.setAttribute('open', '');
+    if (how === 'open') dialog.setAttribute('open', '');
+    else dialog.className = 'modal modal-open';
     document.body.appendChild(dialog);
     const keyEvent = {
       key: 'ArrowRight',
@@ -245,6 +251,34 @@ describe('iframeEventHandlers click gestures', () => {
     expect(postedTypes(postSpy)).not.toContain('iframe-keydown');
 
     handleKeydown('book-1', keyEvent);
+    expect(postedTypes(postSpy)).toContain('iframe-keydown');
+  });
+
+  // A popup over the book (the instant dictionary) is closed by Escape typed
+  // in the book: only a modal dialog takes the book's keys away.
+  test('keys typed in the book still reach a popup over it', async () => {
+    const { handleKeydown } = await importHandlers();
+    const popup = document.createElement('div');
+    popup.className = 'popup-container';
+    popup.setAttribute('data-capture-blocking-overlay', 'true');
+    document.body.appendChild(popup);
+    try {
+      handleKeydown('book-1', {
+        key: 'Escape',
+        code: 'Escape',
+        ctrlKey: false,
+        shiftKey: false,
+        altKey: false,
+        metaKey: false,
+        repeat: false,
+        target: null,
+        getModifierState: () => false,
+        preventDefault: vi.fn(),
+        stopImmediatePropagation: vi.fn(),
+      } as unknown as KeyboardEvent);
+    } finally {
+      popup.remove();
+    }
     expect(postedTypes(postSpy)).toContain('iframe-keydown');
   });
 });
