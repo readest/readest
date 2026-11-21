@@ -32,6 +32,7 @@ const GroupItem: React.FC<GroupItemProps> = ({
   // groups carry user-authored text that must never be translated.
   const groupLabel = group.localized ? _(group.displayName) : group.displayName;
   const { settings } = useSettingsStore();
+  const coverOnly = mode === 'grid' && !!settings.libraryCoverOnly;
   const iconSize15 = useResponsiveSize(15);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -114,8 +115,10 @@ const GroupItem: React.FC<GroupItemProps> = ({
   return (
     <div className={clsx('group-item', appService?.hasContextMenu ? 'cursor-pointer' : '')}>
       <div
+        title={coverOnly ? groupLabel : undefined}
         className={clsx(
-          'groupitem-main relative flex overflow-hidden rounded-sm',
+          'groupitem-main relative flex overflow-hidden',
+          coverOnly ? 'rounded-none' : 'rounded-sm',
           mode === 'grid' && 'bg-base-100 aspect-[28/41] items-center justify-center shadow-md',
           mode === 'list' && 'items-center justify-start gap-4 py-2',
         )}
@@ -231,7 +234,7 @@ const GroupItem: React.FC<GroupItemProps> = ({
           </div>
         )}
       </div>
-      {mode === 'grid' && (
+      {mode === 'grid' && !coverOnly && (
         <div className={clsx('flex w-full flex-col pt-2')}>
           <div className='min-w-0 flex-1'>
             <h4

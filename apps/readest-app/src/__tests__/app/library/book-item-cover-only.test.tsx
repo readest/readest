@@ -52,7 +52,9 @@ describe('BookItem Cover only mode (#7746)', () => {
     const { container } = renderBook('grid', true);
     expect(screen.getByTestId('book-cover')).toBeTruthy();
     expect(screen.queryByText('Dune')).toBeNull();
-    expect(container.querySelector('.bookitem-main')?.getAttribute('title')).toBe('Dune');
+    const main = container.querySelector('.bookitem-main');
+    expect(main?.getAttribute('title')).toBe('Dune');
+    expect(main?.className).toContain('rounded-none');
   });
 
   it('shows title in grid mode when libraryCoverOnly is disabled', () => {

@@ -1204,13 +1204,14 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       dragDisabled,
     ],
   );
+  const coverOnly = !!settings.libraryCoverOnly;
   const lastShelf = sections.at(-1)?.definition;
   const importTile =
     visibleBooks.length > 0 && lastShelf?.layout === 'grid' ? (
       <div
-        className='bookshelf-import-item mx-0 my-2 sm:mx-4 sm:my-4'
+        className={clsx('bookshelf-import-item', coverOnly ? 'm-0' : 'mx-0 my-2 sm:mx-4 sm:my-4')}
         style={
-          lastShelf.coverFit === 'fit'
+          !coverOnly && lastShelf.coverFit === 'fit'
             ? { display: 'flex', paddingBottom: `${iconSize15 + 24}px` }
             : undefined
         }
@@ -1220,7 +1221,8 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           aria-label={_('Import Books')}
           aria-haspopup='menu'
           className={clsx(
-            'bookitem-main eink-bordered bg-base-100/50 hover:bg-base-300/50 flex aspect-28/41 w-full items-center justify-center rounded-sm',
+            'bookitem-main eink-bordered bg-base-100/50 hover:bg-base-300/50 flex aspect-28/41 w-full items-center justify-center',
+            coverOnly ? 'rounded-none' : 'rounded-sm',
             'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
           )}
           onClick={(event) => handleImportBooks(event.currentTarget)}
@@ -1298,6 +1300,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               sections={sections}
               autoColumns={settings.libraryAutoColumns}
               fixedColumns={settings.libraryColumns}
+              coverOnly={coverOnly}
               footerHeight={footerHeight}
               importAction={importAction}
               importTile={importTile}
