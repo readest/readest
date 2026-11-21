@@ -92,6 +92,31 @@ describe('Paginator focus (browser)', () => {
     expect(primaryDoc().activeElement?.localName).toBe('p');
   });
 
+  // A TOC entry for a chapter's start has no fragment: its anchor is 0.
+  it.each([
+    false,
+    true,
+  ])('moves focus to the start of a section when asked (scrolled: %s)', async (scrolled) => {
+    await setup();
+    if (scrolled) {
+      paginator.setAttribute('flow', 'scrolled');
+      await settle();
+    }
+    outside.focus();
+    await paginator.goTo({ index: CHAPTER + 2, focus: true });
+    await settle();
+    expect(document.activeElement).toBe(paginator);
+    const doc = primaryDoc();
+    const focused = doc.activeElement as HTMLElement;
+    expect(focused).not.toBe(doc.body);
+    // The focused element is where the section starts: its first text.
+    const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) =>
+        n.textContent!.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
+    });
+    expect(focused.contains(walker.nextNode())).toBe(true);
+  });
+
   it('keeps a field the user focused while a navigation that asks for focus ran', async () => {
     await setup();
     outside.focus();
