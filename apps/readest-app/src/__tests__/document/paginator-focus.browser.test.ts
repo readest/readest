@@ -92,6 +92,45 @@ describe('Paginator focus (browser)', () => {
     expect(primaryDoc().activeElement?.localName).toBe('p');
   });
 
+  it('keeps a field the user focused while a navigation that asks for focus ran', async () => {
+    await setup();
+    outside.focus();
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    try {
+      // The user clicks into a field before the destination is reached.
+      paginator.addEventListener('relocate', () => field.focus(), { once: true });
+      await paginator.goTo({ index: CHAPTER, anchor: midChapterRange, focus: true });
+      await settle();
+      expect(document.activeElement).toBe(field);
+    } finally {
+      field.remove();
+    }
+  });
+
+  it('turns to the page of a focused element in a neighboring section', async () => {
+    await setup();
+    // At the end of the section, the next one is preloaded next to it.
+    await paginator.goTo({ index: CHAPTER, anchor: 1 });
+    const start = Date.now();
+    while (!paginator.getContents().some((c) => c.index === CHAPTER + 1)) {
+      if (Date.now() - start > 10000) throw new Error('next section never loaded');
+      await settle(100);
+    }
+    await settle();
+    const next = paginator.getContents().find((c) => c.index === CHAPTER + 1)!;
+    const target = next.doc.querySelector('p')!;
+    target.tabIndex = 0;
+    target.focus(); // Tab past the end of this section into the next one
+    await settle();
+    const frame = next.doc.defaultView!.frameElement!.getBoundingClientRect();
+    const rect = target.getBoundingClientRect();
+    const box = paginator.getBoundingClientRect();
+    const left = frame.left + rect.left;
+    expect(left).toBeGreaterThanOrEqual(box.left - 1);
+    expect(left).toBeLessThan(box.right);
+  });
+
   it('keeps the focus another element took while a navigation ran', async () => {
     await setup();
     paginator.focusView!();
