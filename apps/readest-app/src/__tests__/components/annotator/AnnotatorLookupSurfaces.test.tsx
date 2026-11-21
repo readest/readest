@@ -1190,6 +1190,29 @@ describe('the dictionary docked in the Notebook', () => {
     expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
   });
 
+  // Pin hands the word back as closing the popup does. From the instant
+  // dictionary that means reading again unless told to keep the selection
+  // (#6454), as its later lookups into the tab do.
+  test.each([
+    [false, 'goes back to reading'],
+    [true, 'returns the toolbar when told to keep the selection'],
+  ])('Pin from the instant dictionary (keep selection: %s) %s', async (keep) => {
+    h.viewSettings.enableAnnotationQuickActions = true;
+    h.viewSettings.annotationQuickAction = 'dictionary';
+    h.viewSettings.keepSelectionAfterLookup = keep;
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectWord();
+    expect(screen.getByTestId('dictionary-surface')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('dictionary-pin'));
+    });
+
+    expect(h.notebook.setNotebookActiveTab).toHaveBeenCalledWith('dictionary');
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(!!screen.queryByTestId('annotation-toolbar')).toBe(keep);
+  });
+
   describe('with the instant dictionary', () => {
     beforeEach(() => {
       useDictionaryDockStore.setState({ isDocked: true });

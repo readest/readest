@@ -5,6 +5,7 @@
  * stylesheet resolves that cascade, so this runs as a browser test.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
@@ -76,5 +77,29 @@ describe('DictionarySheet — text selection (#7731)', () => {
     );
     const definition = await screen.findByText(/refers to the start of the story/);
     await waitFor(() => expect(getComputedStyle(definition).userSelect).toBe('text'));
+  });
+
+  // A real drag selects part of the answer, and the click that ends it doesn't
+  // fold the card back.
+  it('keeps the card open when a drag selects part of the definition', async () => {
+    render(
+      <div className='reader-page select-none'>
+        <DictionarySheet word='beginning' onDismiss={() => {}} />
+      </div>,
+    );
+    const definition = await screen.findByText(/refers to the start of the story/);
+    const card = screen.getByTestId('dict-card');
+    await waitFor(() => expect(card.getAttribute('aria-expanded')).toBe('true'));
+    const { width, height } = definition.getBoundingClientRect();
+
+    await userEvent.dragAndDrop(definition, definition, {
+      sourcePosition: { x: 4, y: height / 2 },
+      targetPosition: { x: width / 2, y: height / 2 },
+    });
+
+    const selected = document.getSelection()?.toString() ?? '';
+    expect(selected.length).toBeGreaterThan(4);
+    expect(definition.textContent).toContain(selected);
+    expect(card.getAttribute('aria-expanded')).toBe('true');
   });
 });

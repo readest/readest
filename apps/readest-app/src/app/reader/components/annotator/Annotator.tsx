@@ -2105,7 +2105,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   };
 
   // Pin to Notebook in the popup: the lookup moves into the Dictionary tab of a
-  // pinned Notebook, and the toolbar comes back for the word.
+  // pinned Notebook, and the word is handed back as closing the popup would.
+  // From the instant dictionary that is the toolbar only with
+  // keepSelectionAfterLookup, as for its later lookups into the tab (#6454).
   const handlePinDictionary = (lookup: UseDictionaryResultsArgs) => {
     useDictionaryDockStore.getState().setLookup(lookup);
     // The Notebook shows the book the sidebar is on.

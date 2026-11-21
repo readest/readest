@@ -42,6 +42,20 @@ describe('NotebookTabNavigation design regression', () => {
     expect(tabNames()).toEqual(['Notes', 'AI', 'Dictionary']);
   });
 
+  // The active tab is shown by its background alone; screen readers need the
+  // state too.
+  it('marks only the active tab as pressed', () => {
+    render(<NotebookTabNavigation activeTab='dictionary' onTabChange={vi.fn()} />);
+
+    const pressed = screen
+      .getAllByRole('button')
+      .map((tab) => [tab.getAttribute('aria-label'), tab.getAttribute('aria-pressed')]);
+    expect(pressed).toEqual([
+      ['Notes', 'false'],
+      ['Dictionary', 'true'],
+    ]);
+  });
+
   it('switches to the Dictionary tab', () => {
     const onTabChange = vi.fn();
     render(<NotebookTabNavigation activeTab='notes' onTabChange={onTabChange} />);
