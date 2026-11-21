@@ -1046,6 +1046,21 @@ describe('quick actions run on a selection made in the footnote popup', () => {
     expect(screen.queryByTestId('dictionary-surface')).toBeNull();
   });
 
+  // A tap outside the footnote popup closes it; the lookup opened on its text
+  // goes with it, as it does when opened from the toolbar (#7727).
+  test('closing the popup closes the instant dictionary opened in it', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+    expect(screen.getByTestId('dictionary-surface')).toBeTruthy();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', { key: 'book-1', closed: true });
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    });
+
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+  });
+
   test('a report taken mid-drag still opens the toolbar', async () => {
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectInPopup();
