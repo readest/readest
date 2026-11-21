@@ -179,6 +179,30 @@ describe('paginator starts sections and page breaks on a new spread (browser)', 
     expect(pageOf(el, 't')).toBe(2);
   });
 
+  it('moves a break whose value comes from a custom property', async () => {
+    const css = '.chapter { --page: column; break-before: var(--page); }';
+    const body = `<p id="x">x</p><p id="t" class="chapter">t</p>`;
+    const el = await open({ sections: [makeSection(body, { css })] });
+    expect(pageOf(el, 't')).toBe(2);
+  });
+
+  it("leaves the book's type and first-child selectors matching as before", async () => {
+    // The empty page before the break is no div, and goes before the
+    // section the heading starts rather than before the heading
+    const css = `div { padding-top: 7px; }
+      h2:first-child { margin-left: 11px; }
+      p:nth-of-type(2) { margin-left: 13px; }`;
+    const body = `<p id="x">x</p><section><h2 id="t" ${BREAK}>t</h2></section><p id="u">u</p>`;
+    const el = await open({ sections: [makeSection(body, { css })] });
+    expect(pageOf(el, 't')).toBe(2);
+    const { doc } = el.getContents()[0]!;
+    const view = doc.defaultView!;
+    expect(view.getComputedStyle(doc.getElementById('t')!).marginLeft).toBe('11px');
+    expect(view.getComputedStyle(doc.getElementById('u')!).marginLeft).toBe('13px');
+    // the empty page holds no padding from the book's div rule either
+    expect(pageOf(el, 'u')).toBe(2);
+  });
+
   it('keeps a break that already starts a spread where it is', async () => {
     const el = await open({ sections: [makeSection(pages('a', 3))] });
     expect(pageOf(el, 'a-1')).toBe(2);
