@@ -166,6 +166,18 @@ describe('AuthPage back arrow', () => {
     expect(mocks.router.back).toHaveBeenCalledTimes(1);
   });
 
+  // Opened as the first history entry, Go Back has nowhere to go; a sign-in
+  // afterwards must still leave the login page.
+  it('still leaves after signing in when Go Back had nowhere to go', async () => {
+    openLoginPage(null);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+    await waitFor(() => expect(mocks.router.back).toHaveBeenCalledTimes(1));
+    signIn();
+
+    expect(mocks.router.replace).toHaveBeenCalledWith('/library');
+  });
+
   it('goes back once when sign-in completes while saving', async () => {
     let finishSave = () => {};
     mocks.saveSettings.mockImplementationOnce(
