@@ -16,9 +16,13 @@ const isInteractiveTarget = (target: EventTarget | null): boolean => {
   return !!element?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(element?.tagName ?? '');
 };
 
+// Enter and Space activate a button or link, native or ARIA (a sidebar row is
+// an `li role="button"`), and must not also run a reader shortcut.
 const isNativeActivation = (event: KeyboardEvent): boolean => {
   const target = event.target as HTMLElement | null;
-  return /^(A|BUTTON)$/.test(target?.tagName ?? '') && (event.key === 'Enter' || event.key === ' ');
+  const isButton =
+    /^(A|BUTTON)$/.test(target?.tagName ?? '') || target?.getAttribute?.('role') === 'button';
+  return isButton && (event.key === 'Enter' || event.key === ' ');
 };
 
 const useShortcuts = (

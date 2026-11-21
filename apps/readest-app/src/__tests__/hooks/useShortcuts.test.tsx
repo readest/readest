@@ -193,6 +193,35 @@ describe('useShortcuts input handling', () => {
     expect(onOpenCommandPalette).toHaveBeenCalledOnce();
   });
 
+  // Enter on a sidebar row (a bookmark, a search result) both opened the row
+  // and toggled the toolbar, which then took focus from the destination.
+  it.each(['Enter', ' '])('leaves %j on a role="button" element to the element', (key) => {
+    localStorage.setItem(
+      'customShortcuts',
+      JSON.stringify({ onToggleToolbar: ['Enter'], onGoRight: [' '] }),
+    );
+    const onToggleToolbar = vi.fn();
+    const onGoRight = vi.fn();
+    render(<ShortcutHarness actions={{ onToggleToolbar, onGoRight }} />);
+    const row = document.createElement('li');
+    row.setAttribute('role', 'button');
+    row.tabIndex = 0;
+    document.body.appendChild(row);
+    const plain = document.createElement('div');
+    document.body.appendChild(plain);
+    try {
+      keyboardEventFor(row, { key });
+      expect(onToggleToolbar).not.toHaveBeenCalled();
+      expect(onGoRight).not.toHaveBeenCalled();
+
+      keyboardEventFor(plain, { key });
+      expect(onToggleToolbar.mock.calls.length + onGoRight.mock.calls.length).toBe(1);
+    } finally {
+      row.remove();
+      plain.remove();
+    }
+  });
+
   it('preserves iframe button activation while allowing noninteractive shortcuts', () => {
     localStorage.setItem('customShortcuts', JSON.stringify({ onOpenCommandPalette: ['Enter'] }));
     const onOpenCommandPalette = vi.fn(() => true);
