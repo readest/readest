@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
-import type { Renderer } from '@/types/view';
+import type { FoliateView, Renderer } from '@/types/view';
 import { applyScrollModeClass, getStyles } from '@/utils/style';
+import { handleA11yNavigation } from '@/utils/a11y';
 import type { ViewSettings } from '@/types/book';
 import { DEFAULT_BOOK_FONT, DEFAULT_BOOK_LAYOUT, DEFAULT_BOOK_STYLE } from '@/services/constants';
 
@@ -208,8 +209,12 @@ describe('Vertical-rl pagination (browser)', () => {
           writingMode: 'auto',
         } as ViewSettings),
       );
+      // As in the reader, whose load handler nests the next-section skip link
+      // inside the cover's <p>.
       paginator.addEventListener('load', (event) => {
-        applyScrollModeClass((event as CustomEvent<{ doc: Document }>).detail.doc, false);
+        const { doc } = (event as CustomEvent<{ doc: Document }>).detail;
+        applyScrollModeClass(doc, false);
+        handleA11yNavigation(paginator as unknown as FoliateView, doc);
       });
       paginator.open({
         dir: 'rtl',
@@ -220,6 +225,9 @@ describe('Vertical-rl pagination (browser)', () => {
       await stabilized;
 
       const { doc } = paginator.getContents()[0]!;
+      expect(doc.getElementById('readest-skip-link-next-section')?.parentElement?.localName).toBe(
+        'p',
+      );
       const imgRect = doc.getElementById('cover-img')!.getBoundingClientRect();
       // 393px wide page with 400x300 cover -> image height is < 300px inside an 820px available height;
       // centered vertically, its top sits well below the 59px Dynamic Island instead of sticking to y=16px.

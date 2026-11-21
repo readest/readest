@@ -22,7 +22,12 @@ import {
 import { tauriSetWindowTitle } from '@/utils/window';
 import { useContentInsets } from '../hooks/useContentInsets';
 import { usePageOverflow } from '../hooks/usePageOverflow';
-import { type BottomCornerRadii, getCellCornerRadii, NO_CORNERS } from '../utils/footerBand';
+import {
+  type BottomCornerRadii,
+  footerReservesBand,
+  getCellCornerRadii,
+  NO_CORNERS,
+} from '../utils/footerBand';
 import SearchResultsNav from './sidebar/SearchResultsNav';
 import VimCommandLine from './VimCommandLine';
 import BooknotesNav from './sidebar/BooknotesNav';
@@ -251,7 +256,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
               <div
                 className='bg-base-100 absolute left-0 top-0 h-full'
                 style={{
-                  width: `calc(${Math.max(showFooter ? 16 : 0, contentInsets.left) + (viewSettings.doubleBorder ? 32 : 0)}px)`,
+                  width: `calc(${Math.max(footerReservesBand(viewSettings) ? 16 : 0, contentInsets.left) + (viewSettings.doubleBorder ? 32 : 0)}px)`,
                   height: `calc(100%)`,
                 }}
               />

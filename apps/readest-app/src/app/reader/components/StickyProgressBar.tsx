@@ -39,8 +39,10 @@ const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
       <div
         className={clsx(
           'sticky-progress-track absolute overflow-hidden rounded-full border',
+          // Physical edges in vertical mode: the footer is writing-vertical-rl,
+          // where Tailwind's logical inset-x/inset-y swap axes.
           vertical
-            ? 'inset-y-0 left-1/2 w-2 -translate-x-1/2'
+            ? 'top-0 bottom-0 left-1/2 w-2 -translate-x-1/2'
             : 'inset-x-0 top-1/2 h-2 -translate-y-1/2',
           isEink ? 'border-current' : 'border-current/40',
         )}
@@ -48,7 +50,7 @@ const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
         <div
           className={clsx(
             'sticky-progress-fill absolute rounded-full',
-            vertical ? 'inset-x-0' : 'inset-y-0',
+            vertical ? 'left-0 right-0' : 'inset-y-0',
             isEink ? 'bg-current' : 'bg-current/50',
           )}
           style={{ [sizeProp]: `${pct}%`, [startEdge]: 0 }}
@@ -60,7 +62,7 @@ const StickyProgressBar: React.FC<StickyProgressBarProps> = ({
             key={index}
             className={clsx(
               'sticky-progress-tick absolute',
-              vertical ? 'inset-x-0 h-px' : 'inset-y-0 w-px',
+              vertical ? 'left-0 right-0 h-px' : 'inset-y-0 w-px',
               isEink ? 'bg-current' : 'bg-current/40',
             )}
             style={{ [startEdge]: `${tick * 100}%` }}
