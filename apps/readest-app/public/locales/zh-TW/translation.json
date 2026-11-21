@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards...": "Anki 卡片辭典...",
   "Create Backup": "建立備份",
   "Restore from Backup": "從備份還原",
-  "Your backup has been saved to the selected location.": "備份已儲存至所選位置。"
+  "Your backup has been saved to the selected location.": "備份已儲存至所選位置。",
+  "Cover only": "僅顯示封面"
 }

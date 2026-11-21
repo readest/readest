@@ -2894,5 +2894,6 @@
   "Dictionary for Anki Cards...": "Szótár az Anki-kártyákhoz...",
   "Create Backup": "Biztonsági mentés készítése",
   "Restore from Backup": "Visszaállítás biztonsági mentésből",
-  "Your backup has been saved to the selected location.": "A biztonsági mentés a kiválasztott helyre mentve."
+  "Your backup has been saved to the selected location.": "A biztonsági mentés a kiválasztott helyre mentve.",
+  "Cover only": "Csak borítók"
 }

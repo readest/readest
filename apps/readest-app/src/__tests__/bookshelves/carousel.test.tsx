@@ -49,6 +49,26 @@ const scrollTo = (container: HTMLElement, left: number) => {
 };
 
 describe('bookshelf carousel window', () => {
+  it('keeps the same item width and spacing when the shelf shows covers only (#7746)', () => {
+    const layout = (coverOnly: boolean) => {
+      const shelf = section(10);
+      shelf.definition = { ...shelf.definition, coverOnly: coverOnly || undefined };
+      const { container, unmount } = render(
+        <BookshelfCarousel
+          section={shelf}
+          width={WIDTH}
+          columns={COLUMNS}
+          renderItem={renderItem}
+        />,
+      );
+      const root = container.querySelector('[data-shelf-layout="carousel"]')!;
+      const item = container.querySelector<HTMLElement>('[data-book]')!.parentElement!;
+      const result = { root: root.className, item: item.getAttribute('style') };
+      unmount();
+      return result;
+    };
+    expect(layout(true)).toEqual(layout(false));
+  });
   it('keeps rendering cards when the shelf shrinks while scrolled to the end', () => {
     const { container, rerender } = mount(100);
     scrollTo(container, ITEM_WIDTH * 90);

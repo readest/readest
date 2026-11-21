@@ -2894,5 +2894,6 @@
   "Dictionary for Anki Cards...": "ლექსიკონი Anki-ის ბარათებისთვის...",
   "Create Backup": "სარეზერვო ასლის შექმნა",
   "Restore from Backup": "სარეზერვო ასლიდან აღდგენა",
-  "Your backup has been saved to the selected location.": "სარეზერვო ასლი შენახულია არჩეულ ადგილას."
+  "Your backup has been saved to the selected location.": "სარეზერვო ასლი შენახულია არჩეულ ადგილას.",
+  "Cover only": "მხოლოდ ყდები"
 }

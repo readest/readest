@@ -3044,5 +3044,6 @@
   "Dictionary for Anki Cards...": "Словник для карток Anki...",
   "Create Backup": "Створити резервну копію",
   "Restore from Backup": "Відновити з резервної копії",
-  "Your backup has been saved to the selected location.": "Резервну копію збережено у вибраному місці."
+  "Your backup has been saved to the selected location.": "Резервну копію збережено у вибраному місці.",
+  "Cover only": "Лише обкладинки"
 }

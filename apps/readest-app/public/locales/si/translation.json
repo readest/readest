@@ -2894,5 +2894,6 @@
   "Dictionary for Anki Cards...": "Anki කාඩ්පත් සඳහා ශබ්දකෝෂය...",
   "Create Backup": "උපස්ථයක් සාදන්න",
   "Restore from Backup": "උපස්ථයෙන් ප්‍රතිසාධනය කරන්න",
-  "Your backup has been saved to the selected location.": "ඔබගේ උපස්ථය තෝරාගත් ස්ථානයට සුරකින ලදී."
+  "Your backup has been saved to the selected location.": "ඔබගේ උපස්ථය තෝරාගත් ස්ථානයට සුරකින ලදී.",
+  "Cover only": "කවර පමණි"
 }

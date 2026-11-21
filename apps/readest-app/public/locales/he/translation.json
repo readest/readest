@@ -2969,5 +2969,6 @@
   "Dictionary for Anki Cards...": "מילון לכרטיסי Anki...",
   "Create Backup": "יצירת גיבוי",
   "Restore from Backup": "שחזור מגיבוי",
-  "Your backup has been saved to the selected location.": "הגיבוי נשמר במיקום שנבחר."
+  "Your backup has been saved to the selected location.": "הגיבוי נשמר במיקום שנבחר.",
+  "Cover only": "כריכות בלבד"
 }

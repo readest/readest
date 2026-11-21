@@ -2894,5 +2894,6 @@
   "Dictionary for Anki Cards...": "Wörterbuch für Anki-Karten...",
   "Create Backup": "Sicherung erstellen",
   "Restore from Backup": "Aus Sicherung wiederherstellen",
-  "Your backup has been saved to the selected location.": "Ihre Sicherung wurde am ausgewählten Ort gespeichert."
+  "Your backup has been saved to the selected location.": "Ihre Sicherung wurde am ausgewählten Ort gespeichert.",
+  "Cover only": "Nur Cover"
 }

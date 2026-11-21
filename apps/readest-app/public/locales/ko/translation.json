@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards...": "Anki 카드용 사전...",
   "Create Backup": "백업 만들기",
   "Restore from Backup": "백업에서 복원",
-  "Your backup has been saved to the selected location.": "백업이 선택한 위치에 저장되었습니다."
+  "Your backup has been saved to the selected location.": "백업이 선택한 위치에 저장되었습니다.",
+  "Cover only": "표지만"
 }

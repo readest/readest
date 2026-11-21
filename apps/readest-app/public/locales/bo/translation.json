@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards...": "Anki ཤོག་བྱང་གི་ཚིག་མཛོད།...",
   "Create Backup": "གྲབས་ཉར་བཟོ་བ།",
   "Restore from Backup": "གྲབས་ཉར་ནས་སླར་གསོ།",
-  "Your backup has been saved to the selected location.": "ཁྱེད་ཀྱི་གྲབས་ཉར་འདེམས་ཟིན་པའི་གནས་སུ་ཉར་ཚགས་བྱས་ཟིན།"
+  "Your backup has been saved to the selected location.": "ཁྱེད་ཀྱི་གྲབས་ཉར་འདེམས་ཟིན་པའི་གནས་སུ་ཉར་ཚགས་བྱས་ཟིན།",
+  "Cover only": "ཕྱི་ཤོག་ཁོ་ན།"
 }

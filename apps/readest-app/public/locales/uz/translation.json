@@ -2894,5 +2894,6 @@
   "Dictionary for Anki Cards...": "Anki kartalari uchun lug'at...",
   "Create Backup": "Zaxira nusxa yaratish",
   "Restore from Backup": "Zaxira nusxadan tiklash",
-  "Your backup has been saved to the selected location.": "Zaxira nusxangiz tanlangan joyga saqlandi."
+  "Your backup has been saved to the selected location.": "Zaxira nusxangiz tanlangan joyga saqlandi.",
+  "Cover only": "Faqat muqovalar"
 }

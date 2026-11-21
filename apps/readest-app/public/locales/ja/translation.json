@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards...": "Anki カード用の辞書...",
   "Create Backup": "バックアップを作成",
   "Restore from Backup": "バックアップから復元",
-  "Your backup has been saved to the selected location.": "バックアップを選択した場所に保存しました。"
+  "Your backup has been saved to the selected location.": "バックアップを選択した場所に保存しました。",
+  "Cover only": "表紙のみ"
 }

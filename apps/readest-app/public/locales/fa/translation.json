@@ -2894,5 +2894,6 @@
   "Dictionary for Anki Cards...": "فرهنگ لغت برای کارت‌های Anki...",
   "Create Backup": "ایجاد پشتیبان",
   "Restore from Backup": "بازیابی از پشتیبان",
-  "Your backup has been saved to the selected location.": "پشتیبان شما در مکان انتخاب‌شده ذخیره شد."
+  "Your backup has been saved to the selected location.": "پشتیبان شما در مکان انتخاب‌شده ذخیره شد.",
+  "Cover only": "فقط جلدها"
 }

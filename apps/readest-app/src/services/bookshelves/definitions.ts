@@ -95,7 +95,7 @@ const ruleSchema: z.ZodType<BookshelfRule> = z
     value: z.union([z.string().max(4000), z.number().finite(), z.boolean()]).optional(),
     unit: z.enum(['days', 'months', 'years']).optional(),
   })
-  .strict()
+  .loose()
   .refine(
     (rule) => {
       const field = getBookshelfField(rule.field, rule.kind);
@@ -138,7 +138,7 @@ const groupSchema = (depth: number): z.ZodType<BookshelfFilterGroup> =>
         .min(depth ? 1 : 0, { message: _('Complete every filter condition.') })
         .max(50),
     })
-    .strict();
+    .loose();
 const bookshelfSortSchema = z
   .object({
     by: z.enum(Object.values(LibrarySortByType).filter((value) => value !== 'custom')),
@@ -149,7 +149,9 @@ const bookshelfSortSchema = z
     ]),
     thenAscending: z.boolean(),
   })
-  .strict();
+  .loose();
+// Every synced shelf object is loose: devices update at different times, and a
+// field added by a newer version must not hide the shelf or be dropped on edit.
 export const persistedBookshelfSchema: z.ZodType<BookshelfDefinition> = z
   .object({
     id: bookshelfIdSchema,
@@ -161,6 +163,7 @@ export const persistedBookshelfSchema: z.ZodType<BookshelfDefinition> = z
     skeuomorphicCovers: z.boolean().optional(),
     showPageCount: z.boolean().optional(),
     plainPlaceholderCovers: z.boolean().optional(),
+    coverOnly: z.boolean().optional(),
     filters: groupSchema(0),
     useGlobalGrouping: z.boolean().optional(),
     groupBy: z.enum(Object.values(LibraryGroupByType)).optional(),
@@ -170,7 +173,7 @@ export const persistedBookshelfSchema: z.ZodType<BookshelfDefinition> = z
     exclusive: z.boolean(),
     includeExclusiveBooks: z.boolean(),
   })
-  .strict()
+  .loose()
   .refine((s) => isBuiltinBookshelf(s.id) || !!s.name.trim(), {
     message: _('Enter a bookshelf name.'),
   })

@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards...": "Kamus untuk Kartu Anki...",
   "Create Backup": "Buat Cadangan",
   "Restore from Backup": "Pulihkan dari Cadangan",
-  "Your backup has been saved to the selected location.": "Cadangan Anda telah disimpan ke lokasi yang dipilih."
+  "Your backup has been saved to the selected location.": "Cadangan Anda telah disimpan ke lokasi yang dipilih.",
+  "Cover only": "Hanya sampul"
 }

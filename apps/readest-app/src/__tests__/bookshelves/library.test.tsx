@@ -95,9 +95,11 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
     showSeriesIndex,
     showTimeRemaining,
     dragEnabled,
+    coverOnly,
   }: {
     item: Book | BooksGroup;
     dragEnabled?: boolean;
+    coverOnly?: boolean;
     toggleSelection: (id: string) => void;
     itemSelected: boolean;
     coverFit: string;
@@ -127,6 +129,7 @@ vi.mock('@/app/library/components/BookshelfItem', () => ({
         data-show-series-index={showSeriesIndex}
         data-show-time-remaining={showTimeRemaining}
         data-drag-enabled={dragEnabled}
+        data-cover-only={coverOnly}
         aria-pressed={itemSelected}
         onClick={onClick}
       >
@@ -1195,6 +1198,30 @@ describe('library bookshelf integration', () => {
       }
       expect(screen.getByTestId(carousel.id).getAttribute('data-layout')).toBe('carousel');
       expect(screen.getByTestId(carousel.id).querySelectorAll('button')).toHaveLength(20);
+    }
+  });
+  it('applies Cover only per shelf, to grid and carousel tiles but not list rows (#7746)', () => {
+    const carousel = { ...createBookshelf('Carousel'), coverOnly: true };
+    const plain = createBookshelf('Plain');
+    configure([
+      carousel,
+      plain,
+      ...defaultBookshelves(DEFAULT_SYSTEM_SETTINGS).map((s) =>
+        s.id === 'default' ? { ...s, layout: 'grid' as const, coverOnly: true } : s,
+      ),
+    ]);
+    render(<Bookshelf {...props} />);
+    for (const mode of ['grid', 'list'] as const) {
+      act(() =>
+        useSettingsStore.setState({
+          settings: { ...useSettingsStore.getState().settings, libraryViewMode: mode },
+        }),
+      );
+      const coverOnly = (id: string) =>
+        screen.getByTestId(id).querySelector('button')?.getAttribute('data-cover-only');
+      expect(coverOnly(carousel.id)).toBe('true');
+      expect(coverOnly(plain.id)).toBe('false');
+      expect(coverOnly('default')).toBe(String(mode === 'grid'));
     }
   });
   it('uses the global search layout even when Default remains a carousel', () => {

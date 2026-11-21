@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards...": "พจนานุกรมสำหรับการ์ด Anki...",
   "Create Backup": "สร้างข้อมูลสำรอง",
   "Restore from Backup": "กู้คืนจากข้อมูลสำรอง",
-  "Your backup has been saved to the selected location.": "บันทึกข้อมูลสำรองไปยังตำแหน่งที่เลือกแล้ว"
+  "Your backup has been saved to the selected location.": "บันทึกข้อมูลสำรองไปยังตำแหน่งที่เลือกแล้ว",
+  "Cover only": "เฉพาะหน้าปก"
 }

@@ -2819,5 +2819,6 @@
   "Dictionary for Anki Cards...": "Từ điển cho thẻ Anki...",
   "Create Backup": "Tạo bản sao lưu",
   "Restore from Backup": "Khôi phục từ bản sao lưu",
-  "Your backup has been saved to the selected location.": "Bản sao lưu của bạn đã được lưu vào vị trí đã chọn."
+  "Your backup has been saved to the selected location.": "Bản sao lưu của bạn đã được lưu vào vị trí đã chọn.",
+  "Cover only": "Chỉ ảnh bìa"
 }

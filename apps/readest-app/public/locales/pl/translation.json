@@ -3044,5 +3044,6 @@
   "Dictionary for Anki Cards...": "Słownik dla kart Anki...",
   "Create Backup": "Utwórz kopię zapasową",
   "Restore from Backup": "Przywróć z kopii zapasowej",
-  "Your backup has been saved to the selected location.": "Kopia zapasowa została zapisana w wybranej lokalizacji."
+  "Your backup has been saved to the selected location.": "Kopia zapasowa została zapisana w wybranej lokalizacji.",
+  "Cover only": "Tylko okładki"
 }

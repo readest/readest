@@ -2969,5 +2969,6 @@
   "Dictionary for Anki Cards...": "Dicionário para os cartões do Anki...",
   "Create Backup": "Criar backup",
   "Restore from Backup": "Restaurar do backup",
-  "Your backup has been saved to the selected location.": "Seu backup foi salvo no local selecionado."
+  "Your backup has been saved to the selected location.": "Seu backup foi salvo no local selecionado.",
+  "Cover only": "Somente capas"
 }

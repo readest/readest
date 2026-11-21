@@ -2894,5 +2894,6 @@
   "Dictionary for Anki Cards...": "Λεξικό για κάρτες Anki...",
   "Create Backup": "Δημιουργία αντιγράφου ασφαλείας",
   "Restore from Backup": "Επαναφορά από αντίγραφο ασφαλείας",
-  "Your backup has been saved to the selected location.": "Το αντίγραφο ασφαλείας αποθηκεύτηκε στην επιλεγμένη τοποθεσία."
+  "Your backup has been saved to the selected location.": "Το αντίγραφο ασφαλείας αποθηκεύτηκε στην επιλεγμένη τοποθεσία.",
+  "Cover only": "Μόνο εξώφυλλα"
 }

@@ -2894,5 +2894,6 @@
   "Dictionary for Anki Cards...": "Anki அட்டைகளுக்கான அகராதி...",
   "Create Backup": "காப்புப்பிரதியை உருவாக்கு",
   "Restore from Backup": "காப்புப்பிரதியிலிருந்து மீட்டமை",
-  "Your backup has been saved to the selected location.": "உங்கள் காப்புப்பிரதி தேர்ந்தெடுத்த இடத்தில் சேமிக்கப்பட்டது."
+  "Your backup has been saved to the selected location.": "உங்கள் காப்புப்பிரதி தேர்ந்தெடுத்த இடத்தில் சேமிக்கப்பட்டது.",
+  "Cover only": "அட்டைகள் மட்டும்"
 }
