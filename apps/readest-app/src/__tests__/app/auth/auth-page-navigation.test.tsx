@@ -178,6 +178,37 @@ describe('AuthPage back arrow', () => {
     expect(mocks.router.replace).toHaveBeenCalledWith('/library');
   });
 
+  // With nothing beneath and no redirect, Go Back's router.back() goes
+  // nowhere; the sign-in's own navigation must not be dropped.
+  it('leaves for the sign-in that completes while Go Back saves', async () => {
+    let finishSave = () => {};
+    mocks.saveSettings.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishSave = resolve)),
+    );
+    openLoginPage(null);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+    await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalled());
+    signIn();
+    expect(mocks.router.replace).toHaveBeenCalledWith('/library');
+
+    await act(async () => finishSave());
+    expect(mocks.router.back).not.toHaveBeenCalled();
+    expect(mocks.router.replace).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not go back again when pressed after signing in', async () => {
+    mocks.viewStates = { 'book1-abc': {} };
+    openLoginPage(READER);
+
+    signIn();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+    await waitFor(() => expect(mocks.saveSettings).toHaveBeenCalled());
+    await act(async () => {});
+
+    expect(mocks.router.back).toHaveBeenCalledTimes(1);
+  });
+
   it('goes back once when sign-in completes while saving', async () => {
     let finishSave = () => {};
     mocks.saveSettings.mockImplementationOnce(

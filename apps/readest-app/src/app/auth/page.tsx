@@ -54,9 +54,10 @@ export default function AuthPage() {
   const [isMounted, setIsMounted] = useState(false);
   const isOAuthServerRunning = useRef(false);
   const useCustomeOAuth = useRef(false);
-  // Set while Go Back saves; a second press or a sign-in meanwhile would go
-  // back twice.
+  // Go Back waits for a save: a second press meanwhile must not go back
+  // twice, and a sign-in that has already left takes precedence.
   const isLeaving = useRef(false);
+  const signedInAndLeft = useRef(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -257,6 +258,8 @@ export default function AuthPage() {
     } catch (error) {
       console.error('Failed to clear keepLogin:', error);
     }
+    isLeaving.current = false;
+    if (signedInAndLeft.current) return;
     const redirectTo = new URLSearchParams(window.location.search).get('redirect');
     // Go back to the reader rather than pushing the redirect over /auth: a
     // pushed entry leaves /auth in the history, and the reader's Android back
@@ -267,8 +270,6 @@ export default function AuthPage() {
     } else {
       router.back();
     }
-    // A first history entry has nothing to go back to; stay usable.
-    isLeaving.current = false;
   };
 
   useEffect(() => {
@@ -299,8 +300,8 @@ export default function AuthPage() {
         const lastRedirectAt = parseInt(localStorage.getItem(lastRedirectAtKey) || '0', 10);
         const now = Date.now();
         localStorage.setItem(lastRedirectAtKey, now.toString());
-        // Go Back leaves on its own once its save is done.
-        if (now - lastRedirectAt > 3000 && !isLeaving.current) {
+        if (now - lastRedirectAt > 3000) {
+          signedInAndLeft.current = true;
           // Same as handleGoBack: never leave /auth on the history stack.
           if (redirectTo && isReaderBeneath()) {
             router.back();
