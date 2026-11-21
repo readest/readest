@@ -161,13 +161,15 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
   // Point the popup at a new (or no) source document: drop the CFI mapping and
   // the drawn-overlay bookkeeping, and tell the Annotator that any selection
-  // made in the previous popup document is gone.
+  // made in the previous popup document is gone. `closed` says the popup
+  // itself went, which also closes a lookup opened on its text (#7727).
   const resetPopupAnnotationState = (
     map: { index: number; extract: FootnoteExtractMapping | null; doc?: Document } | null = null,
+    closed = false,
   ) => {
     popupMapRef.current = map;
     drawnNotesRef.current.clear();
-    eventDispatcher.dispatch('footnote-selection', { key: bookKey });
+    eventDispatcher.dispatch('footnote-selection', { key: bookKey, closed });
   };
   const historyRef = useRef<{ items: Record<string, unknown>[]; index: number }>({
     items: [],
@@ -790,7 +792,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const handleDismissPopup = () => {
     closePopup();
     stopTrackingPopupContentSize();
-    resetPopupAnnotationState();
+    resetPopupAnnotationState(null, true);
     historyRef.current = { items: [], index: -1 };
     sizeAdjustCountRef.current = 0;
     trianglePositionRef.current = null;

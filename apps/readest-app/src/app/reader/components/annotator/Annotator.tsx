@@ -712,6 +712,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         quickAction?: boolean;
         /** A tap on a Word Lens hint in the popup: look the word up (#7691). */
         wordLens?: boolean;
+        /** The footnote popup itself closed, not just its selection (#7727). */
+        closed?: boolean;
       };
       if (detail.key !== bookKey) return;
       // Every event for this book advances the epoch so a handler still
@@ -720,8 +722,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       const epoch = ++footnoteSelectionEpochRef.current;
       if (!detail.range) {
         // The instant dictionary clears the popup selection as it opens; that
-        // report must not close the lookup.
-        if (selectionIsPopupRef.current && !instantLookupDeselectedRef.current) {
+        // report must not close the lookup. The popup closing does (#7727).
+        if (selectionIsPopupRef.current && (detail.closed || !instantLookupDeselectedRef.current)) {
           handleDismissPopup();
         }
         return;
