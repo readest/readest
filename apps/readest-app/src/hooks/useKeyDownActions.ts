@@ -10,6 +10,8 @@ interface UseKeyDownOptions {
   elementRef?: RefObject<HTMLElement | null>;
 }
 
+const handledDndEvents = new WeakSet<KeyboardEvent>();
+
 export const useKeyDownActions = ({
   onCancel,
   onConfirm,
@@ -37,6 +39,9 @@ export const useKeyDownActions = ({
           return true;
         }
       } else {
+        if (handledDndEvents.has(event)) {
+          return false;
+        }
         const isDndDragging = Boolean(
           elementRef.current?.querySelector('[data-dnd-dragging="true"]'),
         );
@@ -53,9 +58,11 @@ export const useKeyDownActions = ({
             event.key === 'ArrowLeft' ||
             event.key === 'ArrowRight')
         ) {
+          handledDndEvents.add(event);
           return false;
         }
         if (isDndHandle && (event.key === ' ' || event.key === 'Enter')) {
+          handledDndEvents.add(event);
           return false;
         }
         if (event.key === 'Escape') {

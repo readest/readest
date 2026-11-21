@@ -131,6 +131,7 @@ export const presentBookshelf = (
   // For series groups, series index is always ascending; sort direction applies to fallback only
   const sortAscending = sortOrder === 'asc';
   const thenSortAscending = thenSortOrder === 'asc';
+  const hasOrder = Boolean(order && order.length > 0);
   const withinGroupSorter = withTimeRemainingLast<Book>(
     sortBy,
     createWithinGroupSorter(
@@ -143,6 +144,7 @@ export const presentBookshelf = (
       pageDurations,
       order,
     ),
+    hasOrder,
   );
   groups.forEach((group) => {
     group.books.sort(withinGroupSorter);
@@ -167,13 +169,12 @@ export const presentBookshelf = (
     // to avoid the merge sort below overriding the within-group sort order
     return finish(ungroupedBooks);
   } else {
-    ungroupedBooks.sort(withTimeRemainingLast<Book>(sortBy, bookSorter));
+    ungroupedBooks.sort(withTimeRemainingLast<Book>(sortBy, bookSorter, hasOrder));
   }
 
   // Merge groups and ungrouped books, then sort them together
   const allItems: (Book | BooksGroup)[] = [...groups, ...ungroupedBooks];
   const groupSorter = createGroupSorter(sortBy, uiLanguage, groupBy);
-  const hasOrder = Boolean(order && order.length > 0);
   const compareByPriorityOrder = (
     getA: (by: LibrarySortByType) => string | number,
     getB: (by: LibrarySortByType) => string | number,
@@ -185,47 +186,52 @@ export const presentBookshelf = (
         uiLanguage,
         criterion.by,
       );
+      if (Number.isNaN(cmp)) continue;
       if (cmp !== 0) return cmp * (criterion.ascending ? 1 : -1);
     }
     return 0;
   };
 
   allItems.sort(
-    withTimeRemainingLast<Book | BooksGroup>(sortBy, (a, b) => {
-      const isAGroup = 'books' in a;
-      const isBGroup = 'books' in b;
+    withTimeRemainingLast<Book | BooksGroup>(
+      sortBy,
+      (a, b) => {
+        const isAGroup = 'books' in a;
+        const isBGroup = 'books' in b;
 
-      // If both are books, use book sorter
-      if (!isAGroup && !isBGroup) {
-        return bookSorter(a, b);
-      }
+        // If both are books, use book sorter
+        if (!isAGroup && !isBGroup) {
+          return bookSorter(a, b);
+        }
 
-      if (hasOrder) {
-        const getVal = (item: Book | BooksGroup, by: LibrarySortByType) =>
-          'books' in item ? getGroupSortValue(item, by, groupBy) : getBookSortValue(item, by);
-        return compareByPriorityOrder(
-          (by) => getVal(a, by),
-          (by) => getVal(b, by),
-        );
-      }
+        if (hasOrder) {
+          const getVal = (item: Book | BooksGroup, by: LibrarySortByType) =>
+            'books' in item ? getGroupSortValue(item, by, groupBy) : getBookSortValue(item, by);
+          return compareByPriorityOrder(
+            (by) => getVal(a, by),
+            (by) => getVal(b, by),
+          );
+        }
 
-      // If both are groups, use group sorter
-      if (isAGroup && isBGroup) {
-        return groupSorter(a, b) * sortOrderMultiplier;
-      }
+        // If both are groups, use group sorter
+        if (isAGroup && isBGroup) {
+          return groupSorter(a, b) * sortOrderMultiplier;
+        }
 
-      // For series/author groups: compare sort values to interleave properly
-      if (isAGroup && !isBGroup) {
-        const groupValue = getGroupSortValue(a, sortBy, groupBy);
-        const bookValue = getBookSortValue(b, sortBy);
-        return compareSortValues(groupValue, bookValue, uiLanguage, sortBy) * sortOrderMultiplier;
-      } else if (!isAGroup && isBGroup) {
-        const bookValue = getBookSortValue(a, sortBy);
-        const groupValue = getGroupSortValue(b, sortBy, groupBy);
-        return compareSortValues(bookValue, groupValue, uiLanguage, sortBy) * sortOrderMultiplier;
-      }
-      return 0;
-    }),
+        // For series/author groups: compare sort values to interleave properly
+        if (isAGroup && !isBGroup) {
+          const groupValue = getGroupSortValue(a, sortBy, groupBy);
+          const bookValue = getBookSortValue(b, sortBy);
+          return compareSortValues(groupValue, bookValue, uiLanguage, sortBy) * sortOrderMultiplier;
+        } else if (!isAGroup && isBGroup) {
+          const bookValue = getBookSortValue(a, sortBy);
+          const groupValue = getGroupSortValue(b, sortBy, groupBy);
+          return compareSortValues(bookValue, groupValue, uiLanguage, sortBy) * sortOrderMultiplier;
+        }
+        return 0;
+      },
+      hasOrder,
+    ),
   );
 
   return finish(allItems);

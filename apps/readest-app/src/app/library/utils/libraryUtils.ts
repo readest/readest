@@ -539,12 +539,18 @@ const getShelfItemTimeRemaining = (item: Book | BooksGroup): number | undefined 
  * sort-order multiplier, otherwise descending would float those items to the top.
  */
 export const withTimeRemainingLast =
-  <T extends Book | BooksGroup>(sortBy: LibrarySortByType, compare: (a: T, b: T) => number) =>
+  <T extends Book | BooksGroup>(
+    sortBy: LibrarySortByType,
+    compare: (a: T, b: T) => number,
+    tieBreakWhenBothUnavailable = false,
+  ) =>
   (a: T, b: T): number => {
     if (sortBy !== LibrarySortByType.TimeRemaining) return compare(a, b);
     const aTime = getShelfItemTimeRemaining(a);
     const bTime = getShelfItemTimeRemaining(b);
-    if (aTime === undefined && bTime === undefined) return 0;
+    if (aTime === undefined && bTime === undefined) {
+      return tieBreakWhenBothUnavailable ? compare(a, b) : 0;
+    }
     if (aTime === undefined) return 1;
     if (bTime === undefined) return -1;
     return compare(a, b);
@@ -1029,6 +1035,9 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
     case LibrarySortByType.Format:
       return book.format;
 
+    case LibrarySortByType.Series:
+      return book.metadata?.series || '';
+
     case LibrarySortByType.Progress:
       return getBookReadRatio(book);
 
@@ -1147,6 +1156,7 @@ export const compareSortValues = (
 
   // Numeric comparison for date-based sorts
   if (typeof aValue === 'number' && typeof bValue === 'number') {
+    if (aValue === bValue || (!Number.isFinite(aValue) && !Number.isFinite(bValue))) return 0;
     return aValue - bValue;
   }
 

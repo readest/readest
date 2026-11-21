@@ -221,4 +221,135 @@ describe('priority-based library sorting', () => {
       { by: LibrarySortByType.Author, ascending: true },
     ]);
   });
+
+  it('tie-breaks unread books with unavailable TimeRemaining by criterion #2 in evaluateBookshelves and presentBookshelf', () => {
+    const sortOrder: LibrarySortCriterion[] = [
+      { by: LibrarySortByType.TimeRemaining, ascending: true },
+      { by: LibrarySortByType.Title, ascending: true },
+    ];
+    const settings = {
+      libraryGroupBy: LibraryGroupByType.None,
+      librarySortBy: LibrarySortByType.TimeRemaining,
+      librarySortAscending: true,
+      libraryThenSortBy: LibrarySortByType.Title,
+      libraryThenSortAscending: true,
+      librarySortOrder: sortOrder,
+    };
+    const globalSort = getGlobalBookshelfSort(settings);
+    const baseDef = defaultBookshelves(settings).find((s) => s.id === 'default')!;
+    const def = { ...baseDef, sort: resolveBookshelfSort(baseDef, globalSort) };
+    const books: Book[] = [
+      makeBook({ hash: 'z', title: 'Zebra', updatedAt: 2000 }),
+      makeBook({ hash: 'a', title: 'Apple', updatedAt: 1000 }),
+    ];
+    const [result] = evaluateBookshelves(
+      books,
+      [def],
+      'en',
+      undefined,
+      undefined,
+      undefined,
+      sortOrder,
+    );
+    expect(result?.books.map((b) => b.hash)).toEqual(['a', 'z']);
+    const items = presentBookshelf(result!, settings, 'en', undefined, '', undefined, sortOrder);
+    expect(items.map((item) => ('books' in item ? item.displayName : item.title))).toEqual([
+      'Apple',
+      'Zebra',
+    ]);
+  });
+
+  it('continues past Infinity vs Infinity TimeRemaining ties and compares book Series in mixed groups', () => {
+    const sortOrder: LibrarySortCriterion[] = [
+      { by: LibrarySortByType.Pages, ascending: true },
+      { by: LibrarySortByType.TimeRemaining, ascending: true },
+      { by: LibrarySortByType.Series, ascending: true },
+      { by: LibrarySortByType.Title, ascending: true },
+    ];
+    const settings = {
+      libraryGroupBy: LibraryGroupByType.Series,
+      librarySortBy: LibrarySortByType.Pages,
+      librarySortAscending: true,
+      libraryThenSortBy: LibrarySortByType.TimeRemaining,
+      libraryThenSortAscending: true,
+      librarySortOrder: sortOrder,
+    };
+    const globalSort = getGlobalBookshelfSort(settings);
+    const baseDef = defaultBookshelves(settings).find((s) => s.id === 'default')!;
+    const def = { ...baseDef, sort: resolveBookshelfSort(baseDef, globalSort) };
+    const books: Book[] = [
+      makeBook({
+        hash: 'g-zeta',
+        title: 'Zeta Book',
+        updatedAt: 100,
+        pageCount: 200,
+        metadata: { title: 'Zeta Book', author: 'Author', language: 'en', series: 'Zeta Series' },
+      }),
+      makeBook({
+        hash: 'u-alpha',
+        title: 'Alpha Book',
+        updatedAt: 999999,
+        pageCount: 200,
+        metadata: { title: 'Alpha Book', author: 'Author', language: 'en', series: 'Alpha Series' },
+      }),
+      makeBook({
+        hash: 'g-beta',
+        title: 'Beta Book',
+        updatedAt: 500,
+        pageCount: 200,
+        metadata: { title: 'Beta Book', author: 'Author', language: 'en', series: 'Beta Series' },
+      }),
+    ];
+    // Ungrouped Alpha Book has no series grouping only when series is empty; here use groupBy=Group with empty groupName vs named group:
+    const groupSettings = { ...settings, libraryGroupBy: LibraryGroupByType.Group };
+    const groupDef = {
+      ...baseDef,
+      sort: resolveBookshelfSort(baseDef, getGlobalBookshelfSort(groupSettings)),
+    };
+    const mixedBooks: Book[] = [
+      makeBook({
+        hash: 'g-zeta',
+        title: 'Zeta Book',
+        updatedAt: 100,
+        pageCount: 200,
+        groupName: 'Zeta Series',
+      }),
+      makeBook({
+        hash: 'u-alpha',
+        title: 'Alpha Book',
+        updatedAt: 999999,
+        pageCount: 200,
+        metadata: { title: 'Alpha Book', author: 'Author', language: 'en', series: 'Alpha Series' },
+      }),
+      makeBook({
+        hash: 'g-beta',
+        title: 'Beta Book',
+        updatedAt: 500,
+        pageCount: 200,
+        groupName: 'Beta Series',
+      }),
+    ];
+    void books;
+    void def;
+    const [result] = evaluateBookshelves(
+      mixedBooks,
+      [groupDef],
+      'en',
+      undefined,
+      undefined,
+      undefined,
+      sortOrder,
+    );
+    const items = presentBookshelf(
+      result!,
+      groupSettings,
+      'en',
+      undefined,
+      '',
+      undefined,
+      sortOrder,
+    );
+    const names = items.map((item) => ('books' in item ? item.displayName : item.title));
+    expect(names).toEqual(['Alpha Book', 'Beta Series', 'Zeta Series']);
+  });
 });

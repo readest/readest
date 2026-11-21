@@ -115,5 +115,34 @@ describe('useKeyDownActions', () => {
       fireEvent.keyDown(handle, { key: 'Escape' });
       expect(onCancel).toHaveBeenCalledOnce();
     });
+
+    it('keeps a single Escape from cancelling the menu even if dnd-kit clears dragging before window handles it', () => {
+      const onCancel = vi.fn();
+      const DndCancelHost = () => {
+        const ref = useRef<HTMLDivElement>(null);
+        useKeyDownActions({ onCancel, elementRef: ref });
+        return (
+          <div ref={ref} role='dialog'>
+            <div id='dnd-list' data-dnd-dragging='true'>
+              <button type='button' data-dnd-sortable-handle='true'>
+                Drag
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      render(<DndCancelHost />);
+      const list = document.getElementById('dnd-list')!;
+      const clearDraggingOnDocument = () => list.removeAttribute('data-dnd-dragging');
+      document.addEventListener('keydown', clearDraggingOnDocument, { once: true });
+
+      const handle = screen.getByText('Drag');
+      fireEvent.keyDown(handle, { key: 'Escape' });
+      expect(onCancel).not.toHaveBeenCalled();
+
+      fireEvent.keyDown(handle, { key: 'Escape' });
+      expect(onCancel).toHaveBeenCalledOnce();
+    });
   });
 });

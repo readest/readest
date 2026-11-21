@@ -59,8 +59,11 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
   const priorityOrder = resolveLibrarySortOrder(settings, globalSort, searchParams);
   const commitQueueRef = React.useRef<Promise<void>>(Promise.resolve());
+  const pendingCommitsRef = React.useRef(0);
   const latestPriorityOrderRef = React.useRef(priorityOrder);
-  latestPriorityOrderRef.current = priorityOrder;
+  if (pendingCommitsRef.current === 0) {
+    latestPriorityOrderRef.current = priorityOrder;
+  }
 
   const sortLabels = Object.fromEntries(
     METADATA_SORT_BY_ORDER.map((value) => [value, _(BOOKSHELF_SORT_LABELS[value])]),
@@ -149,7 +152,15 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   };
 
   const enqueueSortCommit = (task: () => Promise<void>) => {
-    const run = commitQueueRef.current.then(task, task);
+    pendingCommitsRef.current += 1;
+    const runTask = async () => {
+      try {
+        await task();
+      } finally {
+        pendingCommitsRef.current = Math.max(0, pendingCommitsRef.current - 1);
+      }
+    };
+    const run = commitQueueRef.current.then(runTask, runTask);
     commitQueueRef.current = run.catch(() => {});
     return run;
   };

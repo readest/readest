@@ -177,6 +177,7 @@ export const evaluateBookshelves = (
           : definition.includeExclusiveBooks || !owners.has(b.hash),
       );
       const { by, thenBy, ascending, thenAscending } = definition.sort;
+      const order = resolveBookshelfSortOrder(definition, globalSortOrder);
       const compare = createBookSorter(
         by,
         locale,
@@ -184,10 +185,14 @@ export const evaluateBookshelves = (
         ascending,
         thenAscending,
         pageDurations,
-        resolveBookshelfSortOrder(definition, globalSortOrder),
+        order,
       );
       available.sort(
-        withTimeRemainingLast<Book>(by, (a, b) => compare(a, b) || a.hash.localeCompare(b.hash)),
+        withTimeRemainingLast<Book>(
+          by,
+          (a, b) => compare(a, b) || a.hash.localeCompare(b.hash),
+          Boolean(order && order.length > 0),
+        ),
       );
       return {
         definition,
