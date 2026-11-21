@@ -139,6 +139,54 @@ describe('bookshelf layouts from the View menu', () => {
       '↓',
     );
   });
+
+  it('preserves global metadata direction when a local Custom shelf has ascending: true', async () => {
+    useSettingsStore.setState({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        librarySortBy: 'updated',
+        librarySortAscending: false,
+      } as SystemSettings,
+    });
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    await saveBookshelfDraft(
+      env,
+      base,
+      base.map((shelf) =>
+        shelf.id === 'default'
+          ? {
+              ...shelf,
+              useGlobalSort: false,
+              sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+            }
+          : shelf,
+      ),
+    );
+    render(<ViewMenu />);
+    expect(screen.getByRole('menuitem', { name: /Date Read \(Descending\)/i })).toBeTruthy();
+    fireEvent.click(screen.getByText('Custom'));
+    await waitFor(() =>
+      expect(
+        readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === 'default')
+          ?.useGlobalSort,
+      ).toBe(true),
+    );
+    expect(useSettingsStore.getState().settings.librarySortOrder?.[0]).toEqual({
+      by: 'updated',
+      ascending: false,
+    });
+  });
+
+  it('serializes rapid consecutive direction toggles so both updates land', async () => {
+    render(<ViewMenu />);
+    fireEvent.click(screen.getByRole('menuitem', { name: /Title \(Ascending\)/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Author \(Ascending\)/i }));
+    await waitFor(() => {
+      const order = useSettingsStore.getState().settings.librarySortOrder;
+      expect(order?.find((c) => c.by === 'title')?.ascending).toBe(false);
+      expect(order?.find((c) => c.by === 'author')?.ascending).toBe(false);
+    });
+  });
   it('keeps shelf visibility and cover visibility in Bookshelves settings', () => {
     render(<ViewMenu />);
     expect(screen.getByText('Bookshelves')).toBeTruthy();

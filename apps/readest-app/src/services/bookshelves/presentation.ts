@@ -173,20 +173,45 @@ export const presentBookshelf = (
   // Merge groups and ungrouped books, then sort them together
   const allItems: (Book | BooksGroup)[] = [...groups, ...ungroupedBooks];
   const groupSorter = createGroupSorter(sortBy, uiLanguage, groupBy);
+  const hasOrder = Boolean(order && order.length > 0);
+  const compareByPriorityOrder = (
+    getA: (by: LibrarySortByType) => string | number,
+    getB: (by: LibrarySortByType) => string | number,
+  ) => {
+    for (const criterion of order!) {
+      const cmp = compareSortValues(
+        getA(criterion.by),
+        getB(criterion.by),
+        uiLanguage,
+        criterion.by,
+      );
+      if (cmp !== 0) return cmp * (criterion.ascending ? 1 : -1);
+    }
+    return 0;
+  };
 
   allItems.sort(
     withTimeRemainingLast<Book | BooksGroup>(sortBy, (a, b) => {
       const isAGroup = 'books' in a;
       const isBGroup = 'books' in b;
 
-      // If both are groups, use group sorter
-      if (isAGroup && isBGroup) {
-        return groupSorter(a, b) * sortOrderMultiplier;
-      }
-
       // If both are books, use book sorter
       if (!isAGroup && !isBGroup) {
         return bookSorter(a, b);
+      }
+
+      if (hasOrder) {
+        const getVal = (item: Book | BooksGroup, by: LibrarySortByType) =>
+          'books' in item ? getGroupSortValue(item, by, groupBy) : getBookSortValue(item, by);
+        return compareByPriorityOrder(
+          (by) => getVal(a, by),
+          (by) => getVal(b, by),
+        );
+      }
+
+      // If both are groups, use group sorter
+      if (isAGroup && isBGroup) {
+        return groupSorter(a, b) * sortOrderMultiplier;
       }
 
       // For series/author groups: compare sort values to interleave properly

@@ -57,7 +57,10 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     (settings.librarySortByAuto ?? true) &&
     globalSort.by !== settings.librarySortBy;
 
-  const priorityOrder = resolveLibrarySortOrder(settings, displayedSort);
+  const priorityOrder = resolveLibrarySortOrder(settings, globalSort, searchParams);
+  const commitQueueRef = React.useRef<Promise<void>>(Promise.resolve());
+  const latestPriorityOrderRef = React.useRef(priorityOrder);
+  latestPriorityOrderRef.current = priorityOrder;
 
   const sortLabels = Object.fromEntries(
     METADATA_SORT_BY_ORDER.map((value) => [value, _(BOOKSHELF_SORT_LABELS[value])]),
@@ -145,24 +148,38 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     });
   };
 
-  const handleToggleCustom = async () => {
-    if (sortBy === LibrarySortByType.Custom) {
-      await commitSortOrder(priorityOrder);
-      return;
-    }
-    await saveSysSettings(envConfig, 'librarySortCustom', true);
-    await saveSysSettings(envConfig, 'librarySortByAuto', false);
+  const enqueueSortCommit = (task: () => Promise<void>) => {
+    const run = commitQueueRef.current.then(task, task);
+    commitQueueRef.current = run.catch(() => {});
+    return run;
+  };
 
-    await applyShelfSortNavigation((params) => {
-      params.set('sort', LibrarySortByType.Custom);
+  const handleReorder = (next: LibrarySortCriterion[]) => {
+    latestPriorityOrderRef.current = next;
+    return enqueueSortCommit(() => commitSortOrder(next));
+  };
+
+  const handleToggleCustom = () => {
+    if (sortBy === LibrarySortByType.Custom) {
+      const next = latestPriorityOrderRef.current;
+      return enqueueSortCommit(() => commitSortOrder(next));
+    }
+    return enqueueSortCommit(async () => {
+      await saveSysSettings(envConfig, 'librarySortCustom', true);
+      await saveSysSettings(envConfig, 'librarySortByAuto', false);
+
+      await applyShelfSortNavigation((params) => {
+        params.set('sort', LibrarySortByType.Custom);
+      });
     });
   };
 
-  const handleToggleCriterionDirection = async (by: LibraryMetadataSortByType) => {
-    const next = priorityOrder.map((criterion) =>
+  const handleToggleCriterionDirection = (by: LibraryMetadataSortByType) => {
+    const next = latestPriorityOrderRef.current.map((criterion) =>
       criterion.by === by ? { ...criterion, ascending: !criterion.ascending } : criterion,
     );
-    await commitSortOrder(next);
+    latestPriorityOrderRef.current = next;
+    return enqueueSortCommit(() => commitSortOrder(next));
   };
 
   return (
@@ -254,7 +271,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
             labels={sortLabels}
             dimmed={sortBy === LibrarySortByType.Custom}
             primaryAutoLabel={primaryIsImplicit ? _('Auto') : undefined}
-            onReorder={commitSortOrder}
+            onReorder={handleReorder}
             onToggleDirection={handleToggleCriterionDirection}
           />
         </div>

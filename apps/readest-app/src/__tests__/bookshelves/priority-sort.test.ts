@@ -1,10 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Book } from '@/types/book';
-import { LibrarySortByType, type LibrarySortCriterion } from '@/types/settings';
-import { createBookSorter } from '@/app/library/utils/libraryUtils';
+import { LibraryGroupByType, LibrarySortByType, type LibrarySortCriterion } from '@/types/settings';
+import { createBookSorter, createWithinGroupSorter } from '@/app/library/utils/libraryUtils';
 import { bookshelfSchema, defaultBookshelves } from '@/services/bookshelves/definitions';
 import { evaluateBookshelves } from '@/services/bookshelves/evaluate';
+import { presentBookshelf } from '@/services/bookshelves/presentation';
 import {
   METADATA_SORT_BY_ORDER,
   getGlobalBookshelfSort,
@@ -120,5 +121,104 @@ describe('priority-based library sorting', () => {
     );
     const defaultResult = evaluated.find((r) => r.definition.id === 'default');
     expect(defaultResult?.books.map((b) => b.hash)).toEqual(['b', 'a']);
+  });
+
+  it('respects priority #1 before #2 inside non-series groups when sortOrder is active', () => {
+    const a = makeBook({ hash: 'a', title: 'A', updatedAt: 2000, pageCount: 100 });
+    const b = makeBook({ hash: 'b', title: 'B', updatedAt: 3000, pageCount: 300 });
+    const sortOrder: LibrarySortCriterion[] = [
+      { by: LibrarySortByType.Updated, ascending: false },
+      { by: LibrarySortByType.Pages, ascending: true },
+      { by: LibrarySortByType.Title, ascending: true },
+    ];
+    const sorter = createWithinGroupSorter(
+      LibraryGroupByType.Author,
+      LibrarySortByType.Updated,
+      'en',
+      false,
+      LibrarySortByType.Pages,
+      true,
+      undefined,
+      sortOrder,
+    );
+    expect([a, b].sort(sorter).map((book) => book.hash)).toEqual(['b', 'a']);
+  });
+
+  it('applies priority criteria #2+ to group and mixed comparisons in presentBookshelf', () => {
+    const sortOrder: LibrarySortCriterion[] = [
+      { by: LibrarySortByType.Pages, ascending: true },
+      { by: LibrarySortByType.Title, ascending: false },
+    ];
+    const settings = {
+      libraryGroupBy: LibraryGroupByType.Series,
+      librarySortBy: LibrarySortByType.Pages,
+      librarySortAscending: true,
+      libraryThenSortBy: LibrarySortByType.Title,
+      libraryThenSortAscending: false,
+      librarySortOrder: sortOrder,
+    };
+    const globalSort = getGlobalBookshelfSort(settings);
+    const baseDef = defaultBookshelves(settings).find((s) => s.id === 'default')!;
+    const def = {
+      ...baseDef,
+      sort: resolveBookshelfSort(baseDef, globalSort),
+    };
+    const books: Book[] = [
+      makeBook({
+        hash: 'g-apple',
+        title: 'Apple Book',
+        updatedAt: 1000,
+        pageCount: 200,
+        metadata: { title: 'Apple Book', author: 'Author', language: 'en', series: 'Apple' },
+      }),
+      makeBook({
+        hash: 'g-zebra',
+        title: 'Zebra Book',
+        updatedAt: 1000,
+        pageCount: 200,
+        metadata: { title: 'Zebra Book', author: 'Author', language: 'en', series: 'Zebra' },
+      }),
+      makeBook({
+        hash: 'u-middle',
+        title: 'Middle',
+        updatedAt: 1000,
+        pageCount: 200,
+      }),
+    ];
+    const [result] = evaluateBookshelves(
+      books,
+      [def],
+      'en',
+      undefined,
+      undefined,
+      undefined,
+      sortOrder,
+    );
+    const items = presentBookshelf(result!, settings, 'en', undefined, '', undefined, sortOrder);
+    const names = items.map((item) => ('books' in item ? item.displayName : item.title));
+    expect(names).toEqual(['Zebra', 'Middle', 'Apple']);
+  });
+
+  it('applies explicit URL sort params over stored librarySortOrder while preserving remaining order', () => {
+    const stored: LibrarySortCriterion[] = [
+      { by: LibrarySortByType.Updated, ascending: false },
+      { by: LibrarySortByType.Author, ascending: true },
+      { by: LibrarySortByType.Title, ascending: true },
+    ];
+    const params = new URLSearchParams('sort=pages&order=desc&thenSort=title&thenOrder=desc');
+    const resolved = resolveLibrarySortOrder(
+      {
+        librarySortBy: LibrarySortByType.Author,
+        librarySortOrder: stored,
+      },
+      getGlobalBookshelfSort({ librarySortOrder: stored }, params),
+      params,
+    );
+    expect(resolved.slice(0, 4)).toEqual([
+      { by: LibrarySortByType.Pages, ascending: false },
+      { by: LibrarySortByType.Title, ascending: false },
+      { by: LibrarySortByType.Updated, ascending: false },
+      { by: LibrarySortByType.Author, ascending: true },
+    ]);
   });
 });

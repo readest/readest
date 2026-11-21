@@ -973,18 +973,6 @@ export const createWithinGroupSorter = (
     pageDurations,
     hasSortOrder ? sortOrder : undefined,
   );
-  const afterSecondaryCompare =
-    secondarySortBy !== 'none' && hasSortOrder
-      ? createBookSorter(
-          sortBy,
-          uiLanguage,
-          'none',
-          sortAscending,
-          secondaryAscending,
-          pageDurations,
-          sortOrder!.filter((c) => c.by !== secondarySortBy),
-        )
-      : fallbackCompare;
 
   return (a: Book, b: Book): number => {
     if (groupBy === LibraryGroupByType.Series) {
@@ -1004,12 +992,17 @@ export const createWithinGroupSorter = (
       return fallbackCompare(a, b);
     }
 
+    // When a priority list is active, follow its full order rather than promoting
+    // the mirrored secondary key above the primary key.
+    if (hasSortOrder) {
+      return fallbackCompare(a, b);
+    }
+
     // For author and other non-series groupings: when a secondary key is provided,
     // use it as the within-group primary order with the global key as tiebreaker.
     if (secondarySortBy !== 'none') {
       const bySecondary = compareBookByKey(a, b, secondarySortBy, uiLanguage, pageDurations);
       if (bySecondary !== 0) return bySecondary * (secondaryAscending ? 1 : -1);
-      return afterSecondaryCompare(a, b);
     }
 
     return fallbackCompare(a, b);

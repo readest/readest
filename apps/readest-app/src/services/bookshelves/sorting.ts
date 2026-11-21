@@ -55,6 +55,7 @@ export function resolveLibrarySortOrder(
     BookshelfSort,
     'by' | 'ascending' | 'thenBy' | 'thenAscending'
   > = getGlobalBookshelfSort(settings),
+  params?: Pick<URLSearchParams, 'get'> | null,
 ): LibrarySortCriterion[] {
   const seen = new Set<LibraryMetadataSortByType>();
   const result: LibrarySortCriterion[] = [];
@@ -87,25 +88,37 @@ export function resolveLibrarySortOrder(
 
   const hasStoredOrder =
     Array.isArray(settings.librarySortOrder) && settings.librarySortOrder.length > 0;
+  if (hasStoredOrder) {
+    const parseOrder = (value?: string | null) =>
+      value === 'asc' ? true : value === 'desc' ? false : undefined;
+    const urlSort = params?.get('sort');
+    const urlOrder = parseOrder(params?.get('order'));
+    const urlThenSort = params?.get('thenSort');
+    const urlThenOrder = parseOrder(params?.get('thenOrder'));
+
+    if (urlSort && isMetadataSortKey(urlSort)) {
+      promote(urlSort, 0, urlOrder);
+    } else if (urlOrder !== undefined && result[0]) {
+      result[0] = { ...result[0], ascending: urlOrder };
+    }
+    if (urlThenSort && isMetadataSortKey(urlThenSort) && urlThenSort !== result[0]?.by) {
+      promote(urlThenSort, 1, urlThenOrder);
+    } else if (urlThenOrder !== undefined && result[1]) {
+      result[1] = { ...result[1], ascending: urlThenOrder };
+    }
+    return result;
+  }
+
   const primary =
     effectiveSort.by === LibrarySortByType.Custom
       ? (settings.librarySortBy ?? LibrarySortByType.Updated)
       : effectiveSort.by;
   const secondary = effectiveSort.thenBy;
-  const primaryOverridden = Boolean(settings.librarySortBy && primary !== settings.librarySortBy);
-  const secondaryOverridden = Boolean(
-    secondary !== 'none' && settings.libraryThenSortBy && secondary !== settings.libraryThenSortBy,
-  );
 
-  if (isMetadataSortKey(primary) && (!hasStoredOrder || primaryOverridden)) {
+  if (isMetadataSortKey(primary)) {
     promote(primary, 0, effectiveSort.ascending);
   }
-  if (
-    secondary !== 'none' &&
-    isMetadataSortKey(secondary) &&
-    secondary !== result[0]?.by &&
-    (!hasStoredOrder || secondaryOverridden)
-  ) {
+  if (secondary !== 'none' && isMetadataSortKey(secondary) && secondary !== result[0]?.by) {
     promote(secondary, 1, effectiveSort.thenAscending);
   }
 

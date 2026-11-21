@@ -37,6 +37,27 @@ export const useKeyDownActions = ({
           return true;
         }
       } else {
+        const isDndDragging = Boolean(
+          elementRef.current?.querySelector('[data-dnd-dragging="true"]'),
+        );
+        const isDndHandle =
+          event.target instanceof Element &&
+          Boolean(event.target.closest('[data-dnd-sortable-handle="true"]'));
+        if (
+          isDndDragging &&
+          (event.key === 'Escape' ||
+            event.key === ' ' ||
+            event.key === 'Enter' ||
+            event.key === 'ArrowUp' ||
+            event.key === 'ArrowDown' ||
+            event.key === 'ArrowLeft' ||
+            event.key === 'ArrowRight')
+        ) {
+          return false;
+        }
+        if (isDndHandle && (event.key === ' ' || event.key === 'Enter')) {
+          return false;
+        }
         if (event.key === 'Escape') {
           onCancelRef.current?.();
         } else if (event.key === 'Enter') {

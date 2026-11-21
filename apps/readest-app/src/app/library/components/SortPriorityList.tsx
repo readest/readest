@@ -75,7 +75,7 @@ const SortableSortRow: React.FC<SortableSortRowProps> = ({
       role='listitem'
       style={style}
       className={clsx(
-        'text-base-content flex min-h-8 w-full min-w-0 flex-row items-center rounded-md p-1 transition-colors duration-200',
+        'text-base-content flex min-h-8 w-full min-w-0 flex-row items-center rounded-md py-1 pe-1 ps-0 transition-colors duration-200',
         isDragging
           ? 'bg-base-300 z-10 shadow-sm'
           : isJustDropped
@@ -86,14 +86,16 @@ const SortableSortRow: React.FC<SortableSortRowProps> = ({
     >
       <button
         type='button'
-        style={{ minWidth: `${iconSize}px` }}
-        className='text-base-content/45 hover:text-base-content flex shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing'
+        data-dnd-sortable-handle='true'
+        className='text-base-content/45 hover:text-base-content flex min-h-8 shrink-0 cursor-grab touch-none items-center justify-center self-stretch pe-2 ps-1 active:cursor-grabbing'
         aria-label={_('Drag to reorder {{label}}', { label })}
         title={_('Drag to reorder')}
         {...attributes}
         {...listeners}
       >
-        <MdDragIndicator size={iconSize} aria-hidden='true' />
+        <span style={{ minWidth: `${iconSize}px` }} className='flex items-center justify-center'>
+          <MdDragIndicator size={iconSize} aria-hidden='true' />
+        </span>
       </button>
       <button
         type='button'
@@ -104,7 +106,7 @@ const SortableSortRow: React.FC<SortableSortRowProps> = ({
       >
         <span
           className={clsx(
-            'mx-2 flex-1 break-words text-pretty text-start text-base sm:text-sm',
+            'me-2 flex-1 break-words text-pretty text-start text-base sm:text-sm',
             isPrimary ? 'font-semibold' : 'font-normal',
           )}
           style={{ minWidth: 0 }}
@@ -138,6 +140,7 @@ const SortPriorityList: React.FC<SortPriorityListProps> = ({
   onReorder,
   onToggleDirection,
 }) => {
+  const _ = useTranslation();
   const [localItems, setLocalItems] = useState<LibrarySortCriterion[]>(items);
   const [activeId, setActiveId] = useState<LibraryMetadataSortByType | null>(null);
   const [justDroppedId, setJustDroppedId] = useState<LibraryMetadataSortByType | null>(null);
@@ -207,16 +210,70 @@ const SortPriorityList: React.FC<SortPriorityListProps> = ({
     onToggleDirection(by);
   };
 
+  const getCriterionLabel = (id: string | number) =>
+    labels[id as LibraryMetadataSortByType] ?? String(id);
+
+  const accessibility = useMemo(
+    () => ({
+      screenReaderInstructions: {
+        draggable: _(
+          'To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.',
+        ),
+      },
+      announcements: {
+        onDragStart({ active }: DragStartEvent) {
+          return _('Picked up {{label}}.', { label: getCriterionLabel(active.id) });
+        },
+        onDragOver({
+          active,
+          over,
+        }: {
+          active: { id: string | number };
+          over: { id: string | number } | null;
+        }) {
+          if (over) {
+            return _('{{label}} moved over {{target}}.', {
+              label: getCriterionLabel(active.id),
+              target: getCriterionLabel(over.id),
+            });
+          }
+          return _('{{label}} is no longer over a droppable position.', {
+            label: getCriterionLabel(active.id),
+          });
+        },
+        onDragEnd({ active, over }: DragEndEvent) {
+          if (over) {
+            return _('Dropped {{label}} at {{target}}.', {
+              label: getCriterionLabel(active.id),
+              target: getCriterionLabel(over.id),
+            });
+          }
+          return _('Dropped {{label}}.', { label: getCriterionLabel(active.id) });
+        },
+        onDragCancel({ active }: { active: { id: string | number } }) {
+          return _('Reordering {{label}} cancelled.', { label: getCriterionLabel(active.id) });
+        },
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [labels, _],
+  );
+
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      accessibility={accessibility}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
       <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
-        <div role='list' className='flex min-w-0 flex-1 flex-col'>
+        <div
+          role='list'
+          data-dnd-dragging={activeId !== null ? 'true' : undefined}
+          className='flex min-w-0 flex-1 flex-col'
+        >
           {localItems.map((item, index) => (
             <SortableSortRow
               key={item.by}

@@ -43,6 +43,7 @@ import {
 import {
   getGlobalBookshelfSort,
   resolveBookshelfSort,
+  resolveBookshelfSortOrder,
   resolveBookshelfMetadataSort,
   resolveLibrarySortOrder,
 } from '@/services/bookshelves/sorting';
@@ -195,9 +196,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const globalSortOrder = useMemo(
     () =>
       Array.isArray(settings.librarySortOrder) && settings.librarySortOrder.length > 0
-        ? resolveLibrarySortOrder(settings, globalSort)
+        ? resolveLibrarySortOrder(settings, globalSort, searchParams)
         : undefined,
-    [settings, globalSort],
+    [settings, globalSort, searchParams],
   );
   const definitions = useMemo(
     () =>
@@ -218,10 +219,18 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   const showSeriesIndex = !!groupId && !queryTerm && groupBy === LibraryGroupByType.Series;
   const activeShelf = definitions.find((s) => s.id === activeShelfId);
   const showTimeRemaining = queryTerm
-    ? globalSort.by === 'timeRemaining' || globalSort.thenBy === 'timeRemaining'
+    ? globalSort.by === 'timeRemaining' ||
+      globalSort.thenBy === 'timeRemaining' ||
+      Boolean(globalSortOrder?.some((c) => c.by === 'timeRemaining'))
     : definitions.some((s) => {
         const sort = resolveBookshelfMetadataSort(s);
-        return s.enabled && (sort.by === 'timeRemaining' || sort.thenBy === 'timeRemaining');
+        const shelfOrder = resolveBookshelfSortOrder(s, globalSortOrder);
+        return (
+          s.enabled &&
+          (sort.by === 'timeRemaining' ||
+            sort.thenBy === 'timeRemaining' ||
+            Boolean(shelfOrder?.some((c) => c.by === 'timeRemaining')))
+        );
       });
 
   const [loading, setLoading] = useState(false);
