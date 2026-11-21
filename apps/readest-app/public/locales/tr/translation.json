@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "Alfabetik Z-A",
   "All Languages": "Tüm diller",
   "Pin to Notebook": "Not defterine sabitle",
-  "Look up a word to see its definitions here.": "Tanımlarını burada görmek için bir kelime arayın."
+  "Look up a word to see its definitions here.": "Tanımlarını burada görmek için bir kelime arayın.",
+  "Add Audio to Anki Cards": "Anki kartlarına ses ekle",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Her kart, cihazınızın metin okuma özelliğiyle kelimesini sesli okuyabilir. Readest not türüne yeni alanlar ekler ve daha önce eklediği kartlarda bunları doldurur.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Devam etmeden önce AnkiDroid'i AnkiWeb ile eşitleyin. Bu değişiklikten sonra AnkiDroid'in bir sonraki eşitlemesi tüm koleksiyonu yüklemeyi veya indirmeyi soracak: Yükle'yi seçin.",
+  "Add Audio": "Ses ekle",
+  "Added audio to {{count}} cards_one": "{{count}} karta ses eklendi",
+  "Added audio to {{count}} cards_other": "{{count}} karta ses eklendi"
 }

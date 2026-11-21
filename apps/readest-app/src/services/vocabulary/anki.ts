@@ -4,7 +4,7 @@
 import { TRANSLATOR_LANGS } from '@/services/constants';
 import { getLanguageName } from '@/utils/lang';
 import { entryId, normalizeWordKey, vocabularyLang } from './entry';
-import { UNSPACED, ankiCardOf } from './export';
+import { UNSPACED, ankiCardOf, escapeHtml } from './export';
 import type { VocabularyEntry, VocabularyImport, VocabularyState } from './types';
 
 const MAX_WORD_LEN = 40;
@@ -245,10 +245,28 @@ export const defaultImportLang = (entries: Record<string, VocabularyEntry>): str
 export const ankiDeckName = (lang: string): string =>
   lang === 'und' ? ANKI_DECK : `${ANKI_DECK}::${getLanguageName(lang).split(/[;,]/)[0]!.trim()}`;
 
-/** A note the AnkiDroid link adds to `deck`: Front and Back, plus tags. */
+/**
+ * The locale Anki's `[anki:tts]` reads a word in (`de_DE`): with a bare `de`
+ * AnkiDroid finds no voice. Empty, so no audio, when the language is unknown.
+ */
+export const ankiTtsLang = (lang: string): string => {
+  if (lang === 'und') return '';
+  try {
+    const { language, region } = new Intl.Locale(lang).maximize();
+    return region ? `${language}_${region}` : '';
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * A note the AnkiDroid link adds to `deck`. Its fields follow the note type:
+ * Front and Back, which Sync matches and reads hints from, then Word and
+ * Language for the card's audio, and Entry, left empty for now (#7728).
+ */
 export interface AnkiOutgoingNote {
   deck: string;
-  fields: [string, string];
+  fields: [front: string, back: string, word: string, language: string, entry: string];
   tags: string[];
 }
 
@@ -272,13 +290,13 @@ export const ankiNotesToSend = (
   const notes: AnkiOutgoingNote[] = [];
   for (const e of entries) {
     if (e.deletedAt) continue;
-    const { front, back, tags } = ankiCardOf(e);
+    const { word, front, back, tags } = ankiCardOf(e);
     const key = noteKey([front]);
     if (have.has(`${e.lang}:${key}`) || have.has(`*:${key}`)) continue;
     const mark = MARK_TAGS[e.state];
     notes.push({
       deck: ankiDeckName(e.lang),
-      fields: [front, back],
+      fields: [front, back, word, ankiTtsLang(e.lang), ''],
       tags: [...tags, ankiLangTag(e.lang), ...(mark ? [mark] : [])],
     });
   }
@@ -312,6 +330,24 @@ export const withNoteLangs = <T extends { fields: string[]; tags: string }>(
     return { ...n, tags: `${n.tags.trim()} ${ankiLangTag(noteLang)}`.trim() };
   });
 };
+
+/** The Word and Language an upgraded note type fills on a note Sync added before. */
+export interface AnkiNoteFill {
+  id: number;
+  word: string;
+  language: string;
+}
+
+/** Fills for notes read with their language tags (see `withNoteLangs`). */
+export const ankiNoteFills = (
+  notes: { id: number; fields: string[]; tags: string }[],
+): AnkiNoteFill[] =>
+  notes.flatMap((n) => {
+    const word = ankiHeadwordOf(n.fields);
+    if (!word) return [];
+    const language = ankiTtsLang(ankiLangOf(n.tags) ?? 'und');
+    return [{ id: n.id, word: escapeHtml(word), language }];
+  });
 
 /** A note's full tag list, as Sync writes it back. */
 export interface AnkiTagUpdate {

@@ -11,6 +11,7 @@ import {
   PiExport,
   PiFileCsv,
   PiGlobe,
+  PiSpeakerHigh,
 } from 'react-icons/pi';
 import type { IconType } from 'react-icons';
 
@@ -32,6 +33,7 @@ import { getLocale } from '@/utils/misc';
 import Dropdown from '@/components/Dropdown';
 import Menu from '@/components/Menu';
 import MenuItem from '@/components/MenuItem';
+import AnkiAudioPanel from './AnkiAudioPanel';
 import AnkiImportPanel from './AnkiImportPanel';
 import VocabularyDetail from './VocabularyDetail';
 import { useAnkiLink } from './useAnkiLink';
@@ -166,14 +168,22 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
     });
   };
 
-  const importPanel = anki.importState && (
-    <AnkiImportPanel {...anki.importState} onImport={anki.runImport} onCancel={anki.closeImport} />
+  const panel = anki.audioPrompt ? (
+    <AnkiAudioPanel onAnswer={anki.answerAudioPrompt} />
+  ) : (
+    anki.importState && (
+      <AnkiImportPanel
+        {...anki.importState}
+        onImport={anki.runImport}
+        onCancel={anki.closeImport}
+      />
+    )
   );
 
   if (all.every((e) => e.deletedAt)) {
     return (
       <div className='flex h-full flex-col items-center justify-center gap-4 px-6 py-12 text-center'>
-        {importPanel || (
+        {panel || (
           <>
             <p className='not-eink:opacity-70 text-sm'>
               {_('Words you look up while reading appear here.')}
@@ -289,6 +299,16 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
                 onClick={() => void anki.openImport()}
               />
             )}
+            {anki.available && anki.audioDeclined && (
+              <MenuItem
+                label={_('Add Audio to Anki Cards')}
+                Icon={PiSpeakerHigh}
+                transient
+                // Its Sync would run alongside the one in progress.
+                disabled={anki.syncing}
+                onClick={anki.addAudio}
+              />
+            )}
           </Menu>
         </Dropdown>
       </div>
@@ -339,7 +359,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
       </div>
 
       <div className='border-base-content/10 flex min-h-0 flex-1 border-t'>
-        {importPanel || (
+        {panel || (
           <>
             <ul
               aria-label={_('Words')}

@@ -91,6 +91,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::anki_read_deck,
             commands::anki_add_notes,
             commands::anki_update_tags,
+            commands::anki_note_type,
+            commands::anki_upgrade_note_type,
             commands::select_directory,
             commands::show_file_picker,
             commands::get_storefront_region_code,

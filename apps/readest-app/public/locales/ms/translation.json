@@ -2810,5 +2810,10 @@
   "Alphabetical Z-A": "Abjad Z-A",
   "All Languages": "Semua bahasa",
   "Pin to Notebook": "Pin ke buku nota",
-  "Look up a word to see its definitions here.": "Cari sesuatu perkataan untuk melihat definisinya di sini."
+  "Look up a word to see its definitions here.": "Cari sesuatu perkataan untuk melihat definisinya di sini.",
+  "Add Audio to Anki Cards": "Tambah Audio pada Kad Anki",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Setiap kad boleh membacakan perkataannya dengan teks-ke-pertuturan peranti anda. Readest menambah medan baharu pada jenis notanya dan mengisinya pada kad yang telah ditambah.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Segerakkan AnkiDroid dengan AnkiWeb sebelum meneruskan. Selepas perubahan ini, penyegerakan AnkiDroid seterusnya akan bertanya sama ada mahu memuat naik atau memuat turun seluruh koleksi: pilih Muat Naik.",
+  "Add Audio": "Tambah Audio",
+  "Added audio to {{count}} cards_other": "Audio ditambah pada {{count}} kad"
 }

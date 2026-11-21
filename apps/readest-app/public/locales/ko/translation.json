@@ -2810,5 +2810,10 @@
   "Alphabetical Z-A": "알파벳순 Z-A",
   "All Languages": "모든 언어",
   "Pin to Notebook": "노트북에 고정",
-  "Look up a word to see its definitions here.": "단어를 찾아보면 여기에 뜻이 표시됩니다."
+  "Look up a word to see its definitions here.": "단어를 찾아보면 여기에 뜻이 표시됩니다.",
+  "Add Audio to Anki Cards": "Anki 카드에 오디오 추가",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "각 카드가 기기의 텍스트 음성 변환으로 단어를 소리 내어 읽을 수 있습니다. Readest가 노트 유형에 새 필드를 추가하고 이미 추가한 카드에도 채웁니다.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "계속하기 전에 AnkiDroid를 AnkiWeb과 동기화하세요. 이 변경 후 AnkiDroid의 다음 동기화에서 전체 컬렉션을 업로드할지 다운로드할지 묻습니다. 업로드를 선택하세요.",
+  "Add Audio": "오디오 추가",
+  "Added audio to {{count}} cards_other": "카드 {{count}}개에 오디오를 추가함"
 }

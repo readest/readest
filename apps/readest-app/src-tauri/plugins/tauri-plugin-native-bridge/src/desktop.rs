@@ -266,6 +266,17 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn anki_note_type(&self) -> crate::Result<AnkiNoteTypeResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_upgrade_note_type(
+        &self,
+        _payload: AnkiUpgradeNoteTypeRequest,
+    ) -> crate::Result<AnkiUpdateTagsResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn set_lookup_app(&self, _payload: SetLookupAppRequest) -> crate::Result<()> {
         Err(crate::Error::UnsupportedPlatformError)
     }

@@ -2883,5 +2883,11 @@
   "Alphabetical Z-A": "Alifbo bo‘yicha Z-A",
   "All Languages": "Barcha tillar",
   "Pin to Notebook": "Daftarga mahkamlash",
-  "Look up a word to see its definitions here.": "Taʼriflarini shu yerda koʻrish uchun soʻzni qidiring."
+  "Look up a word to see its definitions here.": "Taʼriflarini shu yerda koʻrish uchun soʻzni qidiring.",
+  "Add Audio to Anki Cards": "Anki kartalariga audio qo'shish",
+  "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Har bir karta qurilmangizning matnni nutqqa aylantirish vositasi bilan so'zini ovoz chiqarib o'qiy oladi. Readest o'z eslatma turiga yangi maydonlar qo'shadi va ularni allaqachon qo'shilgan kartalarda to'ldiradi.",
+  "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Davom etishdan oldin AnkiDroid'ni AnkiWeb bilan sinxronlang. Bu o'zgarishdan keyin AnkiDroid'ning keyingi sinxronlashi butun to'plamni yuklash yoki yuklab olishni so'raydi: Yuklash (Upload) ni tanlang.",
+  "Add Audio": "Audio qo'shish",
+  "Added audio to {{count}} cards_one": "{{count}} ta kartaga audio qo'shildi",
+  "Added audio to {{count}} cards_other": "{{count}} ta kartaga audio qo'shildi"
 }

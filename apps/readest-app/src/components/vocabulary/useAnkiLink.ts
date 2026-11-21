@@ -9,6 +9,7 @@ import { useVocabularyStore } from '@/store/vocabularyStore';
 import {
   ANKI_DECK,
   type AnkiImportPlan,
+  ankiNoteFills,
   ankiNotesToSend,
   ankiTagUpdates,
   defaultImportLang,
@@ -23,10 +24,12 @@ import {
   AnkiError,
   ankiAddNotes,
   ankiListDecks,
+  ankiNoteTypeOutdated,
   ankiReadDeck,
   ankiRequestPermission,
   ankiStatus,
   ankiUpdateTags,
+  ankiUpgradeNoteType,
 } from '@/services/vocabulary/ankiDroid';
 import { isAnkiAllowed } from '@/utils/access';
 import { eventDispatcher } from '@/utils/event';
@@ -48,6 +51,22 @@ const readMatured = (): Set<string> => {
 const saveMatured = (ids: string[]) => {
   try {
     localStorage.setItem(MATURED_KEY, JSON.stringify(ids));
+  } catch {}
+};
+
+// Set when the reader answered Not now to adding audio, so Sync stops asking.
+const AUDIO_DECLINED_KEY = 'readest-anki-audio-declined';
+const readAudioDeclined = (): boolean => {
+  try {
+    return localStorage.getItem(AUDIO_DECLINED_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+const saveAudioDeclined = (declined: boolean) => {
+  try {
+    if (declined) localStorage.setItem(AUDIO_DECLINED_KEY, '1');
+    else localStorage.removeItem(AUDIO_DECLINED_KEY);
   } catch {}
 };
 
@@ -86,6 +105,9 @@ export const useAnkiLink = () => {
   const [status, setStatus] = useState<{ installed: boolean; granted: boolean } | null>(null);
   const [importState, setImportState] = useState<AnkiImportState | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [audioDeclined, setAudioDeclined] = useState(readAudioDeclined);
+  // Resolves the open "Add audio" prompt with the reader's answer.
+  const [audioPrompt, setAudioPrompt] = useState<((add: boolean) => void) | null>(null);
   const pulledOnOpen = useRef(false);
   const isAndroid = !!appService?.isAndroidApp;
 
@@ -176,13 +198,39 @@ export const useAnkiLink = () => {
       .catch((err) => console.warn('[anki] pull on open failed', err));
   }, [status, entitled]);
 
+  const declineAudio = (declined: boolean) => {
+    saveAudioDeclined(declined);
+    setAudioDeclined(declined);
+  };
+
+  /**
+   * A note type from before #7729 gets its audio fields only when the reader
+   * agrees, once: adding fields makes AnkiDroid's next AnkiWeb sync a full one.
+   * Resolves with the answer, or null when there was nothing to ask.
+   */
+  const askAudio = async (): Promise<boolean | null> => {
+    if (!(await ankiNoteTypeOutdated())) {
+      declineAudio(false);
+      return null;
+    }
+    if (readAudioDeclined()) return null;
+    const add = await new Promise<boolean>((resolve) => setAudioPrompt(() => resolve));
+    setAudioPrompt(null);
+    if (!add) declineAudio(true);
+    return add;
+  };
+
   /** Pull, then add Learning words the deck lacks, then bring mark tags in step. */
   const sync = async () => {
     if (!guard()) return;
     setSyncing(true);
     try {
       if (!(await ready())) return;
-      const { notes, lang, plan, cardsRead } = await pull();
+      const first = await pull();
+      const add = await askAudio();
+      // The prompt asks the reader to sync AnkiDroid first, which can bring in notes.
+      const { notes, lang, plan, cardsRead } = add === null ? first : await pull();
+      const voiced = add ? await ankiUpgradeNoteType(ankiNoteFills(notes)) : 0;
       const { entries } = useVocabularyStore.getState();
       // Words with no sentence came in from Anki, so they're already there.
       const learning = Object.values(entries).filter(
@@ -193,8 +241,17 @@ export const useAnkiLink = () => {
       const updates = ankiTagUpdates(notes, entries, lang);
       if (updates.length) await ankiUpdateTags(updates);
       const parts = [
+        ...(voiced ? [_('Added audio to {{count}} cards', { count: voiced })] : []),
         ...(sent ? [_('Added {{count}} words to Anki', { count: sent })] : []),
-        ...pullSummary(plan),
+        ...pullSummary(
+          plan === first.plan
+            ? plan
+            : {
+                ...plan,
+                added: first.plan.added + plan.added,
+                mastered: first.plan.mastered + plan.mastered,
+              },
+        ),
       ];
       if (!cardsRead) parts.push(_('Update AnkiDroid to bring back mastered words.'));
       toast('success', parts.length ? parts.join(' · ') : _('In sync with Anki'));
@@ -255,5 +312,13 @@ export const useAnkiLink = () => {
     runImport,
     closeImport: () => setImportState(null),
     guardFileExport: guard,
+    audioPrompt: !!audioPrompt,
+    answerAudioPrompt: (add: boolean) => audioPrompt?.(add),
+    audioDeclined,
+    // Asking again: the next Sync shows the prompt.
+    addAudio: () => {
+      declineAudio(false);
+      void sync();
+    },
   };
 };
