@@ -3037,5 +3037,12 @@
   "Added audio to {{count}} cards_one": "Dodano dźwięk do kart: {{count}}",
   "Added audio to {{count}} cards_few": "Dodano dźwięk do kart: {{count}}",
   "Added audio to {{count}} cards_many": "Dodano dźwięk do kart: {{count}}",
-  "Added audio to {{count}} cards_other": "Dodano dźwięk do kart: {{count}}"
+  "Added audio to {{count}} cards_other": "Dodano dźwięk do kart: {{count}}",
+  "Dictionary for Anki Cards": "Słownik dla kart Anki",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Synchronizacja z Anki umieszcza hasło z tego słownika na odwrocie każdej karty, dla maksymalnie 30 kart na synchronizację.",
+  "Added dictionary entries to {{count}} cards_one": "Dodano hasła słownikowe do kart: {{count}}",
+  "Added dictionary entries to {{count}} cards_few": "Dodano hasła słownikowe do kart: {{count}}",
+  "Added dictionary entries to {{count}} cards_many": "Dodano hasła słownikowe do kart: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "Dodano hasła słownikowe do kart: {{count}}",
+  "Dictionary for Anki Cards...": "Słownik dla kart Anki..."
 }

@@ -2889,5 +2889,10 @@
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Davom etishdan oldin AnkiDroid'ni AnkiWeb bilan sinxronlang. Bu o'zgarishdan keyin AnkiDroid'ning keyingi sinxronlashi butun to'plamni yuklash yoki yuklab olishni so'raydi: Yuklash (Upload) ni tanlang.",
   "Add Audio": "Audio qo'shish",
   "Added audio to {{count}} cards_one": "{{count}} ta kartaga audio qo'shildi",
-  "Added audio to {{count}} cards_other": "{{count}} ta kartaga audio qo'shildi"
+  "Added audio to {{count}} cards_other": "{{count}} ta kartaga audio qo'shildi",
+  "Dictionary for Anki Cards": "Anki kartalari uchun lug'at",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Anki bilan sinxronlash har bir kartaning orqa tomoniga ushbu lug'at maqolasini qo'yadi, har bir sinxronlashda 30 tagacha karta.",
+  "Added dictionary entries to {{count}} cards_one": "{{count}} ta kartaga lug'at maqolasi qo'shildi",
+  "Added dictionary entries to {{count}} cards_other": "{{count}} ta kartaga lug'at maqolasi qo'shildi",
+  "Dictionary for Anki Cards...": "Anki kartalari uchun lug'at..."
 }

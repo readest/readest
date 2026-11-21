@@ -2963,5 +2963,11 @@
   "Add Audio": "הוספת שמע",
   "Added audio to {{count}} cards_one": "נוסף שמע לכרטיסים: {{count}}",
   "Added audio to {{count}} cards_two": "נוסף שמע לכרטיסים: {{count}}",
-  "Added audio to {{count}} cards_other": "נוסף שמע לכרטיסים: {{count}}"
+  "Added audio to {{count}} cards_other": "נוסף שמע לכרטיסים: {{count}}",
+  "Dictionary for Anki Cards": "מילון לכרטיסי Anki",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "הסנכרון עם Anki מוסיף את הערך של המילון הזה לגב כל כרטיס, עד 30 כרטיסים בכל סנכרון.",
+  "Added dictionary entries to {{count}} cards_one": "נוספו ערכי מילון לכרטיסים: {{count}}",
+  "Added dictionary entries to {{count}} cards_two": "נוספו ערכי מילון לכרטיסים: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "נוספו ערכי מילון לכרטיסים: {{count}}",
+  "Dictionary for Anki Cards...": "מילון לכרטיסי Anki..."
 }

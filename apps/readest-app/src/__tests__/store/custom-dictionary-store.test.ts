@@ -923,6 +923,32 @@ describe('customDictionaryStore — saveLookupsToVocabulary (#789)', () => {
   });
 });
 
+describe('customDictionaryStore — Anki card dictionary (#7728)', () => {
+  it('keeps the chosen dictionary across a load, and clears it', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['builtin:wiktionary'],
+          providerEnabled: { 'builtin:wiktionary': true },
+          webSearches: [],
+          ankiEntryProviderId: 'builtin:wiktionary',
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+    const fakeEnv = {
+      getAppService: () => Promise.resolve({ exists: vi.fn().mockResolvedValue(false) }),
+    } as unknown as EnvConfigType;
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.ankiEntryProviderId).toBe(
+      'builtin:wiktionary',
+    );
+    useCustomDictionaryStore.getState().setAnkiEntryProviderId(undefined);
+    expect(useCustomDictionaryStore.getState().settings.ankiEntryProviderId).toBeUndefined();
+  });
+});
+
 describe('customDictionaryStore — system dictionary fullscreen (#7101)', () => {
   it.each([true, false])('keeps fullscreen=%s saved during a pending load', async (enabled) => {
     type SettingsState = ReturnType<typeof useSettingsStore.getState>;

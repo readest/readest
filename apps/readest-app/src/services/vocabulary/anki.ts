@@ -262,7 +262,7 @@ export const ankiTtsLang = (lang: string): string => {
 /**
  * A note the AnkiDroid link adds to `deck`. Its fields follow the note type:
  * Front and Back, which Sync matches and reads hints from, then Word and
- * Language for the card's audio, and Entry, left empty for now (#7728).
+ * Language for the card's audio, and Entry for the dictionary entry (#7728).
  */
 export interface AnkiOutgoingNote {
   deck: string;
@@ -275,32 +275,75 @@ export interface AnkiOutgoingNote {
 const noteKey = (fields: string[]) => normalizeWordKey(ankiHeadwordOf(fields));
 
 /**
- * The notes Sync adds. A word is left out when the deck already has a note for
- * it, under any note type, tagged with the same language or with none.
+ * The words Sync adds notes for. A word is left out when the deck already has a
+ * note for it, under any note type, tagged with the same language or with none.
  */
-export const ankiNotesToSend = (
+export const ankiWordsToSend = (
   entries: VocabularyEntry[],
   existing: { fields: string[]; tags: string }[],
-): AnkiOutgoingNote[] => {
+): VocabularyEntry[] => {
   const have = new Set<string>();
   for (const n of existing) {
     const key = noteKey(n.fields);
     if (key) have.add(`${ankiLangOf(n.tags) ?? '*'}:${key}`);
   }
-  const notes: AnkiOutgoingNote[] = [];
-  for (const e of entries) {
-    if (e.deletedAt) continue;
+  return entries.filter((e) => {
+    if (e.deletedAt) return false;
+    const key = noteKey([ankiCardOf(e).front]);
+    return !have.has(`${e.lang}:${key}`) && !have.has(`*:${key}`);
+  });
+};
+
+/**
+ * The notes Sync adds (see `ankiWordsToSend`), with the dictionary entries
+ * looked up for them (#7728) by word id.
+ */
+export const ankiNotesToSend = (
+  entries: VocabularyEntry[],
+  existing: { fields: string[]; tags: string }[],
+  entryOf: Record<string, string> = {},
+): AnkiOutgoingNote[] =>
+  ankiWordsToSend(entries, existing).map((e) => {
     const { word, front, back, tags } = ankiCardOf(e);
-    const key = noteKey([front]);
-    if (have.has(`${e.lang}:${key}`) || have.has(`*:${key}`)) continue;
     const mark = MARK_TAGS[e.state];
-    notes.push({
+    return {
       deck: ankiDeckName(e.lang),
-      fields: [front, back, word, ankiTtsLang(e.lang), ''],
+      fields: [front, back, word, ankiTtsLang(e.lang), entryOf[e.id] ?? ''],
       tags: [...tags, ankiLangTag(e.lang), ...(mark ? [mark] : [])],
-    });
-  }
-  return notes;
+    };
+  });
+
+/** A note whose Entry Sync can fill (#7728): the word to look up, in its language. */
+export interface AnkiEntryGap {
+  id: number;
+  word: string;
+  lang: string;
+}
+
+/**
+ * Readest's notes (of the note type `noteType`) whose Entry field is empty,
+ * oldest first, starting after note `after`: a Sync that looks up only some
+ * goes on from the last one it tried, so words the dictionary lacks don't
+ * hold back the rest. Notes read before this Sync added the field count as
+ * empty; the native side checks again before writing.
+ */
+export const ankiEntryGaps = (
+  notes: { id: number; mid: number; fields: string[]; tags: string }[],
+  noteType: { id?: number; fields?: string[] },
+  lang: string,
+  after = 0,
+): AnkiEntryGap[] => {
+  const i = noteType.fields?.indexOf('Entry') ?? -1;
+  if (i < 0) return [];
+  const gaps = notes
+    .flatMap((n) => {
+      if (n.mid !== noteType.id || n.fields[i]?.trim()) return [];
+      const word = ankiHeadwordOf(n.fields);
+      return word ? [{ id: n.id, word, lang: ankiLangOf(n.tags) ?? lang }] : [];
+    })
+    .sort((a, b) => a.id - b.id);
+  const start = gaps.findIndex((g) => g.id > after);
+  return start <= 0 ? gaps : [...gaps.slice(start), ...gaps.slice(0, start)];
 };
 
 /**

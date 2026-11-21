@@ -320,6 +320,14 @@ pub(crate) async fn anki_upgrade_note_type<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn anki_set_entries<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiSetEntriesRequest,
+) -> Result<AnkiUpdateTagsResponse> {
+    app.native_bridge().anki_set_entries(payload)
+}
+
+#[command]
 pub(crate) async fn select_directory<R: Runtime>(
     app: AppHandle<R>,
     callback_state: State<'_, DirectoryCallbackState<R>>,

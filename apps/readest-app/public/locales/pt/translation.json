@@ -2963,5 +2963,11 @@
   "Add Audio": "Adicionar áudio",
   "Added audio to {{count}} cards_one": "Áudio adicionado aos cartões: {{count}}",
   "Added audio to {{count}} cards_many": "Áudio adicionado aos cartões: {{count}}",
-  "Added audio to {{count}} cards_other": "Áudio adicionado aos cartões: {{count}}"
+  "Added audio to {{count}} cards_other": "Áudio adicionado aos cartões: {{count}}",
+  "Dictionary for Anki Cards": "Dicionário para os cartões do Anki",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "A sincronização com o Anki coloca a entrada deste dicionário no verso de cada cartão, até 30 cartões por sincronização.",
+  "Added dictionary entries to {{count}} cards_one": "Entradas de dicionário adicionadas aos cartões: {{count}}",
+  "Added dictionary entries to {{count}} cards_many": "Entradas de dicionário adicionadas aos cartões: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "Entradas de dicionário adicionadas aos cartões: {{count}}",
+  "Dictionary for Anki Cards...": "Dicionário para os cartões do Anki..."
 }

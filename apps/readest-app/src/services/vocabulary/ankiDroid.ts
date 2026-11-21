@@ -19,6 +19,8 @@ export interface AnkiDeck {
 
 export interface AnkiNoteRow {
   id: number;
+  /** The note's note type. */
+  mid: number;
   fields: string[];
   tags: string;
 }
@@ -91,9 +93,30 @@ export const ankiAddNotes = async (notes: AnkiOutgoingNote[]): Promise<number> =
 export const ankiUpdateTags = async (notes: AnkiTagUpdate[]): Promise<number> =>
   (await call<{ updated?: number; error?: string }>('anki_update_tags', { notes })).updated ?? 0;
 
-/** Whether the Readest note type still lacks its audio fields or template (#7729). */
-export const ankiNoteTypeOutdated = async (): Promise<boolean> =>
-  !!(await call<{ outdated?: boolean; error?: string }>('anki_note_type')).outdated;
+/**
+ * The Readest note type: whether it is behind its current fields or template
+ * (#7729), and its id and field names, which are absent before Sync created it.
+ */
+export const ankiNoteType = async (): Promise<{
+  outdated: boolean;
+  id?: number;
+  fields?: string[];
+}> => {
+  const { outdated, id, fields } = await call<{
+    outdated?: boolean;
+    id?: number;
+    fields?: string[];
+    error?: string;
+  }>('anki_note_type');
+  return { outdated: !!outdated, id, fields };
+};
+
+/**
+ * Put dictionary entries (#7728) into the empty Entry field of Readest's notes;
+ * resolves with how many were set.
+ */
+export const ankiSetEntries = async (notes: { id: number; entry: string }[]): Promise<number> =>
+  (await call<{ updated?: number; error?: string }>('anki_set_entries', { notes })).updated ?? 0;
 
 /**
  * Give the note type its audio fields and template, filling them on the notes

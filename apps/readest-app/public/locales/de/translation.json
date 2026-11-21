@@ -2889,5 +2889,10 @@
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Synchronisiere AnkiDroid vor dem Fortfahren mit AnkiWeb. Nach dieser Änderung fragt die nächste Synchronisierung von AnkiDroid, ob die gesamte Sammlung hoch- oder heruntergeladen werden soll: Wähle Hochladen.",
   "Add Audio": "Audio hinzufügen",
   "Added audio to {{count}} cards_one": "Audio zu Karten hinzugefügt: {{count}}",
-  "Added audio to {{count}} cards_other": "Audio zu Karten hinzugefügt: {{count}}"
+  "Added audio to {{count}} cards_other": "Audio zu Karten hinzugefügt: {{count}}",
+  "Dictionary for Anki Cards": "Wörterbuch für Anki-Karten",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Die Synchronisierung mit Anki setzt den Eintrag dieses Wörterbuchs auf die Rückseite jeder Karte, für bis zu 30 Karten pro Synchronisierung.",
+  "Added dictionary entries to {{count}} cards_one": "Wörterbucheinträge zu Karten hinzugefügt: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "Wörterbucheinträge zu Karten hinzugefügt: {{count}}",
+  "Dictionary for Anki Cards...": "Wörterbuch für Anki-Karten..."
 }

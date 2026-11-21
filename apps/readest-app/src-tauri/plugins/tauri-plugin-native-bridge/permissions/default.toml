@@ -39,6 +39,7 @@ permissions = [
   "allow-anki-update-tags",
   "allow-anki-note-type",
   "allow-anki-upgrade-note-type",
+  "allow-anki-set-entries",
   "allow-select-directory",
   "allow-show-file-picker",
   "allow-get-storefront-region-code",

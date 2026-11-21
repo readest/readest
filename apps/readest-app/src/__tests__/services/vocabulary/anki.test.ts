@@ -9,8 +9,10 @@ import {
   ankiWordOf,
   cleanAnkiField,
   defaultImportLang,
+  ankiEntryGaps,
   ankiNoteFills,
   ankiNotesToSend,
+  ankiWordsToSend,
   ankiTagUpdates,
   ankiTtsLang,
   withNoteLangs,
@@ -367,6 +369,61 @@ describe('ankiNotesToSend', () => {
 
   it('never sends a deleted word', () => {
     expect(ankiNotesToSend([entry('gone', { deletedAt: 3 })], [])).toEqual([]);
+  });
+});
+
+describe('dictionary entries on the card (#7728)', () => {
+  const spice = entry('spice', {
+    state: 'learning',
+    occurrences: [{ sentence: 'The spice must flow.', at: 1 }],
+  });
+
+  it('puts a looked-up entry in the Entry field of the notes it sends', () => {
+    expect(ankiWordsToSend([spice], [])).toEqual([spice]);
+    const [note] = ankiNotesToSend([spice], [], { [spice.id]: '<p>a drug</p>' });
+    expect(note!.fields[4]).toBe('<p>a drug</p>');
+    expect(ankiNotesToSend([spice], [])[0]!.fields[4]).toBe('');
+  });
+
+  it("finds Readest's notes whose Entry is still empty, with their word and language", () => {
+    const noteType = { id: 5, fields: ['Front', 'Back', 'Word', 'Language', 'Entry'] };
+    const notes = [
+      {
+        id: 1,
+        mid: 5,
+        fields: ['<div>R&amp;D</div>', 'x', 'R&amp;D', 'en_US', ''],
+        tags: 'readest::lang::en',
+      },
+      { id: 2, mid: 5, fields: ['done', 'x', 'done', 'en_US', '<p>kept</p>'], tags: '' },
+      // Another note type in the deck.
+      { id: 3, mid: 9, fields: ['other', 'x', '', '', ''], tags: '' },
+      // Read before this Sync added the fields.
+      { id: 4, mid: 5, fields: ['Haus', 'house'], tags: 'readest::lang::de' },
+    ];
+    expect(ankiEntryGaps(notes, noteType, 'en')).toEqual([
+      { id: 1, word: 'R&D', lang: 'en' },
+      { id: 4, word: 'Haus', lang: 'de' },
+    ]);
+  });
+
+  it('starts after the last note a Sync tried, so notes with no entry never block the rest', () => {
+    const noteType = { id: 5, fields: ['Front', 'Back', 'Word', 'Language', 'Entry'] };
+    const note = (id: number) => ({
+      id,
+      mid: 5,
+      fields: [`w${id}`, 'x', `w${id}`, 'en_US', ''],
+      tags: '',
+    });
+    const notes = [note(30), note(10), note(20)];
+    const ids = (after?: number) => ankiEntryGaps(notes, noteType, 'en', after).map((g) => g.id);
+    expect(ids()).toEqual([10, 20, 30]);
+    expect(ids(10)).toEqual([20, 30, 10]);
+    expect(ids(30)).toEqual([10, 20, 30]);
+  });
+
+  it('finds none when the note type has no Entry field', () => {
+    const notes = [{ id: 1, mid: 5, fields: ['spice', 'x'], tags: '' }];
+    expect(ankiEntryGaps(notes, { id: 5, fields: ['Front', 'Back'] }, 'en')).toEqual([]);
   });
 });
 

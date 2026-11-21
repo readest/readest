@@ -2815,5 +2815,9 @@
   "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Setiap kad boleh membacakan perkataannya dengan teks-ke-pertuturan peranti anda. Readest menambah medan baharu pada jenis notanya dan mengisinya pada kad yang telah ditambah.",
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Segerakkan AnkiDroid dengan AnkiWeb sebelum meneruskan. Selepas perubahan ini, penyegerakan AnkiDroid seterusnya akan bertanya sama ada mahu memuat naik atau memuat turun seluruh koleksi: pilih Muat Naik.",
   "Add Audio": "Tambah Audio",
-  "Added audio to {{count}} cards_other": "Audio ditambah pada {{count}} kad"
+  "Added audio to {{count}} cards_other": "Audio ditambah pada {{count}} kad",
+  "Dictionary for Anki Cards": "Kamus untuk Kad Anki",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Penyegerakan dengan Anki meletakkan entri kamus ini di belakang setiap kad, sehingga 30 kad bagi setiap penyegerakan.",
+  "Added dictionary entries to {{count}} cards_other": "Entri kamus ditambah pada {{count}} kad",
+  "Dictionary for Anki Cards...": "Kamus untuk Kad Anki..."
 }

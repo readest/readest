@@ -30,21 +30,25 @@ object AnkiDroidLink {
     private const val AUDIO =
         "{{#Language}}{{#Word}}<br>[anki:tts lang={{Language}}]{{Word}}[/anki:tts]{{/Word}}{{/Language}}"
 
+    /** The dictionary entry (#7728), below the hint and the audio. */
+    private const val ENTRY =
+        "{{#Entry}}<hr><div style=\"text-align:start;font-size:0.85em\">{{Entry}}</div>{{/Entry}}"
+
     /**
      * The question and answer templates for a note type with these field
      * [names]: its own first two fields, so a reader who renamed Front and
-     * Back keeps a card that renders them, then the audio.
+     * Back keeps a card that renders them, then the audio and the entry.
      */
     fun templates(names: List<String>): Pair<String, String> =
-        "{{${names[0]}}}" to "{{FrontSide}}<hr id=answer>{{${names[1]}}}$AUDIO"
+        "{{${names[0]}}}" to "{{FrontSide}}<hr id=answer>{{${names[1]}}}$AUDIO$ENTRY"
 
     /**
-     * True until the note type has every field and the audio template. An
+     * True until the note type has every field and the current template. An
      * upgrade that stopped after adding the fields is still outdated, so the
      * next one finishes it.
      */
     fun outdated(names: List<String>, answerFormat: String): Boolean =
-        missingFields(names).isNotEmpty() || AUDIO !in answerFormat
+        missingFields(names).isNotEmpty() || AUDIO !in answerFormat || ENTRY !in answerFormat
 
     /**
      * The fields after Front and Back that a note type lacks. Its first two
@@ -55,13 +59,15 @@ object AnkiDroidLink {
     private const val FIELD_SEPARATOR = "\u001f"
     /** Notes per bulkInsert: one Binder transaction carries at most about 1 MB. */
     private const val INSERT_CHUNK = 200
+    /** Characters per bulkInsert, at two bytes each, so notes with entries stay under 1 MB. */
+    private const val INSERT_CHARS = 256 * 1024
     /** Anki calls a review card mature from a 21-day interval. */
     private const val MATURE_INTERVAL = 21
     private const val CARD_CSS =
         ".card { font-family: sans-serif; font-size: 20px; text-align: center; }"
 
     data class Deck(val id: Long, val name: String)
-    data class Note(val id: Long, val fields: List<String>, val tags: String)
+    data class Note(val id: Long, val mid: Long, val fields: List<String>, val tags: String)
     data class Card(val noteId: Long, val type: Int, val interval: Long)
 
     fun joinFields(fields: List<String>): String = fields.joinToString(FIELD_SEPARATOR)
@@ -106,15 +112,43 @@ object AnkiDroidLink {
         "(${deckSearch(deckIds)}) prop:ivl>=$MATURE_INTERVAL"
 
     /**
-     * Insert [rows] [size] at a time. ContentResolver.bulkInsert returns 0 when
-     * a transaction is too large, so a short count fails loudly instead.
+     * Insert [rows] at most [size] and [maxSize] (by [sizeOf]) at a time.
+     * ContentResolver.bulkInsert returns 0 when a transaction is too large, so a
+     * short count fails loudly instead.
      */
-    fun <T> insertInChunks(rows: List<T>, size: Int, insert: (List<T>) -> Int): Int =
-        rows.chunked(size).sumOf { chunk ->
+    fun <T> insertInChunks(
+        rows: List<T>,
+        size: Int,
+        maxSize: Int = Int.MAX_VALUE,
+        sizeOf: (T) -> Int = { 0 },
+        insert: (List<T>) -> Int,
+    ): Int {
+        val chunks = mutableListOf<MutableList<T>>()
+        var used = 0
+        for (row in rows) {
+            val rowSize = sizeOf(row)
+            val last = chunks.lastOrNull()
+            if (last == null || last.size >= size || used + rowSize > maxSize) {
+                chunks.add(mutableListOf(row))
+                used = rowSize
+            } else {
+                last.add(row)
+                used += rowSize
+            }
+        }
+        return chunks.sumOf { chunk ->
             val added = insert(chunk)
             if (added < chunk.size) throw IOException("AnkiDroid added $added of ${chunk.size} notes")
             added
         }
+    }
+
+    /** A note's [current] fields with [entry] in an empty Entry field; null when there's none to fill. */
+    fun withEntry(current: List<String>, names: List<String>, entry: String): List<String>? {
+        val i = names.indexOf("Entry")
+        if (i < 0 || current.getOrElse(i) { "" }.isNotEmpty()) return null
+        return names.indices.map { if (it == i) entry else current.getOrElse(it) { "" } }
+    }
 
     // Built on use: android.net.Uri is a stub in host-JVM unit tests.
     private const val AUTHORITY = "$PACKAGE.flashcards"
@@ -142,11 +176,12 @@ object AnkiDroidLink {
             ?: throw IOException("AnkiDroid is not available")
         try {
             // AnkiDroid answers a notes search that matches nothing with no cursor.
-            val cursor = client.query(uri("notes"), arrayOf("_id", "flds", "tags"), deckSearch(deckIds), null, null)
+            val cursor = client.query(uri("notes"), arrayOf("_id", "mid", "flds", "tags"), deckSearch(deckIds), null, null)
                 ?: return emptyList()
             return cursor.rows {
                 Note(
                     it.getLong(it.getColumnIndexOrThrow("_id")),
+                    it.getLong(it.getColumnIndexOrThrow("mid")),
                     splitFields(it.getString(it.getColumnIndexOrThrow("flds")) ?: ""),
                     it.getString(it.getColumnIndexOrThrow("tags")) ?: "",
                 )
@@ -262,7 +297,26 @@ object AnkiDroidLink {
             }
         }
         val target = uri("notes").buildUpon().appendQueryParameter("deckId", deckId.toString()).build()
-        return insertInChunks(rows, INSERT_CHUNK) { cr.bulkInsert(target, it.toTypedArray()) }
+        return insertInChunks(rows, INSERT_CHUNK, INSERT_CHARS, { it.getAsString("flds").length }) {
+            cr.bulkInsert(target, it.toTypedArray())
+        }
+    }
+
+    /**
+     * Put dictionary entries (#7728) into the empty Entry field of Readest's
+     * notes ([entries]: note id, entry HTML). Notes of other types, and an
+     * Entry the reader wrote, are left alone. Resolves with how many were set.
+     */
+    fun setEntries(cr: ContentResolver, entries: List<Pair<Long, String>>): Int {
+        val (mid, names) = findNoteType(cr) ?: return 0
+        return entries.sumOf { (id, entry) ->
+            val note = cr.query(uri("notes/$id"), arrayOf("mid", "flds"), null, null, null).rows {
+                it.getLong(it.getColumnIndexOrThrow("mid")) to (it.getString(it.getColumnIndexOrThrow("flds")) ?: "")
+            }.firstOrNull()
+            if (note == null || note.first != mid) return@sumOf 0
+            val fields = withEntry(splitFields(note.second), names, entry) ?: return@sumOf 0
+            cr.update(uri("notes/$id"), ContentValues().apply { put("flds", joinFields(fields)) }, null, null)
+        }
     }
 
     /** Replace the tags of existing notes; resolves with how many AnkiDroid updated. */

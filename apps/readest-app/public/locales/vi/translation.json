@@ -2815,5 +2815,9 @@
   "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "Mỗi thẻ có thể đọc to từ của nó bằng chuyển văn bản thành giọng nói trên thiết bị của bạn. Readest thêm các trường mới vào loại ghi chú của mình và điền chúng vào các thẻ đã thêm trước đó.",
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Hãy đồng bộ AnkiDroid với AnkiWeb trước khi tiếp tục. Sau thay đổi này, lần đồng bộ tiếp theo của AnkiDroid sẽ hỏi tải lên hay tải xuống toàn bộ bộ sưu tập: hãy chọn Tải lên.",
   "Add Audio": "Thêm âm thanh",
-  "Added audio to {{count}} cards_other": "Đã thêm âm thanh vào {{count}} thẻ"
+  "Added audio to {{count}} cards_other": "Đã thêm âm thanh vào {{count}} thẻ",
+  "Dictionary for Anki Cards": "Từ điển cho thẻ Anki",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync.": "Đồng bộ với Anki sẽ đặt mục từ của từ điển này ở mặt sau mỗi thẻ, tối đa 30 thẻ mỗi lần đồng bộ.",
+  "Added dictionary entries to {{count}} cards_other": "Đã thêm mục từ điển vào {{count}} thẻ",
+  "Dictionary for Anki Cards...": "Từ điển cho thẻ Anki..."
 }
