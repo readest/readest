@@ -13,6 +13,7 @@ import TOCView from './TOCView';
 import BooknoteView from './BooknoteView';
 import TabNavigation from './TabNavigation';
 import ChatHistoryView from './ChatHistoryView';
+import DictionaryView from './DictionaryView';
 
 const SidebarContent: React.FC<{
   bookDoc: BookDoc;
@@ -92,6 +93,8 @@ const SidebarContent: React.FC<{
       >
         {targetTab === 'history' ? (
           <ChatHistoryView bookKey={sideBarBookKey} />
+        ) : targetTab === 'dictionary' ? (
+          <DictionaryView bookKey={sideBarBookKey} />
         ) : (
           <OverlayScrollbarsComponent
             className='min-h-0 flex-1'

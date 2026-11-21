@@ -22,6 +22,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import { useSidebarStore } from '@/store/sidebarStore';
+import { useDictionaryDockStore } from '@/store/dictionaryDockStore';
+import { saveSysSettings } from '@/helpers/settings';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
@@ -106,7 +108,7 @@ import PageTurnHint from './PageTurnHint';
 import SelectionRangeEditor from './SelectionRangeEditor';
 import AnnotationPopup from './AnnotationPopup';
 import DictionaryPopup from './DictionaryPopup';
-import type { VocabularyCapture } from './DictionaryResultsView';
+import type { UseDictionaryResultsArgs, VocabularyCapture } from './DictionaryResultsView';
 import { vocabularyLang } from '@/services/vocabulary/entry';
 import { sentenceAt } from '@/services/vocabulary/sentence';
 import DictionarySheet from './DictionarySheet';
@@ -560,16 +562,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   );
 
   // The passage around the looked-up text, for the AI context dictionary (#5544).
-  const dictionarySelection = useMemo<DictionarySelectionContext | undefined>(
-    () =>
-      showDictionaryPopup && selection?.range
-        ? {
-            ...buildSelectionContext(selection.range),
-            bookTitle: bookData.book?.title,
-            bookAuthor: bookData.book?.author,
-            targetLang: viewSettings.translateTargetLang,
-          }
-        : undefined,
+  const getDictionarySelection = (): DictionarySelectionContext | undefined =>
+    selection?.range
+      ? {
+          ...buildSelectionContext(selection.range),
+          bookTitle: bookData.book?.title,
+          bookAuthor: bookData.book?.author,
+          targetLang: viewSettings.translateTargetLang,
+        }
+      : undefined;
+  const dictionarySelection = useMemo(
+    () => (showDictionaryPopup ? getDictionarySelection() : undefined),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [showDictionaryPopup, selection],
   );
@@ -1360,7 +1363,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           // CJK term); on a longer selection fall back to the annotation
           // toolbar so highlighting and copying stay reachable (#5213).
           if (selection && isSingleLookupTerm(selection.text)) {
-            handleDictionary();
+            if (handleDictionary()) {
+              // Shown in the sidebar, nothing covers the word: hand it back
+              // now, as closing the popup would (#6213, #6454). The flag stops
+              // a republish of it (a highlight) from looking it up again.
+              if (viewSettings.keepSelectionAfterLookup) {
+                setSelection({ ...selection, quickActionHandled: true });
+              } else {
+                handleDismissPopupAndSelection();
+              }
+              break;
+            }
             // Drop the selection for as long as the lookup is up, so iOS's
             // native handles and blue highlight — painted above web content —
             // don't sit on top of the popup (#5585). With
@@ -1480,7 +1493,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         // Route through handleDictionary so a Word Lens gloss tap honours the
         // dictionary settings (system dictionary vs the in-app popup) — same
         // as the selection-toolbar and instant-quick-action dictionary paths.
-        handleDictionary();
+        // Shown in the sidebar, the tap needs nothing more from the word.
+        if (handleDictionary()) handleDismissPopupAndSelection();
       } else if (
         enableAnnotationQuickActions &&
         annotationQuickAction &&
@@ -2020,8 +2034,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     eventDispatcher.dispatch('search-term', { term, bookKey });
   };
 
+  /** Whether the lookup was shown in the sidebar's Dictionary tab. */
   const handleDictionary = () => {
-    if (!selection || !selection.text) return;
+    if (!selection || !selection.text) return false;
     // System-dictionary path: when the user has opted in via Settings →
     // Languages → Dictionaries, hand the selection to the OS instead of
     // opening the in-app popup. Exclusivity is enforced at the store
@@ -2055,24 +2070,60 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         });
       }
       handleDismissPopupAndSelection();
-      return;
+      return false;
     }
-    setShowAnnotPopup(false);
-    void suppressNativeSelectionHandles();
-    setDictionaryInSheet(isSheetViewport());
-    setDictionaryContextOnly(false);
-    setShowDictionaryPopup(true);
+    return lookUpInApp(false);
   };
 
   // Asks the AI context dictionary alone, so it can stay off in the dictionary
   // list and spend no tokens on everyday lookups (#7497).
   const handleContextDictionary = () => {
     if (!selection || !selection.text) return;
+    lookUpInApp(true);
+  };
+
+  // Every in-app lookup is kept for the sidebar's Dictionary tab (#7730). While
+  // that tab is on screen it shows the lookup there, opens no popup over the
+  // word, and returns true; the word stays selected for the toolbar.
+  const lookUpInApp = (contextOnly: boolean) => {
+    if (!selection?.text) return false;
+    const { isDocked, setLookup } = useDictionaryDockStore.getState();
+    setLookup({
+      word: selection.text,
+      lang: bookData.bookDoc?.metadata.language as string,
+      selection: getDictionarySelection(),
+      capture: getDictionaryCapture(),
+      contextOnly,
+    });
+    if (isDocked) return true;
     setShowAnnotPopup(false);
     void suppressNativeSelectionHandles();
     setDictionaryInSheet(isSheetViewport());
-    setDictionaryContextOnly(true);
+    setDictionaryContextOnly(contextOnly);
     setShowDictionaryPopup(true);
+    return false;
+  };
+
+  // Pin to Sidebar in the popup: the lookup moves into the Dictionary tab of a
+  // pinned sidebar, and the toolbar comes back for the word.
+  const handlePinDictionary = (lookup: UseDictionaryResultsArgs) => {
+    useDictionaryDockStore.getState().setLookup(lookup);
+    const config = getConfig(bookKey);
+    if (config) {
+      setConfig(bookKey, { viewSettings: { ...config.viewSettings, sideBarTab: 'dictionary' } });
+    }
+    const { isSideBarPinned, setSideBarBookKey, setSideBarPin, setSideBarVisible } =
+      useSidebarStore.getState();
+    setSideBarBookKey(bookKey);
+    if (!isSideBarPinned) {
+      setSideBarPin(true);
+      void saveSysSettings(envConfig, 'globalReadSettings', {
+        ...settings.globalReadSettings,
+        isSideBarPinned: true,
+      });
+    }
+    setSideBarVisible(true);
+    handleDismissPopupShowToolbar();
   };
 
   const handleTranslation = () => {
@@ -2897,6 +2948,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
               contextOnly={dictionaryContextOnly}
               onDismiss={handleDismissPopupShowToolbar}
               onManage={onManage}
+              onPin={handlePinDictionary}
             />
           );
         })()}

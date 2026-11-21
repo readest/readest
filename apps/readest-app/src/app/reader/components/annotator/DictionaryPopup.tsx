@@ -9,6 +9,7 @@ import {
   useDictionaryResults,
   DictionaryResultsHeader,
   DictionaryResultsBody,
+  type UseDictionaryResultsArgs,
   type VocabularyCapture,
 } from './DictionaryResultsView';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
@@ -32,6 +33,8 @@ interface DictionaryPopupProps {
    * deep-linking to the dictionaries sub-page.
    */
   onManage?: () => void;
+  /** Move the lookup on screen into the sidebar's Dictionary tab (#7730). */
+  onPin?: (lookup: UseDictionaryResultsArgs) => void;
 }
 
 type Box = { x: number; y: number; w: number; h: number };
@@ -139,8 +142,17 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   popupHeight,
   onDismiss,
   onManage,
+  onPin,
 }) => {
   const state = useDictionaryResults({ word, lang, selection, capture, contextOnly });
+  // A word reached through a link wasn't selected in the passage or sentence,
+  // so it goes without them, as the popup itself asks and saves it.
+  const handlePin = () =>
+    onPin?.(
+      state.canGoBack
+        ? { word: state.currentWord, lang, capture: capture && { lang: capture.lang }, contextOnly }
+        : { word, lang, selection, capture, contextOnly },
+    );
   const { box, gripProps, moveProps } = usePopupBox(useResponsiveSize(10));
   return (
     <Popup
@@ -162,6 +174,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
           canGoBack={state.canGoBack}
           goBack={state.goBack}
           onManage={onManage}
+          onPin={onPin && handlePin}
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
           vocabularyLang={state.vocabularyLang}

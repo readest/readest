@@ -1,7 +1,13 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MdArrowBack, MdChevronRight, MdSettings, MdVolumeUp } from 'react-icons/md';
+import {
+  MdArrowBack,
+  MdChevronRight,
+  MdOutlinePushPin,
+  MdSettings,
+  MdVolumeUp,
+} from 'react-icons/md';
 import clsx from 'clsx';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
@@ -565,6 +571,8 @@ interface DictionaryResultsHeaderProps {
   canGoBack: boolean;
   goBack: () => void;
   onManage?: () => void;
+  /** Move the lookup into the sidebar's Dictionary tab (#7730); omit to hide the pin. */
+  onPin?: () => void;
   /** Pronounce the current word (#4876); omit to hide the speaker button. */
   onSpeak?: () => void;
   /** Whether pronunciation is in progress, for the active button state. */
@@ -683,6 +691,7 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   canGoBack,
   goBack,
   onManage,
+  onPin,
   onSpeak,
   speaking,
   vocabularyLang,
@@ -690,6 +699,9 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
   dragHandleProps,
 }) => {
   const _ = useTranslation();
+  const slotClassName = 'flex h-8 w-8 items-center justify-center';
+  const iconButtonClassName =
+    'btn btn-ghost btn-square btn-xs text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60';
   return (
     <div className={clsx('w-full', headerClassName)}>
       <div
@@ -699,17 +711,20 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
           dragHandleProps && 'cursor-move touch-none select-none',
         )}
       >
-        <div className='flex h-8 w-8 items-center justify-center'>
-          {canGoBack ? (
-            <button
-              type='button'
-              aria-label={_('Back')}
-              onClick={goBack}
-              className='btn btn-ghost btn-circle h-8 min-h-8 w-8'
-            >
-              <MdArrowBack size={20} />
-            </button>
-          ) : null}
+        {/* As wide as the end side, so the word stays centered. */}
+        <div className={clsx('flex', onPin ? 'w-16' : 'w-8')}>
+          <div className={slotClassName}>
+            {canGoBack ? (
+              <button
+                type='button'
+                aria-label={_('Back')}
+                onClick={goBack}
+                className='btn btn-ghost btn-circle h-8 min-h-8 w-8'
+              >
+                <MdArrowBack size={20} />
+              </button>
+            ) : null}
+          </div>
         </div>
         <div className='flex min-w-0 flex-1 items-center justify-center gap-1'>
           {onSpeak ? (
@@ -733,18 +748,33 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
             {currentWord}
           </span>
         </div>
-        <div className='flex h-8 w-8 items-center justify-center'>
-          {onManage ? (
-            <button
-              type='button'
-              aria-label={_('Manage Dictionaries')}
-              title={_('Manage Dictionaries')}
-              onClick={onManage}
-              className='btn btn-ghost btn-square btn-xs text-base-content/60 hover:text-base-content not-eink:hover:bg-base-200/60'
-            >
-              <MdSettings size={16} />
-            </button>
+        <div className='flex'>
+          {onPin ? (
+            <div className={slotClassName}>
+              <button
+                type='button'
+                aria-label={_('Pin to Sidebar')}
+                title={_('Pin to Sidebar')}
+                onClick={onPin}
+                className={iconButtonClassName}
+              >
+                <MdOutlinePushPin size={16} />
+              </button>
+            </div>
           ) : null}
+          <div className={slotClassName}>
+            {onManage ? (
+              <button
+                type='button'
+                aria-label={_('Manage Dictionaries')}
+                title={_('Manage Dictionaries')}
+                onClick={onManage}
+                className={iconButtonClassName}
+              >
+                <MdSettings size={16} />
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
       {vocabularyLang && normalizeWordKey(currentWord) ? (
