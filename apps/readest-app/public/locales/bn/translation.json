@@ -1036,8 +1036,6 @@
   "Select Backup": "ব্যাকআপ নির্বাচন করুন",
   "Restore failed: {{error}}": "পুনরুদ্ধার ব্যর্থ: {{error}}",
   "Backup & Restore": "ব্যাকআপ ও পুনরুদ্ধার",
-  "Backup Library": "লাইব্রেরি ব্যাকআপ",
-  "Restore Library": "লাইব্রেরি পুনরুদ্ধার",
   "Creating backup...": "ব্যাকআপ তৈরি হচ্ছে...",
   "Restoring library...": "লাইব্রেরি পুনরুদ্ধার হচ্ছে...",
   "{{current}} of {{total}} items": "{{current}} / {{total}} আইটেম",
@@ -1412,7 +1410,6 @@
   "Highlight Word": "শব্দ হাইলাইট",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "আপনার লাইব্রেরি এবং সেটিংসের একটি ব্যাকআপ তৈরি করুন বা পূর্ববর্তী ব্যাকআপ থেকে পুনরুদ্ধার করুন। পুনরুদ্ধার করলে তা আপনার বর্তমান লাইব্রেরির সাথে মিশে যাবে।",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "অ্যাকাউন্ট শংসাপত্র (সিঙ্ক টোকেন, পাসওয়ার্ড) অন্তর্ভুক্ত করুন। ব্যাকআপ ফাইলটি এনক্রিপ্ট করা নেই।",
-  "Your library and settings have been saved to the selected location.": "আপনার লাইব্রেরি এবং সেটিংস নির্বাচিত স্থানে সংরক্ষণ করা হয়েছে।",
   "Settings have been restored.": "সেটিংস পুনরুদ্ধার করা হয়েছে।",
   "Could not fetch this page": "এই পৃষ্ঠাটি আনা যায়নি",
   "Send to Readest": "Readest-এ পাঠান",
@@ -2894,5 +2891,8 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki-এর সাথে সিঙ্ক প্রতিটি কার্ডের পেছনে এই অভিধানের ভুক্তি যোগ করে, প্রতি সিঙ্কে সর্বোচ্চ 30টি কার্ডে",
   "Added dictionary entries to {{count}} cards_one": "{{count}}টি কার্ডে অভিধানের ভুক্তি যোগ হয়েছে",
   "Added dictionary entries to {{count}} cards_other": "{{count}}টি কার্ডে অভিধানের ভুক্তি যোগ হয়েছে",
-  "Dictionary for Anki Cards...": "Anki কার্ডের অভিধান..."
+  "Dictionary for Anki Cards...": "Anki কার্ডের অভিধান...",
+  "Create Backup": "ব্যাকআপ তৈরি করুন",
+  "Restore from Backup": "ব্যাকআপ থেকে পুনরুদ্ধার করুন",
+  "Your backup has been saved to the selected location.": "আপনার ব্যাকআপ নির্বাচিত স্থানে সংরক্ষিত হয়েছে।"
 }

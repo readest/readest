@@ -43,7 +43,11 @@ describe('validateBackupStructure', () => {
     expect(validateBackupStructure(['library.json', 'abc123/book.epub'])).toBe(true);
   });
 
-  it('should return false when library.json is missing', () => {
+  it('should return true for a settings-only backup (#7752)', () => {
+    expect(validateBackupStructure(['settings.json'])).toBe(true);
+  });
+
+  it('should return false when library.json and settings.json are missing', () => {
     expect(validateBackupStructure(['abc123/book.epub', 'abc123/config.json'])).toBe(false);
   });
 

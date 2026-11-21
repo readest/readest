@@ -1048,8 +1048,6 @@
   "Select Backup": "Seleccionar copia de seguridad",
   "Restore failed: {{error}}": "Error en la restauración: {{error}}",
   "Backup & Restore": "Copia de seguridad y restauración",
-  "Backup Library": "Hacer copia de seguridad",
-  "Restore Library": "Restaurar biblioteca",
   "Creating backup...": "Creando copia de seguridad...",
   "Restoring library...": "Restaurando biblioteca...",
   "{{current}} of {{total}} items": "{{current}} de {{total}} elementos",
@@ -1440,7 +1438,6 @@
   "Highlight Word": "Resaltar palabra",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Crea una copia de seguridad de tu biblioteca y ajustes o restaura desde una copia anterior. La restauración se combinará con tu biblioteca actual.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Incluir credenciales de cuenta (tokens de sincronización, contraseñas). El archivo de copia de seguridad no está cifrado.",
-  "Your library and settings have been saved to the selected location.": "Tu biblioteca y ajustes se han guardado en la ubicación seleccionada.",
   "Settings have been restored.": "Se han restaurado los ajustes.",
   "Could not fetch this page": "No se pudo cargar esta página",
   "Send to Readest": "Enviar a Readest",
@@ -2969,5 +2966,8 @@
   "Added dictionary entries to {{count}} cards_one": "Entradas de diccionario añadidas a tarjetas: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Entradas de diccionario añadidas a tarjetas: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Entradas de diccionario añadidas a tarjetas: {{count}}",
-  "Dictionary for Anki Cards...": "Diccionario para las tarjetas de Anki..."
+  "Dictionary for Anki Cards...": "Diccionario para las tarjetas de Anki...",
+  "Create Backup": "Crear copia de seguridad",
+  "Restore from Backup": "Restaurar desde copia de seguridad",
+  "Your backup has been saved to the selected location.": "Tu copia de seguridad se ha guardado en la ubicación seleccionada."
 }

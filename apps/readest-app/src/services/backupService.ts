@@ -45,6 +45,10 @@ export interface BackupOptions {
    * defaults to false.
    */
   includeCredentials?: boolean;
+  /** Include the library: book files, library.json, statistics, vocabulary. Defaults to true. */
+  includeLibrary?: boolean;
+  /** Include the global settings snapshot (settings.json). Defaults to true. */
+  includeSettings?: boolean;
 }
 
 /**
@@ -346,21 +350,32 @@ async function collectBackupEntries(
   appService: AppService,
   options: BackupOptions,
 ): Promise<BackupPlan> {
+  // A backup holds the library, the settings, or both (#7752).
+  const includeLibrary = options.includeLibrary !== false;
+  const texts: { name: string; content: string }[] = [];
+
   // Generate canonical library.json from the current storage backend
-  const books = await appService.loadLibraryBooks();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
-  const texts = [{ name: getLibraryFilename(), content: JSON.stringify(libraryBooks, null, 2) }];
+  const books = includeLibrary ? await appService.loadLibraryBooks() : [];
+  if (includeLibrary) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
+    texts.push({ name: getLibraryFilename(), content: JSON.stringify(libraryBooks, null, 2) });
+  }
 
   // Add the global settings snapshot, sanitized of device-specific and
   // (unless opted in) credential fields.
-  try {
-    const settings = await appService.loadSettings();
-    const sanitized = sanitizeSettingsForBackup(settings, options);
-    texts.push({ name: SETTINGS_BACKUP_FILENAME, content: JSON.stringify(sanitized, null, 2) });
-  } catch (error) {
-    console.warn('Skipping settings backup:', error);
+  if (options.includeSettings !== false) {
+    try {
+      const settings = await appService.loadSettings();
+      const sanitized = sanitizeSettingsForBackup(settings, options);
+      texts.push({ name: SETTINGS_BACKUP_FILENAME, content: JSON.stringify(sanitized, null, 2) });
+    } catch (error) {
+      // Settings are the whole backup without the library: never save an empty zip.
+      if (!includeLibrary) throw error;
+      console.warn('Skipping settings backup:', error);
+    }
   }
+  if (!includeLibrary) return { texts, files: [] };
 
   // Reading statistics live in statistics.db under the Data dir, outside the
   // Books tree walked below: export every book and page event.
@@ -567,51 +582,27 @@ export async function createBackupZipToFile(
 }
 
 /**
- * Validate that zip entries contain a valid backup structure.
- * Must contain library.json at the root level.
+ * Validate that zip entries contain a valid backup structure: library.json
+ * or settings.json at the root level (a backup may hold either or both).
  */
 export function validateBackupStructure(entryNames: string[]): boolean {
-  return entryNames.some((name) => name === getLibraryFilename());
+  return entryNames.some(
+    (name) => name === getLibraryFilename() || name === SETTINGS_BACKUP_FILENAME,
+  );
 }
 
 /**
- * Restore library from a zip backup, merging with existing data.
- * - Override book files and cover images for existing books
- * - Merge book config files (keep higher progress, merge notes)
- * - Add new books not present in current library
- * - Import orphan hash directories not listed in library.json
- * - Restore global settings (settings.json), deep-merged onto current
- * - Merge reading statistics (statistics.json) into statistics.db
+ * Merge the library part of a backup into the current library: book files,
+ * book configs and library.json.
  */
-export async function restoreFromBackupZip(
+async function restoreLibraryEntries(
   appService: AppService,
-  zipBlob: Blob,
+  fileEntries: FileEntry[],
+  libraryEntry: FileEntry,
+  source: string | undefined,
   onProgress?: ProgressCallback,
-  /** Where the zip lives (path or picker URI); lets Tauri extract it natively. */
-  source?: string,
-): Promise<{ booksAdded: number; booksUpdated: number; settingsRestored: boolean }> {
-  await configureZip();
-  const { BlobReader, ZipReader, Uint8ArrayWriter } = await import('@zip.js/zip.js');
-
-  const reader = new ZipReader(new BlobReader(zipBlob));
-  const entries = await reader.getEntries();
-
-  // Validate structure
-  const entryNames = entries.map((e) => e.filename);
-  if (!validateBackupStructure(entryNames)) {
-    await reader.close();
-    throw new Error('Invalid backup file: missing library.json');
-  }
-
-  // Filter to file entries only (directories don't have getData)
-  const fileEntries = entries.filter((e) => !e.directory);
-
-  // Read backup library.json
-  const libraryEntry = fileEntries.find((e) => e.filename === getLibraryFilename());
-  if (!libraryEntry) {
-    await reader.close();
-    throw new Error('Cannot read library.json from backup');
-  }
+): Promise<{ booksAdded: number; booksUpdated: number }> {
+  const { Uint8ArrayWriter } = await import('@zip.js/zip.js');
   const libraryData = await libraryEntry.getData!(new Uint8ArrayWriter());
   const backupBooks: Book[] = JSON.parse(new TextDecoder().decode(libraryData));
 
@@ -746,6 +737,60 @@ export async function restoreFromBackupZip(
   // Save merged library
   await appService.saveLibraryBooks(currentBooks);
 
+  return { booksAdded, booksUpdated };
+}
+
+/**
+ * Restore library from a zip backup, merging with existing data.
+ * - Override book files and cover images for existing books
+ * - Merge book config files (keep higher progress, merge notes)
+ * - Add new books not present in current library
+ * - Import orphan hash directories not listed in library.json
+ * - Restore global settings (settings.json), deep-merged onto current
+ * - Merge reading statistics (statistics.json) into statistics.db
+ */
+export async function restoreFromBackupZip(
+  appService: AppService,
+  zipBlob: Blob,
+  onProgress?: ProgressCallback,
+  /** Where the zip lives (path or picker URI); lets Tauri extract it natively. */
+  source?: string,
+): Promise<{
+  booksAdded: number;
+  booksUpdated: number;
+  libraryRestored: boolean;
+  settingsRestored: boolean;
+}> {
+  await configureZip();
+  const { BlobReader, ZipReader, Uint8ArrayWriter } = await import('@zip.js/zip.js');
+
+  const reader = new ZipReader(new BlobReader(zipBlob));
+  const entries = await reader.getEntries();
+
+  // Validate structure
+  const entryNames = entries.map((e) => e.filename);
+  if (!validateBackupStructure(entryNames)) {
+    await reader.close();
+    throw new Error('Invalid backup file: missing library.json and settings.json');
+  }
+
+  // Filter to file entries only (directories don't have getData)
+  const fileEntries = entries.filter((e) => !e.directory);
+
+  // A backup may hold the library, the settings, or both (#7752).
+  let booksAdded = 0;
+  let booksUpdated = 0;
+  const libraryEntry = fileEntries.find((e) => e.filename === getLibraryFilename());
+  if (libraryEntry) {
+    ({ booksAdded, booksUpdated } = await restoreLibraryEntries(
+      appService,
+      fileEntries,
+      libraryEntry,
+      source,
+      onProgress,
+    ));
+  }
+
   // Restore global settings if the backup carries them. Blacklisted
   // fields are absent from the snapshot, so the current device keeps
   // its own values for those after the deep merge.
@@ -759,6 +804,11 @@ export async function restoreFromBackupZip(
       await appService.saveSettings(mergeRestoredSettings(currentSettings, backupSettings));
       settingsRestored = true;
     } catch (error) {
+      // Settings are the whole restore without a library: report the failure.
+      if (!libraryEntry) {
+        await reader.close();
+        throw error;
+      }
       console.warn('Failed to restore settings from backup:', error);
     }
   }
@@ -805,7 +855,7 @@ export async function restoreFromBackupZip(
 
   await reader.close();
 
-  return { booksAdded, booksUpdated, settingsRestored };
+  return { booksAdded, booksUpdated, libraryRestored: !!libraryEntry, settingsRestored };
 }
 
 /**

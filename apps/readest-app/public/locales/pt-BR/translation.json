@@ -51,8 +51,6 @@
   "Select Backup": "Selecionar backup",
   "Restore failed: {{error}}": "Falha na restauração: {{error}}",
   "Backup & Restore": "Backup e restauração",
-  "Backup Library": "Fazer backup da biblioteca",
-  "Restore Library": "Restaurar biblioteca",
   "Creating backup...": "Criando backup...",
   "Restoring library...": "Restaurando biblioteca...",
   "{{current}} of {{total}} items": "{{current}} de {{total}} itens",
@@ -1440,7 +1438,6 @@
   "Highlight Word": "Destacar palavra",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Crie um backup da sua biblioteca e configurações ou restaure a partir de um backup anterior. A restauração será mesclada com a sua biblioteca atual.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Incluir credenciais da conta (tokens de sincronização, senhas). O arquivo de backup não é criptografado.",
-  "Your library and settings have been saved to the selected location.": "Sua biblioteca e configurações foram salvas no local selecionado.",
   "Settings have been restored.": "As configurações foram restauradas.",
   "Could not fetch this page": "Não foi possível carregar esta página",
   "Send to Readest": "Enviar para o Readest",
@@ -2969,5 +2966,8 @@
   "Added dictionary entries to {{count}} cards_one": "Verbetes de dicionário adicionados aos cartões: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Verbetes de dicionário adicionados aos cartões: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Verbetes de dicionário adicionados aos cartões: {{count}}",
-  "Dictionary for Anki Cards...": "Dicionário para os cartões do Anki..."
+  "Dictionary for Anki Cards...": "Dicionário para os cartões do Anki...",
+  "Create Backup": "Criar backup",
+  "Restore from Backup": "Restaurar do backup",
+  "Your backup has been saved to the selected location.": "Seu backup foi salvo no local selecionado."
 }

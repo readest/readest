@@ -1036,8 +1036,6 @@
   "Select Backup": "காப்புப்பிரதியைத் தேர்ந்தெடுக்கவும்",
   "Restore failed: {{error}}": "மீட்டமைப்பு தோல்வி: {{error}}",
   "Backup & Restore": "காப்புப்பிரதி & மீட்டமைப்பு",
-  "Backup Library": "நூலகத்தை காப்புப்பிரதி எடு",
-  "Restore Library": "நூலகத்தை மீட்டமை",
   "Creating backup...": "காப்புப்பிரதி உருவாக்கப்படுகிறது...",
   "Restoring library...": "நூலகம் மீட்டமைக்கப்படுகிறது...",
   "{{current}} of {{total}} items": "{{current}} / {{total}} உருப்படிகள்",
@@ -1412,7 +1410,6 @@
   "Highlight Word": "சொல்லை முன்னிலைப்படுத்து",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "உங்கள் நூலகம் மற்றும் அமைப்புகளின் காப்புப்பிரதியை உருவாக்கவும் அல்லது முந்தைய காப்புப்பிரதியிலிருந்து மீட்டெடுக்கவும். மீட்டெடுப்பது உங்கள் தற்போதைய நூலகத்துடன் இணைக்கப்படும்.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "கணக்கு அறிமுகச் சான்றுகளை (ஒத்திசைவு டோக்கன்கள், கடவுச்சொற்கள்) சேர்க்கவும். காப்புப்பிரதி கோப்பு குறியாக்கம் செய்யப்படவில்லை.",
-  "Your library and settings have been saved to the selected location.": "உங்கள் நூலகம் மற்றும் அமைப்புகள் தேர்ந்தெடுக்கப்பட்ட இடத்தில் சேமிக்கப்பட்டன.",
   "Settings have been restored.": "அமைப்புகள் மீட்டெடுக்கப்பட்டன.",
   "Could not fetch this page": "இந்தப் பக்கத்தைப் பெற முடியவில்லை",
   "Send to Readest": "Readest-க்கு அனுப்பு",
@@ -2894,5 +2891,8 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki உடன் ஒத்திசைவு ஒவ்வொரு அட்டையின் பின்புறத்திலும் இந்த அகராதியின் பதிவைச் சேர்க்கிறது, ஒரு ஒத்திசைவுக்கு அதிகபட்சம் 30 அட்டைகள்",
   "Added dictionary entries to {{count}} cards_one": "{{count}} அட்டைகளில் அகராதிப் பதிவுகள் சேர்க்கப்பட்டன",
   "Added dictionary entries to {{count}} cards_other": "{{count}} அட்டைகளில் அகராதிப் பதிவுகள் சேர்க்கப்பட்டன",
-  "Dictionary for Anki Cards...": "Anki அட்டைகளுக்கான அகராதி..."
+  "Dictionary for Anki Cards...": "Anki அட்டைகளுக்கான அகராதி...",
+  "Create Backup": "காப்புப்பிரதியை உருவாக்கு",
+  "Restore from Backup": "காப்புப்பிரதியிலிருந்து மீட்டமை",
+  "Your backup has been saved to the selected location.": "உங்கள் காப்புப்பிரதி தேர்ந்தெடுத்த இடத்தில் சேமிக்கப்பட்டது."
 }
