@@ -808,6 +808,9 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
                 tabIndex={0}
                 aria-expanded={expanded}
                 onClick={(e) => {
+                  // Releasing a drag that selected text isn't a tap (#7731). A
+                  // double click still toggles twice, as before.
+                  if (e.detail < 2 && document.getSelection()?.isCollapsed === false) return;
                   const path = e.nativeEvent.composedPath();
                   for (const node of path) {
                     if (node === e.currentTarget) break;
