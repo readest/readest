@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { WHITE_TRANSPARENCY_FILTER } from '@/utils/imageBackground';
+import { page } from 'vitest/browser';
+import { WHITE_TRANSPARENCY_FILTER, mountWhiteTransparencyFilter } from '@/utils/imageBackground';
 import { applyFixedlayoutStyles, getStyles, type ThemeCode } from '@/utils/style';
 import {
   DEFAULT_BOOK_STYLE,
@@ -59,6 +60,7 @@ const renderPixels = async (invert = false) => {
   output.width = 8;
   output.height = 1;
   const result = output.getContext('2d')!;
+  mountWhiteTransparencyFilter(document);
   result.filter = `${WHITE_TRANSPARENCY_FILTER}${invert ? ' invert(100%)' : ''}`;
   result.drawImage(image, 0, 0);
   return [...result.getImageData(0, 0, 8, 1).data];
@@ -143,5 +145,47 @@ describe('white transparency rendered pixels (#7045)', () => {
     const pixels = await renderPixels(true);
     expect(pixels.slice(0, 8)).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
     expect(pixels.slice(16, 24)).toEqual([0, 255, 255, 255, 255, 255, 255, 255]);
+  });
+
+  // Sections render in an iframe, where WebKit (iOS, iPadOS, macOS) drew a
+  // filter held in a data: URL as no filter at all (#7391).
+  it('paints a white image as transparent inside a section iframe', async () => {
+    const white = document.createElement('canvas');
+    white.width = white.height = 40;
+    const ctx = white.getContext('2d')!;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, 40, 40);
+    const xhtml = `<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body><img src="${white.toDataURL()}"/></body></html>`;
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'border:0;width:40px;height:40px';
+    frame.src = URL.createObjectURL(new Blob([xhtml], { type: 'application/xhtml+xml' }));
+    document.body.appendChild(frame);
+    try {
+      await new Promise((resolve) => (frame.onload = resolve));
+      const doc = frame.contentDocument!;
+      const style = doc.createElement('style');
+      style.textContent = `${getStyles(settings, theme)}
+        html, body { margin: 0 !important; padding: 0 !important; background: rgb(0, 128, 0) !important; }
+        img { display: block; }`;
+      doc.head.appendChild(style);
+      // as the reader's load handler does, after the styles are in place
+      mountWhiteTransparencyFilter(doc);
+      await doc.querySelector('img')!.decode();
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      const shot = await page.screenshot({ element: frame, save: false, base64: true });
+      const image = new Image();
+      image.src = `data:image/png;base64,${shot}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const read = canvas.getContext('2d')!;
+      read.drawImage(image, 0, 0);
+      const [r, g, b] = read.getImageData(10, 10, 1, 1).data;
+      // the page's green, not the image's white
+      expect([r, g, b]).toEqual([0, 128, 0]);
+    } finally {
+      frame.remove();
+    }
   });
 });
