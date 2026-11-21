@@ -209,7 +209,7 @@ describe('TOC keyboard navigation (#7571)', () => {
 
     await press('ArrowDown', 'Part 2');
     await userEvent.keyboard('{Enter}');
-    expect(goTo).toHaveBeenCalledWith('p2.html');
+    expect(goTo).toHaveBeenCalledWith('p2.html', { focus: true });
     expect(leakedKeys).toEqual([]);
   });
 
@@ -221,7 +221,7 @@ describe('TOC keyboard navigation (#7571)', () => {
 
     await press('ArrowDown', 'Current position');
     await userEvent.keyboard('{Enter}');
-    expect(goTo).toHaveBeenCalledWith('epubcfi(/6/2!/4/1:0)');
+    expect(goTo).toHaveBeenCalledWith('epubcfi(/6/2!/4/1:0)', { focus: true });
   });
 
   it('brings the current chapter into view when Tab enters a list scrolled away from it', async () => {
@@ -247,7 +247,7 @@ describe('TOC keyboard navigation (#7571)', () => {
     await expect.poll(() => rowByLabel('Chapter 2.5')).toBeTruthy();
 
     await userEvent.click(rowByLabel('Chapter 2.5')!);
-    expect(goTo).toHaveBeenCalledWith('p2c5.html');
+    expect(goTo).toHaveBeenCalledWith('p2c5.html', { focus: true });
     await userEvent.click(document.querySelector('button[aria-label="Expand Chapter 2.4"]')!);
     await expect.poll(() => rowByLabel('Chapter 2.4')?.getAttribute('aria-expanded')).toBe('true');
     expect(tree().contains(document.activeElement)).toBe(false);

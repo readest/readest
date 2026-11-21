@@ -158,7 +158,7 @@ describe('footnote rejected by check (#7537)', () => {
       );
     });
 
-    await vi.waitFor(() => expect(h.goTo).toHaveBeenCalledWith('chapter.html#n1'));
+    await vi.waitFor(() => expect(h.goTo).toHaveBeenCalledWith('chapter.html#n1', { focus: true }));
     // The content-size observer reports on the next frame and shows the popup
     // on the one after.
     await nextFrame();
