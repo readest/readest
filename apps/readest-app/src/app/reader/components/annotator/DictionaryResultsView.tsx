@@ -571,7 +571,7 @@ interface DictionaryResultsHeaderProps {
   canGoBack: boolean;
   goBack: () => void;
   onManage?: () => void;
-  /** Move the lookup into the sidebar's Dictionary tab (#7730); omit to hide the pin. */
+  /** Move the lookup into the Notebook's Dictionary tab (#7730); omit to hide the pin. */
   onPin?: () => void;
   /** Pronounce the current word (#4876); omit to hide the speaker button. */
   onSpeak?: () => void;
@@ -753,8 +753,8 @@ export const DictionaryResultsHeader: React.FC<DictionaryResultsHeaderProps> = (
             <div className={slotClassName}>
               <button
                 type='button'
-                aria-label={_('Pin to Sidebar')}
-                title={_('Pin to Sidebar')}
+                aria-label={_('Pin to Notebook')}
+                title={_('Pin to Notebook')}
                 onClick={onPin}
                 className={iconButtonClassName}
               >

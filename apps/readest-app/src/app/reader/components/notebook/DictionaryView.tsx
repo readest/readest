@@ -37,7 +37,7 @@ const DockedLookup: React.FC<{ lookup: UseDictionaryResultsArgs; onManage: () =>
 };
 
 /**
- * The sidebar's Dictionary tab (#7730): the latest lookup, kept beside the
+ * The Notebook's Dictionary tab (#7730): the latest lookup, kept beside the
  * book while the reader highlights, annotates or searches. While it is on
  * screen the reader sends new lookups here instead of opening a popup.
  */
@@ -60,7 +60,7 @@ const DictionaryView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   return (
-    // The sidebar is `select-none`; definitions are for copying. `text-base`
+    // The Notebook is `select-none`; definitions are for copying. `text-base`
     // sizes them as in the popup.
     <div className='flex min-h-0 flex-1 select-text flex-col text-base'>
       {lookup ? (

@@ -1364,7 +1364,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           // toolbar so highlighting and copying stay reachable (#5213).
           if (selection && isSingleLookupTerm(selection.text)) {
             if (handleDictionary()) {
-              // Shown in the sidebar, nothing covers the word: hand it back
+              // Shown in the Notebook, nothing covers the word: hand it back
               // now, as closing the popup would (#6213, #6454). The flag stops
               // a republish of it (a highlight) from looking it up again.
               if (viewSettings.keepSelectionAfterLookup) {
@@ -1493,7 +1493,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         // Route through handleDictionary so a Word Lens gloss tap honours the
         // dictionary settings (system dictionary vs the in-app popup) — same
         // as the selection-toolbar and instant-quick-action dictionary paths.
-        // Shown in the sidebar, the tap needs nothing more from the word.
+        // Shown in the Notebook, the tap needs nothing more from the word.
         if (handleDictionary()) handleDismissPopupAndSelection();
       } else if (
         enableAnnotationQuickActions &&
@@ -2034,7 +2034,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     eventDispatcher.dispatch('search-term', { term, bookKey });
   };
 
-  /** Whether the lookup was shown in the sidebar's Dictionary tab. */
+  /** Whether the lookup was shown in the Notebook's Dictionary tab. */
   const handleDictionary = () => {
     if (!selection || !selection.text) return false;
     // System-dictionary path: when the user has opted in via Settings →
@@ -2082,7 +2082,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     lookUpInApp(true);
   };
 
-  // Every in-app lookup is kept for the sidebar's Dictionary tab (#7730). While
+  // Every in-app lookup is kept for the Notebook's Dictionary tab (#7730). While
   // that tab is on screen it shows the lookup there, opens no popup over the
   // word, and returns true; the word stays selected for the toolbar.
   const lookUpInApp = (contextOnly: boolean) => {
@@ -2104,25 +2104,22 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     return false;
   };
 
-  // Pin to Sidebar in the popup: the lookup moves into the Dictionary tab of a
-  // pinned sidebar, and the toolbar comes back for the word.
+  // Pin to Notebook in the popup: the lookup moves into the Dictionary tab of a
+  // pinned Notebook, and the toolbar comes back for the word.
   const handlePinDictionary = (lookup: UseDictionaryResultsArgs) => {
     useDictionaryDockStore.getState().setLookup(lookup);
-    const config = getConfig(bookKey);
-    if (config) {
-      setConfig(bookKey, { viewSettings: { ...config.viewSettings, sideBarTab: 'dictionary' } });
-    }
-    const { isSideBarPinned, setSideBarBookKey, setSideBarPin, setSideBarVisible } =
-      useSidebarStore.getState();
-    setSideBarBookKey(bookKey);
-    if (!isSideBarPinned) {
-      setSideBarPin(true);
-      void saveSysSettings(envConfig, 'globalReadSettings', {
-        ...settings.globalReadSettings,
-        isSideBarPinned: true,
-      });
-    }
-    setSideBarVisible(true);
+    // The Notebook shows the book the sidebar is on.
+    useSidebarStore.getState().setSideBarBookKey(bookKey);
+    const { setNotebookActiveTab, setNotebookPin, setNotebookVisible } =
+      useNotebookStore.getState();
+    setNotebookActiveTab('dictionary');
+    setNotebookPin(true);
+    setNotebookVisible(true);
+    void saveSysSettings(envConfig, 'globalReadSettings', {
+      ...settings.globalReadSettings,
+      isNotebookPinned: true,
+      notebookActiveTab: 'dictionary',
+    });
     handleDismissPopupShowToolbar();
   };
 

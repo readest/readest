@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React from 'react';
 import { PiNotePencil, PiRobot } from 'react-icons/pi';
+import { LuBookA } from 'react-icons/lu';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -21,9 +22,8 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
   const { settings } = useSettingsStore();
   const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
-  const tabs: NotebookTab[] = aiEnabled ? ['notes', 'ai'] : [];
-
-  if (tabs.length === 0) return null;
+  // The Dictionary tab keeps the latest lookup beside the notes (#7730).
+  const tabs: NotebookTab[] = aiEnabled ? ['notes', 'ai', 'dictionary'] : ['notes', 'dictionary'];
 
   const getTabLabel = (tab: NotebookTab) => {
     switch (tab) {
@@ -31,6 +31,8 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
         return _('Notes');
       case 'ai':
         return _('AI');
+      case 'dictionary':
+        return _('Dictionary');
       default:
         return '';
     }
@@ -42,6 +44,8 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
         return <PiNotePencil className='mx-auto' size={20} />;
       case 'ai':
         return <PiRobot className='mx-auto' size={20} />;
+      case 'dictionary':
+        return <LuBookA className='mx-auto' size={20} />;
       default:
         return null;
     }

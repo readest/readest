@@ -43,6 +43,11 @@ const h = vi.hoisted(() => ({
     setSideBarPin: vi.fn(),
     setSideBarVisible: vi.fn(),
   },
+  notebook: {
+    setNotebookVisible: vi.fn(),
+    setNotebookActiveTab: vi.fn(),
+    setNotebookPin: vi.fn(),
+  },
   updateBooknotes: vi.fn(),
   deselect: vi.fn(),
   restoreSelectionRange: vi.fn(() => true),
@@ -152,12 +157,15 @@ vi.mock('@/store/readerProgressStore', () => ({
 }));
 
 vi.mock('@/store/notebookStore', () => ({
-  useNotebookStore: () => ({
-    setNotebookVisible: vi.fn(),
-    setNotebookActiveTab: vi.fn(),
-    setNotebookNewAnnotation: vi.fn(),
-    setNotebookNewHighlightIds: vi.fn(),
-  }),
+  useNotebookStore: Object.assign(
+    () => ({
+      setNotebookVisible: vi.fn(),
+      setNotebookActiveTab: vi.fn(),
+      setNotebookNewAnnotation: vi.fn(),
+      setNotebookNewHighlightIds: vi.fn(),
+    }),
+    { getState: () => h.notebook },
+  ),
 }));
 
 vi.mock('@/store/sidebarStore', () => ({
@@ -343,7 +351,7 @@ vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
       data-triangle-y={trianglePosition.point.y}
     >
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
-      {/* Pin to Sidebar after following a link from the selected word to "luck". */}
+      {/* Pin to Notebook after following a link from the selected word to "luck". */}
       <button
         type='button'
         data-testid='dictionary-pin'
@@ -1085,7 +1093,7 @@ describe('quick actions run on a selection made in the footnote popup', () => {
 
 // #7730: with the sidebar's Dictionary tab on screen, lookups go there and
 // leave the word on the page free to highlight, annotate or search.
-describe('the dictionary docked in the sidebar', () => {
+describe('the dictionary docked in the Notebook', () => {
   const selectWord = async (text = 'fortune') => {
     if (!document.querySelector('#gridcell-book-1')) {
       const gridCell = document.createElement('div');
@@ -1151,7 +1159,7 @@ describe('the dictionary docked in the sidebar', () => {
     expect(docked()).toMatchObject({ word: 'serendipity', contextOnly: false });
   });
 
-  test('Pin to Sidebar opens the tab in the pinned sidebar and returns the toolbar', async () => {
+  test('Pin to Notebook opens its Dictionary tab, pinned, and returns the toolbar', async () => {
     h.viewSettings.annotationToolbarItems = ['dictionary'];
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectText('serendipity');
@@ -1164,37 +1172,22 @@ describe('the dictionary docked in the sidebar', () => {
     });
 
     expect(docked()).toMatchObject({ word: 'luck', lang: 'en' });
-    expect(h.setConfig).toHaveBeenCalledWith('book-1', {
-      viewSettings: expect.objectContaining({ sideBarTab: 'dictionary' }),
-    });
+    // The Notebook shows the book the sidebar is on.
     expect(h.sidebar.setSideBarBookKey).toHaveBeenCalledWith('book-1');
-    expect(h.sidebar.setSideBarVisible).toHaveBeenCalledWith(true);
-    expect(h.sidebar.setSideBarPin).toHaveBeenCalledWith(true);
+    expect(h.notebook.setNotebookActiveTab).toHaveBeenCalledWith('dictionary');
+    expect(h.notebook.setNotebookPin).toHaveBeenCalledWith(true);
+    expect(h.notebook.setNotebookVisible).toHaveBeenCalledWith(true);
     expect(h.saveSysSettings).toHaveBeenCalledWith(
       {},
       'globalReadSettings',
-      expect.objectContaining({ isSideBarPinned: true }),
+      expect.objectContaining({ isNotebookPinned: true, notebookActiveTab: 'dictionary' }),
     );
+    // The left sidebar keeps its own tab and stays as it was.
+    expect(h.setConfig).not.toHaveBeenCalled();
+    expect(h.sidebar.setSideBarVisible).not.toHaveBeenCalled();
+    expect(h.sidebar.setSideBarPin).not.toHaveBeenCalled();
     expect(screen.queryByTestId('dictionary-surface')).toBeNull();
     expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
-  });
-
-  test('Pin to Sidebar leaves a pinned sidebar and its saved setting alone', async () => {
-    h.sidebar.isSideBarPinned = true;
-    h.viewSettings.annotationToolbarItems = ['dictionary'];
-    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
-    await selectText('serendipity');
-    act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('dictionary-pin'));
-    });
-
-    expect(h.sidebar.setSideBarVisible).toHaveBeenCalledWith(true);
-    expect(h.sidebar.setSideBarPin).not.toHaveBeenCalled();
-    expect(h.saveSysSettings).not.toHaveBeenCalled();
   });
 
   describe('with the instant dictionary', () => {

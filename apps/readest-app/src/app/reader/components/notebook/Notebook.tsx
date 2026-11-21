@@ -5,7 +5,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore, useBookData, useBookConfig } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { useNotebookStore } from '@/store/notebookStore';
+import { NotebookTab, useNotebookStore } from '@/store/notebookStore';
 import { useAIChatStore } from '@/store/aiChatStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useThemeStore } from '@/store/themeStore';
@@ -25,6 +25,7 @@ import {
   useNotebookDocumentCoordinator,
 } from '../../hooks/useNotebookDocumentCoordinator';
 import AIAssistant from './AIAssistant';
+import DictionaryView from './DictionaryView';
 import NotebookHeader from './Header';
 import NotebookEditor from './NotebookEditor';
 import NotebookTabNavigation from './NotebookTabNavigation';
@@ -61,8 +62,9 @@ const Notebook: React.FC = () => {
 
   useNotebookDocumentCoordinator(sideBarBookKey);
 
-  const isMobile =
-    appService?.isMobile === true || window.innerWidth < 640 || window.innerHeight < 640;
+  // As the sidebar decides it: a sheet on a phone-width window, and on a
+  // tablet a panel that can pin beside the page (#7730).
+  const isMobile = window.innerWidth < 640;
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(isMobile);
 
   const hideNotebook = useCallback(() => {
@@ -98,8 +100,10 @@ const Notebook: React.FC = () => {
 
   useEffect(() => {
     setNotebookWidth(settings.globalReadSettings.notebookWidth);
-    setNotebookPin(settings.globalReadSettings.isNotebookPinned);
-    setNotebookVisible(settings.globalReadSettings.isNotebookPinned);
+    // As the sidebar does, a phone opens the book without the pinned panel over it.
+    const pinned = !isMobile && settings.globalReadSettings.isNotebookPinned;
+    setNotebookPin(pinned);
+    setNotebookVisible(pinned);
     if (settings.globalReadSettings.notebookActiveTab) {
       setNotebookActiveTab(settings.globalReadSettings.notebookActiveTab);
     }
@@ -129,7 +133,7 @@ const Notebook: React.FC = () => {
     });
   };
 
-  const handleTabChange = (tab: 'notes' | 'ai') => {
+  const handleTabChange = (tab: NotebookTab) => {
     setNotebookActiveTab(tab);
     saveSysSettings(envConfig, 'globalReadSettings', {
       ...settings.globalReadSettings,
@@ -271,6 +275,8 @@ const Notebook: React.FC = () => {
           <div className='flex min-h-0 flex-1 flex-col'>
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
           </div>
+        ) : notebookActiveTab === 'dictionary' ? (
+          <DictionaryView bookKey={sideBarBookKey} />
         ) : (
           <NotebookEditor
             bookKey={sideBarBookKey}

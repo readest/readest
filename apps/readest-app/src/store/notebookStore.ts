@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { BookNote } from '@/types/book';
 import { TextSelection } from '@/utils/sel';
 
-export type NotebookTab = 'notes' | 'ai';
+export type NotebookTab = 'notes' | 'ai' | 'dictionary';
 
 interface NotebookState {
   notebookWidth: string;

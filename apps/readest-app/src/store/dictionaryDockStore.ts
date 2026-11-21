@@ -3,7 +3,7 @@ import type { UseDictionaryResultsArgs } from '@/app/reader/components/annotator
 
 interface DictionaryDockState {
   /**
-   * The latest in-app lookup, shown in the sidebar's Dictionary tab (#7730).
+   * The latest in-app lookup, shown in the Notebook's Dictionary tab (#7730).
    * `id` changes on every lookup so the tab starts each one fresh, as a popup does.
    */
   lookup: (UseDictionaryResultsArgs & { id: number }) | null;

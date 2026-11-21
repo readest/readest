@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 /**
- * The dictionary docked in the sidebar (#7730): the popup's Pin to Sidebar
- * button hands its lookup over, and the sidebar's Dictionary tab shows the
+ * The dictionary docked in the Notebook (#7730): the popup's Pin to Notebook
+ * button hands its lookup over, and the Notebook's Dictionary tab shows the
  * latest lookup and tells the reader it is on screen.
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -44,7 +44,7 @@ vi.mock('@/services/dictionaries/registry', () => ({
 }));
 
 import DictionaryPopup from '@/app/reader/components/annotator/DictionaryPopup';
-import DictionaryView from '@/app/reader/components/sidebar/DictionaryView';
+import DictionaryView from '@/app/reader/components/notebook/DictionaryView';
 
 const passage = { before: 'It was pure ', after: '.', bookTitle: 'Luck' };
 const capture = {
@@ -68,7 +68,7 @@ afterAll(() => vi.unstubAllGlobals());
 beforeEach(() => useDictionaryDockStore.setState({ lookup: null, isDocked: false }));
 afterEach(cleanup);
 
-describe('Pin to Sidebar in the dictionary popup', () => {
+describe('Pin to Notebook in the dictionary popup', () => {
   const renderPopup = (onPin: (lookup: unknown) => void) =>
     render(
       <DictionaryPopup
@@ -84,11 +84,11 @@ describe('Pin to Sidebar in the dictionary popup', () => {
       />,
     );
 
-  it('hands the lookup to the sidebar with its passage and sentence', () => {
+  it('hands the lookup to the Notebook with its passage and sentence', () => {
     const onPin = vi.fn();
     renderPopup(onPin);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Pin to Sidebar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pin to Notebook' }));
 
     expect(onPin).toHaveBeenCalledWith({
       word: 'serendipity',
@@ -108,7 +108,7 @@ describe('Pin to Sidebar in the dictionary popup', () => {
       fireEvent.click(link);
     });
     expect(title()).toBe('luck');
-    fireEvent.click(screen.getByRole('button', { name: 'Pin to Sidebar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pin to Notebook' }));
 
     expect(onPin).toHaveBeenCalledWith({
       word: 'luck',
@@ -119,7 +119,7 @@ describe('Pin to Sidebar in the dictionary popup', () => {
   });
 });
 
-describe('the sidebar Dictionary tab', () => {
+describe('the Notebook Dictionary tab', () => {
   it('says how to fill it before the first lookup', () => {
     render(<DictionaryView bookKey='book-1' />);
     expect(screen.queryByTestId('dict-title')).toBeNull();
@@ -145,10 +145,10 @@ describe('the sidebar Dictionary tab', () => {
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
-  it('has no Pin to Sidebar button of its own', () => {
+  it('has no Pin to Notebook button of its own', () => {
     useDictionaryDockStore.getState().setLookup({ word: 'serendipity', lang: 'en' });
     render(<DictionaryView bookKey='book-1' />);
-    expect(screen.queryByRole('button', { name: 'Pin to Sidebar' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pin to Notebook' })).toBeNull();
   });
 
   it('takes the lookups while it is on screen', () => {

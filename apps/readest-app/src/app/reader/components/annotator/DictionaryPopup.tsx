@@ -33,7 +33,7 @@ interface DictionaryPopupProps {
    * deep-linking to the dictionaries sub-page.
    */
   onManage?: () => void;
-  /** Move the lookup on screen into the sidebar's Dictionary tab (#7730). */
+  /** Move the lookup on screen into the Notebook's Dictionary tab (#7730). */
   onPin?: (lookup: UseDictionaryResultsArgs) => void;
 }
 
