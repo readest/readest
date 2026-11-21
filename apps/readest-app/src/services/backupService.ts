@@ -370,6 +370,8 @@ async function collectBackupEntries(
       const sanitized = sanitizeSettingsForBackup(settings, options);
       texts.push({ name: SETTINGS_BACKUP_FILENAME, content: JSON.stringify(sanitized, null, 2) });
     } catch (error) {
+      // Settings are the whole backup without the library: never save an empty zip.
+      if (!includeLibrary) throw error;
       console.warn('Skipping settings backup:', error);
     }
   }
@@ -802,6 +804,11 @@ export async function restoreFromBackupZip(
       await appService.saveSettings(mergeRestoredSettings(currentSettings, backupSettings));
       settingsRestored = true;
     } catch (error) {
+      // Settings are the whole restore without a library: report the failure.
+      if (!libraryEntry) {
+        await reader.close();
+        throw error;
+      }
       console.warn('Failed to restore settings from backup:', error);
     }
   }

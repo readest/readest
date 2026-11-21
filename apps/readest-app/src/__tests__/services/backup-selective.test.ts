@@ -100,6 +100,32 @@ describe('selective backups (#7752)', () => {
     expect(target.saveSettings).not.toHaveBeenCalled();
   });
 
+  it('fails a settings-only backup whose settings cannot be read', async () => {
+    const appService = makeAppService([book]);
+    vi.mocked(appService.loadSettings).mockRejectedValue(new Error('settings unreadable'));
+    await expect(createBackupZip(appService, { includeLibrary: false })).rejects.toThrow(
+      'settings unreadable',
+    );
+  });
+
+  it('fails a settings-only restore whose settings cannot be applied', async () => {
+    const { BlobWriter, TextReader, ZipWriter } = await import('@zip.js/zip.js');
+    const blobWriter = new BlobWriter('application/zip');
+    const writer = new ZipWriter(blobWriter);
+    await writer.add('settings.json', new TextReader('{ not json'));
+    await writer.close();
+    const zip = await blobWriter.getData();
+    await expect(restoreFromBackupZip(makeAppService(), zip)).rejects.toThrow(SyntaxError);
+
+    vi.spyOn(StatisticsDb, 'open').mockRejectedValue(new Error('unused'));
+    const valid = await createBackupZip(makeAppService([], { libraryColumns: 6 }), {
+      includeLibrary: false,
+    });
+    const target = makeAppService();
+    target.saveSettings.mockRejectedValue(new Error('disk full'));
+    await expect(restoreFromBackupZip(target, new Blob([valid]))).rejects.toThrow('disk full');
+  });
+
   it('still rejects a zip that is not a backup', async () => {
     const { BlobWriter, TextReader, ZipWriter } = await import('@zip.js/zip.js');
     const blobWriter = new BlobWriter('application/zip');
