@@ -1024,8 +1024,6 @@
   "Select Backup": "เลือกข้อมูลสำรอง",
   "Restore failed: {{error}}": "การกู้คืนล้มเหลว: {{error}}",
   "Backup & Restore": "สำรองและกู้คืน",
-  "Backup Library": "สำรองห้องสมุด",
-  "Restore Library": "กู้คืนห้องสมุด",
   "Creating backup...": "กำลังสร้างข้อมูลสำรอง...",
   "Restoring library...": "กำลังกู้คืนห้องสมุด...",
   "{{current}} of {{total}} items": "{{current}} จาก {{total}} รายการ",
@@ -1384,7 +1382,6 @@
   "Highlight Word": "เน้นคำ",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "สร้างข้อมูลสำรองของคลังหนังสือและการตั้งค่าของคุณ หรือกู้คืนจากข้อมูลสำรองก่อนหน้า การกู้คืนจะรวมเข้ากับคลังหนังสือปัจจุบันของคุณ",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "รวมข้อมูลรับรองบัญชี (โทเค็นการซิงค์ รหัสผ่าน) ไฟล์ข้อมูลสำรองไม่ได้เข้ารหัส",
-  "Your library and settings have been saved to the selected location.": "คลังหนังสือและการตั้งค่าของคุณถูกบันทึกไปยังตำแหน่งที่เลือกแล้ว",
   "Settings have been restored.": "กู้คืนการตั้งค่าแล้ว",
   "Could not fetch this page": "ไม่สามารถดึงข้อมูลหน้านี้ได้",
   "Send to Readest": "ส่งไปยัง Readest",
@@ -2819,5 +2816,8 @@
   "Dictionary for Anki Cards": "พจนานุกรมสำหรับการ์ด Anki",
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "การซิงค์กับ Anki จะใส่คำอธิบายจากพจนานุกรมนี้ไว้ด้านหลังการ์ดแต่ละใบ สูงสุด 30 ใบต่อการซิงค์หนึ่งครั้ง",
   "Added dictionary entries to {{count}} cards_other": "เพิ่มคำอธิบายจากพจนานุกรมในการ์ด {{count}} ใบแล้ว",
-  "Dictionary for Anki Cards...": "พจนานุกรมสำหรับการ์ด Anki..."
+  "Dictionary for Anki Cards...": "พจนานุกรมสำหรับการ์ด Anki...",
+  "Create Backup": "สร้างข้อมูลสำรอง",
+  "Restore from Backup": "กู้คืนจากข้อมูลสำรอง",
+  "Your backup has been saved to the selected location.": "บันทึกข้อมูลสำรองไปยังตำแหน่งที่เลือกแล้ว"
 }

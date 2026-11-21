@@ -1060,8 +1060,6 @@
   "Select Backup": "Выбрать резервную копию",
   "Restore failed: {{error}}": "Ошибка восстановления: {{error}}",
   "Backup & Restore": "Резервное копирование и восстановление",
-  "Backup Library": "Резервная копия библиотеки",
-  "Restore Library": "Восстановить библиотеку",
   "Creating backup...": "Создание резервной копии...",
   "Restoring library...": "Восстановление библиотеки...",
   "{{current}} of {{total}} items": "{{current}} из {{total}} элементов",
@@ -1468,7 +1466,6 @@
   "Highlight Word": "Подсветка слова",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Создайте резервную копию своей библиотеки и настроек или восстановите из предыдущей резервной копии. Восстановление будет объединено с вашей текущей библиотекой.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Включить учётные данные аккаунта (токены синхронизации, пароли). Файл резервной копии не зашифрован.",
-  "Your library and settings have been saved to the selected location.": "Ваша библиотека и настройки сохранены в выбранном месте.",
   "Settings have been restored.": "Настройки восстановлены.",
   "Could not fetch this page": "Не удалось загрузить эту страницу",
   "Send to Readest": "Отправить в Readest",
@@ -3044,5 +3041,8 @@
   "Added dictionary entries to {{count}} cards_few": "Словарные статьи добавлены в карточки: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Словарные статьи добавлены в карточки: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Словарные статьи добавлены в карточки: {{count}}",
-  "Dictionary for Anki Cards...": "Словарь для карточек Anki..."
+  "Dictionary for Anki Cards...": "Словарь для карточек Anki...",
+  "Create Backup": "Создать резервную копию",
+  "Restore from Backup": "Восстановить из резервной копии",
+  "Your backup has been saved to the selected location.": "Резервная копия сохранена в выбранном месте."
 }

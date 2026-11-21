@@ -1040,8 +1040,6 @@
   "Select Backup": "Yedek Seç",
   "Restore failed: {{error}}": "Geri yükleme başarısız: {{error}}",
   "Backup & Restore": "Yedekleme & Geri Yükleme",
-  "Backup Library": "Kütüphaneyi Yedekle",
-  "Restore Library": "Kütüphaneyi Geri Yükle",
   "Creating backup...": "Yedek oluşturuluyor...",
   "Restoring library...": "Kütüphane geri yükleniyor...",
   "{{current}} of {{total}} items": "{{current}} / {{total}} öğe",
@@ -1416,7 +1414,6 @@
   "Highlight Word": "Kelimeyi vurgula",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Kitaplığınızın ve ayarlarınızın bir yedeğini oluşturun veya önceki bir yedekten geri yükleyin. Geri yükleme, mevcut kitaplığınızla birleştirilir.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Hesap kimlik bilgilerini (eşitleme belirteçleri, parolalar) dahil et. Yedek dosyası şifrelenmemiştir.",
-  "Your library and settings have been saved to the selected location.": "Kitaplığınız ve ayarlarınız seçilen konuma kaydedildi.",
   "Settings have been restored.": "Ayarlar geri yüklendi.",
   "Could not fetch this page": "Bu sayfa getirilemedi",
   "Send to Readest": "Readest'e Gönder",
@@ -2894,5 +2891,8 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki ile eşitleme, bu sözlüğün maddesini her kartın arka yüzüne koyar; her eşitlemede en fazla 30 kart",
   "Added dictionary entries to {{count}} cards_one": "{{count}} karta sözlük maddesi eklendi",
   "Added dictionary entries to {{count}} cards_other": "{{count}} karta sözlük maddesi eklendi",
-  "Dictionary for Anki Cards...": "Anki kartları için sözlük..."
+  "Dictionary for Anki Cards...": "Anki kartları için sözlük...",
+  "Create Backup": "Yedek oluştur",
+  "Restore from Backup": "Yedekten geri yükle",
+  "Your backup has been saved to the selected location.": "Yedeğiniz seçilen konuma kaydedildi."
 }

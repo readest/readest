@@ -1036,8 +1036,6 @@
   "Select Backup": "Selecteer back-up",
   "Restore failed: {{error}}": "Herstel mislukt: {{error}}",
   "Backup & Restore": "Back-up & Herstel",
-  "Backup Library": "Bibliotheek back-uppen",
-  "Restore Library": "Bibliotheek herstellen",
   "Creating backup...": "Back-up maken...",
   "Restoring library...": "Bibliotheek herstellen...",
   "{{current}} of {{total}} items": "{{current}} van {{total}} items",
@@ -1412,7 +1410,6 @@
   "Highlight Word": "Woord markeren",
   "Create a backup of your library and settings or restore from a previous backup. Restoring will merge with your current library.": "Maak een back-up van je bibliotheek en instellingen of herstel vanuit een eerdere back-up. Bij herstellen wordt samengevoegd met je huidige bibliotheek.",
   "Include account credentials (sync tokens, passwords). The backup file is not encrypted.": "Accountgegevens opnemen (synchronisatietokens, wachtwoorden). Het back-upbestand is niet versleuteld.",
-  "Your library and settings have been saved to the selected location.": "Je bibliotheek en instellingen zijn opgeslagen op de geselecteerde locatie.",
   "Settings have been restored.": "Instellingen zijn hersteld.",
   "Could not fetch this page": "Kan deze pagina niet ophalen",
   "Send to Readest": "Naar Readest sturen",
@@ -2894,5 +2891,8 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Synchroniseren met Anki zet het lemma uit dit woordenboek op de achterkant van elke kaart, voor maximaal 30 kaarten per synchronisatie",
   "Added dictionary entries to {{count}} cards_one": "Woordenboeklemma's toegevoegd aan kaarten: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Woordenboeklemma's toegevoegd aan kaarten: {{count}}",
-  "Dictionary for Anki Cards...": "Woordenboek voor Anki-kaarten..."
+  "Dictionary for Anki Cards...": "Woordenboek voor Anki-kaarten...",
+  "Create Backup": "Back-up maken",
+  "Restore from Backup": "Herstellen vanuit back-up",
+  "Your backup has been saved to the selected location.": "Je back-up is op de gekozen locatie opgeslagen."
 }
