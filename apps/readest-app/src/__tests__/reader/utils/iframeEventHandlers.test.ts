@@ -216,12 +216,18 @@ describe('iframeEventHandlers click gestures', () => {
 
   // #7732: a key typed in the book while a dialog is open (focus was taken
   // from it) must not turn the page behind the dialog.
-  test('keys typed in the book do nothing while a dialog is open', async () => {
+  // A modal shows it is open with the `open` attribute, or with daisyUI's
+  // `modal-open` class (the passphrase prompt, the app lock dialog).
+  test.each([
+    'open',
+    'modal-open',
+  ])('keys typed in the book do nothing while a dialog is open (%s)', async (how) => {
     const { eventDispatcher } = await import('@/utils/event');
     const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatchSync');
     const { handleKeydown } = await importHandlers();
     const dialog = document.createElement('dialog');
-    dialog.setAttribute('open', '');
+    if (how === 'open') dialog.setAttribute('open', '');
+    else dialog.className = 'modal modal-open';
     document.body.appendChild(dialog);
     const keyEvent = {
       key: 'ArrowRight',

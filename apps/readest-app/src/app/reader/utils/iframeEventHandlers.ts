@@ -3,6 +3,7 @@ import { eventDispatcher } from '@/utils/event';
 import type { ImageViewerGesture, ViewSettings } from '@/types/book';
 import { findGlossWord } from '@/app/reader/utils/wordlensRuby';
 import { TURN_GESTURE_LEFT_INSET_ATTRIBUTE } from './brightnessGesture';
+import { hasReaderModal } from './readerOverlay';
 import { hasScrollRoomY } from './wheelGesture';
 import { toParentViewportPoint } from './annotatorUtil';
 import { isTextAtPoint } from './crossDocSelection';
@@ -304,7 +305,7 @@ export const handleKeydown = (bookKey: string, event: KeyboardEvent) => {
   // A modal dialog owns the keys, even when focus slipped into the book: they
   // must not turn the page behind it (#7732). A popup over the book (the
   // instant dictionary) is not modal: Escape typed in the book closes it.
-  if (document.querySelector('dialog[open], [aria-modal="true"]')) return;
+  if (hasReaderModal()) return;
   const target = event.target as HTMLElement | null;
   const interactiveTarget =
     !!target?.isContentEditable ||
