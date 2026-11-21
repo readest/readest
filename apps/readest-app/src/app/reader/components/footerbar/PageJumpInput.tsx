@@ -160,7 +160,7 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({
     const target = clampPage(page, total);
     if (referenceInfo) {
       const href = findReferencePageHref(bookData?.bookDoc?.pageList, target);
-      if (href) view.goTo(href);
+      if (href) view.goTo(href, { focus: true });
       else view.goToFraction(fractionForPage(target, total));
     } else if (bookData?.isFixedLayout) {
       view.goTo(target - 1);

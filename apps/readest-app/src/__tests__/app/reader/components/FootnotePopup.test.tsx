@@ -409,7 +409,7 @@ describe('FootnotePopup jump to location', () => {
       fireEvent.click(button);
     });
 
-    expect(hoisted.goTo).toHaveBeenCalledWith(HREF);
+    expect(hoisted.goTo).toHaveBeenCalledWith(HREF, { focus: true });
     expect(screen.getByTestId('popup').dataset['open']).toBe('false');
     expect(screen.queryByLabelText('Jump to Location')).toBeNull();
   });
@@ -435,7 +435,7 @@ describe('FootnotePopup jump to location', () => {
       fireEvent.click(screen.getByLabelText('Jump to Location'));
     });
 
-    expect(hoisted.goTo).toHaveBeenCalledWith(nestedHref);
+    expect(hoisted.goTo).toHaveBeenCalledWith(nestedHref, { focus: true });
   });
 
   // The reader's stylesheet hides inline footnote bodies, so a link that

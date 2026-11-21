@@ -130,7 +130,7 @@ const BooknoteItem: React.FC<BooknoteItemProps> = ({
     eventDispatcher.dispatch('navigate', { bookKey, cfi });
 
     onClick?.();
-    getView(bookKey)?.goTo(cfi);
+    getView(bookKey)?.goTo(cfi, { focus: true });
   };
 
   const deleteNote = (note: BookNote) => {

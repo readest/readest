@@ -248,7 +248,7 @@ describe('PageJumpInput', () => {
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: '2 / 2' } });
     fireEvent.keyDown(input, { key: 'Enter' });
-    expect(mocks.view.goTo).toHaveBeenCalledWith('ch01.html#p2');
+    expect(mocks.view.goTo).toHaveBeenCalledWith('ch01.html#p2', { focus: true });
     expect(mocks.view.goToFraction).not.toHaveBeenCalled();
   });
 

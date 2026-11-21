@@ -303,7 +303,7 @@ const TOCView: React.FC<{
     (item: TOCItem) => {
       eventDispatcher.dispatch('navigate', { bookKey, href: item.href });
       if (item.href) {
-        getView(bookKey)?.goTo(item.href);
+        getView(bookKey)?.goTo(item.href, { focus: true });
       }
     },
     [bookKey, getView],
@@ -321,7 +321,7 @@ const TOCView: React.FC<{
     const location = getProgress(bookKey)?.location;
     if (!location) return;
     eventDispatcher.dispatch('navigate', { bookKey, cfi: location });
-    getView(bookKey)?.goTo(location);
+    getView(bookKey)?.goTo(location, { focus: true });
   }, [bookKey, getView, getProgress]);
 
   // The list is one Tab stop. Keys move a focus marker between rows

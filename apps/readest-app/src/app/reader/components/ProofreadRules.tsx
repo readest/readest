@@ -118,7 +118,7 @@ const RuleItem: React.FC<{
   const navigateToSelection = () => {
     if (!sideBarBookKey || !rule.cfi) return;
     eventDispatcher.dispatch('navigate', { bookKey: sideBarBookKey, cfi: rule.cfi });
-    getView(sideBarBookKey)?.goTo(rule.cfi);
+    getView(sideBarBookKey)?.goTo(rule.cfi, { focus: true });
   };
 
   if (isEditing) {
