@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   router: { push: vi.fn(), replace: vi.fn(), back: vi.fn() },
   refresh: vi.fn(),
   dispatch: vi.fn(),
+  userActions: {} as { signingOut?: boolean },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -39,7 +40,7 @@ vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, params?: Record<string, string | number>) =>
     params ? key.replace(/\{\{(\w+)\}\}/g, (_match, name) => String(params[name] ?? '')) : key,
 }));
-vi.mock('@/hooks/useUserActions', () => ({ useUserActions: () => ({}) }));
+vi.mock('@/hooks/useUserActions', () => ({ useUserActions: () => mocks.userActions }));
 vi.mock('@/hooks/useAvailablePlans', () => ({
   useAvailablePlans: () => ({ availablePlans: [], iapAvailable: true }),
 }));
@@ -72,6 +73,7 @@ vi.mock('@/app/user/components/SyncCategoriesSection', () => ({
 vi.mock('@/app/user/components/Checkout', () => ({ default: () => null }));
 
 afterEach(() => {
+  mocks.userActions = {};
   cleanup();
   vi.clearAllMocks();
   vi.useRealTimers();
@@ -87,4 +89,16 @@ it('replaces itself with the login page when signed out, keeping the redirect', 
     `/auth?redirect=${encodeURIComponent('/reader?ids=book1')}`,
   );
   expect(mocks.router.push).not.toHaveBeenCalled();
+});
+
+// Signing out here opens the library; the login page in between is what the
+// reporter of #7726 called intrusive.
+it('stays out of the way while its Sign Out opens the library', () => {
+  vi.useFakeTimers();
+  mocks.userActions = { signingOut: true };
+  render(<ProfilePage />);
+
+  act(() => vi.advanceTimersByTime(1000));
+
+  expect(mocks.router.replace).not.toHaveBeenCalled();
 });
