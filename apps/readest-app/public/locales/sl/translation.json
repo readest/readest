@@ -3037,5 +3037,12 @@
   "Added audio to {{count}} cards_one": "Zvok dodan karticam: {{count}}",
   "Added audio to {{count}} cards_two": "Zvok dodan karticam: {{count}}",
   "Added audio to {{count}} cards_few": "Zvok dodan karticam: {{count}}",
-  "Added audio to {{count}} cards_other": "Zvok dodan karticam: {{count}}"
+  "Added audio to {{count}} cards_other": "Zvok dodan karticam: {{count}}",
+  "Dictionary for Anki Cards": "Slovar za kartice Anki",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Sinhronizacija z Anki doda geslo iz tega slovarja na hrbtno stran vsake kartice, za največ 30 kartic na sinhronizacijo",
+  "Added dictionary entries to {{count}} cards_one": "Slovarska gesla dodana karticam: {{count}}",
+  "Added dictionary entries to {{count}} cards_two": "Slovarska gesla dodana karticam: {{count}}",
+  "Added dictionary entries to {{count}} cards_few": "Slovarska gesla dodana karticam: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "Slovarska gesla dodana karticam: {{count}}",
+  "Dictionary for Anki Cards...": "Slovar za kartice Anki..."
 }

@@ -2889,5 +2889,10 @@
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Συγχρονίστε το AnkiDroid με το AnkiWeb πριν συνεχίσετε. Μετά από αυτή την αλλαγή, ο επόμενος συγχρονισμός του AnkiDroid θα ζητήσει μεταφόρτωση ή λήψη ολόκληρης της συλλογής: επιλέξτε Μεταφόρτωση.",
   "Add Audio": "Προσθήκη ήχου",
   "Added audio to {{count}} cards_one": "Προστέθηκε ήχος σε κάρτες: {{count}}",
-  "Added audio to {{count}} cards_other": "Προστέθηκε ήχος σε κάρτες: {{count}}"
+  "Added audio to {{count}} cards_other": "Προστέθηκε ήχος σε κάρτες: {{count}}",
+  "Dictionary for Anki Cards": "Λεξικό για κάρτες Anki",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Ο συγχρονισμός με το Anki βάζει το λήμμα αυτού του λεξικού στο πίσω μέρος κάθε κάρτας, για έως 30 κάρτες ανά συγχρονισμό",
+  "Added dictionary entries to {{count}} cards_one": "Προστέθηκαν λήμματα λεξικού σε κάρτες: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "Προστέθηκαν λήμματα λεξικού σε κάρτες: {{count}}",
+  "Dictionary for Anki Cards...": "Λεξικό για κάρτες Anki..."
 }

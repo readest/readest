@@ -127,6 +127,8 @@ interface DictionaryStoreState {
   setAutoPlayPronunciation(enabled: boolean): void;
   setSaveLookupsToVocabulary(enabled: boolean): void;
   setSystemDictionaryFullscreen(enabled: boolean): void;
+  /** Pick the dictionary whose entry goes on Readest's Anki cards (#7728). */
+  setAnkiEntryProviderId(id: string | undefined): void;
   /** Pick the custom translator the context dictionary asks (#5544). */
   setContextTranslatorId(id: string): void;
   setContextOptions(
@@ -480,6 +482,12 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
     }));
   },
 
+  setAnkiEntryProviderId: (id) => {
+    set((state) => ({
+      settings: { ...state.settings, ankiEntryProviderId: id },
+    }));
+  },
+
   setContextTranslatorId: (id) => {
     set((state) => ({
       settings: { ...state.settings, contextTranslatorId: id },
@@ -678,6 +686,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
           persistedSettings.autoPlayPronunciation ??
           DEFAULT_DICTIONARY_SETTINGS.autoPlayPronunciation,
         saveLookupsToVocabulary: persistedSettings.saveLookupsToVocabulary,
+        ankiEntryProviderId: persistedSettings.ankiEntryProviderId,
         systemDictionaryFullscreen: persistedSettings.systemDictionaryFullscreen ?? false,
         contextTranslatorId: persistedSettings.contextTranslatorId,
         contextPromptId: persistedSettings.contextPromptId,
@@ -714,7 +723,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         markExplicitProviderOrderPublish();
       }
       setSettings(next);
-      saveSettings(envConfig, next);
+      await saveSettings(envConfig, next);
     } catch (error) {
       console.error('Failed to save custom dictionaries settings:', error);
       throw error;

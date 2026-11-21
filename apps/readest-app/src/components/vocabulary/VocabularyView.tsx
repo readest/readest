@@ -4,6 +4,7 @@ import { MdArrowDropDown, MdSearch, MdSort } from 'react-icons/md';
 import { IoMdCloseCircle } from 'react-icons/io';
 import {
   PiArrowsClockwise,
+  PiBookOpenText,
   PiBooks,
   PiCardsThree,
   PiDotsThreeVertical,
@@ -34,6 +35,7 @@ import Dropdown from '@/components/Dropdown';
 import Menu from '@/components/Menu';
 import MenuItem from '@/components/MenuItem';
 import AnkiAudioPanel from './AnkiAudioPanel';
+import AnkiEntryPanel from './AnkiEntryPanel';
 import AnkiImportPanel from './AnkiImportPanel';
 import VocabularyDetail from './VocabularyDetail';
 import { useAnkiLink } from './useAnkiLink';
@@ -170,6 +172,12 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
 
   const panel = anki.audioPrompt ? (
     <AnkiAudioPanel onAnswer={anki.answerAudioPrompt} />
+  ) : anki.entryPicker ? (
+    <AnkiEntryPanel
+      {...anki.entryPicker}
+      onSave={anki.saveEntryPicker}
+      onCancel={anki.closeEntryPicker}
+    />
   ) : (
     anki.importState && (
       <AnkiImportPanel
@@ -297,6 +305,15 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
                 Icon={PiDownloadSimple}
                 transient
                 onClick={() => void anki.openImport()}
+              />
+            )}
+            {anki.available && (
+              <MenuItem
+                label={_('Dictionary for Anki Cards...')}
+                description={anki.premiumBadge}
+                Icon={PiBookOpenText}
+                transient
+                onClick={() => void anki.openEntryPicker()}
               />
             )}
             {anki.available && anki.audioDeclined && (

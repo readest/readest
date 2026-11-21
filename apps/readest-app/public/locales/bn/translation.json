@@ -2889,5 +2889,10 @@
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "চালিয়ে যাওয়ার আগে AnkiDroid-কে AnkiWeb-এর সাথে সিঙ্ক করুন। এই পরিবর্তনের পরে, AnkiDroid-এর পরবর্তী সিঙ্ক পুরো সংগ্রহ আপলোড বা ডাউনলোড করতে বলবে: Upload বেছে নিন।",
   "Add Audio": "অডিও যোগ করুন",
   "Added audio to {{count}} cards_one": "{{count}}টি কার্ডে অডিও যোগ হয়েছে",
-  "Added audio to {{count}} cards_other": "{{count}}টি কার্ডে অডিও যোগ হয়েছে"
+  "Added audio to {{count}} cards_other": "{{count}}টি কার্ডে অডিও যোগ হয়েছে",
+  "Dictionary for Anki Cards": "Anki কার্ডের অভিধান",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki-এর সাথে সিঙ্ক প্রতিটি কার্ডের পেছনে এই অভিধানের ভুক্তি যোগ করে, প্রতি সিঙ্কে সর্বোচ্চ 30টি কার্ডে",
+  "Added dictionary entries to {{count}} cards_one": "{{count}}টি কার্ডে অভিধানের ভুক্তি যোগ হয়েছে",
+  "Added dictionary entries to {{count}} cards_other": "{{count}}টি কার্ডে অভিধানের ভুক্তি যোগ হয়েছে",
+  "Dictionary for Anki Cards...": "Anki কার্ডের অভিধান..."
 }

@@ -240,6 +240,11 @@ export interface DictionarySettings {
    * builder with its sentence (#789). Unset means on.
    */
   saveLookupsToVocabulary?: boolean;
+  /**
+   * The dictionary whose entry Sync with Anki puts on the back of Readest's
+   * cards (#7728). Unset: cards get no entry.
+   */
+  ankiEntryProviderId?: string;
   /** Use a full-screen native dictionary on iOS; unset keeps the compact presentation. */
   systemDictionaryFullscreen?: boolean;
   /**

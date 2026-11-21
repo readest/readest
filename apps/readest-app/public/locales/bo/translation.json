@@ -2815,5 +2815,9 @@
   "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "ཤོག་བྱང་རེ་རེས་ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཀྱི་ཡི་གེ་སྒྲར་བསྒྱུར་བ་བེད་སྤྱོད་ནས་ཚིག་དེ་སྐད་གསལ་པོས་ཀློག་ཐུབ། Readest ཀྱིས་ཟིན་བྲིས་རིགས་ལ་ཡིག་ཁོངས་གསར་པ་ཁ་སྣོན་བྱས་ནས་སྔོན་ལ་ཁ་སྣོན་བྱས་པའི་ཤོག་བྱང་ནང་དུ་འགེངས།",
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "མུ་མཐུད་གོང་ལ་ AnkiDroid དང་ AnkiWeb མཉམ་སྡེབ་བྱོས། འགྱུར་བ་འདིའི་རྗེས་སུ་ AnkiDroid ཡི་མཉམ་སྡེབ་རྗེས་མས་བསྡུ་གསོག་ཧྲིལ་པོ་ཡར་འཇུག་གམ་མར་ལེན་བྱེད་དགོས་མིན་འདྲི་སྲིད། Upload འདེམས་རོགས།",
   "Add Audio": "སྒྲ་ཁ་སྣོན།",
-  "Added audio to {{count}} cards_other": "ཤོག་བྱང་ {{count}} ལ་སྒྲ་ཁ་སྣོན་བྱས།"
+  "Added audio to {{count}} cards_other": "ཤོག་བྱང་ {{count}} ལ་སྒྲ་ཁ་སྣོན་བྱས།",
+  "Dictionary for Anki Cards": "Anki ཤོག་བྱང་གི་ཚིག་མཛོད།",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki དང་མཉམ་སྡེབ་ཀྱིས་ཤོག་བྱང་རེ་རེའི་རྒྱབ་ངོས་སུ་ཚིག་མཛོད་འདིའི་འགྲེལ་བཤད་འཇོག མཉམ་སྡེབ་རེ་རེར་ཤོག་བྱང་ 30 བར།",
+  "Added dictionary entries to {{count}} cards_other": "ཤོག་བྱང་ {{count}} ལ་ཚིག་མཛོད་ཀྱི་འགྲེལ་བཤད་ཁ་སྣོན་བྱས།",
+  "Dictionary for Anki Cards...": "Anki ཤོག་བྱང་གི་ཚིག་མཛོད།..."
 }

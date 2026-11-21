@@ -2889,5 +2889,10 @@
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "გაგრძელებამდე დაასინქრონეთ AnkiDroid AnkiWeb-თან. ამ ცვლილების შემდეგ AnkiDroid-ის შემდეგი სინქრონიზაცია მთელი კოლექციის ატვირთვას ან ჩამოტვირთვას მოითხოვს: აირჩიეთ ატვირთვა (Upload).",
   "Add Audio": "აუდიოს დამატება",
   "Added audio to {{count}} cards_one": "აუდიო დაემატა ბარათებს: {{count}}",
-  "Added audio to {{count}} cards_other": "აუდიო დაემატა ბარათებს: {{count}}"
+  "Added audio to {{count}} cards_other": "აუდიო დაემატა ბარათებს: {{count}}",
+  "Dictionary for Anki Cards": "ლექსიკონი Anki-ის ბარათებისთვის",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki-სთან სინქრონიზაცია ამ ლექსიკონის სტატიას თითოეული ბარათის უკანა მხარეს ათავსებს, თითო სინქრონიზაციაზე მაქსიმუმ 30 ბარათზე",
+  "Added dictionary entries to {{count}} cards_one": "ლექსიკონის სტატიები დაემატა ბარათებს: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "ლექსიკონის სტატიები დაემატა ბარათებს: {{count}}",
+  "Dictionary for Anki Cards...": "ლექსიკონი Anki-ის ბარათებისთვის..."
 }

@@ -2963,5 +2963,11 @@
   "Add Audio": "Adaugă audio",
   "Added audio to {{count}} cards_one": "Audio adăugat la carduri: {{count}}",
   "Added audio to {{count}} cards_few": "Audio adăugat la carduri: {{count}}",
-  "Added audio to {{count}} cards_other": "Audio adăugat la carduri: {{count}}"
+  "Added audio to {{count}} cards_other": "Audio adăugat la carduri: {{count}}",
+  "Dictionary for Anki Cards": "Dicționar pentru cardurile Anki",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Sincronizarea cu Anki pune intrarea din acest dicționar pe spatele fiecărui card, pentru cel mult 30 de carduri la fiecare sincronizare",
+  "Added dictionary entries to {{count}} cards_one": "Intrări de dicționar adăugate la carduri: {{count}}",
+  "Added dictionary entries to {{count}} cards_few": "Intrări de dicționar adăugate la carduri: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "Intrări de dicționar adăugate la carduri: {{count}}",
+  "Dictionary for Anki Cards...": "Dicționar pentru cardurile Anki..."
 }

@@ -10,7 +10,8 @@ vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
 import {
   AnkiError,
   ankiAddNotes,
-  ankiNoteTypeOutdated,
+  ankiNoteType,
+  ankiSetEntries,
   ankiReadDeck,
   ankiStatus,
   ankiUpdateTags,
@@ -32,13 +33,27 @@ describe('ankiDroid', () => {
   });
 
   it('fills the note type on the upgrade, and reads whether one is needed', async () => {
-    invokeSpy.mockResolvedValue({ outdated: true });
-    await expect(ankiNoteTypeOutdated()).resolves.toBe(true);
+    invokeSpy.mockResolvedValue({ outdated: true, id: 5, fields: ['Front', 'Back'] });
+    await expect(ankiNoteType()).resolves.toEqual({
+      outdated: true,
+      id: 5,
+      fields: ['Front', 'Back'],
+    });
+    invokeSpy.mockResolvedValue({});
+    await expect(ankiNoteType()).resolves.toEqual({ outdated: false });
     invokeSpy.mockResolvedValue({ updated: 2 });
     const fills = [{ id: 1, word: 'Haus', language: 'de_DE' }];
     await expect(ankiUpgradeNoteType(fills)).resolves.toBe(2);
     expect(invokeSpy).toHaveBeenLastCalledWith('plugin:native-bridge|anki_upgrade_note_type', {
       payload: { notes: fills },
+    });
+  });
+
+  it('sends dictionary entries for empty Entry fields', async () => {
+    invokeSpy.mockResolvedValue({ updated: 1 });
+    await expect(ankiSetEntries([{ id: 1, entry: '<p>a drug</p>' }])).resolves.toBe(1);
+    expect(invokeSpy).toHaveBeenCalledWith('plugin:native-bridge|anki_set_entries', {
+      payload: { notes: [{ id: 1, entry: '<p>a drug</p>' }] },
     });
   });
 

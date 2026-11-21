@@ -439,6 +439,22 @@ describe('customDictionaryStore — web search CRUD', () => {
   });
 });
 
+describe('customDictionaryStore — saveCustomDictionaries write (#7728)', () => {
+  it('rejects when the settings write fails, so a caller can keep its form open', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: { customDictionaries: [] } as unknown as SettingsState['settings'],
+      setSettings: (s: SettingsState['settings']) => useSettingsStore.setState({ settings: s }),
+      saveSettings: vi.fn().mockRejectedValue(new Error('disk full')),
+    } as unknown as SettingsState);
+    await expect(
+      useCustomDictionaryStore
+        .getState()
+        .saveCustomDictionaries({ name: 'env' } as unknown as EnvConfigType),
+    ).rejects.toThrow('disk full');
+  });
+});
+
 describe('customDictionaryStore — saveCustomDictionaries reference identity (PR 6)', () => {
   it('replaces useSettingsStore.settings with a NEW reference so subscribers fire', async () => {
     // Seed the settings store with a real reducer so setSettings actually
@@ -920,6 +936,32 @@ describe('customDictionaryStore — saveLookupsToVocabulary (#789)', () => {
     } as unknown as EnvConfigType;
     await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
     expect(useCustomDictionaryStore.getState().settings.saveLookupsToVocabulary).toBe(false);
+  });
+});
+
+describe('customDictionaryStore — Anki card dictionary (#7728)', () => {
+  it('keeps the chosen dictionary across a load, and clears it', async () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    useSettingsStore.setState({
+      settings: {
+        customDictionaries: [],
+        dictionarySettings: {
+          providerOrder: ['builtin:wiktionary'],
+          providerEnabled: { 'builtin:wiktionary': true },
+          webSearches: [],
+          ankiEntryProviderId: 'builtin:wiktionary',
+        },
+      } as unknown as SettingsState['settings'],
+    } as unknown as SettingsState);
+    const fakeEnv = {
+      getAppService: () => Promise.resolve({ exists: vi.fn().mockResolvedValue(false) }),
+    } as unknown as EnvConfigType;
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
+    expect(useCustomDictionaryStore.getState().settings.ankiEntryProviderId).toBe(
+      'builtin:wiktionary',
+    );
+    useCustomDictionaryStore.getState().setAnkiEntryProviderId(undefined);
+    expect(useCustomDictionaryStore.getState().settings.ankiEntryProviderId).toBeUndefined();
   });
 });
 

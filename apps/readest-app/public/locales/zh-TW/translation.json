@@ -2815,5 +2815,9 @@
   "Each card can read its word aloud with your device's text-to-speech. Readest adds new fields to its note type and fills them on the cards it already added.": "每張卡片都能用裝置的文字轉語音朗讀其單字。Readest 會在其筆記類型中加入新欄位，並替已加入的卡片填好。",
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "繼續之前，請先將 AnkiDroid 與 AnkiWeb 同步。此變更後，AnkiDroid 下次同步時會詢問要上傳還是下載整個收藏：請選擇「上傳」。",
   "Add Audio": "加入音訊",
-  "Added audio to {{count}} cards_other": "已為 {{count}} 張卡片加入音訊"
+  "Added audio to {{count}} cards_other": "已為 {{count}} 張卡片加入音訊",
+  "Dictionary for Anki Cards": "Anki 卡片辭典",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "與 Anki 同步時，會把此辭典的詞條放到每張卡片的背面，每次同步最多 30 張",
+  "Added dictionary entries to {{count}} cards_other": "已為 {{count}} 張卡片加入辭典詞條",
+  "Dictionary for Anki Cards...": "Anki 卡片辭典..."
 }

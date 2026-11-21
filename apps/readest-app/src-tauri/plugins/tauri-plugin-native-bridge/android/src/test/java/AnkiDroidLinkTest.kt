@@ -96,7 +96,8 @@ class AnkiDroidLinkTest {
         assertEquals("{{Wort}}", question)
         assertEquals(
             "{{FrontSide}}<hr id=answer>{{Hinweis}}" +
-                "{{#Language}}{{#Word}}<br>[anki:tts lang={{Language}}]{{Word}}[/anki:tts]{{/Word}}{{/Language}}",
+                "{{#Language}}{{#Word}}<br>[anki:tts lang={{Language}}]{{Word}}[/anki:tts]{{/Word}}{{/Language}}" +
+                "{{#Entry}}<hr><div style=\"text-align:start;font-size:0.85em\">{{Entry}}</div>{{/Entry}}",
             answer,
         )
     }
@@ -109,6 +110,10 @@ class AnkiDroidLinkTest {
         // Fields added but the upgrade stopped before the template: still to finish.
         assertEquals(true, AnkiDroidLink.outdated(all, "{{FrontSide}}<hr id=answer>{{Back}}"))
         assertEquals(false, AnkiDroidLink.outdated(all, audio))
+        // The template #7736 wrote has the audio but not the dictionary entry (#7728).
+        val audioOnly = "{{FrontSide}}<hr id=answer>{{Back}}" +
+            "{{#Language}}{{#Word}}<br>[anki:tts lang={{Language}}]{{Word}}[/anki:tts]{{/Word}}{{/Language}}"
+        assertEquals(true, AnkiDroidLink.outdated(all, audioOnly))
         // Renamed Front and Back are not missing fields.
         assertEquals(false, AnkiDroidLink.outdated(listOf("Wort", "Hinweis", "Word", "Language", "Entry"), audio))
     }
@@ -120,5 +125,28 @@ class AnkiDroidLinkTest {
             AnkiDroidLink.missingFields(listOf("Wort", "Hinweis")),
         )
         assertEquals(listOf("Entry"), AnkiDroidLink.missingFields(listOf("Front", "Back", "Word", "Language")))
+    }
+
+    @Test
+    fun withEntry_fillsOnlyAnEmptyEntry() {
+        val names = listOf("Front", "Back", "Word", "Language", "Entry")
+        assertEquals(
+            listOf("f", "b", "w", "en_US", "<p>def</p>"),
+            AnkiDroidLink.withEntry(listOf("f", "b", "w", "en_US", ""), names, "<p>def</p>"),
+        )
+        // An entry the reader edited stays, and a note type without Entry is left alone.
+        assertEquals(null, AnkiDroidLink.withEntry(listOf("f", "b", "w", "en_US", "mine"), names, "<p>def</p>"))
+        assertEquals(null, AnkiDroidLink.withEntry(listOf("f", "b"), listOf("Front", "Back"), "<p>def</p>"))
+    }
+
+    @Test
+    fun insertInChunks_alsoKeepsEachChunkUnderASize() {
+        // Notes with dictionary entries are large: 200 of them can pass the Binder limit.
+        val sizes = mutableListOf<Int>()
+        AnkiDroidLink.insertInChunks(listOf(400, 400, 400, 100), 200, maxSize = 1000, sizeOf = { it }) {
+            sizes.add(it.size)
+            it.size
+        }
+        assertEquals(listOf(2, 2), sizes)
     }
 }

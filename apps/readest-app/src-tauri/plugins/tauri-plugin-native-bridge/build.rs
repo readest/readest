@@ -37,6 +37,7 @@ const COMMANDS: &[&str] = &[
     "anki_update_tags",
     "anki_note_type",
     "anki_upgrade_note_type",
+    "anki_set_entries",
     "select_directory",
     "show_file_picker",
     "get_storefront_region_code",

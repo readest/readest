@@ -141,6 +141,8 @@
   "Added {{count}} words to Anki_other": "Added {{count}} words to Anki",
   "Added audio to {{count}} cards_one": "Added audio to {{count}} card",
   "Added audio to {{count}} cards_other": "Added audio to {{count}} cards",
+  "Added dictionary entries to {{count}} cards_one": "Added dictionary entries to {{count}} card",
+  "Added dictionary entries to {{count}} cards_other": "Added dictionary entries to {{count}} cards",
   "{{count}} skipped_one": "{{count}} skipped",
   "{{count}} skipped_other": "{{count}} skipped",
   "Imported {{count}} new words_one": "Imported {{count}} new word",

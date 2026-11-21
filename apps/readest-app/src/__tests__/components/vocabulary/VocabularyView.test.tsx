@@ -6,10 +6,14 @@ import VocabularyView from '@/components/vocabulary/VocabularyView';
 import { DropdownProvider } from '@/context/DropdownContext';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import type { DictionaryProvider } from '@/services/dictionaries/types';
 import type { VocabularyEntry } from '@/services/vocabulary/types';
 import type { Book } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 
+const FIELDS = ['Front', 'Back', 'Word', 'Language', 'Entry'];
 const saveFile = vi.fn(async () => true);
 const push = vi.fn();
 const appService = { saveFile, isAndroidApp: false };
@@ -21,9 +25,11 @@ const anki = vi.hoisted(() => ({
   ankiReadDeck: vi.fn(),
   ankiAddNotes: vi.fn(),
   ankiUpdateTags: vi.fn(),
-  ankiNoteTypeOutdated: vi.fn(),
+  ankiNoteType: vi.fn(),
   ankiUpgradeNoteType: vi.fn(),
+  ankiSetEntries: vi.fn(),
 }));
+const dicts = vi.hoisted(() => ({ providers: [] as unknown[] }));
 const account = vi.hoisted(() => ({
   user: { id: 'u1' } as { id: string } | null,
   plan: 'plus' as string | undefined,
@@ -52,12 +58,15 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
   default: ({ word }: { word: string }) => <div data-testid='dict-sheet' data-word={word} />,
 }));
-vi.mock('@/services/vocabulary/hintSources', () => ({
+vi.mock('@/services/vocabulary/hintSources', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/vocabulary/hintSources')>()),
   canAskAIForHint: async () => false,
   hintFromAI: vi.fn(),
   hintFromDictionary: vi.fn(async () => 'good fortune'),
 }));
-vi.mock('@/services/dictionaries/registry', () => ({ getEnabledProviders: () => [] }));
+vi.mock('@/services/dictionaries/registry', () => ({
+  getEnabledProviders: () => dicts.providers,
+}));
 
 const entry = (key: string, patch: Partial<VocabularyEntry>, bookHash = 'd'): VocabularyEntry => ({
   id: `en:${key}`,
@@ -105,7 +114,14 @@ beforeEach(() => {
   anki.ankiReadDeck.mockReset().mockResolvedValue({ notes: [], cards: [] });
   anki.ankiAddNotes.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
   anki.ankiUpdateTags.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
-  anki.ankiNoteTypeOutdated.mockReset().mockResolvedValue(false);
+  anki.ankiNoteType.mockReset().mockResolvedValue({ outdated: false, id: 5, fields: FIELDS });
+  anki.ankiSetEntries.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
+  dicts.providers = [];
+  // Loading reads settings.json; the tests set the store directly.
+  useCustomDictionaryStore.setState((state) => ({
+    loadCustomDictionaries: async () => true,
+    settings: { ...state.settings, ankiEntryProviderId: undefined },
+  }));
   anki.ankiUpgradeNoteType.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
 });
 afterEach(() => cleanup());
@@ -332,7 +348,7 @@ describe('VocabularyView Anki link', () => {
 
   it('asks before giving an old note type its audio, then fills the notes Sync added', async () => {
     const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
-    anki.ankiNoteTypeOutdated.mockResolvedValue(true);
+    anki.ankiNoteType.mockResolvedValue({ outdated: true, id: 5, fields: ['Front', 'Back'] });
     anki.ankiReadDeck.mockResolvedValue({
       notes: [{ id: 1, fields: ['<div>spice</div>', 'a drug'], tags: 'readest readest::lang::en' }],
       cards: [],
@@ -356,7 +372,7 @@ describe('VocabularyView Anki link', () => {
   });
 
   it('reads the deck again after the prompt, which asks to sync AnkiDroid first', async () => {
-    anki.ankiNoteTypeOutdated.mockResolvedValue(true);
+    anki.ankiNoteType.mockResolvedValue({ outdated: true, id: 5, fields: ['Front', 'Back'] });
     renderWithMenu();
     fireEvent.click(await syncButton());
     const prompt = await screen.findByRole('region', { name: 'Add Audio to Anki Cards' });
@@ -376,7 +392,7 @@ describe('VocabularyView Anki link', () => {
   });
 
   it('syncs without audio on Not now, stops asking, and offers it again from the menu', async () => {
-    anki.ankiNoteTypeOutdated.mockResolvedValue(true);
+    anki.ankiNoteType.mockResolvedValue({ outdated: true, id: 5, fields: ['Front', 'Back'] });
     renderWithMenu();
     const sync = await syncButton();
     fireEvent.click(sync);
@@ -386,7 +402,7 @@ describe('VocabularyView Anki link', () => {
     expect(anki.ankiUpgradeNoteType).not.toHaveBeenCalled();
 
     fireEvent.click(sync);
-    await waitFor(() => expect(anki.ankiNoteTypeOutdated).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(anki.ankiNoteType).toHaveBeenCalledTimes(2));
     await settle();
     expect(screen.queryByRole('region', { name: 'Add Audio to Anki Cards' })).toBeNull();
 
@@ -413,6 +429,241 @@ describe('VocabularyView Anki link', () => {
     expect(localStorage.getItem('readest-anki-audio-declined')).toBe('1');
     finish();
     await waitFor(() => expect(sync.hasAttribute('disabled')).toBe(false));
+  });
+
+  describe('dictionary entries on the cards (#7728)', () => {
+    const lookups: string[] = [];
+    const collins: DictionaryProvider = {
+      id: 'stardict:collins',
+      kind: 'stardict',
+      label: 'Collins',
+      lookup: async (word, ctx) => {
+        lookups.push(word);
+        ctx.container.innerHTML = `<p>${word} <a href="x">def</a></p>`;
+        return { ok: true };
+      },
+    };
+    const choose = (id: string | undefined) =>
+      useCustomDictionaryStore.setState((state) => ({
+        settings: { ...state.settings, ankiEntryProviderId: id },
+      }));
+    const readNote = (id: number, word: string, entry = '') => ({
+      id,
+      mid: 5,
+      fields: [`<div>${word}</div>`, 'hint', word, 'en_US', entry],
+      tags: 'readest readest::lang::en',
+    });
+
+    beforeEach(() => {
+      lookups.length = 0;
+      dicts.providers = [collins];
+    });
+
+    it("puts the chosen dictionary's entry on new cards and on older cards that have none", async () => {
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      choose('stardict:collins');
+      renderWithMenu();
+      const sync = await syncButton();
+      await waitFor(() => expect(anki.ankiReadDeck).toHaveBeenCalledTimes(1));
+      anki.ankiReadDeck.mockResolvedValue({
+        notes: [readNote(1, 'kettle'), readNote(2, 'ladle', '<p>mine</p>')],
+        cards: [],
+      });
+      fireEvent.click(sync);
+      await waitFor(() => expect(anki.ankiSetEntries).toHaveBeenCalled());
+      const [sent] = anki.ankiAddNotes.mock.calls[0] as [{ fields: string[] }[]];
+      expect(sent.map((n) => n.fields[4])).toEqual(['<p>spice def</p>']);
+      expect(anki.ankiSetEntries).toHaveBeenCalledWith([{ id: 1, entry: '<p>kettle def</p>' }]);
+      expect(lookups).not.toContain('ladle');
+      await waitFor(() =>
+        expect(dispatch).toHaveBeenCalledWith(
+          'toast',
+          expect.objectContaining({
+            message: expect.stringContaining('Added dictionary entries to {{count}} cards'),
+          }),
+        ),
+      );
+      dispatch.mockRestore();
+    });
+
+    it('reads the saved choice when the dictionaries were not loaded yet, as from the library', async () => {
+      // A load stands in for reading settings.json: the store starts without the choice.
+      useCustomDictionaryStore.setState({
+        loadCustomDictionaries: async () => {
+          choose('stardict:collins');
+          return true;
+        },
+      });
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Dictionary for Anki Cards/ }));
+      const panel = await screen.findByRole('region', { name: 'Dictionary for Anki Cards' });
+      expect(
+        (within(panel).getByRole('combobox', { name: 'Dictionary' }) as HTMLSelectElement).value,
+      ).toBe('stardict:collins');
+      fireEvent.click(within(panel).getByRole('button', { name: 'Cancel' }));
+
+      choose(undefined);
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
+      expect(lookups).toEqual(['spice']);
+    });
+
+    it('looks nothing up until a dictionary is chosen', async () => {
+      anki.ankiReadDeck.mockResolvedValue({ notes: [readNote(1, 'kettle')], cards: [] });
+      renderWithMenu();
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
+      expect(lookups).toEqual([]);
+      expect(anki.ankiSetEntries).not.toHaveBeenCalled();
+    });
+
+    it('looks up at most 30 words in one Sync, and goes on from there next time', async () => {
+      choose('stardict:collins');
+      anki.ankiReadDeck.mockResolvedValue({
+        notes: Array.from({ length: 40 }, (_, i) => readNote(i + 1, `w${i}`)),
+        cards: [],
+      });
+      renderWithMenu();
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(anki.ankiSetEntries).toHaveBeenCalled());
+      expect(lookups).toHaveLength(30);
+      // spice, the new card, comes first; the rest of the budget goes to older cards.
+      expect(lookups[0]).toBe('spice');
+      expect((anki.ankiSetEntries.mock.calls[0] as [unknown[]])[0]).toHaveLength(29);
+
+      // The next Sync goes on after note 29, so words the dictionary lacks can't hold the rest back.
+      lookups.length = 0;
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(anki.ankiSetEntries).toHaveBeenCalledTimes(2));
+      expect(lookups.slice(0, 3)).toEqual(['spice', 'w29', 'w30']);
+    });
+
+    it('looks nothing up while the note type has no Entry field', async () => {
+      choose('stardict:collins');
+      localStorage.setItem('readest-anki-audio-declined', '1');
+      anki.ankiNoteType.mockResolvedValue({ outdated: true, id: 5, fields: ['Front', 'Back'] });
+      renderWithMenu();
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
+      expect(lookups).toEqual([]);
+      expect(anki.ankiSetEntries).not.toHaveBeenCalled();
+    });
+
+    it("doesn't send a word deleted while its entry was being looked up", async () => {
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      choose('stardict:collins');
+      const deleting: DictionaryProvider = {
+        ...collins,
+        lookup: async (word, ctx) => {
+          const { entries, remove } = useVocabularyStore.getState();
+          remove(Object.values(entries).find((e) => e.word === word)!.id);
+          return collins.lookup(word, ctx);
+        },
+      };
+      dicts.providers = [deleting];
+      renderWithMenu();
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(dispatch).toHaveBeenCalledWith('toast', expect.anything()));
+      expect(lookups).toEqual(['spice']);
+      expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+      dispatch.mockRestore();
+    });
+
+    it('tags a word with the mark it has after the entries are written', async () => {
+      choose('stardict:collins');
+      anki.ankiReadDeck.mockResolvedValue({ notes: [readNote(1, 'kettle')], cards: [] });
+      // The reader marks the word Mastered while Sync writes the entries.
+      anki.ankiSetEntries.mockImplementation(async (notes: unknown[]) => {
+        act(() => useVocabularyStore.getState().setState('en:kettle', 'mastered'));
+        return notes.length;
+      });
+      renderWithMenu();
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(anki.ankiUpdateTags).toHaveBeenCalled());
+      expect(anki.ankiUpdateTags).toHaveBeenCalledWith([
+        { id: 1, tags: ['readest', 'readest::lang::en', 'readest::mastered'] },
+      ]);
+    });
+
+    it('opens on None when the saved dictionary is no longer enabled', async () => {
+      choose('stardict:removed');
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Dictionary for Anki Cards/ }));
+      const panel = await screen.findByRole('region', { name: 'Dictionary for Anki Cards' });
+      expect(
+        within(panel).getByRole('heading', { name: 'Dictionary for Anki Cards' }),
+      ).toBeTruthy();
+      expect(
+        (within(panel).getByRole('combobox', { name: 'Dictionary' }) as HTMLSelectElement).value,
+      ).toBe('');
+      fireEvent.click(within(panel).getByRole('button', { name: 'Save' }));
+      await waitFor(() =>
+        expect(useCustomDictionaryStore.getState().settings.ankiEntryProviderId).toBeUndefined(),
+      );
+    });
+
+    it('keeps the panel open and the old choice when the choice could not be saved', async () => {
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+      const settingsStore = useSettingsStore.getState();
+      useSettingsStore.setState({
+        settings: { customDictionaries: [] } as unknown as SettingsState['settings'],
+        setSettings: (s: SettingsState['settings']) => useSettingsStore.setState({ settings: s }),
+        saveSettings: vi.fn().mockRejectedValue(new Error('disk full')),
+      } as unknown as SettingsState);
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Dictionary for Anki Cards/ }));
+      const panel = await screen.findByRole('region', { name: 'Dictionary for Anki Cards' });
+      fireEvent.change(within(panel).getByRole('combobox', { name: 'Dictionary' }), {
+        target: { value: 'stardict:collins' },
+      });
+      fireEvent.click(within(panel).getByRole('button', { name: 'Save' }));
+      await waitFor(() =>
+        expect(dispatch).toHaveBeenCalledWith(
+          'toast',
+          expect.objectContaining({ type: 'error', message: "Couldn't save" }),
+        ),
+      );
+      expect(screen.getByRole('region', { name: 'Dictionary for Anki Cards' })).toBeTruthy();
+      // Neither store keeps the choice that wasn't saved, so Sync doesn't use it.
+      expect(useCustomDictionaryStore.getState().settings.ankiEntryProviderId).toBeUndefined();
+      expect(
+        useSettingsStore.getState().settings.dictionarySettings?.ankiEntryProviderId,
+      ).toBeUndefined();
+      useSettingsStore.setState(settingsStore);
+      dispatch.mockRestore();
+    });
+
+    it('chooses the dictionary from the More menu', async () => {
+      const save = vi
+        .spyOn(useCustomDictionaryStore.getState(), 'saveCustomDictionaries')
+        .mockResolvedValue();
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Dictionary for Anki Cards/ }));
+      const panel = await screen.findByRole('region', { name: 'Dictionary for Anki Cards' });
+      const select = within(panel).getByRole('combobox', {
+        name: 'Dictionary',
+      }) as HTMLSelectElement;
+      expect(Array.from(select.options).map((o) => o.text)).toEqual(['None', 'Collins']);
+      fireEvent.change(select, { target: { value: 'stardict:collins' } });
+      fireEvent.click(within(panel).getByRole('button', { name: 'Save' }));
+      await waitFor(() =>
+        expect(useCustomDictionaryStore.getState().settings.ankiEntryProviderId).toBe(
+          'stardict:collins',
+        ),
+      );
+      expect(save).toHaveBeenCalled();
+      expect(screen.queryByRole('region', { name: 'Dictionary for Anki Cards' })).toBeNull();
+      save.mockRestore();
+    });
   });
 
   it('pulls before pushing: a mature card makes a word Mastered and a deck-only note comes in', async () => {

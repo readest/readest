@@ -2889,5 +2889,10 @@
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Synchroniseer AnkiDroid met AnkiWeb voordat je doorgaat. Na deze wijziging vraagt de volgende synchronisatie van AnkiDroid of de hele collectie moet worden geüpload of gedownload: kies Uploaden.",
   "Add Audio": "Audio toevoegen",
   "Added audio to {{count}} cards_one": "Audio toegevoegd aan kaarten: {{count}}",
-  "Added audio to {{count}} cards_other": "Audio toegevoegd aan kaarten: {{count}}"
+  "Added audio to {{count}} cards_other": "Audio toegevoegd aan kaarten: {{count}}",
+  "Dictionary for Anki Cards": "Woordenboek voor Anki-kaarten",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Synchroniseren met Anki zet het lemma uit dit woordenboek op de achterkant van elke kaart, voor maximaal 30 kaarten per synchronisatie",
+  "Added dictionary entries to {{count}} cards_one": "Woordenboeklemma's toegevoegd aan kaarten: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "Woordenboeklemma's toegevoegd aan kaarten: {{count}}",
+  "Dictionary for Anki Cards...": "Woordenboek voor Anki-kaarten..."
 }

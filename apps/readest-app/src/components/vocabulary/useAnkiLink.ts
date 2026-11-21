@@ -5,13 +5,18 @@ import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useVocabularyStore } from '@/store/vocabularyStore';
+import { getEnabledProviders } from '@/services/dictionaries/registry';
 import {
   ANKI_DECK,
   type AnkiImportPlan,
+  ankiEntryGaps,
   ankiNoteFills,
   ankiNotesToSend,
   ankiTagUpdates,
+  ankiWordsToSend,
   defaultImportLang,
   importLanguageOptions,
   planAnkiImport,
@@ -24,19 +29,27 @@ import {
   AnkiError,
   ankiAddNotes,
   ankiListDecks,
-  ankiNoteTypeOutdated,
+  ankiNoteType,
   ankiReadDeck,
   ankiRequestPermission,
+  ankiSetEntries,
   ankiStatus,
   ankiUpdateTags,
   ankiUpgradeNoteType,
 } from '@/services/vocabulary/ankiDroid';
+import { lookupEntry } from '@/services/vocabulary/ankiEntry';
+import { hintProviders } from '@/services/vocabulary/hintSources';
+import type { VocabularyEntry } from '@/services/vocabulary/types';
 import { isAnkiAllowed } from '@/utils/access';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 
 /** Anki calls a review card mature from a 21-day interval. */
 const MATURE_INTERVAL = 21;
+
+// Dictionary lookups per Sync for card entries (#7728), new cards first: an
+// online dictionary takes a moment per word, and the rest come next Sync.
+const MAX_ENTRY_LOOKUPS = 30;
 
 // The words whose mature cards this device has applied. A word lowered after
 // that stays lowered until its card lapses and matures again.
@@ -70,6 +83,21 @@ const saveAudioDeclined = (declined: boolean) => {
   } catch {}
 };
 
+// The last note whose entry Sync looked up (#7728): the next Sync goes on after it.
+const ENTRY_AFTER_KEY = 'readest-anki-entry-after';
+const readEntryAfter = (): number => {
+  try {
+    return Number(localStorage.getItem(ENTRY_AFTER_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+};
+const saveEntryAfter = (id: number) => {
+  try {
+    localStorage.setItem(ENTRY_AFTER_KEY, String(id));
+  } catch {}
+};
+
 /** A deck and its subdecks (`Name::Sub`), which Anki reads as one deck. */
 const deckFamily = (decks: AnkiDeck[], name: string): number[] =>
   decks.filter((d) => d.name === name || d.name.startsWith(`${name}::`)).map((d) => d.id);
@@ -83,6 +111,11 @@ const importNotes = (notes: AnkiNoteRow[], cards?: AnkiCardRow[]) => {
   );
   return notes.map((n) => ({ fields: n.fields, tags: n.tags, mature: mature.has(n.id) }));
 };
+
+export interface AnkiEntryPickerState {
+  providers: { id: string; label: string }[];
+  selected: string;
+}
 
 export interface AnkiImportState {
   decks: AnkiDeck[];
@@ -99,11 +132,12 @@ export interface AnkiImportState {
 export const useAnkiLink = () => {
   const _ = useTranslation();
   const router = useRouter();
-  const { appService } = useEnv();
+  const { appService, envConfig } = useEnv();
   const { user } = useAuth();
   const { userProfilePlan, customizationPurchased } = useQuotaStats();
   const [status, setStatus] = useState<{ installed: boolean; granted: boolean } | null>(null);
   const [importState, setImportState] = useState<AnkiImportState | null>(null);
+  const [entryPicker, setEntryPicker] = useState<AnkiEntryPickerState | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [audioDeclined, setAudioDeclined] = useState(readAudioDeclined);
   // Resolves the open "Add audio" prompt with the reader's answer.
@@ -209,7 +243,7 @@ export const useAnkiLink = () => {
    * Resolves with the answer, or null when there was nothing to ask.
    */
   const askAudio = async (): Promise<boolean | null> => {
-    if (!(await ankiNoteTypeOutdated())) {
+    if (!(await ankiNoteType()).outdated) {
       declineAudio(false);
       return null;
     }
@@ -218,6 +252,30 @@ export const useAnkiLink = () => {
     setAudioPrompt(null);
     if (!add) declineAudio(true);
     return add;
+  };
+
+  // Opened from the library, the dictionaries and their settings may not be
+  // loaded yet: the choice would read as None and a save would overwrite them.
+  const loadDictionaries = () =>
+    useCustomDictionaryStore
+      .getState()
+      .loadCustomDictionaries(envConfig)
+      .catch(() => false);
+
+  // The dictionaries a card entry can come from: no web searches, no paid AI.
+  const entryProviders = () => {
+    const { settings, dictionaries } = useCustomDictionaryStore.getState();
+    return hintProviders(
+      getEnabledProviders({ settings, dictionaries, fs: appService ?? undefined }),
+    );
+  };
+
+  /** The reader's card dictionary, when the note type has an Entry field to fill. */
+  const entryProvider = (fields?: string[]) => {
+    const id = useCustomDictionaryStore.getState().settings.ankiEntryProviderId;
+    // No fields yet: Sync creates the note type, with Entry.
+    if (!id || (fields && !fields.includes('Entry'))) return undefined;
+    return entryProviders().find((p) => p.id === id);
   };
 
   /** Pull, then add Learning words the deck lacks, then bring mark tags in step. */
@@ -231,17 +289,43 @@ export const useAnkiLink = () => {
       // The prompt asks the reader to sync AnkiDroid first, which can bring in notes.
       const { notes, lang, plan, cardsRead } = add === null ? first : await pull();
       const voiced = add ? await ankiUpgradeNoteType(ankiNoteFills(notes)) : 0;
-      const { entries } = useVocabularyStore.getState();
       // Words with no sentence came in from Anki, so they're already there.
-      const learning = Object.values(entries).filter(
-        (e) => e.state === 'learning' && e.occurrences.length,
-      );
-      const outgoing = ankiNotesToSend(learning, notes);
+      const learningOf = (all: Record<string, VocabularyEntry>) =>
+        Object.values(all).filter((e) => e.state === 'learning' && e.occurrences.length);
+      const learning = learningOf(useVocabularyStore.getState().entries);
+      // Dictionary entries (#7728): the cards about to be added first, then
+      // older cards without one, within the lookup budget.
+      const noteType = await ankiNoteType();
+      await loadDictionaries();
+      const provider = entryProvider(noteType.fields);
+      const looked: Record<string, string> = {};
+      const gapEntries: { id: number; entry: string }[] = [];
+      if (provider) {
+        const words = ankiWordsToSend(learning, notes).slice(0, MAX_ENTRY_LOOKUPS);
+        for (const e of words) looked[e.id] = await lookupEntry(e.word, e.lang, provider);
+        const gaps = ankiEntryGaps(notes, noteType, lang, readEntryAfter()).slice(
+          0,
+          MAX_ENTRY_LOOKUPS - words.length,
+        );
+        for (const gap of gaps) {
+          const entry = await lookupEntry(gap.word, gap.lang, provider);
+          if (entry) gapEntries.push({ id: gap.id, entry });
+        }
+        if (gaps.length) saveEntryAfter(gaps[gaps.length - 1]!.id);
+      }
+      // The lookups take a while: send and tag what the list holds now.
+      const { entries } = useVocabularyStore.getState();
+      const outgoing = ankiNotesToSend(learningOf(entries), notes, looked);
       const sent = outgoing.length ? await ankiAddNotes(outgoing) : 0;
-      const updates = ankiTagUpdates(notes, entries, lang);
+      const entered =
+        Object.values(looked).filter(Boolean).length +
+        (gapEntries.length ? await ankiSetEntries(gapEntries) : 0);
+      // Read again: the reader may have changed a mark during the Anki calls.
+      const updates = ankiTagUpdates(notes, useVocabularyStore.getState().entries, lang);
       if (updates.length) await ankiUpdateTags(updates);
       const parts = [
         ...(voiced ? [_('Added audio to {{count}} cards', { count: voiced })] : []),
+        ...(entered ? [_('Added dictionary entries to {{count}} cards', { count: entered })] : []),
         ...(sent ? [_('Added {{count}} words to Anki', { count: sent })] : []),
         ...pullSummary(
           plan === first.plan
@@ -302,6 +386,34 @@ export const useAnkiLink = () => {
     }
   };
 
+  const openEntryPicker = async () => {
+    if (!guard() || !(await loadDictionaries())) return;
+    setEntryPicker({
+      providers: entryProviders().map(({ id, label }) => ({ id, label })),
+      selected: useCustomDictionaryStore.getState().settings.ankiEntryProviderId ?? '',
+    });
+  };
+
+  const saveEntryPicker = async (id: string) => {
+    const store = useCustomDictionaryStore.getState();
+    const previous = store.settings.ankiEntryProviderId;
+    store.setAnkiEntryProviderId(id || undefined);
+    try {
+      await store.saveCustomDictionaries(envConfig);
+      setEntryPicker(null);
+    } catch (err) {
+      console.warn('[anki] saving the card dictionary failed', err);
+      // Put the old choice back in both stores, so Sync doesn't use one that wasn't saved.
+      store.setAnkiEntryProviderId(previous);
+      const { settings, setSettings } = useSettingsStore.getState();
+      setSettings({
+        ...settings,
+        dictionarySettings: useCustomDictionaryStore.getState().settings,
+      });
+      toast('error', _("Couldn't save"));
+    }
+  };
+
   return {
     available: !!status?.installed,
     premiumBadge,
@@ -311,6 +423,10 @@ export const useAnkiLink = () => {
     importState,
     runImport,
     closeImport: () => setImportState(null),
+    entryPicker,
+    openEntryPicker,
+    saveEntryPicker,
+    closeEntryPicker: () => setEntryPicker(null),
     guardFileExport: guard,
     audioPrompt: !!audioPrompt,
     answerAudioPrompt: (add: boolean) => audioPrompt?.(add),

@@ -2889,5 +2889,10 @@
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "پیش از ادامه، AnkiDroid را با AnkiWeb همگام کنید. پس از این تغییر، همگام‌سازی بعدی AnkiDroid می‌پرسد که کل مجموعه بارگذاری شود یا بارگیری: بارگذاری (Upload) را انتخاب کنید.",
   "Add Audio": "افزودن صدا",
   "Added audio to {{count}} cards_one": "صدا به کارت‌ها افزوده شد: {{count}}",
-  "Added audio to {{count}} cards_other": "صدا به کارت‌ها افزوده شد: {{count}}"
+  "Added audio to {{count}} cards_other": "صدا به کارت‌ها افزوده شد: {{count}}",
+  "Dictionary for Anki Cards": "فرهنگ لغت برای کارت‌های Anki",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "همگام‌سازی با Anki مدخل این فرهنگ لغت را پشت هر کارت می‌گذارد، برای حداکثر ۳۰ کارت در هر همگام‌سازی",
+  "Added dictionary entries to {{count}} cards_one": "مدخل فرهنگ لغت به کارت‌ها افزوده شد: {{count}}",
+  "Added dictionary entries to {{count}} cards_other": "مدخل فرهنگ لغت به کارت‌ها افزوده شد: {{count}}",
+  "Dictionary for Anki Cards...": "فرهنگ لغت برای کارت‌های Anki..."
 }

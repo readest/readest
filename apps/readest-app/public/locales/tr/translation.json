@@ -2889,5 +2889,10 @@
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "Devam etmeden önce AnkiDroid'i AnkiWeb ile eşitleyin. Bu değişiklikten sonra AnkiDroid'in bir sonraki eşitlemesi tüm koleksiyonu yüklemeyi veya indirmeyi soracak: Yükle'yi seçin.",
   "Add Audio": "Ses ekle",
   "Added audio to {{count}} cards_one": "{{count}} karta ses eklendi",
-  "Added audio to {{count}} cards_other": "{{count}} karta ses eklendi"
+  "Added audio to {{count}} cards_other": "{{count}} karta ses eklendi",
+  "Dictionary for Anki Cards": "Anki kartları için sözlük",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki ile eşitleme, bu sözlüğün maddesini her kartın arka yüzüne koyar; her eşitlemede en fazla 30 kart",
+  "Added dictionary entries to {{count}} cards_one": "{{count}} karta sözlük maddesi eklendi",
+  "Added dictionary entries to {{count}} cards_other": "{{count}} karta sözlük maddesi eklendi",
+  "Dictionary for Anki Cards...": "Anki kartları için sözlük..."
 }

@@ -2889,5 +2889,10 @@
   "Sync AnkiDroid with AnkiWeb before you continue. After this change, AnkiDroid's next sync asks to upload or download the whole collection: choose Upload.": "தொடர்வதற்கு முன் AnkiDroid-ஐ AnkiWeb உடன் ஒத்திசைக்கவும். இந்த மாற்றத்திற்குப் பிறகு, AnkiDroid-இன் அடுத்த ஒத்திசைவு முழு தொகுப்பையும் பதிவேற்றவா பதிவிறக்கவா எனக் கேட்கும்: Upload-ஐத் தேர்ந்தெடுக்கவும்.",
   "Add Audio": "ஒலியைச் சேர்",
   "Added audio to {{count}} cards_one": "{{count}} அட்டைகளில் ஒலி சேர்க்கப்பட்டது",
-  "Added audio to {{count}} cards_other": "{{count}} அட்டைகளில் ஒலி சேர்க்கப்பட்டது"
+  "Added audio to {{count}} cards_other": "{{count}} அட்டைகளில் ஒலி சேர்க்கப்பட்டது",
+  "Dictionary for Anki Cards": "Anki அட்டைகளுக்கான அகராதி",
+  "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki உடன் ஒத்திசைவு ஒவ்வொரு அட்டையின் பின்புறத்திலும் இந்த அகராதியின் பதிவைச் சேர்க்கிறது, ஒரு ஒத்திசைவுக்கு அதிகபட்சம் 30 அட்டைகள்",
+  "Added dictionary entries to {{count}} cards_one": "{{count}} அட்டைகளில் அகராதிப் பதிவுகள் சேர்க்கப்பட்டன",
+  "Added dictionary entries to {{count}} cards_other": "{{count}} அட்டைகளில் அகராதிப் பதிவுகள் சேர்க்கப்பட்டன",
+  "Dictionary for Anki Cards...": "Anki அட்டைகளுக்கான அகராதி..."
 }
