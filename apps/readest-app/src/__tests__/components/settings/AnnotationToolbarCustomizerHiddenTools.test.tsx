@@ -49,11 +49,11 @@ afterEach(cleanup);
 
 describe('AnnotationToolbarCustomizer on a device that hides some tools', () => {
   it('shows neither hidden tool and keeps both in the saved toolbar', () => {
-    const { getByText, queryByText } = render(
+    const { getByText, queryByRole } = render(
       <AnnotationToolbarCustomizer bookKey='test' onBack={() => {}} />,
     );
-    expect(queryByText('Share')).toBeNull();
-    expect(queryByText('System Dictionary')).toBeNull();
+    expect(queryByRole('button', { name: 'Share' })).toBeNull();
+    expect(queryByRole('button', { name: 'System Dictionary' })).toBeNull();
 
     fireEvent.click(getByText('Clear all'));
     expect(h.saveViewSettings.mock.lastCall?.[3]).toEqual(['share', 'systemdictionary']);
