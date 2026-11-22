@@ -66,7 +66,6 @@ const SortableSortRow: React.FC<SortableSortRowProps> = ({
     transition,
   };
 
-  const isPrimary = index === 0 && !dimmed;
   const displayLabel = index === 0 && primaryAutoLabel ? `${label} (${primaryAutoLabel})` : label;
 
   return (
@@ -87,7 +86,7 @@ const SortableSortRow: React.FC<SortableSortRowProps> = ({
       <button
         type='button'
         data-dnd-sortable-handle='true'
-        className='text-base-content/45 hover:text-base-content flex min-h-8 shrink-0 cursor-grab touch-none items-center justify-center self-stretch pe-2 ps-1 active:cursor-grabbing'
+        className='text-base-content/45 hover:text-base-content flex shrink-0 cursor-grab touch-none items-center justify-center self-stretch pe-2 ps-1 active:cursor-grabbing'
         aria-label={_('Drag to reorder {{label}}', { label })}
         title={_('Drag to reorder')}
         {...attributes}
@@ -105,10 +104,7 @@ const SortableSortRow: React.FC<SortableSortRowProps> = ({
         className='flex min-w-0 flex-1 items-center justify-between text-start'
       >
         <span
-          className={clsx(
-            'me-2 flex-1 break-words text-pretty text-start text-base sm:text-sm',
-            isPrimary ? 'font-semibold' : 'font-normal',
-          )}
+          className='me-2 flex-1 break-words text-pretty text-start text-base font-normal sm:text-sm'
           style={{ minWidth: 0 }}
         >
           {displayLabel}
@@ -116,10 +112,7 @@ const SortableSortRow: React.FC<SortableSortRowProps> = ({
         <span
           aria-hidden='true'
           style={{ minWidth: `${iconSize}px` }}
-          className={clsx(
-            'shrink-0 text-center text-sm',
-            isPrimary ? 'text-base-content font-bold' : 'text-base-content/85 font-normal',
-          )}
+          className='text-base-content/85 shrink-0 text-center text-sm font-normal'
         >
           {item.ascending ? '↑' : '↓'}
         </span>
