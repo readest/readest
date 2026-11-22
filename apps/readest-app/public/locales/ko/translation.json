@@ -2839,5 +2839,8 @@
   "Apple Intelligence is not available on this device.": "이 기기에서는 Apple Intelligence를 사용할 수 없습니다.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence가 꺼져 있습니다. 설정 > Apple Intelligence & Siri에서 켜세요.",
   "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence 모델을 아직 다운로드하는 중입니다. 나중에 다시 시도하세요.",
-  "The text is too long for Apple Intelligence on this device.": "텍스트가 너무 길어 이 기기의 Apple Intelligence에서 처리할 수 없습니다."
+  "The text is too long for Apple Intelligence on this device.": "텍스트가 너무 길어 이 기기의 Apple Intelligence에서 처리할 수 없습니다.",
+  "Forget": "삭제",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "이 WebDAV 서버 정보를 삭제할까요? 주소와 로그인 정보가 이 기기, Readest Cloud, 그리고 이 서버에 연결되지 않은 다른 기기에서 삭제됩니다. 서버의 파일은 그대로 유지됩니다.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "이 S3 버킷 정보를 삭제할까요? 엔드포인트와 키가 이 기기, Readest Cloud, 그리고 이 버킷에 연결되지 않은 다른 기기에서 삭제됩니다. 버킷의 파일은 그대로 유지됩니다."
 }

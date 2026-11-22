@@ -2914,5 +2914,8 @@
   "Apple Intelligence is not available on this device.": "Apple Intelligence در این دستگاه در دسترس نیست.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence خاموش است. آن را در تنظیمات > Apple Intelligence & Siri روشن کنید.",
   "The Apple Intelligence model is still downloading. Try again later.": "مدل Apple Intelligence هنوز در حال دانلود است. بعداً دوباره تلاش کنید.",
-  "The text is too long for Apple Intelligence on this device.": "متن برای Apple Intelligence در این دستگاه بیش از حد طولانی است."
+  "The text is too long for Apple Intelligence on this device.": "متن برای Apple Intelligence در این دستگاه بیش از حد طولانی است.",
+  "Forget": "فراموش کردن",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "این سرور WebDAV فراموش شود؟ نشانی و اطلاعات ورود آن از این دستگاه، از Readest Cloud و از دیگر دستگاه‌های شما که به آن متصل نیستند حذف می‌شود. فایل‌های روی سرور دست‌نخورده می‌مانند.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "این باکت S3 فراموش شود؟ نقطه پایانی و کلیدهای آن از این دستگاه، از Readest Cloud و از دیگر دستگاه‌های شما که به آن متصل نیستند حذف می‌شود. فایل‌های داخل باکت دست‌نخورده می‌مانند."
 }

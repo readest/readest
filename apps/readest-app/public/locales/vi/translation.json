@@ -2839,5 +2839,8 @@
   "Apple Intelligence is not available on this device.": "Apple Intelligence không khả dụng trên thiết bị này.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence đang tắt. Hãy bật trong Cài đặt > Apple Intelligence & Siri.",
   "The Apple Intelligence model is still downloading. Try again later.": "Mô hình Apple Intelligence vẫn đang tải về. Hãy thử lại sau.",
-  "The text is too long for Apple Intelligence on this device.": "Văn bản quá dài đối với Apple Intelligence trên thiết bị này."
+  "The text is too long for Apple Intelligence on this device.": "Văn bản quá dài đối với Apple Intelligence trên thiết bị này.",
+  "Forget": "Quên",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Quên máy chủ WebDAV này? Địa chỉ và thông tin đăng nhập của nó sẽ bị xóa khỏi thiết bị này, khỏi Readest Cloud và khỏi các thiết bị khác của bạn không kết nối với nó. Các tệp trên máy chủ không bị ảnh hưởng.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Quên bucket S3 này? Endpoint và khóa của nó sẽ bị xóa khỏi thiết bị này, khỏi Readest Cloud và khỏi các thiết bị khác của bạn không kết nối với nó. Các tệp trong bucket không bị ảnh hưởng."
 }

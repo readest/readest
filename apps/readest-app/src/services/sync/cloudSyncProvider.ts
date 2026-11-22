@@ -24,6 +24,35 @@ export const settingsKeyForBackend = (
 ): 'webdav' | 'googleDrive' | 's3' | 'onedrive' | 'icloud' =>
   kind === 'gdrive' ? 'googleDrive' : kind;
 
+/** Providers whose saved connection the Integrations page can Forget (#7799). */
+export type ForgettableConnection = 'webdav' | 's3';
+
+/**
+ * Reset a provider's server address and login to the defaults. Per-device
+ * state (`enabled`, `deviceId`, sync toggles, cursors) is kept: Forget only
+ * removes what the user typed into the connect form.
+ */
+export const withConnectionForgotten = (
+  settings: SystemSettings,
+  kind: ForgettableConnection,
+): SystemSettings =>
+  kind === 'webdav'
+    ? {
+        ...settings,
+        webdav: { ...settings.webdav, serverUrl: '', username: '', password: '', rootPath: '/' },
+      }
+    : {
+        ...settings,
+        s3: {
+          ...settings.s3,
+          endpoint: '',
+          region: 'auto',
+          bucket: '',
+          accessKeyId: '',
+          secretAccessKey: '',
+        },
+      };
+
 /** Human-readable provider name (product names — deliberately untranslated). */
 export const cloudProviderDisplayName = (kind: CloudSyncProviderKind): string =>
   kind === 'gdrive'

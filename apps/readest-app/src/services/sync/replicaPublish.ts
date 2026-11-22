@@ -12,6 +12,10 @@ import type { FieldsObject, Hlc, ReplicaRow } from '@/types/replica';
  * field stamps. The row is queued via replicaSyncManager.markDirty
  * (5s debounced push, immediate flush on visibilitychange / online).
  *
+ * `clearedFields` names encrypted fields to ship as empty values whatever
+ * the credentials toggle or the session lock say: an empty value carries
+ * no secret, and it is how an explicit Forget clears the cloud copy (#7799).
+ *
  * No-op when:
  *   - replica sync is not initialized (e.g., user signed out)
  *   - the kind has no registered adapter
@@ -22,6 +26,7 @@ export const publishReplicaUpsert = async <T>(
   record: T,
   contentId: string,
   reincarnation?: string,
+  clearedFields: readonly string[] = [],
 ): Promise<void> => {
   if (!isSyncCategoryEnabled(kind)) return;
   const ctx = getReplicaSync();
@@ -50,6 +55,7 @@ export const publishReplicaUpsert = async <T>(
   // Encrypts the remaining encryptedFields in place. Locked session →
   // those fields are dropped from the push (sync without creds).
   await encryptPackedFields(packed, adapter.encryptedFields);
+  for (const field of clearedFields) packed[field] = '';
   let fields: FieldsObject = {};
   let maxFieldHlc: Hlc | null = null;
   for (const [key, value] of Object.entries(packed)) {

@@ -2839,5 +2839,8 @@
   "Apple Intelligence is not available on this device.": "སྒྲིག་ཆས་འདིའི་ཐོག་ Apple Intelligence བེད་སྤྱོད་བྱེད་མི་ཐུབ།",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence སྒོ་བརྒྱབ་ཡོད། སྒྲིག་འགོད་ > Apple Intelligence & Siri ནང་ཁ་ཕྱེ་རོགས།",
   "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence དཔེ་དབྱིབས་ད་དུང་ཕབ་ལེན་བྱེད་བཞིན་ཡོད། རྗེས་སུ་ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
-  "The text is too long for Apple Intelligence on this device.": "ཡི་གེ་འདི་སྒྲིག་ཆས་འདིའི་ Apple Intelligence ལ་རིང་དྲགས་འདུག"
+  "The text is too long for Apple Intelligence on this device.": "ཡི་གེ་འདི་སྒྲིག་ཆས་འདིའི་ Apple Intelligence ལ་རིང་དྲགས་འདུག",
+  "Forget": "བརྗེད་པ།",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "WebDAV ཞབས་ཞུ་འཕྲུལ་ཆས་འདི་བརྗེད་དགོས་སམ། དེའི་ཁ་བྱང་དང་ནང་འཛུལ་ཆ་འཕྲིན་སྒྲིག་ཆས་འདི་དང་། Readest Cloud། དེ་དང་མཐུད་མེད་པའི་ཁྱེད་ཀྱི་སྒྲིག་ཆས་གཞན་དག་ནས་སུབ་རྒྱུ་ཡིན། ཞབས་ཞུ་འཕྲུལ་ཆས་ཐོག་གི་ཡིག་ཆར་ཐེ་གཏོགས་མི་བྱེད།",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "S3 སྣོད་འདི་བརྗེད་དགོས་སམ། དེའི་མཐའ་ཚེག་དང་ལྡེ་མིག་སྒྲིག་ཆས་འདི་དང་། Readest Cloud། དེ་དང་མཐུད་མེད་པའི་ཁྱེད་ཀྱི་སྒྲིག་ཆས་གཞན་དག་ནས་སུབ་རྒྱུ་ཡིན། སྣོད་ནང་གི་ཡིག་ཆར་ཐེ་གཏོགས་མི་བྱེད།"
 }

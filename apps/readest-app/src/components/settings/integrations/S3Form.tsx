@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
@@ -9,7 +9,7 @@ import { FileSyncError } from '@/services/sync/file/provider';
 import { createS3Provider } from '@/services/sync/providers/s3/S3Provider';
 import { SectionTitle } from '../primitives';
 import FileSyncForm from './FileSyncForm';
-import { persistCloudProviderEnabled } from './cloudSync';
+import { forgetCloudProviderConnection, persistCloudProviderEnabled } from './cloudSync';
 
 /**
  * Translate a connection-probe failure into a user-facing string. Each branch
@@ -42,15 +42,22 @@ const formatConnectError = (_: TranslationFunc, e: unknown): string => {
  *   settings, so a previously-configured bucket reconnects in one click).
  *   Connect probes the bucket with one signed listing — wrong keys surface as
  *   an auth failure, a wrong bucket as not-found — then turns S3 on. Every
- *   other provider is left exactly as it was (#5062).
+ *   other provider is left exactly as it was (#5062). Forget removes the
+ *   saved bucket here and in Readest Cloud (#7799).
  */
 const S3Form: React.FC = () => {
   const _ = useTranslation();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
 
   const stored = settings.s3;
   const isActive = !!stored?.enabled;
+  const hasSavedConnection = !!(
+    stored?.endpoint ||
+    stored?.bucket ||
+    stored?.accessKeyId ||
+    stored?.secretAccessKey
+  );
 
   const [endpoint, setEndpoint] = useState(stored?.endpoint || '');
   const [region, setRegion] = useState(stored?.region || 'auto');
@@ -58,7 +65,21 @@ const S3Form: React.FC = () => {
   const [accessKeyId, setAccessKeyId] = useState(stored?.accessKeyId || '');
   const [secretAccessKey, setSecretAccessKey] = useState(stored?.secretAccessKey || '');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isForgetting, setIsForgetting] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+
+  // Drop the drafts once the saved connection is gone, whether this window,
+  // another window or another device forgot it: useState keeps its initial
+  // values, and Connect would otherwise save the forgotten bucket again.
+  useEffect(() => {
+    if (hasSavedConnection) return;
+    setEndpoint('');
+    setRegion('auto');
+    setBucket('');
+    setAccessKeyId('');
+    setSecretAccessKey('');
+    setShowSecret(false);
+  }, [hasSavedConnection]);
 
   const canSubmit = !!(endpoint && bucket && accessKeyId && secretAccessKey);
 
@@ -101,6 +122,22 @@ const S3Form: React.FC = () => {
     await persistCloudProviderEnabled(envConfig, 's3', false);
     setShowSecret(false);
     eventDispatcher.dispatch('toast', { type: 'info', message: _('Disconnected') });
+  };
+
+  const handleForget = async () => {
+    const confirmed = await appService?.ask(
+      _(
+        'Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.',
+      ),
+    );
+    if (!confirmed) return;
+    // Connect waits: a bucket saved before the Forget's upload went out would race it.
+    setIsForgetting(true);
+    try {
+      await forgetCloudProviderConnection(envConfig, 's3');
+    } finally {
+      setIsForgetting(false);
+    }
   };
 
   const persistS3 = async (patch: Partial<typeof stored>) => {
@@ -240,10 +277,21 @@ const S3Form: React.FC = () => {
         </div>
       </div>
 
-      <div className='flex justify-end pt-1'>
+      <div className='flex items-center justify-end gap-2 pt-1'>
+        {hasSavedConnection && (
+          <button
+            type='button'
+            onClick={handleForget}
+            // A pending Connect would save the bucket again after a Forget.
+            disabled={isConnecting}
+            className='text-error me-auto min-h-11 min-w-11 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+          >
+            {_('Forget')}
+          </button>
+        )}
         <button
           type='submit'
-          disabled={isConnecting || !canSubmit}
+          disabled={isConnecting || isForgetting || !canSubmit}
           className={clsx(
             'btn btn-contrast',
             'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',

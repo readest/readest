@@ -2914,5 +2914,8 @@
   "Apple Intelligence is not available on this device.": "इस डिवाइस पर Apple Intelligence उपलब्ध नहीं है।",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence बंद है। इसे सेटिंग्स > Apple Intelligence & Siri में चालू करें।",
   "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence मॉडल अभी डाउनलोड हो रहा है। बाद में फिर से कोशिश करें।",
-  "The text is too long for Apple Intelligence on this device.": "इस डिवाइस पर Apple Intelligence के लिए टेक्स्ट बहुत लंबा है।"
+  "The text is too long for Apple Intelligence on this device.": "इस डिवाइस पर Apple Intelligence के लिए टेक्स्ट बहुत लंबा है।",
+  "Forget": "भूल जाएं",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "इस WebDAV सर्वर को भूल जाएं? इसका पता और लॉगिन इस डिवाइस से, Readest Cloud से और आपके उन अन्य डिवाइसों से हटा दिया जाएगा जो इससे कनेक्ट नहीं हैं। सर्वर पर मौजूद फ़ाइलें नहीं बदली जाएंगी।",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "इस S3 बकेट को भूल जाएं? इसका एंडपॉइंट और कुंजियां इस डिवाइस से, Readest Cloud से और आपके उन अन्य डिवाइसों से हटा दी जाएंगी जो इससे कनेक्ट नहीं हैं। बकेट की फ़ाइलें नहीं बदली जाएंगी।"
 }

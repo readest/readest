@@ -3064,5 +3064,8 @@
   "Apple Intelligence is not available on this device.": "Apple Intelligence недоступен на этом устройстве.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence выключен. Включите его в Настройки > Apple Intelligence & Siri.",
   "The Apple Intelligence model is still downloading. Try again later.": "Модель Apple Intelligence ещё загружается. Повторите попытку позже.",
-  "The text is too long for Apple Intelligence on this device.": "Текст слишком длинный для Apple Intelligence на этом устройстве."
+  "The text is too long for Apple Intelligence on this device.": "Текст слишком длинный для Apple Intelligence на этом устройстве.",
+  "Forget": "Забыть",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Забыть этот сервер WebDAV? Его адрес и данные для входа будут удалены с этого устройства, из Readest Cloud и с ваших других устройств, которые к нему не подключены. Файлы на сервере не затрагиваются.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Забыть этот бакет S3? Его конечная точка и ключи будут удалены с этого устройства, из Readest Cloud и с ваших других устройств, которые к нему не подключены. Файлы в бакете не затрагиваются."
 }

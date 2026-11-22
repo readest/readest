@@ -2989,5 +2989,8 @@
   "Apple Intelligence is not available on this device.": "Apple Intelligence לא זמין במכשיר זה.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence כבוי. הפעילו אותו בהגדרות > Apple Intelligence & Siri.",
   "The Apple Intelligence model is still downloading. Try again later.": "המודל של Apple Intelligence עדיין בהורדה. נסו שוב מאוחר יותר.",
-  "The text is too long for Apple Intelligence on this device.": "הטקסט ארוך מדי עבור Apple Intelligence במכשיר זה."
+  "The text is too long for Apple Intelligence on this device.": "הטקסט ארוך מדי עבור Apple Intelligence במכשיר זה.",
+  "Forget": "שכח",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "לשכוח את שרת ה-WebDAV הזה? הכתובת ופרטי ההתחברות שלו יוסרו מהמכשיר הזה, מ-Readest Cloud ומהמכשירים האחרים שלך שאינם מחוברים אליו. הקבצים בשרת לא ייפגעו.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "לשכוח את דלי ה-S3 הזה? נקודת הקצה והמפתחות שלו יוסרו מהמכשיר הזה, מ-Readest Cloud ומהמכשירים האחרים שלך שאינם מחוברים אליו. הקבצים בדלי לא ייפגעו."
 }

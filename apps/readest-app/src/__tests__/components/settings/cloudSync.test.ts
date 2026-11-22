@@ -5,11 +5,17 @@ vi.mock('@/utils/settingsSync', () => ({
   broadcastGlobalSettings: vi.fn(),
 }));
 
+vi.mock('@/services/sync/replicaSettingsSync', () => ({
+  publishConnectionForget: vi.fn(async () => {}),
+}));
+
 import {
+  forgetCloudProviderConnection,
   persistCloudProviderEnabled,
   persistReadestCloudChoice,
   withCloudProviderEnabled,
 } from '@/services/sync/cloudSyncActivation';
+import { publishConnectionForget } from '@/services/sync/replicaSettingsSync';
 import { useSettingsStore } from '@/store/settingsStore';
 import { broadcastGlobalSettings } from '@/utils/settingsSync';
 import { CLOUD_SYNC_REQUIRES_PREMIUM, isCloudSyncAllowed, isCloudSyncInPlan } from '@/utils/access';
@@ -292,5 +298,57 @@ describe('isCloudSyncAllowed — customization unlock', () => {
 
   test('does not entitle a storage-only buyer after the grace period', () => {
     expect(isCloudSyncAllowed('purchase', false)).toBe(false);
+  });
+});
+
+describe('forgetCloudProviderConnection (#7799)', () => {
+  test.each([
+    {
+      kind: 'webdav' as const,
+      saved: { serverUrl: 'https://dav', username: 'u', password: 'p', rootPath: '/Books' },
+      forgotten: { serverUrl: '', username: '', password: '', rootPath: '/' },
+    },
+    {
+      kind: 's3' as const,
+      saved: {
+        endpoint: 'https://s3',
+        region: 'eu-west-1',
+        bucket: 'b',
+        accessKeyId: 'k',
+        secretAccessKey: 's',
+      },
+      forgotten: { endpoint: '', region: 'auto', bucket: '', accessKeyId: '', secretAccessKey: '' },
+    },
+  ])('resets the $kind connection, uploads the reset, and tells other windows', async ({
+    kind,
+    saved,
+    forgotten,
+  }) => {
+    const perDevice = { enabled: false, deviceId: 'dev-1', syncBooks: false, lastSyncedAt: 42 };
+    useSettingsStore.setState({
+      settings: { version: 1, [kind]: { ...perDevice, ...saved } } as unknown as SystemSettings,
+    });
+    mockBroadcastGlobalSettings.mockClear();
+    // The publish reads the cleared connection back from the store.
+    let storeWhenPublished: unknown;
+    vi.mocked(publishConnectionForget).mockImplementation(async () => {
+      storeWhenPublished = useSettingsStore.getState().settings[kind];
+    });
+    const saveSettings = vi.fn().mockResolvedValue(undefined);
+    const envConfig = {
+      getAppService: vi.fn().mockResolvedValue({ saveSettings }),
+    } as unknown as EnvConfigType;
+
+    const next = await forgetCloudProviderConnection(envConfig, kind);
+
+    expect(publishConnectionForget).toHaveBeenCalledWith(kind);
+    expect(storeWhenPublished).toMatchObject(forgotten);
+    expect(next[kind]).toEqual({ ...perDevice, ...forgotten });
+    expect(useSettingsStore.getState().settings).toBe(next);
+    expect(saveSettings).toHaveBeenCalledWith(next);
+    expect(mockBroadcastGlobalSettings).toHaveBeenCalledWith(next, {
+      includeCloudSyncProviders: true,
+      forgottenConnection: kind,
+    });
   });
 });

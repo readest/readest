@@ -2914,5 +2914,8 @@
   "Apple Intelligence is not available on this device.": "මෙම උපාංගයේ Apple Intelligence ලබා ගත නොහැක.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence අක්‍රියයි. සැකසීම් > Apple Intelligence & Siri තුළ එය සක්‍රිය කරන්න.",
   "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence ආකෘතිය තවමත් බාගත වෙමින් පවතී. පසුව නැවත උත්සාහ කරන්න.",
-  "The text is too long for Apple Intelligence on this device.": "මෙම උපාංගයේ Apple Intelligence සඳහා පෙළ ඉතා දිගයි."
+  "The text is too long for Apple Intelligence on this device.": "මෙම උපාංගයේ Apple Intelligence සඳහා පෙළ ඉතා දිගයි.",
+  "Forget": "අමතක කරන්න",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "මෙම WebDAV සේවාදායකය අමතක කරන්නද? එහි ලිපිනය සහ පිවිසුම් තොරතුරු මෙම උපාංගයෙන්, Readest Cloud වෙතින් සහ එයට සම්බන්ධ නොවූ ඔබේ අනෙකුත් උපාංගවලින් ඉවත් කෙරේ. සේවාදායකයේ ගොනු වෙනස් නොවේ.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "මෙම S3 බාල්දිය අමතක කරන්නද? එහි අන්ත ලක්ෂ්‍යය සහ යතුරු මෙම උපාංගයෙන්, Readest Cloud වෙතින් සහ එයට සම්බන්ධ නොවූ ඔබේ අනෙකුත් උපාංගවලින් ඉවත් කෙරේ. බාල්දියේ ගොනු වෙනස් නොවේ."
 }
