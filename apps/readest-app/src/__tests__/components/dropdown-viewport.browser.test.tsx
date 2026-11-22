@@ -34,6 +34,7 @@ import Dropdown from '@/components/Dropdown';
 import Menu from '@/components/Menu';
 import MenuItem from '@/components/MenuItem';
 import { DropdownProvider } from '@/context/DropdownContext';
+import { useThemeStore } from '@/store/themeStore';
 
 const PHONE_WIDTH = 360;
 const VIEWPORT_PADDING = 16;
@@ -95,6 +96,7 @@ beforeAll(async () => {
 afterEach(async () => {
   cleanup();
   document.documentElement.classList.remove('ui-rtl');
+  useThemeStore.setState({ safeAreaInsets: { top: 0, right: 0, bottom: 0, left: 0 } });
   await page.viewport(PHONE_WIDTH, 800);
 });
 
@@ -244,5 +246,20 @@ describe('Dropdown menu viewport layout', () => {
     expect(pushProgress.matches(':hover')).toBe(false);
     expect(linkBook.matches(':hover')).toBe(true);
     expect(menu.querySelectorAll('[role="menuitem"]:hover')).toHaveLength(1);
+  });
+
+  it('caps menu max-height by the top and bottom safe-area insets', async () => {
+    await page.viewport(393, 852);
+    useThemeStore.setState({ safeAreaInsets: { top: 59, right: 0, bottom: 34, left: 0 } });
+
+    const labels = Array.from({ length: 30 }, (_, i) => `Option ${i + 1}`);
+    renderMenu(labels, { anchorLeft: 8 });
+
+    await expectMenuWithinViewport();
+    const menu = openMenu();
+    const rect = menu.getBoundingClientRect();
+    // 852 - 59 - 34 - 96 = 663
+    expect(rect.height).toBeLessThanOrEqual(663 + 1);
+    expect(menu.scrollHeight).toBeGreaterThan(menu.clientHeight);
   });
 });
