@@ -52,8 +52,13 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getStripe();
-    const successUrl = `${request.headers.get('origin')}/user/subscription/success?payment=stripe&session_id={CHECKOUT_SESSION_ID}`;
-    const returnUrl = `${request.headers.get('origin')}/user`;
+    const origin = request.headers.get('origin');
+    // A gift purchase returns to the buyer's gift cards, not the plan pages.
+    const isGift = typeof metadata.giftCardId === 'string';
+    const successUrl = isGift
+      ? `${origin}/user?section=gifts&session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/user/subscription/success?payment=stripe&session_id={CHECKOUT_SESSION_ID}`;
+    const returnUrl = isGift ? `${origin}/user?section=gifts` : `${origin}/user`;
     const session = await stripe.checkout.sessions.create({
       ui_mode: embedded ? 'embedded_page' : 'hosted_page',
       customer: customerId,

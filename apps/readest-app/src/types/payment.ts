@@ -1,3 +1,4 @@
+import { GiftTier } from './gift';
 import { QuotaFeature, UserPlan } from './quota';
 
 export type PaymentProvider = 'stripe' | 'apple' | 'google';
@@ -20,6 +21,8 @@ export interface StripeProductMetadata {
   translationChars?: string;
   tokensM?: string;
   customization?: string;
+  /** Marks a gift card product; such a product has no `plan`. */
+  gift?: GiftTier;
 }
 
 export interface BasePaymentData {
