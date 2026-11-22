@@ -573,8 +573,8 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
           className={clsx(
             'drag-handle absolute z-10 flex items-center justify-center',
             isStacked
-              ? 'inset-x-0 -mt-1.5 h-3 cursor-row-resize'
-              : 'inset-y-0 -ms-1.5 w-3 cursor-col-resize',
+              ? 'inset-x-0 -mt-4 h-8 cursor-row-resize'
+              : 'inset-y-0 -ms-4 w-8 cursor-col-resize',
           )}
           style={isStacked ? { top: `${split ?? 50}%` } : { insetInlineStart: `${split ?? 50}%` }}
           onMouseDown={handleSplitDragStart}
