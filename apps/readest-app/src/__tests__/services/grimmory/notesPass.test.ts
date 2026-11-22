@@ -49,9 +49,13 @@ class FakeServer {
   statuses: string[] = [];
 
   listBooks = vi.fn(async () => this.books);
-  readContent = vi.fn(async (bookId: number, _type: unknown, start: number, end: number) =>
-    this.files.get(bookId)!.slice(start, end),
-  );
+  readContent = vi.fn(async (bookId: number, _type: unknown, start: number, end: number) => {
+    const file = this.files.get(bookId)!;
+    // Grimmory answers a range past the end of the file with a 416.
+    if (start >= file.length) throw new GrimmoryRequestError(416, 'range not satisfiable');
+    return file.slice(start, end);
+  });
+  contentLength = vi.fn(async (bookId: number) => this.files.get(bookId)!.length);
   getAnnotations = vi.fn(async (bookId: number) =>
     this.annotations.filter((a) => a.bookId === bookId),
   );
@@ -171,6 +175,52 @@ describe('findGrimmoryBook', () => {
     const server = new FakeServer();
     server.files.set(2, makeFile(LOCAL.length, 3));
     expect(await findGrimmoryBook(server, { hash: HASH, fileSize: LOCAL.length })).toBeNull();
+  });
+
+  // #7809: Grimmory updates a file's hash, not its fileSizeKb, when it writes
+  // metadata into the file, so the listed size is the file's old size.
+  test('finds a book whose listed size is stale by its title', async () => {
+    const server = new FakeServer();
+    server.books = [
+      {
+        id: 2,
+        metadata: { title: 'Alice in Wonderland (Grimmory edit)' },
+        primaryFile: { id: 2, fileSizeKb: Math.floor(LOCAL.length / 1024) + 1, bookType: 'EPUB' },
+      },
+    ];
+    expect(await findGrimmoryBook(server, { hash: HASH, fileSize: LOCAL.length })).toBeNull();
+    const match = await findGrimmoryBook(server, {
+      hash: HASH,
+      fileSize: LOCAL.length,
+      titles: ['Alice in  Wonderland (Grimmory Edit)'],
+    });
+    expect(match).toMatchObject({ bookId: 2, bookFileId: 2, isPrimary: true });
+  });
+
+  test('a same-title file is checked by its real length, not only its partial MD5', async () => {
+    const server = new FakeServer();
+    // A shorter copy still holds every range the partial MD5 reads.
+    const prefix = LOCAL.slice(0, 300_000);
+    expect(partialMD5Ranges(LOCAL.length).every(([, end]) => end <= prefix.length)).toBe(true);
+    server.files.set(1, prefix);
+    server.books = [
+      {
+        id: 1,
+        metadata: { title: 'Alice' },
+        primaryFile: { id: 1, fileSizeKb: Math.floor(prefix.length / 1024), bookType: 'EPUB' },
+      },
+      {
+        id: 2,
+        metadata: { title: 'Alice' },
+        primaryFile: { id: 2, fileSizeKb: Math.floor(LOCAL.length / 1024) + 1, bookType: 'EPUB' },
+      },
+    ];
+    const match = await findGrimmoryBook(server, {
+      hash: HASH,
+      fileSize: LOCAL.length,
+      titles: ['Alice'],
+    });
+    expect(match).toMatchObject({ bookId: 2 });
   });
 });
 

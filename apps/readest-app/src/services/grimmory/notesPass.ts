@@ -37,6 +37,7 @@ export interface GrimmoryPassDeps {
     GrimmoryClient,
     | 'listBooks'
     | 'readContent'
+    | 'contentLength'
     | 'getAnnotations'
     | 'createAnnotation'
     | 'updateAnnotation'
@@ -52,6 +53,7 @@ export interface GrimmoryPassDeps {
   book: {
     hash: string;
     fileSize?: number;
+    titles?: (string | undefined)[];
     readingStatus?: ReadingStatus;
     readingStatusUpdatedAt?: number;
   };
@@ -180,6 +182,7 @@ export const runGrimmoryPass = async (
     account,
     hash: book.hash,
     fileSize: book.fileSize,
+    titles: book.titles,
   });
   if (!match) {
     deps.onUnmatched();

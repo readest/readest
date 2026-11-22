@@ -3,7 +3,7 @@ import type { GrimmoryClient } from './GrimmoryClient';
 import type { GrimmoryBookMatch, GrimmorySyncStore } from './GrimmorySyncStore';
 import type { GrimmoryBookFile } from './types';
 
-type MatchClient = Pick<GrimmoryClient, 'listBooks' | 'readContent'>;
+type MatchClient = Pick<GrimmoryClient, 'listBooks' | 'readContent' | 'contentLength'>;
 type MatchStore = Pick<GrimmorySyncStore, 'getBook' | 'setBook'>;
 
 /**
@@ -28,19 +28,31 @@ export const remotePartialMD5 = async (
   return hasher.hex();
 };
 
+const normalizeTitle = (title: string | null | undefined) =>
+  (title ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+
 export const findGrimmoryBook = async (
   client: MatchClient,
-  local: { hash: string; fileSize: number },
+  local: { hash: string; fileSize: number; titles?: (string | undefined)[] },
 ): Promise<GrimmoryBookMatch | null> => {
   const sizeKb = Math.floor(local.fileSize / 1024);
+  const titles = new Set((local.titles ?? []).map(normalizeTitle).filter(Boolean));
   const books = await client.listBooks();
   for (const book of books) {
+    const sameTitle = titles.has(normalizeTitle(book.metadata?.title ?? book.title));
     const files: [GrimmoryBookFile | null | undefined, boolean][] = [
       [book.primaryFile, true],
       ...(book.alternativeFormats ?? []).map((file): [GrimmoryBookFile, boolean] => [file, false]),
     ];
     for (const [file, isPrimary] of files) {
-      if (!file || file.fileSizeKb !== sizeKb) continue;
+      if (!file) continue;
+      if (file.fileSizeKb !== sizeKb) {
+        // Grimmory updates a file's hash but not its listed size when it
+        // writes metadata into the file (#7809), so a file of the same title
+        // is checked by its real length.
+        if (!sameTitle) continue;
+        if ((await client.contentLength(book.id, file.bookType)) !== local.fileSize) continue;
+      }
       if ((await remotePartialMD5(client, book.id, file, local.fileSize)) !== local.hash) continue;
       return {
         bookId: book.id,
@@ -70,8 +82,10 @@ export const resolveGrimmoryBook = async (params: {
   account: string;
   hash: string;
   fileSize?: number;
+  /** The local book's titles, to find a file whose listed size is stale. */
+  titles?: (string | undefined)[];
 }): Promise<GrimmoryBookMatch | null> => {
-  const { client, store, account, hash, fileSize } = params;
+  const { client, store, account, hash, fileSize, titles } = params;
   const stored = await store.getBook(account, hash);
   if (stored || !fileSize) return stored;
 
@@ -82,7 +96,7 @@ export const resolveGrimmoryBook = async (params: {
   if (pending) return pending;
 
   const lookup = (async () => {
-    const found = await findGrimmoryBook(client, { hash, fileSize });
+    const found = await findGrimmoryBook(client, { hash, fileSize, titles });
     if (found) {
       await store.setBook(account, hash, found);
       misses.delete(key);

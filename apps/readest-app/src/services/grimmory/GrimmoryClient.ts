@@ -204,16 +204,14 @@ export class GrimmoryClient {
     return this.json<GrimmoryBook>(`/api/v1/books/${bookId}`);
   }
 
-  /** Bytes [start, end) of a book file, via an HTTP Range request. */
-  async readContent(
+  private async content(
     bookId: number,
     bookType: GrimmoryBookType | null | undefined,
-    start: number,
-    end: number,
-  ): Promise<Uint8Array> {
+    range: string,
+  ): Promise<Response> {
     const query = bookType ? `?bookType=${encodeURIComponent(bookType)}` : '';
     const response = await this.authorized(`/api/v1/books/${bookId}/content${query}`, {
-      headers: { Accept: '*/*', Range: `bytes=${start}-${end - 1}` },
+      headers: { Accept: '*/*', Range: range },
     });
     if (!response.ok) {
       throw new GrimmoryRequestError(
@@ -221,9 +219,32 @@ export class GrimmoryClient {
         `Content request failed (${response.status})`,
       );
     }
+    return response;
+  }
+
+  /** Bytes [start, end) of a book file, via an HTTP Range request. */
+  async readContent(
+    bookId: number,
+    bookType: GrimmoryBookType | null | undefined,
+    start: number,
+    end: number,
+  ): Promise<Uint8Array> {
+    const response = await this.content(bookId, bookType, `bytes=${start}-${end - 1}`);
     const bytes = new Uint8Array(await response.arrayBuffer());
     // A server that ignores Range sends the whole file from byte 0.
     return response.status === 206 ? bytes : bytes.slice(start, end);
+  }
+
+  /** A book file's length in bytes, from the Content-Range of a one-byte read. */
+  async contentLength(
+    bookId: number,
+    bookType: GrimmoryBookType | null | undefined,
+  ): Promise<number> {
+    const response = await this.content(bookId, bookType, 'bytes=0-0');
+    const bytes = await response.arrayBuffer();
+    // A server that ignores Range sends the whole file.
+    if (response.status !== 206) return bytes.byteLength;
+    return Number(response.headers.get('Content-Range')?.split('/')[1]);
   }
 
   getAnnotations(bookId: number): Promise<GrimmoryAnnotation[]> {
