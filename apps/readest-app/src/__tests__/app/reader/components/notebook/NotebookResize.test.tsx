@@ -214,6 +214,23 @@ describe('Notebook layout', () => {
     }
   });
 
+  // An unpinned Notebook floats over the page, so unpinning closes it, as
+  // unpinning the sidebar does (#7788).
+  test('closes when unpinned, and stays open when pinned', () => {
+    setWindow(1280, 800);
+    render(<Notebook />);
+    act(() => useNotebookStore.getState().setNotebookVisible(true));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pin Notebook' }));
+    expect(useNotebookStore.getState().isNotebookPinned).toBe(true);
+    expect(panel()).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unpin Notebook' }));
+    expect(useNotebookStore.getState().isNotebookPinned).toBe(false);
+    expect(flushNotebookDocument).toHaveBeenCalledWith('book-1');
+    expect(screen.queryByRole('group', { name: 'Notebook' })).toBeNull();
+  });
+
   test('shows the Dictionary tab', () => {
     render(<Notebook />);
     act(() => {

@@ -5,7 +5,7 @@
  * latest lookup and tells the reader it is on screen.
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import type { DictionaryProvider } from '@/services/dictionaries/types';
 import { useDictionaryDockStore } from '@/store/dictionaryDockStore';
@@ -37,8 +37,19 @@ const linking: DictionaryProvider = {
     return { ok: true, headword: word };
   },
 };
+// Over three dictionaries with results start folded.
+const plain = (n: number): DictionaryProvider => ({
+  id: `test:plain-${n}`,
+  kind: 'builtin',
+  label: `Plain ${n}`,
+  lookup: async (word, ctx) => {
+    ctx.container.append(`plain ${n}: ${word}`);
+    return { ok: true, headword: word };
+  },
+});
+const providers = vi.hoisted(() => ({ list: [] as DictionaryProvider[] }));
 vi.mock('@/services/dictionaries/registry', () => ({
-  getEnabledProviders: () => [linking],
+  getEnabledProviders: () => providers.list,
   __resetRegistryForTests: vi.fn(),
   evictProvider: vi.fn(),
 }));
@@ -65,7 +76,10 @@ beforeAll(() => {
   );
 });
 afterAll(() => vi.unstubAllGlobals());
-beforeEach(() => useDictionaryDockStore.setState({ lookup: null, isDocked: false }));
+beforeEach(() => {
+  providers.list = [linking];
+  useDictionaryDockStore.setState({ lookup: null, isDocked: false });
+});
 afterEach(cleanup);
 
 describe('Pin to Notebook in the dictionary popup', () => {
@@ -156,6 +170,33 @@ describe('the Notebook Dictionary tab', () => {
     expect(useDictionaryDockStore.getState().isDocked).toBe(true);
     unmount();
     expect(useDictionaryDockStore.getState().isDocked).toBe(false);
+  });
+
+  // A tap that clears a selection in a definition is still a tap on the card;
+  // in the Notebook it must not fold the card and lose the place (#7788).
+  it('keeps an open card open when it is tapped', async () => {
+    useDictionaryDockStore.getState().setLookup({ word: 'serendipity', lang: 'en' });
+    render(<DictionaryView bookKey='book-1' />);
+    const card = screen.getByTestId('dict-card');
+    await waitFor(() => expect(card.getAttribute('aria-expanded')).toBe('true'));
+
+    fireEvent.click(card);
+
+    expect(card.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('still unfolds a folded card when it is tapped', async () => {
+    providers.list = [plain(1), plain(2), plain(3), plain(4)];
+    useDictionaryDockStore.getState().setLookup({ word: 'serendipity', lang: 'en' });
+    render(<DictionaryView bookKey='book-1' />);
+    await screen.findByText('plain 4: serendipity');
+    const card = screen.getAllByTestId('dict-card')[0]!;
+    await waitFor(() => expect(card.getAttribute('aria-expanded')).toBe('false'));
+
+    fireEvent.click(card);
+    expect(card.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(card);
+    expect(card.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('opens Manage Dictionaries from its gear', () => {

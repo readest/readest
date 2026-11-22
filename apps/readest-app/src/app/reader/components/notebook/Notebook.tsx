@@ -126,6 +126,8 @@ const Notebook: React.FC = () => {
 
   const handleTogglePin = () => {
     toggleNotebookPin();
+    // As the sidebar does: an unpinned Notebook would float over the page.
+    if (isNotebookPinned) hideNotebook();
     const globalReadSettings = settings.globalReadSettings;
     saveSysSettings(envConfig, 'globalReadSettings', {
       ...globalReadSettings,
