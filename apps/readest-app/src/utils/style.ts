@@ -747,14 +747,31 @@ const getPageLayoutStyles = (
   }
 
   /* A section holding only an image (a cover, a plate) has it sized to the
-     page. A top margin above it, or the descent of the line it sits on, makes
-     its line taller than the page, and the rest goes onto the next page:
-     WebKit cuts the image there, Chromium moves it whole (#6676). */
+     page. A top margin above it makes its line taller than the page, and the
+     rest goes onto the next page: WebKit cuts the image there, Chromium moves
+     it whole and leaves a blank page (#6676). */
   body.paginated-mode :has(.lone-image) {
     margin-block-start: 0 !important;
   }
-  body.paginated-mode .lone-image {
-    vertical-align: top;
+  /* WebKit never moves anything taller than a page: it cuts it where it falls.
+     An image sized to the page sits on the baseline with the line's descent
+     under it, so its line is a few px taller than the page and the image is
+     cut across two pages. Chromium moves it whole. Aligning an image alone on
+     its line to the top drops the descent, so its line fits; an image that
+     shares its line with text keeps the book's alignment.
+     A block that ends exactly on a page boundary also carries the margin after
+     it onto the next page, where Chromium drops it, so a second page-tall image
+     went a page further and left a blank page. Ending the line 1px early lets
+     WebKit drop that margin; :where() lets a book's own margin win.
+     -webkit-line-box-contain is supported only by WebKit (#6676). */
+  @supports (-webkit-line-box-contain: replaced) {
+    body.paginated-mode img.alone-on-line:not(.has-text-siblings),
+    body.paginated-mode .lone-image {
+      vertical-align: top;
+    }
+    :where(body.paginated-mode img.alone-on-line:not(.has-text-siblings)) {
+      margin-block-end: -1px;
+    }
   }
 
   body.scroll-mode img {
@@ -1995,6 +2012,54 @@ const INLINE_IMAGE_CONTAINER_TAGS = new Set([
   'q',
 ]);
 
+// An element whose content flows on its parent's lines (a, span, a div made
+// inline); anything else but an inline-block ends the line. An empty value
+// is the initial `inline`, in environments that report unset props as ''.
+const flowsInLine = (display: string) =>
+  display === 'inline' || display === '' || display === 'contents' || display.startsWith('ruby');
+
+// What comes first on the image's line, reading `node` in one direction:
+// text, a line break (a <br> or a block), or neither
+const scanLine = (node: Node, forward: boolean, win: Window): 'text' | 'break' | null => {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent?.trim() ? 'text' : null;
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+  const el = node as Element;
+  const display = win.getComputedStyle(el).display;
+  if (display === 'none') return null;
+  if (el.localName === 'br') return 'break';
+  if (display.startsWith('inline-')) return el.textContent?.trim() ? 'text' : null;
+  if (!flowsInLine(display)) return 'break';
+  const children = Array.from(el.childNodes);
+  for (const child of forward ? children : children.reverse()) {
+    const found = scanLine(child, forward, win);
+    if (found) return found;
+  }
+  return null;
+};
+
+// Whether text shares the image's line: read out from the image and from each
+// inline element around it (links included), up to a <br> or a block. A break
+// ends the line in that direction for every element further out too.
+const hasTextOnLine = (img: Element, win: Window): boolean => {
+  const open = { backward: true, forward: true };
+  for (let node: Element = img; node.parentElement; node = node.parentElement) {
+    for (const forward of [false, true]) {
+      const side = forward ? 'forward' : 'backward';
+      let sib = open[side] ? (forward ? node.nextSibling : node.previousSibling) : null;
+      for (; sib; sib = forward ? sib.nextSibling : sib.previousSibling) {
+        const found = scanLine(sib, forward, win);
+        if (found === 'text') return true;
+        if (found === 'break') {
+          open[side] = false;
+          break;
+        }
+      }
+    }
+    if (!flowsInLine(win.getComputedStyle(node.parentElement).display)) return false;
+  }
+  return false;
+};
+
 const hasInlineTextSibling = (container: Element, targetNode: Node): boolean => {
   const childNodes = Array.from(container.childNodes);
   const idx = childNodes.indexOf(targetNode as ChildNode);
@@ -2100,6 +2165,7 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
       keepBaseline,
       noEnlarge,
       leadingImageParagraph,
+      aloneOnLine: !hasTextOnLine(img, win),
     };
   });
 
@@ -2128,8 +2194,10 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
     keepBaseline,
     noEnlarge,
     leadingImageParagraph,
+    aloneOnLine,
   } of plans) {
     leadingImageParagraph?.classList.add('leading-image');
+    if (aloneOnLine) img.classList.add('alone-on-line');
     if (!isNaN(percentWidth)) {
       img.style.width = `${(percentWidth / 100) * baseWidth}px`;
       img.removeAttribute('width');

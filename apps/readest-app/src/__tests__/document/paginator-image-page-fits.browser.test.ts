@@ -94,7 +94,7 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
   });
 
   // Two pages to a spread, with the reader's page margins, as on a desktop
-  const open = async (cover: string) => {
+  const open = async (cover: string, pageSpread = 'center') => {
     const el = document.createElement('foliate-paginator') as Renderer;
     Object.assign(el.style, {
       width: '1200px',
@@ -116,7 +116,7 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     });
     document.body.appendChild(el);
     paginator = el;
-    const book = { sections: [makeSection(cover, 'center'), makeSection(TEXT)] };
+    const book = { sections: [makeSection(cover, pageSpread), makeSection(TEXT)] };
     el.open(book as unknown as BookDoc);
     el.setStyles?.(getStyles(makeViewSettings(), undefined, []));
     const stabilized = waitForStabilized(el);
@@ -163,5 +163,29 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     // and its page, which the image's wrapper spans, sits in the middle of
     // the spread
     expect(middleOf(el, doc.body.firstElementChild!)).toBeCloseTo(1, 1);
+  });
+
+  // Page-tall images later in a chapter, as in the reporter's book. The
+  // descent under an image made its line taller than a page, and WebKit, which
+  // never moves anything taller than a page, cut it across two pages where it
+  // fell. Once it fits, WebKit carried the paragraph's bottom margin onto the
+  // next page and pushed the second image a page further, leaving a blank
+  // page. Chromium moves the image whole and drops a margin at a page break.
+  it('keeps page-tall images after text whole on consecutive pages', async () => {
+    const text = `<p>${'Some text before the example. '.repeat(40)}</p>`;
+    const figure = `<p style="margin-bottom: 1em"><img alt="" height="100%" src="${COVER}"/><br/></p>`;
+    const { el, doc } = await open(`${text}${figure}${figure}${TEXT}`, '');
+    const [first, second] = doc.querySelectorAll('img');
+    expect(first!.getClientRects()).toHaveLength(1);
+    expect(second!.getClientRects()).toHaveLength(1);
+    expect(middleOf(el, second!) - middleOf(el, first!)).toBeCloseTo(1, 1);
+  });
+
+  // Only an image alone on its line is top-aligned: a linked icon before text
+  // keeps the book's own alignment
+  it("keeps the book's alignment for a linked icon before text", async () => {
+    const icon = `<style>img.icon { vertical-align: middle; }</style><p><a href="#n"><img class="icon" alt="" src="${COVER}" height="16"/></a> Text after the icon.</p>`;
+    const { img } = await open(icon, '');
+    expect(getComputedStyle(img).verticalAlign).toBe('middle');
   });
 });

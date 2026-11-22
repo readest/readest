@@ -816,6 +816,68 @@ describe('applyImageStyle', () => {
     applyImageStyle(document);
     expect(document.querySelectorAll('.lone-image')).toHaveLength(lone ? 1 : 0);
   });
+
+  // An image with no text on its line is top-aligned in WebKit so a page-tall
+  // one fits its page (#6676); an image sharing its line with text keeps the
+  // book's alignment, even inside a link
+  it.each([
+    ['an image and a line break', '<p><img src="c.png" /><br /></p>', true],
+    ['an image in a div', '<div><img src="c.png" /></div>', true],
+    ['a linked image', '<p><a href="#p"><img src="c.png" /></a></p>', true],
+    ['an image above its caption', '<p><img src="c.png" /><br />Plate 1</p>', true],
+    ['an image beside a comment', '<p><!-- plate --><img src="c.png" /></p>', true],
+    [
+      'an image before a span that breaks the line',
+      '<p><img src="c.png" /><span><br />Caption</span></p>',
+      true,
+    ],
+    [
+      'an image after a break inside its span',
+      '<p>Caption<span><br /><img src="c.png" /></span></p>',
+      true,
+    ],
+    [
+      'an image in a span made a block, before text',
+      '<p><span style="display: block"><img src="c.png" /></span>Text</p>',
+      true,
+    ],
+    [
+      'an image between paragraphs',
+      '<div><p>Before</p><img src="c.png" /><p>After</p></div>',
+      true,
+    ],
+    [
+      'an image after text in a link',
+      '<p>Figure 1 <a href="#f"><img src="c.png" /></a></p>',
+      false,
+    ],
+    [
+      'a linked icon before text',
+      '<p><a href="#n"><img class="icon" src="n.png" /></a>Text</p>',
+      false,
+    ],
+    ['an image beside linked text', '<p><img src="c.png" /><a href="#n">Note</a></p>', false],
+    ['an image in a span after text', '<p>Text <span><img src="c.png" /></span></p>', false],
+    [
+      'an image before a span with text, then a break',
+      '<p><img src="c.png" /><span>Note<br />Caption</span></p>',
+      false,
+    ],
+    [
+      'an image before a hidden break and text',
+      '<p><img src="c.png" /><br style="display: none" />Text</p>',
+      false,
+    ],
+    [
+      'a linked icon in a div made inline, before text',
+      '<div><div style="display: inline"><a href="#n"><img src="n.png" /></a></div> Text</div>',
+      false,
+    ],
+  ])('tells whether %s is alone on its line', (_, html, alone) => {
+    document.body.innerHTML = html;
+    applyImageStyle(document);
+    expect(document.querySelectorAll('img.alone-on-line')).toHaveLength(alone ? 1 : 0);
+  });
 });
 
 describe('applyLinkHitArea', () => {
