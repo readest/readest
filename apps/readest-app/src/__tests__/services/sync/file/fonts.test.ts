@@ -224,17 +224,29 @@ describe('syncFonts', () => {
     expect(r.writes).toEqual([]);
   });
 
-  test('a re-import here newer than the listed import is recorded', async () => {
+  test('a re-import here uploads again after an older delete elsewhere raced it', async () => {
     const r = memoryProvider();
     r.setIndex([remote()]);
     r.files.set('/Readest/fonts/c1/Inter-Regular.ttf', BYTES);
     seed([font({ downloadedAt: 300 })]);
+    const readText = r.provider.readText;
+    let peerDeleted = false;
+    r.provider.readText = async (p) => {
+      const body = await readText(p);
+      if (!peerDeleted) {
+        // Both passes read the old index; the peer's delete at 200 lands first.
+        peerDeleted = true;
+        r.files.delete('/Readest/fonts/c1/Inter-Regular.ttf');
+        r.setIndex([remote({ deletedAt: 200 })]);
+      }
+      return body;
+    };
 
     await syncFonts(envConfig, r.provider, 'silent');
+    await syncFonts(envConfig, r.provider, 'silent');
 
-    // A delete made elsewhere before 300 must not win over this import.
+    expect(r.files.get('/Readest/fonts/c1/Inter-Regular.ttf')).toBe(BYTES);
     expect(r.index().fonts).toEqual([remote({ addedAt: 300 })]);
-    expect(r.writes).toEqual([INDEX]);
   });
 
   test('keeps a delete a peer commits while this pass runs', async () => {

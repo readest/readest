@@ -135,16 +135,11 @@ export const syncFonts = async (
           removed.set(contentId, entry);
         } else {
           if (font.unavailable) continue;
-          const importedAt = font.downloadedAt ?? 0;
-          if (entry && !entry.deletedAt) {
-            // Already listed: record a newer import here (same file), so a
-            // delete made elsewhere before it can't win.
-            if (importedAt <= entry.addedAt) continue;
-            entries.set(contentId, { ...entry, addedAt: importedAt });
-          } else {
-            if (entry?.deletedAt && entry.deletedAt > importedAt) continue;
-            entries.set(contentId, await uploadFont(provider, appService, font));
-          }
+          // A live entry is left alone, even for a newer import here: listing
+          // it without uploading could leave an entry with no file if a delete
+          // raced it. If an older delete wins, the next pass uploads again.
+          if (entry && (!entry.deletedAt || entry.deletedAt > (font.downloadedAt ?? 0))) continue;
+          entries.set(contentId, await uploadFont(provider, appService, font));
         }
         changed = true;
       } catch (e) {
