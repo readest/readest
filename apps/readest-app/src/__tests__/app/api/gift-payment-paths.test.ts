@@ -16,6 +16,7 @@ const hooks = vi.hoisted(() => ({
   validateUserAndToken: vi.fn(),
   sessionsRetrieve: vi.fn(),
   sessionsCreate: vi.fn(),
+  constructEvent: vi.fn(),
   verifyTransaction: vi.fn(),
   verifyPurchase: vi.fn(),
   acknowledgePurchase: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock('stripe', () => {
   function MockStripe() {
     return {
       checkout: { sessions: { retrieve: hooks.sessionsRetrieve, create: hooks.sessionsCreate } },
+      webhooks: { constructEvent: hooks.constructEvent },
     };
   }
   MockStripe.createFetchHttpClient = () => ({});
@@ -139,6 +141,7 @@ import { handleAppleNotification } from '@/libs/payment/iap/apple/notifications'
 import { POST as checkoutPost } from '@/app/api/stripe/checkout/route';
 import { POST as applePost } from '@/app/api/apple/iap-verify/route';
 import { POST as googlePost } from '@/app/api/google/iap-verify/route';
+import { POST as stripeWebhookPost } from '@/app/api/stripe/webhook/route';
 
 const BUYER = 'buyer-1';
 const DRAFT_ID = '6f1c2d3e-4b5a-4c7d-8e9f-0a1b2c3d4e5f';
@@ -236,6 +239,7 @@ beforeEach(() => {
     hooks.validateUserAndToken,
     hooks.sessionsRetrieve,
     hooks.sessionsCreate,
+    hooks.constructEvent,
     hooks.verifyTransaction,
     hooks.verifyPurchase,
     hooks.acknowledgePurchase,
@@ -322,6 +326,59 @@ describe('Stripe gift payments', () => {
     await expect(createOrUpdatePayment(BUYER, 'cus_1', 'cs_1')).rejects.toThrow(
       'gift card belongs to another buyer',
     );
+  });
+});
+
+// A bank debit (ACH, SEPA) is still processing when the checkout completes;
+// Stripe reports the money arriving as a separate event.
+describe('Stripe delayed payments', () => {
+  const asyncPaymentSucceeded = () => {
+    hooks.constructEvent.mockReturnValue({
+      type: 'checkout.session.async_payment_succeeded',
+      data: {
+        object: {
+          id: 'cs_1',
+          mode: 'payment',
+          customer: 'cus_1',
+          metadata: { userId: BUYER, giftCardId: DRAFT_ID },
+        },
+      },
+    });
+    return stripeWebhookPost(
+      new NextRequest('https://web.readest.com/api/stripe/webhook', {
+        method: 'POST',
+        headers: { 'stripe-signature': 'sig' },
+        body: '{}',
+      }),
+    );
+  };
+
+  it('async_payment_succeeded for a gift session activates the card', async () => {
+    hooks.sessionsRetrieve.mockResolvedValue(stripeSession());
+
+    const res = await asyncPaymentSucceeded();
+
+    expect(res.status).toBe(200);
+    expect(hooks.sessionsRetrieve).toHaveBeenCalledWith('cs_1', expect.anything());
+    expect(hooks.activateGiftCard).toHaveBeenCalledWith(
+      expect.objectContaining({ buyerId: BUYER, paymentRef: 'pi_1', giftCardId: DRAFT_ID }),
+    );
+  });
+
+  it('async_payment_succeeded for a storage session records the payment', async () => {
+    hooks.sessionsRetrieve.mockResolvedValue(
+      stripeSession({ productMetadata: { plan: 'purchase', storageGB: '5' } }),
+    );
+
+    const res = await asyncPaymentSucceeded();
+
+    expect(res.status).toBe(200);
+    expect(hooks.paymentWrites[0]).toMatchObject({
+      stripe_payment_intent_id: 'pi_1',
+      status: 'succeeded',
+      storage_gb: 5,
+    });
+    expect(hooks.activateGiftCard).not.toHaveBeenCalled();
   });
 });
 
