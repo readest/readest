@@ -447,7 +447,9 @@ const ProfilePage = () => {
                           ? searchParams.get('session_id') || undefined
                           : undefined
                       }
-                      useIAP={buyThroughIAP}
+                      // An IAP build sells gifts through its store only: store
+                      // prices or none, never Stripe while the store loads.
+                      useIAP={appService.hasIAP}
                       onPlanChanged={handleGiftPlanChanged}
                     />
                   </div>

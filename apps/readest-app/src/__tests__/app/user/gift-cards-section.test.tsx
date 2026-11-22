@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
   purchaseIAPProduct: vi.fn(),
   writeTextToClipboard: vi.fn(),
   dispatch: vi.fn(),
+  router: { replace: vi.fn() },
   // Stable identity, like the real memoized useTranslation.
   translate: (key: string, params?: Record<string, string | number>): string =>
     params ? key.replace(/\{\{(\w+)\}\}/g, (_match, name) => String(params[name] ?? '')) : key,
@@ -44,6 +45,7 @@ vi.mock('@/utils/access', () => ({ getAccessToken: async () => 'test-token' }));
 vi.mock('@/utils/clipboard', () => ({ writeTextToClipboard: h.writeTextToClipboard }));
 vi.mock('@/utils/event', () => ({ eventDispatcher: { dispatch: h.dispatch } }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => h.translate }));
+vi.mock('@/hooks/useAppRouter', () => ({ useAppRouter: () => h.router }));
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ user: { user_metadata: { full_name: 'Alex' } } }),
 }));
@@ -111,6 +113,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -147,6 +150,8 @@ describe('GiftCardsSection', () => {
       ),
     );
     expect(h.purchaseIAPProduct).not.toHaveBeenCalled();
+    // The page is leaving for Stripe: a second tap must not make a second draft.
+    expect(((await buyButton()) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('buying with IAP verifies with the draft id', async () => {
@@ -173,6 +178,46 @@ describe('GiftCardsSection', () => {
     await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(2));
   });
 
+  it('a failed verify after the store charged says the payment was received', async () => {
+    h.fetchGiftPrices.mockResolvedValue(IAP_PRICES);
+    h.purchaseIAPProduct.mockResolvedValue({ platform: 'android', purchaseToken: 'token-1' });
+    h.verifyGiftIAPPurchase.mockRejectedValue(new Error('gift_verify_failed'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderSection({ useIAP: true });
+    await waitFor(() => expect(h.fetchGiftPrices).toHaveBeenCalledWith(true));
+    fireEvent.click(await buyButton());
+
+    await waitFor(() =>
+      expect(h.dispatch).toHaveBeenCalledWith('toast', {
+        type: 'info',
+        message:
+          'Payment received. Your gift card will appear here shortly, or use Restore Purchase.',
+      }),
+    );
+    expect(h.dispatch).not.toHaveBeenCalledWith('toast', {
+      type: 'info',
+      message: 'Failed to buy the gift card',
+    });
+    await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(2));
+  });
+
+  it('an IAP build with no store products shows no price and never uses Stripe', async () => {
+    h.fetchGiftPrices.mockImplementation(async (useIAP: boolean) => (useIAP ? [] : STRIPE_PRICES));
+
+    renderSection({ useIAP: true });
+    await waitFor(() => expect(h.fetchGiftPrices).toHaveBeenCalledWith(true));
+    await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalled());
+
+    expect(h.fetchGiftPrices).not.toHaveBeenCalledWith(false);
+    expect(screen.queryByText(/\$39\.99|\$79\.99/)).toBeNull();
+    const buy = screen.getByRole('button', { name: 'Buy' }) as HTMLButtonElement;
+    expect(buy.disabled).toBe(true);
+    fireEvent.click(buy);
+    expect(h.createGiftDraft).not.toHaveBeenCalled();
+    expect(h.createStripeCheckoutSession).not.toHaveBeenCalled();
+  });
+
   it('a returning Stripe session is checked before the list loads', async () => {
     let finishCheck!: (value: Response) => void;
     const fetchMock = vi.fn(
@@ -182,6 +227,7 @@ describe('GiftCardsSection', () => {
         }),
     );
     vi.stubGlobal('fetch', fetchMock);
+    window.history.replaceState(null, '', '/user?section=gifts&session_id=cs_returning');
 
     renderSection({ stripeSessionId: 'cs_returning' });
 
@@ -192,9 +238,13 @@ describe('GiftCardsSection', () => {
       body: JSON.stringify({ sessionId: 'cs_returning' }),
     });
     expect(h.fetchGiftCards).not.toHaveBeenCalled();
+    expect(h.router.replace).not.toHaveBeenCalled();
 
     finishCheck(new Response(JSON.stringify({ session: {} }), { status: 200 }));
     await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(1));
+    // Checked once: the session leaves the URL, so reopening the view doesn't
+    // check it again.
+    expect(h.router.replace).toHaveBeenCalledWith('/user?section=gifts');
   });
 
   it('redeem shows the shared error for a bad code', async () => {

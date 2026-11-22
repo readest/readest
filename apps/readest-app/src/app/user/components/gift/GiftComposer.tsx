@@ -16,7 +16,7 @@ import {
   type GiftTier,
 } from '@/types/gift';
 import { getPlanAccent } from '../../utils/plan';
-import GiftCard, { GIFT_TIER_NAMES } from './GiftCard';
+import GiftCard, { giftTierName } from './GiftCard';
 
 export type GiftFaceText = Pick<GiftDraftInput, 'recipientName' | 'senderName' | 'message'>;
 
@@ -150,7 +150,7 @@ const GiftComposer: React.FC<GiftComposerProps> = ({ prices, defaultSenderName, 
               />
               <span className='flex min-w-0 flex-col'>
                 <SettingLabel>
-                  {_('Readest {{plan}}', { plan: GIFT_TIER_NAMES[option] })}
+                  {_('Readest {{plan}}', { plan: giftTierName(option, _) })}
                 </SettingLabel>
                 <span className='text-base-content/70 text-[0.85em]'>
                   {optionPrice ? `${_('1 year')} · ${formatPrice(optionPrice)}` : _('1 year')}

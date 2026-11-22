@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useAppRouter } from '@/hooks/useAppRouter';
 import { useTranslation } from '@/hooks/useTranslation';
 import { SectionTitle } from '@/components/settings/primitives';
 import {
@@ -58,6 +59,7 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
   onPlanChanged,
 }) => {
   const _ = useTranslation();
+  const router = useAppRouter();
   const { user } = useAuth();
   const giveId = useId();
   const receivedId = useId();
@@ -106,13 +108,24 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
 
   useEffect(() => {
     const open = async () => {
-      await finishPurchase(stripeSessionId ? await checkStripeSession(stripeSessionId) : false);
+      let paid = false;
+      if (stripeSessionId) {
+        paid = await checkStripeSession(stripeSessionId);
+        // Checked once: reopening the view must not check and announce it again.
+        const params = new URLSearchParams(window.location.search);
+        params.delete('session_id');
+        router.replace(`${window.location.pathname}?${params}`);
+      }
+      await finishPurchase(paid);
     };
     void open();
     // Once on open: a returning checkout is checked before the first load.
   }, []);
 
   useEffect(() => {
+    // Never keep one store's prices once the other is in use: a Stripe price
+    // id must not reach the store, nor a store id Stripe.
+    setPrices([]);
     let stale = false;
     fetchGiftPrices(useIAP)
       .then((next) => {
@@ -131,6 +144,9 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
 
   const handleBuy = async (draft: GiftDraftInput, price: GiftPrice) => {
     setBusy(true);
+    // Set once the page is on its way to Stripe: a second tap before it leaves
+    // would make a second draft and session.
+    let leaving = false;
     try {
       const giftCardId = await createGiftDraft(draft);
       if (useIAP) {
@@ -140,7 +156,20 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
           return null;
         });
         if (!purchase) return;
-        await verifyGiftIAPPurchase(purchase, giftCardId);
+        // The store has charged by now. A failed verify is retried by the
+        // store notification and Restore Purchase, so don't call it a failure.
+        try {
+          await verifyGiftIAPPurchase(purchase, giftCardId);
+        } catch (error) {
+          console.error('Gift purchase verification failed:', error);
+          toast(
+            _(
+              'Payment received. Your gift card will appear here shortly, or use Restore Purchase.',
+            ),
+          );
+          await load();
+          return;
+        }
         await finishPurchase(true);
         return;
       }
@@ -153,12 +182,13 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
         setCheckout({ sessionId, clientSecret });
       } else {
         await redirectToStripeCheckout(url);
+        leaving = true;
       }
     } catch (error) {
       console.error('Gift purchase failed:', error);
       toast(_('Failed to buy the gift card'));
     } finally {
-      setBusy(false);
+      if (!leaving) setBusy(false);
     }
   };
 

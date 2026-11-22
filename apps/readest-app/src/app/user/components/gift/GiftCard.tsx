@@ -1,9 +1,10 @@
 import clsx from 'clsx';
 import { PiBookOpenTextFill } from 'react-icons/pi';
-import { useTranslation } from '@/hooks/useTranslation';
+import { type TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import type { GiftCardFace, GiftTier } from '@/types/gift';
 
-export const GIFT_TIER_NAMES: Record<GiftTier, string> = { plus: 'Plus', pro: 'Pro' };
+export const giftTierName = (tier: GiftTier, _: TranslationFunc) =>
+  tier === 'pro' ? _('Pro') : _('Plus');
 
 /**
  * Each tier's palette, from the plan accents' sky and violet families. The card
@@ -117,7 +118,7 @@ const GiftCard: React.FC<GiftCardProps> = ({ face, className }) => {
 
       <p className='mt-1.5 flex flex-wrap items-baseline gap-x-2 pe-8 leading-tight'>
         <span className='text-xl font-semibold tracking-tight'>
-          {_('Readest {{plan}}', { plan: GIFT_TIER_NAMES[face.tier] })}
+          {_('Readest {{plan}}', { plan: giftTierName(face.tier, _) })}
         </span>
         <span aria-hidden='true' className={tier.muted}>
           ·
