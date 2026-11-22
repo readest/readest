@@ -70,7 +70,17 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const commitQueueRef = React.useRef<Promise<void>>(Promise.resolve());
   const pendingCommitsRef = React.useRef(0);
   const latestPriorityOrderRef = React.useRef(priorityOrder);
-  if (pendingCommitsRef.current === 0) {
+  // A commit updates settings before router.replace lands, and the stale ?sort=&thenSort=
+  // would re-promote the old criteria meanwhile: hold the committed order until it resolves.
+  const awaitingResolvedOrderRef = React.useRef(false);
+  const orderKey = (order: LibrarySortCriterion[]) =>
+    order.map((c) => `${c.by}:${c.ascending}`).join(',');
+  if (
+    pendingCommitsRef.current === 0 &&
+    (!awaitingResolvedOrderRef.current ||
+      orderKey(priorityOrder) === orderKey(latestPriorityOrderRef.current))
+  ) {
+    awaitingResolvedOrderRef.current = false;
     latestPriorityOrderRef.current = priorityOrder;
   }
 
@@ -134,6 +144,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const commitSortOrder = async (next: LibrarySortCriterion[]) => {
     const [primary, secondary] = next;
     if (!primary) return;
+    awaitingResolvedOrderRef.current = true;
 
     await saveSysSettings(envConfig, 'librarySortCustom', false);
     await saveSysSettings(envConfig, 'librarySortByAuto', false);
@@ -287,7 +298,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           />
           <hr aria-hidden='true' className='border-base-200 my-1' />
           <SortPriorityList
-            items={priorityOrder}
+            items={latestPriorityOrderRef.current}
             labels={sortLabels}
             dimmed={sortBy === LibrarySortByType.Custom}
             autoLabel={_('Auto')}
