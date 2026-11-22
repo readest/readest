@@ -249,6 +249,49 @@ describe('syncFonts', () => {
     expect(r.index().fonts).toEqual([remote({ addedAt: 300 })]);
   });
 
+  test('a delete lost to a racing write is listed again, then the re-import uploads', async () => {
+    const r = memoryProvider();
+    r.setIndex([remote()]);
+    r.files.set('/Readest/fonts/c1/Inter-Regular.ttf', BYTES);
+    const deleter = [font({ deletedAt: 200 })];
+    const importer = [
+      font({ downloadedAt: 300 }),
+      font({ id: 'f2', contentId: 'c2', bundleDir: 'b2', path: 'b2/Inter-Bold.ttf' }),
+    ];
+    seed(importer);
+    const readText = r.provider.readText;
+    let reads = 0;
+    r.provider.readText = async (p) => {
+      const body = await readText(p);
+      if (++reads === 2) {
+        // The peer's delete at 200 commits after this pass re-reads fonts.json.
+        r.files.delete('/Readest/fonts/c1/Inter-Regular.ttf');
+        r.setIndex([remote({ deletedAt: 200 })]);
+      }
+      return body;
+    };
+
+    // The importer uploads c2, and its write lists c1 over the peer's tombstone.
+    await syncFonts(envConfig, r.provider, 'silent');
+    r.provider.readText = readText;
+    expect(r.index().fonts.map((f) => [f.contentId, f.deletedAt])).toEqual([
+      ['c1', undefined],
+      ['c2', undefined],
+    ]);
+    expect(r.files.has('/Readest/fonts/c1/Inter-Regular.ttf')).toBe(false);
+
+    // The deleter's next pass still sees its delete as the later event.
+    seed(deleter);
+    await syncFonts(envConfig, r.provider, 'silent');
+    expect(r.index().fonts.find((f) => f.contentId === 'c1')?.deletedAt).toBe(200);
+
+    // The importer's next pass sees a delete older than its import.
+    seed(importer);
+    await syncFonts(envConfig, r.provider, 'silent');
+    expect(r.files.get('/Readest/fonts/c1/Inter-Regular.ttf')).toBe(BYTES);
+    expect(r.index().fonts.find((f) => f.contentId === 'c1')).toEqual(remote({ addedAt: 300 }));
+  });
+
   test('keeps a delete a peer commits while this pass runs', async () => {
     const r = memoryProvider();
     r.setIndex([remote()]);
