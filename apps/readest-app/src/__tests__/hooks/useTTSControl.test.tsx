@@ -1580,6 +1580,32 @@ describe('useTTSControl background session lifecycle', () => {
     expect(liveController.setSkipInlineAnnotations).toHaveBeenCalledWith(false);
   });
 
+  // #7787: the engine resolves its voice on the first utterance, after the
+  // clients report ready, and nothing announces it.
+  it('picks up the voice the engine resolves once reading starts', async () => {
+    vi.useFakeTimers();
+    try {
+      const liveController = makeLiveController();
+      mockSessionManager.getSessionByHash.mockReturnValue({
+        bookHash: 'book',
+        bookKey: 'book-old',
+        controller: liveController,
+      });
+      render(<ApiHarness />);
+      await act(async () => {
+        for (let i = 0; i < 10; i++) await Promise.resolve();
+      });
+      expect(hookApi!.voiceId).toBe('');
+      liveController.getVoiceId.mockReturnValue('en-US-AvaNeural');
+      await act(async () => {
+        vi.advanceTimersByTime(400);
+      });
+      expect(hookApi!.voiceId).toBe('en-US-AvaNeural');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   // Back from another route the reader remounts under the same book key; the
   // store still holds the previous, detached view until the new one opens.
   // Attaching to that one would draw every highlight off screen.

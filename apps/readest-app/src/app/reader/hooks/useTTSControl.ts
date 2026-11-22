@@ -92,6 +92,9 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // sentence boundary it has no event of its own — and cheap enough to poll,
   // being two property reads whose result usually does not change.
   const [buffering, setBuffering] = useState(false);
+  // The voice the engine reads with. It resolves on the first utterance and
+  // nothing announces it, so the buffering probe reads it too (#7787).
+  const [voiceId, setVoiceId] = useState('');
   const [showBackToCurrentTTSLocation, setShowBackToCurrentTTSLocation] = useState(false);
 
   const [timeoutOption, setTimeoutOption] = useState(0);
@@ -1194,6 +1197,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   useEffect(() => {
     if (!showIndicator) {
       setBuffering(false);
+      setVoiceId('');
       return;
     }
     const poll = () => {
@@ -1202,6 +1206,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       // session hands back something that is not a full controller.
       const next = ttsControllerRef.current?.isBuffering?.() ?? false;
       setBuffering((prev) => (prev === next ? prev : next));
+      setVoiceId(ttsControllerRef.current?.getVoiceId?.() ?? '');
     };
     poll();
     const interval = setInterval(poll, TTS_BUFFERING_POLL_MS);
@@ -1458,6 +1463,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     audioTransport,
     supportsLyrics,
     buffering,
+    voiceId,
     refreshTtsLang,
     getController,
   };
