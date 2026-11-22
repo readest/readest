@@ -61,6 +61,7 @@ const WebDAVForm: React.FC = () => {
   const [password, setPassword] = useState(stored?.password || '');
   const [rootPath, setRootPath] = useState(stored?.rootPath || '/');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isForgetting, setIsForgetting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // Drop the drafts once the saved connection is gone, whether this window,
@@ -120,7 +121,13 @@ const WebDAVForm: React.FC = () => {
       ),
     );
     if (!confirmed) return;
-    await forgetCloudProviderConnection(envConfig, 'webdav');
+    // Connect waits: a server saved before the Forget's upload went out would race it.
+    setIsForgetting(true);
+    try {
+      await forgetCloudProviderConnection(envConfig, 'webdav');
+    } finally {
+      setIsForgetting(false);
+    }
   };
 
   const persistWebdav = async (patch: Partial<typeof stored>) => {
@@ -261,7 +268,7 @@ const WebDAVForm: React.FC = () => {
         )}
         <button
           type='submit'
-          disabled={isConnecting || !url || !username}
+          disabled={isConnecting || isForgetting || !url || !username}
           className={clsx(
             'btn btn-contrast',
             'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',

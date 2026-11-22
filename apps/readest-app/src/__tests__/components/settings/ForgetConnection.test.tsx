@@ -41,6 +41,7 @@ vi.mock('@/services/sync/providers/s3/S3Provider', () => ({
   createS3Provider: () => ({ list: () => new Promise(() => {}) }),
 }));
 
+import { publishConnectionForget } from '@/services/sync/replicaSettingsSync';
 import WebDAVForm from '@/components/settings/integrations/WebDAVForm';
 import S3Form from '@/components/settings/integrations/S3Form';
 
@@ -145,6 +146,25 @@ describe.each(forms)('$kind connect form: Forget (#7799)', ({
     fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
 
     expect(screen.getByRole('button', { name: 'Forget' })).toHaveProperty('disabled', true);
+  });
+
+  test('Connect is disabled while a Forget is running', async () => {
+    vi.mocked(publishConnectionForget).mockImplementationOnce(() => new Promise(() => {}));
+    setConnection(kind, saved);
+    render(<Form />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Forget' }));
+    await waitFor(() => {
+      expect(useSettingsStore.getState().settings[kind]).toMatchObject(forgotten);
+    });
+    // Another server typed in before the Forget's upload finished.
+    for (const id of Object.keys(inputs)) {
+      fireEvent.change(document.getElementById(id)!, {
+        target: { value: 'https://x.example.com' },
+      });
+    }
+
+    expect(screen.getByRole('button', { name: 'Connect' })).toHaveProperty('disabled', true);
   });
 
   test('no Forget when nothing is saved', () => {

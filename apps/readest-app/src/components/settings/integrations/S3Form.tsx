@@ -65,6 +65,7 @@ const S3Form: React.FC = () => {
   const [accessKeyId, setAccessKeyId] = useState(stored?.accessKeyId || '');
   const [secretAccessKey, setSecretAccessKey] = useState(stored?.secretAccessKey || '');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isForgetting, setIsForgetting] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
 
   // Drop the drafts once the saved connection is gone, whether this window,
@@ -130,7 +131,13 @@ const S3Form: React.FC = () => {
       ),
     );
     if (!confirmed) return;
-    await forgetCloudProviderConnection(envConfig, 's3');
+    // Connect waits: a bucket saved before the Forget's upload went out would race it.
+    setIsForgetting(true);
+    try {
+      await forgetCloudProviderConnection(envConfig, 's3');
+    } finally {
+      setIsForgetting(false);
+    }
   };
 
   const persistS3 = async (patch: Partial<typeof stored>) => {
@@ -284,7 +291,7 @@ const S3Form: React.FC = () => {
         )}
         <button
           type='submit'
-          disabled={isConnecting || !canSubmit}
+          disabled={isConnecting || isForgetting || !canSubmit}
           className={clsx(
             'btn btn-contrast',
             'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',

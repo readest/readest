@@ -1146,6 +1146,36 @@ describe('Forget a WebDAV / S3 connection (#7799)', () => {
     expect(webdavPatches.at(-1)).toEqual(connections.webdav.forgotten);
   });
 
+  test('Forget uploads the reset it saved, and a Connect saved while it waited publishes after it', async () => {
+    await publishSettingsIfChanged(withConnection('webdav', connections.webdav.saved));
+    publishMock.mockClear();
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: withConnection('webdav', connections.webdav.forgotten),
+    });
+    enableCredentialsSync();
+
+    const forgetting = publishConnectionForget('webdav');
+    // Another server connected before the Forget's upload went out.
+    const other = {
+      serverUrl: 'https://other.example.com',
+      username: 'bob',
+      password: 'pw2',
+      rootPath: '/Other',
+    };
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: withConnection('webdav', other, true),
+    });
+    enableCredentialsSync();
+    await forgetting;
+
+    await vi.waitFor(() => expect(publishMock).toHaveBeenCalledTimes(2));
+    const [forgot, connected] = publishMock.mock.calls.map(([, record]) => record.patch.webdav);
+    expect(forgot).toEqual(connections.webdav.forgotten);
+    expect(connected).toMatchObject(other);
+  });
+
   test.each(kinds)('a %s field cleared without Forget still stays local', async (kind) => {
     await publishSettingsIfChanged(withConnection(kind, connections[kind].saved));
     publishMock.mockClear();

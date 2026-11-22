@@ -49,7 +49,10 @@ import { cryptoSession } from '@/libs/crypto/session';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
 import { isCredentialsSyncEnabled, isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
-import type { ForgettableConnection } from '@/services/sync/cloudSyncProvider';
+import {
+  withConnectionForgotten,
+  type ForgettableConnection,
+} from '@/services/sync/cloudSyncProvider';
 
 const ENCRYPTED_PATHS: ReadonlySet<string> = new Set(SETTINGS_ENCRYPTED_FIELDS);
 const DICTIONARY_PATHS: ReadonlySet<string> = new Set(SETTINGS_DICTIONARY_FIELDS);
@@ -281,15 +284,16 @@ export const publishSettingsIfChanged = (settings: SystemSettings): Promise<void
 
 /**
  * Publish a Forget (#7799): the connection's whitelisted fields at their
- * cleared values, read back from the store after the Forget wrote them.
- * The cleared login ships as empty values even with credentials sync off
- * or the session locked, since an empty value carries no secret; every
- * other credential stays behind those gates. Recording the push-hashes
- * keeps the next ordinary pass from seeing a change.
+ * reset values. The cleared login ships as empty values even with
+ * credentials sync off or the session locked, since an empty value carries
+ * no secret; every other credential stays behind those gates. Recording the
+ * push-hashes keeps the next ordinary pass from seeing a change.
  */
 export const publishConnectionForget = async (kind: ForgettableConnection): Promise<void> => {
   await Promise.allSettled([...inFlightPasses]);
-  const settings = useSettingsStore.getState().settings;
+  // The reset itself, not the live store: a connection saved during the wait
+  // must not ride this upload with a blanked login. It publishes below.
+  const settings = withConnectionForgotten(useSettingsStore.getState().settings, kind);
   const paths = SETTINGS_WHITELIST.filter((path) => path.startsWith(`${kind}.`));
   const patch: Record<string, unknown> = {};
   for (const path of paths) writePath(patch, path, readPath(settings, path));
@@ -302,6 +306,7 @@ export const publishConnectionForget = async (kind: ForgettableConnection): Prom
   for (const path of paths) {
     setStoredEncryptedHash(path, await sha256Hex(readPath(settings, path)));
   }
+  void publishSettingsIfChanged(useSettingsStore.getState().settings);
 };
 
 const runPublishPass = async (settings: SystemSettings): Promise<void> => {
