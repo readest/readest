@@ -52,8 +52,11 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   // null = idle, true = importing (spinner), { family } = done importing (show font name).
   // The card stays mounted throughout — only its content changes.
   const [importingFont, setImportingFont] = useState<true | { family: string } | null>(null);
-  // A file sync backend downloads in place, outside the transfer queue.
-  const [fileDownloadFamily, setFileDownloadFamily] = useState<string | null>(null);
+  // A file sync backend downloads in place, outside the transfer queue: the
+  // spinner belongs to the pick that started the download.
+  const [fileDownload, setFileDownload] = useState<{ family: string; selection: number } | null>(
+    null,
+  );
   const latestSelection = useRef(0);
 
   const { selectFiles } = useFileSelector(appService, _);
@@ -124,7 +127,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   };
 
   const isFamilyDownloading = (family: FontFamily) =>
-    fileDownloadFamily === family.name ||
+    fileDownload?.family === family.name ||
     family.fonts.some((f) => f.contentId && getReplicaTransfer('font', f.contentId, 'download'));
 
   const handleSelectFamily = async (family: FontFamily) => {
@@ -135,14 +138,14 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
     const cloudFonts = family.fonts.filter((f) => f.unavailable);
     const selection = ++latestSelection.current;
     if (cloudFonts.length > 0) {
-      setFileDownloadFamily(family.name);
+      setFileDownload({ family: family.name, selection });
       const queued = await Promise.all(
         cloudFonts.map(
           async (font) =>
             (await runFileFontDownload(envConfig, font)) ||
             (await queueReplicaBinaryDownload('font', font)),
         ),
-      ).finally(() => setFileDownloadFamily((shown) => (shown === family.name ? null : shown)));
+      ).finally(() => setFileDownload((shown) => (shown?.selection === selection ? null : shown)));
       if (!queued.some(Boolean)) {
         eventDispatcher.dispatch('toast', { type: 'error', message: _('Download failed') });
         return;

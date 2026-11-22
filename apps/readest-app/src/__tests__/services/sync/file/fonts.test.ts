@@ -196,6 +196,7 @@ describe('syncFonts', () => {
     r.setIndex([remote()]);
     r.files.set('/Readest/fonts/c1/Inter-Regular.ttf', BYTES);
     seed([font({ deletedAt: 200 })]);
+    const deleteDir = r.provider.deleteDir;
     r.provider.deleteDir = async () => {
       throw new Error('offline');
     };
@@ -203,6 +204,12 @@ describe('syncFonts', () => {
     await syncFonts(envConfig, r.provider, 'silent');
 
     expect(r.index().fonts).toEqual([remote()]);
+
+    r.provider.deleteDir = deleteDir;
+    await syncFonts(envConfig, r.provider, 'silent');
+
+    expect(r.files.has('/Readest/fonts/c1/Inter-Regular.ttf')).toBe(false);
+    expect(r.index().fonts).toEqual([remote({ deletedAt: 200 })]);
   });
 
   test('a newer delete on another device removes the font here', async () => {

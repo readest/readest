@@ -44,6 +44,7 @@ import { useTransferStore } from '@/store/transferStore';
 import { saveViewSettings } from '@/helpers/settings';
 import { queueReplicaBinaryDownload } from '@/services/sync/replicaBinaryUpload';
 import { runFileFontDownload } from '@/services/sync/file/runLibrarySync';
+import { eventDispatcher } from '@/utils/event';
 import type { CustomFont } from '@/styles/fonts';
 import type { SystemSettings } from '@/types/settings';
 
@@ -152,6 +153,28 @@ describe('CustomFonts download on demand', () => {
     expect(vi.mocked(saveViewSettings).mock.calls.map(([, , , family]) => family)).toEqual([
       'Lora',
     ]);
+  });
+
+  it('keeps the spinner while a repeated pick of the family still downloads', async () => {
+    let failFirst: (done: boolean) => void = () => {};
+    vi.mocked(runFileFontDownload)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          failFirst = resolve;
+        }),
+      )
+      .mockReturnValueOnce(new Promise(() => {}));
+    vi.mocked(queueReplicaBinaryDownload).mockResolvedValueOnce(null);
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    useCustomFontStore.setState({ fonts: [cloudFont()] });
+    render(<CustomFonts bookKey='' onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Inter'));
+    fireEvent.click(screen.getByText('Inter'));
+    failFirst(false);
+
+    await waitFor(() => expect(dispatch).toHaveBeenCalledWith('toast', expect.anything()));
+    expect(screen.queryByRole('status', { name: 'Downloading…' })).not.toBeNull();
   });
 
   it('does not download a family that is already on this device', () => {
