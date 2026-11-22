@@ -157,16 +157,13 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
         });
         if (!purchase) return;
         // The store has charged by now. A failed verify is retried by the
-        // store notification and Restore Purchase, so don't call it a failure.
+        // store notification, so don't call it a failure. Restore Purchase
+        // isn't offered: StoreKit never restores a consumable.
         try {
           await verifyGiftIAPPurchase(purchase, giftCardId);
         } catch (error) {
           console.error('Gift purchase verification failed:', error);
-          toast(
-            _(
-              'Payment received. Your gift card will appear here shortly, or use Restore Purchase.',
-            ),
-          );
+          toast(_('Payment received. Your gift card will appear here shortly.'));
           await load();
           return;
         }

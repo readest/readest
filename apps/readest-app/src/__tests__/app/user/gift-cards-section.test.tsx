@@ -191,8 +191,8 @@ describe('GiftCardsSection', () => {
     await waitFor(() =>
       expect(h.dispatch).toHaveBeenCalledWith('toast', {
         type: 'info',
-        message:
-          'Payment received. Your gift card will appear here shortly, or use Restore Purchase.',
+        // Not Restore Purchase: StoreKit never restores a consumable.
+        message: 'Payment received. Your gift card will appear here shortly.',
       }),
     );
     expect(h.dispatch).not.toHaveBeenCalledWith('toast', {
