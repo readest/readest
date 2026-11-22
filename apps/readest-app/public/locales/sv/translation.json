@@ -1573,7 +1573,6 @@
   "Share anonymous data": "Dela anonyma data",
   "Not now": "Inte nu",
   "You can change this anytime in Settings.": "Du kan ändra detta när som helst i Inställningar.",
-  "Then by...": "Sedan efter...",
   "Some files could not be added to your library.": "Vissa filer kunde inte läggas till i ditt bibliotek.",
   "Failed to import {{count}} books_one": "Kunde inte importera {{count}} bok",
   "Failed to import {{count}} books_other": "Kunde inte importera {{count}} böcker",
@@ -2894,5 +2893,13 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Synkronisering med Anki lägger den här ordbokens uppslag på baksidan av varje kort, för upp till 30 kort per synkronisering",
   "Added dictionary entries to {{count}} cards_one": "Ordboksuppslag tillagda på kort: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Ordboksuppslag tillagda på kort: {{count}}",
-  "Dictionary for Anki Cards...": "Ordbok för Anki-kort..."
+  "Dictionary for Anki Cards...": "Ordbok för Anki-kort...",
+  "Drag to reorder {{label}}": "Dra för att ändra ordning på {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Tryck på blanksteg eller Enter för att plocka upp ett sorteringskriterium. Ändra ordning med upp- och nedpilarna och tryck sedan på blanksteg eller Enter för att släppa, eller Escape för att avbryta.",
+  "Picked up {{label}}.": "{{label}} upplockad.",
+  "{{label}} moved over {{target}}.": "{{label}} flyttad över {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} är inte längre över en släppbar position.",
+  "Dropped {{label}} at {{target}}.": "{{label}} släppt vid {{target}}.",
+  "Dropped {{label}}.": "{{label}} släppt.",
+  "Reordering {{label}} cancelled.": "Omordning av {{label}} avbruten."
 }

@@ -1693,7 +1693,6 @@
   "Share anonymous data": "مشاركة بيانات مجهولة",
   "Not now": "ليس الآن",
   "You can change this anytime in Settings.": "يمكنك تغيير هذا في أي وقت من الإعدادات.",
-  "Then by...": "ثم حسب...",
   "Some files could not be added to your library.": "تعذّر إضافة بعض الملفات إلى مكتبتك.",
   "Failed to import {{count}} books_zero": "لم يتم استيراد أي كتب",
   "Failed to import {{count}} books_one": "فشل استيراد كتاب واحد",
@@ -3194,5 +3193,13 @@
   "Added dictionary entries to {{count}} cards_few": "أُضيفت مدخلات القاموس إلى البطاقات: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "أُضيفت مدخلات القاموس إلى البطاقات: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "أُضيفت مدخلات القاموس إلى البطاقات: {{count}}",
-  "Dictionary for Anki Cards...": "قاموس بطاقات Anki..."
+  "Dictionary for Anki Cards...": "قاموس بطاقات Anki...",
+  "Drag to reorder {{label}}": "اسحب لإعادة ترتيب {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "لالتقاط معيار فرز، اضغط على المسافة أو Enter. استخدم مفتاحي السهم لأعلى ولأسفل لإعادة الترتيب، ثم اضغط على المسافة أو Enter للإفلات، أو Escape للإلغاء.",
+  "Picked up {{label}}.": "تم التقاط {{label}}.",
+  "{{label}} moved over {{target}}.": "تم نقل {{label}} فوق {{target}}.",
+  "{{label}} is no longer over a droppable position.": "لم يعد {{label}} فوق موضع إفلات.",
+  "Dropped {{label}} at {{target}}.": "تم إفلات {{label}} عند {{target}}.",
+  "Dropped {{label}}.": "تم إفلات {{label}}.",
+  "Reordering {{label}} cancelled.": "تم إلغاء إعادة ترتيب {{label}}."
 }

@@ -1603,7 +1603,6 @@
   "Share anonymous data": "Partager les données anonymes",
   "Not now": "Pas maintenant",
   "You can change this anytime in Settings.": "Vous pouvez modifier ce choix à tout moment dans les Paramètres.",
-  "Then by...": "Puis par...",
   "Some files could not be added to your library.": "Certains fichiers n'ont pas pu être ajoutés à votre bibliothèque.",
   "Failed to import {{count}} books_one": "Échec de l'importation de {{count}} livre",
   "Failed to import {{count}} books_many": "Échec de l'importation de {{count}} livres",
@@ -2969,5 +2968,13 @@
   "Added dictionary entries to {{count}} cards_one": "Entrées de dictionnaire ajoutées aux cartes : {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Entrées de dictionnaire ajoutées aux cartes : {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Entrées de dictionnaire ajoutées aux cartes : {{count}}",
-  "Dictionary for Anki Cards...": "Dictionnaire des cartes Anki..."
+  "Dictionary for Anki Cards...": "Dictionnaire des cartes Anki...",
+  "Drag to reorder {{label}}": "Faire glisser pour réorganiser {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Pour saisir un critère de tri, appuyez sur Espace ou Entrée. Utilisez les flèches haut et bas pour réorganiser, puis appuyez sur Espace ou Entrée pour déposer, ou sur Échap pour annuler.",
+  "Picked up {{label}}.": "{{label}} saisi.",
+  "{{label}} moved over {{target}}.": "{{label}} déplacé au-dessus de {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} n'est plus au-dessus d'une position de dépôt.",
+  "Dropped {{label}} at {{target}}.": "{{label}} déposé à {{target}}.",
+  "Dropped {{label}}.": "{{label}} déposé.",
+  "Reordering {{label}} cancelled.": "Réorganisation de {{label}} annulée."
 }

@@ -1543,7 +1543,6 @@
   "Share anonymous data": "Kongsi data tanpa nama",
   "Not now": "Bukan sekarang",
   "You can change this anytime in Settings.": "Anda boleh menukar ini pada bila-bila masa dalam Tetapan.",
-  "Then by...": "Kemudian mengikut...",
   "Some files could not be added to your library.": "Sebahagian fail tidak dapat ditambah ke pustaka anda.",
   "Failed to import {{count}} books_other": "Gagal mengimport {{count}} buku",
   "Add to My Catalogs": "Tambah ke Katalog Saya",
@@ -2819,5 +2818,13 @@
   "Dictionary for Anki Cards": "Kamus untuk Kad Anki",
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Penyegerakan dengan Anki meletakkan entri kamus ini di belakang setiap kad, sehingga 30 kad bagi setiap penyegerakan",
   "Added dictionary entries to {{count}} cards_other": "Entri kamus ditambah pada {{count}} kad",
-  "Dictionary for Anki Cards...": "Kamus untuk Kad Anki..."
+  "Dictionary for Anki Cards...": "Kamus untuk Kad Anki...",
+  "Drag to reorder {{label}}": "Seret untuk menyusun semula {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Untuk mengambil kriteria isihan, tekan ruang atau Enter. Gunakan kekunci anak panah atas dan bawah untuk menyusun semula, kemudian tekan ruang atau Enter untuk melepaskan, atau Escape untuk membatalkan.",
+  "Picked up {{label}}.": "{{label}} diambil.",
+  "{{label}} moved over {{target}}.": "{{label}} dialihkan ke atas {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} tidak lagi berada di atas kedudukan yang boleh dilepaskan.",
+  "Dropped {{label}} at {{target}}.": "{{label}} dilepaskan di {{target}}.",
+  "Dropped {{label}}.": "{{label}} dilepaskan.",
+  "Reordering {{label}} cancelled.": "Penyusunan semula {{label}} dibatalkan."
 }

@@ -124,6 +124,20 @@ describe('bookshelf layouts from the View menu', () => {
     expect(screen.getAllByText('Date Published')).toHaveLength(1);
     expect(screen.getAllByText('Progress Read')).toHaveLength(1);
   });
+  // Group by Author with no Then by picks Series automatically (#4307); the
+  // list marks it "(Auto)" at rank 2, as the old Then by menu did.
+  it('marks an automatic rank-2 pick as Auto until the list is customized', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        libraryGroupBy: 'author',
+        libraryThenSortBy: 'none',
+      } as SystemSettings,
+    });
+    render(<ViewMenu />);
+    expect(screen.getByText('Series (Auto)')).toBeTruthy();
+  });
+
   it('toggles direction per criterion independently with arrow indicators', async () => {
     render(<ViewMenu />);
     const titleBtn = screen.getByRole('menuitem', { name: /Title \(Ascending\)/i });

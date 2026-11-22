@@ -56,6 +56,15 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     !searchParams?.get('sort') &&
     (settings.librarySortByAuto ?? true) &&
     globalSort.by !== settings.librarySortBy;
+  const secondaryIsImplicit =
+    !customShelf &&
+    !searchParams?.get('thenSort') &&
+    (!settings.libraryThenSortBy || settings.libraryThenSortBy === 'none') &&
+    globalSort.thenBy !== 'none';
+  const autoSortKeys = [
+    primaryIsImplicit && globalSort.by,
+    secondaryIsImplicit && globalSort.thenBy,
+  ].filter(Boolean) as LibraryMetadataSortByType[];
 
   const priorityOrder = resolveLibrarySortOrder(settings, globalSort, searchParams);
   const commitQueueRef = React.useRef<Promise<void>>(Promise.resolve());
@@ -281,7 +290,8 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
             items={priorityOrder}
             labels={sortLabels}
             dimmed={sortBy === LibrarySortByType.Custom}
-            primaryAutoLabel={primaryIsImplicit ? _('Auto') : undefined}
+            autoLabel={_('Auto')}
+            autoKeys={autoSortKeys}
             onReorder={handleReorder}
             onToggleDirection={handleToggleCriterionDirection}
           />

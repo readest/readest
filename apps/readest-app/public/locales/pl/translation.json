@@ -1633,7 +1633,6 @@
   "Share anonymous data": "Udostępnij anonimowe dane",
   "Not now": "Nie teraz",
   "You can change this anytime in Settings.": "Możesz to zmienić w dowolnej chwili w Ustawieniach.",
-  "Then by...": "Następnie...",
   "Some files could not be added to your library.": "Niektórych plików nie udało się dodać do biblioteki.",
   "Failed to import {{count}} books_one": "Nie udało się zaimportować {{count}} książki",
   "Failed to import {{count}} books_few": "Nie udało się zaimportować {{count}} książek",
@@ -3044,5 +3043,13 @@
   "Added dictionary entries to {{count}} cards_few": "Dodano hasła słownikowe do kart: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Dodano hasła słownikowe do kart: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Dodano hasła słownikowe do kart: {{count}}",
-  "Dictionary for Anki Cards...": "Słownik dla kart Anki..."
+  "Dictionary for Anki Cards...": "Słownik dla kart Anki...",
+  "Drag to reorder {{label}}": "Przeciągnij, aby zmienić kolejność {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Aby podnieść kryterium sortowania, naciśnij spację lub Enter. Zmieniaj kolejność strzałkami w górę i w dół, a następnie naciśnij spację lub Enter, aby upuścić, albo Escape, aby anulować.",
+  "Picked up {{label}}.": "Podniesiono {{label}}.",
+  "{{label}} moved over {{target}}.": "{{label}} przesunięto nad {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} nie znajduje się już nad miejscem upuszczenia.",
+  "Dropped {{label}} at {{target}}.": "Upuszczono {{label}} na {{target}}.",
+  "Dropped {{label}}.": "Upuszczono {{label}}.",
+  "Reordering {{label}} cancelled.": "Anulowano zmianę kolejności {{label}}."
 }

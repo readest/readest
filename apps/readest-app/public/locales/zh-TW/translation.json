@@ -1558,7 +1558,6 @@
   "Share anonymous data": "分享匿名資料",
   "Not now": "暫不",
   "You can change this anytime in Settings.": "您可以隨時在「設定」中變更此項目。",
-  "Then by...": "其次按...",
   "Some files could not be added to your library.": "部分檔案無法新增到您的書庫。",
   "Failed to import {{count}} books_other": "匯入 {{count}} 本書籍失敗",
   "Add to My Catalogs": "新增到我的目錄",
@@ -2819,5 +2818,13 @@
   "Dictionary for Anki Cards": "Anki 卡片辭典",
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "與 Anki 同步時，會把此辭典的詞條放到每張卡片的背面，每次同步最多 30 張",
   "Added dictionary entries to {{count}} cards_other": "已為 {{count}} 張卡片加入辭典詞條",
-  "Dictionary for Anki Cards...": "Anki 卡片辭典..."
+  "Dictionary for Anki Cards...": "Anki 卡片辭典...",
+  "Drag to reorder {{label}}": "拖曳以重新排序{{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "若要拾取排序條件，請按空白鍵或 Enter 鍵。使用上下方向鍵調整順序，然後按空白鍵或 Enter 鍵放下，或按 Esc 鍵取消。",
+  "Picked up {{label}}.": "已拾取{{label}}。",
+  "{{label}} moved over {{target}}.": "{{label}}已移到{{target}}上方。",
+  "{{label}} is no longer over a droppable position.": "{{label}}已不在可放置的位置上方。",
+  "Dropped {{label}} at {{target}}.": "已將{{label}}放到{{target}}。",
+  "Dropped {{label}}.": "已放下{{label}}。",
+  "Reordering {{label}} cancelled.": "已取消重新排序{{label}}。"
 }

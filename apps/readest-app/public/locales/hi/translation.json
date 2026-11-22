@@ -1573,7 +1573,6 @@
   "Share anonymous data": "गुमनाम डेटा साझा करें",
   "Not now": "अभी नहीं",
   "You can change this anytime in Settings.": "आप इसे कभी भी सेटिंग्स में बदल सकते हैं।",
-  "Then by...": "फिर इसके अनुसार...",
   "Some files could not be added to your library.": "कुछ फ़ाइलें आपकी लाइब्रेरी में नहीं जोड़ी जा सकीं।",
   "Failed to import {{count}} books_one": "{{count}} पुस्तक आयात करने में विफल",
   "Failed to import {{count}} books_other": "{{count}} पुस्तकें आयात करने में विफल",
@@ -2894,5 +2893,13 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki के साथ सिंक हर कार्ड के पीछे इस शब्दकोश की प्रविष्टि जोड़ता है, हर सिंक में अधिकतम 30 कार्ड तक",
   "Added dictionary entries to {{count}} cards_one": "{{count}} कार्ड में शब्दकोश प्रविष्टि जोड़ी गई",
   "Added dictionary entries to {{count}} cards_other": "{{count}} कार्ड में शब्दकोश प्रविष्टि जोड़ी गई",
-  "Dictionary for Anki Cards...": "Anki कार्ड के लिए शब्दकोश..."
+  "Dictionary for Anki Cards...": "Anki कार्ड के लिए शब्दकोश...",
+  "Drag to reorder {{label}}": "{{label}} का क्रम बदलने के लिए खींचें",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "किसी क्रमबद्ध मानदंड को उठाने के लिए स्पेस या एंटर दबाएँ। क्रम बदलने के लिए ऊपर और नीचे तीर कुंजियों का उपयोग करें, फिर छोड़ने के लिए स्पेस या एंटर, या रद्द करने के लिए एस्केप दबाएँ।",
+  "Picked up {{label}}.": "{{label}} उठाया गया।",
+  "{{label}} moved over {{target}}.": "{{label}} को {{target}} के ऊपर ले जाया गया।",
+  "{{label}} is no longer over a droppable position.": "{{label}} अब छोड़ने योग्य स्थान के ऊपर नहीं है।",
+  "Dropped {{label}} at {{target}}.": "{{label}} को {{target}} पर छोड़ा गया।",
+  "Dropped {{label}}.": "{{label}} छोड़ा गया।",
+  "Reordering {{label}} cancelled.": "{{label}} का क्रम बदलना रद्द किया गया।"
 }

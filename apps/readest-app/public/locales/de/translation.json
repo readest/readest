@@ -1573,7 +1573,6 @@
   "Share anonymous data": "Anonyme Daten teilen",
   "Not now": "Nicht jetzt",
   "You can change this anytime in Settings.": "Du kannst dies jederzeit in den Einstellungen ändern.",
-  "Then by...": "Dann nach...",
   "Some files could not be added to your library.": "Einige Dateien konnten nicht zu Ihrer Bibliothek hinzugefügt werden.",
   "Failed to import {{count}} books_one": "Fehler beim Importieren von {{count}} Buch",
   "Failed to import {{count}} books_other": "Fehler beim Importieren von {{count}} Büchern",
@@ -2894,5 +2893,13 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Die Synchronisierung mit Anki setzt den Eintrag dieses Wörterbuchs auf die Rückseite jeder Karte, für bis zu 30 Karten pro Synchronisierung",
   "Added dictionary entries to {{count}} cards_one": "Wörterbucheinträge zu Karten hinzugefügt: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Wörterbucheinträge zu Karten hinzugefügt: {{count}}",
-  "Dictionary for Anki Cards...": "Wörterbuch für Anki-Karten..."
+  "Dictionary for Anki Cards...": "Wörterbuch für Anki-Karten...",
+  "Drag to reorder {{label}}": "{{label}} ziehen, um neu anzuordnen",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Drücken Sie Leertaste oder Eingabe, um ein Sortierkriterium aufzunehmen. Ordnen Sie es mit den Pfeiltasten nach oben und unten neu an und drücken Sie dann Leertaste oder Eingabe zum Ablegen oder Escape zum Abbrechen.",
+  "Picked up {{label}}.": "{{label}} aufgenommen.",
+  "{{label}} moved over {{target}}.": "{{label}} über {{target}} verschoben.",
+  "{{label}} is no longer over a droppable position.": "{{label}} befindet sich nicht mehr über einer Ablageposition.",
+  "Dropped {{label}} at {{target}}.": "{{label}} bei {{target}} abgelegt.",
+  "Dropped {{label}}.": "{{label}} abgelegt.",
+  "Reordering {{label}} cancelled.": "Neuanordnung von {{label}} abgebrochen."
 }

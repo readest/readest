@@ -1573,7 +1573,6 @@
   "Share anonymous data": "Anonim adatok megosztása",
   "Not now": "Most nem",
   "You can change this anytime in Settings.": "Ezt bármikor megváltoztathatod a Beállításokban.",
-  "Then by...": "Másodlagosan...",
   "Some files could not be added to your library.": "Néhány fájlt nem sikerült hozzáadni a könyvtárához.",
   "Failed to import {{count}} books_one": "{{count}} könyv importálása sikertelen",
   "Failed to import {{count}} books_other": "{{count}} könyv importálása sikertelen",
@@ -2894,5 +2893,13 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Az Anki-szinkronizálás ennek a szótárnak a szócikkét teszi minden kártya hátoldalára, szinkronizálásonként legfeljebb 30 kártyára",
   "Added dictionary entries to {{count}} cards_one": "Szótári szócikk hozzáadva {{count}} kártyához",
   "Added dictionary entries to {{count}} cards_other": "Szótári szócikk hozzáadva {{count}} kártyához",
-  "Dictionary for Anki Cards...": "Szótár az Anki-kártyákhoz..."
+  "Dictionary for Anki Cards...": "Szótár az Anki-kártyákhoz...",
+  "Drag to reorder {{label}}": "Húzza a(z) {{label}} átrendezéséhez",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Egy rendezési szempont felvételéhez nyomja meg a szóközt vagy az Entert. Az átrendezéshez használja a fel és le nyilakat, majd a lerakáshoz nyomja meg a szóközt vagy az Entert, a megszakításhoz az Escape-et.",
+  "Picked up {{label}}.": "{{label}} felvéve.",
+  "{{label}} moved over {{target}}.": "{{label}} áthelyezve a(z) {{target}} fölé.",
+  "{{label}} is no longer over a droppable position.": "{{label}} már nem lerakható pozíció fölött van.",
+  "Dropped {{label}} at {{target}}.": "{{label}} lerakva ide: {{target}}.",
+  "Dropped {{label}}.": "{{label}} lerakva.",
+  "Reordering {{label}} cancelled.": "{{label}} átrendezése megszakítva."
 }

@@ -369,7 +369,6 @@
   "Auto": "ავტომატური",
   "Group by...": "დაჯგუფება...",
   "Sort by...": "დალაგება...",
-  "Then by...": "შემდეგ...",
   "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest ხელახლა სკანირებს ამ საქაღალდეებს გახსნისას ან წინა პლანზე დაბრუნებისას და აიმპორტებს ყველა ახალ წიგნს. თითოეული საქაღალდე ინარჩუნებს იმ სტრუქტურას, რომლითაც დაიმპორტდა.",
   "No folders are watched.": "დაკვირვებული საქაღალდეები არ არის.",
   "Flat": "ბრტყელი",
@@ -2894,5 +2893,13 @@
   "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync": "Anki-სთან სინქრონიზაცია ამ ლექსიკონის სტატიას თითოეული ბარათის უკანა მხარეს ათავსებს, თითო სინქრონიზაციაზე მაქსიმუმ 30 ბარათზე",
   "Added dictionary entries to {{count}} cards_one": "ლექსიკონის სტატიები დაემატა ბარათებს: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "ლექსიკონის სტატიები დაემატა ბარათებს: {{count}}",
-  "Dictionary for Anki Cards...": "ლექსიკონი Anki-ის ბარათებისთვის..."
+  "Dictionary for Anki Cards...": "ლექსიკონი Anki-ის ბარათებისთვის...",
+  "Drag to reorder {{label}}": "გადაათრიეთ {{label}}-ის გადასალაგებლად",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "დახარისხების კრიტერიუმის ასაღებად დააჭირეთ Space-ს ან Enter-ს. გადასალაგებლად გამოიყენეთ ზემოთ და ქვემოთ ისრები, შემდეგ დასადებად დააჭირეთ Space-ს ან Enter-ს, ან გასაუქმებლად Escape-ს.",
+  "Picked up {{label}}.": "{{label}} აღებულია.",
+  "{{label}} moved over {{target}}.": "{{label}} გადაადგილდა {{target}}-ის თავზე.",
+  "{{label}} is no longer over a droppable position.": "{{label}} აღარ არის დასადები პოზიციის თავზე.",
+  "Dropped {{label}} at {{target}}.": "{{label}} დადებულია {{target}}-ზე.",
+  "Dropped {{label}}.": "{{label}} დადებულია.",
+  "Reordering {{label}} cancelled.": "{{label}}-ის გადალაგება გაუქმდა."
 }

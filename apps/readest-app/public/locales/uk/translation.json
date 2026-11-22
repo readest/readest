@@ -1633,7 +1633,6 @@
   "Share anonymous data": "Поділитися анонімними даними",
   "Not now": "Не зараз",
   "You can change this anytime in Settings.": "Ви можете змінити це будь-коли в Налаштуваннях.",
-  "Then by...": "Потім за...",
   "Some files could not be added to your library.": "Деякі файли не вдалося додати до вашої бібліотеки.",
   "Failed to import {{count}} books_one": "Не вдалося імпортувати {{count}} книгу",
   "Failed to import {{count}} books_few": "Не вдалося імпортувати {{count}} книги",
@@ -3044,5 +3043,13 @@
   "Added dictionary entries to {{count}} cards_few": "Словникові статті додано до карток: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Словникові статті додано до карток: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Словникові статті додано до карток: {{count}}",
-  "Dictionary for Anki Cards...": "Словник для карток Anki..."
+  "Dictionary for Anki Cards...": "Словник для карток Anki...",
+  "Drag to reorder {{label}}": "Перетягніть, щоб змінити порядок {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Щоб узяти критерій сортування, натисніть пробіл або Enter. Змінюйте порядок клавішами зі стрілками вгору й униз, потім натисніть пробіл або Enter, щоб відпустити, або Escape, щоб скасувати.",
+  "Picked up {{label}}.": "Узято {{label}}.",
+  "{{label}} moved over {{target}}.": "{{label}} переміщено над {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} більше не над позицією для відпускання.",
+  "Dropped {{label}} at {{target}}.": "{{label}} відпущено на {{target}}.",
+  "Dropped {{label}}.": "{{label}} відпущено.",
+  "Reordering {{label}} cancelled.": "Зміну порядку {{label}} скасовано."
 }

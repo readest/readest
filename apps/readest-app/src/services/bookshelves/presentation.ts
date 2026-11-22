@@ -205,8 +205,14 @@ export const presentBookshelf = (
         }
 
         if (hasOrder) {
+          // getBookSortValue has no Series case (main's mixed order relies on that),
+          // so the priority path reads a book's series itself.
           const getVal = (item: Book | BooksGroup, by: LibrarySortByType) =>
-            'books' in item ? getGroupSortValue(item, by, groupBy) : getBookSortValue(item, by);
+            'books' in item
+              ? getGroupSortValue(item, by, groupBy)
+              : by === LibrarySortByType.Series
+                ? item.metadata?.series || ''
+                : getBookSortValue(item, by);
           return compareByPriorityOrder(
             (by) => getVal(a, by),
             (by) => getVal(b, by),

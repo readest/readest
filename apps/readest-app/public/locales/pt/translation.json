@@ -1603,7 +1603,6 @@
   "Share anonymous data": "Partilhar dados anónimos",
   "Not now": "Agora não",
   "You can change this anytime in Settings.": "Pode alterar isto a qualquer momento nas Definições.",
-  "Then by...": "Depois por...",
   "Some files could not be added to your library.": "Alguns arquivos não puderam ser adicionados à sua biblioteca.",
   "Failed to import {{count}} books_one": "Falha ao importar {{count}} livro",
   "Failed to import {{count}} books_many": "Falha ao importar {{count}} livros",
@@ -2969,5 +2968,13 @@
   "Added dictionary entries to {{count}} cards_one": "Entradas de dicionário adicionadas aos cartões: {{count}}",
   "Added dictionary entries to {{count}} cards_many": "Entradas de dicionário adicionadas aos cartões: {{count}}",
   "Added dictionary entries to {{count}} cards_other": "Entradas de dicionário adicionadas aos cartões: {{count}}",
-  "Dictionary for Anki Cards...": "Dicionário para os cartões do Anki..."
+  "Dictionary for Anki Cards...": "Dicionário para os cartões do Anki...",
+  "Drag to reorder {{label}}": "Arraste para reordenar {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Para pegar num critério de ordenação, prima espaço ou Enter. Use as setas para cima e para baixo para reordenar e depois prima espaço ou Enter para largar, ou Escape para cancelar.",
+  "Picked up {{label}}.": "{{label}} selecionado.",
+  "{{label}} moved over {{target}}.": "{{label}} movido sobre {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} já não está sobre uma posição válida.",
+  "Dropped {{label}} at {{target}}.": "{{label}} largado em {{target}}.",
+  "Dropped {{label}}.": "{{label}} largado.",
+  "Reordering {{label}} cancelled.": "Reordenação de {{label}} cancelada."
 }

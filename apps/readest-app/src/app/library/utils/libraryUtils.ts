@@ -998,12 +998,6 @@ export const createWithinGroupSorter = (
       return fallbackCompare(a, b);
     }
 
-    // When a priority list is active, follow its full order rather than promoting
-    // the mirrored secondary key above the primary key.
-    if (hasSortOrder) {
-      return fallbackCompare(a, b);
-    }
-
     // For author and other non-series groupings: when a secondary key is provided,
     // use it as the within-group primary order with the global key as tiebreaker.
     if (secondarySortBy !== 'none') {
@@ -1034,9 +1028,6 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
 
     case LibrarySortByType.Format:
       return book.format;
-
-    case LibrarySortByType.Series:
-      return book.metadata?.series || '';
 
     case LibrarySortByType.Progress:
       return getBookReadRatio(book);

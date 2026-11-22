@@ -28,30 +28,30 @@ interface SortPriorityListProps {
   items: LibrarySortCriterion[];
   labels: Record<LibraryMetadataSortByType, string>;
   dimmed?: boolean;
-  primaryAutoLabel?: string;
+  autoLabel?: string;
+  /** Criteria picked by the smart default rather than the user, shown as "(Auto)". */
+  autoKeys?: LibraryMetadataSortByType[];
   onReorder: (next: LibrarySortCriterion[]) => void;
   onToggleDirection: (by: LibraryMetadataSortByType) => void;
 }
 
 interface SortableSortRowProps {
   item: LibrarySortCriterion;
-  index: number;
   label: string;
   dimmed?: boolean;
   isAnyDragging?: boolean;
   isJustDropped?: boolean;
-  primaryAutoLabel?: string;
+  autoLabel?: string;
   onToggleDirection: (by: LibraryMetadataSortByType) => void;
 }
 
 const SortableSortRow: React.FC<SortableSortRowProps> = ({
   item,
-  index,
   label,
   dimmed = false,
   isAnyDragging = false,
   isJustDropped = false,
-  primaryAutoLabel,
+  autoLabel,
   onToggleDirection,
 }) => {
   const _ = useTranslation();
@@ -66,7 +66,7 @@ const SortableSortRow: React.FC<SortableSortRowProps> = ({
     transition,
   };
 
-  const displayLabel = index === 0 && primaryAutoLabel ? `${label} (${primaryAutoLabel})` : label;
+  const displayLabel = autoLabel ? `${label} (${autoLabel})` : label;
 
   return (
     <div
@@ -129,7 +129,8 @@ const SortPriorityList: React.FC<SortPriorityListProps> = ({
   items,
   labels,
   dimmed = false,
-  primaryAutoLabel,
+  autoLabel,
+  autoKeys,
   onReorder,
   onToggleDirection,
 }) => {
@@ -267,16 +268,15 @@ const SortPriorityList: React.FC<SortPriorityListProps> = ({
           data-dnd-dragging={activeId !== null ? 'true' : undefined}
           className='flex min-w-0 flex-1 flex-col'
         >
-          {localItems.map((item, index) => (
+          {localItems.map((item) => (
             <SortableSortRow
               key={item.by}
               item={item}
-              index={index}
               label={labels[item.by]}
               dimmed={dimmed}
               isAnyDragging={activeId !== null}
               isJustDropped={justDroppedId === item.by}
-              primaryAutoLabel={primaryAutoLabel}
+              autoLabel={autoKeys?.includes(item.by) ? autoLabel : undefined}
               onToggleDirection={handleToggleRowDirection}
             />
           ))}

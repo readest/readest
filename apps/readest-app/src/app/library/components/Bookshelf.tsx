@@ -43,7 +43,6 @@ import {
 import {
   getGlobalBookshelfSort,
   resolveBookshelfSort,
-  resolveBookshelfSortOrder,
   resolveBookshelfMetadataSort,
   resolveLibrarySortOrder,
 } from '@/services/bookshelves/sorting';
@@ -218,19 +217,15 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   // Inside a series the breadcrumb names it, so each cover only needs its number.
   const showSeriesIndex = !!groupId && !queryTerm && groupBy === LibraryGroupByType.Series;
   const activeShelf = definitions.find((s) => s.id === activeShelfId);
+  // Reading pace loads only when Time Remaining is rank 1 or 2 (mirrored into
+  // by/thenBy). The saved list always holds every criterion, so checking all of
+  // it would query reading statistics on every library load; deeper ranks use
+  // the default pace.
   const showTimeRemaining = queryTerm
-    ? globalSort.by === 'timeRemaining' ||
-      globalSort.thenBy === 'timeRemaining' ||
-      Boolean(globalSortOrder?.some((c) => c.by === 'timeRemaining'))
+    ? globalSort.by === 'timeRemaining' || globalSort.thenBy === 'timeRemaining'
     : definitions.some((s) => {
         const sort = resolveBookshelfMetadataSort(s);
-        const shelfOrder = resolveBookshelfSortOrder(s, globalSortOrder);
-        return (
-          s.enabled &&
-          (sort.by === 'timeRemaining' ||
-            sort.thenBy === 'timeRemaining' ||
-            Boolean(shelfOrder?.some((c) => c.by === 'timeRemaining')))
-        );
+        return s.enabled && (sort.by === 'timeRemaining' || sort.thenBy === 'timeRemaining');
       });
 
   const [loading, setLoading] = useState(false);
