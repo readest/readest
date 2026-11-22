@@ -951,11 +951,13 @@ export const resolveCurrentShelfBooks = (
  * For series groups: sort by seriesIndex first (always ascending), then by global sort for items without index.
  * For other groupings: when a secondary key is supplied, sort by secondary key first (in its own
  *   direction), with the primary global sort as tiebreaker. Without secondary, follow global sort setting.
+ *   A saved `sortOrder` is followed in rank order instead: it always has a rank 2, so leading
+ *   with it would make whatever sits second the in-group order (#7786).
  * @param sortAscending - When true (default), sort direction is ascending. Series index is always
  *   ascending regardless of this flag; the flag affects the fallback / primary tiebreaker only.
- * @param secondarySortBy - When non-'none', acts as the *primary* within-group ordering for
- *   non-series groupings (matches the user's mental model: "group by author, then sort by series"
- *   should land series order inside each author).
+ * @param secondarySortBy - When non-'none' and no `sortOrder` is given, acts as the *primary*
+ *   within-group ordering for non-series groupings (matches the user's mental model: "group by
+ *   author, then sort by series" should land series order inside each author, #4307).
  * @param secondaryAscending - Direction of the secondary key, independent of `sortAscending`
  *   (issue #5119).
  */
@@ -1000,7 +1002,7 @@ export const createWithinGroupSorter = (
 
     // For author and other non-series groupings: when a secondary key is provided,
     // use it as the within-group primary order with the global key as tiebreaker.
-    if (secondarySortBy !== 'none') {
+    if (secondarySortBy !== 'none' && !hasSortOrder) {
       const bySecondary = compareBookByKey(a, b, secondarySortBy, uiLanguage, pageDurations);
       if (bySecondary !== 0) return bySecondary * (secondaryAscending ? 1 : -1);
     }

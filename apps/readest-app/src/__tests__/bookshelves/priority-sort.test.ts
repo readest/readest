@@ -123,9 +123,9 @@ describe('priority-based library sorting', () => {
     expect(defaultResult?.books.map((b) => b.hash)).toEqual(['b', 'a']);
   });
 
-  // #4307: inside a non-series group, "Then by" is the within-group order. A saved
-  // priority list keeps that: rank 2 first, then rank 1, then the rest.
-  it('orders books inside a non-series group by rank 2 first, as without a saved order', () => {
+  // #4307: without a saved list, "Then by" is the within-group order. A saved list
+  // always has a rank 2, so it is followed in rank order inside a group too (#7786).
+  it('orders books inside a non-series group by rank 1 when an order is saved', () => {
     const mk = (hash: string, title: string, series: string) =>
       makeBook({
         hash,
@@ -133,7 +133,7 @@ describe('priority-based library sorting', () => {
         author: 'Tolkien',
         metadata: { title, author: 'Tolkien', language: 'en', series, seriesIndex: 1 },
       });
-    const books = [mk('a', 'A Book', 'Zeta'), mk('b', 'B Book', 'Alpha'), mk('c', 'C Book', 'Mid')];
+    const books = [mk('a', 'Apple', 'Zeta'), mk('b', 'Birch', 'Alpha'), mk('c', 'Cedar', 'Mid')];
     const sortOrder: LibrarySortCriterion[] = [
       { by: LibrarySortByType.Title, ascending: true },
       { by: LibrarySortByType.Series, ascending: true },
@@ -150,8 +150,65 @@ describe('priority-based library sorting', () => {
         undefined,
         order,
       );
-    expect([...books].sort(sorter(sortOrder)).map((book) => book.hash)).toEqual(['b', 'c', 'a']);
+    expect([...books].sort(sorter(sortOrder)).map((book) => book.hash)).toEqual(['a', 'b', 'c']);
     expect([...books].sort(sorter()).map((book) => book.hash)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('orders a Status group by Date Read, then Title, as the saved list ranks them', () => {
+    const sortOrder: LibrarySortCriterion[] = [
+      { by: LibrarySortByType.Updated, ascending: false },
+      { by: LibrarySortByType.Title, ascending: true },
+    ];
+    const settings = {
+      libraryGroupBy: LibraryGroupByType.Status,
+      librarySortBy: LibrarySortByType.Updated,
+      librarySortAscending: false,
+      libraryThenSortBy: LibrarySortByType.Title,
+      libraryThenSortAscending: true,
+      librarySortOrder: sortOrder,
+    };
+    const baseDef = defaultBookshelves(settings).find((s) => s.id === 'default')!;
+    const def = {
+      ...baseDef,
+      sort: resolveBookshelfSort(baseDef, getGlobalBookshelfSort(settings)),
+    };
+    const finished = (hash: string, title: string, updatedAt: number) =>
+      makeBook({ hash, title, updatedAt, readingStatus: 'finished' });
+    const books = [
+      finished('old', 'Alpha', 1000),
+      finished('new', 'Zeta', 3000),
+      finished('mid', 'Mid', 2000),
+    ];
+    const [result] = evaluateBookshelves(
+      books,
+      [def],
+      'en',
+      undefined,
+      undefined,
+      undefined,
+      sortOrder,
+    );
+    const [group] = presentBookshelf(result!, settings, 'en', undefined, '', undefined, sortOrder);
+    expect(group && 'books' in group && group.books.map((book) => book.title)).toEqual([
+      'Zeta',
+      'Mid',
+      'Alpha',
+    ]);
+    const groupId = group && 'books' in group ? group.id : '';
+    const drilledIn = presentBookshelf(
+      result!,
+      settings,
+      'en',
+      undefined,
+      groupId,
+      undefined,
+      sortOrder,
+    );
+    expect(drilledIn.map((item) => ('books' in item ? item.name : item.title))).toEqual([
+      'Zeta',
+      'Mid',
+      'Alpha',
+    ]);
   });
 
   // Users who never touch the list keep main's order: with Group by Series and
