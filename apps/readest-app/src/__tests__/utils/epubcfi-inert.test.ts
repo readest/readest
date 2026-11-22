@@ -843,27 +843,36 @@ describe('epubcfi cfi-inert element filtering', () => {
   });
 });
 
-// A range that ends where an inert block starts, as a selection to the end of
-// a paragraph can, before a spread spacer the paginator inserts before a page
-// break (readest#6873). The end stopped at the inert node and was written as
-// the body, which reads back as its start: the range came back collapsed.
-describe('range end before an inert element', () => {
+// A range that ends right before a page break's block, after the spread
+// spacer the paginator inserts before it (readest#6873). The end stopped at
+// the inert spacer and was written as the body, which reads back as its start:
+// the range came back collapsed. An end before the spacer must hold too.
+describe('range end beside an inert element', () => {
   const page = (spacer: string) =>
     XHTML(`<html xmlns="http://www.w3.org/1999/xhtml"><head><title>T</title></head>
 <body><p>First</p>${spacer}<p>Second</p></body></html>`);
+  const SPACER = '<foliate-spacer cfi-inert="" aria-hidden="true"></foliate-spacer>';
 
-  const firstToBreak = (doc: Document) => {
-    const [first, second] = Array.from(doc.querySelectorAll('p'));
+  // From the start of the first paragraph to the body boundary before `end`
+  const firstTo = (doc: Document, end: Element) => {
     const range = doc.createRange();
-    range.setStart(first!.firstChild!, 0);
-    range.setEnd(doc.body, Array.from(doc.body.childNodes).indexOf(second!));
+    range.setStart(doc.querySelector('p')!.firstChild!, 0);
+    range.setEnd(doc.body, Array.from(doc.body.childNodes).indexOf(end));
     return range;
   };
+  const second = (doc: Document) => doc.querySelectorAll('p')[1]!;
+  const expected = () => {
+    const doc = page('');
+    return CFI.fromRange(firstTo(doc, second(doc)));
+  };
 
-  it('keeps the text before the inert element', () => {
-    const doc = page('<foliate-spacer cfi-inert="" aria-hidden="true"></foliate-spacer>');
-    const cfi = CFI.fromRange(firstToBreak(doc));
-    expect(cfi).toBe(CFI.fromRange(firstToBreak(page(''))));
+  it.each([
+    ['after the inert element', second],
+    ['before the inert element', (doc: Document) => doc.querySelector('[cfi-inert]')!],
+  ])('keeps the text of a range that ends %s', (_, end) => {
+    const doc = page(SPACER);
+    const cfi = CFI.fromRange(firstTo(doc, end(doc)));
+    expect(cfi).toBe(expected());
     expect(CFI.toRange(doc, CFI.parse(cfi)).toString()).toBe('First');
   });
 });

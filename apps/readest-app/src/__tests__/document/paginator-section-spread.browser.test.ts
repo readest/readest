@@ -161,6 +161,10 @@ describe('paginator starts sections and page breaks on a new spread (browser)', 
     ],
     ['a break after', `<div id="x" style="break-after: column">x</div><div id="t">t</div>`],
     [
+      'inline content after a break',
+      `<div id="x" style="break-after: column">x</div><span id="t">t</span>`,
+    ],
+    [
       'a nested break before',
       `<div id="x">x</div><section><div id="t" ${BREAK}>t</div><p id="u">u</p></section>`,
     ],
