@@ -70,8 +70,11 @@ export const splitForOnDevice = (text: string, max: number): string[] => {
       current = '';
     }
     while (sentence.length > max) {
-      pieces.push(sentence.slice(0, max));
-      sentence = sentence.slice(max);
+      // Never between the two halves of an emoji: a lone half fails the native IPC.
+      const code = sentence.charCodeAt(max - 1);
+      const cut = max > 1 && code >= 0xd800 && code <= 0xdbff ? max - 1 : max;
+      pieces.push(sentence.slice(0, cut));
+      sentence = sentence.slice(cut);
     }
     current += sentence;
   }

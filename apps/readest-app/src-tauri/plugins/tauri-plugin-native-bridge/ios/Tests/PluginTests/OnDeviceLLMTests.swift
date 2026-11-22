@@ -120,6 +120,18 @@ final class OnDeviceLLMTests: XCTestCase {
     XCTAssertEqual(result, .failure(OnDeviceLLMFailure(message: "Aborted")))
   }
 
+  func testCancelBeforeStartNeverAsksTheModel() throws {
+    guard #available(iOS 27.0, *) else { throw XCTSkip("custom models need iOS 27") }
+    StubScript.shared.set("early") { "too late" }
+    OnDeviceLLM.cancel("r-early")
+    let result = try run(
+      id: "early",
+      args: .init(
+        requestId: "r-early", instructions: "", prompt: "p", temperature: nil, maxTokens: nil))
+    XCTAssertEqual(result, .failure(OnDeviceLLMFailure(message: "Aborted")))
+    XCTAssertNil(StubScript.shared.request("early"))
+  }
+
   func testModelErrorBecomesItsDescription() throws {
     guard #available(iOS 27.0, *) else { throw XCTSkip("custom models need iOS 27") }
     struct Boom: LocalizedError { var errorDescription: String? { "The model failed." } }

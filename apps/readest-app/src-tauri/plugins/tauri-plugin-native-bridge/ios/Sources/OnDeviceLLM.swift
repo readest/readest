@@ -27,6 +27,9 @@ struct OnDeviceLLMFailure: Error, Equatable {
 enum OnDeviceLLM {
   private static let lock = NSLock()
   private static var tasks: [String: Task<Void, Never>] = [:]
+  /// Cancels that arrived before their request started: generate hops to a
+  /// blocking thread in Rust, so its cancel can overtake it.
+  private static var cancelledEarly: Set<String> = []
 
   static func status() -> [String: Any] {
     #if canImport(FoundationModels)
@@ -82,6 +85,7 @@ enum OnDeviceLLM {
   static func cancel(_ requestId: String) {
     lock.lock()
     let task = tasks.removeValue(forKey: requestId)
+    if task == nil { cancelledEarly.insert(requestId) }
     lock.unlock()
     task?.cancel()
   }
@@ -102,6 +106,10 @@ enum OnDeviceLLM {
     ) {
       // Registered under the lock so a fast reply can't remove its entry first.
       lock.lock()
+      if cancelledEarly.remove(args.requestId) != nil {
+        lock.unlock()
+        return completion(.failure(OnDeviceLLMFailure(message: "Aborted")))
+      }
       defer { lock.unlock() }
       tasks[args.requestId] = Task {
         defer { finish(args.requestId) }

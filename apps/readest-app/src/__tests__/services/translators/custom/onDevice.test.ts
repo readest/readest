@@ -142,6 +142,14 @@ describe('Apple Intelligence custom translator', () => {
     }
   });
 
+  it('never cuts an emoji in half when a sentence must be hard-cut', async () => {
+    nativeGenerate.mockImplementation(async ({ prompt }: { prompt: string }) => ({ text: prompt }));
+    // No sentence ends, and every emoji is two UTF-16 units starting at an odd index.
+    const text = `a${'😀'.repeat(600)}`;
+    expect(await buildCustomTranslator(onDevice).translate([text], 'en', 'zh')).toEqual([text]);
+    for (const [{ prompt }] of nativeGenerate.mock.calls) expect(prompt.isWellFormed()).toBe(true);
+  });
+
   it('registers every native error message it may show for translation', () => {
     const swift = readFileSync(
       'src-tauri/plugins/tauri-plugin-native-bridge/ios/Sources/OnDeviceLLM.swift',
