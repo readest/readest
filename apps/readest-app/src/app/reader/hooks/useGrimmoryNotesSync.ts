@@ -115,6 +115,7 @@ export const useGrimmoryNotesSync = (bookKey: string) => {
           book: {
             hash: book.hash,
             fileSize: bookData.file?.size,
+            titles: [book.title, book.sourceTitle],
             readingStatus: book.readingStatus,
             readingStatusUpdatedAt: book.readingStatusUpdatedAt,
           },

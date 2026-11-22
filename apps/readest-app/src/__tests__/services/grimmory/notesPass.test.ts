@@ -49,9 +49,12 @@ class FakeServer {
   statuses: string[] = [];
 
   listBooks = vi.fn(async () => this.books);
-  readContent = vi.fn(async (bookId: number, _type: unknown, start: number, end: number) =>
-    this.files.get(bookId)!.slice(start, end),
-  );
+  readContent = vi.fn(async (bookId: number, _type: unknown, start: number, end: number) => {
+    const file = this.files.get(bookId)!;
+    // Grimmory answers a range past the end of the file with a 416.
+    if (start >= file.length) throw new GrimmoryRequestError(416, 'range not satisfiable');
+    return file.slice(start, end);
+  });
   getAnnotations = vi.fn(async (bookId: number) =>
     this.annotations.filter((a) => a.bookId === bookId),
   );
@@ -171,6 +174,49 @@ describe('findGrimmoryBook', () => {
     const server = new FakeServer();
     server.files.set(2, makeFile(LOCAL.length, 3));
     expect(await findGrimmoryBook(server, { hash: HASH, fileSize: LOCAL.length })).toBeNull();
+  });
+
+  // #7809: Grimmory updates a file's hash, not its fileSizeKb, when it writes
+  // metadata into the file, so the listed size is the file's old size.
+  test('finds a book whose listed size is stale by its title', async () => {
+    const server = new FakeServer();
+    server.books = [
+      {
+        id: 2,
+        metadata: { title: 'Alice in Wonderland (Grimmory edit)' },
+        primaryFile: { id: 2, fileSizeKb: Math.floor(LOCAL.length / 1024) + 1, bookType: 'EPUB' },
+      },
+    ];
+    expect(await findGrimmoryBook(server, { hash: HASH, fileSize: LOCAL.length })).toBeNull();
+    const match = await findGrimmoryBook(server, {
+      hash: HASH,
+      fileSize: LOCAL.length,
+      titles: ['Alice in  Wonderland (Grimmory Edit)'],
+    });
+    expect(match).toMatchObject({ bookId: 2, bookFileId: 2, isPrimary: true });
+  });
+
+  test('a same-title book shorter than the local file is not a match', async () => {
+    const server = new FakeServer();
+    server.files.set(1, makeFile(1000, 2));
+    server.books = [
+      {
+        id: 1,
+        metadata: { title: 'Alice' },
+        primaryFile: { id: 1, fileSizeKb: 0, bookType: 'EPUB' },
+      },
+      {
+        id: 2,
+        metadata: { title: 'Alice' },
+        primaryFile: { id: 2, fileSizeKb: 1, bookType: 'EPUB' },
+      },
+    ];
+    const match = await findGrimmoryBook(server, {
+      hash: HASH,
+      fileSize: LOCAL.length,
+      titles: ['Alice'],
+    });
+    expect(match).toMatchObject({ bookId: 2 });
   });
 });
 

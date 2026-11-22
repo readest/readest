@@ -27,6 +27,7 @@ const createGrimmoryProgressClient = (
       account,
       hash: book.hash,
       fileSize: useBookDataStore.getState().getBookData(book.hash)?.file?.size,
+      titles: [book.title, book.sourceTitle],
     });
   const progressClient: ProgressSyncClient = {
     lastError: null,
