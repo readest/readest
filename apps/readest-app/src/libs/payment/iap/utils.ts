@@ -1,4 +1,5 @@
 import { PlanInterval, PlanType, UserPlan } from '@/types/quota';
+import { GiftTier } from '@/types/gift';
 import { IAPStatus } from './types';
 
 // Statuses that still grant the user their paid plan. Anything else (expired,
@@ -40,6 +41,18 @@ export const isPurchaseProduct = (productId: string): boolean => {
   return productId.includes('.purchase');
 };
 
+export const GIFT_PRODUCT_IDS: Record<GiftTier, string> = {
+  plus: 'com.bilingify.readest.giftcard_plus.purchase',
+  pro: 'com.bilingify.readest.giftcard_pro.purchase',
+};
+
+export const isGiftProduct = (productId: string): boolean =>
+  Object.values(GIFT_PRODUCT_IDS).includes(productId);
+
+export const giftTierForProduct = (productId: string): GiftTier | null =>
+  (Object.keys(GIFT_PRODUCT_IDS) as GiftTier[]).find((t) => GIFT_PRODUCT_IDS[t] === productId) ??
+  null;
+
 export const isStoragePurchase = (productId: string): boolean => {
   return isPurchaseProduct(productId) && productId.includes('.storage');
 };
@@ -48,13 +61,14 @@ export const isStoragePurchase = (productId: string): boolean => {
  * Whether Play should consume a one-time product after verifying it.
  *
  * Consuming is what lets a SKU be bought again, which storage add-ons need
- * because they stack. A permanent unlock must NOT be consumed or the buyer can
+ * because they stack. Gifts are bought repeatedly too. A permanent unlock must NOT be consumed or the buyer can
  * be charged for it twice; it only needs acknowledging. This is an allowlist
  * rather than a denylist on purpose: an unrecognised product failing to be
  * repurchasable is an annoyance caught in testing, while wrongly consuming a
  * permanent unlock costs a user real money.
  */
-export const isConsumablePurchase = (productId: string): boolean => isStoragePurchase(productId);
+export const isConsumablePurchase = (productId: string): boolean =>
+  isStoragePurchase(productId) || isGiftProduct(productId);
 
 export const parseStorageGB = (productId: string): number => {
   const match = productId.match(/\.([0-9]+)gb/);
