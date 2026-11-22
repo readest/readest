@@ -21,8 +21,8 @@ import {
 // its line came out taller than a page. Chromium lets that overflow into the
 // bottom margin; WebKit carries it onto the next page, so on macOS and iOS the
 // bottom of the cover showed at the top of the next page and the cover lost
-// its centred spread (readest#6676). Run with `--browser.name=webkit` to see
-// the WebKit failure; Chromium passes either way.
+// its centred spread (readest#6676). `pnpm test:browser:webkit` runs this file
+// in WebKit, as CI does; Chromium passes either way.
 
 const makeViewSettings = () =>
   ({

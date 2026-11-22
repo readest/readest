@@ -29,6 +29,7 @@
     "test:extension": "dotenv -e .env -e .env.test.local -- vitest extensions/send-to-readest/ --run",
     "test:coverage": "dotenv -e .env -e .env.test.local -- vitest run --coverage",
     "test:browser": "dotenv -e .env -e .env.test.local -- vitest run --config vitest.browser.config.mts",
+    "test:browser:webkit": "dotenv -e .env -e .env.test.local -- vitest run --config vitest.browser.webkit.config.mts",
     "test:tauri": "bash scripts/test-tauri.sh",
     "test:android": "bash scripts/test-android.sh",
     "test:pr:web:unit": "dotenv -e .env -e .env.test.local -- vitest run --maxWorkers=4",
