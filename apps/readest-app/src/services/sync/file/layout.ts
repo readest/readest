@@ -17,6 +17,9 @@ import { makeSafeFilename } from '@/utils/misc';
  *           <safe-title>.<ext>                       ← the book file
  *           cover.png                                ← optional
  *           config.json                              ← progress + booknotes
+ *       fonts.json                                   ← custom font index
+ *       fonts/
+ *         <contentId>/<font file name>               ← one custom font
  *
  * Why hash directories: avoids title collisions and makes title edits a
  * pure metadata operation (no remote rename). The friendly file name
@@ -36,6 +39,10 @@ export const SYNC_BOOK_COVER_FILE = 'cover.png';
 // per-book subdirectory. Additive to the frozen layout above: older clients
 // simply never look inside it.
 export const SYNC_BOOK_TTS_DIR = 'tts';
+// Custom fonts (#7793): `fonts.json` lists them, each file sits in
+// `fonts/<contentId>/`. Also additive: older clients never read either.
+export const SYNC_FONTS_FILE = 'fonts.json';
+export const SYNC_FONTS_DIR = 'fonts';
 
 /**
  * Normalise the user-entered rootPath so the rest of the code can rely on
@@ -82,6 +89,14 @@ export const buildBookConfigPath = (rootPath: string, bookHash: string): string 
 /** Absolute path of the shared library.json index. */
 export const buildLibraryPath = (rootPath: string): string =>
   join(buildBasePath(rootPath), SYNC_LIBRARY_FILE);
+
+/** Absolute path of the fonts.json index. */
+export const buildFontsIndexPath = (rootPath: string): string =>
+  join(buildBasePath(rootPath), SYNC_FONTS_FILE);
+
+/** Absolute path of one font's directory, keyed by its contentId. */
+export const buildFontDirPath = (rootPath: string, contentId: string): string =>
+  join(buildBasePath(rootPath), SYNC_FONTS_DIR, contentId);
 
 /**
  * Friendly book file name "<sanitized title>.<ext>" used inside the

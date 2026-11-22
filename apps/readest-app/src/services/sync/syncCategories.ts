@@ -110,18 +110,19 @@ export const isSyncCategoryLocked = (category: SyncCategory): boolean => {
 };
 
 /**
- * Book-data categories gated on the Readest Cloud switch (#4380). Providers
- * are independently selectable (#5062): these categories ride the native
- * channels whenever Readest Cloud is switched on, and any enabled file
- * backend mirrors them in parallel through library.json + config.json. Only
- * an unchecked Readest Cloud gates the native rows off. Account-level
- * categories (settings, stats, dictionaries, fonts, textures, OPDS catalogs)
- * have no file-based counterpart and always stay native.
+ * Categories gated on the Readest Cloud switch (#4380). Providers are
+ * independently selectable (#5062): these categories ride the native channels
+ * whenever Readest Cloud is switched on, and any enabled file backend mirrors
+ * them in parallel (library.json + config.json, and fonts.json for custom fonts,
+ * #7793). Only an unchecked Readest Cloud gates the native rows off. The other
+ * account-level categories (settings, stats, dictionaries, textures, OPDS
+ * catalogs) have no file-based counterpart and always stay native.
  */
 const PROVIDER_GATED_CATEGORIES: ReadonlySet<SyncCategory> = new Set([
   'book',
   'progress',
   'note',
+  'font',
 ] as SyncCategory[]);
 
 export const isSyncCategoryEnabled = (id: string): boolean => {

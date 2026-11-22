@@ -79,6 +79,16 @@ describe('isSyncCategoryEnabled', () => {
       expect(isSyncCategoryEnabled('note')).toBe(false);
     });
 
+    test('fonts follow the file provider while Readest Cloud is off (#7793)', () => {
+      setSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('font')).toBe(false);
+      setSettings({
+        readestCloud: { enabled: true },
+        webdav: { enabled: true },
+      } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('font')).toBe(true);
+    });
+
     test('legacy plural/singular aliases are gated too', () => {
       setSettings({ googleDrive: { enabled: true } } as Partial<SystemSettings>);
       expect(isSyncCategoryEnabled('books')).toBe(false);
@@ -92,7 +102,6 @@ describe('isSyncCategoryEnabled', () => {
       expect(isSyncCategoryEnabled('stats')).toBe(true);
       expect(isSyncCategoryEnabled('settings')).toBe(true);
       expect(isSyncCategoryEnabled('dictionary')).toBe(true);
-      expect(isSyncCategoryEnabled('font')).toBe(true);
       expect(isSyncCategoryEnabled('opds_catalog')).toBe(true);
     });
 

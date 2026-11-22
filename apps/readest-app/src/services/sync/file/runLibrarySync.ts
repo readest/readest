@@ -9,9 +9,11 @@ import type { ProgressHandler } from '@/utils/transfer';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import type { SystemSettings } from '@/types/settings';
 import type { UserPlan } from '@/types/quota';
+import type { CustomFont } from '@/styles/fonts';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
+import { useCustomFontStore } from '@/store/customFontStore';
 import { isWebAppPlatform } from '@/services/environment';
 import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
 import { isICloudSupportedPlatform } from '@/services/sync/providers/icloud/buildICloudProvider';
@@ -25,6 +27,7 @@ import {
 } from '@/services/sync/file/providerRegistry';
 import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
 import { FileSyncEngine, type SyncLibraryResult } from '@/services/sync/file/engine';
+import { downloadFont, syncFonts } from '@/services/sync/file/fonts';
 
 /**
  * Whether a backend's transport can work at all right now. Web Google Drive
@@ -120,9 +123,9 @@ const syncOneBackend = async (
     await appService.saveSettings(next);
   }
 
-  const strategy = ps?.strategy ?? 'silent';
+  const strategy = ps?.strategy === 'prompt' ? 'silent' : (ps?.strategy ?? 'silent');
   const result = await engine.syncLibrary(useLibraryStore.getState().library, {
-    strategy: strategy === 'prompt' ? 'silent' : strategy,
+    strategy,
     syncBooks: ps?.syncBooks ?? false,
     fullSync: false,
     concurrency: 6,
@@ -139,6 +142,13 @@ const syncOneBackend = async (
   });
 
   recordLibraryPass(kind, result);
+  // Custom fonts ride the same pass (#7793); a font failure is not a library one.
+  try {
+    const provider = await createFileSyncProvider(kind, useSettingsStore.getState().settings);
+    if (provider) await syncFonts(envConfig, provider, strategy);
+  } catch (e) {
+    console.warn('[cloudSync] font sync failed', kind, e);
+  }
   if (!result.failures && !result.indexPushFailed) {
     const latest = useSettingsStore.getState().settings;
     const next = { ...latest, [key]: { ...latest[key], lastSyncedAt: Date.now() } };
@@ -284,6 +294,30 @@ export const runFileBookDownload = async (
         bookTitle: book.title,
         error: e instanceof Error ? e.message : String(e),
       });
+    }
+  }
+  return false;
+};
+
+/**
+ * Download a synced custom font when the user picks it (#7793), from the first
+ * enabled backend that holds it, then mount it as the Readest Cloud download
+ * handler does.
+ */
+export const runFileFontDownload = async (
+  envConfig: EnvConfigType,
+  font: CustomFont,
+): Promise<boolean> => {
+  const settings = useSettingsStore.getState().settings;
+  const appService = await envConfig.getAppService();
+  for (const kind of getReadyFileSyncBackends(settings)) {
+    try {
+      const provider = await createFileSyncProvider(kind, settings);
+      if (!provider || !(await downloadFont(provider, appService, font))) continue;
+      await useCustomFontStore.getState().activateFontByContentId(envConfig, font.contentId!);
+      return true;
+    } catch (e) {
+      console.warn('[cloudSync] font download failed', kind, font.name, e);
     }
   }
   return false;

@@ -144,15 +144,18 @@ export function SyncCategoriesSection() {
           const on = enabled(category);
           const locked = isSyncCategoryLocked(category);
           // While Readest Cloud is switched off and a file backend is on, the
-          // book / progress / note channels are routed to the file backend at
-          // runtime and these toggles have no immediate effect. The
+          // book / progress / note / font channels are routed to the file
+          // backend at runtime and these toggles have no immediate effect. The
           // description says so in place (same pattern as `locked`), but the
           // toggle stays interactive and persists: it governs the native
           // channel the user returns to when Readest Cloud is re-enabled.
           const managedByProvider =
             !readestEnabled &&
             backends.length > 0 &&
-            (category === 'book' || category === 'progress' || category === 'note');
+            (category === 'book' ||
+              category === 'progress' ||
+              category === 'note' ||
+              category === 'font');
           return (
             <li key={category} className='flex items-center justify-between gap-4 px-4 py-3'>
               <div className='flex flex-col gap-0.5'>

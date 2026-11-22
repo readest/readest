@@ -17,6 +17,8 @@ import { useSettingsStore } from '@/store/settingsStore';
  */
 
 const syncLibrary = vi.fn();
+const { syncFonts } = vi.hoisted(() => ({ syncFonts: vi.fn(async () => {}) }));
+vi.mock('@/services/sync/file/fonts', () => ({ syncFonts }));
 
 vi.mock('@/components/Dialog', () => ({
   default: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
@@ -92,6 +94,18 @@ describe('FileSyncForm — Sync now health reporting', () => {
     expect(syncLibrary).toHaveBeenCalledTimes(1);
     // Mutex released.
     expect(useFileSyncStore.getState().byKind.webdav?.isSyncing ?? false).toBe(false);
+  });
+
+  test('Sync now syncs custom fonts too, and a font failure is not a sync error (#7793)', async () => {
+    syncFonts.mockRejectedValueOnce(new Error('font upload failed'));
+    renderForm();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sync now' }));
+
+    await waitFor(() => expect(syncFonts).toHaveBeenCalledTimes(1));
+    expect((syncFonts.mock.calls[0] as unknown[])[2]).toBe('silent');
+    await waitFor(() => expect(useFileSyncStore.getState().byKind.webdav?.isSyncing).toBe(false));
+    expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeNull();
   });
 
   test('Sync now reports what moved to Data Flow', async () => {
