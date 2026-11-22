@@ -112,6 +112,12 @@ function createSupabaseMock(state: {
               },
             }),
           };
+        case 'gift_cards':
+          return {
+            select: () => ({
+              eq: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }),
+            }),
+          };
         default:
           throw new Error(`unexpected table: ${table}`);
       }
