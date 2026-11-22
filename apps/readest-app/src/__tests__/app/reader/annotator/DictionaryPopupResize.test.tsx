@@ -15,6 +15,7 @@ vi.mock('@/hooks/useKeyDownActions', () => ({
 }));
 vi.mock('@/app/reader/components/annotator/DictionaryResultsView', () => ({
   useDictionaryResults: () => ({}),
+  lookupToPin: () => ({}),
   DictionaryResultsHeader: ({
     dragHandleProps,
   }: {

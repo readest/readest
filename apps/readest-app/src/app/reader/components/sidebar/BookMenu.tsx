@@ -30,7 +30,7 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { bookKeys, recreateViewer, getViewSettings } = useReaderStore();
+  const { bookKeys, recreateViewer, getViewSettings, getProgress } = useReaderStore();
   const { getVisibleLibrary } = useLibraryStore();
   const { openParallelView } = useBooksManager();
   const { sideBarBookKey } = useSidebarStore();
@@ -103,8 +103,14 @@ const BookMenu: React.FC<BookMenuProps> = ({ menuClassName, setIsDropdownOpen })
       );
     }
   };
+  // Keep the books on the sections they are on now (#4991).
   const handleSetParallel = () => {
-    setParallel(bookKeys);
+    const sections: Record<string, number> = {};
+    for (const key of bookKeys) {
+      const section = getProgress(key)?.section?.current;
+      if (section !== undefined) sections[key] = section;
+    }
+    setParallel(bookKeys, sections);
     setIsDropdownOpen?.(false);
   };
   const handleUnsetParallel = () => {
