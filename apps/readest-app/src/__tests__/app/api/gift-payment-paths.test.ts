@@ -252,7 +252,9 @@ beforeEach(() => {
     token: 'buyer-token',
   });
   hooks.acknowledgePurchase.mockResolvedValue(undefined);
-  hooks.consumeProductPurchase.mockResolvedValue(undefined);
+  hooks.consumeProductPurchase.mockImplementation(async () => {
+    hooks.log.push('google.consume');
+  });
   process.env['STRIPE_SECRET_KEY_DEV'] = 'sk_test_dummy';
   process.env['APPLE_IAP_BUNDLE_ID'] = BUNDLE_ID;
 });
@@ -324,7 +326,7 @@ describe('Stripe gift payments', () => {
 });
 
 describe('Stripe gift checkout', () => {
-  const checkout = (metadata?: Record<string, string>) =>
+  const checkout = (metadata?: Record<string, unknown>) =>
     checkoutPost(
       jsonReq('/api/stripe/checkout', {
         priceId: 'price_gift_plus',
@@ -354,6 +356,18 @@ describe('Stripe gift checkout', () => {
         cancel_url: 'https://web.readest.com/user?section=gifts',
       }),
     );
+  });
+
+  // A tampered id would be paid for and then fail every webhook retry on the
+  // uuid column, so it is refused before any session exists.
+  it.each([
+    ['a non-UUID string', 'not-a-uuid'],
+    ['a number', 42],
+  ])('checkout answers %s giftCardId with 400', async (_label, giftCardId) => {
+    const res = await checkout({ giftCardId });
+
+    expect(res.status).toBe(400);
+    expect(hooks.sessionsCreate).not.toHaveBeenCalled();
   });
 
   it('checkout keeps the plan success and cancel URLs without a giftCardId', async () => {
@@ -399,6 +413,16 @@ describe('App Store gift payments', () => {
       paymentRef: 'otx-1',
       giftCardId: undefined,
     });
+  });
+
+  it('a failed App Store activation answers 500', async () => {
+    hooks.verifyTransaction.mockResolvedValue(appleVerification(GIFT_PLUS));
+    hooks.activateGiftCard.mockRejectedValue(new Error('gift card belongs to another buyer'));
+
+    const res = await appleVerify({ giftCardId: DRAFT_ID });
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({ purchase: null });
   });
 
   it('a revoked App Store gift does not activate', async () => {
@@ -467,6 +491,34 @@ describe('Google Play gift payments', () => {
       giftCardId: DRAFT_ID,
     });
     expect(hooks.log.indexOf('payments.write')).toBeLessThan(hooks.log.indexOf('gift.activate'));
+    expect(hooks.consumeProductPurchase).toHaveBeenCalledWith(googleParams);
+    // Play consumes only once the card is recorded: an unconsumed purchase
+    // comes back on the next restore and is verified again.
+    expect(hooks.log.indexOf('gift.activate')).toBeLessThan(hooks.log.indexOf('google.consume'));
+  });
+
+  it('a failed Play activation answers 500 and leaves the purchase unconsumed', async () => {
+    hooks.verifyPurchase.mockResolvedValue(googleVerification());
+    hooks.activateGiftCard.mockRejectedValue(new Error('gift card belongs to another buyer'));
+
+    const res = await googleVerify({ giftCardId: DRAFT_ID });
+
+    expect(res.status).toBe(500);
+    expect(hooks.consumeProductPurchase).not.toHaveBeenCalled();
+  });
+
+  it('a Play restore re-verify with no giftCardId still makes a card', async () => {
+    hooks.verifyPurchase.mockResolvedValue(googleVerification());
+
+    const res = await googleVerify({});
+
+    expect(res.status).toBe(200);
+    expect(hooks.activateGiftCard).toHaveBeenCalledTimes(1);
+    expect(hooks.activateGiftCard.mock.calls[0]![0]).toMatchObject({
+      tier: 'plus',
+      paymentRef: 'gift-token-1',
+      giftCardId: undefined,
+    });
     expect(hooks.consumeProductPurchase).toHaveBeenCalledWith(googleParams);
   });
 
