@@ -3053,5 +3053,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} ni več nad mestom za spust.",
   "Dropped {{label}} at {{target}}.": "{{label}} spuščeno na {{target}}.",
   "Dropped {{label}}.": "{{label}} spuščeno.",
-  "Reordering {{label}} cancelled.": "Prerazporejanje {{label}} preklicano."
+  "Reordering {{label}} cancelled.": "Prerazporejanje {{label}} preklicano.",
+  "Add to Vocabulary": "Dodaj v besedišče",
+  "Add the selected word to the vocabulary list": "Dodaj izbrano besedo na seznam besedišča",
+  "Added to vocabulary": "Dodano v besedišče"
 }

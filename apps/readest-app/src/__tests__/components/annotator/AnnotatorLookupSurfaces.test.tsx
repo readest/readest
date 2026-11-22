@@ -588,6 +588,31 @@ describe('the System Dictionary tool (#6728)', () => {
   });
 });
 
+describe('the Add to Vocabulary tool', () => {
+  test('saves the word with its sentence, opens no lookup and dismisses the toolbar', async () => {
+    // An explicit add saves even with lookup saving off.
+    h.lookupSettings.saveLookupsToVocabulary = false;
+    h.viewSettings.annotationToolbarItems = ['dictionary', 'vocabulary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('serendipity');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add to Vocabulary' }));
+    });
+
+    expect(h.recordLookup).toHaveBeenCalledWith({
+      word: 'serendipity',
+      lang: 'en',
+      occurrence: expect.objectContaining({
+        cfi: 'epubcfi(/6/2!/4/2)',
+        sentence: 'serendipity',
+      }),
+    });
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
+});
+
 describe('a lookup surface survives the selection it is anchored to being republished', () => {
   test.each([
     ['onDictionarySelection', 'dictionary-surface'],

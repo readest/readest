@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import GroupHeader from '@/app/library/components/GroupHeader';
 import { LibraryGroupByType } from '@/types/settings';
+import { eventDispatcher } from '@/utils/event';
 
 // Stand-in for a non-English locale: keys the app ships translations for come
 // back translated, everything else falls through to the key (i18next's
@@ -31,7 +32,21 @@ vi.mock('@/utils/nav', () => ({
   navigateToLibrary: (...args: unknown[]) => navigateToLibraryMock(...args),
 }));
 
+const envStub = { appService: { isAndroidApp: false } };
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => envStub,
+}));
+
+const acquireBackKeyInterception = vi.fn();
+const releaseBackKeyInterception = vi.fn();
+vi.mock('@/store/deviceStore', () => ({
+  useDeviceControlStore: () => ({ acquireBackKeyInterception, releaseBackKeyInterception }),
+}));
+
 afterEach(() => {
+  envStub.appService.isAndroidApp = false;
+  acquireBackKeyInterception.mockReset();
+  releaseBackKeyInterception.mockReset();
   cleanup();
   navigateToLibraryMock.mockReset();
   window.history.replaceState(null, '', '/');
@@ -71,6 +86,40 @@ describe('GroupHeader back button', () => {
     expect(params.get('sort')).toBe('title');
     expect(params.has('shelf')).toBe(false);
     expect(params.get('group')).toBe('');
+  });
+});
+
+describe('GroupHeader Android system Back', () => {
+  // #7773: inside a series (or any virtual group) the page's breadcrumb Back
+  // handler is off, because the group id is not a folder path. Without the
+  // header taking Back, Android finished the activity and left Readest.
+  it('intercepts Back and returns to the bookshelf like the header arrow', () => {
+    envStub.appService.isAndroidApp = true;
+    window.history.replaceState(null, '', '?sort=title&group=abc123&shelf=recent');
+    render(<GroupHeader groupBy={LibraryGroupByType.Series} groupName='My Series' />);
+
+    expect(acquireBackKeyInterception).toHaveBeenCalledTimes(1);
+    const consumed = eventDispatcher.dispatchSync('native-key-down', { keyName: 'Back' });
+
+    expect(consumed).toBe(true);
+    expect(navigateToLibraryMock).toHaveBeenCalledTimes(1);
+    const params = new URLSearchParams(navigateToLibraryMock.mock.calls[0]![1] as string);
+    expect(params.get('sort')).toBe('title');
+    expect(params.has('shelf')).toBe(false);
+    expect(params.get('group')).toBe('');
+
+    cleanup();
+    expect(releaseBackKeyInterception).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves Escape alone off Android', () => {
+    window.history.replaceState(null, '', '?group=abc123');
+    render(<GroupHeader groupBy={LibraryGroupByType.Series} groupName='My Series' />);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(acquireBackKeyInterception).not.toHaveBeenCalled();
+    expect(navigateToLibraryMock).not.toHaveBeenCalled();
   });
 });
 

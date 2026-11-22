@@ -2903,5 +2903,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} دیگر روی موقعیتی برای رها کردن نیست.",
   "Dropped {{label}} at {{target}}.": "{{label}} در {{target}} رها شد.",
   "Dropped {{label}}.": "{{label}} رها شد.",
-  "Reordering {{label}} cancelled.": "تغییر ترتیب {{label}} لغو شد."
+  "Reordering {{label}} cancelled.": "تغییر ترتیب {{label}} لغو شد.",
+  "Add to Vocabulary": "افزودن به واژگان",
+  "Add the selected word to the vocabulary list": "افزودن واژهٔ انتخاب‌شده به فهرست واژگان",
+  "Added to vocabulary": "به واژگان افزوده شد"
 }

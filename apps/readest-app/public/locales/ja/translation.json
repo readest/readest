@@ -2828,5 +2828,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}}はドロップ可能な位置の上にありません。",
   "Dropped {{label}} at {{target}}.": "{{label}}を{{target}}に配置しました。",
   "Dropped {{label}}.": "{{label}}を配置しました。",
-  "Reordering {{label}} cancelled.": "{{label}}の並べ替えをキャンセルしました。"
+  "Reordering {{label}} cancelled.": "{{label}}の並べ替えをキャンセルしました。",
+  "Add to Vocabulary": "単語帳に追加",
+  "Add the selected word to the vocabulary list": "選択した単語を単語帳に追加",
+  "Added to vocabulary": "単語帳に追加しました"
 }

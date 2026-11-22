@@ -1,6 +1,8 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { MdArrowBack } from 'react-icons/md';
+import { useEnv } from '@/context/EnvContext';
+import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { navigateToLibrary } from '@/utils/nav';
@@ -20,6 +22,7 @@ interface GroupHeaderProps {
 const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName, localized }) => {
   const _ = useTranslation();
   const router = useRouter();
+  const { appService } = useEnv();
   const iconSize = useResponsiveSize(20);
 
   const handleBack = () => {
@@ -37,6 +40,10 @@ const GroupHeader: React.FC<GroupHeaderProps> = ({ groupBy, groupName, localized
     params.delete('shelf');
     navigateToLibrary(router, params.toString());
   };
+
+  // Android system Back leaves the group like the arrow does (#7773). The
+  // page's breadcrumb Back handler only covers folder groups.
+  useKeyDownActions({ onCancel: handleBack, enabled: !!appService?.isAndroidApp });
 
   // Get localized label for the group type
   const getGroupTypeLabel = (): string => {

@@ -2903,5 +2903,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} තවදුරටත් අතහැරිය හැකි ස්ථානයක් මත නැත.",
   "Dropped {{label}} at {{target}}.": "{{label}} {{target}} හි අතහරින ලදී.",
   "Dropped {{label}}.": "{{label}} අතහරින ලදී.",
-  "Reordering {{label}} cancelled.": "{{label}} නැවත පෙළගැස්වීම අවලංගු කරන ලදී."
+  "Reordering {{label}} cancelled.": "{{label}} නැවත පෙළගැස්වීම අවලංගු කරන ලදී.",
+  "Add to Vocabulary": "වචන මාලාවට එක් කරන්න",
+  "Add the selected word to the vocabulary list": "තෝරාගත් වචනය වචන මාලා ලැයිස්තුවට එක් කරන්න",
+  "Added to vocabulary": "වචන මාලාවට එක් කළා"
 }

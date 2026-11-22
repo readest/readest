@@ -3053,5 +3053,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} більше не над позицією для відпускання.",
   "Dropped {{label}} at {{target}}.": "{{label}} відпущено на {{target}}.",
   "Dropped {{label}}.": "{{label}} відпущено.",
-  "Reordering {{label}} cancelled.": "Зміну порядку {{label}} скасовано."
+  "Reordering {{label}} cancelled.": "Зміну порядку {{label}} скасовано.",
+  "Add to Vocabulary": "Додати до словника",
+  "Add the selected word to the vocabulary list": "Додати вибране слово до списку слів",
+  "Added to vocabulary": "Додано до словника"
 }

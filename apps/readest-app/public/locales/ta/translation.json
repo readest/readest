@@ -2903,5 +2903,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} இனி விடக்கூடிய நிலையின் மேல் இல்லை.",
   "Dropped {{label}} at {{target}}.": "{{label}} {{target}} இல் விடப்பட்டது.",
   "Dropped {{label}}.": "{{label}} விடப்பட்டது.",
-  "Reordering {{label}} cancelled.": "{{label}} மறுவரிசைப்படுத்தல் ரத்துசெய்யப்பட்டது."
+  "Reordering {{label}} cancelled.": "{{label}} மறுவரிசைப்படுத்தல் ரத்துசெய்யப்பட்டது.",
+  "Add to Vocabulary": "சொற்களஞ்சியத்தில் சேர்",
+  "Add the selected word to the vocabulary list": "தேர்ந்தெடுத்த சொல்லைச் சொற்களஞ்சியப் பட்டியலில் சேர்",
+  "Added to vocabulary": "சொற்களஞ்சியத்தில் சேர்க்கப்பட்டது"
 }

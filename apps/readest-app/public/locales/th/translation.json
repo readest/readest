@@ -2828,5 +2828,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} ไม่ได้อยู่เหนือตำแหน่งที่วางได้แล้ว",
   "Dropped {{label}} at {{target}}.": "วาง {{label}} ที่ {{target}} แล้ว",
   "Dropped {{label}}.": "วาง {{label}} แล้ว",
-  "Reordering {{label}} cancelled.": "ยกเลิกการจัดลำดับ {{label}} ใหม่แล้ว"
+  "Reordering {{label}} cancelled.": "ยกเลิกการจัดลำดับ {{label}} ใหม่แล้ว",
+  "Add to Vocabulary": "เพิ่มในคำศัพท์",
+  "Add the selected word to the vocabulary list": "เพิ่มคำที่เลือกลงในรายการคำศัพท์",
+  "Added to vocabulary": "เพิ่มในคำศัพท์แล้ว"
 }

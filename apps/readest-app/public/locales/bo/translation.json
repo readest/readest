@@ -2828,5 +2828,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} འཇོག་ས་ཞིག་གི་སྟེང་ན་མེད།",
   "Dropped {{label}} at {{target}}.": "{{label}} {{target}} ལ་བཞག་ཟིན།",
   "Dropped {{label}}.": "{{label}} བཞག་ཟིན།",
-  "Reordering {{label}} cancelled.": "{{label}} ཡི་གོ་རིམ་བསྐྱར་སྒྲིག་འདོར་ཟིན།"
+  "Reordering {{label}} cancelled.": "{{label}} ཡི་གོ་རིམ་བསྐྱར་སྒྲིག་འདོར་ཟིན།",
+  "Add to Vocabulary": "ཚིག་མཛོད་དུ་སྣོན།",
+  "Add the selected word to the vocabulary list": "འདེམས་ཟིན་པའི་ཚིག་དེ་ཚིག་མཛོད་ཐོ་གཞུང་དུ་སྣོན།",
+  "Added to vocabulary": "ཚིག་མཛོད་དུ་བསྣན་ཟིན།"
 }

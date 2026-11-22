@@ -842,3 +842,51 @@ describe('epubcfi cfi-inert element filtering', () => {
     });
   });
 });
+
+// A range that ends right before a page break's block, after the spread
+// spacer the paginator inserts before it (readest#6873). The end stopped at
+// the inert spacer and was written as the body, which reads back as its start:
+// the range came back collapsed. An end before the spacer must hold too.
+describe('range end beside an inert element', () => {
+  const page = (spacer: string) =>
+    XHTML(`<html xmlns="http://www.w3.org/1999/xhtml"><head><title>T</title></head>
+<body><p>First</p>${spacer}<p>Second</p></body></html>`);
+  const SPACER = '<foliate-spacer cfi-inert="" aria-hidden="true"></foliate-spacer>';
+
+  // From the start of the first paragraph to the body boundary before `end`
+  const firstTo = (doc: Document, end: Element) => {
+    const range = doc.createRange();
+    range.setStart(doc.querySelector('p')!.firstChild!, 0);
+    range.setEnd(doc.body, Array.from(doc.body.childNodes).indexOf(end));
+    return range;
+  };
+  const second = (doc: Document) => doc.querySelectorAll('p')[1]!;
+  const expected = () => {
+    const doc = page('');
+    return CFI.fromRange(firstTo(doc, second(doc)));
+  };
+
+  it('starts a range that begins at the inert element at the content after it', () => {
+    const range = (doc: Document, start: Node) => {
+      const r = doc.createRange();
+      r.setStart(doc.body, Array.from(doc.body.childNodes).indexOf(start as ChildNode));
+      r.setEnd(second(doc).firstChild!, 6);
+      return r;
+    };
+    const plain = page('');
+    const doc = page(SPACER);
+    const cfi = CFI.fromRange(range(doc, doc.querySelector('[cfi-inert]')!));
+    expect(cfi).toBe(CFI.fromRange(range(plain, second(plain))));
+    expect(CFI.toRange(doc, CFI.parse(cfi)).toString()).toBe('Second');
+  });
+
+  it.each([
+    ['after the inert element', second],
+    ['before the inert element', (doc: Document) => doc.querySelector('[cfi-inert]')!],
+  ])('keeps the text of a range that ends %s', (_, end) => {
+    const doc = page(SPACER);
+    const cfi = CFI.fromRange(firstTo(doc, end(doc)));
+    expect(cfi).toBe(expected());
+    expect(CFI.toRange(doc, CFI.parse(cfi)).toString()).toBe('First');
+  });
+});

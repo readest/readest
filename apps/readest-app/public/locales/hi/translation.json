@@ -2903,5 +2903,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} अब छोड़ने योग्य स्थान के ऊपर नहीं है।",
   "Dropped {{label}} at {{target}}.": "{{label}} को {{target}} पर छोड़ा गया।",
   "Dropped {{label}}.": "{{label}} छोड़ा गया।",
-  "Reordering {{label}} cancelled.": "{{label}} का क्रम बदलना रद्द किया गया।"
+  "Reordering {{label}} cancelled.": "{{label}} का क्रम बदलना रद्द किया गया।",
+  "Add to Vocabulary": "शब्दावली में जोड़ें",
+  "Add the selected word to the vocabulary list": "चयनित शब्द को शब्दावली सूची में जोड़ें",
+  "Added to vocabulary": "शब्दावली में जोड़ा गया"
 }

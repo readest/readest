@@ -33,6 +33,8 @@ type LayoutState = {
   viewRatio: number | null;
   columnCount: number | null;
   pageLabel: string | null;
+  // Whether a section's first page starts the visible spread
+  spreadStartsSection: boolean;
   anchor: string | null;
   anchorVisible: boolean;
   pairDx: number | null;
@@ -62,6 +64,8 @@ const probe = (page: Page, wantedAnchor: string | null): Promise<LayoutState> =>
     let pairDx: number | null = null;
     let pairDy: number | null = null;
     let pairTarget: Element | null = null;
+    const containerLeft = container?.getBoundingClientRect().left ?? NaN;
+    let spreadStartsSection = false;
     let longestLen = -1;
 
     for (const frame of frames) {
@@ -70,6 +74,7 @@ const probe = (page: Page, wantedAnchor: string | null): Promise<LayoutState> =>
       // is not parsed yet when the resize observer is still re-laying out.
       if (!doc?.documentElement) continue;
       const fr = frame.getBoundingClientRect();
+      if (Math.abs(fr.left - containerLeft) < 1) spreadStartsSection = true;
       const paracol = doc.querySelector('.paracol');
       if (paracol && !display) display = getComputedStyle(paracol).display;
       for (const el of Array.from(doc.querySelectorAll('.yuanwen'))) {
@@ -108,6 +113,7 @@ const probe = (page: Page, wantedAnchor: string | null): Promise<LayoutState> =>
         rect && rect.height > 0 ? Math.round((rect.width / rect.height) * 1000) / 1000 : null,
       columnCount: renderer?.columnCount ?? null,
       pageLabel: input?.value ?? null,
+      spreadStartsSection,
       anchor,
       anchorVisible,
       pairDx,
@@ -127,10 +133,11 @@ const settle = async (page: Page, orientation: string) => {
 const openAdaptiveBook = async (
   openBook: (p?: string) => Promise<ReaderPage>,
   scrolled: boolean,
+  tocItem = 3,
 ) => {
   const reader = await openBook(BOOK);
   // The book opens on a cover without a .paracol block; jump into the prose.
-  await reader.openTocChapter(3);
+  await reader.openTocChapter(tocItem);
   if (scrolled) {
     await reader.revealHeader();
     await reader.headerBar.locator('button[aria-label="View Options"]').click();
@@ -225,18 +232,31 @@ test('scrolled spread stays single-column and stacks cleanly in portrait', async
 });
 
 test('paginated reading position survives an orientation switch', async ({ openBook }) => {
-  const reader = await openAdaptiveBook(openBook, false);
+  // The label follows the page that starts the spread, so it only carries
+  // across a reflow when that page starts a section: one partway through a
+  // section can start on another page of it in portrait. The jump to About
+  // starts a spread with it.
+  const reader = await openAdaptiveBook(openBook, false, 1);
   const { landscape, portrait, back } = await sweep(reader.page);
 
+  expect(landscape.spreadStartsSection).toBe(true);
+  expect(back.spreadStartsSection).toBe(true);
   expect(portrait.pageLabel).toBe(landscape.pageLabel);
   expect(back.pageLabel).toBe(landscape.pageLabel);
   expect(portrait.anchorVisible).toBe(true);
   expect(back.anchorVisible).toBe(true);
 
-  // The label is a live progress readout, not a cached input value.
-  await reader.page.keyboard.press('ArrowRight');
+  // The label is a live progress readout, not a cached input value. It counts
+  // a few pages per label, so turn until it changes.
   await expect
-    .poll(async () => (await probe(reader.page, null)).pageLabel, { timeout: 15_000 })
+    .poll(
+      async () => {
+        await reader.page.keyboard.press('ArrowRight');
+        await reader.page.waitForTimeout(500);
+        return (await probe(reader.page, null)).pageLabel;
+      },
+      { timeout: 15_000, intervals: [0, 0, 0, 0, 0] },
+    )
     .not.toBe(back.pageLabel);
 });
 
