@@ -414,16 +414,18 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
   const isStacked = aspectRatio < 1;
   const gridTemplate = getGridTemplate(bookKeys.length, aspectRatio, split);
   const isRtl = () => !!gridRef.current && getComputedStyle(gridRef.current).direction === 'rtl';
-  const { handleDragStart: handleSplitDragStart, handleDragKeyDown: handleSplitKeyDown } = useDrag(
+  // Where the divider was grabbed: it moves with the pointer from there, so a
+  // press off the seam doesn't make it jump.
+  const splitDragStartRef = useRef({ x: 0, y: 0, split: 50 });
+  const { handleDragStart, handleDragKeyDown: handleSplitKeyDown } = useDrag(
     ({ clientX, clientY }) => {
       const rect = gridRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const fraction = isStacked
-        ? (clientY - rect.top) / rect.height
-        : isRtl()
-          ? (rect.right - clientX) / rect.width
-          : (clientX - rect.left) / rect.width;
-      setSplit(clampSplit(fraction * 100));
+      const start = splitDragStartRef.current;
+      const moved = isStacked
+        ? (clientY - start.y) / rect.height
+        : (isRtl() ? start.x - clientX : clientX - start.x) / rect.width;
+      setSplit(clampSplit(start.split + moved * 100));
     },
     ({ key, step }) => {
       const forward = isStacked ? 'ArrowDown' : isRtl() ? 'ArrowLeft' : 'ArrowRight';
@@ -434,6 +436,11 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
     undefined,
     isStacked ? 'row-resize' : 'col-resize',
   );
+  const handleSplitDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const point = 'touches' in e ? e.touches[0]! : e;
+    splitDragStartRef.current = { x: point.clientX, y: point.clientY, split: split ?? 50 };
+    handleDragStart(e);
+  };
 
   useEffect(() => {
     if (!sideBarBookKey) return;

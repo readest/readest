@@ -90,8 +90,12 @@ const renderGrid = (bookKeys = ['book-1', 'book-2']) =>
 const grid = () => document.querySelector<HTMLElement>('.books-grid')!;
 const divider = () => screen.getByRole('slider', { name: 'Resize Books' });
 
-const drag = (to: { clientX?: number; clientY?: number }) => {
-  fireEvent.mouseDown(divider(), { clientX: 700, clientY: 400 });
+// The seam of an even split is at x 700 (side by side) or y 400 (stacked).
+const drag = (
+  to: { clientX?: number; clientY?: number },
+  from: { clientX?: number; clientY?: number } = {},
+) => {
+  fireEvent.mouseDown(divider(), { clientX: 700, clientY: 400, ...from });
   act(() => {
     window.dispatchEvent(new MouseEvent('mousemove', { clientX: 0, clientY: 0, ...to }));
     window.dispatchEvent(new MouseEvent('mouseup', { clientX: 0, clientY: 0, ...to }));
@@ -116,8 +120,16 @@ describe('BooksGrid divider between two books', () => {
     renderGrid();
     drag({ clientX: 210 });
     expect(grid().style.gridTemplateColumns).toBe('minmax(0, 20fr) minmax(0, 80fr)');
-    drag({ clientX: 1190 });
+    drag({ clientX: 1190 }, { clientX: 400 });
     expect(grid().style.gridTemplateColumns).toBe('minmax(0, 80fr) minmax(0, 20fr)');
+  });
+
+  // The hit area is 32px wide: a press off the seam must not jump it to the pointer.
+  it('keeps the divider where it was grabbed', () => {
+    renderGrid();
+    drag({ clientX: 717 }, { clientX: 716 });
+    expect(grid().style.gridTemplateColumns).toBe('minmax(0, 50fr) minmax(0, 50fr)');
+    expect(divider().getAttribute('aria-valuenow')).toBe('50');
   });
 
   it('measures from the right when the first book is on the right (RTL)', () => {
