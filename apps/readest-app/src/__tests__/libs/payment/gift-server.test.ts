@@ -16,6 +16,8 @@ const h = vi.hoisted(() => ({
   stripe: 'free' as UserPlan,
   iap: 'free' as UserPlan,
   paidLookups: 0,
+  resolveError: null as Error | null,
+  claimError: null as Error | null,
 }));
 
 vi.mock('@/utils/supabase', () => ({
@@ -33,7 +35,10 @@ vi.mock('@/libs/payment/entitlements', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/libs/payment/entitlements')>();
   return {
     ...actual,
-    resolveUserPlan: async () => h.resolved,
+    resolveUserPlan: async () => {
+      if (h.resolveError) throw h.resolveError;
+      return h.resolved;
+    },
     getHighestActiveStripePlan: async () => {
       h.paidLookups++;
       return h.stripe;
@@ -42,6 +47,16 @@ vi.mock('@/libs/payment/entitlements', async (importOriginal) => {
       h.paidLookups++;
       return h.iap;
     },
+  };
+});
+
+// The email claim stays real unless a test makes it fail.
+vi.mock('@/libs/payment/gift/claim', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/libs/payment/gift/claim')>();
+  return {
+    ...actual,
+    claimGiftCardsForEmail: (userId: string, email: string) =>
+      h.claimError ? Promise.reject(h.claimError) : actual.claimGiftCardsForEmail(userId, email),
   };
 });
 
@@ -97,6 +112,8 @@ beforeEach(() => {
   h.stripe = 'free';
   h.iap = 'free';
   h.paidLookups = 0;
+  h.resolveError = null;
+  h.claimError = null;
 });
 
 describe('createGiftDraft', () => {
@@ -346,6 +363,63 @@ describe('activateGiftCard', () => {
 
     expect(card.redeemed_by).toBeNull();
     expect(db().planWrites()).toEqual([]);
+  });
+});
+
+// The buyer has paid and the card is live. Handing it to its recipient is
+// best-effort: a failure there must not fail the payment call (Play refunds an
+// unconsumed purchase), and the cron's email sweep and gift-boundary sync
+// finish the job.
+describe('activateGiftCard once the card is live', () => {
+  const addressedDraft = () =>
+    createGiftDraft('buyer-1', draftInput({ recipientEmail: 'sam@example.com' }));
+
+  it('returns the card when the recipient lookup fails', async () => {
+    const { id } = await addressedDraft();
+    vi.spyOn(db().client, 'rpc').mockResolvedValue({
+      data: null,
+      error: { code: 'XX000', message: 'lookup failed' },
+    });
+
+    await expect(activateGiftCard(stripePayment('pi_1', id))).resolves.toMatchObject({
+      id,
+      status: 'active',
+      redeemed_by: null,
+    });
+  });
+
+  it('returns the card when the claim fails', async () => {
+    const { id } = await addressedDraft();
+    h.claimError = new Error('claim failed');
+
+    await expect(activateGiftCard(stripePayment('pi_1', id))).resolves.toMatchObject({
+      id,
+      status: 'active',
+      redeemed_by: null,
+    });
+  });
+
+  it("returns the claimed card when the recipient's plan sync fails", async () => {
+    const { id } = await addressedDraft();
+    h.resolveError = new Error('stripe unavailable');
+
+    await expect(activateGiftCard(stripePayment('pi_1', id))).resolves.toMatchObject({
+      id,
+      status: 'active',
+      redeemed_by: 'friend-1',
+    });
+    expect(db().planWrites()).toEqual([]);
+  });
+
+  it("a refund revokes the card when the recipient's plan sync fails", async () => {
+    const card = await activateGiftCard(stripePayment());
+    await claimGiftCardByCode(card.code, 'friend-2');
+    h.resolveError = new Error('stripe unavailable');
+
+    await expect(
+      revokeGiftCardForPayment('stripe_payment_intent_id', 'pi_1'),
+    ).resolves.toBeUndefined();
+    expect(db().card(card.id)?.status).toBe('refunded');
   });
 });
 

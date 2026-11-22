@@ -178,8 +178,18 @@ const activate = async ({
  * reference: the buyer's draft when there is one, otherwise a card with an
  * empty message for the buyer to fill in.
  */
-export const activateGiftCard = async (payment: GiftPayment): Promise<GiftCardRow> =>
-  claimForRecipient(await activate(payment));
+export const activateGiftCard = async (payment: GiftPayment): Promise<GiftCardRow> => {
+  const card = await activate(payment);
+  // The card is live and paid for. Handing it to its recipient must not fail
+  // the payment call (Play refunds a purchase left unconsumed); the cron's
+  // email sweep claims it later.
+  try {
+    return await claimForRecipient(card);
+  } catch (error) {
+    console.error(`gift ${card.id}: claim for the recipient failed`, error);
+    return card;
+  }
+};
 
 const sentStatus = (card: GiftCardRow): SentGiftStatus => {
   if (card.status === 'refunded') return 'refunded';
@@ -268,7 +278,14 @@ export const revokeGiftCardForPayment = async (
     .select('redeemed_by');
   if (error) throw error;
   const recipient = ((data ?? []) as Pick<GiftCardRow, 'redeemed_by'>[])[0]?.redeemed_by;
-  if (recipient) await syncUserPlan(recipient);
+  if (!recipient) return;
+  // The card is refunded either way; the cron re-syncs recipients of cards
+  // refunded since its last runs.
+  try {
+    await syncUserPlan(recipient);
+  } catch (error) {
+    console.error(`gift ${column} ${value}: plan sync after the refund failed`, error);
+  }
 };
 
 /** The cards a user sent and received, and where their gifts stand at `now`. */

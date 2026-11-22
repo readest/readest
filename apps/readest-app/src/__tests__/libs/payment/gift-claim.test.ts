@@ -11,6 +11,7 @@ import { GiftDb } from '../../helpers/gift-db';
 const h = vi.hoisted(() => ({
   db: null as GiftDb | null,
   resolved: 'free' as UserPlan,
+  resolveError: null as Error | null,
 }));
 
 vi.mock('@/utils/supabase', () => ({
@@ -19,7 +20,13 @@ vi.mock('@/utils/supabase', () => ({
 
 vi.mock('@/libs/payment/entitlements', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/libs/payment/entitlements')>();
-  return { ...actual, resolveUserPlan: async () => h.resolved };
+  return {
+    ...actual,
+    resolveUserPlan: async () => {
+      if (h.resolveError) throw h.resolveError;
+      return h.resolved;
+    },
+  };
 });
 
 import {
@@ -36,6 +43,7 @@ const db = () => h.db!;
 beforeEach(() => {
   h.db = new GiftDb();
   h.resolved = 'free';
+  h.resolveError = null;
 });
 
 describe('claimGiftCardByCode', () => {
@@ -53,6 +61,19 @@ describe('claimGiftCardByCode', () => {
     expect(claimed).toMatchObject({ id: card.id, redeemed_by: 'friend-2' });
     expect(claimed?.redeemed_at).not.toBeNull();
     expect(db().planWrites()).toEqual([{ id: 'friend-2', plan: 'plus', status: 'active' }]);
+  });
+
+  // The claim is committed; a retry would find the code used. The cron syncs
+  // the plan from `redeemed_at`.
+  it('redeem by code returns the card when the plan sync fails', async () => {
+    const card = db().addCard({ status: 'active', tier: 'plus', code: CODE });
+    h.resolveError = new Error('stripe unavailable');
+
+    await expect(claimGiftCardByCode(CODE, 'friend-2')).resolves.toMatchObject({
+      id: card.id,
+      redeemed_by: 'friend-2',
+    });
+    expect(db().planWrites()).toEqual([]);
   });
 
   it('the first claim wins', async () => {

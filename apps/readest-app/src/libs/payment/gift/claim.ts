@@ -43,7 +43,15 @@ const claimCards = async (
     .select();
   if (error) throw error;
   const claimed = (data ?? []) as GiftCardRow[];
-  if (claimed.length > 0) await syncUserPlan(userId);
+  if (claimed.length === 0) return claimed;
+  // The claim is committed, so failing here would only make a retry report
+  // the code as used. The cron re-syncs a recipient whose gift began since
+  // its last runs.
+  try {
+    await syncUserPlan(userId);
+  } catch (error) {
+    console.error(`gift claim by ${column} for ${userId}: plan sync failed`, error);
+  }
   return claimed;
 };
 

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { GiftDb } from '../../helpers/gift-db';
 
 // Each payment path records its payment exactly as before (refund webhooks find
 // the purchase through that `payments` row) and then turns a gift payment into
@@ -23,6 +24,8 @@ const hooks = vi.hoisted(() => ({
   consumeProductPurchase: vi.fn(),
   decodeNotificationPayload: vi.fn(),
   decodeTransaction: vi.fn(),
+  rpc: vi.fn(),
+  giftDb: null as GiftDb | null,
 }));
 
 vi.mock('stripe', () => {
@@ -128,10 +131,14 @@ vi.mock('@/utils/supabase', () => ({
           };
         case 'customers':
           return { select: () => query({ stripe_customer_id: 'cus_1' }) };
+        // Only for a test that runs the real activation.
+        case 'gift_cards':
+          return hooks.giftDb!.client.from(table);
         default:
           throw new Error(`unexpected table: ${table}`);
       }
     },
+    rpc: (...a: unknown[]) => hooks.rpc(...a),
   }),
 }));
 
@@ -246,6 +253,7 @@ beforeEach(() => {
     hooks.consumeProductPurchase,
     hooks.decodeNotificationPayload,
     hooks.decodeTransaction,
+    hooks.rpc,
   ]) {
     fn.mockReset();
   }
@@ -552,6 +560,35 @@ describe('Google Play gift payments', () => {
     // Play consumes only once the card is recorded: an unconsumed purchase
     // comes back on the next restore and is verified again.
     expect(hooks.log.indexOf('gift.activate')).toBeLessThan(hooks.log.indexOf('google.consume'));
+  });
+
+  it('a live Play gift is consumed even when handing it to its recipient fails', async () => {
+    const actual = await vi.importActual<typeof import('@/libs/payment/gift/server')>(
+      '@/libs/payment/gift/server',
+    );
+    hooks.activateGiftCard.mockImplementation(actual.activateGiftCard);
+    hooks.giftDb = new GiftDb();
+    hooks.giftDb.addCard({
+      id: DRAFT_ID,
+      buyer_id: BUYER,
+      status: 'pending',
+      tier: 'plus',
+      recipient_email: 'friend@example.com',
+    });
+    hooks.rpc.mockResolvedValue({ data: null, error: { message: 'lookup failed' } });
+    hooks.verifyPurchase.mockResolvedValue(googleVerification());
+
+    const res = await googleVerify({ giftCardId: DRAFT_ID });
+
+    expect(res.status).toBe(200);
+    expect(hooks.rpc).toHaveBeenCalledWith('gift_user_id_for_email', {
+      p_email: 'friend@example.com',
+    });
+    expect(hooks.giftDb.card(DRAFT_ID)).toMatchObject({
+      status: 'active',
+      google_purchase_token: 'gift-token-1',
+    });
+    expect(hooks.consumeProductPurchase).toHaveBeenCalledWith(googleParams);
   });
 
   it('a failed Play activation answers 500 and leaves the purchase unconsumed', async () => {
