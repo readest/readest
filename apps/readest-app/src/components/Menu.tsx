@@ -12,9 +12,7 @@ interface MenuProps {
 
 const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel }) => {
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const { safeAreaInsets } = useThemeStore();
-  const topInset = safeAreaInsets?.top ?? 0;
-  const bottomInset = safeAreaInsets?.bottom ?? 0;
+  const insets = useThemeStore((state) => state.safeAreaInsets);
 
   useKeyDownActions({ onCancel, elementRef: menuRef });
 
@@ -23,13 +21,12 @@ const Menu: React.FC<MenuProps> = ({ children, className, style, onCancel }) => 
       ref={menuRef}
       role='none'
       className={clsx(
-        'menu-container max-h-[calc(100vh-max(var(--safe-area-inset-top,0px),var(--menu-safe-area-top,0px))-max(var(--safe-area-inset-bottom,0px),var(--menu-safe-area-bottom,0px))-96px)] overflow-y-auto border-0',
+        'menu-container max-h-[calc(100vh-var(--menu-inset-y)-96px)] overflow-y-auto border-0',
         className,
       )}
       style={
         {
-          '--menu-safe-area-top': `${topInset}px`,
-          '--menu-safe-area-bottom': `${bottomInset}px`,
+          '--menu-inset-y': `${(insets?.top ?? 0) + (insets?.bottom ?? 0)}px`,
           ...style,
         } as React.CSSProperties
       }
