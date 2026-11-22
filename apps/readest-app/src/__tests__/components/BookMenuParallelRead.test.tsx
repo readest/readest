@@ -1,8 +1,10 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import { useLibraryStore } from '@/store/libraryStore';
+import { useParallelViewStore } from '@/store/parallelViewStore';
+import { useReaderProgressStore } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useSidebarStore } from '@/store/sidebarStore';
@@ -57,5 +59,31 @@ describe('BookMenu Parallel Read book list', () => {
   it('lists downloaded PDF books so a PDF can be opened in parallel (#4991)', () => {
     render(<BookMenu />);
     expect(screen.getByRole('menuitem', { name: /A PDF Book/ })).toBeTruthy();
+  });
+});
+
+describe('BookMenu Enter Parallel Sync', () => {
+  beforeEach(() => {
+    (useReaderStore.setState as unknown as (state: unknown) => void)({
+      bookKeys: ['book1', 'book2'],
+      viewStates: { book1: { viewSettings: {} }, book2: { viewSettings: {} } },
+    });
+    useParallelViewStore.setState({ parallelViews: [], sectionAnchors: {} });
+    (useReaderProgressStore.setState as unknown as (state: unknown) => void)({
+      progresses: {
+        book1: { section: { current: 3, total: 30 } },
+        book2: { section: { current: 13, total: 30 } },
+      },
+    });
+  });
+
+  // The same book open twice, its English half beside its Swedish half.
+  it('keeps the sections the books are on in step (#4991)', () => {
+    render(<BookMenu />);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Enter Parallel Sync' }));
+
+    const { areParallels, getSectionOffset } = useParallelViewStore.getState();
+    expect(areParallels('book1', 'book2')).toBe(true);
+    expect(getSectionOffset('book1', 'book2')).toBe(10);
   });
 });

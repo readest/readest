@@ -3,7 +3,7 @@ import { describe, test, expect, beforeEach } from 'vitest';
 import { useParallelViewStore } from '@/store/parallelViewStore';
 
 beforeEach(() => {
-  useParallelViewStore.setState({ parallelViews: [] });
+  useParallelViewStore.setState({ parallelViews: [], sectionAnchors: {} });
 });
 
 describe('parallelViewStore', () => {
@@ -308,6 +308,38 @@ describe('parallelViewStore', () => {
       const group = useParallelViewStore.getState().getParallels('a');
       expect(group).not.toBeNull();
       expect(group!.size).toBe(3);
+    });
+  });
+
+  // ── getSectionOffset (#4991) ─────────────────────────────────────
+  describe('getSectionOffset', () => {
+    test('books linked without their sections sync to the same section', () => {
+      useParallelViewStore.getState().setParallel(['a', 'b']);
+
+      expect(useParallelViewStore.getState().getSectionOffset('a', 'b')).toBe(0);
+    });
+
+    test('keeps the gap between the sections the books were linked at', () => {
+      useParallelViewStore.getState().setParallel(['a', 'b'], { a: 3, b: 13 });
+
+      expect(useParallelViewStore.getState().getSectionOffset('a', 'b')).toBe(10);
+      expect(useParallelViewStore.getState().getSectionOffset('b', 'a')).toBe(-10);
+    });
+
+    test('a book opened next to a linked one follows that book', () => {
+      useParallelViewStore.getState().setParallel(['a', 'b'], { a: 3, b: 13 });
+      useParallelViewStore.getState().setParallel(['b', 'c']);
+
+      expect(useParallelViewStore.getState().getSectionOffset('b', 'c')).toBe(0);
+      expect(useParallelViewStore.getState().getSectionOffset('a', 'c')).toBe(10);
+    });
+
+    test('unlinking forgets the sections', () => {
+      useParallelViewStore.getState().setParallel(['a', 'b'], { a: 3, b: 13 });
+      useParallelViewStore.getState().unsetParallel(['a', 'b']);
+      useParallelViewStore.getState().setParallel(['a', 'b']);
+
+      expect(useParallelViewStore.getState().getSectionOffset('a', 'b')).toBe(0);
     });
   });
 });
