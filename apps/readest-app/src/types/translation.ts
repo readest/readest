@@ -1,4 +1,4 @@
-export type CustomTranslatorType = 'openai-compatible' | 'deepl';
+export type CustomTranslatorType = 'openai-compatible' | 'deepl' | 'apple-intelligence';
 
 /**
  * A user-configured translation backend. Registered alongside the built-in

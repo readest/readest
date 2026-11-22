@@ -3057,5 +3057,12 @@
   "Add to Vocabulary": "Dodaj do słownictwa",
   "Add the selected word to the vocabulary list": "Dodaj zaznaczone słowo do listy słownictwa",
   "Added to vocabulary": "Dodano do słownictwa",
-  "Resize Books": "Zmień rozmiar książek"
+  "Resize Books": "Zmień rozmiar książek",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (na urządzeniu)",
+  "On-Device": "Na urządzeniu",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence nie może pisać w języku docelowym.",
+  "Apple Intelligence is not available on this device.": "Apple Intelligence nie jest dostępne na tym urządzeniu.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence jest wyłączone. Włącz je w Ustawienia > Apple Intelligence & Siri.",
+  "The Apple Intelligence model is still downloading. Try again later.": "Model Apple Intelligence wciąż się pobiera. Spróbuj ponownie później.",
+  "The text is too long for Apple Intelligence on this device.": "Tekst jest za długi dla Apple Intelligence na tym urządzeniu."
 }

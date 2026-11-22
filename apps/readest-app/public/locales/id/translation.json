@@ -2832,5 +2832,12 @@
   "Add to Vocabulary": "Tambahkan ke kosakata",
   "Add the selected word to the vocabulary list": "Tambahkan kata yang dipilih ke daftar kosakata",
   "Added to vocabulary": "Ditambahkan ke kosakata",
-  "Resize Books": "Ubah Ukuran Buku"
+  "Resize Books": "Ubah Ukuran Buku",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (di perangkat)",
+  "On-Device": "Di perangkat",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence tidak dapat menulis dalam bahasa tujuan.",
+  "Apple Intelligence is not available on this device.": "Apple Intelligence tidak tersedia di perangkat ini.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence nonaktif. Aktifkan di Pengaturan > Apple Intelligence & Siri.",
+  "The Apple Intelligence model is still downloading. Try again later.": "Model Apple Intelligence masih diunduh. Coba lagi nanti.",
+  "The text is too long for Apple Intelligence on this device.": "Teks terlalu panjang untuk Apple Intelligence di perangkat ini."
 }

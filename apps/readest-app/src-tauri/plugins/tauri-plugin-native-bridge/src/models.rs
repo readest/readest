@@ -1094,3 +1094,41 @@ pub struct AnkiEntry {
 pub struct AnkiSetEntriesRequest {
     pub notes: Vec<AnkiEntry>,
 }
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnDeviceLlmStatusResponse {
+    pub available: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// Tokens per session, shared by instructions, prompt and reply.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_size: Option<u32>,
+    /// Base language codes the model supports, e.g. `en`, `zh`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub languages: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnDeviceLlmGenerateRequest {
+    pub request_id: String,
+    pub instructions: String,
+    pub prompt: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<u32>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnDeviceLlmGenerateResponse {
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnDeviceLlmCancelRequest {
+    pub request_id: String,
+}

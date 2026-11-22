@@ -2907,5 +2907,12 @@
   "Add to Vocabulary": "වචන මාලාවට එක් කරන්න",
   "Add the selected word to the vocabulary list": "තෝරාගත් වචනය වචන මාලා ලැයිස්තුවට එක් කරන්න",
   "Added to vocabulary": "වචන මාලාවට එක් කළා",
-  "Resize Books": "පොත්වල ප්‍රමාණය වෙනස් කරන්න"
+  "Resize Books": "පොත්වල ප්‍රමාණය වෙනස් කරන්න",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (උපාංගය මත)",
+  "On-Device": "උපාංගය මත",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence හට ඉලක්ක භාෂාවෙන් ලිවිය නොහැක.",
+  "Apple Intelligence is not available on this device.": "මෙම උපාංගයේ Apple Intelligence ලබා ගත නොහැක.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence අක්‍රියයි. සැකසීම් > Apple Intelligence & Siri තුළ එය සක්‍රිය කරන්න.",
+  "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence ආකෘතිය තවමත් බාගත වෙමින් පවතී. පසුව නැවත උත්සාහ කරන්න.",
+  "The text is too long for Apple Intelligence on this device.": "මෙම උපාංගයේ Apple Intelligence සඳහා පෙළ ඉතා දිගයි."
 }

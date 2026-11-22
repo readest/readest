@@ -2832,5 +2832,12 @@
   "Add to Vocabulary": "เพิ่มในคำศัพท์",
   "Add the selected word to the vocabulary list": "เพิ่มคำที่เลือกลงในรายการคำศัพท์",
   "Added to vocabulary": "เพิ่มในคำศัพท์แล้ว",
-  "Resize Books": "ปรับขนาดหนังสือ"
+  "Resize Books": "ปรับขนาดหนังสือ",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (บนอุปกรณ์)",
+  "On-Device": "บนอุปกรณ์",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence ไม่สามารถเขียนเป็นภาษาเป้าหมายได้",
+  "Apple Intelligence is not available on this device.": "Apple Intelligence ไม่พร้อมใช้งานบนอุปกรณ์นี้",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence ปิดอยู่ เปิดได้ที่ การตั้งค่า > Apple Intelligence & Siri",
+  "The Apple Intelligence model is still downloading. Try again later.": "โมเดล Apple Intelligence ยังดาวน์โหลดไม่เสร็จ โปรดลองอีกครั้งภายหลัง",
+  "The text is too long for Apple Intelligence on this device.": "ข้อความยาวเกินไปสำหรับ Apple Intelligence บนอุปกรณ์นี้"
 }

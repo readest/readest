@@ -6,6 +6,12 @@ import type { CustomTranslator } from '@/types/translation';
 import { ErrorCodes, TranslationContext, TranslationProvider } from '../types';
 import { renderPrompt } from './prompts';
 import { CUSTOM_TRANSLATOR_PREFIX } from './constants';
+import {
+  generateOnDeviceText,
+  onDeviceInputChars,
+  prepareOnDevice,
+  splitForOnDevice,
+} from './onDevice';
 
 const BATCH_DELAY_MS = 50;
 const MAX_BATCH_ITEMS = 4;
@@ -103,6 +109,7 @@ export const generateChatText = async (
     onProgress?: () => void;
   },
 ): Promise<string> => {
+  if (config.type === 'apple-intelligence') return generateOnDeviceText(config, options);
   const [{ generateText, streamText }] = await loadSDK();
   const { onText, onProgress, ...settings } = options;
   const run = async (thinkingOff: boolean) => {
@@ -173,6 +180,8 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
   const pending = new Map<string, PendingBatch>();
   const queue: PendingBatch[] = [];
   let inflight = 0;
+  // Apple's on-device model shares a small window between input and reply.
+  let maxBatchChars = MAX_BATCH_CHARS;
 
   const renderSystem = (sourceLang: string, targetLang: string, context?: TranslationContext) =>
     renderPrompt(getPromptTemplate(context?.promptId), {
@@ -255,7 +264,7 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
     const batch = pending.get(system);
     if (
       batch &&
-      (batch.items.length >= MAX_BATCH_ITEMS || batch.chars + item.text.length > MAX_BATCH_CHARS)
+      (batch.items.length >= MAX_BATCH_ITEMS || batch.chars + item.text.length > maxBatchChars)
     ) {
       flush(system);
     }
@@ -279,15 +288,30 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
       )}`,
     translate: async (texts, sourceLang, targetLang, _token, _useCache, signal, context) => {
       signal?.throwIfAborted();
+      const onDevice = config.type === 'apple-intelligence';
+      if (onDevice) {
+        maxBatchChars = onDeviceInputChars((await prepareOnDevice(targetLang)).contextSize);
+        signal?.throwIfAborted();
+      }
       const system = renderSystem(sourceLang, targetLang, context);
       const items: Item[] = [];
-      const results = texts.map((text) => {
-        if (!text?.trim()) return Promise.resolve(text);
-        return new Promise<string>((resolve, reject) => {
+      const queueText = (text: string) =>
+        new Promise<string>((resolve, reject) => {
           const item: Item = { text, resolve, reject };
           items.push(item);
           enqueue(system, item);
         });
+      // Chinese and Japanese run sentences together; other languages space them.
+      const joiner = /^(zh|ja)\b/i.test(targetLang) ? '' : ' ';
+      const results = texts.map((text) => {
+        if (!text?.trim()) return Promise.resolve(text);
+        // Apple's small window can't take a long paragraph whole.
+        if (onDevice && text.length > maxBatchChars) {
+          return Promise.all(splitForOnDevice(text, maxBatchChars).map(queueText)).then((parts) =>
+            parts.join(joiner),
+          );
+        }
+        return queueText(text);
       });
       const all = Promise.all(results);
       if (!signal) return all;

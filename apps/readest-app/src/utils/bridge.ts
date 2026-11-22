@@ -803,3 +803,37 @@ export interface PenStrokeBatch {
   kind: PenEventKind;
   points: { x: number; y: number; pressure: number }[];
 }
+
+export interface OnDeviceLLMStatusResponse {
+  available: boolean;
+  /** deviceNotEligible, appleIntelligenceNotEnabled, modelNotReady or unsupportedOS. */
+  reason?: string;
+  /** Tokens per session, shared by instructions, prompt and reply. */
+  contextSize?: number;
+  /** Base language codes the model supports, e.g. `en`, `zh`. */
+  languages?: string[];
+}
+
+export interface OnDeviceLLMGenerateRequest {
+  requestId: string;
+  instructions: string;
+  prompt: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export async function getOnDeviceLLMStatus(): Promise<OnDeviceLLMStatusResponse> {
+  return invoke<OnDeviceLLMStatusResponse>('plugin:native-bridge|on_device_llm_status');
+}
+
+export async function onDeviceLLMGenerate(
+  request: OnDeviceLLMGenerateRequest,
+): Promise<{ text: string }> {
+  return invoke<{ text: string }>('plugin:native-bridge|on_device_llm_generate', {
+    payload: request,
+  });
+}
+
+export async function cancelOnDeviceLLM(requestId: string): Promise<void> {
+  await invoke('plugin:native-bridge|on_device_llm_cancel', { payload: { requestId } });
+}

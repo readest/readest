@@ -2907,5 +2907,12 @@
   "Add to Vocabulary": "Lug‘atga qo‘shish",
   "Add the selected word to the vocabulary list": "Tanlangan so‘zni lug‘at ro‘yxatiga qo‘shish",
   "Added to vocabulary": "Lug‘atga qo‘shildi",
-  "Resize Books": "Kitoblar oʻlchamini oʻzgartirish"
+  "Resize Books": "Kitoblar oʻlchamini oʻzgartirish",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (qurilmada)",
+  "On-Device": "Qurilmada",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence maqsad tilda yoza olmaydi.",
+  "Apple Intelligence is not available on this device.": "Bu qurilmada Apple Intelligence mavjud emas.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence o‘chirilgan. Uni Sozlamalar > Apple Intelligence & Siri bo‘limida yoqing.",
+  "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence modeli hali yuklab olinmoqda. Keyinroq qayta urinib ko‘ring.",
+  "The text is too long for Apple Intelligence on this device.": "Matn bu qurilmadagi Apple Intelligence uchun juda uzun."
 }

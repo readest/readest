@@ -2907,5 +2907,12 @@
   "Add to Vocabulary": "शब्दावली में जोड़ें",
   "Add the selected word to the vocabulary list": "चयनित शब्द को शब्दावली सूची में जोड़ें",
   "Added to vocabulary": "शब्दावली में जोड़ा गया",
-  "Resize Books": "पुस्तकों का आकार बदलें"
+  "Resize Books": "पुस्तकों का आकार बदलें",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (डिवाइस पर)",
+  "On-Device": "डिवाइस पर",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence लक्ष्य भाषा में नहीं लिख सकता।",
+  "Apple Intelligence is not available on this device.": "इस डिवाइस पर Apple Intelligence उपलब्ध नहीं है।",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence बंद है। इसे सेटिंग्स > Apple Intelligence & Siri में चालू करें।",
+  "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence मॉडल अभी डाउनलोड हो रहा है। बाद में फिर से कोशिश करें।",
+  "The text is too long for Apple Intelligence on this device.": "इस डिवाइस पर Apple Intelligence के लिए टेक्स्ट बहुत लंबा है।"
 }

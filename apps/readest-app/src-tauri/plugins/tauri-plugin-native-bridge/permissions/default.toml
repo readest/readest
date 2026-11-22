@@ -76,4 +76,7 @@ permissions = [
   "allow-read-share-clip-html",
   "allow-icloud-container-status",
   "allow-icloud-ensure-downloaded",
+  "allow-on-device-llm-status",
+  "allow-on-device-llm-generate",
+  "allow-on-device-llm-cancel",
 ]

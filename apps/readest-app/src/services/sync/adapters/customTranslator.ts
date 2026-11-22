@@ -10,7 +10,11 @@ import { defaultComputeId, unwrap } from './helpers';
 export const CUSTOM_TRANSLATOR_KIND = 'custom_translator';
 export const TRANSLATION_PROMPT_KIND = 'translation_prompt';
 
-const TRANSLATOR_TYPES: readonly CustomTranslatorType[] = ['openai-compatible', 'deepl'];
+const TRANSLATOR_TYPES: readonly CustomTranslatorType[] = [
+  'openai-compatible',
+  'deepl',
+  'apple-intelligence',
+];
 
 const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
 const num = (v: unknown): number | undefined => (typeof v === 'number' ? v : undefined);

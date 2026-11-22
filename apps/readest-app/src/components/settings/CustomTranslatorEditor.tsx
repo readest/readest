@@ -1,10 +1,12 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PiSpinner, PiArrowsClockwise } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
 import { buildCustomTranslator } from '@/services/translators/custom';
+import { isOnDeviceLLMSupported } from '@/services/translators/custom/onDevice';
+import { getOnDeviceLLMStatus } from '@/utils/bridge';
 import { fetchOpenRouterModels } from '@/services/ai/providers/OpenRouterProvider';
 import type { CustomTranslator, CustomTranslatorType } from '@/types/translation';
 import {
@@ -61,11 +63,21 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
   const [fetchingModels, setFetchingModels] = useState(false);
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [onDeviceAvailable, setOnDeviceAvailable] = useState(false);
 
-  const isLLM = draft.type === 'openai-compatible';
+  useEffect(() => {
+    if (!isOnDeviceLLMSupported()) return;
+    getOnDeviceLLMStatus()
+      .then(({ available }) => setOnDeviceAvailable(available))
+      .catch(() => {});
+  }, []);
+
+  const isOnDevice = draft.type === 'apple-intelligence';
+  const isOpenAI = draft.type === 'openai-compatible';
+  const isLLM = isOpenAI || isOnDevice;
   const canSave =
     !!draft.name.trim() &&
-    (isLLM ? !!draft.baseUrl?.trim() && !!draft.model?.trim() : !!draft.apiKey);
+    (isOnDevice || (isOpenAI ? !!draft.baseUrl?.trim() && !!draft.model?.trim() : !!draft.apiKey));
 
   const update = (patch: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -103,10 +115,11 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
     const cleaned: Draft = {
       ...draft,
       name: draft.name.trim(),
-      baseUrl: isLLM ? draft.baseUrl?.trim() : undefined,
-      model: isLLM ? draft.model?.trim() : undefined,
+      baseUrl: isOpenAI ? draft.baseUrl?.trim() : undefined,
+      apiKey: isOnDevice ? undefined : draft.apiKey,
+      model: isOpenAI ? draft.model?.trim() : undefined,
       temperature: isLLM ? draft.temperature : undefined,
-      thinking: isLLM ? draft.thinking : undefined,
+      thinking: isOpenAI ? draft.thinking : undefined,
     };
     if (translator) store.updateTranslator(translator.id, cleaned);
     else store.addTranslator(cleaned);
@@ -139,12 +152,21 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
         <SettingsRow label={_('Type')}>
           <SettingsSelect
             value={draft.type}
-            onChange={(e) => update({ type: e.target.value as CustomTranslatorType })}
+            onChange={(e) => {
+              const type = e.target.value as CustomTranslatorType;
+              update({
+                type,
+                name: draft.name || (type === 'apple-intelligence' ? 'Apple Intelligence' : ''),
+              });
+            }}
             ariaLabel={_('Type')}
             disabled={!!translator}
             options={[
               { value: 'openai-compatible', label: _('OpenAI Compatible') },
               { value: 'deepl', label: 'DeepL' },
+              ...(onDeviceAvailable || isOnDevice
+                ? [{ value: 'apple-intelligence', label: _('Apple Intelligence (On-Device)') }]
+                : []),
             ]}
           />
         </SettingsRow>
@@ -155,10 +177,10 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
             className={inputClass}
             value={draft.name}
             onChange={(e) => update({ name: e.target.value })}
-            placeholder={isLLM ? 'DeepSeek' : 'DeepL'}
+            placeholder={isOnDevice ? 'Apple Intelligence' : isLLM ? 'DeepSeek' : 'DeepL'}
           />
         </Field>
-        {isLLM && (
+        {isOpenAI && (
           <Field id='ct-base-url' label={_('Base URL')}>
             <input
               id='ct-base-url'
@@ -176,18 +198,20 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
             </datalist>
           </Field>
         )}
-        <Field id='ct-api-key' label={_('API Key')}>
-          <input
-            id='ct-api-key'
-            type='password'
-            className={inputClass}
-            value={draft.apiKey ?? ''}
-            onChange={(e) => update({ apiKey: e.target.value || undefined })}
-            placeholder={isLLM ? _('Optional for local servers') : 'xxxxxxxx:fx'}
-            autoComplete='off'
-          />
-        </Field>
-        {isLLM && (
+        {!isOnDevice && (
+          <Field id='ct-api-key' label={_('API Key')}>
+            <input
+              id='ct-api-key'
+              type='password'
+              className={inputClass}
+              value={draft.apiKey ?? ''}
+              onChange={(e) => update({ apiKey: e.target.value || undefined })}
+              placeholder={isLLM ? _('Optional for local servers') : 'xxxxxxxx:fx'}
+              autoComplete='off'
+            />
+          </Field>
+        )}
+        {isOpenAI && (
           <Field id='ct-model' label={_('Model')}>
             <div className='flex w-full gap-2'>
               <input
@@ -238,7 +262,7 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
             />
           </Field>
         )}
-        {isLLM && (
+        {isOpenAI && (
           <SettingsRow label={_('Thinking')}>
             <SettingsSelect
               value={draft.thinking ?? 'default'}
@@ -261,7 +285,7 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
       <div className='flex flex-col gap-3 px-4'>
         {result && (
           <p className={clsx('break-words text-sm', result.ok ? 'text-success' : 'text-error')}>
-            {result.ok ? `${_('Test translation')}: ${result.text}` : result.text}
+            {result.ok ? `${_('Test translation')}: ${result.text}` : _(result.text)}
           </p>
         )}
         <div className='flex justify-end gap-2'>
