@@ -572,6 +572,9 @@ const compareTitles = (a: string, b: string, uiLanguage: string): number => {
 const getTitleSortValue = (book: Book): string =>
   formatTitle(book.title).replace(/^\s*(?:a|an|the)\s+(?=\S)/i, '');
 
+// An undated book sorts as the oldest, against books and groups alike.
+const UNDATED_PUBLISHED = '0001-01-01';
+
 const compareBookByKey = (
   a: Book,
   b: Book,
@@ -611,13 +614,8 @@ const compareBookByKey = (
       return (a.metadata?.seriesIndex || 0) - (b.metadata?.seriesIndex || 0);
     }
     case LibrarySortByType.Published: {
-      const aPublished = a.metadata?.published || '0001-01-01';
-      const bPublished = b.metadata?.published || '0001-01-01';
-
-      // Handle cases where published date might not exist
-      if (!aPublished && !bPublished) return 0;
-      if (!aPublished) return 1; // Books without published date go to the end
-      if (!bPublished) return -1;
+      const aPublished = a.metadata?.published || UNDATED_PUBLISHED;
+      const bPublished = b.metadata?.published || UNDATED_PUBLISHED;
 
       // Try to parse dates - handle various date formats
       const aDate = new Date(aPublished).getTime();
@@ -1075,9 +1073,7 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
       return getBookPageCount(book) ?? 0;
 
     case LibrarySortByType.Published: {
-      const published = book.metadata?.published;
-      if (!published) return 0;
-      const publishedTime = new Date(published).getTime();
+      const publishedTime = new Date(book.metadata?.published || UNDATED_PUBLISHED).getTime();
       return isNaN(publishedTime) ? 0 : publishedTime;
     }
 
@@ -1156,7 +1152,9 @@ export const getGroupSortValue = (
         .map((d) => new Date(d).getTime())
         .filter((t) => !isNaN(t));
 
-      return publishedDates.length > 0 ? Math.max(...publishedDates) : 0;
+      return publishedDates.length > 0
+        ? Math.max(...publishedDates)
+        : new Date(UNDATED_PUBLISHED).getTime();
     }
 
     case LibrarySortByType.TimeRemaining:

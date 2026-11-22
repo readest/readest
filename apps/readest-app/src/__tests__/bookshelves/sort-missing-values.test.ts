@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Book, BooksGroup } from '@/types/book';
-import { LibraryGroupByType, LibrarySortByType, type LibrarySortCriterion } from '@/types/settings';
+import {
+  LibraryGroupByType,
+  LibrarySortByType,
+  type LibraryMetadataSortByType,
+  type LibrarySortCriterion,
+} from '@/types/settings';
 import { createBookSorter, createWithinGroupSorter } from '@/app/library/utils/libraryUtils';
 import { createBookshelf } from '@/services/bookshelves/definitions';
 import { evaluateBookshelves } from '@/services/bookshelves/evaluate';
@@ -16,6 +21,40 @@ const makeBook = (overrides: Partial<Book> & { hash: string; title: string }): B
 });
 
 const label = (item: Book | BooksGroup) => ('books' in item ? `[${item.name}]` : item.title);
+
+const present = (
+  books: Book[],
+  by: LibraryMetadataSortByType,
+  ascending: boolean,
+  withOrder: boolean,
+) => {
+  const sort = { by, ascending, thenBy: 'none' as const, thenAscending: true };
+  const order: LibrarySortCriterion[] | undefined = withOrder
+    ? [
+        { by, ascending },
+        { by: LibrarySortByType.Title, ascending: true },
+      ]
+    : undefined;
+  const definition = { ...createBookshelf('Shelf'), sort };
+  const [result] = evaluateBookshelves(
+    books,
+    [definition],
+    'en',
+    undefined,
+    undefined,
+    undefined,
+    order,
+  );
+  return presentBookshelf(
+    result!,
+    { libraryGroupBy: LibraryGroupByType.Group },
+    'en',
+    undefined,
+    '',
+    undefined,
+    order,
+  ).map(label);
+};
 
 // #7786: books with no time left (unread, finished) sit after the ones with time
 // in both directions, at every rank, as `withTimeRemainingLast` does for rank 1.
@@ -123,5 +162,32 @@ describe('Time Remaining descending keeps books without time last', () => {
       order,
     );
     expect(items.map(label)).toEqual(['Reading', 'Aaa', '[Shelf]']);
+  });
+});
+
+// #7786: an undated book sorts as the oldest (year 1) against other books, so a
+// group of undated books must too, not as 1970 after every pre-1970 book.
+describe('undated Published sorts the same for books and groups', () => {
+  const books = [
+    makeBook({ hash: 'grouped', title: 'Grouped', groupName: 'Undated' }),
+    makeBook({
+      hash: 'old',
+      title: 'Old',
+      metadata: { title: 'Old', author: 'Author', language: 'en', published: '1950-06-01' },
+    }),
+    makeBook({ hash: 'unknown', title: 'Unknown' }),
+  ];
+
+  it.each([false, true])('ascending and descending (saved order: %s)', (withOrder) => {
+    expect(present(books, LibrarySortByType.Published, true, withOrder)).toEqual([
+      '[Undated]',
+      'Unknown',
+      'Old',
+    ]);
+    expect(present(books, LibrarySortByType.Published, false, withOrder)).toEqual([
+      'Old',
+      '[Undated]',
+      'Unknown',
+    ]);
   });
 });

@@ -197,9 +197,11 @@ describe('getBookSortValue', () => {
     expect(value).toBe(new Date('2023-01-15').getTime());
   });
 
-  it('should return 0 for Published sort when no published date', () => {
+  it('should return year 1 for Published sort when no published date', () => {
     const book = createMockBook({ metadata: {} });
-    expect(getBookSortValue(book, LibrarySortByType.Published)).toBe(0);
+    expect(getBookSortValue(book, LibrarySortByType.Published)).toBe(
+      new Date('0001-01-01').getTime(),
+    );
   });
 
   it('should return 0 for Published sort when date is invalid', () => {
