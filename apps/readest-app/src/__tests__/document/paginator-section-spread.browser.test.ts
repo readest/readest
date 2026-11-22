@@ -165,6 +165,11 @@ describe('paginator starts sections and page breaks on a new spread (browser)', 
       `<div id="x" style="break-after: column">x</div><span id="t">t</span>`,
     ],
     [
+      'text after a break',
+      // the text and the span share a line: both start the next spread
+      `<div id="x" style="break-after: column">x</div>hello <span id="t">t</span>`,
+    ],
+    [
       'a nested break before',
       `<div id="x">x</div><section><div id="t" ${BREAK}>t</div><p id="u">u</p></section>`,
     ],
@@ -241,6 +246,20 @@ describe('paginator starts sections and page breaks on a new spread (browser)', 
     await el.goTo({ index: 1 });
     await frames(4);
     expect(pageOf(el, 'b-0')).toBe(3);
+  });
+
+  it('drops a blank page whose break no longer applies', async () => {
+    const body = `<div id="x">x</div><div id="t" ${BREAK}>t</div>`;
+    const el = await open({ sections: [makeSection(body)] });
+    const { doc } = el.getContents()[0]!;
+    expect(pageOf(el, 't')).toBe(2);
+    doc.getElementById('t')!.removeAttribute('style');
+    // a re-render that keeps two pages to a spread
+    el.setAttribute('max-inline-size', '700px');
+    await frames(6);
+    expect(el.columnCount).toBe(2);
+    expect(doc.querySelectorAll('[data-foliate-spread-spacer]')).toHaveLength(0);
+    expect(pageOf(el, 't')).toBe(0);
   });
 
   it('drops the blank pages when the book scrolls', async () => {

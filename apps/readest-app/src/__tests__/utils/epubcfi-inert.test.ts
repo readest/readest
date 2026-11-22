@@ -866,6 +866,20 @@ describe('range end beside an inert element', () => {
     return CFI.fromRange(firstTo(doc, second(doc)));
   };
 
+  it('starts a range that begins at the inert element at the content after it', () => {
+    const range = (doc: Document, start: Node) => {
+      const r = doc.createRange();
+      r.setStart(doc.body, Array.from(doc.body.childNodes).indexOf(start as ChildNode));
+      r.setEnd(second(doc).firstChild!, 6);
+      return r;
+    };
+    const plain = page('');
+    const doc = page(SPACER);
+    const cfi = CFI.fromRange(range(doc, doc.querySelector('[cfi-inert]')!));
+    expect(cfi).toBe(CFI.fromRange(range(plain, second(plain))));
+    expect(CFI.toRange(doc, CFI.parse(cfi)).toString()).toBe('Second');
+  });
+
   it.each([
     ['after the inert element', second],
     ['before the inert element', (doc: Document) => doc.querySelector('[cfi-inert]')!],
