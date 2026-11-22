@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     metadata = {},
   } = await request.json();
 
-  const giftCardId = giftCardIdSchema.safeParse(metadata.giftCardId);
+  const giftCardId = giftCardIdSchema.safeParse(metadata?.giftCardId);
   if (!giftCardId.success) {
     return NextResponse.json({ error: 'Invalid gift card id' }, { status: 400 });
   }

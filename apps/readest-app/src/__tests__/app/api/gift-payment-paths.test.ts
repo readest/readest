@@ -435,6 +435,21 @@ describe('Stripe gift checkout', () => {
     expect(hooks.sessionsCreate).not.toHaveBeenCalled();
   });
 
+  it('checkout treats a null metadata as no giftCardId', async () => {
+    const res = await checkoutPost(
+      jsonReq('/api/stripe/checkout', {
+        priceId: 'price_plus',
+        embedded: false,
+        metadata: null,
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(hooks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ metadata: { userId: BUYER } }),
+    );
+  });
+
   it('checkout keeps the plan success and cancel URLs without a giftCardId', async () => {
     await checkout();
 

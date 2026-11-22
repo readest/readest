@@ -65,8 +65,9 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
         </div>
         {/* The account's billing interval isn't carried on the session token, so
             this stays neutrally worded rather than claiming which one they are
-            on. It routes to the Stripe portal, which swaps the subscription in
-            place instead of stacking a second one. */}
+            on. A subscriber goes to the Stripe portal, which swaps the
+            subscription in place instead of stacking a second one; a gift-only
+            holder has no subscription and goes to checkout. */}
         {(giftOnly || canSwitchInterval) && plan.plan !== 'free' && plan.productId && (
           <button
             onClick={() => onSubscribe(plan.productId)}
