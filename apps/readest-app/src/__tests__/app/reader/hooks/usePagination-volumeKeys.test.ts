@@ -432,4 +432,28 @@ describe('usePagination volume-key interception with TTS (#4691)', () => {
 
     expect(view.prev).toHaveBeenCalled();
   });
+
+  test('drops held volume-key repeat events while a turn is still in flight', async () => {
+    let resolveTurn!: () => void;
+    const view = makeView();
+    view.next.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveTurn = resolve;
+        }),
+    );
+    setupWithView(view);
+
+    await pressVolumeKey('VolumeDown');
+    await pressVolumeKey('VolumeDown');
+    await pressVolumeKey('VolumeDown');
+    expect(view.next).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      resolveTurn();
+    });
+
+    await pressVolumeKey('VolumeDown');
+    expect(view.next).toHaveBeenCalledTimes(2);
+  });
 });
