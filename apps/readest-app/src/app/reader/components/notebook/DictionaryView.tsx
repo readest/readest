@@ -30,7 +30,7 @@ const DockedLookup: React.FC<{ lookup: UseDictionaryResultsArgs; onManage: () =>
         manualVocabularyOccurrence={state.manualVocabularyOccurrence}
       />
       <div className='min-h-0 flex-1'>
-        <DictionaryResultsBody {...state} />
+        <DictionaryResultsBody {...state} keepOpenOnTap />
       </div>
     </>
   );
