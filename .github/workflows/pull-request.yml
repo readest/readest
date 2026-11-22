@@ -300,20 +300,26 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: playwright-chromium-webkit-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: install playwright browsers
         working-directory: apps/readest-app
         run: |
           if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = 'true' ]; then
-            npx playwright install-deps chromium
+            npx playwright install-deps chromium webkit
           else
-            npx playwright install --with-deps chromium
+            npx playwright install --with-deps chromium webkit
           fi
 
       - name: run web browser tests
         working-directory: apps/readest-app
         run: pnpm test:browser
+
+      # The tests listed in vitest.browser.webkit.config.mts, in WebKit: the
+      # engine of the macOS and iOS apps, which paginates differently
+      - name: run WebKit browser tests
+        working-directory: apps/readest-app
+        run: pnpm test:browser:webkit
 
   # Browser-extension tests + build always run. The koplugin lint + Lua tests
   # (and the ~45s LuaJIT/busted install they need) only run when the koplugin

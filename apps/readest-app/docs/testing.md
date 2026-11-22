@@ -59,6 +59,14 @@ pnpm test:browser
 - **Browser:** Chromium (headless, via `@vitest/browser-playwright`)
 - **Use for:** WASM modules (e.g. `@tursodatabase/database-wasm`), Web Worker integration such as bundled dictionary plugins, and browser-specific storage APIs.
 
+### WebKit (`pnpm test:browser:webkit`)
+
+The macOS and iOS apps render in WebKit, which lays pages out differently from Chromium: it cuts anything taller than a page where it falls, where Chromium moves it whole. A browser test of a rule only WebKit needs passes in Chromium either way, so list it in `vitest.browser.webkit.config.mts` too. CI runs those tests in WebKit after the Chromium run.
+
+```bash
+pnpm test:browser:webkit
+```
+
 ## Tauri Integration Tests (`pnpm test:tauri`)
 
 Runs Vitest tests **inside the Tauri WebView**, with access to Tauri IPC and native plugin commands. Tests execute in the actual app environment.
