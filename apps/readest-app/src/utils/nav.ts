@@ -184,7 +184,13 @@ export const navigateToLibrary = (
     queryParams = lastLibraryParams;
   }
 
-  router.replace(`/library${queryParams ? `?${queryParams}` : ''}`, navOptions);
+  // Stay on `/` when the library is already mounted at the root route (e.g. PWA
+  // `start_url: "/"` or direct root visits) so updating query params does not
+  // switch App Router segments from `src/app/page.tsx` to `src/app/library/page.tsx`
+  // and unmount open menus or the bookshelf.
+  const pathname =
+    typeof window !== 'undefined' && window.location.pathname === '/' ? '/' : '/library';
+  router.replace(`${pathname}${queryParams ? `?${queryParams}` : ''}`, navOptions);
 };
 
 // Recovery action when a reader has nothing to display — e.g. all books were
