@@ -17,6 +17,7 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [Reply Desk artifact](reply-desk-artifact.md) loops' approval page · [Bounded waits only](feedback-bounded-waits.md) cap shells at 2 min
 - [git stash is shared across worktrees](feedback-stash-shared-across-worktrees.md) never stash/pop for revert checks · [Submodule deinit in a worktree hits the main checkout](worktree-submodule-deinit-shared-config.md) worktree:rm too; check `git submodule status` after · [Never pkill Chrome helpers](feedback-never-pkill-chrome-helpers.md)
 - [Tests running git must clear GIT_* env](test-git-commands-inherit-hook-git-dir.md) pre-push GIT_DIR rewrote the real repo · [Targeted tests: `pnpm test --run <files>`](feedback-pnpm-test-file-filter.md) · [No simulated-wait loops in unit tests](feedback-no-simulated-wait-loops-in-unit-tests.md) slow pre-push and CI
+- [Leave the tauri fork alone unless needed](feedback-leave-tauri-fork-unless-needed.md) fix in the readest repo first
 - [Ubuntu box: no killall -3 gnome-shell](ubuntu-gnome-shell-restart-fail-whale.md) · [Never restore a settings backup after the user acts](feedback-no-restore-settings-after-user-acts.md) · [Toolbars never change content layout](feedback-toolbars-never-change-layout.md)
 
 ## Safety & Security
@@ -84,13 +85,14 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - Resolved/stable → [Platform Compat](platform-compat-fixes.md)
 
 ## Reader Features & UI
+- [#7471 Dynamic Island blank: hidden home indicator or status bar](dynamic-island-home-indicator-7471.md) MERGED #7717 4de43e5fc; fork hid the indicator app-wide; plist key ignored; headless island-state recipe
 - [iPhone Duo series + #7146 orientation lock](iphone-duo-6307-column-gap.md) #7146 MERGED · [#6848 macOS paired M4B silent](macos-paired-audiobook-asset-range-cap-6848.md) MAS needs network.server (local plist fixed, next MAS build) · [#6989 iOS narration in place](narration-ios-file-window-6989.md) MERGED #7019
 - [Android lookup app reset: vivo vs stock](android-lookup-app-reset-vivo.md)
 - [Book li margins: keep like calibre](list-item-end-margin-bullets.md) owner rule; MERGED #7338
 - [#6637 iOS OPDS http covers blocked](opds-http-cover-mixed-content-6637.md) · [primaryLanguage legacy raw values](book-primarylanguage-legacy-raw-values.md)
 - [EPUB meta-cover href picked wrong cover](epub-meta-cover-href.md) · [Reading widget E-ink black-on-dark](reading-widget-eink-dark-mode.md) · [#5233 sentence-by-sentence + A-B repeat](tts-sentence-step-ab-repeat-5233.md) PR #6627 OPEN
 - [#6618 dictionary text unreadable in dark](dict-dark-mode-text-colors-6618.md) · [#6347 series index cover badge](series-index-badge-6347.md) · [#6607 Plans page dropped the book](plans-page-back-to-reader-6607.md)
-- [#5544 AI context dictionary](context-dictionary-5544.md) · [#6574 image long-press menu](image-long-press-menu-6574.md)
+- [Apple on-device LLM notes](private-apple-on-device-llm-7429.md) local only · [#5544 AI context dictionary](context-dictionary-5544.md) · [#6574 image long-press menu](image-long-press-menu-6574.md)
 - [#6400 inverted image blank on Android](invert-image-blank-android-6400.md) · [#6568 iOS annotation cards expand on scroll](ios-touchstart-hover-annotation-expand-6568.md) · [Calibre plugin columns never filterable](calibre-plugin-custom-columns-filter.md)
 - [#6433/#6457 media keys + desktop Now Playing](desktop-now-playing-6457.md) · [#6360 BookDrop own section](bookdrop-own-section-6360.md)
 - [#6444 CarPlay no resume after nav prompt](carplay-interruption-resume-6444.md) · [#7168 CarPlay hidden app stops car music](carplay-hidden-app-music-stops-7168.md) NOT reproduced
@@ -102,7 +104,7 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [Character tracking direction](character-tracking-direction.md) #6690 CLOSED
 - [#7658 settings select: native + main's exact look](settings-select-native-same-look-7658.md) chevron via pe-6!/-ms-5; prove with pixel snapshots vs main; Dialog native Escape listener
 - [Word Lens hint change left highlights misaligned](wordlens-gloss-highlight-redraw.md) re-resolve CFIs via contentEpoch, not overlayer.redraw; MERGED #7616 + popup #7620
-- [#789/#6613 Vocabulary builder + Word Lens](vocabulary-builder-789-6613.md) PR #7284 OPEN · [Vocabulary ↔ AnkiDroid Sync (#789)](anki-link-ankidroid-789.md) MERGED #7328; desktop AnkiConnect next
+- [#789/#6613 Vocabulary builder + Word Lens](vocabulary-builder-789-6613.md) PR #7284 OPEN · [Vocabulary ↔ AnkiDroid Sync (#789)](anki-link-ankidroid-789.md) MERGED #7328; #7442 subdecks #7718 + language filter #7719 MERGED, #7442 closed (profiles via new FRs); desktop AnkiConnect next
 - [Sanitizer unwraps <rb>; rb ruby repros need Allow JavaScript](sanitizer-strips-rb-ruby.md) #7405 MERGED; Playwright translation-payload recipe
 - [Chromium Selection.modify boundary quirks](chromium-selection-modify-boundary-quirks.md) vim find #7282 MERGED · [open-book-in-reader skips guarded close](open-book-in-reader-skips-guarded-close.md) UNFIXED
 - [#7692 read-aloud quieter than preview: Web Audio output path](android-tts-webaudio-output-path-7692.md) HONOR MMAP only; Xiaomi fast track 2 dB louder; mic loudness recipe
@@ -112,6 +114,8 @@ Index only — one line per memory. Detail lives in the topic files; do not rest
 - [#7635 rapid push swipes: touch takeover](push-turn-touch-takeover-7635.md) MERGED 4dddf6443 + foliate #180 fd05acd; pin a38923e on-pin; device test via renderer attrs, no settings change
 - [#7599 scrolled-mode zoom kept the offset, not the text](scrolled-zoom-keeps-offset-7599.md) foliate #175 + #7610 MERGED e44bd6cf7; stage the submodule on -on-pin
 - [RTL books already follow dc:language; UI RTL menu-only](rtl-book-direction-from-language.md) #7478 narrowed
+- [#6676 cover split across columns in WebKit only](lone-image-page-webkit-split-6676.md) MERGED #7794; .lone-image; WebKit vitest config + webdriver resize gotchas
+- [WebKit SVG filters resolve in the same document only](webkit-svg-filter-same-document-only.md) #7391/#7394 MERGED #7724; data: URL filters draw nothing on Apple; iPad book-import recipe
 - [#7553 macOS file URL encodes ; as %3B](macos-file-url-semicolon-encoding-7553.md) MERGED #7554; test with NSURL, not Swift URL
 - [#7482 highlight from paragraph start: CFI start between children](cfi-range-start-between-children-7482.md) foliate #168+#169, readest #7515 MERGED; readest pins off-main foliate (`-on-pin` branch)
 - [#7537 footnote check rejects rich <sup> notes + orphan popup](footnote-check-superscript-7537.md) MERGED #7541 431ea8cae; foliate #171+#173 pinned 297e121
