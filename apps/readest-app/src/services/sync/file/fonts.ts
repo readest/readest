@@ -30,11 +30,16 @@ export interface RemoteFontIndex {
   updatedAt: number;
 }
 
+// One plain path segment, so a listed font never leads outside its folder.
+const isPlainName = (name: unknown) =>
+  typeof name === 'string' && name !== '' && name !== '.' && name !== '..' && !/[\\/]/.test(name);
+
 const parseFontIndex = (raw: string | null): RemoteFont[] => {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as RemoteFontIndex;
-    return parsed?.schemaVersion === 1 && Array.isArray(parsed.fonts) ? parsed.fonts : [];
+    if (parsed?.schemaVersion !== 1 || !Array.isArray(parsed.fonts)) return [];
+    return parsed.fonts.filter((f) => isPlainName(f.contentId) && isPlainName(f.filename));
   } catch {
     return [];
   }
@@ -127,8 +132,16 @@ export const syncFonts = async (
           entries.set(contentId, { ...entry, deletedAt: font.deletedAt });
         } else {
           if (font.unavailable) continue;
-          if (entry && (!entry.deletedAt || entry.deletedAt > (font.downloadedAt ?? 0))) continue;
-          entries.set(contentId, await uploadFont(provider, appService, font));
+          const importedAt = font.downloadedAt ?? 0;
+          if (entry && !entry.deletedAt) {
+            // Already listed: record a newer import here (same file), so a
+            // delete made elsewhere before it can't win.
+            if (importedAt <= entry.addedAt) continue;
+            entries.set(contentId, { ...entry, addedAt: importedAt });
+          } else {
+            if (entry?.deletedAt && entry.deletedAt > importedAt) continue;
+            entries.set(contentId, await uploadFont(provider, appService, font));
+          }
         }
         changed = true;
       } catch (e) {
@@ -143,7 +156,7 @@ export const syncFonts = async (
       const font = local.get(entry.contentId);
       if (entry.deletedAt) {
         if (font && !font.deletedAt && entry.deletedAt > (font.downloadedAt ?? 0)) {
-          store.softDeleteByContentId(entry.contentId);
+          store.softDeleteByContentId(entry.contentId, entry.deletedAt);
         }
       } else if (!font || (font.deletedAt && entry.addedAt > font.deletedAt)) {
         store.applyRemoteFont(toPlaceholder(entry, font));
@@ -152,6 +165,13 @@ export const syncFonts = async (
   }
 
   if (!changed) return;
+  // A peer may have written fonts.json since the read: keep its entries where
+  // they are the later event, so its deletes and imports survive this write.
+  const eventAt = (entry: RemoteFont) => entry.deletedAt ?? entry.addedAt;
+  for (const fresh of parseFontIndex(await provider.readText(indexPath))) {
+    const ours = entries.get(fresh.contentId);
+    if (!ours || eventAt(fresh) > eventAt(ours)) entries.set(fresh.contentId, fresh);
+  }
   const index: RemoteFontIndex = {
     schemaVersion: 1,
     fonts: [...entries.values()],

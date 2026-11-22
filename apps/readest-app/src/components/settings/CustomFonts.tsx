@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { MdAdd, MdDelete, MdOutlineCloudDownload } from 'react-icons/md';
 import { IoMdCloseCircleOutline } from 'react-icons/io';
 import { useEnv } from '@/context/EnvContext';
@@ -54,6 +54,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   const [importingFont, setImportingFont] = useState<true | { family: string } | null>(null);
   // A file sync backend downloads in place, outside the transfer queue.
   const [fileDownloadFamily, setFileDownloadFamily] = useState<string | null>(null);
+  const latestSelection = useRef(0);
 
   const { selectFiles } = useFileSelector(appService, _);
 
@@ -132,6 +133,7 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
     // sync backend goes first (#7793): a font that came through one may not be
     // in Readest Cloud, while queuing a Readest Cloud download can't tell.
     const cloudFonts = family.fonts.filter((f) => f.unavailable);
+    const selection = ++latestSelection.current;
     if (cloudFonts.length > 0) {
       setFileDownloadFamily(family.name);
       const queued = await Promise.all(
@@ -140,11 +142,13 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
             (await runFileFontDownload(envConfig, font)) ||
             (await queueReplicaBinaryDownload('font', font)),
         ),
-      ).finally(() => setFileDownloadFamily(null));
+      ).finally(() => setFileDownloadFamily((shown) => (shown === family.name ? null : shown)));
       if (!queued.some(Boolean)) {
         eventDispatcher.dispatch('toast', { type: 'error', message: _('Download failed') });
         return;
       }
+      // A family picked while this one downloaded keeps the selection.
+      if (selection !== latestSelection.current) return;
     }
     if (currentDefaultFont === 'serif') {
       saveViewSettings(envConfig, bookKey, 'serifFont', family.name);

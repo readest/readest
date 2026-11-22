@@ -133,6 +133,27 @@ describe('CustomFonts download on demand', () => {
     );
   });
 
+  it('keeps a later pick when an earlier family finishes downloading', async () => {
+    let finishDownload: (done: boolean) => void = () => {};
+    vi.mocked(runFileFontDownload).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishDownload = resolve;
+      }),
+    );
+    const lora = cloudFont({ id: 'lora', contentId: 'hash-lora', name: 'Lora', family: 'Lora' });
+    useCustomFontStore.setState({ fonts: [cloudFont(), { ...lora, unavailable: undefined }] });
+    render(<CustomFonts bookKey='' onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Inter'));
+    fireEvent.click(screen.getByText('Lora'));
+    finishDownload(true);
+
+    await waitFor(() => expect(screen.queryByRole('status', { name: 'Downloading…' })).toBeNull());
+    expect(vi.mocked(saveViewSettings).mock.calls.map(([, , , family]) => family)).toEqual([
+      'Lora',
+    ]);
+  });
+
   it('does not download a family that is already on this device', () => {
     useCustomFontStore.setState({ fonts: [cloudFont({ unavailable: undefined })] });
     render(<CustomFonts bookKey='' onBack={vi.fn()} />);

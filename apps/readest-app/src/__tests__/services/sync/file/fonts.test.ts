@@ -179,8 +179,55 @@ describe('syncFonts', () => {
 
     await syncFonts(envConfig, r.provider, 'silent');
 
-    expect(fontsHere()[0]?.deletedAt).toBeDefined();
+    // The peer's delete time, not this pass's: a re-import after it must win.
+    expect(fontsHere()[0]?.deletedAt).toBe(200);
     expect(r.writes).toEqual([]);
+  });
+
+  test('a re-import here newer than the listed import is recorded', async () => {
+    const r = memoryProvider();
+    r.setIndex([remote()]);
+    r.files.set('/Readest/fonts/c1/Inter-Regular.ttf', BYTES);
+    seed([font({ downloadedAt: 300 })]);
+
+    await syncFonts(envConfig, r.provider, 'silent');
+
+    // A delete made elsewhere before 300 must not win over this import.
+    expect(r.index().fonts).toEqual([remote({ addedAt: 300 })]);
+    expect(r.writes).toEqual([INDEX]);
+  });
+
+  test('keeps a delete a peer commits while this pass runs', async () => {
+    const r = memoryProvider();
+    r.setIndex([remote()]);
+    r.files.set('/Readest/fonts/c1/Inter-Regular.ttf', BYTES);
+    seed([font(), font({ id: 'f2', contentId: 'c2', bundleDir: 'b2', path: 'b2/Inter-Bold.ttf' })]);
+    const writeBinary = r.provider.writeBinary;
+    r.provider.writeBinary = async (p, body, type) => {
+      await writeBinary(p, body, type);
+      r.setIndex([remote({ deletedAt: 200 })]);
+    };
+
+    await syncFonts(envConfig, r.provider, 'silent');
+
+    expect(r.index().fonts.map((f) => [f.contentId, f.deletedAt])).toEqual([
+      ['c1', 200],
+      ['c2', undefined],
+    ]);
+  });
+
+  test('skips a listed font whose file name leaves its folder', async () => {
+    const r = memoryProvider();
+    r.setIndex([
+      remote({ filename: '../../evil.ttf' }),
+      remote({ contentId: '..', filename: 'x.ttf' }),
+      remote({ contentId: 'c3', filename: 'a\\b.ttf' }),
+      remote({ contentId: 'c4', filename: 'Inter-Bold.ttf' }),
+    ]);
+
+    await syncFonts(envConfig, r.provider, 'silent');
+
+    expect(fontsHere().map((f) => f.contentId)).toEqual(['c4']);
   });
 
   test('re-importing a deleted font restores it on the remote', async () => {
