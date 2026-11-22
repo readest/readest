@@ -10,6 +10,7 @@ import { useReaderProgressStore } from '@/store/readerProgressStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useDrag } from '@/hooks/useDrag';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
 import { getRendererLayout, isRendererSpread } from '@/utils/duo';
 import { useDuoPose } from '@/hooks/useDuoPose';
@@ -380,6 +381,11 @@ const cellSpansWidth = (index: number, count: number, aspectRatio: number) => {
   return left && right;
 };
 
+// Each of two books keeps at least this share of the screen, in percent.
+const MIN_SPLIT = 20;
+const clampSplit = (percent: number) =>
+  Math.round(Math.min(100 - MIN_SPLIT, Math.max(MIN_SPLIT, percent)));
+
 const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibrary }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -401,7 +407,33 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
   } = useThemeStore();
   const alwaysShowStatusBar = useSettingsStore((s) => s.settings.alwaysShowStatusBar);
   const aspectRatio = window.innerWidth / window.innerHeight;
-  const gridTemplate = getGridTemplate(bookKeys.length, aspectRatio);
+  // Two books share the screen at the split the reader drags the divider to
+  // (#4991); side by side, or stacked on a portrait screen.
+  const [split, setSplit] = useState<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const isStacked = aspectRatio < 1;
+  const gridTemplate = getGridTemplate(bookKeys.length, aspectRatio, split);
+  const isRtl = () => !!gridRef.current && getComputedStyle(gridRef.current).direction === 'rtl';
+  const { handleDragStart: handleSplitDragStart, handleDragKeyDown: handleSplitKeyDown } = useDrag(
+    ({ clientX, clientY }) => {
+      const rect = gridRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const fraction = isStacked
+        ? (clientY - rect.top) / rect.height
+        : isRtl()
+          ? (rect.right - clientX) / rect.width
+          : (clientX - rect.left) / rect.width;
+      setSplit(clampSplit(fraction * 100));
+    },
+    ({ key, step }) => {
+      const forward = isStacked ? 'ArrowDown' : isRtl() ? 'ArrowLeft' : 'ArrowRight';
+      const back = isStacked ? 'ArrowUp' : isRtl() ? 'ArrowRight' : 'ArrowLeft';
+      const delta = key === forward ? step : key === back ? -step : 0;
+      setSplit((prev) => clampSplit((prev ?? 50) + delta * 100));
+    },
+    undefined,
+    isStacked ? 'row-resize' : 'col-resize',
+  );
 
   useEffect(() => {
     if (!sideBarBookKey) return;
@@ -504,6 +536,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
 
   return (
     <div
+      ref={gridRef}
       className={clsx('books-grid bg-base-100 relative grid h-full grow')}
       style={gridStyle}
       role='main'
@@ -528,6 +561,31 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
           onGoToLibrary={onGoToLibrary}
         />
       ))}
+      {bookKeys.length === 2 && (
+        <div
+          role='slider'
+          tabIndex={0}
+          aria-label={_('Resize Books')}
+          aria-orientation={isStacked ? 'vertical' : 'horizontal'}
+          aria-valuenow={split ?? 50}
+          aria-valuemin={MIN_SPLIT}
+          aria-valuemax={100 - MIN_SPLIT}
+          className={clsx(
+            'drag-handle absolute z-10 flex items-center justify-center',
+            isStacked
+              ? 'inset-x-0 -mt-1.5 h-3 cursor-row-resize'
+              : 'inset-y-0 -ms-1.5 w-3 cursor-col-resize',
+          )}
+          style={isStacked ? { top: `${split ?? 50}%` } : { insetInlineStart: `${split ?? 50}%` }}
+          onMouseDown={handleSplitDragStart}
+          onTouchStart={handleSplitDragStart}
+          onKeyDown={handleSplitKeyDown}
+        >
+          <div
+            className={clsx('bg-base-content/50 rounded-full', isStacked ? 'h-1 w-10' : 'h-10 w-1')}
+          />
+        </div>
+      )}
     </div>
   );
 };

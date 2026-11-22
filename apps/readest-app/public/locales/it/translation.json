@@ -2981,5 +2981,6 @@
   "Reordering {{label}} cancelled.": "Riordinamento di {{label}} annullato.",
   "Add to Vocabulary": "Aggiungi al vocabolario",
   "Add the selected word to the vocabulary list": "Aggiungi la parola selezionata all’elenco del vocabolario",
-  "Added to vocabulary": "Aggiunto al vocabolario"
+  "Added to vocabulary": "Aggiunto al vocabolario",
+  "Resize Books": "Ridimensiona libri"
 }

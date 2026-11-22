@@ -2906,5 +2906,6 @@
   "Reordering {{label}} cancelled.": "Η αναδιάταξη του {{label}} ακυρώθηκε.",
   "Add to Vocabulary": "Προσθήκη στο λεξιλόγιο",
   "Add the selected word to the vocabulary list": "Προσθήκη της επιλεγμένης λέξης στη λίστα λεξιλογίου",
-  "Added to vocabulary": "Προστέθηκε στο λεξιλόγιο"
+  "Added to vocabulary": "Προστέθηκε στο λεξιλόγιο",
+  "Resize Books": "Αλλαγή μεγέθους βιβλίων"
 }
