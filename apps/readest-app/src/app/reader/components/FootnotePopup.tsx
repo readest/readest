@@ -1061,8 +1061,15 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           relative, and the cell is its `relative` ancestor, so insetting the
           wrapper to the cell makes the stacking context without moving
           anything. `pointer-events-none` keeps the cell-covering wrapper from
-          swallowing the outside taps the Overlay above dismisses on. */}
-      <div className='pointer-events-none absolute inset-0 z-[42]'>
+          swallowing the outside taps the Overlay above dismisses on.
+
+          While closed the band is `invisible`: the note still loads and
+          measures off-screen, but a painted cell-wide band kept Chromium from
+          seeing the pointer over scrolled mode's overlay scrollbar, which
+          faded mid-drag and lost the drag (#7796). */}
+      <div
+        className={clsx('pointer-events-none absolute inset-0 z-[42]', !showPopup && 'invisible')}
+      >
         <Popup
           isOpen={showPopup}
           width={responsiveWidth}

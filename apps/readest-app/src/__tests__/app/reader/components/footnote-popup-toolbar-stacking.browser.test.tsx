@@ -233,3 +233,32 @@ describe('footnote popup in paragraph mode (#6995)', () => {
     expect(footnote.getAttribute('aria-hidden')).toBe('true');
   });
 });
+
+describe('closed footnote popup (#7796)', () => {
+  /** The popup's band: the nearest ancestor that sets a z-index. */
+  const bandOf = (el: Element) => {
+    for (let node = el.parentElement; node; node = node.parentElement) {
+      if (getComputedStyle(node).zIndex !== 'auto') return node;
+    }
+    throw new Error('no band');
+  };
+
+  // The band spans the whole book cell, scrolled mode's scrollbar included.
+  // Painted while closed, it kept Chromium from seeing the pointer on that
+  // overlay scrollbar, which then faded mid-drag and lost the drag.
+  test('its cell-wide band paints nothing until a note opens', () => {
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+    const footnote = footnoteContainer();
+    expect(footnote.getAttribute('aria-hidden')).toBe('true');
+    expect(getComputedStyle(bandOf(footnote)).visibility).toBe('hidden');
+
+    act(() => {
+      h.dispatchFootnote({ bookKey: 'book-1', element: anchor, footnote: NOTE });
+    });
+    expect(footnote.getAttribute('aria-hidden')).toBe('false');
+    expect(getComputedStyle(bandOf(footnote)).visibility).toBe('visible');
+    const box = footnote.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+    expect(footnote.contains(hit)).toBe(true);
+  });
+});
