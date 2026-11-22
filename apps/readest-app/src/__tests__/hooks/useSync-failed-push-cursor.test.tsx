@@ -114,4 +114,38 @@ describe('books cursor after a push', () => {
 
     expect(result.current.lastSyncedAtBooks).toBe(EDITED_AT + 60_000);
   });
+
+  // Pull to refresh, the library opening and the settings sync row pull books
+  // without pushing (pullLibrary).
+  const pullOnly = async (result: Awaited<ReturnType<typeof syncBoth>>, syncedAt: number) => {
+    syncClientMock.pullChanges.mockResolvedValue({
+      books: [{ book_hash: 'c'.repeat(32), synced_at: iso(syncedAt) }],
+    });
+    await act(async () => {
+      await result.current.syncBooks([], 'pull', 0);
+    });
+  };
+
+  test('stays below them through a later pull-only sync', async () => {
+    syncClientMock.pushChanges.mockRejectedValue(new Error('Failed to push changes: 503'));
+    const result = await syncBoth();
+
+    await pullOnly(result, EDITED_AT + 120_000);
+
+    expect(result.current.lastSyncedAtBooks).toBeLessThan(EDITED_AT);
+    expect(h.settings.lastSyncedAtBooks).toBeLessThan(EDITED_AT);
+  });
+
+  test('advances again once a later push sends them', async () => {
+    syncClientMock.pushChanges.mockRejectedValueOnce(new Error('Failed to push changes: 503'));
+    const result = await syncBoth();
+    syncClientMock.pushChanges.mockResolvedValue({ books: [], configs: null, notes: null });
+    await act(async () => {
+      await result.current.syncBooks([editedBook], 'push');
+    });
+
+    await pullOnly(result, EDITED_AT + 120_000);
+
+    expect(result.current.lastSyncedAtBooks).toBe(EDITED_AT + 120_000);
+  });
 });

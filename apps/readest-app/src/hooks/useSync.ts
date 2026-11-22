@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSyncContext } from '@/context/SyncContext';
@@ -160,6 +160,8 @@ export function useSync(bookKey?: string) {
   const [syncedNotes, setSyncedNotes] = useState<BookNote[] | null>(null);
 
   const { syncClient } = useSyncContext();
+  // Upper bound on the books cursor while a failed push left changes unsent.
+  const booksCursorBoundRef = useRef(Infinity);
 
   useEffect(() => {
     if (!bookKey) return;
@@ -345,15 +347,18 @@ export function useSync(bookKey?: string) {
     async (books?: Book[], op: SyncOp = 'both', since?: number) => {
       if (!lastSyncedAtInited) return;
       if (!isSyncCategoryEnabled('book')) return;
-      let maxCursor = Infinity;
-      if ((op === 'push' || op === 'both') && books?.length && !(await pushChanges({ books }))) {
-        // The next push sends a synced book only if it changed after the
-        // cursor (getNewBooks), so a pull must not move the cursor past the
-        // changes this push left unsent.
-        for (const book of books) {
-          if (!book.syncedAt) continue;
-          const changedAt = Math.max(getBookChangedAt(book), book.deletedAt ?? 0);
-          maxCursor = Math.min(maxCursor, changedAt - 1);
+      if ((op === 'push' || op === 'both') && books?.length) {
+        if (await pushChanges({ books })) {
+          booksCursorBoundRef.current = Infinity;
+        } else {
+          // The next push sends a synced book only if it changed after the
+          // cursor (getNewBooks), so no pull may move the cursor past the
+          // changes this push left unsent until a push sends them.
+          for (const book of books) {
+            if (!book.syncedAt) continue;
+            const changedAt = Math.max(getBookChangedAt(book), book.deletedAt ?? 0);
+            booksCursorBoundRef.current = Math.min(booksCursorBoundRef.current, changedAt - 1);
+          }
         }
       }
       if (op === 'pull' || op === 'both') {
@@ -364,7 +369,7 @@ export function useSync(bookKey?: string) {
           setSyncingBooks,
           undefined,
           undefined,
-          maxCursor,
+          booksCursorBoundRef.current,
         );
       }
       return;
