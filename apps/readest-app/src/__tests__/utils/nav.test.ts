@@ -322,6 +322,31 @@ describe('navigateToLibrary', () => {
     // Should still use the provided queryParams since sessionStorage has nothing
     expect(router.replace).toHaveBeenCalledWith('/library?sort=date', undefined);
   });
+
+  test('stays on / when already on the root library route', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/', search: '' },
+      writable: true,
+    });
+
+    const router = mockRouter();
+    navigateToLibrary(router, 'sort=title');
+    expect(router.replace).toHaveBeenCalledWith('/?sort=title', undefined);
+
+    navigateToLibrary(router);
+    expect(router.replace).toHaveBeenCalledWith('/', undefined);
+  });
+
+  test('still navigates to /library when called from another route like /reader', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/reader', search: '?ids=book1' },
+      writable: true,
+    });
+
+    const router = mockRouter();
+    navigateToLibrary(router, 'sort=title');
+    expect(router.replace).toHaveBeenCalledWith('/library?sort=title', undefined);
+  });
 });
 
 describe('redirectToLibrary', () => {
