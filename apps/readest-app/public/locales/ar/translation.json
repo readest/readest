@@ -3206,5 +3206,6 @@
   "Reordering {{label}} cancelled.": "تم إلغاء إعادة ترتيب {{label}}.",
   "Add to Vocabulary": "إضافة إلى المفردات",
   "Add the selected word to the vocabulary list": "إضافة الكلمة المحددة إلى قائمة المفردات",
-  "Added to vocabulary": "أُضيفت إلى المفردات"
+  "Added to vocabulary": "أُضيفت إلى المفردات",
+  "Resize Books": "تغيير حجم الكتب"
 }

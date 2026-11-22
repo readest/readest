@@ -2906,5 +2906,6 @@
   "Reordering {{label}} cancelled.": "Omordning av {{label}} avbruten.",
   "Add to Vocabulary": "Lägg till i ordförråd",
   "Add the selected word to the vocabulary list": "Lägg till det markerade ordet i ordlistan",
-  "Added to vocabulary": "Tillagt i ordförråd"
+  "Added to vocabulary": "Tillagt i ordförråd",
+  "Resize Books": "Ändra storlek på böcker"
 }

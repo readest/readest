@@ -2831,5 +2831,6 @@
   "Reordering {{label}} cancelled.": "已取消重新排序{{label}}。",
   "Add to Vocabulary": "添加到生词本",
   "Add the selected word to the vocabulary list": "将所选单词添加到生词本",
-  "Added to vocabulary": "已添加到生词本"
+  "Added to vocabulary": "已添加到生词本",
+  "Resize Books": "调整书籍大小"
 }

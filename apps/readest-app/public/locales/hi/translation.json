@@ -2906,5 +2906,6 @@
   "Reordering {{label}} cancelled.": "{{label}} का क्रम बदलना रद्द किया गया।",
   "Add to Vocabulary": "शब्दावली में जोड़ें",
   "Add the selected word to the vocabulary list": "चयनित शब्द को शब्दावली सूची में जोड़ें",
-  "Added to vocabulary": "शब्दावली में जोड़ा गया"
+  "Added to vocabulary": "शब्दावली में जोड़ा गया",
+  "Resize Books": "पुस्तकों का आकार बदलें"
 }
