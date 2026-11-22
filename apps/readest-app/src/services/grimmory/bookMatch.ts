@@ -1,9 +1,9 @@
 import { md5, partialMD5Ranges } from '@/utils/md5';
-import { GrimmoryRequestError, type GrimmoryClient } from './GrimmoryClient';
+import type { GrimmoryClient } from './GrimmoryClient';
 import type { GrimmoryBookMatch, GrimmorySyncStore } from './GrimmorySyncStore';
 import type { GrimmoryBookFile } from './types';
 
-type MatchClient = Pick<GrimmoryClient, 'listBooks' | 'readContent'>;
+type MatchClient = Pick<GrimmoryClient, 'listBooks' | 'readContent' | 'contentLength'>;
 type MatchStore = Pick<GrimmorySyncStore, 'getBook' | 'setBook'>;
 
 /**
@@ -31,11 +31,6 @@ export const remotePartialMD5 = async (
 const normalizeTitle = (title: string | null | undefined) =>
   (title ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
 
-/**
- * A file is checked when its listed size matches, or when its book has the
- * local book's title: Grimmory updates a file's hash but not its listed size
- * when it writes metadata into the file (#7809).
- */
 export const findGrimmoryBook = async (
   client: MatchClient,
   local: { hash: string; fileSize: number; titles?: (string | undefined)[] },
@@ -50,15 +45,15 @@ export const findGrimmoryBook = async (
       ...(book.alternativeFormats ?? []).map((file): [GrimmoryBookFile, boolean] => [file, false]),
     ];
     for (const [file, isPrimary] of files) {
-      if (!file || (file.fileSizeKb !== sizeKb && !sameTitle)) continue;
-      const remoteHash = await remotePartialMD5(client, book.id, file, local.fileSize).catch(
-        (error) => {
-          // The file is shorter than the local one.
-          if (error instanceof GrimmoryRequestError && error.status === 416) return null;
-          throw error;
-        },
-      );
-      if (remoteHash !== local.hash) continue;
+      if (!file) continue;
+      if (file.fileSizeKb !== sizeKb) {
+        // Grimmory updates a file's hash but not its listed size when it
+        // writes metadata into the file (#7809), so a file of the same title
+        // is checked by its real length.
+        if (!sameTitle) continue;
+        if ((await client.contentLength(book.id, file.bookType)) !== local.fileSize) continue;
+      }
+      if ((await remotePartialMD5(client, book.id, file, local.fileSize)) !== local.hash) continue;
       return {
         bookId: book.id,
         bookFileId: file.id,

@@ -59,3 +59,32 @@ describe('GrimmoryClient.checkConnection', () => {
     expect(await client.checkConnection()).toEqual({ success: false, message: 'Network down' });
   });
 });
+
+describe('GrimmoryClient.contentLength', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const login = () => json(200, { accessToken: 'token', refreshToken: 'r' });
+
+  it('reads the length from the Content-Range of a one-byte read', async () => {
+    stubServer((url) =>
+      url.includes('/login')
+        ? login()
+        : new Response(new Uint8Array([80]), {
+            status: 206,
+            headers: { 'Content-Range': 'bytes 0-0/413295' },
+          }),
+    );
+    const client = new GrimmoryClient(connection('http://192.168.1.63'));
+
+    expect(await client.contentLength(2, 'EPUB')).toBe(413295);
+  });
+
+  it('counts the bytes when the server ignores Range', async () => {
+    stubServer((url) =>
+      url.includes('/login') ? login() : new Response(new Uint8Array(1500), { status: 200 }),
+    );
+    const client = new GrimmoryClient(connection('http://192.168.1.64'));
+
+    expect(await client.contentLength(2, 'EPUB')).toBe(1500);
+  });
+});

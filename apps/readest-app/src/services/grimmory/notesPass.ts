@@ -37,6 +37,7 @@ export interface GrimmoryPassDeps {
     GrimmoryClient,
     | 'listBooks'
     | 'readContent'
+    | 'contentLength'
     | 'getAnnotations'
     | 'createAnnotation'
     | 'updateAnnotation'
