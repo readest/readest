@@ -9,11 +9,15 @@ import { BOOKSHELF_SORT_LABELS, createBookshelf } from '@/services/bookshelves/d
 import { readBookshelves } from '@/services/bookshelves/state';
 import { saveBookshelfDraft } from '@/services/bookshelves/persistence';
 import { readPendingBookshelves } from '@/services/bookshelves/journal';
-import { getGlobalBookshelfSort } from '@/services/bookshelves/sorting';
+import {
+  clearPendingLibrarySortUrlSync,
+  getGlobalBookshelfSort,
+} from '@/services/bookshelves/sorting';
 
+let mockSearchParams = new URLSearchParams();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useSearchParams: () => mockSearchParams,
 }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {}, appService: null }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
@@ -25,16 +29,26 @@ vi.mock('@/helpers/settings', () => ({
       settings: { ...useSettingsStore.getState().settings, [key]: value },
     });
   },
+  saveSysSettingsFields: async (_env: unknown, patch: Partial<SystemSettings>) => {
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, ...patch },
+    });
+  },
 }));
 vi.mock('@/utils/nav', () => ({ navigateToLibrary: vi.fn() }));
 beforeEach(() => {
   localStorage.clear();
+  mockSearchParams = new URLSearchParams();
+  clearPendingLibrarySortUrlSync();
   useSettingsStore.setState({
     settings: { ...DEFAULT_SYSTEM_SETTINGS, libraryViewMode: 'grid' } as SystemSettings,
     saveSettings: vi.fn().mockResolvedValue(undefined),
   });
 });
-afterEach(cleanup);
+afterEach(() => {
+  clearPendingLibrarySortUrlSync();
+  cleanup();
+});
 const env = {} as EnvConfigType;
 describe('bookshelf layouts from the View menu', () => {
   it('shows custom order and exits it through a normal sort choice without discarding saved positions', async () => {

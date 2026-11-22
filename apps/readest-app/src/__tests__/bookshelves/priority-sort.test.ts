@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { Book } from '@/types/book';
 import { LibraryGroupByType, LibrarySortByType, type LibrarySortCriterion } from '@/types/settings';
 import { createBookSorter, createWithinGroupSorter } from '@/app/library/utils/libraryUtils';
@@ -8,7 +8,9 @@ import { evaluateBookshelves } from '@/services/bookshelves/evaluate';
 import { presentBookshelf } from '@/services/bookshelves/presentation';
 import {
   METADATA_SORT_BY_ORDER,
+  clearPendingLibrarySortUrlSync,
   getGlobalBookshelfSort,
+  markPendingLibrarySortUrlSync,
   resolveBookshelfSort,
   resolveLibrarySortOrder,
 } from '@/services/bookshelves/sorting';
@@ -19,6 +21,10 @@ const makeBook = (overrides: Partial<Book> & { hash: string; title: string }): B
   createdAt: 1000,
   updatedAt: 1000,
   ...overrides,
+});
+
+afterEach(() => {
+  clearPendingLibrarySortUrlSync();
 });
 
 describe('priority-based library sorting', () => {
@@ -494,5 +500,52 @@ describe('priority-based library sorting', () => {
     );
     const names = items.map((item) => ('books' in item ? item.displayName : item.title));
     expect(names).toEqual(['Alpha Book', 'Beta Series', 'Zeta Series']);
+  });
+
+  it('ignores stale sort searchParams while a ViewMenu sort URL sync is pending and clears once URL advances', () => {
+    const staleParams = new URLSearchParams(
+      'groupBy=series&sort=author&order=asc&thenSort=created&thenOrder=desc',
+    );
+    const expectedParams = new URLSearchParams(
+      'groupBy=series&sort=timeRemaining&order=asc&thenSort=author&thenOrder=asc',
+    );
+    const settings = {
+      librarySortByAuto: false,
+      librarySortBy: LibrarySortByType.TimeRemaining,
+      librarySortAscending: true,
+      libraryThenSortBy: LibrarySortByType.Author,
+      libraryThenSortAscending: true,
+      librarySortOrder: [
+        { by: LibrarySortByType.TimeRemaining, ascending: true },
+        { by: LibrarySortByType.Author, ascending: true },
+        { by: LibrarySortByType.Created, ascending: false },
+      ] as LibrarySortCriterion[],
+    };
+
+    markPendingLibrarySortUrlSync(staleParams, expectedParams);
+
+    const resolvedDuringSync = resolveLibrarySortOrder(
+      settings,
+      getGlobalBookshelfSort(settings, staleParams),
+      staleParams,
+    );
+    expect(resolvedDuringSync.slice(0, 3).map((c) => c.by)).toEqual([
+      LibrarySortByType.TimeRemaining,
+      LibrarySortByType.Author,
+      LibrarySortByType.Created,
+    ]);
+    expect(getGlobalBookshelfSort(settings, staleParams)).toMatchObject({
+      by: LibrarySortByType.TimeRemaining,
+      thenBy: LibrarySortByType.Author,
+    });
+
+    // Once router.replace lands on expectedParams, or on a different deep link, the guard clears.
+    const deepLinkParams = new URLSearchParams('sort=pages&order=asc');
+    const resolvedAfterDeepLink = resolveLibrarySortOrder(
+      settings,
+      getGlobalBookshelfSort(settings, deepLinkParams),
+      deepLinkParams,
+    );
+    expect(resolvedAfterDeepLink[0]).toEqual({ by: LibrarySortByType.Pages, ascending: true });
   });
 });

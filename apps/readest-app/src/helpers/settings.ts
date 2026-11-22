@@ -118,3 +118,20 @@ export const saveSysSettings = async <K extends keyof SystemSettings>(
     await saveSettings(envConfig, settings);
   }
 };
+
+/**
+ * Atomically update multiple top-level SystemSettings fields and persist once.
+ */
+export const saveSysSettingsFields = async (
+  envConfig: EnvConfigType,
+  patch: Partial<SystemSettings>,
+) => {
+  const { settings, setSettings, saveSettings } = useSettingsStore.getState();
+  const hasChange = (
+    Object.entries(patch) as [keyof SystemSettings, SystemSettings[keyof SystemSettings]][]
+  ).some(([key, value]) => settings[key] !== value);
+  if (!hasChange) return;
+  const nextSettings: SystemSettings = { ...settings, ...patch };
+  setSettings(nextSettings);
+  await saveSettings(envConfig, nextSettings);
+};
