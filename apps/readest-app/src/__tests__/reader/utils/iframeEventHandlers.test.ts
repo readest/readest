@@ -157,6 +157,81 @@ describe('iframeEventHandlers click gestures', () => {
     frame.remove();
   });
 
+  describe("a tap the book's own script handles is not a page turn (#7769)", () => {
+    // A Go book's diagram shows its replay controls when tapped, then steps
+    // through moves with buttons and a slider; Allow JavaScript runs them.
+    // Taps each target 100ms apart, inside the double-click window.
+    const tapIn = async (setup: (doc: Document) => Element | Element[]) => {
+      const { handleClick, handleMousedown, handleMouseup } = await importHandlers();
+      const frame = document.createElement('iframe');
+      document.body.appendChild(frame);
+      const doc = frame.contentDocument!;
+      const targets = [setup(doc)].flat();
+      doc.addEventListener('click', (event) =>
+        handleClick('book-1', { current: false }, false, false, event),
+      );
+      for (const target of targets) {
+        handleMousedown('book-1', mouseEvent({ target }));
+        handleMouseup('book-1', mouseEvent({ target }));
+        target.dispatchEvent(
+          new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }),
+        );
+        vi.advanceTimersByTime(100);
+      }
+      vi.advanceTimersByTime(300);
+      frame.remove();
+      return postedTypes(postSpy);
+    };
+
+    test('a click the script cancels does not post iframe-single-click', async () => {
+      const types = await tapIn((doc) => {
+        doc.body.innerHTML = '<svg><rect width="100" height="100"></rect></svg>';
+        const rect = doc.querySelector('rect')!;
+        rect.addEventListener('click', (event) => event.preventDefault());
+        return rect;
+      });
+      expect(types).not.toContain('iframe-single-click');
+    });
+
+    test.each([
+      '<input type="range">',
+      '<button>＞</button>',
+      '<select></select>',
+      '<textarea></textarea>',
+    ])('a click on the book control %s does not post iframe-single-click', async (html) => {
+      const types = await tapIn((doc) => {
+        doc.body.innerHTML = `<div class="replay">${html}</div>`;
+        return doc.querySelector('.replay')!.firstElementChild!;
+      });
+      expect(types).not.toContain('iframe-single-click');
+    });
+
+    test("a click on a label's text does not post iframe-single-click", async () => {
+      const types = await tapIn((doc) => {
+        doc.body.innerHTML =
+          '<input type="checkbox" id="choice"><label for="choice"><span>Choose</span></label>';
+        return doc.querySelector('span')!;
+      });
+      expect(types).not.toContain('iframe-single-click');
+    });
+
+    test('a control tapped right after the text cancels the pending page turn', async () => {
+      const types = await tapIn((doc) => {
+        doc.body.innerHTML = '<p>text</p><button>＞</button>';
+        return [doc.querySelector('p')!, doc.querySelector('button')!];
+      });
+      expect(types).not.toContain('iframe-single-click');
+    });
+
+    test('a click on the diagram the script leaves alone still turns the page', async () => {
+      const types = await tapIn((doc) => {
+        doc.body.innerHTML = '<p>text</p>';
+        return doc.querySelector('p')!;
+      });
+      expect(types).toContain('iframe-single-click');
+    });
+  });
+
   test('iframe shortcuts are consumed synchronously or fall back to reader events', async () => {
     const { eventDispatcher } = await import('@/utils/event');
     const dispatchSpy = vi

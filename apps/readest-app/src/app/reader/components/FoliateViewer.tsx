@@ -66,6 +66,7 @@ import {
   transformStylesheet,
 } from '@/utils/style';
 import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable';
+import { bindInlineEventHandlers } from '@/utils/inlineEventHandlers';
 import { classifyAndTagStandaloneDiagrams } from '@/utils/imageClassifier';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { mountWhiteTransparencyFilter } from '@/utils/imageBackground';
@@ -707,7 +708,7 @@ const FoliateViewer: React.FC<{
         if (section?.loadHref) observeDynamicResources(detail.doc, section.loadHref);
       }
 
-      // Inline scripts in tauri platforms are not executed by default
+      // Inline scripts and event handlers in tauri platforms are not executed by default
       if (viewSettings.allowScript && isTauriAppPlatform()) {
         evalInlineScripts(detail.doc);
       }
@@ -796,6 +797,7 @@ const FoliateViewer: React.FC<{
           console.error(`Error executing iframe script ${index + 1}:`, error);
         }
       });
+      bindInlineEventHandlers(doc);
     }
   };
 
