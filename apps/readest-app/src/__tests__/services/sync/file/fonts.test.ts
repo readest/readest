@@ -172,6 +172,39 @@ describe('syncFonts', () => {
     expect(r.index().fonts).toEqual([remote({ deletedAt: 200 })]);
   });
 
+  test('a delete here keeps the file a peer re-imported while this pass ran', async () => {
+    const r = memoryProvider();
+    r.setIndex([remote()]);
+    r.files.set('/Readest/fonts/c1/Inter-Regular.ttf', BYTES);
+    seed([font({ deletedAt: 200 })]);
+    const readText = r.provider.readText;
+    r.provider.readText = async (p) => {
+      const body = await readText(p);
+      // The peer's import at 300 lands right after this pass reads fonts.json.
+      r.setIndex([remote({ addedAt: 300 })]);
+      return body;
+    };
+
+    await syncFonts(envConfig, r.provider, 'silent');
+
+    expect(r.index().fonts).toEqual([remote({ addedAt: 300 })]);
+    expect(r.files.get('/Readest/fonts/c1/Inter-Regular.ttf')).toBe(BYTES);
+  });
+
+  test('a delete whose file removal fails is tried again next pass', async () => {
+    const r = memoryProvider();
+    r.setIndex([remote()]);
+    r.files.set('/Readest/fonts/c1/Inter-Regular.ttf', BYTES);
+    seed([font({ deletedAt: 200 })]);
+    r.provider.deleteDir = async () => {
+      throw new Error('offline');
+    };
+
+    await syncFonts(envConfig, r.provider, 'silent');
+
+    expect(r.index().fonts).toEqual([remote()]);
+  });
+
   test('a newer delete on another device removes the font here', async () => {
     const r = memoryProvider();
     r.setIndex([remote({ deletedAt: 200 })]);

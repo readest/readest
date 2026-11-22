@@ -122,14 +122,17 @@ export const syncFonts = async (
   }
 
   let changed = false;
+  // Fonts deleted here, with the entry each replaces. A folder is removed only
+  // if the delete is still the latest event when fonts.json is committed.
+  const removed = new Map<string, RemoteFont>();
   if (strategy !== 'receive') {
     for (const [contentId, font] of local) {
       const entry = entries.get(contentId);
       try {
         if (font.deletedAt) {
           if (!entry || entry.deletedAt || font.deletedAt <= entry.addedAt) continue;
-          await provider.deleteDir(buildFontDirPath(provider.rootPath, contentId));
           entries.set(contentId, { ...entry, deletedAt: font.deletedAt });
+          removed.set(contentId, entry);
         } else {
           if (font.unavailable) continue;
           const importedAt = font.downloadedAt ?? 0;
@@ -171,6 +174,18 @@ export const syncFonts = async (
   for (const fresh of parseFontIndex(await provider.readText(indexPath))) {
     const ours = entries.get(fresh.contentId);
     if (!ours || eventAt(fresh) > eventAt(ours)) entries.set(fresh.contentId, fresh);
+  }
+  for (const [contentId, listed] of removed) {
+    const entry = entries.get(contentId);
+    // A peer's newer import won: its file stays.
+    if (!entry?.deletedAt) continue;
+    try {
+      await provider.deleteDir(buildFontDirPath(provider.rootPath, contentId));
+    } catch (e) {
+      console.warn('[cloudSync] font delete failed', contentId, e);
+      // Leave this device's delete unlisted, so the next pass tries again.
+      if (entry.deletedAt === local.get(contentId)?.deletedAt) entries.set(contentId, listed);
+    }
   }
   const index: RemoteFontIndex = {
     schemaVersion: 1,
