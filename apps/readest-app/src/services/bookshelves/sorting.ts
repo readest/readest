@@ -64,10 +64,16 @@ const sortUrlParamsEqual = (a: SortUrlParams, b: SortUrlParams): boolean =>
   a.thenSort === b.thenSort &&
   a.thenOrder === b.thenOrder;
 
-let pendingSortUrlSync: { stale: SortUrlParams; expected: SortUrlParams } | null = null;
+type PendingSortUrlSync = {
+  superseded: SortUrlParams[];
+  expected: SortUrlParams;
+};
+
+let pendingSortUrlSync: PendingSortUrlSync | null = null;
 
 /**
  * Record an in-flight sort URL navigation from `ViewMenu` so stale `searchParams`
+ * (including superseded intermediate targets from rapid consecutive commits)
  * captured before `router.replace` settles do not demote newly committed ranks.
  */
 export function markPendingLibrarySortUrlSync(
@@ -76,7 +82,23 @@ export function markPendingLibrarySortUrlSync(
 ): void {
   const stale = readSortUrlParams(staleParams);
   const expected = readSortUrlParams(expectedParams);
-  pendingSortUrlSync = sortUrlParamsEqual(stale, expected) ? null : { stale, expected };
+  if (sortUrlParamsEqual(stale, expected)) {
+    pendingSortUrlSync = null;
+    return;
+  }
+  const candidates: SortUrlParams[] = pendingSortUrlSync
+    ? [...pendingSortUrlSync.superseded, pendingSortUrlSync.expected, stale]
+    : [stale];
+  const superseded: SortUrlParams[] = [];
+  for (const candidate of candidates) {
+    if (
+      !sortUrlParamsEqual(candidate, expected) &&
+      !superseded.some((existing) => sortUrlParamsEqual(existing, candidate))
+    ) {
+      superseded.push(candidate);
+    }
+  }
+  pendingSortUrlSync = superseded.length > 0 ? { superseded, expected } : null;
 }
 
 export function clearPendingLibrarySortUrlSync(): void {
@@ -88,7 +110,11 @@ export function resolveEffectiveLibrarySortSearchParams(
 ): Pick<URLSearchParams, 'get'> | null | undefined {
   if (!pendingSortUrlSync || !params) return params;
   const current = readSortUrlParams(params);
-  if (sortUrlParamsEqual(current, pendingSortUrlSync.stale)) {
+  if (sortUrlParamsEqual(current, pendingSortUrlSync.expected)) {
+    pendingSortUrlSync = null;
+    return params;
+  }
+  if (pendingSortUrlSync.superseded.some((stale) => sortUrlParamsEqual(current, stale))) {
     return null;
   }
   pendingSortUrlSync = null;

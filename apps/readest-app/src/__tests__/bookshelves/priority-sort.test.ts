@@ -548,4 +548,51 @@ describe('priority-based library sorting', () => {
     );
     expect(resolvedAfterDeepLink[0]).toEqual({ by: LibrarySortByType.Pages, ascending: true });
   });
+
+  it('keeps newer committed order when a superseded intermediate navigation lands before the latest expected URL', () => {
+    const urlA = new URLSearchParams('sort=author&order=asc&thenSort=created&thenOrder=desc');
+    const urlB = new URLSearchParams('sort=title&order=asc&thenSort=author&thenOrder=asc');
+    const urlC = new URLSearchParams('sort=timeRemaining&order=asc&thenSort=author&thenOrder=asc');
+    const externalDeepLink = new URLSearchParams('sort=pages&order=asc');
+
+    const latestSettings = {
+      librarySortByAuto: false,
+      librarySortBy: LibrarySortByType.TimeRemaining,
+      librarySortAscending: true,
+      libraryThenSortBy: LibrarySortByType.Author,
+      libraryThenSortAscending: true,
+      librarySortOrder: [
+        { by: LibrarySortByType.TimeRemaining, ascending: true },
+        { by: LibrarySortByType.Author, ascending: true },
+        { by: LibrarySortByType.Created, ascending: false },
+      ] as LibrarySortCriterion[],
+    };
+
+    // Rapid consecutive commits: A -> B, then A -> C before B settles.
+    markPendingLibrarySortUrlSync(urlA, urlB);
+    markPendingLibrarySortUrlSync(urlA, urlC);
+
+    // Both A (initial stale URL) and B (superseded intermediate navigation) are ignored.
+    expect(
+      resolveLibrarySortOrder(latestSettings, getGlobalBookshelfSort(latestSettings, urlA), urlA)[0]
+        ?.by,
+    ).toBe(LibrarySortByType.TimeRemaining);
+    expect(
+      resolveLibrarySortOrder(latestSettings, getGlobalBookshelfSort(latestSettings, urlB), urlB)[0]
+        ?.by,
+    ).toBe(LibrarySortByType.TimeRemaining);
+
+    // Once C (expected) arrives, the guard clears and external deep links work normally again.
+    expect(
+      resolveLibrarySortOrder(latestSettings, getGlobalBookshelfSort(latestSettings, urlC), urlC)[0]
+        ?.by,
+    ).toBe(LibrarySortByType.TimeRemaining);
+    expect(
+      resolveLibrarySortOrder(
+        latestSettings,
+        getGlobalBookshelfSort(latestSettings, externalDeepLink),
+        externalDeepLink,
+      )[0]?.by,
+    ).toBe(LibrarySortByType.Pages);
+  });
 });

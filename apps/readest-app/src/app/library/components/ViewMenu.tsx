@@ -2,6 +2,7 @@ import { eventDispatcher } from '@/utils/event';
 import { BOOKSHELF_GROUP_LABELS, BOOKSHELF_SORT_LABELS } from '@/services/bookshelves/definitions';
 import {
   METADATA_SORT_BY_ORDER,
+  clearPendingLibrarySortUrlSync,
   getGlobalBookshelfSort,
   markPendingLibrarySortUrlSync,
   resolveLibrarySortOrder,
@@ -156,17 +157,22 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     applySortParams(expectedParams);
     markPendingLibrarySortUrlSync(latestSearchParamsRef.current, expectedParams);
 
-    await saveSysSettingsFields(envConfig, {
-      librarySortCustom: false,
-      librarySortByAuto: false,
-      librarySortBy: primary.by,
-      librarySortAscending: primary.ascending,
-      libraryThenSortBy: secondary ? secondary.by : 'none',
-      libraryThenSortAscending: secondary ? secondary.ascending : true,
-      librarySortOrder: next,
-    });
+    try {
+      await saveSysSettingsFields(envConfig, {
+        librarySortCustom: false,
+        librarySortByAuto: false,
+        librarySortBy: primary.by,
+        librarySortAscending: primary.ascending,
+        libraryThenSortBy: secondary ? secondary.by : 'none',
+        libraryThenSortAscending: secondary ? secondary.ascending : true,
+        librarySortOrder: next,
+      });
 
-    await applyShelfSortNavigation(applySortParams);
+      await applyShelfSortNavigation(applySortParams);
+    } catch (error) {
+      clearPendingLibrarySortUrlSync();
+      throw error;
+    }
   };
 
   const enqueueSortCommit = (task: () => Promise<void>) => {
@@ -198,14 +204,19 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
       expectedParams.set('sort', LibrarySortByType.Custom);
       markPendingLibrarySortUrlSync(latestSearchParamsRef.current, expectedParams);
 
-      await saveSysSettingsFields(envConfig, {
-        librarySortCustom: true,
-        librarySortByAuto: false,
-      });
+      try {
+        await saveSysSettingsFields(envConfig, {
+          librarySortCustom: true,
+          librarySortByAuto: false,
+        });
 
-      await applyShelfSortNavigation((params) => {
-        params.set('sort', LibrarySortByType.Custom);
-      });
+        await applyShelfSortNavigation((params) => {
+          params.set('sort', LibrarySortByType.Custom);
+        });
+      } catch (error) {
+        clearPendingLibrarySortUrlSync();
+        throw error;
+      }
     });
   };
 

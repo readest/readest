@@ -36,6 +36,7 @@ vi.mock('@/helpers/settings', () => ({
     useSettingsStore.setState({
       settings: { ...useSettingsStore.getState().settings, ...patch },
     });
+    await Promise.resolve();
   },
 }));
 
@@ -85,7 +86,7 @@ describe('ViewMenu priority sort reorder in Chromium', () => {
       } as SystemSettings,
     });
 
-    const { rerender } = render(<ViewMenu />);
+    const { container, rerender } = render(<ViewMenu />);
     fireEvent.click(screen.getByText('Sort by...'));
 
     const getRowOrder = () =>
@@ -107,9 +108,26 @@ describe('ViewMenu priority sort reorder in Chromium', () => {
     for (let i = 0; i < 9; i++) {
       await userEvent.keyboard('{ArrowUp}');
     }
-    await userEvent.keyboard(' ');
 
-    await waitFor(() => expect(navigateToLibrary).toHaveBeenCalled());
+    const observedOrders: (string | undefined)[][] = [];
+    const captureOrder = () => {
+      observedOrders.push(getRowOrder());
+    };
+    const observer = new MutationObserver(captureOrder);
+    observer.observe(container, { childList: true, subtree: true, attributes: true });
+    try {
+      await userEvent.keyboard(' ');
+      captureOrder();
+      await waitFor(() => expect(navigateToLibrary).toHaveBeenCalled());
+      captureOrder();
+    } finally {
+      observer.disconnect();
+    }
+
+    expect(observedOrders.length).toBeGreaterThan(0);
+    for (const order of observedOrders) {
+      expect(order[2]).not.toBe('Time Remaining');
+    }
     expect(useSettingsStore.getState().settings.librarySortOrder?.[0]?.by).toBe('timeRemaining');
     expect(getRowOrder().slice(0, 3)).toEqual(['Time Remaining', 'Author', 'Date Added']);
     expect(navigateToLibrary).toHaveBeenCalledWith(
