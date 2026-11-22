@@ -2012,23 +2012,44 @@ const INLINE_IMAGE_CONTAINER_TAGS = new Set([
   'q',
 ]);
 
-// Block-level tags that end a line, so text past them is on another line
-const LINE_BREAKING_TAGS =
-  /^(br|p|div|li|dd|dt|td|th|tr|table|ul|ol|dl|figure|figcaption|blockquote|section|article|aside|header|footer|nav|main|body|center|pre|hr|h[1-6])$/;
+// An element whose content flows on its parent's lines (a, span, a div made
+// inline); anything else but an inline-block ends the line. An empty value
+// is the initial `inline`, in environments that report unset props as ''.
+const flowsInLine = (display: string) =>
+  display === 'inline' || display === '' || display === 'contents' || display.startsWith('ruby');
 
-// Whether text shares the image's line: look at the siblings of the image and
-// of each inline element around it (links included), up to a <br> or a block.
-const hasTextOnLine = (img: Element): boolean => {
+// What comes first on the image's line, reading `node` in one direction:
+// text, a line break (a <br> or a block), or neither
+const scanLine = (node: Node, forward: boolean, win: Window): 'text' | 'break' | null => {
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent?.trim() ? 'text' : null;
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+  const el = node as Element;
+  if (el.localName === 'br') return 'break';
+  const display = win.getComputedStyle(el).display;
+  if (display === 'none') return null;
+  if (display.startsWith('inline-')) return el.textContent?.trim() ? 'text' : null;
+  if (!flowsInLine(display)) return 'break';
+  const children = Array.from(el.childNodes);
+  for (const child of forward ? children : children.reverse()) {
+    const found = scanLine(child, forward, win);
+    if (found) return found;
+  }
+  return null;
+};
+
+// Whether text shares the image's line: read out from the image and from each
+// inline element around it (links included), up to a <br> or a block.
+const hasTextOnLine = (img: Element, win: Window): boolean => {
   for (let node: Element = img; node.parentElement; node = node.parentElement) {
     for (const forward of [false, true]) {
       let sib = forward ? node.nextSibling : node.previousSibling;
       for (; sib; sib = forward ? sib.nextSibling : sib.previousSibling) {
-        const isElement = sib.nodeType === Node.ELEMENT_NODE;
-        if (isElement && LINE_BREAKING_TAGS.test((sib as Element).localName)) break;
-        if ((isElement || sib.nodeType === Node.TEXT_NODE) && sib.textContent?.trim()) return true;
+        const found = scanLine(sib, forward, win);
+        if (found === 'text') return true;
+        if (found === 'break') break;
       }
     }
-    if (LINE_BREAKING_TAGS.test(node.parentElement.localName)) return false;
+    if (!flowsInLine(win.getComputedStyle(node.parentElement).display)) return false;
   }
   return false;
 };
@@ -2138,7 +2159,7 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
       keepBaseline,
       noEnlarge,
       leadingImageParagraph,
-      aloneOnLine: !hasTextOnLine(img),
+      aloneOnLine: !hasTextOnLine(img, win),
     };
   });
 

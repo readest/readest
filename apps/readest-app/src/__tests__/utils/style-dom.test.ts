@@ -827,6 +827,16 @@ describe('applyImageStyle', () => {
     ['an image above its caption', '<p><img src="c.png" /><br />Plate 1</p>', true],
     ['an image beside a comment', '<p><!-- plate --><img src="c.png" /></p>', true],
     [
+      'an image before a span that breaks the line',
+      '<p><img src="c.png" /><span><br />Caption</span></p>',
+      true,
+    ],
+    [
+      'an image in a span made a block, before text',
+      '<p><span style="display: block"><img src="c.png" /></span>Text</p>',
+      true,
+    ],
+    [
       'an image between paragraphs',
       '<div><p>Before</p><img src="c.png" /><p>After</p></div>',
       true,
@@ -843,6 +853,16 @@ describe('applyImageStyle', () => {
     ],
     ['an image beside linked text', '<p><img src="c.png" /><a href="#n">Note</a></p>', false],
     ['an image in a span after text', '<p>Text <span><img src="c.png" /></span></p>', false],
+    [
+      'an image before a span with text, then a break',
+      '<p><img src="c.png" /><span>Note<br />Caption</span></p>',
+      false,
+    ],
+    [
+      'a linked icon in a div made inline, before text',
+      '<div><div style="display: inline"><a href="#n"><img src="n.png" /></a></div> Text</div>',
+      false,
+    ],
   ])('tells whether %s is alone on its line', (_, html, alone) => {
     document.body.innerHTML = html;
     applyImageStyle(document);
