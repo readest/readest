@@ -95,6 +95,8 @@ beforeAll(async () => {
 afterEach(async () => {
   cleanup();
   document.documentElement.classList.remove('ui-rtl');
+  document.documentElement.style.removeProperty('--safe-area-inset-top');
+  document.documentElement.style.removeProperty('--safe-area-inset-bottom');
   await page.viewport(PHONE_WIDTH, 800);
 });
 
@@ -244,5 +246,21 @@ describe('Dropdown menu viewport layout', () => {
     expect(pushProgress.matches(':hover')).toBe(false);
     expect(linkBook.matches(':hover')).toBe(true);
     expect(menu.querySelectorAll('[role="menuitem"]:hover')).toHaveLength(1);
+  });
+
+  it('caps menu max-height by top and bottom safe-area insets so tall menus stay clear of the home bar', async () => {
+    await page.viewport(393, 852);
+    document.documentElement.style.setProperty('--safe-area-inset-top', '59px');
+    document.documentElement.style.setProperty('--safe-area-inset-bottom', '34px');
+
+    const labels = Array.from({ length: 30 }, (_, i) => `Option ${i + 1}`);
+    renderMenu(labels, { anchorLeft: 8 });
+
+    await expectMenuWithinViewport();
+    const menu = openMenu();
+    const rect = menu.getBoundingClientRect();
+    // 852 - 59 - 34 - 96 = 663
+    expect(rect.height).toBeLessThanOrEqual(663 + 1);
+    expect(menu.scrollHeight).toBeGreaterThan(menu.clientHeight);
   });
 });
