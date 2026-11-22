@@ -15,9 +15,18 @@ export async function POST(request: Request) {
   try {
     const claimed = await claimGiftCardByCode(body.code, user.id);
     if (!claimed) return invalid();
-    const { received } = await listGiftCards(user.id);
-    const card = received.find((c) => c.id === claimed.id);
-    return card ? NextResponse.json({ card }) : invalid();
+    // The claim is committed. If the listing fails (a gift holder's listing
+    // calls Stripe), answer success without the card: an error would make the
+    // retry say "invalid or already used".
+    try {
+      const { received } = await listGiftCards(user.id);
+      const card = received.find((c) => c.id === claimed.id);
+      if (card) return NextResponse.json({ card });
+      console.error('gift redeem: claimed card missing from the listing', claimed.id);
+    } catch (error) {
+      console.error('gift redeem: listing after a committed claim failed:', error);
+    }
+    return NextResponse.json({ card: null });
   } catch (error) {
     console.error('gift redeem failed:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });

@@ -13,6 +13,8 @@ interface PlanActionButtonProps {
   canSwitchInterval?: boolean;
   giftUntil?: string;
   giftOnly?: boolean;
+  /** A gift-only holder's gift is a higher tier than this one. */
+  belowGift?: boolean;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
@@ -25,6 +27,7 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
   canSwitchInterval,
   giftUntil,
   giftOnly,
+  belowGift,
   onSubscribe,
 }) => {
   const _ = useTranslation();
@@ -42,7 +45,9 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
           accent.cta,
         )}
       >
-        {_('Upgrade to {{plan}}', { plan: _(plan.name) })}
+        {belowGift
+          ? _('Subscribe to {{plan}}', { plan: _(plan.name) })
+          : _('Upgrade to {{plan}}', { plan: _(plan.name) })}
       </button>
     );
   }

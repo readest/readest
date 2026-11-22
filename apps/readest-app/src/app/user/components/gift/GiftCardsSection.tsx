@@ -156,14 +156,22 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
           return null;
         });
         if (!purchase) return;
-        // The store has charged by now. A failed verify is retried by the
-        // store notification, so don't call it a failure. Restore Purchase
-        // isn't offered: StoreKit never restores a consumable.
+        // The store has charged by now, so don't call a failed verify a failure.
+        // iOS recovers by itself: the App Store ONE_TIME_CHARGE notification
+        // retries, and StoreKit never restores a consumable. Google Play sends
+        // no one-time product notifications; Restore Purchase re-verifies its
+        // purchased products, gift SKUs included.
         try {
           await verifyGiftIAPPurchase(purchase, giftCardId);
         } catch (error) {
           console.error('Gift purchase verification failed:', error);
-          toast(_('Payment received. Your gift card will appear here shortly.'));
+          toast(
+            purchase.platform === 'android'
+              ? _(
+                  'Payment received. Your gift card will appear here shortly, or use Restore Purchase.',
+                )
+              : _('Payment received. Your gift card will appear here shortly.'),
+          );
           await load();
           return;
         }

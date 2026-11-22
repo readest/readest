@@ -178,7 +178,31 @@ describe('GiftCardsSection', () => {
     await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(2));
   });
 
-  it('a failed verify after the store charged says the payment was received', async () => {
+  it('a failed verify on iOS says the payment was received, without Restore Purchase', async () => {
+    h.fetchGiftPrices.mockResolvedValue(IAP_PRICES);
+    h.purchaseIAPProduct.mockResolvedValue({ platform: 'ios', transactionId: 'txn-1' });
+    h.verifyGiftIAPPurchase.mockRejectedValue(new Error('gift_verify_failed'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    renderSection({ useIAP: true });
+    await waitFor(() => expect(h.fetchGiftPrices).toHaveBeenCalledWith(true));
+    fireEvent.click(await buyButton());
+
+    await waitFor(() =>
+      expect(h.dispatch).toHaveBeenCalledWith('toast', {
+        type: 'info',
+        // The App Store notification retries; StoreKit never restores a consumable.
+        message: 'Payment received. Your gift card will appear here shortly.',
+      }),
+    );
+    expect(h.dispatch).not.toHaveBeenCalledWith('toast', {
+      type: 'info',
+      message: 'Failed to buy the gift card',
+    });
+    await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(2));
+  });
+
+  it('a failed verify on Android points at Restore Purchase', async () => {
     h.fetchGiftPrices.mockResolvedValue(IAP_PRICES);
     h.purchaseIAPProduct.mockResolvedValue({ platform: 'android', purchaseToken: 'token-1' });
     h.verifyGiftIAPPurchase.mockRejectedValue(new Error('gift_verify_failed'));
@@ -191,8 +215,8 @@ describe('GiftCardsSection', () => {
     await waitFor(() =>
       expect(h.dispatch).toHaveBeenCalledWith('toast', {
         type: 'info',
-        // Not Restore Purchase: StoreKit never restores a consumable.
-        message: 'Payment received. Your gift card will appear here shortly.',
+        message:
+          'Payment received. Your gift card will appear here shortly, or use Restore Purchase.',
       }),
     );
     expect(h.dispatch).not.toHaveBeenCalledWith('toast', {
@@ -259,6 +283,24 @@ describe('GiftCardsSection', () => {
     expect(await screen.findByText('This code is invalid or has already been used.')).toBeTruthy();
     expect(h.redeemGiftCode).toHaveBeenCalledWith('ABCD-EFGH-JKMN-PQRS');
     expect(onPlanChanged).not.toHaveBeenCalled();
+  });
+
+  it('a redeem that returns no card still counts as redeemed', async () => {
+    h.redeemGiftCode.mockResolvedValue(null);
+    const onPlanChanged = vi.fn();
+    renderSection({ initialCode: 'ABCD-EFGH-JKMN-PQRS', onPlanChanged });
+
+    await screen.findByRole('textbox', { name: 'Gift code' });
+    fireEvent.click(screen.getByRole('button', { name: 'Redeem' }));
+
+    await waitFor(() =>
+      expect(h.dispatch).toHaveBeenCalledWith('toast', {
+        type: 'info',
+        message: 'Gift card redeemed',
+      }),
+    );
+    // The list reloads, as after any redeem.
+    await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(2));
   });
 
   it('the composer blocks a 301st character', async () => {

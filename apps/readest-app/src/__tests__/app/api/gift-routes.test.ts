@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   claimByCode: null as unknown,
   claimForEmail: 0,
   claimedEmailArgs: [] as unknown[],
+  listFails: false,
 }));
 
 vi.mock('@/utils/access', () => ({
@@ -25,7 +26,10 @@ vi.mock('@/utils/supabase', () => ({
 vi.mock('@/libs/payment/gift/server', () => ({
   createGiftDraft: async () => ({ id: 'draft-id' }),
   updateSentGiftCard: async () => (h.update === 'ok' ? { id: 'x' } : h.update),
-  listGiftCards: async () => ({ received: [{ id: 'c1', startsAt: 's', endsAt: 'e' }] }),
+  listGiftCards: async () => {
+    if (h.listFails) throw new Error('stripe down');
+    return { received: [{ id: 'c1', startsAt: 's', endsAt: 'e' }] };
+  },
 }));
 
 vi.mock('@/libs/payment/gift/claim', () => ({
@@ -131,6 +135,27 @@ describe('gift routes', () => {
     h.claimByCode = { id: 'c1' } as GiftCardRow;
     const res = await redeem(req('POST', { code: 'AAAA' }));
     expect(await res.json()).toEqual({ card: { id: 'c1', startsAt: 's', endsAt: 'e' } });
+  });
+
+  it('redeem answers 200 with no card when the claim committed but the listing failed', async () => {
+    h.claimByCode = { id: 'c1' } as GiftCardRow;
+    h.listFails = true;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const res = await redeem(req('POST', { code: 'AAAA' }));
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ card: null });
+    } finally {
+      h.listFails = false;
+    }
+  });
+
+  it('redeem answers 200 with no card when the claimed card is missing from the listing', async () => {
+    h.claimByCode = { id: 'other' } as GiftCardRow;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await redeem(req('POST', { code: 'AAAA' }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ card: null });
   });
 
   it('reconcile 503 without a token and 401 with a wrong one', async () => {

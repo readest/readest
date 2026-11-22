@@ -38,8 +38,8 @@ export const createGiftDraft = async (input: GiftDraftInput): Promise<string> =>
 export const updateGiftCard = async (id: string, patch: GiftCardPatch): Promise<SentGiftCard> =>
   (await giftRequest<{ card: SentGiftCard }>('cards', 'PATCH', { id, ...patch })).card;
 
-export const redeemGiftCode = async (code: string): Promise<ReceivedGiftCard> =>
-  (await giftRequest<{ card: ReceivedGiftCard }>('redeem', 'POST', { code })).card;
+export const redeemGiftCode = async (code: string): Promise<ReceivedGiftCard | null> =>
+  (await giftRequest<{ card: ReceivedGiftCard | null }>('redeem', 'POST', { code })).card;
 
 export const claimGiftCards = async (): Promise<number> =>
   (await giftRequest<{ claimed: number }>('claim', 'POST', {})).claimed;

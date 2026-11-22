@@ -16,6 +16,7 @@ interface PlanCardProps {
   canSwitchInterval?: boolean;
   giftUntil?: string;
   giftOnly?: boolean;
+  belowGift?: boolean;
   /** Defaults to false: an unknown state shows the buy button, never hides it. */
   customizationPurchased?: boolean;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
@@ -31,6 +32,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   canSwitchInterval,
   giftUntil,
   giftOnly,
+  belowGift,
   onSubscribe,
 }) => {
   const _ = useTranslation();
@@ -158,6 +160,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
               isUserPlan={isUserPlan}
               giftUntil={giftUntil}
               giftOnly={giftOnly}
+              belowGift={belowGift}
               onSubscribe={onSubscribe}
             />
           )}

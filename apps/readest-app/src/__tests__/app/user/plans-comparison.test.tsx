@@ -186,7 +186,10 @@ describe('PlansComparison', () => {
         />,
       );
 
-      fireEvent.click(within(planCard('Plus Plan')).getByText('Upgrade to Plus Plan'));
+      const plusCard = planCard('Plus Plan');
+      // "Upgrade" would be wrong: Plus is below the Pro gift.
+      expect(within(plusCard).queryByText('Upgrade to Plus Plan')).toBeNull();
+      fireEvent.click(within(plusCard).getByText('Subscribe to Plus Plan'));
       expect(onSubscribe).toHaveBeenCalledWith('price_month_plus');
       // Their own tier keeps the gift chip and its Subscribe button.
       const proCard = planCard('Pro Plan');

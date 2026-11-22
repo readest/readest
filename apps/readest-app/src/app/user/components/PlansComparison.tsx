@@ -56,6 +56,11 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
             // read as that plan ending.
             giftUntil={gift?.giftOnly && gift.plan === plan.plan ? gift.activeUntil : undefined}
             giftOnly={gift?.plan === plan.plan ? gift.giftOnly : undefined}
+            belowGift={
+              !!gift?.giftOnly &&
+              PLAN_ORDER.indexOf(plan.plan) > 0 &&
+              PLAN_ORDER.indexOf(plan.plan) < PLAN_ORDER.indexOf(gift.plan)
+            }
             // A gift-only holder can subscribe to any tier, below their gift too.
             upgradable={
               index > 0 &&
