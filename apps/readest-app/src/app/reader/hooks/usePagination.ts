@@ -312,6 +312,9 @@ export const usePagination = (
   // the ttsPlaying state directly without going stale. This ref mirrors it for
   // the volume-key page-flip guard.
   const ttsPlayingRef = useRef(false);
+  // Gate hardware volume-key repeats while a previous volume-triggered turn is
+  // still animating so releasing a held button stops turning right away.
+  const volumeTurnInFlightRef = useRef(false);
 
   const handlePageFlip = async (
     msg: MessageEvent | CustomEvent | React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -475,16 +478,28 @@ export const usePagination = (
           });
           return;
         }
+        const runVolumeTurn = (side: 'up' | 'down') => {
+          if (volumeTurnInFlightRef.current) return;
+          const nav = viewPagination(viewRef.current, viewSettings, side);
+          if (nav && typeof (nav as Promise<unknown>).finally === 'function') {
+            volumeTurnInFlightRef.current = true;
+            void Promise.resolve(nav)
+              .catch(() => {})
+              .finally(() => {
+                volumeTurnInFlightRef.current = false;
+              });
+          }
+        };
         if (keyName === 'VolumeUp') {
           if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('up')) {
             return;
           }
-          viewPagination(viewRef.current, viewSettings, 'up');
+          runVolumeTurn('up');
         } else if (keyName === 'VolumeDown') {
           if (viewSettings.readingRulerEnabled && dispatchReadingRulerMove('down')) {
             return;
           }
-          viewPagination(viewRef.current, viewSettings, 'down');
+          runVolumeTurn('down');
         }
       }
     } else {
@@ -649,6 +664,13 @@ export const usePagination = (
     eventDispatcher.on('tts-playback-state', handlePlaybackState);
     return () => {
       eventDispatcher.off('tts-playback-state', handlePlaybackState);
+    };
+  }, [bookKey]);
+
+  useEffect(() => {
+    volumeTurnInFlightRef.current = false;
+    return () => {
+      volumeTurnInFlightRef.current = false;
     };
   }, [bookKey]);
 
