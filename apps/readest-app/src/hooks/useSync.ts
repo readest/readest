@@ -76,6 +76,14 @@ const recordCloudFlow = (
 export const BOOKS_PULL_PAGE_SIZE = 1000;
 
 /**
+ * Books per push request. /api/sync keeps Next's 1 MB body limit, and a book
+ * row with its parsed metadata is about 1-5 KB, so a library imported in bulk
+ * (every book changed within the push look-back) went over it in one request
+ * and failed with "Body exceeded 1mb limit" on every sync.
+ */
+export const BOOKS_PUSH_BATCH_SIZE = 100;
+
+/**
  * Pull the books delta in bounded pages: a delta grown to a whole 10k-book
  * library in one response exceeded Cloudflare Worker limits (error 1102) and
  * wedged the device — the pull failed forever and the cursor never advanced.
@@ -341,7 +349,10 @@ export function useSync(bookKey?: string) {
       if (!lastSyncedAtInited) return;
       if (!isSyncCategoryEnabled('book')) return;
       if ((op === 'push' || op === 'both') && books?.length) {
-        await pushChanges({ books });
+        for (let i = 0; i < books.length; i += BOOKS_PUSH_BATCH_SIZE) {
+          // Books not pushed stay unsynced, so the next sync sends them again.
+          if (!(await pushChanges({ books: books.slice(i, i + BOOKS_PUSH_BATCH_SIZE) }))) break;
+        }
       }
       if (op === 'pull' || op === 'both') {
         return await pullChanges(
