@@ -6,6 +6,7 @@ import type { CustomTranslator } from '@/types/translation';
 import { ErrorCodes, TranslationContext, TranslationProvider } from '../types';
 import { renderPrompt } from './prompts';
 import { CUSTOM_TRANSLATOR_PREFIX } from './constants';
+import { generateOnDeviceText, onDeviceInputChars, prepareOnDevice } from './onDevice';
 
 const BATCH_DELAY_MS = 50;
 const MAX_BATCH_ITEMS = 4;
@@ -103,6 +104,7 @@ export const generateChatText = async (
     onProgress?: () => void;
   },
 ): Promise<string> => {
+  if (config.type === 'apple-intelligence') return generateOnDeviceText(config, options);
   const [{ generateText, streamText }] = await loadSDK();
   const { onText, onProgress, ...settings } = options;
   const run = async (thinkingOff: boolean) => {
@@ -173,6 +175,8 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
   const pending = new Map<string, PendingBatch>();
   const queue: PendingBatch[] = [];
   let inflight = 0;
+  // Apple's on-device model shares a small window between input and reply.
+  let maxBatchChars = MAX_BATCH_CHARS;
 
   const renderSystem = (sourceLang: string, targetLang: string, context?: TranslationContext) =>
     renderPrompt(getPromptTemplate(context?.promptId), {
@@ -255,7 +259,7 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
     const batch = pending.get(system);
     if (
       batch &&
-      (batch.items.length >= MAX_BATCH_ITEMS || batch.chars + item.text.length > MAX_BATCH_CHARS)
+      (batch.items.length >= MAX_BATCH_ITEMS || batch.chars + item.text.length > maxBatchChars)
     ) {
       flush(system);
     }
@@ -279,6 +283,9 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
       )}`,
     translate: async (texts, sourceLang, targetLang, _token, _useCache, signal, context) => {
       signal?.throwIfAborted();
+      if (config.type === 'apple-intelligence') {
+        maxBatchChars = onDeviceInputChars((await prepareOnDevice(targetLang)).contextSize);
+      }
       const system = renderSystem(sourceLang, targetLang, context);
       const items: Item[] = [];
       const results = texts.map((text) => {

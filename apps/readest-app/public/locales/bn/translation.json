@@ -2906,5 +2906,7 @@
   "Reordering {{label}} cancelled.": "{{label}} এর পুনর্বিন্যাস বাতিল হয়েছে।",
   "Add to Vocabulary": "শব্দভান্ডারে যোগ করুন",
   "Add the selected word to the vocabulary list": "নির্বাচিত শব্দটি শব্দভান্ডার তালিকায় যোগ করুন",
-  "Added to vocabulary": "শব্দভান্ডারে যোগ করা হয়েছে"
+  "Added to vocabulary": "শব্দভান্ডারে যোগ করা হয়েছে",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (ডিভাইসে)",
+  "On-Device": "ডিভাইসে"
 }

@@ -233,7 +233,14 @@ const CustomTranslators: React.FC<CustomTranslatorsProps> = ({ targetLang, onBac
               <NavigationRow
                 key={t.id}
                 title={t.name}
-                status={[t.type === 'deepl' ? 'DeepL' : t.model, t.disabled ? _('Disabled') : '']
+                status={[
+                  t.type === 'deepl'
+                    ? 'DeepL'
+                    : t.type === 'apple-intelligence'
+                      ? _('On-Device')
+                      : t.model,
+                  t.disabled ? _('Disabled') : '',
+                ]
                   .filter(Boolean)
                   .join(' · ')}
                 onClick={() => setPage({ kind: 'translator', id: t.id })}

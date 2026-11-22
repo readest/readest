@@ -2138,6 +2138,25 @@ class NativeBridgePlugin: Plugin {
     }
   }
 
+  @objc public func on_device_llm_status(_ invoke: Invoke) {
+    invoke.resolve(OnDeviceLLM.status())
+  }
+
+  @objc public func on_device_llm_generate(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(OnDeviceLLMGenerateArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    OnDeviceLLM.generate(args, invoke: invoke)
+  }
+
+  @objc public func on_device_llm_cancel(_ invoke: Invoke) {
+    guard let args = try? invoke.parseArgs(OnDeviceLLMCancelArgs.self) else {
+      return invoke.reject("Failed to parse arguments")
+    }
+    OnDeviceLLM.cancel(args.requestId)
+    invoke.resolve()
+  }
+
   /// Hold a strong reference to the active folder picker delegate so
   /// it survives until the user dismisses the picker. `present`
   /// only retains the controller; the delegate is `weak` from

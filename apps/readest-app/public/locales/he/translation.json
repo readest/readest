@@ -2981,5 +2981,7 @@
   "Reordering {{label}} cancelled.": "שינוי הסדר של {{label}} בוטל.",
   "Add to Vocabulary": "הוספה לאוצר המילים",
   "Add the selected word to the vocabulary list": "הוספת המילה שנבחרה לרשימת אוצר המילים",
-  "Added to vocabulary": "נוסף לאוצר המילים"
+  "Added to vocabulary": "נוסף לאוצר המילים",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (במכשיר)",
+  "On-Device": "במכשיר"
 }

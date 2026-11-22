@@ -574,3 +574,26 @@ pub(crate) async fn icloud_ensure_downloaded<R: Runtime>(
 ) -> Result<ICloudEnsureDownloadedResponse> {
     app.native_bridge().icloud_ensure_downloaded(payload)
 }
+
+#[command]
+pub(crate) async fn on_device_llm_status<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<OnDeviceLlmStatusResponse> {
+    app.native_bridge().on_device_llm_status()
+}
+
+#[command]
+pub(crate) async fn on_device_llm_generate<R: Runtime>(
+    app: AppHandle<R>,
+    payload: OnDeviceLlmGenerateRequest,
+) -> Result<OnDeviceLlmGenerateResponse> {
+    app.native_bridge().on_device_llm_generate(payload)
+}
+
+#[command]
+pub(crate) async fn on_device_llm_cancel<R: Runtime>(
+    app: AppHandle<R>,
+    payload: OnDeviceLlmCancelRequest,
+) -> Result<()> {
+    app.native_bridge().on_device_llm_cancel(payload)
+}

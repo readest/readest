@@ -3056,5 +3056,7 @@
   "Reordering {{label}} cancelled.": "Изменение порядка {{label}} отменено.",
   "Add to Vocabulary": "Добавить в словарь",
   "Add the selected word to the vocabulary list": "Добавить выбранное слово в список слов",
-  "Added to vocabulary": "Добавлено в словарь"
+  "Added to vocabulary": "Добавлено в словарь",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (на устройстве)",
+  "On-Device": "На устройстве"
 }

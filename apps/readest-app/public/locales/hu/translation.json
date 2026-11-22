@@ -2906,5 +2906,7 @@
   "Reordering {{label}} cancelled.": "{{label}} átrendezése megszakítva.",
   "Add to Vocabulary": "Hozzáadás a szókincshez",
   "Add the selected word to the vocabulary list": "A kijelölt szó hozzáadása a szókincslistához",
-  "Added to vocabulary": "Hozzáadva a szókincshez"
+  "Added to vocabulary": "Hozzáadva a szókincshez",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (eszközön)",
+  "On-Device": "Eszközön"
 }

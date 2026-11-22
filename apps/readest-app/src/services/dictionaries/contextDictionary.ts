@@ -9,6 +9,7 @@
 import type { CustomTranslator } from '@/types/translation';
 import { md5Fingerprint } from '@/utils/md5';
 import { renderPrompt } from '@/services/translators/custom/prompts';
+import { onDeviceInputChars, prepareOnDevice } from '@/services/translators/custom/onDevice';
 import {
   generateChatText,
   loadSDK,
@@ -162,6 +163,13 @@ export const lookupInContext = async (
   signal: AbortSignal,
   options: ContextLookupOptions = {},
 ): Promise<ContextEntry> => {
+  if (translator.type === 'apple-intelligence') {
+    // Each side gets half of what fits Apple's small on-device window.
+    const side = Math.floor(
+      onDeviceInputChars((await prepareOnDevice(input.targetLang)).contextSize) / 2,
+    );
+    input = { ...input, before: input.before.slice(-side), after: input.after.slice(0, side) };
+  }
   const customPrompt = options.systemPrompt?.trim();
   const system = renderPrompt(customPrompt || CONTEXT_DICTIONARY_PROMPT, {
     sourceLang: input.sourceLang || 'AUTO',

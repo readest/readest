@@ -2906,5 +2906,7 @@
   "Reordering {{label}} cancelled.": "{{label}} නැවත පෙළගැස්වීම අවලංගු කරන ලදී.",
   "Add to Vocabulary": "වචන මාලාවට එක් කරන්න",
   "Add the selected word to the vocabulary list": "තෝරාගත් වචනය වචන මාලා ලැයිස්තුවට එක් කරන්න",
-  "Added to vocabulary": "වචන මාලාවට එක් කළා"
+  "Added to vocabulary": "වචන මාලාවට එක් කළා",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (උපාංගය මත)",
+  "On-Device": "උපාංගය මත"
 }

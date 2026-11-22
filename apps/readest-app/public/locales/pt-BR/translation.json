@@ -2981,5 +2981,7 @@
   "Reordering {{label}} cancelled.": "Reordenação de {{label}} cancelada.",
   "Add to Vocabulary": "Adicionar ao vocabulário",
   "Add the selected word to the vocabulary list": "Adicionar a palavra selecionada à lista de vocabulário",
-  "Added to vocabulary": "Adicionado ao vocabulário"
+  "Added to vocabulary": "Adicionado ao vocabulário",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (no dispositivo)",
+  "On-Device": "No dispositivo"
 }

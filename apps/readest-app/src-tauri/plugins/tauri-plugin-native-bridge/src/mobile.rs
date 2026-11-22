@@ -713,4 +713,25 @@ impl<R: Runtime> NativeBridge<R> {
             .run_mobile_plugin("icloud_ensure_downloaded", payload)
             .map_err(Into::into)
     }
+
+    pub fn on_device_llm_status(&self) -> crate::Result<OnDeviceLlmStatusResponse> {
+        self.0
+            .run_mobile_plugin("on_device_llm_status", ())
+            .map_err(Into::into)
+    }
+
+    pub fn on_device_llm_generate(
+        &self,
+        payload: OnDeviceLlmGenerateRequest,
+    ) -> crate::Result<OnDeviceLlmGenerateResponse> {
+        self.0
+            .run_mobile_plugin("on_device_llm_generate", payload)
+            .map_err(Into::into)
+    }
+
+    pub fn on_device_llm_cancel(&self, payload: OnDeviceLlmCancelRequest) -> crate::Result<()> {
+        self.0
+            .run_mobile_plugin("on_device_llm_cancel", payload)
+            .map_err(Into::into)
+    }
 }

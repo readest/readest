@@ -78,6 +78,9 @@ const COMMANDS: &[&str] = &[
     "read_share_clip_html",
     "icloud_container_status",
     "icloud_ensure_downloaded",
+    "on_device_llm_status",
+    "on_device_llm_generate",
+    "on_device_llm_cancel",
 ];
 
 fn main() {

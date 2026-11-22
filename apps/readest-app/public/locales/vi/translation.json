@@ -2831,5 +2831,7 @@
   "Reordering {{label}} cancelled.": "Đã hủy sắp xếp lại {{label}}.",
   "Add to Vocabulary": "Thêm vào từ vựng",
   "Add the selected word to the vocabulary list": "Thêm từ đã chọn vào danh sách từ vựng",
-  "Added to vocabulary": "Đã thêm vào từ vựng"
+  "Added to vocabulary": "Đã thêm vào từ vựng",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (trên thiết bị)",
+  "On-Device": "Trên thiết bị"
 }

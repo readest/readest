@@ -187,9 +187,7 @@ const LangPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset 
   const isLLMProvider =
     hasPremium &&
     isCustomTranslatorName(translationProvider) &&
-    customTranslators.some(
-      (t) => `custom:${t.id}` === translationProvider && t.type === 'openai-compatible',
-    );
+    customTranslators.some((t) => `custom:${t.id}` === translationProvider && t.type !== 'deepl');
 
   const getPromptOptions = () => [
     { value: DEFAULT_PROMPT_ID, label: _('Default') },

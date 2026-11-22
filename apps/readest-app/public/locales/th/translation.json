@@ -2831,5 +2831,7 @@
   "Reordering {{label}} cancelled.": "ยกเลิกการจัดลำดับ {{label}} ใหม่แล้ว",
   "Add to Vocabulary": "เพิ่มในคำศัพท์",
   "Add the selected word to the vocabulary list": "เพิ่มคำที่เลือกลงในรายการคำศัพท์",
-  "Added to vocabulary": "เพิ่มในคำศัพท์แล้ว"
+  "Added to vocabulary": "เพิ่มในคำศัพท์แล้ว",
+  "Apple Intelligence (On-Device)": "Apple Intelligence (บนอุปกรณ์)",
+  "On-Device": "บนอุปกรณ์"
 }

@@ -648,6 +648,27 @@ impl<R: Runtime> NativeBridge<R> {
             Err(crate::Error::UnsupportedPlatformError)
         }
     }
+
+    /// Apple's on-device model is bridged on iOS only; desktops report it
+    /// unavailable so the JS side never offers it.
+    pub fn on_device_llm_status(&self) -> crate::Result<OnDeviceLlmStatusResponse> {
+        Ok(OnDeviceLlmStatusResponse {
+            available: false,
+            reason: Some("unsupportedOS".into()),
+            ..Default::default()
+        })
+    }
+
+    pub fn on_device_llm_generate(
+        &self,
+        _payload: OnDeviceLlmGenerateRequest,
+    ) -> crate::Result<OnDeviceLlmGenerateResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn on_device_llm_cancel(&self, _payload: OnDeviceLlmCancelRequest) -> crate::Result<()> {
+        Ok(())
+    }
 }
 
 const KEYRING_SERVICE: &str = "Readest Safe Storage";
