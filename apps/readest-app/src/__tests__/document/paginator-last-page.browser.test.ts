@@ -2,26 +2,28 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { BookDoc } from '@/libs/document';
 import type { Renderer } from '@/types/view';
 
-// A book can end on the left column of a two-column spread (readest#7303).
-// The scroll container then stopped half a spread short of the last page.
-// The browser clamped the turn to it, so the final spread showed the column
-// before it again. With fractional page widths
+// Sections are sized by columns, not whole spreads, so the next section can
+// fill the right column of a spread another section ends on. The book's last
+// section has no next section, so the book can end on the left column of a
+// two-column spread (readest#7303). The scroll container then stopped half a
+// spread short of the last page. The browser clamped the turn to it, so the
+// final spread showed the column before it again. With fractional page widths
 // the paginator also miscounted that page: either it never reported the end
 // of the book, or it stopped one page early and never showed the last column.
 
-// A section of `blocks` blocks, each after the first breaking before itself.
-// In a two-column spread each starts a spread, so the section ends on the
-// left column of its last spread.
-const makeSection = (name: string, blocks: number, writingMode = 'horizontal-tb') => {
-  const body = Array.from(
-    { length: blocks },
+// A section of `columns` blocks, every block after the first breaking before
+// itself. In a two-column spread a break starts the next spread (readest#6873),
+// so each block starts a spread and the section ends on a left column.
+const makeSection = (name: string, columns: number, writingMode = 'horizontal-tb') => {
+  const blocks = Array.from(
+    { length: columns },
     (_, i) =>
-      `<div${i === blocks - 1 ? ` id="${name}-last"` : ''}${i ? ' style="break-before: column"' : ''}>${name} block ${i}</div>`,
+      `<div${i === columns - 1 ? ` id="${name}-last"` : ''}${i ? ' style="break-before: column"' : ''}>${name} column ${i}</div>`,
   ).join('\n');
   const html = `<?xml version="1.0" encoding="utf-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head><style>html { writing-mode: ${writingMode}; } body { font: 16px/1.5 serif; }</style></head>
-  <body>${body}</body>
+  <body>${blocks}</body>
 </html>`;
   const src = URL.createObjectURL(new Blob([html], { type: 'application/xhtml+xml' }));
   return { load: () => src, unload: () => {}, size: html.length };
@@ -123,7 +125,7 @@ describe('paginator last page of the book (browser)', () => {
   // 1017.9 stop a page early with the last column off screen.
   const widths = [1000, 1003.3, 1011.1, 1017.9];
 
-  it.each(widths)('ends on the last column of a 5-block book at width %s', async (width) => {
+  it.each(widths)('ends on the last column of a 5-column book at width %s', async (width) => {
     const el = await open({ sections: [makeSection('a', 5)] }, width);
     expect(el.columnCount).toBe(2);
     await turnToEnd(el);
@@ -137,8 +139,8 @@ describe('paginator last page of the book (browser)', () => {
 
   it.each(
     widths,
-  )('ends on the last column when the last section follows another, width %s', async (width) => {
-    // 3 + 4 blocks: the second section starts a spread of its own.
+  )('ends on the last column when the last section starts on a right column, width %s', async (width) => {
+    // 3 + 4 columns: the second section starts beside the first one's end.
     const el = await open({ sections: [makeSection('a', 3), makeSection('b', 4)] }, width);
     await turnToEnd(el);
     const pageWidth = container(el).getBoundingClientRect().width;

@@ -117,9 +117,7 @@ describe('Paginator page turn', () => {
     // Two columns a page: ch1 is 2 pages, ch2 4. Entering ch2 starts preloading
     // ch3, whose load never finishes, so the preload is still running when
     // the next turn's page reflows. A view that grows while sections preload
-    // is not re-anchored, nor is a view before the turned one. ch1 grows by a
-    // whole page (sections fill whole spreads), so the turn is to ch2's third
-    // page: the grown ch1 then puts its second page in view.
+    // is not re-anchored, nor is a view before the turned one.
     await open({
       dir: 'ltr',
       sections: [
@@ -129,7 +127,6 @@ describe('Paginator page turn', () => {
       ],
     } as unknown as Book);
     expect(paginator.columnCount).toBe(2);
-    await paginator.next();
     await paginator.next();
     await paginator.next();
     await wait(600);

@@ -2,16 +2,18 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { BookDoc } from '@/libs/document';
 import type { Renderer } from '@/types/view';
 
-// In a two-page spread, a new section and a page break start on the first page
-// of the next spread, as facing pages do in print (readest#6873). The first
-// page is the left one, or the right one in a right-to-left book. A section
-// used to continue beside the previous one's end, and a break moved to the
-// next page, which could be the second page of the same spread.
+// In a two-page spread a section continues beside the previous one's end. A
+// page break, or a spine `page-spread-*` property, decides which page of a
+// spread comes next (readest#6873): a break starts the next spread, `left` and
+// `right` put the section's first page on that side, and `center` gives the
+// section a spread to itself, centred when it is shorter than a spread, as for
+// a cover (readest#6676). The first page of a spread is the left one, or the
+// right one in a right-to-left book.
 
 // A section document with `body` as its content and `css` in its stylesheet.
 const makeSection = (
   body: string,
-  { writingMode = 'horizontal-tb', dir = 'ltr', css = '' } = {},
+  { writingMode = 'horizontal-tb', dir = 'ltr', css = '', pageSpread = '' } = {},
 ) => {
   const html = `<?xml version="1.0" encoding="utf-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml" dir="${dir}">
@@ -19,7 +21,7 @@ const makeSection = (
   <body>${body}</body>
 </html>`;
   const src = URL.createObjectURL(new Blob([html], { type: 'application/xhtml+xml' }));
-  return { load: () => src, unload: () => {}, size: html.length };
+  return { load: () => src, unload: () => {}, size: html.length, pageSpread };
 };
 
 const BREAK = 'style="break-before: column"';
@@ -28,6 +30,13 @@ const pages = (name: string, n: number) =>
   Array.from(
     { length: n },
     (_, i) => `<div id="${name}-${i}"${i ? ` ${BREAK}` : ''}>${name} page ${i}</div>`,
+  ).join('');
+// `n` pages without breaks: each block fills a page.
+const fill = (name: string, n: number) =>
+  Array.from(
+    { length: n },
+    (_, i) =>
+      `<div id="${name}-${i}" style="height: calc(var(--available-height) * 1px)">${name} page ${i}</div>`,
   ).join('');
 
 type Book = { dir?: string; sections: ReturnType<typeof makeSection>[] };
@@ -71,7 +80,7 @@ describe('paginator starts sections and page breaks on a new spread (browser)', 
     }
   });
 
-  const open = async (book: Book, { width = 1000, height = 600, columns = 2 } = {}) => {
+  const open = async (book: Book, { width = 1000, height = 600, columns = 2, index = 0 } = {}) => {
     const el = document.createElement('foliate-paginator') as Renderer;
     Object.assign(el.style, {
       width: `${width}px`,
@@ -86,7 +95,7 @@ describe('paginator starts sections and page breaks on a new spread (browser)', 
     el.setAttribute('max-column-count', String(columns));
     el.open(book as unknown as BookDoc);
     const stabilized = waitForStabilized(el);
-    await el.goTo({ index: 0 });
+    await el.goTo({ index });
     await stabilized;
     await frames(4);
     return el;
@@ -117,40 +126,144 @@ describe('paginator starts sections and page breaks on a new spread (browser)', 
     return NaN;
   };
 
-  it('starts a section that follows a first page on the next spread', async () => {
-    // A one-page section, then the second: it used to start on page 1, the
-    // second page of the first spread.
-    const el = await open({ sections: [makeSection(pages('a', 1)), makeSection(pages('b', 3))] });
-    expect(el.columnCount).toBe(2);
-    await el.goTo({ index: 1 });
-    await frames(4);
-    expect(pageOf(el, 'b-0')).toBe(2);
-    expect(pageOf(el, 'b-1')).toBe(4);
-  });
+  /** Where an element's middle is, in pages from the start of the book. */
+  const middleOf = (el: Renderer, id: string) => {
+    const box = container(el);
+    const c = box.getBoundingClientRect();
+    for (const { doc } of el.getContents()) {
+      const node = doc.getElementById(id);
+      if (!node) continue;
+      const frame = (doc.defaultView!.frameElement as HTMLElement).getBoundingClientRect();
+      const r = node.getBoundingClientRect();
+      return (frame.left + r.left + r.width / 2 - c.left + box.scrollLeft) / (c.width / 2);
+    }
+    return NaN;
+  };
 
-  it('starts a right-to-left section on the right page of the next spread', async () => {
-    const el = await open({
-      dir: 'rtl',
-      sections: [
-        makeSection(pages('a', 1), { dir: 'rtl' }),
-        makeSection(pages('b', 2), { dir: 'rtl' }),
-      ],
-    });
-    await el.goTo({ index: 1 });
+  const openAt = async (book: Book, index: number, options = {}) => {
+    const el = await open(book, options);
+    await el.goTo({ index });
     await frames(4);
-    expect(pageOf(el, 'b-0', 'rtl')).toBe(2);
-  });
+    return el;
+  };
 
-  it('starts a vertical section at the top of the next spread', async () => {
-    const vertical = { writingMode: 'vertical-rl' };
-    const el = await open(
-      { sections: [makeSection(pages('a', 1), vertical), makeSection(pages('b', 2), vertical)] },
-      { width: 800, height: 1000 },
+  it('lets a section start beside the previous one', async () => {
+    const el = await openAt(
+      { sections: [makeSection(fill('a', 1)), makeSection(fill('b', 2))] },
+      1,
     );
     expect(el.columnCount).toBe(2);
-    await el.goTo({ index: 1 });
-    await frames(4);
+    expect(pageOf(el, 'b-0')).toBe(1);
+  });
+
+  it('starts a page-spread-left section on a left page', async () => {
+    const book = {
+      sections: [makeSection(fill('a', 1)), makeSection(fill('b', 2), { pageSpread: 'left' })],
+    };
+    const el = await openAt(book, 1);
+    expect(pageOf(el, 'b-0')).toBe(2);
+    expect(pageOf(el, 'b-1')).toBe(3);
+  });
+
+  it.each([
+    [1, 1],
+    [2, 3],
+  ])('starts a page-spread-right section after %i pages on page %i', async (before, page) => {
+    const book = {
+      sections: [
+        makeSection(fill('a', before)),
+        makeSection(fill('b', 1), { pageSpread: 'right' }),
+      ],
+    };
+    const el = await openAt(book, 1);
+    expect(pageOf(el, 'b-0')).toBe(page);
+  });
+
+  it.each([
+    ['right', 2],
+    ['left', 1],
+  ])('starts a right-to-left page-spread-%s section on page %i', async (pageSpread, page) => {
+    const book = {
+      dir: 'rtl',
+      sections: [
+        makeSection(fill('a', 1), { dir: 'rtl' }),
+        makeSection(fill('b', 1), { dir: 'rtl', pageSpread }),
+      ],
+    };
+    const el = await openAt(book, 1);
+    expect(pageOf(el, 'b-0', 'rtl')).toBe(page);
+  });
+
+  it('starts a vertical page-spread-right section at the top of a spread', async () => {
+    // vertical-rl pages right to left: the right page is the first, on top
+    const vertical = { writingMode: 'vertical-rl' };
+    const book = {
+      dir: 'rtl',
+      sections: [
+        makeSection('<p id="a-0">a</p>', vertical),
+        makeSection('<p id="b-0">b</p>', { ...vertical, pageSpread: 'right' }),
+      ],
+    };
+    const el = await openAt(book, 1, { width: 800, height: 1000 });
+    expect(el.columnCount).toBe(2);
     expect(pageOf(el, 'b-0', 'y')).toBe(2);
+  });
+
+  it('centres a one-page page-spread-center section in a spread of its own', async () => {
+    const book = {
+      sections: [
+        makeSection(fill('a', 1)),
+        makeSection(fill('b', 1), { pageSpread: 'center' }),
+        makeSection(fill('c', 1)),
+      ],
+    };
+    const el = await openAt(book, 1);
+    // the middle of the spread of pages 2 and 3
+    expect(middleOf(el, 'b-0')).toBeCloseTo(3, 1);
+    await el.goTo({ index: 2 });
+    await frames(4);
+    expect(pageOf(el, 'c-0')).toBe(4);
+  });
+
+  it('gives a longer page-spread-center section whole spreads', async () => {
+    const book = {
+      sections: [
+        makeSection(fill('a', 1)),
+        makeSection(fill('b', 3), { pageSpread: 'center' }),
+        makeSection(fill('c', 1)),
+      ],
+    };
+    const el = await openAt(book, 1);
+    expect(pageOf(el, 'b-0')).toBe(2);
+    expect(pageOf(el, 'b-2')).toBe(4);
+    await el.goTo({ index: 2 });
+    await frames(4);
+    expect(pageOf(el, 'c-0')).toBe(6);
+  });
+
+  it('counts breaks from where the section starts in the spread', async () => {
+    // b starts on page 1, so its break already lands on page 2, a first page
+    const book = {
+      sections: [
+        makeSection(fill('a', 1)),
+        makeSection(`<div id="x">x</div><div id="t" ${BREAK}>t</div>`),
+      ],
+    };
+    const el = await openAt(book, 1);
+    expect(pageOf(el, 'x')).toBe(1);
+    expect(pageOf(el, 't')).toBe(2);
+  });
+
+  it('lays a section out again when the one before it loads', async () => {
+    // Opened at b, the strip starts with b; then a loads before it
+    const book = {
+      sections: [makeSection(fill('a', 1)), makeSection(fill('b', 2), { pageSpread: 'left' })],
+    };
+    const el = await open(book, { index: 1 });
+    await el.prev();
+    await frames(6);
+    expect(pageOf(el, 'a-0')).toBe(0);
+    expect(pageOf(el, 'b-0')).toBe(2);
   });
 
   it.each([
