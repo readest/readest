@@ -22,4 +22,5 @@ Shape: one Sync button (pull: mature cards → Mastered, deck-only notes → Lea
 - Xiaomi timings (1,000 notes): add 1.2 s, read 32 ms, 1,000 tag updates 2.75 s.
 - Device CDP: python websocket must use `ws://127.0.0.1:<port>/devtools/page/<id>` and bypass the shell proxy; `__TAURI_INTERNALS__.invoke` is non-writable, so bridge calls can't be sniffed from JS.
 - Device lookups for e2e: turn Readest's System Dictionary off (Settings > Language > Dictionaries) or the lookup opens Android's app chooser; turn it back on after.
+- #7442 (2026-11-20, owner chose "filter + subdecks"): Sync adds notes to `Readest Vocabulary::<English ISO 639-2 name>` (`und` stays in the parent) — MERGED #7718; Vocabulary window language chip + CSV `language` column — MERGED #7719. #7442 CLOSED 2026-11-21 (owner: "close #7442 and let users open additional more focused feature requests"); not built yet, awaiting focused FRs: per-language/per-book profiles (deck, note type, field mapping) and richer cards (dictionary back, audio, pronunciation); this conflicts with the owner's "less configuration" goal, so it needs a design + owner decision first.
 - Related: [[vocabulary-builder-789-6613]].
