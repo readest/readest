@@ -52,9 +52,17 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
             recommended={plan.plan === RECOMMENDED_PLAN}
             canSwitchInterval={intervals.length > 1}
             customizationPurchased={customizationPurchased}
-            giftUntil={gift?.plan === plan.plan ? gift.activeUntil : undefined}
+            // Only a gift-only holder sees the chip: beside a paid plan it would
+            // read as that plan ending.
+            giftUntil={gift?.giftOnly && gift.plan === plan.plan ? gift.activeUntil : undefined}
             giftOnly={gift?.plan === plan.plan ? gift.giftOnly : undefined}
-            upgradable={index > 0 && (index > userPlanIndex || userPlan === 'purchase')}
+            // A gift-only holder can subscribe to any tier, below their gift too.
+            upgradable={
+              index > 0 &&
+              (index > userPlanIndex ||
+                userPlan === 'purchase' ||
+                (!!gift?.giftOnly && (plan.plan === 'plus' || plan.plan === 'pro')))
+            }
             onSubscribe={onSubscribe}
           />
         ))}

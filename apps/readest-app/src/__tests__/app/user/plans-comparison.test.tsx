@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import PlansComparison from '@/app/user/components/PlansComparison';
+import { GiftTier } from '@/types/gift';
 import { AvailablePlan, PlanInterval, UserPlan } from '@/types/quota';
 import { getLocale } from '@/utils/misc';
 
@@ -133,8 +134,8 @@ describe('PlansComparison', () => {
 
   describe('gift holders', () => {
     const GIFT_UNTIL = '2027-06-15T12:00:00.000Z';
-    const gift = (giftOnly: boolean) => ({
-      plan: 'plus' as const,
+    const gift = (giftOnly: boolean, tier: GiftTier = 'plus') => ({
+      plan: tier,
       activeUntil: GIFT_UNTIL,
       giftOnly,
     });
@@ -171,6 +172,58 @@ describe('PlansComparison', () => {
       expect(within(plusCard).queryByText('Change billing period')).toBeNull();
       fireEvent.click(within(plusCard).getByText('Subscribe to Plus Plan'));
       expect(onSubscribe).toHaveBeenCalledWith('price_month_plus');
+    });
+
+    // Owner rule: a gift holder can buy any plan at any time.
+    it('a gift-only holder can subscribe to a tier below their gift', () => {
+      const onSubscribe = vi.fn();
+      render(
+        <PlansComparison
+          availablePlans={WITH_YEARLY}
+          userPlan='pro'
+          gift={gift(true, 'pro')}
+          onSubscribe={onSubscribe}
+        />,
+      );
+
+      fireEvent.click(within(planCard('Plus Plan')).getByText('Upgrade to Plus Plan'));
+      expect(onSubscribe).toHaveBeenCalledWith('price_month_plus');
+      // Their own tier keeps the gift chip and its Subscribe button.
+      const proCard = planCard('Pro Plan');
+      expect(within(proCard).getByText(/^Gift, until/)).toBeTruthy();
+      expect(within(proCard).getByText('Subscribe to Pro Plan')).toBeTruthy();
+    });
+
+    it('a lower tier stays without a button for a paying subscriber', () => {
+      render(
+        <PlansComparison
+          availablePlans={WITH_YEARLY}
+          userPlan='pro'
+          gift={gift(false, 'pro')}
+          onSubscribe={vi.fn()}
+        />,
+      );
+      expect(within(planCard('Plus Plan')).queryByText('Upgrade to Plus Plan')).toBeNull();
+      cleanup();
+
+      render(<PlansComparison availablePlans={WITH_YEARLY} userPlan='pro' onSubscribe={vi.fn()} />);
+      expect(within(planCard('Plus Plan')).queryByText('Upgrade to Plus Plan')).toBeNull();
+    });
+
+    // The chip would read as their paid plan ending.
+    it('a gift holder who also pays for the tier sees Current Plan, not the gift chip', () => {
+      render(
+        <PlansComparison
+          availablePlans={WITH_YEARLY}
+          userPlan='plus'
+          gift={gift(false)}
+          onSubscribe={vi.fn()}
+        />,
+      );
+
+      const plusCard = planCard('Plus Plan');
+      expect(within(plusCard).getByText('Current Plan')).toBeTruthy();
+      expect(within(plusCard).queryByText(/^Gift, until/)).toBeNull();
     });
 
     it('a gift holder with a paid plan keeps Change billing period', () => {
