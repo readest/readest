@@ -636,12 +636,16 @@ export const handleClick = (
   // A tap the book's own script handled (it cancelled the click; Foliate
   // cancels only link clicks), or one on a form control or its label in the
   // book, belongs to the book, e.g. a Go diagram's replay controls (#7769).
+  // It still counts as a click, so a page turn pending from the tap before it
+  // is cancelled.
   const tapped = event.target as Element | null;
   if (
     (event.defaultPrevented && !tapped?.closest('a[href]')) ||
     tapped?.closest('button, input, select, textarea, label')
-  )
+  ) {
+    lastClickTime = now;
     return;
+  }
   const dismissedSelection =
     !!event.currentTarget &&
     event.button === 0 &&

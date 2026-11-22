@@ -160,18 +160,24 @@ describe('iframeEventHandlers click gestures', () => {
   describe("a tap the book's own script handles is not a page turn (#7769)", () => {
     // A Go book's diagram shows its replay controls when tapped, then steps
     // through moves with buttons and a slider; Allow JavaScript runs them.
-    const tapIn = async (setup: (doc: Document) => Element) => {
+    // Taps each target 100ms apart, inside the double-click window.
+    const tapIn = async (setup: (doc: Document) => Element | Element[]) => {
       const { handleClick, handleMousedown, handleMouseup } = await importHandlers();
       const frame = document.createElement('iframe');
       document.body.appendChild(frame);
       const doc = frame.contentDocument!;
-      const target = setup(doc);
+      const targets = [setup(doc)].flat();
       doc.addEventListener('click', (event) =>
         handleClick('book-1', { current: false }, false, false, event),
       );
-      handleMousedown('book-1', mouseEvent({ target }));
-      handleMouseup('book-1', mouseEvent({ target }));
-      target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
+      for (const target of targets) {
+        handleMousedown('book-1', mouseEvent({ target }));
+        handleMouseup('book-1', mouseEvent({ target }));
+        target.dispatchEvent(
+          new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }),
+        );
+        vi.advanceTimersByTime(100);
+      }
       vi.advanceTimersByTime(300);
       frame.remove();
       return postedTypes(postSpy);
@@ -205,6 +211,14 @@ describe('iframeEventHandlers click gestures', () => {
         doc.body.innerHTML =
           '<input type="checkbox" id="choice"><label for="choice"><span>Choose</span></label>';
         return doc.querySelector('span')!;
+      });
+      expect(types).not.toContain('iframe-single-click');
+    });
+
+    test('a control tapped right after the text cancels the pending page turn', async () => {
+      const types = await tapIn((doc) => {
+        doc.body.innerHTML = '<p>text</p><button>＞</button>';
+        return [doc.querySelector('p')!, doc.querySelector('button')!];
       });
       expect(types).not.toContain('iframe-single-click');
     });
