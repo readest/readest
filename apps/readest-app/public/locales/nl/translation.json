@@ -2903,5 +2903,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} bevindt zich niet meer boven een neerzetpositie.",
   "Dropped {{label}} at {{target}}.": "{{label}} neergezet bij {{target}}.",
   "Dropped {{label}}.": "{{label}} neergezet.",
-  "Reordering {{label}} cancelled.": "Herschikken van {{label}} geannuleerd."
+  "Reordering {{label}} cancelled.": "Herschikken van {{label}} geannuleerd.",
+  "Add to Vocabulary": "Toevoegen aan woordenschat",
+  "Add the selected word to the vocabulary list": "Het geselecteerde woord aan de woordenlijst toevoegen",
+  "Added to vocabulary": "Toegevoegd aan woordenschat"
 }

@@ -2978,5 +2978,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} nu mai este deasupra unei poziții de plasare.",
   "Dropped {{label}} at {{target}}.": "{{label}} a fost plasat la {{target}}.",
   "Dropped {{label}}.": "{{label}} a fost plasat.",
-  "Reordering {{label}} cancelled.": "Reordonarea {{label}} a fost anulată."
+  "Reordering {{label}} cancelled.": "Reordonarea {{label}} a fost anulată.",
+  "Add to Vocabulary": "Adaugă la vocabular",
+  "Add the selected word to the vocabulary list": "Adaugă cuvântul selectat în lista de vocabular",
+  "Added to vocabulary": "Adăugat la vocabular"
 }

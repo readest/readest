@@ -2978,5 +2978,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} non è più sopra una posizione di rilascio.",
   "Dropped {{label}} at {{target}}.": "{{label}} rilasciato su {{target}}.",
   "Dropped {{label}}.": "{{label}} rilasciato.",
-  "Reordering {{label}} cancelled.": "Riordinamento di {{label}} annullato."
+  "Reordering {{label}} cancelled.": "Riordinamento di {{label}} annullato.",
+  "Add to Vocabulary": "Aggiungi al vocabolario",
+  "Add the selected word to the vocabulary list": "Aggiungi la parola selezionata all’elenco del vocabolario",
+  "Added to vocabulary": "Aggiunto al vocabolario"
 }

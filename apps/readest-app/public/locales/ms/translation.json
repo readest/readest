@@ -2828,5 +2828,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} tidak lagi berada di atas kedudukan yang boleh dilepaskan.",
   "Dropped {{label}} at {{target}}.": "{{label}} dilepaskan di {{target}}.",
   "Dropped {{label}}.": "{{label}} dilepaskan.",
-  "Reordering {{label}} cancelled.": "Penyusunan semula {{label}} dibatalkan."
+  "Reordering {{label}} cancelled.": "Penyusunan semula {{label}} dibatalkan.",
+  "Add to Vocabulary": "Tambah ke perbendaharaan kata",
+  "Add the selected word to the vocabulary list": "Tambah perkataan yang dipilih ke senarai perbendaharaan kata",
+  "Added to vocabulary": "Ditambah ke perbendaharaan kata"
 }

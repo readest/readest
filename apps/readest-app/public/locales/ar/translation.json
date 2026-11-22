@@ -3203,5 +3203,8 @@
   "{{label}} is no longer over a droppable position.": "لم يعد {{label}} فوق موضع إفلات.",
   "Dropped {{label}} at {{target}}.": "تم إفلات {{label}} عند {{target}}.",
   "Dropped {{label}}.": "تم إفلات {{label}}.",
-  "Reordering {{label}} cancelled.": "تم إلغاء إعادة ترتيب {{label}}."
+  "Reordering {{label}} cancelled.": "تم إلغاء إعادة ترتيب {{label}}.",
+  "Add to Vocabulary": "إضافة إلى المفردات",
+  "Add the selected word to the vocabulary list": "إضافة الكلمة المحددة إلى قائمة المفردات",
+  "Added to vocabulary": "أُضيفت إلى المفردات"
 }
