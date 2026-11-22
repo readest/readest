@@ -569,8 +569,10 @@ const compareTitles = (a: string, b: string, uiLanguage: string): number => {
   return collator.compare(a, b);
 };
 
-const getTitleSortValue = (book: Book): string =>
-  formatTitle(book.title).replace(/^\s*(?:a|an|the)\s+(?=\S)/i, '');
+const stripLeadingArticle = (title: string): string =>
+  title.replace(/^\s*(?:a|an|the)\s+(?=\S)/i, '');
+
+const getTitleSortValue = (book: Book): string => stripLeadingArticle(formatTitle(book.title));
 
 // An undated book sorts as the oldest, against books and groups alike.
 const UNDATED_PUBLISHED = '0001-01-01';
@@ -1097,7 +1099,9 @@ export const getGroupSortValue = (
   const books = group.books;
   // A subgroup's name is its full path ("Languages/Chinese"); it sorts among
   // the parent group's books by its own name, as it is shown (#7062).
-  const name = groupBy === LibraryGroupByType.Group ? group.displayName : group.name;
+  const shownName = groupBy === LibraryGroupByType.Group ? group.displayName : group.name;
+  // Under Title, "The Expanse" sorts under E, as a book with that title would (#7786).
+  const name = sortBy === LibrarySortByType.Title ? stripLeadingArticle(shownName) : shownName;
 
   if (books.length === 0) {
     return sortBy === LibrarySortByType.Title ||
