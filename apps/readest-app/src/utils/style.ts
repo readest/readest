@@ -747,14 +747,30 @@ const getPageLayoutStyles = (
   }
 
   /* A section holding only an image (a cover, a plate) has it sized to the
-     page. A top margin above it, or the descent of the line it sits on, makes
-     its line taller than the page, and the rest goes onto the next page:
-     WebKit cuts the image there, Chromium moves it whole (#6676). */
+     page. A top margin above it makes its line taller than the page, and the
+     rest goes onto the next page: WebKit cuts the image there, Chromium moves
+     it whole and leaves a blank page (#6676). */
   body.paginated-mode :has(.lone-image) {
     margin-block-start: 0 !important;
   }
-  body.paginated-mode .lone-image {
-    vertical-align: top;
+  /* WebKit never moves anything taller than a page: it cuts it where it falls.
+     An image sized to the page sits on the baseline with the line's descent
+     under it, so its line is a few px taller than the page and the image is
+     cut across two pages. Chromium moves it whole. Aligning images that have
+     no text beside them to the top drops the descent, so their line fits.
+     A block that ends exactly on a page boundary also carries the margin after
+     it onto the next page, where Chromium drops it, so a second page-tall image
+     went a page further and left a blank page. Ending the line 1px early lets
+     WebKit drop that margin; :where() lets a book's own margin win.
+     -webkit-line-box-contain is supported only by WebKit (#6676). */
+  @supports (-webkit-line-box-contain: replaced) {
+    body.paginated-mode img:not(.has-text-siblings),
+    body.paginated-mode .lone-image {
+      vertical-align: top;
+    }
+    :where(body.paginated-mode img:not(.has-text-siblings)) {
+      margin-block-end: -1px;
+    }
   }
 
   body.scroll-mode img {
