@@ -50,6 +50,27 @@ describe('bindInlineEventHandlers', () => {
     expect(calls.map(([what]) => what)).toEqual(['click']);
   });
 
+  test('a malformed handler is skipped and later ones still bind', () => {
+    const { doc, calls } = loadSection(
+      '<p id="bad" onclick="if (">bad</p><p id="good" onclick="record(\'good\', this)">good</p>',
+    );
+    refuseInlineHandlers(doc);
+
+    expect(() => bindInlineEventHandlers(doc)).not.toThrow();
+    doc.getElementById('good')!.click();
+
+    expect(calls.map(([what]) => what)).toEqual(['good']);
+  });
+
+  test("a throwing body onload runs once and doesn't throw into the reader", () => {
+    const { doc, calls } = loadSection('<p>text</p>');
+    doc.body.setAttribute('onload', "record('onload', this); throw new Error('book failure')");
+    refuseInlineHandlers(doc);
+
+    expect(() => bindInlineEventHandlers(doc)).not.toThrow();
+    expect(calls.map(([what]) => what)).toEqual(['onload']);
+  });
+
   test('a tap runs the inline handler once, on its element, and return false cancels it', () => {
     const { doc, calls } = loadSection(
       '<svg><rect width="10" height="10" onmousedown="record(\'down\', this); return false;" onclick="return false;"></rect></svg>',

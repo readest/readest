@@ -200,6 +200,15 @@ describe('iframeEventHandlers click gestures', () => {
       expect(types).not.toContain('iframe-single-click');
     });
 
+    test("a click on a label's text does not post iframe-single-click", async () => {
+      const types = await tapIn((doc) => {
+        doc.body.innerHTML =
+          '<input type="checkbox" id="choice"><label for="choice"><span>Choose</span></label>';
+        return doc.querySelector('span')!;
+      });
+      expect(types).not.toContain('iframe-single-click');
+    });
+
     test('a click on the diagram the script leaves alone still turns the page', async () => {
       const types = await tapIn((doc) => {
         doc.body.innerHTML = '<p>text</p>';

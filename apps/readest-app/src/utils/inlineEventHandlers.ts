@@ -11,10 +11,21 @@ export const bindInlineEventHandlers = (doc: Document) => {
     const handlers = el as unknown as Record<string, unknown>;
     for (const { name, value } of Array.from(el.attributes)) {
       if (!name.startsWith('on') || !(name in el) || handlers[name] !== null) continue;
-      handlers[name] = new win.Function('event', value);
+      try {
+        handlers[name] = new win.Function('event', value);
+      } catch (error) {
+        console.error(`Invalid inline ${name} handler:`, error);
+        continue;
+      }
       if (el === doc.body && name === 'onload') refusedLoad = true;
     }
   }
   // The section has already loaded, so its body's load handler runs here.
-  if (refusedLoad) win.onload?.call(win, new win.Event('load'));
+  // Like a dispatched event, an error in it stays with the book.
+  if (!refusedLoad) return;
+  try {
+    win.onload?.call(win, new win.Event('load'));
+  } catch (error) {
+    console.error('Error in inline onload handler:', error);
+  }
 };
