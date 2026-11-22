@@ -2839,5 +2839,8 @@
   "Apple Intelligence is not available on this device.": "此裝置無法使用 Apple Intelligence。",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence 已關閉。請到「設定」>「Apple Intelligence & Siri」開啟。",
   "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence 模型仍在下載中，請稍後再試。",
-  "The text is too long for Apple Intelligence on this device.": "文字過長，此裝置上的 Apple Intelligence 無法處理。"
+  "The text is too long for Apple Intelligence on this device.": "文字過長，此裝置上的 Apple Intelligence 無法處理。",
+  "Forget": "忘記",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "忘記此 WebDAV 伺服器？其位址與登入資訊將從此裝置、Readest Cloud 以及您未連線到它的其他裝置上移除。伺服器上的檔案不受影響。",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "忘記此 S3 儲存貯體？其端點與金鑰將從此裝置、Readest Cloud 以及您未連線到它的其他裝置上移除。儲存貯體中的檔案不受影響。"
 }

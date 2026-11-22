@@ -49,6 +49,7 @@ import { cryptoSession } from '@/libs/crypto/session';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
 import { isCredentialsSyncEnabled, isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import type { ForgettableConnection } from '@/services/sync/cloudSyncProvider';
 
 const ENCRYPTED_PATHS: ReadonlySet<string> = new Set(SETTINGS_ENCRYPTED_FIELDS);
 const DICTIONARY_PATHS: ReadonlySet<string> = new Set(SETTINGS_DICTIONARY_FIELDS);
@@ -112,6 +113,55 @@ const explicitPublishPending = new Set<string>();
  */
 export const markExplicitProviderOrderPublish = (): void => {
   explicitPublishPending.add('dictionarySettings.providerOrder');
+};
+
+/**
+ * Connections the user forgot this session (#7799). Cleared credential
+ * fields normally stay local; for these the cleared values publish so the
+ * cloud copy goes too. Not consumed per pass like the provider-order
+ * opt-in: a pass already running when Forget was pressed reads the old
+ * values and would use it up. The stored push-hashes keep the cleared
+ * values from shipping twice.
+ */
+const forgetPending = new Set<string>();
+
+/**
+ * Let `publishSettingsIfChanged` upload `kind`'s cleared address and login.
+ * Call it before the `setSettings` that clears them.
+ */
+export const markConnectionForgetPublish = (kind: ForgettableConnection): void => {
+  forgetPending.add(kind);
+};
+
+/**
+ * The field whose being empty in a remote patch means "this connection was
+ * forgotten": a connect always sets it, and a cleared value is published only
+ * by Forget.
+ */
+const FORGOTTEN_CONNECTION_MARKERS: Record<ForgettableConnection, string> = {
+  webdav: 'serverUrl',
+  s3: 'endpoint',
+};
+
+/**
+ * A device still syncing through a connection another device forgot keeps
+ * its own copy, rather than having its sync cut off by a remote change it
+ * never saw. Devices not using it drop the copy as usual.
+ */
+const keepConnectionsInUse = (
+  patch: Partial<SystemSettings>,
+  current: SystemSettings,
+): Partial<SystemSettings> => {
+  let out = patch;
+  for (const [kind, marker] of Object.entries(FORGOTTEN_CONNECTION_MARKERS)) {
+    const key = kind as ForgettableConnection;
+    const incoming = patch[key] as Record<string, unknown> | undefined;
+    if (current[key]?.enabled && incoming?.[marker] === '') {
+      out = { ...out };
+      delete out[key];
+    }
+  }
+  return out;
 };
 
 /**
@@ -262,23 +312,30 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
     if (current === undefined) continue;
     if (!dictionarySync && DICTIONARY_PATHS.has(path)) continue;
 
+    // A Forget (#7799) is the one case where a cleared value is published.
+    const forgetting = forgetPending.has(path.split('.')[0]!);
+
     if (ENCRYPTED_PATHS.has(path)) {
       if (!credentialsSync) continue;
       // Skip empty / cleared credentials entirely — there's nothing
       // useful to encrypt and pushing a plaintext "" would make the
       // server-side schema mix cipher envelopes with bare empty
-      // strings for the same field. Local-clear stays local.
-      if (!isMeaningful(current)) continue;
+      // strings for the same field. Local-clear stays local, unless the
+      // user forgot the connection.
+      if (!isMeaningful(current) && !forgetting) continue;
       const currentHash = await sha256Hex(current);
       if (currentHash === getStoredEncryptedHash(path)) continue;
       encryptedChanged.push({ path, value: current, hash: currentHash });
+      // The push middleware drops every encrypted field while locked, a
+      // cleared one included, so a Forget needs the session as well.
       hasNewEncryptedContent = true;
     } else if (CONNECTION_PATHS.has(path)) {
       // Credential connection metadata: tracked by a persisted push-hash like
       // the encrypted fields (NOT the disk-seeded snapshot) so a URL that was
       // configured before it was ever published still reaches the other
-      // devices alongside its credentials (#5141). Empty values stay local.
-      if (!isMeaningful(current)) continue;
+      // devices alongside its credentials (#5141). Empty values stay local,
+      // unless the user forgot the connection.
+      if (!isMeaningful(current) && !forgetting) continue;
       const currentHash = await sha256Hex(current);
       if (currentHash === getStoredEncryptedHash(path)) continue;
       connectionChanged.push({ path, value: current, hash: currentHash });
@@ -319,9 +376,9 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
   }
 
   // Proactive prompt: only fire when the user has actually entered a
-  // meaningful encrypted value (not just blanked out) AND we don't
-  // have an unlocked session to encrypt it. This is the user's first
-  // moment of opting into credential sync — show the modal.
+  // meaningful encrypted value (not just blanked out, unless by a Forget)
+  // AND we don't have an unlocked session to encrypt it. This is the
+  // user's first moment of opting into credential sync — show the modal.
   // Plaintext-only changes never trigger the prompt.
   if (hasNewEncryptedContent && !cryptoSession.isUnlocked()) {
     try {
@@ -394,11 +451,15 @@ export const applyRemoteSettings = (
   // paths from an incoming patch when the user turned Dictionaries off.
   // The local plaintext copy survives untouched, and the paths are also
   // left out of the snapshot loop below so nothing echoes back (#5465).
-  const patch = isSyncCategoryEnabled('dictionary')
+  const categoryPatch = isSyncCategoryEnabled('dictionary')
     ? record.patch
     : stripDictionaryPaths(record.patch);
 
-  if (!settings || Object.keys(patch).length === 0) return;
+  if (!settings) return;
+  // Applied before the snapshot loop below, so a kept connection's stored
+  // push-hash still matches its value and is not uploaded again.
+  const patch = keepConnectionsInUse(categoryPatch, settings);
+  if (Object.keys(patch).length === 0) return;
 
   // Mark the incoming values as "already published" so the
   // post-save publish hook sees no diff and stays quiet.
@@ -553,6 +614,7 @@ export const initSettingsSync = (initialSettings?: SystemSettings): void => {
 export const __resetSettingsSyncForTests = (): void => {
   lastPublishedFields.clear();
   explicitPublishPending.clear();
+  forgetPending.clear();
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;

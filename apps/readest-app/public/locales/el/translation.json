@@ -2914,5 +2914,8 @@
   "Apple Intelligence is not available on this device.": "Το Apple Intelligence δεν είναι διαθέσιμο σε αυτήν τη συσκευή.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Το Apple Intelligence είναι απενεργοποιημένο. Ενεργοποιήστε το στις Ρυθμίσεις > Apple Intelligence & Siri.",
   "The Apple Intelligence model is still downloading. Try again later.": "Το μοντέλο του Apple Intelligence κατεβαίνει ακόμα. Δοκιμάστε ξανά αργότερα.",
-  "The text is too long for Apple Intelligence on this device.": "Το κείμενο είναι πολύ μεγάλο για το Apple Intelligence σε αυτήν τη συσκευή."
+  "The text is too long for Apple Intelligence on this device.": "Το κείμενο είναι πολύ μεγάλο για το Apple Intelligence σε αυτήν τη συσκευή.",
+  "Forget": "Διαγραφή στοιχείων",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Να διαγραφούν τα στοιχεία αυτού του διακομιστή WebDAV; Η διεύθυνση και τα στοιχεία σύνδεσης θα αφαιρεθούν από αυτή τη συσκευή, από το Readest Cloud και από τις άλλες συσκευές σας που δεν είναι συνδεδεμένες σε αυτόν. Τα αρχεία στον διακομιστή δεν επηρεάζονται.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Να διαγραφούν τα στοιχεία αυτού του κάδου S3; Το τελικό σημείο και τα κλειδιά θα αφαιρεθούν από αυτή τη συσκευή, από το Readest Cloud και από τις άλλες συσκευές σας που δεν είναι συνδεδεμένες σε αυτόν. Τα αρχεία στον κάδο δεν επηρεάζονται."
 }

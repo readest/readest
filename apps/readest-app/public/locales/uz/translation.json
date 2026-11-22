@@ -2914,5 +2914,8 @@
   "Apple Intelligence is not available on this device.": "Bu qurilmada Apple Intelligence mavjud emas.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence o‘chirilgan. Uni Sozlamalar > Apple Intelligence & Siri bo‘limida yoqing.",
   "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence modeli hali yuklab olinmoqda. Keyinroq qayta urinib ko‘ring.",
-  "The text is too long for Apple Intelligence on this device.": "Matn bu qurilmadagi Apple Intelligence uchun juda uzun."
+  "The text is too long for Apple Intelligence on this device.": "Matn bu qurilmadagi Apple Intelligence uchun juda uzun.",
+  "Forget": "Unutish",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Ushbu WebDAV serveri unutilsinmi? Uning manzili va kirish maʼlumotlari ushbu qurilmadan, Readest Cloud'dan va unga ulanmagan boshqa qurilmalaringizdan oʻchiriladi. Serverdagi fayllarga tegilmaydi.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Ushbu S3 bucket unutilsinmi? Uning endpointi va kalitlari ushbu qurilmadan, Readest Cloud'dan va unga ulanmagan boshqa qurilmalaringizdan oʻchiriladi. Bucketdagi fayllarga tegilmaydi."
 }

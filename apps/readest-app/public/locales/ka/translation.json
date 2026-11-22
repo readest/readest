@@ -2914,5 +2914,8 @@
   "Apple Intelligence is not available on this device.": "Apple Intelligence ამ მოწყობილობაზე მიუწვდომელია.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence გამორთულია. ჩართეთ პარამეტრები > Apple Intelligence & Siri.",
   "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence-ის მოდელი ჯერ კიდევ იტვირთება. სცადეთ მოგვიანებით.",
-  "The text is too long for Apple Intelligence on this device.": "ტექსტი ზედმეტად გრძელია ამ მოწყობილობის Apple Intelligence-ისთვის."
+  "The text is too long for Apple Intelligence on this device.": "ტექსტი ზედმეტად გრძელია ამ მოწყობილობის Apple Intelligence-ისთვის.",
+  "Forget": "დავიწყება",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "დავივიწყოთ ეს WebDAV სერვერი? მისი მისამართი და შესვლის მონაცემები წაიშლება ამ მოწყობილობიდან, Readest Cloud-იდან და თქვენი სხვა მოწყობილობებიდან, რომლებიც მას არ არის დაკავშირებული. სერვერზე არსებულ ფაილებს არაფერი მოუვა.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "დავივიწყოთ ეს S3 bucket? მისი endpoint და გასაღებები წაიშლება ამ მოწყობილობიდან, Readest Cloud-იდან და თქვენი სხვა მოწყობილობებიდან, რომლებიც მას არ არის დაკავშირებული. bucket-ში არსებულ ფაილებს არაფერი მოუვა."
 }

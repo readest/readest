@@ -6,4 +6,5 @@
 export {
   withCloudProviderEnabled,
   persistCloudProviderEnabled,
+  forgetCloudProviderConnection,
 } from '@/services/sync/cloudSyncActivation';

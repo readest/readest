@@ -3064,5 +3064,8 @@
   "Apple Intelligence is not available on this device.": "Apple Intelligence v tej napravi ni na voljo.",
   "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence je izklopljen. Vklopite ga v Nastavitve > Apple Intelligence & Siri.",
   "The Apple Intelligence model is still downloading. Try again later.": "Model Apple Intelligence se še prenaša. Poskusite znova pozneje.",
-  "The text is too long for Apple Intelligence on this device.": "Besedilo je predolgo za Apple Intelligence v tej napravi."
+  "The text is too long for Apple Intelligence on this device.": "Besedilo je predolgo za Apple Intelligence v tej napravi.",
+  "Forget": "Pozabi",
+  "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Želite pozabiti ta strežnik WebDAV? Njegov naslov in prijavni podatki bodo odstranjeni s te naprave, iz Readest Cloud in z vaših drugih naprav, ki niso povezane z njim. Datoteke na strežniku ostanejo nedotaknjene.",
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Želite pozabiti to vedro S3? Njegova končna točka in ključi bodo odstranjeni s te naprave, iz Readest Cloud in z vaših drugih naprav, ki niso povezane z njim. Datoteke v vedru ostanejo nedotaknjene."
 }

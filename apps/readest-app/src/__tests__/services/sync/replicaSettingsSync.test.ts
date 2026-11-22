@@ -25,6 +25,7 @@ import {
   __resetSettingsSyncForTests,
   applyRemoteSettings,
   initSettingsSync,
+  markConnectionForgetPublish,
   publishSettingsIfChanged,
 } from '@/services/sync/replicaSettingsSync';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -1050,5 +1051,125 @@ describe('applyRemoteSettings', () => {
     // defaultProviderId is per-device — preserved by the deep-merge even
     // when the remote patch omits it.
     expect(merged.defaultProviderId).toBe('local-x');
+  });
+});
+
+describe('Forget a WebDAV / S3 connection (#7799)', () => {
+  // The saved connection, and what the Integrations page's Forget resets it to.
+  const connections = {
+    webdav: {
+      saved: {
+        serverUrl: 'https://dav.example.com',
+        username: 'alice',
+        password: 'hunter2',
+        rootPath: '/Books',
+      },
+      forgotten: { serverUrl: '', username: '', password: '', rootPath: '/' },
+    },
+    s3: {
+      saved: {
+        endpoint: 'https://s3.example.com',
+        region: 'eu-west-1',
+        bucket: 'books',
+        accessKeyId: 'AKID',
+        secretAccessKey: 'SECRET',
+      },
+      forgotten: { endpoint: '', region: 'auto', bucket: '', accessKeyId: '', secretAccessKey: '' },
+    },
+  } as const;
+  const kinds = ['webdav', 's3'] as const;
+  type Kind = (typeof kinds)[number];
+
+  const withConnection = (kind: Kind, values: object, enabled = false): SystemSettings =>
+    makeSettings({ [kind]: { enabled, ...values } } as Partial<SystemSettings>);
+
+  const flushHashWrites = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  beforeEach(() => {
+    enableCredentialsSync();
+  });
+
+  test.each(kinds)('Forget publishes the cleared %s connection to the cloud', async (kind) => {
+    await publishSettingsIfChanged(withConnection(kind, connections[kind].saved));
+    publishMock.mockClear();
+
+    markConnectionForgetPublish(kind);
+    await publishSettingsIfChanged(withConnection(kind, connections[kind].forgotten));
+
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    expect(publishMock.mock.calls[0]![1].patch[kind]).toEqual(connections[kind].forgotten);
+
+    // Recorded as published: the next save does not send it again.
+    publishMock.mockClear();
+    await publishSettingsIfChanged(withConnection(kind, connections[kind].forgotten));
+    expect(publishMock).not.toHaveBeenCalled();
+  });
+
+  test('a publish pass already running when Forget is pressed does not swallow it', async () => {
+    const saved = withConnection('webdav', connections.webdav.saved);
+    await publishSettingsIfChanged(saved);
+    publishMock.mockClear();
+
+    markConnectionForgetPublish('webdav');
+    // A pass that read the settings before the Forget wrote them finishes first.
+    await publishSettingsIfChanged(saved);
+    await publishSettingsIfChanged(withConnection('webdav', connections.webdav.forgotten));
+
+    expect(publishMock).toHaveBeenCalledTimes(1);
+    expect(publishMock.mock.calls[0]![1].patch.webdav).toEqual(connections.webdav.forgotten);
+  });
+
+  test.each(kinds)('a %s field cleared without Forget still stays local', async (kind) => {
+    await publishSettingsIfChanged(withConnection(kind, connections[kind].saved));
+    publishMock.mockClear();
+
+    await publishSettingsIfChanged(withConnection(kind, connections[kind].forgotten));
+
+    // Only the non-empty defaults (rootPath '/', region 'auto') diff and ship.
+    const shipped = publishMock.mock.calls[0]?.[1].patch[kind] ?? {};
+    expect(Object.values(shipped)).not.toContain('');
+  });
+
+  test('Forget while the passphrase is locked asks for it so the cleared login can ship', async () => {
+    await publishSettingsIfChanged(withConnection('webdav', connections.webdav.saved));
+    isUnlocked = false;
+
+    markConnectionForgetPublish('webdav');
+    await publishSettingsIfChanged(withConnection('webdav', connections.webdav.forgotten));
+
+    expect(ensurePassphraseMock).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(
+    kinds,
+  )('a device still connected to %s keeps its copy when another device forgets it', async (kind) => {
+    const connected = withConnection(kind, connections[kind].saved, true);
+    useSettingsStore.setState({ ...useSettingsStore.getState(), settings: connected });
+    enableCredentialsSync();
+    await publishSettingsIfChanged(useSettingsStore.getState().settings);
+    publishMock.mockClear();
+
+    applyRemoteSettings(makeEnvConfig(), {
+      name: 'singleton',
+      patch: { [kind]: connections[kind].forgotten } as Partial<SystemSettings>,
+    });
+    await flushHashWrites();
+
+    expect(useSettingsStore.getState().settings[kind]).toMatchObject(connections[kind].saved);
+    // Its copy is not mistaken for a new value and uploaded again.
+    await publishSettingsIfChanged(useSettingsStore.getState().settings);
+    expect(publishMock).not.toHaveBeenCalled();
+  });
+
+  test.each(kinds)('a device not connected to %s drops the forgotten connection', async (kind) => {
+    const disconnected = withConnection(kind, connections[kind].saved, false);
+    useSettingsStore.setState({ ...useSettingsStore.getState(), settings: disconnected });
+
+    applyRemoteSettings(makeEnvConfig(), {
+      name: 'singleton',
+      patch: { [kind]: connections[kind].forgotten } as Partial<SystemSettings>,
+    });
+
+    expect(useSettingsStore.getState().settings[kind]).toMatchObject(connections[kind].forgotten);
   });
 });
