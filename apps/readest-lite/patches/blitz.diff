@@ -711,7 +711,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2778,329 @@
+@@ -2543,20 +2778,339 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -975,6 +975,16 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +                boxes.push((f64::from(x), f64::from(top), f64::from(x), f64::from(bottom)));
 +                break;
 +            }
++            // A caret at the start of a line with nothing laid out (a `<br>` on its own line):
++            // where the line's alignment starts it, in the content area of the node's font.
++            if a == b && line.text_range().start == a && line.items().next().is_none() {
++                let (top, bottom) = self
++                    .font_extent(node_id, layout.scale())
++                    .map(|(ascent, descent)| (m.baseline - ascent, m.baseline + descent))
++                    .unwrap_or((m.block_min_coord, m.block_max_coord));
++                boxes.push((f64::from(m.offset), f64::from(top), f64::from(m.offset), f64::from(bottom)));
++                break;
++            }
 +            let (mut y0, mut y1) = (f64::from(m.block_min_coord), f64::from(m.block_max_coord));
 +            let mut span: Option<(f32, f32)> = None;
 +            // Spans that change only the brush don't split shaping: their glyph runs share one
@@ -1053,7 +1063,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3488,36 @@
+@@ -2944,6 +3498,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1090,7 +1100,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4082,58 @@
+@@ -3508,6 +4092,58 @@
  }
  
  #[cfg(test)]
@@ -1149,7 +1159,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4407,7 @@
+@@ -3781,3 +4417,7 @@
          );
      }
  }
@@ -2279,7 +2289,18 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
                                  nodes,
                                  child_id,
                                  &text_transform,
-@@ -233,11 +240,13 @@
+@@ -214,6 +221,10 @@
+                         } else if *tag_name == local_name!("br") {
+                             // node.remove_damage(CONSTRUCT_DESCENDENT | CONSTRUCT_FC | CONSTRUCT_BOX);
+                             // TODO: update span id for br spans
++                            // Where the line break is, so the element's client rect is the empty
++                            // box where its line ends.
++                            let at = builder.text().len();
++                            text_nodes.push((node_id, at, at));
+                             builder.push_style_modification_span(&[
+                                 parley::StyleProperty::WhiteSpaceCollapse(
+                                     WhiteSpaceCollapse::Preserve,
+@@ -233,11 +244,13 @@
                                  });
  
                              builder.push_style_span(style);
@@ -2293,7 +2314,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
                                      nodes,
                                      before_id,
                                      &text_transform,
-@@ -248,6 +257,7 @@
+@@ -248,6 +261,7 @@
                                  build_inline_layout_recursive(
                                      builder,
                                      text_transformer,
@@ -2301,7 +2322,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
                                      nodes,
                                      child_id,
                                      &text_transform,
-@@ -257,11 +267,13 @@
+@@ -257,11 +271,13 @@
                                  build_inline_layout_recursive(
                                      builder,
                                      text_transformer,
@@ -2315,7 +2336,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
  
                              builder.pop_style_span();
                          }
-@@ -292,9 +304,26 @@
+@@ -292,9 +308,26 @@
                  // node.remove_damage(CONSTRUCT_DESCENDENT | CONSTRUCT_FC | CONSTRUCT_BOX);
                  // dbg!(&data.content);
  
@@ -2345,7 +2366,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/build.rs blitz/packages/bli
              }
              NodeData::Comment { .. } => {
                  // node.remove_damage(CONSTRUCT_DESCENDENT | CONSTRUCT_FC | CONSTRUCT_BOX);
-@@ -303,3 +332,25 @@
+@@ -303,3 +336,25 @@
          }
      }
  }

@@ -271,6 +271,10 @@
   before), by the run's colour alpha rather than a layer per run. Blitz ignored it, so the words
   Readest's Speed Reading context panel dims (`opacity-70`) were drawn in full ink and the current
   word didn't stand out. An inline element's own background and border don't fade yet.
+- `blitz-dom` layout/inline/build, document: a `<br>` records where its line break is in the
+  inline root's text, so its client rect is a zero-width box where its line ends, after the text
+  before it, with that text's top and height (at the line's start on a line holding nothing
+  else), as in Chromium. Every `<br>` was an empty box at its paragraph's start.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
