@@ -17,6 +17,7 @@ vi.mock('@/hooks/useKeyDownActions', () => ({
 }));
 vi.mock('@/app/reader/components/annotator/DictionaryResultsView', () => ({
   useDictionaryResults: () => ({}),
+  lookupToPin: () => ({}),
   DictionaryResultsHeader: () => <div className='h-10'>header</div>,
   // The real body's shape: a column whose scroll area fills it.
   DictionaryResultsBody: () => (
