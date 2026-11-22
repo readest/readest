@@ -2820,5 +2820,6 @@
   "Create Backup": "Tạo bản sao lưu",
   "Restore from Backup": "Khôi phục từ bản sao lưu",
   "Your backup has been saved to the selected location.": "Bản sao lưu của bạn đã được lưu vào vị trí đã chọn.",
-  "Cover only": "Chỉ ảnh bìa"
+  "Cover only": "Chỉ ảnh bìa",
+  "Look up text in the system dictionary after selection": "Tra cứu văn bản trong từ điển hệ thống sau khi chọn"
 }

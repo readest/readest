@@ -3045,5 +3045,6 @@
   "Create Backup": "Створити резервну копію",
   "Restore from Backup": "Відновити з резервної копії",
   "Your backup has been saved to the selected location.": "Резервну копію збережено у вибраному місці.",
-  "Cover only": "Лише обкладинки"
+  "Cover only": "Лише обкладинки",
+  "Look up text in the system dictionary after selection": "Шукати текст у системному словнику після виділення"
 }

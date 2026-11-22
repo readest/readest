@@ -2895,5 +2895,6 @@
   "Create Backup": "Biztonsági mentés készítése",
   "Restore from Backup": "Visszaállítás biztonsági mentésből",
   "Your backup has been saved to the selected location.": "A biztonsági mentés a kiválasztott helyre mentve.",
-  "Cover only": "Csak borítók"
+  "Cover only": "Csak borítók",
+  "Look up text in the system dictionary after selection": "Szöveg kikeresése a rendszerszótárban kijelölés után"
 }

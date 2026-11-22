@@ -2820,5 +2820,6 @@
   "Create Backup": "Buat Cadangan",
   "Restore from Backup": "Pulihkan dari Cadangan",
   "Your backup has been saved to the selected location.": "Cadangan Anda telah disimpan ke lokasi yang dipilih.",
-  "Cover only": "Hanya sampul"
+  "Cover only": "Hanya sampul",
+  "Look up text in the system dictionary after selection": "Cari teks di kamus sistem setelah pemilihan"
 }

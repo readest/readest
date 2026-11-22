@@ -2895,5 +2895,6 @@
   "Create Backup": "ব্যাকআপ তৈরি করুন",
   "Restore from Backup": "ব্যাকআপ থেকে পুনরুদ্ধার করুন",
   "Your backup has been saved to the selected location.": "আপনার ব্যাকআপ নির্বাচিত স্থানে সংরক্ষিত হয়েছে।",
-  "Cover only": "শুধু প্রচ্ছদ"
+  "Cover only": "শুধু প্রচ্ছদ",
+  "Look up text in the system dictionary after selection": "নির্বাচনের পরে টেক্সট সিস্টেম অভিধানে দেখুন"
 }

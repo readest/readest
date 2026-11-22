@@ -5,7 +5,7 @@ import { FiLink } from 'react-icons/fi';
 import { FiShare } from 'react-icons/fi';
 import { FiImage } from 'react-icons/fi';
 import { PiHighlighterFill } from 'react-icons/pi';
-import { LuBookA, LuSparkles } from 'react-icons/lu';
+import { LuBookA, LuBookOpenText, LuSparkles } from 'react-icons/lu';
 import { BsPencilSquare } from 'react-icons/bs';
 import { BsTranslate } from 'react-icons/bs';
 import { FaHeadphones } from 'react-icons/fa6';
@@ -83,6 +83,12 @@ export const annotationToolButtons = createAnnotationToolButtons([
     label: _('Context Dictionary'),
     tooltip: _('Look up text in the context dictionary after selection'),
     Icon: LuSparkles,
+  },
+  {
+    type: 'systemdictionary',
+    label: _('System Dictionary'),
+    tooltip: _('Look up text in the system dictionary after selection'),
+    Icon: LuBookOpenText,
   },
   {
     type: 'translate',

@@ -2895,5 +2895,6 @@
   "Create Backup": "Back-up maken",
   "Restore from Backup": "Herstellen vanuit back-up",
   "Your backup has been saved to the selected location.": "Je back-up is op de gekozen locatie opgeslagen.",
-  "Cover only": "Alleen omslagen"
+  "Cover only": "Alleen omslagen",
+  "Look up text in the system dictionary after selection": "Zoek tekst op in het systeemwoordenboek na selectie"
 }

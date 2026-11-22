@@ -2895,5 +2895,6 @@
   "Create Backup": "Zaxira nusxa yaratish",
   "Restore from Backup": "Zaxira nusxadan tiklash",
   "Your backup has been saved to the selected location.": "Zaxira nusxangiz tanlangan joyga saqlandi.",
-  "Cover only": "Faqat muqovalar"
+  "Cover only": "Faqat muqovalar",
+  "Look up text in the system dictionary after selection": "Tanlovdan keyin matnni tizim lug‘atida qidirish"
 }

@@ -563,6 +563,31 @@ describe('the Context Dictionary tool (#7497)', () => {
   });
 });
 
+describe('the System Dictionary tool (#6728)', () => {
+  test('hands the word to the OS while the Dictionary tool keeps the in-app dictionaries', async () => {
+    h.invokeSystemDictionary.mockResolvedValue(true);
+    h.viewSettings.annotationToolbarItems = ['dictionary', 'systemdictionary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('serendipity');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'System Dictionary' }));
+    });
+    expect(h.invokeSystemDictionary.mock.calls[0]?.[0]).toBe('serendipity');
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(h.recordLookup).toHaveBeenCalledWith(
+      expect.objectContaining({ word: 'serendipity', lang: 'en' }),
+    );
+
+    await selectText('serendipity');
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
+    });
+    expect(h.invokeSystemDictionary).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('serendipity');
+  });
+});
+
 describe('a lookup surface survives the selection it is anchored to being republished', () => {
   test.each([
     ['onDictionarySelection', 'dictionary-surface'],

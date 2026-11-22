@@ -2820,5 +2820,6 @@
   "Create Backup": "建立備份",
   "Restore from Backup": "從備份還原",
   "Your backup has been saved to the selected location.": "備份已儲存至所選位置。",
-  "Cover only": "僅顯示封面"
+  "Cover only": "僅顯示封面",
+  "Look up text in the system dictionary after selection": "在系統字典中查找選取後的文字"
 }
