@@ -599,7 +599,14 @@ export const useTextSelector = (
   };
 
   const handleRendererRelocate = (event: Event) => {
-    if ((event as CustomEvent).detail?.reason === 'selection') navigatedSelectionRef.current = true;
+    const reason = (event as CustomEvent).detail?.reason;
+    if (reason === 'selection') navigatedSelectionRef.current = true;
+    // The paginator re-anchored after a re-layout, such as the Notebook pinning
+    // beside the page: keep the Android selection pin (handleScroll) on the
+    // page it chose, not on an offset from the old layout (#7789).
+    if (reason === 'anchor' && selectionPosition.current !== null) {
+      selectionPosition.current = getView(bookKey)?.renderer?.containerPosition ?? null;
+    }
   };
 
   const startInstantAnnotating = (
