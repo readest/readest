@@ -754,7 +754,10 @@ describe('getGroupSortValue', () => {
       books: [createMockBook({ metadata: {} }), createMockBook({})],
     });
 
-    expect(getGroupSortValue(group, LibrarySortByType.Published)).toBe(0);
+    // As an undated book sorts against other books: year 1, before any real date.
+    expect(getGroupSortValue(group, LibrarySortByType.Published)).toBe(
+      new Date('0001-01-01').getTime(),
+    );
   });
 
   it('should return group name for series sort', () => {

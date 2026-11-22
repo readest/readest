@@ -116,28 +116,47 @@ describe('ignoring leading English articles in title sorting', () => {
     ).toEqual(expected);
   });
 
-  it('interleaves normalized book titles with unchanged group names', () => {
+  // #7786: a group named "The Collection" sorts under C, as a book with that title would.
+  it.each([
+    false,
+    true,
+  ])('ignores a leading article in group names too (saved order: %s)', (withOrder) => {
     const books = makeBooks([
       'The Great Gatsby',
       'Dune',
       'An American Tragedy',
       'A Tale of Two Cities',
+      'Ender',
     ]);
     books[1]!.groupName = 'The Collection';
+    books[4]!.groupName = 'Fables';
     const definition = {
       ...createBookshelf('Articles'),
-      sort: { by: 'title' as const, ascending: true, thenBy: 'none' as const, thenAscending: true },
+      sort: {
+        by: 'title' as const,
+        ascending: true,
+        thenBy: 'none' as const,
+        thenAscending: true,
+      },
     };
+    const order = withOrder ? [{ by: LibrarySortByType.Title, ascending: true }] : undefined;
     const result = evaluateBookshelves(books, [definition], 'en')[0]!;
     expect(
-      presentBookshelf(result, { libraryGroupBy: LibraryGroupByType.Group }, 'en').map((item) =>
-        'books' in item ? item.name : item.title,
-      ),
+      presentBookshelf(
+        result,
+        { libraryGroupBy: LibraryGroupByType.Group },
+        'en',
+        undefined,
+        '',
+        undefined,
+        order,
+      ).map((item) => ('books' in item ? item.name : item.title)),
     ).toEqual([
       'An American Tragedy',
+      'The Collection',
+      'Fables',
       'The Great Gatsby',
       'A Tale of Two Cities',
-      'The Collection',
     ]);
   });
 });

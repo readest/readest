@@ -569,8 +569,13 @@ const compareTitles = (a: string, b: string, uiLanguage: string): number => {
   return collator.compare(a, b);
 };
 
-const getTitleSortValue = (book: Book): string =>
-  formatTitle(book.title).replace(/^\s*(?:a|an|the)\s+(?=\S)/i, '');
+const stripLeadingArticle = (title: string): string =>
+  title.replace(/^\s*(?:a|an|the)\s+(?=\S)/i, '');
+
+const getTitleSortValue = (book: Book): string => stripLeadingArticle(formatTitle(book.title));
+
+// An undated book sorts as the oldest, against books and groups alike.
+const UNDATED_PUBLISHED = '0001-01-01';
 
 const compareBookByKey = (
   a: Book,
@@ -611,13 +616,8 @@ const compareBookByKey = (
       return (a.metadata?.seriesIndex || 0) - (b.metadata?.seriesIndex || 0);
     }
     case LibrarySortByType.Published: {
-      const aPublished = a.metadata?.published || '0001-01-01';
-      const bPublished = b.metadata?.published || '0001-01-01';
-
-      // Handle cases where published date might not exist
-      if (!aPublished && !bPublished) return 0;
-      if (!aPublished) return 1; // Books without published date go to the end
-      if (!bPublished) return -1;
+      const aPublished = a.metadata?.published || UNDATED_PUBLISHED;
+      const bPublished = b.metadata?.published || UNDATED_PUBLISHED;
 
       // Try to parse dates - handle various date formats
       const aDate = new Date(aPublished).getTime();
@@ -647,6 +647,25 @@ const compareBookByKey = (
   }
 };
 
+/** `compareBookByKey` in the given direction. A book with no time remaining stays
+ * after the timed ones either way, as `withTimeRemainingLast` keeps it at rank 1. */
+const compareBookByCriterion = (
+  a: Book,
+  b: Book,
+  by: string,
+  ascending: boolean,
+  uiLanguage: string,
+  pageDurations?: Readonly<Record<string, number>>,
+): number => {
+  const cmp = compareBookByKey(a, b, by, uiLanguage, pageDurations);
+  if (by === LibrarySortByType.TimeRemaining) {
+    const aMissing = getDisplayedTimeRemaining(a, pageDurations?.[a.hash]) === undefined;
+    const bMissing = getDisplayedTimeRemaining(b, pageDurations?.[b.hash]) === undefined;
+    if (aMissing !== bMissing) return cmp;
+  }
+  return cmp * (ascending ? 1 : -1);
+};
+
 /**
  * @param secondarySortBy - Optional tiebreaker key applied when the primary
  *   comparison returns 0. Pass `'none'` (or omit) to disable. A Series secondary
@@ -669,17 +688,28 @@ export const createBookSorter =
   (a: Book, b: Book): number => {
     if (sortOrder && sortOrder.length > 0) {
       for (const criterion of sortOrder) {
-        const cmp = compareBookByKey(a, b, criterion.by, uiLanguage, pageDurations);
-        if (cmp !== 0) return cmp * (criterion.ascending ? 1 : -1);
+        const cmp = compareBookByCriterion(
+          a,
+          b,
+          criterion.by,
+          criterion.ascending,
+          uiLanguage,
+          pageDurations,
+        );
+        if (cmp !== 0) return cmp;
       }
       return 0;
     }
-    const primary = compareBookByKey(a, b, sortBy, uiLanguage, pageDurations);
-    if (primary !== 0) return primary * (sortAscending ? 1 : -1);
+    const primary = compareBookByCriterion(a, b, sortBy, sortAscending, uiLanguage, pageDurations);
+    if (primary !== 0) return primary;
     if (secondarySortBy === 'none') return 0;
-    return (
-      compareBookByKey(a, b, secondarySortBy, uiLanguage, pageDurations) *
-      (secondaryAscending ? 1 : -1)
+    return compareBookByCriterion(
+      a,
+      b,
+      secondarySortBy,
+      secondaryAscending,
+      uiLanguage,
+      pageDurations,
     );
   };
 
@@ -951,11 +981,13 @@ export const resolveCurrentShelfBooks = (
  * For series groups: sort by seriesIndex first (always ascending), then by global sort for items without index.
  * For other groupings: when a secondary key is supplied, sort by secondary key first (in its own
  *   direction), with the primary global sort as tiebreaker. Without secondary, follow global sort setting.
+ *   A saved `sortOrder` is followed in rank order instead: it always has a rank 2, so leading
+ *   with it would make whatever sits second the in-group order (#7786).
  * @param sortAscending - When true (default), sort direction is ascending. Series index is always
  *   ascending regardless of this flag; the flag affects the fallback / primary tiebreaker only.
- * @param secondarySortBy - When non-'none', acts as the *primary* within-group ordering for
- *   non-series groupings (matches the user's mental model: "group by author, then sort by series"
- *   should land series order inside each author).
+ * @param secondarySortBy - When non-'none' and no `sortOrder` is given, acts as the *primary*
+ *   within-group ordering for non-series groupings (matches the user's mental model: "group by
+ *   author, then sort by series" should land series order inside each author, #4307).
  * @param secondaryAscending - Direction of the secondary key, independent of `sortAscending`
  *   (issue #5119).
  */
@@ -1000,9 +1032,16 @@ export const createWithinGroupSorter = (
 
     // For author and other non-series groupings: when a secondary key is provided,
     // use it as the within-group primary order with the global key as tiebreaker.
-    if (secondarySortBy !== 'none') {
-      const bySecondary = compareBookByKey(a, b, secondarySortBy, uiLanguage, pageDurations);
-      if (bySecondary !== 0) return bySecondary * (secondaryAscending ? 1 : -1);
+    if (secondarySortBy !== 'none' && !hasSortOrder) {
+      const bySecondary = compareBookByCriterion(
+        a,
+        b,
+        secondarySortBy,
+        secondaryAscending,
+        uiLanguage,
+        pageDurations,
+      );
+      if (bySecondary !== 0) return bySecondary;
     }
 
     return fallbackCompare(a, b);
@@ -1036,9 +1075,7 @@ export const getBookSortValue = (book: Book, sortBy: LibrarySortByType): number 
       return getBookPageCount(book) ?? 0;
 
     case LibrarySortByType.Published: {
-      const published = book.metadata?.published;
-      if (!published) return 0;
-      const publishedTime = new Date(published).getTime();
+      const publishedTime = new Date(book.metadata?.published || UNDATED_PUBLISHED).getTime();
       return isNaN(publishedTime) ? 0 : publishedTime;
     }
 
@@ -1062,7 +1099,9 @@ export const getGroupSortValue = (
   const books = group.books;
   // A subgroup's name is its full path ("Languages/Chinese"); it sorts among
   // the parent group's books by its own name, as it is shown (#7062).
-  const name = groupBy === LibraryGroupByType.Group ? group.displayName : group.name;
+  const shownName = groupBy === LibraryGroupByType.Group ? group.displayName : group.name;
+  // Under Title, "The Expanse" sorts under E, as a book with that title would (#7786).
+  const name = sortBy === LibrarySortByType.Title ? stripLeadingArticle(shownName) : shownName;
 
   if (books.length === 0) {
     return sortBy === LibrarySortByType.Title ||
@@ -1117,7 +1156,9 @@ export const getGroupSortValue = (
         .map((d) => new Date(d).getTime())
         .filter((t) => !isNaN(t));
 
-      return publishedDates.length > 0 ? Math.max(...publishedDates) : 0;
+      return publishedDates.length > 0
+        ? Math.max(...publishedDates)
+        : new Date(UNDATED_PUBLISHED).getTime();
     }
 
     case LibrarySortByType.TimeRemaining:
