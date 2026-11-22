@@ -746,6 +746,17 @@ const getPageLayoutStyles = (
     max-height: calc(var(--available-height) * 1px);
   }
 
+  /* A section holding only an image (a cover, a plate) has it sized to the
+     page. A top margin above it, or the descent of the line it sits on, makes
+     its line taller than the page, and the rest goes onto the next page:
+     WebKit cuts the image there, Chromium moves it whole (#6676). */
+  body.paginated-mode :has(.lone-image) {
+    margin-block-start: 0 !important;
+  }
+  body.paginated-mode .lone-image {
+    vertical-align: top;
+  }
+
   body.scroll-mode img {
     max-width: 100%;
     object-fit: contain;
@@ -2145,6 +2156,19 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
     }
   });
   classifyAndTagStandaloneDiagrams(document, isDarkMode, isFixedLayout);
+  // A section holding only one image, with no text, is a picture page.
+  // An svg's title and desc are never drawn.
+  const images = document.body?.querySelectorAll('img, svg');
+  if (images?.length === 1) {
+    const texts = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let hasText = false;
+    for (let node = texts.nextNode(); node && !hasText; node = texts.nextNode()) {
+      hasText =
+        !!node.textContent?.trim() &&
+        !node.parentElement?.closest('title, desc, metadata, style, script');
+    }
+    if (!hasText) images[0]!.classList.add('lone-image');
+  }
 };
 
 // The enlarged link hit area positions every link and its ::before box, and

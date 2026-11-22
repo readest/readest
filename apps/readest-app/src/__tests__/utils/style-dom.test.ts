@@ -792,6 +792,30 @@ describe('applyImageStyle', () => {
 
     expect(exempt).toEqual(['figure', 'linked', 'wrapped', 'captioned', 'dropcap']);
   });
+
+  // A section holding only one image is a picture page, fitted to one page (#6676)
+  const SVG = 'xmlns="http://www.w3.org/2000/svg"';
+  it.each([
+    ['an image in a paragraph', '<p><img src="c.png" /></p>', true],
+    [
+      'an image with an empty skip link',
+      '<p><img src="c.png" /><span aria-label="x"></span></p>',
+      true,
+    ],
+    ['an svg cover', `<div><svg ${SVG}><image href="c.png" /></svg></div>`, true],
+    [
+      'an svg cover with a title and desc',
+      `<div><svg ${SVG}><title>Cover</title><desc>Front</desc><image href="c.png" /></svg></div>`,
+      true,
+    ],
+    ['an image with a caption', '<p><img src="c.png" /></p><p>Plate 1</p>', false],
+    ['an svg with visible text', `<svg ${SVG}><text>Chapter 1</text></svg>`, false],
+    ['two images', '<p><img src="a.png" /></p><p><img src="b.png" /></p>', false],
+  ])('tells whether %s is a lone image', (_, html, lone) => {
+    document.body.innerHTML = html;
+    applyImageStyle(document);
+    expect(document.querySelectorAll('.lone-image')).toHaveLength(lone ? 1 : 0);
+  });
 });
 
 describe('applyLinkHitArea', () => {
