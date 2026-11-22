@@ -1,12 +1,24 @@
 import { type as osType } from '@tauri-apps/plugin-os';
 import { isTauriAppPlatform } from '@/services/environment';
 import { cancelOnDeviceLLM, getOnDeviceLLMStatus, onDeviceLLMGenerate } from '@/utils/bridge';
-import { getLanguageName } from '@/utils/lang';
-import { uniqueId } from '@/utils/misc';
+import { stubTranslation as _, uniqueId } from '@/utils/misc';
 import type { CustomTranslator } from '@/types/translation';
 
 /** Apple's Foundation Models are only bridged in the iOS/iPadOS app (#7429). */
 export const isOnDeviceLLMSupported = () => isTauriAppPlatform() && osType() === 'ios';
+
+/**
+ * Every message an on-device request can fail with, registered for extraction
+ * and translated with `_()` where the error is shown. The last four come from
+ * OnDeviceLLM.swift and must match it exactly.
+ */
+export const ON_DEVICE_ERRORS = [
+  _("Apple Intelligence can't write in the target language."),
+  _('Apple Intelligence is not available on this device.'),
+  _('Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.'),
+  _('The Apple Intelligence model is still downloading. Try again later.'),
+  _('The text is too long for Apple Intelligence on this device.'),
+];
 
 interface OnDeviceModelInfo {
   /** Tokens for instructions, prompt and reply together. */
@@ -39,9 +51,32 @@ export const prepareOnDevice = async (targetLang: string): Promise<OnDeviceModel
   const info = await getOnDeviceModelInfo();
   const base = targetLang.split(/[-_]/)[0]!.toLowerCase();
   if (info.languages.length > 0 && !info.languages.includes(base)) {
-    throw new Error(`Apple Intelligence can't write ${getLanguageName(base)}.`);
+    throw new Error(ON_DEVICE_ERRORS[0]);
   }
   return info;
+};
+
+/**
+ * Cuts text longer than `max` characters at sentence ends, cutting a sentence
+ * that is itself too long. Joining the pieces gives back the text.
+ */
+export const splitForOnDevice = (text: string, max: number): string[] => {
+  const sentences = text.match(/[^。！？!?.]*[。！？!?.]+\s*|[^。！？!?.]+$/g) ?? [text];
+  const pieces: string[] = [];
+  let current = '';
+  for (let sentence of sentences) {
+    if (current && current.length + sentence.length > max) {
+      pieces.push(current);
+      current = '';
+    }
+    while (sentence.length > max) {
+      pieces.push(sentence.slice(0, max));
+      sentence = sentence.slice(max);
+    }
+    current += sentence;
+  }
+  if (current) pieces.push(current);
+  return pieces;
 };
 
 /**

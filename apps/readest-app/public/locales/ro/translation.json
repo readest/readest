@@ -2984,5 +2984,10 @@
   "Added to vocabulary": "Adăugat la vocabular",
   "Resize Books": "Redimensionează cărțile",
   "Apple Intelligence (On-Device)": "Apple Intelligence (pe dispozitiv)",
-  "On-Device": "Pe dispozitiv"
+  "On-Device": "Pe dispozitiv",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence nu poate scrie în limba țintă.",
+  "Apple Intelligence is not available on this device.": "Apple Intelligence nu este disponibil pe acest dispozitiv.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence este dezactivat. Activează-l din Configurări > Apple Intelligence & Siri.",
+  "The Apple Intelligence model is still downloading. Try again later.": "Modelul Apple Intelligence încă se descarcă. Încearcă din nou mai târziu.",
+  "The text is too long for Apple Intelligence on this device.": "Textul este prea lung pentru Apple Intelligence pe acest dispozitiv."
 }

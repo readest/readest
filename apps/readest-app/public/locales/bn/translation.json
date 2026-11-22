@@ -2909,5 +2909,10 @@
   "Added to vocabulary": "শব্দভান্ডারে যোগ করা হয়েছে",
   "Resize Books": "বইয়ের আকার পরিবর্তন",
   "Apple Intelligence (On-Device)": "Apple Intelligence (ডিভাইসে)",
-  "On-Device": "ডিভাইসে"
+  "On-Device": "ডিভাইসে",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence লক্ষ্য ভাষায় লিখতে পারে না।",
+  "Apple Intelligence is not available on this device.": "এই ডিভাইসে Apple Intelligence উপলভ্য নয়।",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence বন্ধ আছে। সেটিংস > Apple Intelligence & Siri থেকে চালু করুন।",
+  "The Apple Intelligence model is still downloading. Try again later.": "Apple Intelligence মডেল এখনও ডাউনলোড হচ্ছে। পরে আবার চেষ্টা করুন।",
+  "The text is too long for Apple Intelligence on this device.": "এই ডিভাইসে Apple Intelligence-এর জন্য লেখাটি খুব দীর্ঘ।"
 }

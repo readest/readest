@@ -2909,5 +2909,10 @@
   "Added to vocabulary": "Toegevoegd aan woordenschat",
   "Resize Books": "Formaat Boeken Aanpassen",
   "Apple Intelligence (On-Device)": "Apple Intelligence (op het apparaat)",
-  "On-Device": "Op het apparaat"
+  "On-Device": "Op het apparaat",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence kan niet in de doeltaal schrijven.",
+  "Apple Intelligence is not available on this device.": "Apple Intelligence is niet beschikbaar op dit apparaat.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence staat uit. Zet het aan via Instellingen > Apple Intelligence & Siri.",
+  "The Apple Intelligence model is still downloading. Try again later.": "Het Apple Intelligence-model wordt nog gedownload. Probeer het later opnieuw.",
+  "The text is too long for Apple Intelligence on this device.": "De tekst is te lang voor Apple Intelligence op dit apparaat."
 }

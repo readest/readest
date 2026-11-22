@@ -6,7 +6,12 @@ import type { CustomTranslator } from '@/types/translation';
 import { ErrorCodes, TranslationContext, TranslationProvider } from '../types';
 import { renderPrompt } from './prompts';
 import { CUSTOM_TRANSLATOR_PREFIX } from './constants';
-import { generateOnDeviceText, onDeviceInputChars, prepareOnDevice } from './onDevice';
+import {
+  generateOnDeviceText,
+  onDeviceInputChars,
+  prepareOnDevice,
+  splitForOnDevice,
+} from './onDevice';
 
 const BATCH_DELAY_MS = 50;
 const MAX_BATCH_ITEMS = 4;
@@ -283,18 +288,30 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
       )}`,
     translate: async (texts, sourceLang, targetLang, _token, _useCache, signal, context) => {
       signal?.throwIfAborted();
-      if (config.type === 'apple-intelligence') {
+      const onDevice = config.type === 'apple-intelligence';
+      if (onDevice) {
         maxBatchChars = onDeviceInputChars((await prepareOnDevice(targetLang)).contextSize);
+        signal?.throwIfAborted();
       }
       const system = renderSystem(sourceLang, targetLang, context);
       const items: Item[] = [];
-      const results = texts.map((text) => {
-        if (!text?.trim()) return Promise.resolve(text);
-        return new Promise<string>((resolve, reject) => {
+      const queueText = (text: string) =>
+        new Promise<string>((resolve, reject) => {
           const item: Item = { text, resolve, reject };
           items.push(item);
           enqueue(system, item);
         });
+      // Chinese and Japanese run sentences together; other languages space them.
+      const joiner = /^(zh|ja)\b/i.test(targetLang) ? '' : ' ';
+      const results = texts.map((text) => {
+        if (!text?.trim()) return Promise.resolve(text);
+        // Apple's small window can't take a long paragraph whole.
+        if (onDevice && text.length > maxBatchChars) {
+          return Promise.all(splitForOnDevice(text, maxBatchChars).map(queueText)).then((parts) =>
+            parts.join(joiner),
+          );
+        }
+        return queueText(text);
       });
       const all = Promise.all(results);
       if (!signal) return all;

@@ -2984,5 +2984,10 @@
   "Added to vocabulary": "Adicionado ao vocabulário",
   "Resize Books": "Redimensionar Livros",
   "Apple Intelligence (On-Device)": "Apple Intelligence (no dispositivo)",
-  "On-Device": "No dispositivo"
+  "On-Device": "No dispositivo",
+  "Apple Intelligence can't write in the target language.": "O Apple Intelligence não consegue escrever no idioma de destino.",
+  "Apple Intelligence is not available on this device.": "O Apple Intelligence não está disponível neste dispositivo.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "O Apple Intelligence está desativado. Ative-o em Definições > Apple Intelligence & Siri.",
+  "The Apple Intelligence model is still downloading. Try again later.": "O modelo do Apple Intelligence ainda está a ser descarregado. Tente novamente mais tarde.",
+  "The text is too long for Apple Intelligence on this device.": "O texto é demasiado longo para o Apple Intelligence neste dispositivo."
 }

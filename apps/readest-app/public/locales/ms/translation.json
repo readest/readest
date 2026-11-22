@@ -2834,5 +2834,10 @@
   "Added to vocabulary": "Ditambah ke perbendaharaan kata",
   "Resize Books": "Ubah Saiz Buku",
   "Apple Intelligence (On-Device)": "Apple Intelligence (pada peranti)",
-  "On-Device": "Pada peranti"
+  "On-Device": "Pada peranti",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence tidak dapat menulis dalam bahasa sasaran.",
+  "Apple Intelligence is not available on this device.": "Apple Intelligence tidak tersedia pada peranti ini.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence dimatikan. Hidupkannya dalam Tetapan > Apple Intelligence & Siri.",
+  "The Apple Intelligence model is still downloading. Try again later.": "Model Apple Intelligence masih dimuat turun. Cuba lagi kemudian.",
+  "The text is too long for Apple Intelligence on this device.": "Teks terlalu panjang untuk Apple Intelligence pada peranti ini."
 }

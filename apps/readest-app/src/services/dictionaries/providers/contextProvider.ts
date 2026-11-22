@@ -139,7 +139,8 @@ export const contextProvider: DictionaryProvider = {
         'p',
         'text-sm text-error',
         _('Context Dictionary failed: {{message}}', {
-          message: err instanceof Error ? err.message : String(err),
+          // Registered messages (e.g. the on-device ones) are translated.
+          message: _(err instanceof Error ? err.message : String(err)),
         }),
       );
       return { ok: true, headword: word, sourceLabel: translator.name };

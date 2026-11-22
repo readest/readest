@@ -285,7 +285,7 @@ const CustomTranslatorEditor: React.FC<CustomTranslatorEditorProps> = ({
       <div className='flex flex-col gap-3 px-4'>
         {result && (
           <p className={clsx('break-words text-sm', result.ok ? 'text-success' : 'text-error')}>
-            {result.ok ? `${_('Test translation')}: ${result.text}` : result.text}
+            {result.ok ? `${_('Test translation')}: ${result.text}` : _(result.text)}
           </p>
         )}
         <div className='flex justify-end gap-2'>

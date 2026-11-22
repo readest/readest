@@ -3059,5 +3059,10 @@
   "Added to vocabulary": "Добавлено в словарь",
   "Resize Books": "Изменить размер книг",
   "Apple Intelligence (On-Device)": "Apple Intelligence (на устройстве)",
-  "On-Device": "На устройстве"
+  "On-Device": "На устройстве",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence не может писать на целевом языке.",
+  "Apple Intelligence is not available on this device.": "Apple Intelligence недоступен на этом устройстве.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence выключен. Включите его в Настройки > Apple Intelligence & Siri.",
+  "The Apple Intelligence model is still downloading. Try again later.": "Модель Apple Intelligence ещё загружается. Повторите попытку позже.",
+  "The text is too long for Apple Intelligence on this device.": "Текст слишком длинный для Apple Intelligence на этом устройстве."
 }

@@ -3059,5 +3059,10 @@
   "Added to vocabulary": "Додано до словника",
   "Resize Books": "Змінити розмір книг",
   "Apple Intelligence (On-Device)": "Apple Intelligence (на пристрої)",
-  "On-Device": "На пристрої"
+  "On-Device": "На пристрої",
+  "Apple Intelligence can't write in the target language.": "Apple Intelligence не може писати цільовою мовою.",
+  "Apple Intelligence is not available on this device.": "Apple Intelligence недоступний на цьому пристрої.",
+  "Apple Intelligence is turned off. Turn it on in Settings > Apple Intelligence & Siri.": "Apple Intelligence вимкнено. Увімкніть його в Параметри > Apple Intelligence & Siri.",
+  "The Apple Intelligence model is still downloading. Try again later.": "Модель Apple Intelligence ще завантажується. Спробуйте пізніше.",
+  "The text is too long for Apple Intelligence on this device.": "Текст задовгий для Apple Intelligence на цьому пристрої."
 }

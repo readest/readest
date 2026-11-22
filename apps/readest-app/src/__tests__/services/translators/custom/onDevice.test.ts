@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { generateTextMock, nativeGenerate, nativeCancel, nativeStatus, supported } = vi.hoisted(
@@ -32,7 +33,10 @@ vi.mock('@/services/sync/replicaPublish', () => ({
 
 import { lookupInContext } from '@/services/dictionaries/contextDictionary';
 import { buildCustomTranslator } from '@/services/translators/custom';
-import { __clearOnDeviceInfoForTests } from '@/services/translators/custom/onDevice';
+import {
+  __clearOnDeviceInfoForTests,
+  ON_DEVICE_ERRORS,
+} from '@/services/translators/custom/onDevice';
 import { generateChatText } from '@/services/translators/custom/openaiCompatible';
 import { getLLMTranslators, useCustomTranslatorStore } from '@/store/customTranslatorStore';
 import type { CustomTranslator } from '@/types/translation';
@@ -92,7 +96,7 @@ describe('Apple Intelligence custom translator', () => {
   it('refuses a target language the model cannot write before asking it', async () => {
     const provider = buildCustomTranslator(onDevice);
     await expect(provider.translate(['Hello'], 'en', 'ru')).rejects.toThrow(
-      "Apple Intelligence can't write Russian.",
+      "Apple Intelligence can't write in the target language.",
     );
     await expect(
       lookupInContext(
@@ -100,8 +104,54 @@ describe('Apple Intelligence custom translator', () => {
         { text: 'word', before: '', after: '', targetLang: 'ru' },
         new AbortController().signal,
       ),
-    ).rejects.toThrow("Apple Intelligence can't write Russian.");
+    ).rejects.toThrow("Apple Intelligence can't write in the target language.");
     expect(nativeGenerate).not.toHaveBeenCalled();
+  });
+
+  it('drops a translation cancelled while the model status is loading', async () => {
+    let answerStatus: (value: unknown) => void = () => {};
+    nativeStatus.mockReturnValue(new Promise((resolve) => (answerStatus = resolve)));
+    nativeGenerate.mockResolvedValue({ text: 'Bonjour' });
+    const controller = new AbortController();
+    const pending = buildCustomTranslator(onDevice).translate(
+      ['Hello'],
+      'en',
+      'fr',
+      null,
+      false,
+      controller.signal,
+    );
+    controller.abort();
+    answerStatus({ available: true, contextSize: 4096, languages: ['en', 'fr'] });
+    await expect(pending).rejects.toThrow();
+    expect(nativeGenerate).not.toHaveBeenCalled();
+  });
+
+  it('splits a paragraph too long for the window at sentence ends, in order', async () => {
+    nativeGenerate.mockImplementation(async ({ prompt }: { prompt: string }) => ({ text: prompt }));
+    const provider = buildCustomTranslator(onDevice);
+    const chinese = Array.from({ length: 300 }, (_, i) => `第${i}句话。`).join('');
+    const english = Array.from({ length: 300 }, (_, i) => `Sentence ${i}.`).join(' ');
+    // The stub echoes its input: pieces must come back whole, in order, joined
+    // without spaces for Chinese and with them for English.
+    expect(await provider.translate([chinese], 'fr', 'zh')).toEqual([chinese]);
+    expect(await provider.translate([english], 'zh', 'en')).toEqual([english]);
+    for (const [{ prompt }] of nativeGenerate.mock.calls) {
+      for (const block of prompt.split(/^\[\d+\]\n/m))
+        expect(block.trim().length).toBeLessThanOrEqual(1024);
+    }
+  });
+
+  it('registers every native error message it may show for translation', () => {
+    const swift = readFileSync(
+      'src-tauri/plugins/tauri-plugin-native-bridge/ios/Sources/OnDeviceLLM.swift',
+      'utf8',
+    );
+    const shown = [...swift.matchAll(/"((?:Apple Intelligence|The (?:text|Apple)) [^"]+)"/g)].map(
+      (m) => m[1],
+    );
+    expect(shown.length).toBe(4);
+    for (const message of shown) expect(ON_DEVICE_ERRORS).toContain(message);
   });
 
   it('accepts a regional variant of a supported language', async () => {

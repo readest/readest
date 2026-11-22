@@ -582,12 +582,19 @@ pub(crate) async fn on_device_llm_status<R: Runtime>(
     app.native_bridge().on_device_llm_status()
 }
 
+/// The bridge call waits for the whole answer (seconds), so it runs on a
+/// blocking thread: on an async worker, a few overlapping requests could stall
+/// every other command, `on_device_llm_cancel` included.
 #[command]
 pub(crate) async fn on_device_llm_generate<R: Runtime>(
     app: AppHandle<R>,
     payload: OnDeviceLlmGenerateRequest,
 ) -> Result<OnDeviceLlmGenerateResponse> {
-    app.native_bridge().on_device_llm_generate(payload)
+    tauri::async_runtime::spawn_blocking(move || {
+        app.native_bridge().on_device_llm_generate(payload)
+    })
+    .await
+    .map_err(|err| crate::Error::NativeBridgeError(err.to_string()))?
 }
 
 #[command]
