@@ -185,10 +185,16 @@ export const presentBookshelf = (
     seriesTie: number,
   ) => {
     for (const criterion of order!) {
-      let cmp = compareSortValues(getA(criterion.by), getB(criterion.by), uiLanguage, criterion.by);
+      const aValue = getA(criterion.by);
+      const bValue = getB(criterion.by);
+      let cmp = compareSortValues(aValue, bValue, uiLanguage, criterion.by);
       if (cmp === 0 && criterion.by === LibrarySortByType.Series) cmp = seriesTie;
       if (Number.isNaN(cmp)) continue;
-      if (cmp !== 0) return cmp * (criterion.ascending ? 1 : -1);
+      // No time remaining (Infinity) stays last in both directions, as between books.
+      const missingTime =
+        criterion.by === LibrarySortByType.TimeRemaining &&
+        Number.isFinite(aValue) !== Number.isFinite(bValue);
+      if (cmp !== 0) return missingTime ? cmp : cmp * (criterion.ascending ? 1 : -1);
     }
     return 0;
   };
