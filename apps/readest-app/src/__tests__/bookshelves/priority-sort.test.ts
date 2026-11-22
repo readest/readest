@@ -309,6 +309,52 @@ describe('priority-based library sorting', () => {
     ]);
   });
 
+  // A finished book has no time remaining, as on its card: a group holding only
+  // one ties with an unread book on Time Remaining, and Title decides.
+  it('treats a group of finished books as having no time remaining', () => {
+    const sortOrder: LibrarySortCriterion[] = [
+      { by: LibrarySortByType.TimeRemaining, ascending: true },
+      { by: LibrarySortByType.Title, ascending: true },
+    ];
+    const settings = {
+      libraryGroupBy: LibraryGroupByType.Group,
+      librarySortBy: LibrarySortByType.TimeRemaining,
+      librarySortAscending: true,
+      libraryThenSortBy: LibrarySortByType.Title,
+      libraryThenSortAscending: true,
+      librarySortOrder: sortOrder,
+    };
+    const baseDef = defaultBookshelves(settings).find((s) => s.id === 'default')!;
+    const def = {
+      ...baseDef,
+      sort: resolveBookshelfSort(baseDef, getGlobalBookshelfSort(settings)),
+    };
+    const books: Book[] = [
+      makeBook({ hash: 'apple', title: 'Apple', readingStatus: 'unread' }),
+      makeBook({
+        hash: 'done',
+        title: 'Done Book',
+        groupName: 'Zebra',
+        readingStatus: 'finished',
+        progress: [90, 100],
+      }),
+    ];
+    const [result] = evaluateBookshelves(
+      books,
+      [def],
+      'en',
+      undefined,
+      undefined,
+      undefined,
+      sortOrder,
+    );
+    const items = presentBookshelf(result!, settings, 'en', undefined, '', undefined, sortOrder);
+    expect(items.map((item) => ('books' in item ? item.displayName : item.title))).toEqual([
+      'Apple',
+      'Zebra',
+    ]);
+  });
+
   it('continues past Infinity vs Infinity TimeRemaining ties and compares book Series in mixed groups', () => {
     const sortOrder: LibrarySortCriterion[] = [
       { by: LibrarySortByType.Pages, ascending: true },

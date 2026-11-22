@@ -17,6 +17,7 @@ import {
   createGroupSorter,
   createWithinGroupSorter,
   getBookSortValue,
+  getDisplayedTimeRemaining,
   getGroupSortValue,
   compareSortValues,
   withTimeRemainingLast,
@@ -205,14 +206,20 @@ export const presentBookshelf = (
         }
 
         if (hasOrder) {
-          // getBookSortValue has no Series case (main's mixed order relies on that),
-          // so the priority path reads a book's series itself.
-          const getVal = (item: Book | BooksGroup, by: LibrarySortByType) =>
-            'books' in item
-              ? getGroupSortValue(item, by, groupBy)
-              : by === LibrarySortByType.Series
-                ? item.metadata?.series || ''
-                : getBookSortValue(item, by);
+          // The legacy helpers stay as main has them, so this path reads a book's
+          // series itself, and the time remaining a card shows (none for unread
+          // or finished books), as book-to-book comparisons do.
+          const timeLeft = (book: Book) =>
+            getDisplayedTimeRemaining(book, pageDurations?.[book.hash]) ?? Infinity;
+          const getVal = (item: Book | BooksGroup, by: LibrarySortByType) => {
+            if (by === LibrarySortByType.TimeRemaining) {
+              return 'books' in item ? Math.min(...item.books.map(timeLeft)) : timeLeft(item);
+            }
+            if ('books' in item) return getGroupSortValue(item, by, groupBy);
+            return by === LibrarySortByType.Series
+              ? item.metadata?.series || ''
+              : getBookSortValue(item, by);
+          };
           return compareByPriorityOrder(
             (by) => getVal(a, by),
             (by) => getVal(b, by),
