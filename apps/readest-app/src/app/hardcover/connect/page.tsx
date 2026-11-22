@@ -122,7 +122,7 @@ export default function HardcoverConnectPage() {
         <div
           ref={headerRef}
           className={clsx(
-            'fixed z-10 flex w-full items-center justify-between py-2 pe-6 ps-4',
+            'fixed z-30 flex w-full items-center justify-between py-2 pe-6 ps-4',
             appService?.hasTrafficLight && 'pt-11',
           )}
           style={{ top: `${safeAreaInsets?.top || 0}px` }}
