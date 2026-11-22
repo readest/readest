@@ -71,6 +71,22 @@ class Query {
     this.filters.push((row) => (row[column] ?? null) === value);
     return this;
   }
+  not(column: string, _op: 'is', value: null) {
+    this.filters.push((row) => (row[column] ?? null) !== value);
+    return this;
+  }
+  gt(column: string, value: string) {
+    this.filters.push((row) => String(row[column]) > value);
+    return this;
+  }
+  lte(column: string, value: string) {
+    this.filters.push((row) => String(row[column]) <= value);
+    return this;
+  }
+  lt(column: string, value: string) {
+    this.filters.push((row) => String(row[column]) < value);
+    return this;
+  }
   in(column: string, values: unknown[]) {
     this.filters.push((row) => values.includes(row[column]));
     return this;
@@ -180,6 +196,8 @@ export interface GiftDbUser {
 export class GiftDb {
   tables: Record<string, Row[]> = {};
   writes: DbWrite[] = [];
+  /** The recipient ids `claim_gifts_for_confirmed_emails` reports. */
+  sweepClaims: string[] = [];
   private seq = 0;
   private specs: Record<string, TableSpec>;
 
@@ -230,6 +248,9 @@ export class GiftDb {
   client = {
     from: (table: string) => new Query(this, table),
     rpc: (name: string, args: Record<string, unknown>): Promise<Result> => {
+      if (name === 'claim_gifts_for_confirmed_emails') {
+        return Promise.resolve({ data: this.sweepClaims, error: null });
+      }
       if (name !== 'gift_user_id_for_email') throw new Error(`unexpected rpc: ${name}`);
       const email = String(args['p_email']).trim().toLowerCase();
       const user = this.users.find((u) => u.email === email && u.confirmed);
