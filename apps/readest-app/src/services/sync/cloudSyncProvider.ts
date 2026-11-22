@@ -11,9 +11,10 @@ import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry'
  * Providers are INDEPENDENT (#5062): any subset may sync the library at once,
  * including none. Readest Cloud's flag has a derived default so an absent value
  * reproduces the old exclusive behaviour; every third-party backend is a plain
- * per-device `enabled` flag. Account-level data (settings replicas, reading
- * stats, dictionaries/fonts, translations) always syncs via Readest Cloud while
- * signed in, regardless of this selection.
+ * per-device `enabled` flag. Custom fonts follow the same selection (#7793).
+ * Other account-level data (settings replicas, reading stats, dictionaries,
+ * translations) always syncs via Readest Cloud while signed in, regardless of
+ * this selection.
  */
 export type CloudSyncProviderKind = 'readest' | FileSyncBackendKind;
 

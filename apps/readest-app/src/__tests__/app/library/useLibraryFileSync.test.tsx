@@ -46,6 +46,7 @@ vi.mock('@/services/sync/file/runLibrarySync', () => ({
 
 const { useLibraryFileSync } = await import('@/app/library/hooks/useLibraryFileSync');
 const { useLibraryStore } = await import('@/store/libraryStore');
+const { useSettingsStore } = await import('@/store/settingsStore');
 
 const book = (hash: string): Book =>
   ({
@@ -122,6 +123,30 @@ describe('useLibraryFileSync trigger (issue #5062 Task 8)', () => {
       vi.advanceTimersByTime(10_000);
     });
     expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs a pass when a custom font is imported or deleted (#7793)', async () => {
+    routing.backends = ['webdav'];
+    useSettingsStore.setState({ settings: { customFonts: [] } as never });
+
+    const { rerender } = renderHook(() => useLibraryFileSync());
+    await act(async () => {
+      vi.advanceTimersByTime(5_000);
+    });
+    expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(1);
+
+    // saveCustomFonts writes a new list into the same settings object.
+    act(() => {
+      const settings = useSettingsStore.getState().settings;
+      settings.customFonts = [{ id: 'f1', name: 'Inter', path: 'b1/Inter.ttf' }];
+      useSettingsStore.setState({ settings });
+    });
+    rerender();
+    await act(async () => {
+      vi.advanceTimersByTime(5_000);
+    });
+
+    expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(2);
   });
 
   it('does not fire when no backend is active', async () => {

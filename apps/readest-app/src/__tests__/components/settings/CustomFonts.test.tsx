@@ -29,6 +29,9 @@ vi.mock('@/services/sync/replicaBinaryUpload', () => ({
   queueReplicaBinaryDownload: vi.fn(async () => 'transfer-1'),
   queueReplicaBinaryDelete: vi.fn(),
 }));
+vi.mock('@/services/sync/file/runLibrarySync', () => ({
+  runFileFontDownload: vi.fn(async () => false),
+}));
 vi.mock('@/services/sync/replicaPublish', () => ({
   publishReplicaUpsert: vi.fn(),
   publishReplicaDelete: vi.fn(),
@@ -40,6 +43,8 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useTransferStore } from '@/store/transferStore';
 import { saveViewSettings } from '@/helpers/settings';
 import { queueReplicaBinaryDownload } from '@/services/sync/replicaBinaryUpload';
+import { runFileFontDownload } from '@/services/sync/file/runLibrarySync';
+import { eventDispatcher } from '@/utils/event';
 import type { CustomFont } from '@/styles/fonts';
 import type { SystemSettings } from '@/types/settings';
 
@@ -100,6 +105,76 @@ describe('CustomFonts download on demand', () => {
 
     expect(screen.getByRole('status', { name: 'Downloading…' })).not.toBeNull();
     expect(screen.queryByRole('img', { name: 'Download from Cloud' })).toBeNull();
+  });
+
+  it('downloads from a file sync backend before Readest Cloud (#7793)', async () => {
+    vi.mocked(runFileFontDownload).mockResolvedValueOnce(true);
+    useCustomFontStore.setState({ fonts: [cloudFont()] });
+    render(<CustomFonts bookKey='' onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Inter'));
+
+    await waitFor(() => expect(saveViewSettings).toHaveBeenCalled());
+    expect(runFileFontDownload).toHaveBeenCalledWith(
+      env.envConfig,
+      expect.objectContaining({ contentId: 'hash-regular' }),
+    );
+    expect(queueReplicaBinaryDownload).not.toHaveBeenCalled();
+  });
+
+  it('shows progress while a file sync backend downloads the family', async () => {
+    vi.mocked(runFileFontDownload).mockReturnValueOnce(new Promise(() => {}));
+    useCustomFontStore.setState({ fonts: [cloudFont()] });
+    render(<CustomFonts bookKey='' onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Inter'));
+
+    await waitFor(() =>
+      expect(screen.getByRole('status', { name: 'Downloading…' })).not.toBeNull(),
+    );
+  });
+
+  it('keeps a later pick when an earlier family finishes downloading', async () => {
+    let finishDownload: (done: boolean) => void = () => {};
+    vi.mocked(runFileFontDownload).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishDownload = resolve;
+      }),
+    );
+    const lora = cloudFont({ id: 'lora', contentId: 'hash-lora', name: 'Lora', family: 'Lora' });
+    useCustomFontStore.setState({ fonts: [cloudFont(), { ...lora, unavailable: undefined }] });
+    render(<CustomFonts bookKey='' onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Inter'));
+    fireEvent.click(screen.getByText('Lora'));
+    finishDownload(true);
+
+    await waitFor(() => expect(screen.queryByRole('status', { name: 'Downloading…' })).toBeNull());
+    expect(vi.mocked(saveViewSettings).mock.calls.map(([, , , family]) => family)).toEqual([
+      'Lora',
+    ]);
+  });
+
+  it('keeps the spinner while a repeated pick of the family still downloads', async () => {
+    let failFirst: (done: boolean) => void = () => {};
+    vi.mocked(runFileFontDownload)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          failFirst = resolve;
+        }),
+      )
+      .mockReturnValueOnce(new Promise(() => {}));
+    vi.mocked(queueReplicaBinaryDownload).mockResolvedValueOnce(null);
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+    useCustomFontStore.setState({ fonts: [cloudFont()] });
+    render(<CustomFonts bookKey='' onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Inter'));
+    fireEvent.click(screen.getByText('Inter'));
+    failFirst(false);
+
+    await waitFor(() => expect(dispatch).toHaveBeenCalledWith('toast', expect.anything()));
+    expect(screen.queryByRole('status', { name: 'Downloading…' })).not.toBeNull();
   });
 
   it('does not download a family that is already on this device', () => {

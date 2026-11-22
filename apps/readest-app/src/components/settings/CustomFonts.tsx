@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { MdAdd, MdDelete, MdOutlineCloudDownload } from 'react-icons/md';
 import { IoMdCloseCircleOutline } from 'react-icons/io';
 import { useEnv } from '@/context/EnvContext';
@@ -15,6 +15,7 @@ import {
   queueReplicaBinaryDownload,
   queueReplicaBinaryUpload,
 } from '@/services/sync/replicaBinaryUpload';
+import { runFileFontDownload } from '@/services/sync/file/runLibrarySync';
 import { eventDispatcher } from '@/utils/event';
 import { Tips } from './primitives';
 import { useSettingsSubPageBack } from './settingsSubPageBack';
@@ -51,6 +52,12 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   // null = idle, true = importing (spinner), { family } = done importing (show font name).
   // The card stays mounted throughout — only its content changes.
   const [importingFont, setImportingFont] = useState<true | { family: string } | null>(null);
+  // A file sync backend downloads in place, outside the transfer queue: the
+  // spinner belongs to the pick that started the download.
+  const [fileDownload, setFileDownload] = useState<{ family: string; selection: number } | null>(
+    null,
+  );
+  const latestSelection = useRef(0);
 
   const { selectFiles } = useFileSelector(appService, _);
 
@@ -120,20 +127,31 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
   };
 
   const isFamilyDownloading = (family: FontFamily) =>
+    fileDownload?.family === family.name ||
     family.fonts.some((f) => f.contentId && getReplicaTransfer('font', f.contentId, 'download'));
 
   const handleSelectFamily = async (family: FontFamily) => {
     // Synced fonts download on demand: fetch every missing weight of the
-    // family, then select it — the download handler mounts the faces.
+    // family, then select it — the download handler mounts the faces. A file
+    // sync backend goes first (#7793): a font that came through one may not be
+    // in Readest Cloud, while queuing a Readest Cloud download can't tell.
     const cloudFonts = family.fonts.filter((f) => f.unavailable);
+    const selection = ++latestSelection.current;
     if (cloudFonts.length > 0) {
+      setFileDownload({ family: family.name, selection });
       const queued = await Promise.all(
-        cloudFonts.map((font) => queueReplicaBinaryDownload('font', font)),
-      );
+        cloudFonts.map(
+          async (font) =>
+            (await runFileFontDownload(envConfig, font)) ||
+            (await queueReplicaBinaryDownload('font', font)),
+        ),
+      ).finally(() => setFileDownload((shown) => (shown?.selection === selection ? null : shown)));
       if (!queued.some(Boolean)) {
         eventDispatcher.dispatch('toast', { type: 'error', message: _('Download failed') });
         return;
       }
+      // A family picked while this one downloaded keeps the selection.
+      if (selection !== latestSelection.current) return;
     }
     if (currentDefaultFont === 'serif') {
       saveViewSettings(envConfig, bookKey, 'serifFont', family.name);

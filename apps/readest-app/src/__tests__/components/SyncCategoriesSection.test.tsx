@@ -69,4 +69,14 @@ describe('SyncCategoriesSection', () => {
     expect(row('Books').checked).toBe(true);
     expect(row('App settings').checked).toBe(true);
   });
+
+  test('fonts read as managed by the file provider while Readest Cloud is off (#7793)', () => {
+    useSettingsStore.setState({
+      settings: { ...base, readestCloud: { enabled: false }, webdav: { enabled: true } },
+    } as never);
+    render(<SyncCategoriesSection />);
+    const managed = 'Managed by {{provider}} while it is your cloud sync provider';
+    expect(row('Fonts').closest('li')!.textContent).toContain(managed);
+    expect(row('Dictionaries').closest('li')!.textContent).not.toContain(managed);
+  });
 });

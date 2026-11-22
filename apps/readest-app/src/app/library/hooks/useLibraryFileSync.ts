@@ -35,6 +35,7 @@ export const useLibraryFileSync = () => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const settings = useSettingsStore((s) => s.settings);
+  const customFonts = useSettingsStore((s) => s.settings?.customFonts);
   const library = useLibraryStore((s) => s.library);
   const libraryLoaded = useLibraryStore((s) => s.libraryLoaded);
   const { userProfilePlan } = useQuotaStats();
@@ -53,9 +54,10 @@ export const useLibraryFileSync = () => {
 
   // Library changes — import (adds a row), delete (sets deletedAt), book close
   // (bumps updatedAt) — all mutate `library`, so this single effect covers them
-  // plus the initial load pull.
+  // plus the initial load pull. A custom font import or delete saves a new
+  // `customFonts` list, and the pass carries fonts too (#7793).
   useEffect(() => {
     if (!hasBackends || !libraryLoaded) return;
     debouncedSync();
-  }, [library, libraryLoaded, hasBackends, debouncedSync]);
+  }, [library, customFonts, libraryLoaded, hasBackends, debouncedSync]);
 };
