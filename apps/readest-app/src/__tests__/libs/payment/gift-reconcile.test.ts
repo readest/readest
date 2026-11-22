@@ -24,7 +24,7 @@ vi.mock('@/libs/payment/gift/claim', () => ({
   },
 }));
 
-import { reconcileGiftCards } from '@/libs/payment/gift/reconcile';
+import { RECONCILE_PAGE_SIZE, reconcileGiftCards } from '@/libs/payment/gift/reconcile';
 
 const NOW = new Date('2026-12-01T12:00:00Z');
 const HOUR = 3_600_000;
@@ -52,6 +52,15 @@ describe('reconcileGiftCards', () => {
     const result = await reconcileGiftCards(NOW);
     expect(h.synced).toEqual(['ended']);
     expect(result).toMatchObject({ claimed: 0, synced: 1 });
+  });
+
+  // PostgREST caps a response at max-rows, so one select would miss the rest.
+  it('syncs recipients beyond the first page of claimed cards', async () => {
+    for (let i = 0; i <= RECONCILE_PAGE_SIZE; i++) claimed(`ended-${i}`, 365 * DAY + HOUR);
+
+    const result = await reconcileGiftCards(NOW);
+
+    expect(result.synced).toBe(RECONCILE_PAGE_SIZE + 1);
   });
 
   it('skips recipients with no boundary in the window', async () => {

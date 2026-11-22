@@ -33,6 +33,7 @@ class Query {
   private filters: Array<(row: Row) => boolean> = [];
   private match: Row = {};
   private sort: { column: string; ascending: boolean } | null = null;
+  private window: { from: number; to: number } | null = null;
   private mode: 'many' | 'single' | 'maybeSingle' = 'many';
 
   constructor(
@@ -93,6 +94,10 @@ class Query {
   }
   order(column: string, { ascending = true }: { ascending?: boolean } = {}) {
     this.sort = { column, ascending };
+    return this;
+  }
+  range(from: number, to: number) {
+    this.window = { from, to };
     return this;
   }
   single() {
@@ -173,6 +178,12 @@ class Query {
         (a, b) => String(a[column]).localeCompare(String(b[column])) * (ascending ? 1 : -1),
       );
     }
+    if (this.op === 'select') {
+      // PostgREST answers at most `max-rows` rows, however many match.
+      const from = this.window?.from ?? 0;
+      const to = this.window ? this.window.to + 1 : out.length;
+      out = out.slice(from, Math.min(to, from + this.db.maxRows));
+    }
 
     const copies = out.map((row) => ({ ...row }));
     if (this.mode === 'many') {
@@ -198,6 +209,8 @@ export class GiftDb {
   writes: DbWrite[] = [];
   /** The recipient ids `claim_gifts_for_confirmed_emails` reports. */
   sweepClaims: string[] = [];
+  /** PostgREST's `max-rows`, as Supabase sets it. */
+  maxRows = 1000;
   private seq = 0;
   private specs: Record<string, TableSpec>;
 

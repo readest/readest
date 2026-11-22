@@ -8,6 +8,7 @@ const DRAFT_TTL_MS = 7 * 24 * HOUR_MS;
 // The cron runs every 10 minutes; the window is wide enough to survive missed
 // runs, and a repeated sync is harmless.
 const WINDOW_MS = 2 * HOUR_MS;
+export const RECONCILE_PAGE_SIZE = 1000;
 
 /**
  * The cron's three jobs: hand cards to newly confirmed emails, re-sync every
@@ -26,15 +27,25 @@ export const reconcileGiftCards = async (
   const claimedIds = (swept.data ?? []) as string[];
   const picked = new Set(claimedIds);
 
-  const active = await supabase
-    .from('gift_cards')
-    .select('*')
-    .eq('status', 'active')
-    .not('redeemed_at', 'is', null)
-    .not('redeemed_by', 'is', null);
-  if (active.error) throw active.error;
+  // PostgREST answers at most `max-rows` rows (1000 on Supabase), so the
+  // claimed cards are read a page at a time, in a stable order.
+  const active: GiftCardRow[] = [];
+  for (let from = 0; ; from += RECONCILE_PAGE_SIZE) {
+    const page = await supabase
+      .from('gift_cards')
+      .select('*')
+      .eq('status', 'active')
+      .not('redeemed_at', 'is', null)
+      .not('redeemed_by', 'is', null)
+      .order('id')
+      .range(from, from + RECONCILE_PAGE_SIZE - 1);
+    if (page.error) throw page.error;
+    const rows = (page.data ?? []) as GiftCardRow[];
+    active.push(...rows);
+    if (rows.length < RECONCILE_PAGE_SIZE) break;
+  }
   const byRecipient = new Map<string, GiftCardRow[]>();
-  for (const card of (active.data ?? []) as GiftCardRow[]) {
+  for (const card of active) {
     byRecipient.set(card.redeemed_by!, [...(byRecipient.get(card.redeemed_by!) ?? []), card]);
   }
   for (const [userId, cards] of byRecipient) {
