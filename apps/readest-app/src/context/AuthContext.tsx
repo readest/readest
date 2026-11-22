@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { isAuthRetryableFetchError, User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
+import { claimGiftCards } from '@/libs/payment/gift/client';
 import posthog from 'posthog-js';
 
 interface AuthContextType {
@@ -112,13 +113,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // refs in the deps) is what makes the useMemo below actually memoize the
   // context value — without this, login/logout/refresh would be recreated on
   // every render and the memo would always invalidate.
-  const login = useCallback((newToken: string, newUser: User) => {
-    console.log('Logging in');
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
+  const refresh = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      return !error && !!data.session;
+    } catch {
+      return false;
+    }
   }, []);
+
+  const login = useCallback(
+    (newToken: string, newUser: User) => {
+      console.log('Logging in');
+      setToken(newToken);
+      setUser(newUser);
+      localStorage.setItem('token', newToken);
+      localStorage.setItem('user', JSON.stringify(newUser));
+      // Gift cards bought for this email reach the account at sign-in; the
+      // refreshed session then carries the gifted plan.
+      claimGiftCards()
+        .then((claimed) => (claimed > 0 ? refresh() : undefined))
+        .catch((error) => console.error('Failed to claim gift cards:', error));
+    },
+    [refresh],
+  );
 
   const logout = useCallback(async () => {
     console.log('Logging out');
@@ -136,15 +154,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       await supabase.auth.signOut({ scope: 'local' });
       signingOut.current = false;
-    }
-  }, []);
-
-  const refresh = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.auth.refreshSession();
-      return !error && !!data.session;
-    } catch {
-      return false;
     }
   }, []);
 

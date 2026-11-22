@@ -66,6 +66,17 @@ vi.mock('@/app/user/components/SyncCategoriesSection', () => ({
   SyncCategoriesSection: () => null,
 }));
 vi.mock('@/app/user/components/Checkout', () => ({ default: () => null }));
+vi.mock('@/app/user/components/gift/GiftCardsSection', () => ({ default: () => null }));
+vi.mock('@/libs/payment/gift/client', () => ({
+  claimGiftCards: vi.fn().mockResolvedValue(0),
+  fetchGiftCards: vi.fn().mockResolvedValue({
+    sent: [],
+    received: [],
+    giftPlan: 'free',
+    giftActiveUntil: null,
+    giftOnly: false,
+  }),
+}));
 
 afterEach(() => {
   cleanup();

@@ -14,6 +14,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
 import { useAvailablePlans } from '@/hooks/useAvailablePlans';
 import type { PlanType } from '@/types/quota';
+import type { GiftCardsResponse } from '@/types/gift';
 import { navigateBackFromProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -27,6 +28,7 @@ import {
   getSubscriptionSuccessUrl as getIAPSubscriptionSuccessUrl,
 } from '@/libs/payment/iap/client';
 import { isPurchaseProduct } from '@/libs/payment/iap/utils';
+import { claimGiftCards, fetchGiftCards } from '@/libs/payment/gift/client';
 import {
   createStripeCheckoutSession,
   redirectToStripeCheckout,
@@ -49,6 +51,9 @@ import SharedLinksSection from './components/SharedLinksSection';
 import { SyncPassphraseSection } from './components/SyncPassphraseSection';
 import { SyncCategoriesSection } from './components/SyncCategoriesSection';
 import Checkout from './components/Checkout';
+import GiftCardsSection from './components/gift/GiftCardsSection';
+
+type GiftInfo = Pick<GiftCardsResponse, 'giftPlan' | 'giftActiveUntil' | 'giftOnly'>;
 
 type CheckoutState = {
   clientSecret: string;
@@ -71,6 +76,11 @@ const ProfilePage = () => {
   const [showSyncManager, setShowSyncManager] = useState(
     () => searchParams?.get('section') === 'sync',
   );
+  const giftCode = searchParams?.get('gift') || undefined;
+  const [showGiftCards, setShowGiftCards] = useState(
+    () => searchParams?.get('section') === 'gifts' || !!giftCode,
+  );
+  const [giftInfo, setGiftInfo] = useState<GiftInfo | null>(null);
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({
     clientSecret: '',
     sessionId: '',
@@ -97,7 +107,11 @@ const ProfilePage = () => {
     if (isAuthenticated || signingOut) return;
 
     const timer = setTimeout(() => {
-      const redirect = searchParams?.get('redirect') || '/library';
+      // A gift link comes back here after sign-in, with its code.
+      const gift = searchParams?.get('gift');
+      const redirect = gift
+        ? `/user?gift=${encodeURIComponent(gift)}`
+        : searchParams?.get('redirect') || '/library';
       // Replace, so leaving the login page goes back to the opener (#7567).
       router.replace(`/auth?redirect=${encodeURIComponent(redirect)}`);
     }, 1000);
@@ -106,6 +120,36 @@ const ProfilePage = () => {
   }, [mounted, user, token, appService, router, searchParams, signingOut]);
 
   useTheme({ systemUIVisible: false });
+
+  const loadGiftInfo = useCallback(async () => {
+    try {
+      const { giftPlan, giftActiveUntil, giftOnly } = await fetchGiftCards();
+      setGiftInfo({ giftPlan, giftActiveUntil, giftOnly });
+    } catch (error) {
+      console.error('Failed to load gift cards:', error);
+    }
+  }, []);
+
+  // Claim gifts sent to this account's email, then learn whether a gift is
+  // what sets the plan, for the plan cards and Manage Subscription.
+  const signedIn = !!(user && token);
+  useEffect(() => {
+    if (!signedIn) return;
+    const claimThenLoad = async () => {
+      try {
+        if ((await claimGiftCards()) > 0) await refresh();
+      } catch (error) {
+        console.error('Failed to claim gift cards:', error);
+      }
+      await loadGiftInfo();
+    };
+    void claimThenLoad();
+  }, [signedIn, refresh, loadGiftInfo]);
+
+  const handleGiftPlanChanged = useCallback(() => {
+    void refresh();
+    void loadGiftInfo();
+  }, [refresh, loadGiftInfo]);
 
   const { quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
 
@@ -132,6 +176,8 @@ const ProfilePage = () => {
       setShowSharedLinksManager(false);
     } else if (showSyncManager) {
       setShowSyncManager(false);
+    } else if (showGiftCards) {
+      setShowGiftCards(false);
     } else {
       // A book stays open beneath while this page sits over it (#6607).
       const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
@@ -145,7 +191,7 @@ const ProfilePage = () => {
     // Someone who already holds a subscription changes plan or billing period
     // in the billing portal. Opening a second checkout session would leave the
     // old subscription running alongside the new one and bill them twice.
-    if (shouldUseBillingPortal(userProfilePlan, planType)) {
+    if (shouldUseBillingPortal(userProfilePlan, planType, giftInfo?.giftOnly)) {
       await openStripePortal('subscription_update');
       return;
     }
@@ -298,6 +344,9 @@ const ProfilePage = () => {
   const handleManageSync = () => {
     setShowSyncManager(true);
   };
+  const handleManageGiftCards = () => {
+    setShowGiftCards(true);
+  };
 
   if (!mounted) {
     return null;
@@ -320,6 +369,15 @@ const ProfilePage = () => {
   const userEmail = user?.email || '';
   const userPlanDetails =
     getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
+  const buyThroughIAP = appService.hasIAP && iapAvailable;
+  const gift =
+    giftInfo && giftInfo.giftPlan !== 'free' && giftInfo.giftActiveUntil
+      ? {
+          plan: giftInfo.giftPlan,
+          activeUntil: giftInfo.giftActiveUntil,
+          giftOnly: giftInfo.giftOnly,
+        }
+      : undefined;
 
   return (
     <div
@@ -361,9 +419,10 @@ const ProfilePage = () => {
                     planDetails={userPlanDetails}
                   />
 
-                  {!showStorageManager && !showSharedLinksManager && !showSyncManager && (
-                    <UsageStats quotas={quotas} />
-                  )}
+                  {!showStorageManager &&
+                    !showSharedLinksManager &&
+                    !showSyncManager &&
+                    !showGiftCards && <UsageStats quotas={quotas} />}
                 </div>
 
                 {showStorageManager ? (
@@ -379,6 +438,19 @@ const ProfilePage = () => {
                     <SyncCategoriesSection />
                     <SyncPassphraseSection />
                   </div>
+                ) : showGiftCards ? (
+                  <div className='flex flex-col gap-y-8 px-6'>
+                    <GiftCardsSection
+                      initialCode={giftCode}
+                      stripeSessionId={
+                        searchParams?.get('section') === 'gifts'
+                          ? searchParams.get('session_id') || undefined
+                          : undefined
+                      }
+                      useIAP={buyThroughIAP}
+                      onPlanChanged={handleGiftPlanChanged}
+                    />
+                  </div>
                 ) : (
                   <>
                     <div className='flex flex-col gap-y-8 px-2 sm:px-6'>
@@ -386,11 +458,8 @@ const ProfilePage = () => {
                         availablePlans={availablePlans}
                         userPlan={userProfilePlan}
                         customizationPurchased={customizationPurchased}
-                        onSubscribe={
-                          appService.hasIAP && iapAvailable
-                            ? handleIAPSubscribe
-                            : handleStripeSubscribe
-                        }
+                        gift={gift}
+                        onSubscribe={buyThroughIAP ? handleIAPSubscribe : handleStripeSubscribe}
                       />
                     </div>
                     <div className='flex flex-col gap-y-8 px-6'>
@@ -400,6 +469,7 @@ const ProfilePage = () => {
                         userPlan={userProfilePlan}
                         customizationPurchased={customizationPurchased}
                         iapAvailable={iapAvailable}
+                        giftOnly={giftInfo?.giftOnly}
                         onLogout={handleLogout}
                         onResetPassword={handleResetPassword}
                         onUpdateEmail={handleUpdateEmail}
@@ -410,6 +480,7 @@ const ProfilePage = () => {
                         onManageStorage={handleManageStorage}
                         onManageSharedLinks={handleManageSharedLinks}
                         onManageSync={handleManageSync}
+                        onManageGiftCards={handleManageGiftCards}
                       />
                     </div>
                   </>
