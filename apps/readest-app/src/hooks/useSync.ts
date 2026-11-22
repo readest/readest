@@ -14,6 +14,7 @@ import { transformBookFromDB } from '@/utils/transform';
 import { DBBook, DBBookConfig, DBBookNote } from '@/types/records';
 import { Book, BookConfig, BookDataRecord, BookNote } from '@/types/book';
 import { navigateToLogin } from '@/utils/nav';
+import { getBookChangedAt } from '@/utils/book';
 import { useReaderStore } from '@/store/readerStore';
 
 const transformsFromDB = {
@@ -74,14 +75,6 @@ const recordCloudFlow = (
 };
 
 export const BOOKS_PULL_PAGE_SIZE = 1000;
-
-/**
- * Books per push request. /api/sync keeps Next's 1 MB body limit, and a book
- * row with its parsed metadata is about 1-5 KB, so a library imported in bulk
- * (every book changed within the push look-back) went over it in one request
- * and failed with "Body exceeded 1mb limit" on every sync.
- */
-export const BOOKS_PUSH_BATCH_SIZE = 100;
 
 /**
  * Pull the books delta in bounded pages: a delta grown to a whole 10k-book
@@ -219,6 +212,7 @@ export function useSync(bookKey?: string) {
     setSyncing: React.Dispatch<React.SetStateAction<boolean>>,
     bookId?: string,
     metaHash?: string,
+    maxCursor = Infinity,
   ) => {
     setSyncing(true);
     setSyncError(null);
@@ -235,9 +229,9 @@ export function useSync(bookKey?: string) {
           (cursor) => {
             // Persist the cursor per page so an interrupted initial sync
             // resumes from the last page instead of restarting from `since`.
-            setLastSyncedAt(cursor);
+            setLastSyncedAt(Math.min(cursor, maxCursor));
             const settings = useSettingsStore.getState().settings;
-            settings.lastSyncedAtBooks = cursor;
+            settings.lastSyncedAtBooks = Math.min(cursor, maxCursor);
             setSettings(settings);
           },
         );
@@ -252,7 +246,10 @@ export function useSync(bookKey?: string) {
       recordCloudFlow('pull', type, countSyncedRecords(type, newRecords));
       if (since > 1000 && !records?.length) return 0;
       // For since <= 1000, we set lastSyncedAt to now if no records returned
-      const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();
+      const maxTime = Math.min(
+        records?.length ? computeMaxTimestamp(records) : Date.now(),
+        maxCursor,
+      );
       setLastSyncedAt(maxTime);
 
       // due to closures in React hooks the settings might be stale
@@ -348,10 +345,15 @@ export function useSync(bookKey?: string) {
     async (books?: Book[], op: SyncOp = 'both', since?: number) => {
       if (!lastSyncedAtInited) return;
       if (!isSyncCategoryEnabled('book')) return;
-      if ((op === 'push' || op === 'both') && books?.length) {
-        for (let i = 0; i < books.length; i += BOOKS_PUSH_BATCH_SIZE) {
-          // Books not pushed stay unsynced, so the next sync sends them again.
-          if (!(await pushChanges({ books: books.slice(i, i + BOOKS_PUSH_BATCH_SIZE) }))) break;
+      let maxCursor = Infinity;
+      if ((op === 'push' || op === 'both') && books?.length && !(await pushChanges({ books }))) {
+        // The next push sends a synced book only if it changed after the
+        // cursor (getNewBooks), so a pull must not move the cursor past the
+        // changes this push left unsent.
+        for (const book of books) {
+          if (!book.syncedAt) continue;
+          const changedAt = Math.max(getBookChangedAt(book), book.deletedAt ?? 0);
+          maxCursor = Math.min(maxCursor, changedAt - 1);
         }
       }
       if (op === 'pull' || op === 'both') {
@@ -360,6 +362,9 @@ export function useSync(bookKey?: string) {
           since ?? lastSyncedAtBooks + 1,
           setLastSyncedAtBooks,
           setSyncingBooks,
+          undefined,
+          undefined,
+          maxCursor,
         );
       }
       return;
