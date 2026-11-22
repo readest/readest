@@ -2965,6 +2965,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
                 contextOnly={dictionaryContextOnly}
                 onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
+                // The Notebook pins beside the page from 640 px wide, as on a
+                // phone in landscape, which is too short for the popup (#7789).
+                onPin={window.innerWidth >= 640 ? handlePinDictionary : undefined}
               />
             );
           }

@@ -7,6 +7,8 @@ import {
   useDictionaryResults,
   DictionaryResultsHeader,
   DictionaryResultsBody,
+  lookupToPin,
+  type UseDictionaryResultsArgs,
   type VocabularyCapture,
 } from './DictionaryResultsView';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
@@ -21,6 +23,8 @@ interface DictionarySheetProps {
   contextOnly?: boolean;
   onDismiss: () => void;
   onManage?: () => void;
+  /** Move the lookup into the Notebook's Dictionary tab; omit to hide the pin. */
+  onPin?: (lookup: UseDictionaryResultsArgs) => void;
 }
 
 const DictionarySheet: React.FC<DictionarySheetProps> = ({
@@ -31,8 +35,11 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
   contextOnly,
   onDismiss,
   onManage,
+  onPin,
 }) => {
   const state = useDictionaryResults({ word, lang, selection, capture, contextOnly });
+  const handlePin = () =>
+    onPin?.(lookupToPin({ word, lang, selection, capture, contextOnly }, state));
   return (
     <Dialog
       isOpen
@@ -48,6 +55,7 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
           canGoBack={state.canGoBack}
           goBack={state.goBack}
           onManage={onManage}
+          onPin={onPin && handlePin}
           onSpeak={state.speakWord}
           speaking={state.isSpeaking}
           vocabularyLang={state.vocabularyLang}
