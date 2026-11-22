@@ -2895,5 +2895,6 @@
   "Create Backup": "Sicherung erstellen",
   "Restore from Backup": "Aus Sicherung wiederherstellen",
   "Your backup has been saved to the selected location.": "Ihre Sicherung wurde am ausgewählten Ort gespeichert.",
-  "Cover only": "Nur Cover"
+  "Cover only": "Nur Cover",
+  "Look up text in the system dictionary after selection": "Text nach Auswahl im Systemwörterbuch nachschlagen"
 }

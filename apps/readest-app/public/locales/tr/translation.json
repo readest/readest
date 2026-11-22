@@ -2895,5 +2895,6 @@
   "Create Backup": "Yedek oluştur",
   "Restore from Backup": "Yedekten geri yükle",
   "Your backup has been saved to the selected location.": "Yedeğiniz seçilen konuma kaydedildi.",
-  "Cover only": "Yalnızca kapaklar"
+  "Cover only": "Yalnızca kapaklar",
+  "Look up text in the system dictionary after selection": "Seçimden sonra metni sistem sözlüğünde ara"
 }

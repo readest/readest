@@ -2820,5 +2820,6 @@
   "Create Backup": "สร้างข้อมูลสำรอง",
   "Restore from Backup": "กู้คืนจากข้อมูลสำรอง",
   "Your backup has been saved to the selected location.": "บันทึกข้อมูลสำรองไปยังตำแหน่งที่เลือกแล้ว",
-  "Cover only": "เฉพาะหน้าปก"
+  "Cover only": "เฉพาะหน้าปก",
+  "Look up text in the system dictionary after selection": "ค้นหาข้อความในพจนานุกรมของระบบหลังการเลือก"
 }

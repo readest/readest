@@ -2895,5 +2895,6 @@
   "Create Backup": "Δημιουργία αντιγράφου ασφαλείας",
   "Restore from Backup": "Επαναφορά από αντίγραφο ασφαλείας",
   "Your backup has been saved to the selected location.": "Το αντίγραφο ασφαλείας αποθηκεύτηκε στην επιλεγμένη τοποθεσία.",
-  "Cover only": "Μόνο εξώφυλλα"
+  "Cover only": "Μόνο εξώφυλλα",
+  "Look up text in the system dictionary after selection": "Αναζήτηση κειμένου στο λεξικό συστήματος μετά την επιλογή"
 }

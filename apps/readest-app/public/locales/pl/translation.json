@@ -3045,5 +3045,6 @@
   "Create Backup": "Utwórz kopię zapasową",
   "Restore from Backup": "Przywróć z kopii zapasowej",
   "Your backup has been saved to the selected location.": "Kopia zapasowa została zapisana w wybranej lokalizacji.",
-  "Cover only": "Tylko okładki"
+  "Cover only": "Tylko okładki",
+  "Look up text in the system dictionary after selection": "Sprawdź zaznaczony tekst w słowniku systemowym"
 }

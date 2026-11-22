@@ -3045,5 +3045,6 @@
   "Create Backup": "Ustvari varnostno kopijo",
   "Restore from Backup": "Obnovi iz varnostne kopije",
   "Your backup has been saved to the selected location.": "Varnostna kopija je shranjena na izbrano mesto.",
-  "Cover only": "Samo naslovnice"
+  "Cover only": "Samo naslovnice",
+  "Look up text in the system dictionary after selection": "Poišči besedilo v sistemskem slovarju po izbiri"
 }

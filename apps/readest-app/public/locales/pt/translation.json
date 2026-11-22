@@ -2970,5 +2970,6 @@
   "Create Backup": "Criar backup",
   "Restore from Backup": "Restaurar a partir do backup",
   "Your backup has been saved to the selected location.": "O seu backup foi guardado na localização selecionada.",
-  "Cover only": "Apenas capas"
+  "Cover only": "Apenas capas",
+  "Look up text in the system dictionary after selection": "Procurar texto no dicionário do sistema após a seleção"
 }

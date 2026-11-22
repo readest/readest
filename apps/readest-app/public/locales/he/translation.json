@@ -2970,5 +2970,6 @@
   "Create Backup": "יצירת גיבוי",
   "Restore from Backup": "שחזור מגיבוי",
   "Your backup has been saved to the selected location.": "הגיבוי נשמר במיקום שנבחר.",
-  "Cover only": "כריכות בלבד"
+  "Cover only": "כריכות בלבד",
+  "Look up text in the system dictionary after selection": "חפש טקסט במילון המערכת לאחר הבחירה"
 }

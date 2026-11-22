@@ -3195,5 +3195,6 @@
   "Create Backup": "إنشاء نسخة احتياطية",
   "Restore from Backup": "الاستعادة من نسخة احتياطية",
   "Your backup has been saved to the selected location.": "تم حفظ النسخة الاحتياطية في الموقع المحدد.",
-  "Cover only": "الأغلفة فقط"
+  "Cover only": "الأغلفة فقط",
+  "Look up text in the system dictionary after selection": "البحث عن النص في قاموس النظام بعد التحديد"
 }

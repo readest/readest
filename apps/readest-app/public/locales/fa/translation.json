@@ -2895,5 +2895,6 @@
   "Create Backup": "ایجاد پشتیبان",
   "Restore from Backup": "بازیابی از پشتیبان",
   "Your backup has been saved to the selected location.": "پشتیبان شما در مکان انتخاب‌شده ذخیره شد.",
-  "Cover only": "فقط جلدها"
+  "Cover only": "فقط جلدها",
+  "Look up text in the system dictionary after selection": "جستجوی متن در فرهنگ‌نامه سیستم پس از انتخاب"
 }
