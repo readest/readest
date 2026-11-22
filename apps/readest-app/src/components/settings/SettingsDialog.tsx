@@ -6,7 +6,7 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCommandPalette } from '@/components/command-palette';
 import { RiFontSize, RiShareLine } from 'react-icons/ri';
-import { RiDashboardLine, RiTranslate } from 'react-icons/ri';
+import { RiDashboardLine, RiTranslate2 } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { PiDotsThreeVerticalBold, PiRobot, PiSpeakerHigh } from 'react-icons/pi';
 import { LiaHandPointerSolid } from 'react-icons/lia';
@@ -33,7 +33,11 @@ import LangPanel from './LangPanel';
 import MiscPanel from './MiscPanel';
 import AIPanel from './AIPanel';
 import TTSPanel from './TTSPanel';
-import { SettingsSubPageBackScope, stepBackSettingsSubPage } from './settingsSubPageBack';
+import {
+  SettingsSubPageBackScope,
+  stepBackSettingsSubPage,
+  trackSettingsScroll,
+} from './settingsSubPageBack';
 
 export type SettingsPanelType =
   | 'Font'
@@ -113,7 +117,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     },
     {
       tab: 'Language',
-      icon: RiTranslate,
+      icon: RiTranslate2,
       label: _('Language'),
     },
     {
@@ -178,8 +182,10 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       observer = new MutationObserver(apply);
       observer.observe(scroller, { attributeFilter: ['data-overlayscrollbars-viewport'] });
     }
+    const untrackSubPages = trackSettingsScroll(scroller);
 
     return () => {
+      untrackSubPages();
       if (observer) observer.disconnect();
       else savedScroll = { panel: activePanel, top: scroller.scrollTop };
       panel.style.visibility = '';

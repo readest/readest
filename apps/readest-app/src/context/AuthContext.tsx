@@ -8,6 +8,7 @@ import {
   useMemo,
   ReactNode,
   useEffect,
+  useRef,
 } from 'react';
 import { isAuthRetryableFetchError, User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
@@ -37,11 +38,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     return null;
   });
+  // logout() refreshes before signing out, which reports the session again.
+  const signingOut = useRef(false);
 
   useEffect(() => {
     const syncSession = (
       session: { access_token: string; refresh_token: string; user: User } | null,
     ) => {
+      if (session && signingOut.current) return;
       if (session) {
         console.log('Syncing session');
         const { access_token, refresh_token, user } = session;
@@ -118,15 +122,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(async () => {
     console.log('Logging out');
+    // Signed out in the app at once: the requests below can take a while (the
+    // refresh retries for up to 30 s offline), and pages opened meanwhile still
+    // saw the user signed in, so the library kept them signed in (#7726).
+    signingOut.current = true;
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
     try {
       await supabase.auth.refreshSession();
     } catch {
     } finally {
       await supabase.auth.signOut({ scope: 'local' });
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
+      signingOut.current = false;
     }
   }, []);
 

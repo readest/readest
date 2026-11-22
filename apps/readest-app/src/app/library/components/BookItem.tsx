@@ -32,6 +32,7 @@ interface BookItemProps {
   mode: LibraryViewModeType;
   coverFit: LibraryCoverFitType;
   skeuomorphicCovers?: boolean;
+  coverOnly?: boolean;
   isSelectMode: boolean;
   bookSelected: boolean;
   transferProgress: number | null;
@@ -50,6 +51,7 @@ const BookItem: React.FC<BookItemProps> = ({
   mode,
   coverFit,
   skeuomorphicCovers,
+  coverOnly = false,
   isSelectMode,
   bookSelected,
   transferProgress,
@@ -140,6 +142,7 @@ const BookItem: React.FC<BookItemProps> = ({
       onClick={(e) => e.stopPropagation()}
     >
       <div
+        title={coverOnly ? book.title : undefined}
         className={clsx(
           'bookitem-main relative flex justify-center overflow-hidden rounded-sm',
           !fitCoverInGrid && 'aspect-28/41',
@@ -196,167 +199,169 @@ const BookItem: React.FC<BookItemProps> = ({
           </div>
         )}
       </div>
-      <div
-        className={clsx(
-          'flex w-full flex-col p-0',
-          mode === 'grid' && 'pt-2',
-          mode === 'list' && 'gap-1 py-0',
-        )}
-      >
-        <div className={clsx('min-w-0 flex-1', mode === 'list' && 'flex flex-col gap-1')}>
-          <h4
-            title={book.title}
-            className={clsx(
-              'overflow-hidden text-ellipsis font-semibold',
-              mode === 'grid' && 'block whitespace-nowrap text-xs',
-              mode === 'list' && 'line-clamp-1 text-base',
-            )}
-          >
-            {book.title}
-          </h4>
-          {mode === 'list' && (
-            <p className='text-neutral-content line-clamp-1 text-sm'>
-              {formatAuthors(book.author, book.primaryLanguage) || ''}
-            </p>
-          )}
-        </div>
-        {mode === 'list' && seriesText && (
-          <p className='text-neutral-content line-clamp-1 text-sm'>{seriesText}</p>
-        )}
-        {mode === 'list' && (
-          <h4 className='text-neutral-content line-clamp-1 text-sm'>
-            {formatDescription(book.metadata?.description)}
-          </h4>
-        )}
+      {!coverOnly && (
         <div
           className={clsx(
-            'flex items-center',
-            book.progress || book.readingStatus || isAbsBook || pageCount
-              ? 'justify-between'
-              : 'justify-end',
+            'flex w-full flex-col p-0',
+            mode === 'grid' && 'pt-2',
+            mode === 'list' && 'gap-1 py-0',
           )}
-          style={{
-            height: `${iconSize15}px`,
-            minHeight: `${iconSize15}px`,
-          }}
         >
-          {isAbsBook && book.readingStatus !== 'finished' ? (
-            <div
-              className='text-neutral-content/70 flex min-w-0 justify-between text-xs'
-              role='status'
-            >
-              <span className='truncate tabular-nums'>
-                {isPodcastShow ? episodeCountLabel : absTimeLabel}
-              </span>
-            </div>
-          ) : (
-            (book.progress || book.readingStatus || pageCount) && (
-              <ReadingProgress
-                book={book}
-                showTimeRemaining={showTimeRemaining}
-                pageCount={pageCount}
-              />
-            )
-          )}
-          {mode === 'list' && tags.length > 0 && (
-            // The tags only take the space left between the progress and the
-            // icons, and clip (fading out) when it runs out. `w-0` zeroes their
-            // min-content contribution, else a long tag list widens the whole
-            // text column and pushes the icons out of the row.
-            <div
-              aria-label={_('Tags')}
+          <div className={clsx('min-w-0 flex-1', mode === 'list' && 'flex flex-col gap-1')}>
+            <h4
+              title={book.title}
               className={clsx(
-                'me-2 flex w-0 min-w-0 flex-1 items-center gap-1.5 overflow-hidden',
-                // Space from the progress only when it shows something.
-                '[:not(:empty)+&]:ms-1.5',
-                '[mask-image:linear-gradient(to_right,black_calc(100%-12px),transparent)]',
-                'rtl:[mask-image:linear-gradient(to_left,black_calc(100%-12px),transparent)]',
-                'eink:[mask-image:none]',
+                'overflow-hidden text-ellipsis font-semibold',
+                mode === 'grid' && 'block whitespace-nowrap text-xs',
+                mode === 'list' && 'line-clamp-1 text-base',
               )}
             >
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className='eink-bordered text-neutral-content/70 border-base-content/15 inline-flex h-3.5 shrink-0 items-center whitespace-nowrap rounded-sm border px-1 text-[10px] leading-none'
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
+              {book.title}
+            </h4>
+            {mode === 'list' && (
+              <p className='text-neutral-content line-clamp-1 text-sm'>
+                {formatAuthors(book.author, book.primaryLanguage) || ''}
+              </p>
+            )}
+          </div>
+          {mode === 'list' && seriesText && (
+            <p className='text-neutral-content line-clamp-1 text-sm'>{seriesText}</p>
           )}
-          <div className='flex shrink-0 items-center justify-center gap-x-2'>
-            {!appService?.isMobile && (
-              <button
-                aria-label={_('Show Book Details')}
-                className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => {
-                  showBookDetailsModal(book);
-                }}
-              >
-                <div className='pt-0.5 sm:pt-px'>
-                  <LiaInfoCircleSolid size={iconSize15} />
-                </div>
-              </button>
+          {mode === 'list' && (
+            <h4 className='text-neutral-content line-clamp-1 text-sm'>
+              {formatDescription(book.metadata?.description)}
+            </h4>
+          )}
+          <div
+            className={clsx(
+              'flex items-center',
+              book.progress || book.readingStatus || isAbsBook || pageCount
+                ? 'justify-between'
+                : 'justify-end',
             )}
-            {(book.hasNarration || isAbsBook) && (
+            style={{
+              height: `${iconSize15}px`,
+              minHeight: `${iconSize15}px`,
+            }}
+          >
+            {isAbsBook && book.readingStatus !== 'finished' ? (
               <div
-                className='pt-0.5 sm:pt-px'
-                title={isAbsBook ? _('Audiobook') : _('Includes narration')}
-                aria-label={isAbsBook ? _('Audiobook') : _('Includes narration')}
+                className='text-neutral-content/70 flex min-w-0 justify-between text-xs'
+                role='status'
               >
-                <LiaHeadphonesSolid size={iconSize15} />
+                <span className='truncate tabular-nums'>
+                  {isPodcastShow ? episodeCountLabel : absTimeLabel}
+                </span>
               </div>
+            ) : (
+              (book.progress || book.readingStatus || pageCount) && (
+                <ReadingProgress
+                  book={book}
+                  showTimeRemaining={showTimeRemaining}
+                  pageCount={pageCount}
+                />
+              )
             )}
-            {book.absDownloadedAt && (
+            {mode === 'list' && tags.length > 0 && (
+              // The tags only take the space left between the progress and the
+              // icons, and clip (fading out) when it runs out. `w-0` zeroes their
+              // min-content contribution, else a long tag list widens the whole
+              // text column and pushes the icons out of the row.
               <div
-                className='pt-0.5 sm:pt-px'
-                title={_('Available Offline')}
-                aria-label={_('Available Offline')}
-              >
-                <MdOutlineOfflinePin size={iconSize15} />
-              </div>
-            )}
-            {isTransferring
-              ? // Progress is rendered as a cover overlay; keep the row's action
-                // buttons hidden while a transfer is active. Same condition as
-                // the overlay, so a book can never show neither.
-                null
-              : // A feed book has no file to move either way, so it never gets a
-                // cloud badge — it would only queue a transfer that fails (#5307).
-                // Same for an ABS book: it streams from the server and never has
-                // uploadedAt/downloadedAt set, so without this check the badge
-                // would render forever and Upload would always fail.
-                !isFeedBook(book) &&
-                !isAudiobook(book) &&
-                (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
-                  <button
-                    aria-label={!book.uploadedAt ? _('Upload Book') : _('Download Book')}
-                    className='show-cloud-button -m-2 p-2'
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={() => {
-                      if (!user) {
-                        navigateToLogin(router);
-                        return;
-                      }
-                      if (!book.uploadedAt) {
-                        handleBookUpload(book);
-                      } else if (!book.downloadedAt) {
-                        handleBookDownload(book, { queued: true });
-                      }
-                    }}
-                  >
-                    {!book.uploadedAt && isReadestCloudStorageActive(settings) && (
-                      <LiaCloudUploadAltSolid size={iconSize15} />
-                    )}
-                    {book.uploadedAt && !book.downloadedAt && (
-                      <LiaCloudDownloadAltSolid size={iconSize15} />
-                    )}
-                  </button>
+                aria-label={_('Tags')}
+                className={clsx(
+                  'me-2 flex w-0 min-w-0 flex-1 items-center gap-1.5 overflow-hidden',
+                  // Space from the progress only when it shows something.
+                  '[:not(:empty)+&]:ms-1.5',
+                  '[mask-image:linear-gradient(to_right,black_calc(100%-12px),transparent)]',
+                  'rtl:[mask-image:linear-gradient(to_left,black_calc(100%-12px),transparent)]',
+                  'eink:[mask-image:none]',
                 )}
+              >
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className='eink-bordered text-neutral-content/70 border-base-content/15 inline-flex h-3.5 shrink-0 items-center whitespace-nowrap rounded-sm border px-1 text-[10px] leading-none'
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className='flex shrink-0 items-center justify-center gap-x-2'>
+              {!appService?.isMobile && (
+                <button
+                  aria-label={_('Show Book Details')}
+                  className='show-detail-button -m-2 p-2 sm:opacity-0 sm:group-hover:opacity-100'
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => {
+                    showBookDetailsModal(book);
+                  }}
+                >
+                  <div className='pt-0.5 sm:pt-px'>
+                    <LiaInfoCircleSolid size={iconSize15} />
+                  </div>
+                </button>
+              )}
+              {(book.hasNarration || isAbsBook) && (
+                <div
+                  className='pt-0.5 sm:pt-px'
+                  title={isAbsBook ? _('Audiobook') : _('Includes narration')}
+                  aria-label={isAbsBook ? _('Audiobook') : _('Includes narration')}
+                >
+                  <LiaHeadphonesSolid size={iconSize15} />
+                </div>
+              )}
+              {book.absDownloadedAt && (
+                <div
+                  className='pt-0.5 sm:pt-px'
+                  title={_('Available Offline')}
+                  aria-label={_('Available Offline')}
+                >
+                  <MdOutlineOfflinePin size={iconSize15} />
+                </div>
+              )}
+              {isTransferring
+                ? // Progress is rendered as a cover overlay; keep the row's action
+                  // buttons hidden while a transfer is active. Same condition as
+                  // the overlay, so a book can never show neither.
+                  null
+                : // A feed book has no file to move either way, so it never gets a
+                  // cloud badge — it would only queue a transfer that fails (#5307).
+                  // Same for an ABS book: it streams from the server and never has
+                  // uploadedAt/downloadedAt set, so without this check the badge
+                  // would render forever and Upload would always fail.
+                  !isFeedBook(book) &&
+                  !isAudiobook(book) &&
+                  (!book.uploadedAt || (book.uploadedAt && !book.downloadedAt)) && (
+                    <button
+                      aria-label={!book.uploadedAt ? _('Upload Book') : _('Download Book')}
+                      className='show-cloud-button -m-2 p-2'
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => {
+                        if (!user) {
+                          navigateToLogin(router);
+                          return;
+                        }
+                        if (!book.uploadedAt) {
+                          handleBookUpload(book);
+                        } else if (!book.downloadedAt) {
+                          handleBookDownload(book, { queued: true });
+                        }
+                      }}
+                    >
+                      {!book.uploadedAt && isReadestCloudStorageActive(settings) && (
+                        <LiaCloudUploadAltSolid size={iconSize15} />
+                      )}
+                      {book.uploadedAt && !book.downloadedAt && (
+                        <LiaCloudDownloadAltSolid size={iconSize15} />
+                      )}
+                    </button>
+                  )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

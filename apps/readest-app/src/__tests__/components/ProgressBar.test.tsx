@@ -536,12 +536,17 @@ describe('ProgressBar — sticky progress bar', () => {
     expect(container.querySelector('.sticky-progress-bar')).toBeNull();
   });
 
-  it('does not render the sticky bar in vertical writing mode', () => {
+  it('renders a vertical sticky bar in vertical writing mode', () => {
     enableStickyBar({ vertical: true });
 
     const { container } = renderProgressBar();
 
-    expect(container.querySelector('.sticky-progress-bar')).toBeNull();
+    const bar = container.querySelector('.sticky-progress-bar') as HTMLElement;
+    expect(bar).not.toBeNull();
+    expect(bar.classList.contains('w-3')).toBe(true);
+    const fill = bar.querySelector('.sticky-progress-fill') as HTMLElement;
+    expect(fill.style.height).toBe('50%');
+    expect(fill.style.top).toBe('0px');
   });
 });
 
@@ -1097,32 +1102,46 @@ describe('ProgressBar — battery percentage follows a custom footer color (#679
   });
 });
 
-describe('ProgressBar vertical safe-area top (#7389)', () => {
-  it('anchors the vertical progress bar below gridInsets.top plus 1.5x margin', () => {
+describe('ProgressBar vertical safe-area and 0px margin floor (#7389)', () => {
+  it('anchors the vertical progress bar within gridInsets.top and gridInsets.bottom plus 1.5x margins', () => {
     currentViewSettings = { ...baseSettings, vertical: true } as ViewSettings;
     const { container } = render(
       <ProgressBar
         bookKey='book-1'
         horizontalGap={0}
-        contentInsets={{ top: 75, right: 0, bottom: 0, left: 0 }}
-        gridInsets={{ top: 59, right: 0, bottom: 0, left: 0 }}
+        contentInsets={{ top: 75, right: 0, bottom: 50, left: 0 }}
+        gridInsets={{ top: 59, right: 0, bottom: 34, left: 0 }}
       />,
     );
     const bar = container.querySelector('.progressinfo') as HTMLElement;
     expect(bar.style.top).toBe('83px');
+    expect(bar.style.bottom).toBe('58px');
+    expect(bar.style.width).toBe('16px');
   });
 
-  it('keeps the 1.5x vertical margin when gridInsets.top is zero', () => {
-    currentViewSettings = { ...baseSettings, vertical: true } as ViewSettings;
+  it('keeps the 1.5x vertical margins and 16px width floor when gridInsets and left margin are zero', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      vertical: true,
+      showRemainingPages: true,
+    } as ViewSettings;
+    currentProgress = makeProgress(1, 4);
+    currentRenderer = { page: 1, pages: 4 };
     const { container } = render(
       <ProgressBar
         bookKey='book-1'
         horizontalGap={0}
-        contentInsets={{ top: 16, right: 0, bottom: 0, left: 0 }}
+        contentInsets={{ top: 16, right: 0, bottom: 16, left: 0 }}
         gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
       />,
     );
     const bar = container.querySelector('.progressinfo') as HTMLElement;
     expect(bar.style.top).toBe('24px');
+    expect(bar.style.bottom).toBe('24px');
+    expect(bar.style.left).toBe('calc(0px)');
+    expect(bar.style.width).toBe('16px');
+    const readout = container.querySelector('.progress-readout') as HTMLElement;
+    expect(readout.classList.contains('min-h-0')).toBe(true);
+    expect(readout.classList.contains('min-w-0')).toBe(false);
   });
 });

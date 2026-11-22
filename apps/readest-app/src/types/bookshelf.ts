@@ -59,6 +59,8 @@ export interface BookshelfDefinition {
   showPageCount?: boolean;
   /** Books without art get the neutral title panel instead of a colored cover (#7549). */
   plainPlaceholderCovers?: boolean;
+  /** Grid and carousel tiles show the cover alone, edge to edge, with no title below (#7746). */
+  coverOnly?: boolean;
   filters: BookshelfFilterGroup;
   /** Missing on older definitions; inherit the View menu's grouping by default. */
   useGlobalGrouping?: boolean;

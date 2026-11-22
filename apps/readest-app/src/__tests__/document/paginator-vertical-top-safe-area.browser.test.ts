@@ -26,7 +26,7 @@ const openVertical = async (scrolled: boolean) => {
   });
   paginator.setAttribute('margin-top', `${59 / 1.5 + 16}px`);
   paginator.setAttribute('margin-right', '16px');
-  paginator.setAttribute('margin-bottom', '24px');
+  paginator.setAttribute('margin-bottom', `${34 / 1.5 + 16}px`);
   paginator.setAttribute('margin-left', '16px');
   paginator.setAttribute('max-column-count', '1');
   paginator.setAttribute('max-inline-size', '720px');
@@ -80,17 +80,17 @@ afterEach(() => {
   urls.splice(0).forEach(URL.revokeObjectURL);
 });
 
-describe('vertical writing mode top safe-area inset (#7389)', () => {
-  it('clears the 59px Dynamic Island plus 1.5x margin in vertical paginated mode', async () => {
+describe('vertical writing mode top and bottom safe-area insets (#7389)', () => {
+  it('clears the 59px Dynamic Island and 34px bottom safe area plus 1.5x margins in vertical paginated mode', async () => {
     await openVertical(false);
     const { top } = getTextColumnBounds();
     expect(top).toBeGreaterThanOrEqual(82);
   });
 
-  it('clears the 59px Dynamic Island and fits within bottom margin in vertical scrolled mode', async () => {
+  it('clears the 59px Dynamic Island and 34px bottom safe area plus 1.5x margins in vertical scrolled mode', async () => {
     await openVertical(true);
     const { top, bottom } = getTextColumnBounds();
     expect(top).toBeGreaterThanOrEqual(82);
-    expect(bottom).toBeLessThanOrEqual(852 - 35);
+    expect(bottom).toBeLessThanOrEqual(852 - 57);
   });
 });

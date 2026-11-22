@@ -44,7 +44,7 @@ const SubPageHeader: React.FC<SubPageHeaderProps> = ({
   onBack,
   rightSlot,
 }) => {
-  useSettingsSubPageBack(onBack);
+  useSettingsSubPageBack(onBack, currentLabel);
 
   return (
     <div className={clsx(description ? 'mb-6' : 'mb-4', 'px-4')}>

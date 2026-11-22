@@ -97,11 +97,11 @@ const HintInfo: React.FC<SectionInfoProps> = ({
         style={
           isVertical
             ? {
-                bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
+                bottom: `${gridInsets.bottom + (contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
                 right: showDoubleBorder
                   ? `calc(${contentInsets.right}px)`
-                  : `calc(${Math.max(0, contentInsets.right - 32)}px)`,
-                width: showDoubleBorder ? '30px' : `${contentInsets.right}px`,
+                  : `calc(${Math.max(0, Math.max(16, contentInsets.right) - 32)}px)`,
+                width: showDoubleBorder ? '30px' : `${Math.max(16, contentInsets.right)}px`,
               }
             : {
                 top: `${band.top}px`,

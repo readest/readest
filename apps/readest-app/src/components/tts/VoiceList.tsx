@@ -42,8 +42,6 @@ interface VoiceListProps {
   // Only the voices whose name or language contains it, in any case; the
   // gender tab narrows them further.
   query?: string;
-  // Off while one engine is picked: its favorites are in the list below.
-  showFavorites: boolean;
 }
 
 // Every group names its engine, though the type leaves it optional.
@@ -66,7 +64,6 @@ const VoiceList: React.FC<VoiceListProps> = ({
   onUpgrade,
   preview,
   query = '',
-  showFavorites,
 }) => {
   const _ = useTranslation();
   const [gender, setGender] = useState<GenderFilter>('all');
@@ -95,13 +92,13 @@ const VoiceList: React.FC<VoiceListProps> = ({
   const shown = groups
     .map((group) => ({ group, voices: group.voices.filter(matches) }))
     .filter(({ voices }) => voices.length > 0);
-  const favoriteRows = showFavorites
-    ? shown.flatMap(({ group, voices }) =>
-        voices
-          .filter((voice) => listed.includes(favoriteKeyOf(group, voice)))
-          .map((voice) => ({ group, voice })),
-      )
-    : [];
+  // With one engine picked, the groups are that engine's alone, and so are
+  // its favorites.
+  const favoriteRows = shown.flatMap(({ group, voices }) =>
+    voices
+      .filter((voice) => listed.includes(favoriteKeyOf(group, voice)))
+      .map((voice) => ({ group, voice })),
+  );
   const narration = shown.filter(({ voices }) => voices.some(isNarration));
   const engines = shown.filter(({ voices }) => !voices.some(isNarration));
 

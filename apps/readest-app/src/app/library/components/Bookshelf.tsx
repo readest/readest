@@ -1178,6 +1178,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
           coverFit={shelf.coverFit || 'crop'}
           skeuomorphicCovers={shelf.skeuomorphicCovers}
           showPageCount={shelf.showPageCount}
+          coverOnly={!!shelf.coverOnly && mode === 'grid'}
           isSelectMode={isSelectMode}
           itemSelected={
             'hash' in item
@@ -1222,12 +1223,13 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     ],
   );
   const lastShelf = sections.at(-1)?.definition;
+  const coverOnly = !!lastShelf?.coverOnly;
   const importTile =
     visibleBooks.length > 0 && lastShelf?.layout === 'grid' ? (
       <div
         className='bookshelf-import-item mx-0 my-2 sm:mx-4 sm:my-4'
         style={
-          lastShelf.coverFit === 'fit'
+          !coverOnly && lastShelf.coverFit === 'fit'
             ? { display: 'flex', paddingBottom: `${iconSize15 + 24}px` }
             : undefined
         }

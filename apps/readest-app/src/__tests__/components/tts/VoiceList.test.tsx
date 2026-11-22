@@ -49,18 +49,15 @@ const renderList = (
   {
     groups = GROUPS,
     selected = null,
-    showFavorites = true,
   }: {
     groups?: TTSVoicesGroup[];
     selected?: { engine?: string; voiceId: string } | null;
-    showFavorites?: boolean;
   } = {},
 ) => {
   render(
     <VoiceList
       groups={groups}
       selected={selected}
-      showFavorites={showFavorites}
       onSelect={onSelect}
       onUpgrade={vi.fn()}
       preview={{ toggle: vi.fn(), statusOf: () => null }}
@@ -166,14 +163,6 @@ describe('VoiceList favorites', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Female' }));
 
     expect(screen.queryByText('Favorites')).toBeNull();
-  });
-
-  it('shows no Favorites section while one engine is picked', () => {
-    TTSUtils.toggleFavoriteVoice('edge-tts', 'en-GB-RyanNeural');
-    renderList(vi.fn(), { showFavorites: false });
-
-    expect(screen.queryByText('Favorites')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Remove Ryan from favorites' })).toBeTruthy();
   });
 
   it("keeps the book's narrator first, with no heart", () => {

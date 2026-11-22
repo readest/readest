@@ -77,7 +77,7 @@ describe('BackupWindow screen wake lock (#6291)', () => {
     });
     expect(lastWakeLockRequest()).toBe(false);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Backup Library' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Create Backup' }));
     await waitFor(() => expect(lastWakeLockRequest()).toBe(true));
     expect(mocks.useScreenWakeLock).toHaveBeenLastCalledWith(
       true,
@@ -101,7 +101,7 @@ describe('BackupWindow screen wake lock (#6291)', () => {
       setBackupDialogVisible(true);
     });
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Restore Library' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore from Backup' }));
     await waitFor(() => expect(lastWakeLockRequest()).toBe(true));
 
     await act(async () => {

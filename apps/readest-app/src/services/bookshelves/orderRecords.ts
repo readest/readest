@@ -15,7 +15,7 @@ export const bookshelfOrderModeSchema = z
       .regex(/^[0-9a-f]{13}-[0-9a-f]{8}-.+$/)
       .nullable(),
   })
-  .strict();
+  .loose();
 
 export const createBookshelfOrderModeRow = (
   shelfId: string,
@@ -70,7 +70,7 @@ export const bookshelfItemOrderSchema = z
     ids: z.array(z.string().max(200)).max(CHUNK_SIZE),
     orderedAt: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional(),
   })
-  .strict()
+  .loose()
   .refine((value) => value.chunk < value.chunks);
 
 export const createBookshelfOrderRows = (

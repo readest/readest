@@ -29,6 +29,17 @@ pub fn is_eink_device() -> bool {
     *IS_EINK.get_or_init(detect_eink_device)
 }
 
+/// JNI entry for `MainActivity.isEinkDevice()`. The activity picks its launch
+/// theme before the window draws, long before the Tauri runtime starts, so
+/// an e-ink launch can go white instead of through the dark splash (#7346).
+#[no_mangle]
+pub extern "system" fn Java_com_bilingify_readest_MainActivity_isEinkDevice(
+    _env: *mut std::ffi::c_void,
+    _class: *mut std::ffi::c_void,
+) -> u8 {
+    is_eink_device() as u8
+}
+
 /// Probe the device identity properties and e-ink specific properties once.
 fn detect_eink_device() -> bool {
     let lower = |prop: &str| get_system_property(prop).unwrap_or_default().to_lowercase();

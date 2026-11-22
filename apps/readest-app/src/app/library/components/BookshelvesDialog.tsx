@@ -528,6 +528,7 @@ export function BookshelvesEditor({
           coverFit={shelf.coverFit || 'crop'}
           skeuomorphicCovers={shelf.skeuomorphicCovers}
           showPageCount={shelf.showPageCount}
+          coverOnly={!!shelf.coverOnly && mode === 'grid'}
           isSelectMode={false}
           itemSelected={false}
           transferProgress={null}
@@ -726,6 +727,12 @@ export function BookshelvesEditor({
                     plainPlaceholderCovers: selected.plainPlaceholderCovers ? undefined : true,
                   })
                 }
+              />
+              <SettingsSwitchRow
+                label={_('Cover only')}
+                checked={!!selected.coverOnly}
+                // Off clears the key: older app versions reject a definition carrying it.
+                onChange={() => update({ coverOnly: selected.coverOnly ? undefined : true })}
               />
               <SettingsSwitchRow
                 label={_('Show page count')}

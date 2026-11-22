@@ -59,4 +59,19 @@ describe('StickyProgressBar', () => {
     const tick = container.querySelector('.sticky-progress-tick') as HTMLElement;
     expect(tick.style.right).toBe('25%');
   });
+
+  it('positions fill and ticks vertically from the top edge in vertical mode', () => {
+    const { container } = render(
+      <StickyProgressBar fraction={0.5} tickFractions={[0.25, 0.75]} vertical />,
+    );
+    // Rendered geometry: sticky-progress-bar-vertical.browser.test.tsx.
+    const fill = container.querySelector('.sticky-progress-fill') as HTMLElement;
+    expect(fill.style.height).toBe('50%');
+    expect(fill.style.top).toBe('0px');
+    expect(fill.style.width).toBe('');
+    const ticks = container.querySelectorAll('.sticky-progress-tick');
+    expect(ticks.length).toBe(2);
+    expect((ticks[0] as HTMLElement).style.top).toBe('25%');
+    expect((ticks[1] as HTMLElement).style.top).toBe('75%');
+  });
 });

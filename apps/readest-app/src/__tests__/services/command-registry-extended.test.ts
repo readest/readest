@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('react-icons/ri', () => ({
   RiFontSize: () => null,
   RiDashboardLine: () => null,
-  RiTranslate: () => null,
+  RiTranslate2: () => null,
   RiPlugLine: () => null,
   RiShareLine: () => null,
 }));

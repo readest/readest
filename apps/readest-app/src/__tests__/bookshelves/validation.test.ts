@@ -9,6 +9,7 @@ import {
   resolveBookshelfGroupBy,
 } from '@/services/bookshelves/grouping';
 import type { ReplicaRow } from '@/types/replica';
+import { bookshelfAdapter } from '@/services/sync/adapters/bookshelf';
 const clock = new HlcGenerator('device');
 const makeRow = (): ReplicaRow => {
   const t = clock.next();
@@ -70,6 +71,16 @@ describe('bookshelf validation boundaries', () => {
     expect(
       readBookshelves(settings).find((s) => s.id === row.replica_id)?.plainPlaceholderCovers,
     ).toBe(true);
+  });
+  it('round-trips the Cover only choice through synced definitions (#7746)', () => {
+    const row = makeRow();
+    row.fields_jsonb['definition']!.v = {
+      ...createBookshelf('Covers', row.replica_id),
+      coverOnly: true,
+    };
+    const settings = { bookshelves: { rows: { [row.replica_id]: row } } };
+    expect(validateRow(row).ok).toBe(true);
+    expect(readBookshelves(settings).find((s) => s.id === row.replica_id)?.coverOnly).toBe(true);
   });
   it('round-trips relative date filters through synced definitions', () => {
     const row = makeRow();
@@ -169,6 +180,17 @@ describe('bookshelf validation boundaries', () => {
     expect(readBookshelves(settings).find((s) => s.id === row.replica_id)?.hideCovers).toBe(false);
     row.fields_jsonb['definition']!.v = { ...definition, hideCovers: 'invalid' };
     expect(validateRow(row).ok).toBe(false);
+  });
+  it('accepts rows and definitions carrying fields from a newer app version', () => {
+    const row = makeRow();
+    const definition = row.fields_jsonb['definition']!.v as Record<string, unknown> & {
+      sort: Record<string, unknown>;
+    };
+    definition['tint'] = 'red';
+    definition.sort['nulls'] = 'last';
+    row.fields_jsonb['color'] = { v: 'red', t: row.updated_at_ts, s: 'newer' };
+    expect(validateRow(row).ok).toBe(true);
+    expect(bookshelfAdapter.unpackRow(row, '')).toBe(row);
   });
   it('accepts atomic definitions and independently stamped positions', () => {
     const row = makeRow();
