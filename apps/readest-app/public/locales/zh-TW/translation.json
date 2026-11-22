@@ -2842,5 +2842,12 @@
   "The text is too long for Apple Intelligence on this device.": "文字過長，此裝置上的 Apple Intelligence 無法處理。",
   "Forget": "忘記",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "忘記此 WebDAV 伺服器？其位址與登入資訊將從此裝置、Readest Cloud 以及您未連線到它的其他裝置上移除。伺服器上的檔案不受影響。",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "忘記此 S3 儲存貯體？其端點與金鑰將從此裝置、Readest Cloud 以及您未連線到它的其他裝置上移除。儲存貯體中的檔案不受影響。"
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "忘記此 S3 儲存貯體？其端點與金鑰將從此裝置、Readest Cloud 以及您未連線到它的其他裝置上移除。儲存貯體中的檔案不受影響。",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "它們的閱讀時長將在你的所有裝置上轉到另一本書。此操作無法復原。",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "它們的閱讀時長將在此裝置上轉到另一本書。此操作無法復原。",
+  "Merge {{count}} entries into “{{target}}”?_other": "要將 {{count}} 個條目合併到《{{target}}》嗎？",
+  "Their reading time is removed from all your devices. This can’t be undone.": "這些書的閱讀時長將從你的所有裝置中移除。此操作無法復原。",
+  "Their reading time is removed from this device. This can’t be undone.": "這些書的閱讀時長將從此裝置中移除。此操作無法復原。",
+  "Delete the reading statistics of {{count}} books?_other": "要刪除 {{count}} 本書的閱讀統計嗎？",
+  "Merge {{count}} entries into:_other": "將 {{count}} 個條目合併到："
 }

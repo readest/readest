@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { MdCalendarMonth, MdMenuBook } from 'react-icons/md';
+import { MdCalendarMonth, MdChecklist, MdMenuBook } from 'react-icons/md';
 import Dialog from '@/components/Dialog';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
@@ -59,6 +59,8 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
   const { user } = useAuth();
   const [stats, setStats] = useState<ReadingStats | null>(null);
   const [failed, setFailed] = useState(false);
+  // Statistics by Book is checking entries to merge or delete (#7812).
+  const [selecting, setSelecting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const shownPage = useRef(page);
 
@@ -68,6 +70,7 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
     const previous = shownPage.current;
     if (previous === page) return;
     shownPage.current = page;
+    setSelecting(false);
     const target = contentRef.current?.querySelector<HTMLElement>(
       page ? '[data-subpage-heading]' : `[data-setting-id="${PAGE_ENTRY[previous!]}"]`,
     );
@@ -150,10 +153,33 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
             currentLabel={_('Statistics by Book')}
             description={_('Each book’s reading time, most recently read first')}
             onBack={() => onPage(null)}
+            rightSlot={
+              totals.books > 0 && (
+                <button
+                  type='button'
+                  className='btn btn-ghost btn-sm text-base-content -me-4 gap-2 px-3'
+                  title={selecting ? undefined : _('Select')}
+                  aria-label={selecting ? undefined : _('Select')}
+                  onClick={() => setSelecting((v) => !v)}
+                >
+                  {selecting ? (
+                    _('Cancel')
+                  ) : (
+                    <>
+                      <MdChecklist className='h-5 w-5 min-[800px]:h-4 min-[800px]:w-4' />
+                      {/* Icon only on narrow screens, so the breadcrumb stays readable. */}
+                      <span className='hidden min-[800px]:inline'>{_('Select')}</span>
+                    </>
+                  )}
+                </button>
+              )
+            }
           />
         </div>
         <BookStatsList
           db={stats.db}
+          selecting={selecting}
+          onSelectingDone={() => setSelecting(false)}
           reloadKey={stats}
           onChange={() =>
             void readStats(stats.db)

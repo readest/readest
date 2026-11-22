@@ -2917,5 +2917,15 @@
   "The text is too long for Apple Intelligence on this device.": "இந்தச் சாதனத்தில் உள்ள Apple Intelligence-க்கு உரை மிக நீளமாக உள்ளது.",
   "Forget": "மறந்துவிடு",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "இந்த WebDAV சேவையகத்தை மறக்கவா? அதன் முகவரியும் உள்நுழைவு விவரங்களும் இந்தச் சாதனம், Readest Cloud மற்றும் அதனுடன் இணைக்கப்படாத உங்கள் பிற சாதனங்களிலிருந்து அகற்றப்படும். சேவையகத்தில் உள்ள கோப்புகள் தொடப்படாது.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "இந்த S3 பக்கெட்டை மறக்கவா? அதன் எண்ட்பாயிண்ட் மற்றும் விசைகள் இந்தச் சாதனம், Readest Cloud மற்றும் அதனுடன் இணைக்கப்படாத உங்கள் பிற சாதனங்களிலிருந்து அகற்றப்படும். பக்கெட்டில் உள்ள கோப்புகள் தொடப்படாது."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "இந்த S3 பக்கெட்டை மறக்கவா? அதன் எண்ட்பாயிண்ட் மற்றும் விசைகள் இந்தச் சாதனம், Readest Cloud மற்றும் அதனுடன் இணைக்கப்படாத உங்கள் பிற சாதனங்களிலிருந்து அகற்றப்படும். பக்கெட்டில் உள்ள கோப்புகள் தொடப்படாது.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "இவற்றின் வாசிப்பு நேரம் உங்கள் எல்லா சாதனங்களிலும் மற்ற புத்தகத்துக்கு மாற்றப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "இவற்றின் வாசிப்பு நேரம் இந்தச் சாதனத்தில் மற்ற புத்தகத்துக்கு மாற்றப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+  "Merge {{count}} entries into “{{target}}”?_one": "{{count}} பதிவை “{{target}}” உடன் இணைக்கவா?",
+  "Merge {{count}} entries into “{{target}}”?_other": "{{count}} பதிவுகளை “{{target}}” உடன் இணைக்கவா?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "இவற்றின் வாசிப்பு நேரம் உங்கள் எல்லா சாதனங்களிலிருந்தும் அகற்றப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+  "Their reading time is removed from this device. This can’t be undone.": "இவற்றின் வாசிப்பு நேரம் இந்தச் சாதனத்திலிருந்து அகற்றப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+  "Delete the reading statistics of {{count}} books?_one": "{{count}} புத்தகத்தின் வாசிப்பு புள்ளிவிவரங்களை நீக்கவா?",
+  "Delete the reading statistics of {{count}} books?_other": "{{count}} புத்தகங்களின் வாசிப்பு புள்ளிவிவரங்களை நீக்கவா?",
+  "Merge {{count}} entries into:_one": "{{count}} பதிவை இதனுடன் இணை:",
+  "Merge {{count}} entries into:_other": "{{count}} பதிவுகளை இதனுடன் இணை:"
 }

@@ -2917,5 +2917,15 @@
   "The text is too long for Apple Intelligence on this device.": "Το κείμενο είναι πολύ μεγάλο για το Apple Intelligence σε αυτήν τη συσκευή.",
   "Forget": "Διαγραφή στοιχείων",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Να διαγραφούν τα στοιχεία αυτού του διακομιστή WebDAV; Η διεύθυνση και τα στοιχεία σύνδεσης θα αφαιρεθούν από αυτή τη συσκευή, από το Readest Cloud και από τις άλλες συσκευές σας που δεν είναι συνδεδεμένες σε αυτόν. Τα αρχεία στον διακομιστή δεν επηρεάζονται.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Να διαγραφούν τα στοιχεία αυτού του κάδου S3; Το τελικό σημείο και τα κλειδιά θα αφαιρεθούν από αυτή τη συσκευή, από το Readest Cloud και από τις άλλες συσκευές σας που δεν είναι συνδεδεμένες σε αυτόν. Τα αρχεία στον κάδο δεν επηρεάζονται."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Να διαγραφούν τα στοιχεία αυτού του κάδου S3; Το τελικό σημείο και τα κλειδιά θα αφαιρεθούν από αυτή τη συσκευή, από το Readest Cloud και από τις άλλες συσκευές σας που δεν είναι συνδεδεμένες σε αυτόν. Τα αρχεία στον κάδο δεν επηρεάζονται.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Ο χρόνος ανάγνωσής τους θα μεταφερθεί στο άλλο βιβλίο σε όλες τις συσκευές σας. Η ενέργεια δεν αναιρείται.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Ο χρόνος ανάγνωσής τους θα μεταφερθεί στο άλλο βιβλίο σε αυτήν τη συσκευή. Η ενέργεια δεν αναιρείται.",
+  "Merge {{count}} entries into “{{target}}”?_one": "Συγχώνευση {{count}} καταχώρισης στο «{{target}}»;",
+  "Merge {{count}} entries into “{{target}}”?_other": "Συγχώνευση {{count}} καταχωρίσεων στο «{{target}}»;",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Ο χρόνος ανάγνωσής τους θα αφαιρεθεί από όλες τις συσκευές σας. Η ενέργεια δεν αναιρείται.",
+  "Their reading time is removed from this device. This can’t be undone.": "Ο χρόνος ανάγνωσής τους θα αφαιρεθεί από αυτήν τη συσκευή. Η ενέργεια δεν αναιρείται.",
+  "Delete the reading statistics of {{count}} books?_one": "Διαγραφή των στατιστικών ανάγνωσης {{count}} βιβλίου;",
+  "Delete the reading statistics of {{count}} books?_other": "Διαγραφή των στατιστικών ανάγνωσης {{count}} βιβλίων;",
+  "Merge {{count}} entries into:_one": "Συγχώνευση {{count}} καταχώρισης σε:",
+  "Merge {{count}} entries into:_other": "Συγχώνευση {{count}} καταχωρίσεων σε:"
 }

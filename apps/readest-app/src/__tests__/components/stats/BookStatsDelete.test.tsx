@@ -40,8 +40,8 @@ const entry = (md5: string, title: string, seconds: number): BookStats => ({
 // A fake StatisticsDb whose books disappear once deleteBookStats ran for them.
 const fakeDb = (books: BookStats[]) => {
   let left = books;
-  sync.deleteBookStats.mockImplementation(async (_db, _client, book: { bookMd5: string }) => {
-    left = left.filter((b) => b.md5 !== book.bookMd5);
+  sync.deleteBookStats.mockImplementation(async (_db, _client, gone: { bookMd5: string }[]) => {
+    left = left.filter((b) => !gone.some((g) => g.bookMd5 === b.md5));
   });
   const fake = {
     getQuarterHourDurations: async () => [],
@@ -86,14 +86,61 @@ describe('Statistics by Book', () => {
     fireEvent.click(within(alert).getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => expect(screen.queryByText('Dune (old copy)')).toBeNull());
-    expect(sync.deleteBookStats).toHaveBeenCalledWith(fake, null, {
-      bookMd5: 'b',
-      title: 'Dune (old copy)',
-      authors: 'Author',
-    });
+    expect(sync.deleteBookStats).toHaveBeenCalledWith(fake, null, [
+      { bookMd5: 'b', title: 'Dune (old copy)', authors: 'Author' },
+    ]);
     expect(screen.getByText('Dune')).toBeTruthy();
     // the totals on the main page are read again
     expect(fake.getReadingTotals.mock.calls.length).toBeGreaterThan(1);
+  });
+
+  it('deletes several selected books at once (#7812)', async () => {
+    const fake = fakeDb([
+      entry('a', 'Dune', 600),
+      entry('b', 'Dune (copy 1)', 60),
+      entry('c', 'Dune (copy 2)', 60),
+    ]);
+    await openBooksPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Select' }));
+    // the per-entry actions give way to checkboxes
+    expect(screen.queryByRole('button', { name: 'Delete statistics of Dune' })).toBeNull();
+    const deleteSelected = screen.getByRole('button', { name: 'Delete' });
+    expect((deleteSelected as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Dune (copy 1)' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Dune (copy 2)' }));
+    expect(screen.getByText('2 selected')).toBeTruthy();
+
+    fireEvent.click(deleteSelected);
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText('Delete the reading statistics of 2 books?')).toBeTruthy();
+    fireEvent.click(within(alert).getByRole('button', { name: 'Delete' }));
+
+    await waitFor(() => expect(screen.queryByText('Dune (copy 1)')).toBeNull());
+    expect(sync.deleteBookStats).toHaveBeenCalledTimes(1);
+    expect(sync.deleteBookStats).toHaveBeenCalledWith(fake, null, [
+      { bookMd5: 'b', title: 'Dune (copy 1)', authors: 'Author' },
+      { bookMd5: 'c', title: 'Dune (copy 2)', authors: 'Author' },
+    ]);
+    expect(screen.queryByText('Dune (copy 2)')).toBeNull();
+    // back to the list, out of selection
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Delete statistics of Dune' })).toBeTruthy();
+  });
+
+  it('selects every book at once and leaves selection with Cancel', async () => {
+    fakeDb([entry('a', 'Dune', 600), entry('b', 'Emma', 60)]);
+    await openBooksPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Select' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select All' }));
+    expect(screen.getByText('2 selected')).toBeTruthy();
+    expect(screen.getAllByRole('checkbox').every((c) => (c as HTMLInputElement).checked)).toBe(
+      true,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Deselect' }));
+    expect(screen.getByText('0 selected')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(sync.deleteBookStats).not.toHaveBeenCalled();
   });
 
   it('deletes on every device through the sync server when stats sync is on', async () => {
@@ -177,11 +224,9 @@ describe('Book Details: Reading Statistics', () => {
     );
 
     expect(await screen.findByText('No reading statistics yet')).toBeTruthy();
-    expect(sync.deleteBookStats.mock.calls[0]![2]).toEqual({
-      bookMd5: 'a',
-      title: 'Dune',
-      authors: 'Author',
-    });
+    expect(sync.deleteBookStats.mock.calls[0]![2]).toEqual([
+      { bookMd5: 'a', title: 'Dune', authors: 'Author' },
+    ]);
   });
 
   it('offers nothing to delete for a book with no statistics', async () => {

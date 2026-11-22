@@ -2917,5 +2917,15 @@
   "The text is too long for Apple Intelligence on this device.": "De tekst is te lang voor Apple Intelligence op dit apparaat.",
   "Forget": "Vergeten",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Deze WebDAV-server vergeten? Het adres en de inloggegevens worden verwijderd van dit apparaat, uit Readest Cloud en van uw andere apparaten die er niet mee verbonden zijn. Bestanden op de server blijven ongemoeid.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Deze S3-bucket vergeten? Het endpoint en de sleutels worden verwijderd van dit apparaat, uit Readest Cloud en van uw andere apparaten die er niet mee verbonden zijn. Bestanden in de bucket blijven ongemoeid."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Deze S3-bucket vergeten? Het endpoint en de sleutels worden verwijderd van dit apparaat, uit Readest Cloud en van uw andere apparaten die er niet mee verbonden zijn. Bestanden in de bucket blijven ongemoeid.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Hun leestijd gaat op al je apparaten naar het andere boek. Dit kan niet ongedaan worden gemaakt.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Hun leestijd gaat op dit apparaat naar het andere boek. Dit kan niet ongedaan worden gemaakt.",
+  "Merge {{count}} entries into “{{target}}”?_one": "{{count}} item samenvoegen in ‘{{target}}’?",
+  "Merge {{count}} entries into “{{target}}”?_other": "{{count}} items samenvoegen in ‘{{target}}’?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Hun leestijd wordt van al je apparaten verwijderd. Dit kan niet ongedaan worden gemaakt.",
+  "Their reading time is removed from this device. This can’t be undone.": "Hun leestijd wordt van dit apparaat verwijderd. Dit kan niet ongedaan worden gemaakt.",
+  "Delete the reading statistics of {{count}} books?_one": "Leesstatistieken van {{count}} boek verwijderen?",
+  "Delete the reading statistics of {{count}} books?_other": "Leesstatistieken van {{count}} boeken verwijderen?",
+  "Merge {{count}} entries into:_one": "{{count}} item samenvoegen in:",
+  "Merge {{count}} entries into:_other": "{{count}} items samenvoegen in:"
 }

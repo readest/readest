@@ -2992,5 +2992,18 @@
   "The text is too long for Apple Intelligence on this device.": "O texto é demasiado longo para o Apple Intelligence neste dispositivo.",
   "Forget": "Esquecer",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Esquecer este servidor WebDAV? O endereço e as credenciais serão removidos deste dispositivo, do Readest Cloud e dos seus outros dispositivos que não estejam ligados a ele. Os ficheiros no servidor não são afetados.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Esquecer este bucket S3? O endpoint e as chaves serão removidos deste dispositivo, do Readest Cloud e dos seus outros dispositivos que não estejam ligados a ele. Os ficheiros no bucket não são afetados."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Esquecer este bucket S3? O endpoint e as chaves serão removidos deste dispositivo, do Readest Cloud e dos seus outros dispositivos que não estejam ligados a ele. Os ficheiros no bucket não são afetados.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "O tempo de leitura delas passará para o outro livro em todos os seus dispositivos. Esta ação não pode ser anulada.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "O tempo de leitura delas passará para o outro livro neste dispositivo. Esta ação não pode ser anulada.",
+  "Merge {{count}} entries into “{{target}}”?_one": "Unir {{count}} entrada a «{{target}}»?",
+  "Merge {{count}} entries into “{{target}}”?_many": "Unir {{count}} entradas a «{{target}}»?",
+  "Merge {{count}} entries into “{{target}}”?_other": "Unir {{count}} entradas a «{{target}}»?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "O tempo de leitura deles será removido de todos os seus dispositivos. Esta ação não pode ser anulada.",
+  "Their reading time is removed from this device. This can’t be undone.": "O tempo de leitura deles será removido deste dispositivo. Esta ação não pode ser anulada.",
+  "Delete the reading statistics of {{count}} books?_one": "Excluir as estatísticas de leitura de {{count}} livro?",
+  "Delete the reading statistics of {{count}} books?_many": "Excluir as estatísticas de leitura de {{count}} livros?",
+  "Delete the reading statistics of {{count}} books?_other": "Excluir as estatísticas de leitura de {{count}} livros?",
+  "Merge {{count}} entries into:_one": "Unir {{count}} entrada a:",
+  "Merge {{count}} entries into:_many": "Unir {{count}} entradas a:",
+  "Merge {{count}} entries into:_other": "Unir {{count}} entradas a:"
 }

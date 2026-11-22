@@ -2842,5 +2842,12 @@
   "The text is too long for Apple Intelligence on this device.": "ཡི་གེ་འདི་སྒྲིག་ཆས་འདིའི་ Apple Intelligence ལ་རིང་དྲགས་འདུག",
   "Forget": "བརྗེད་པ།",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "WebDAV ཞབས་ཞུ་འཕྲུལ་ཆས་འདི་བརྗེད་དགོས་སམ། དེའི་ཁ་བྱང་དང་ནང་འཛུལ་ཆ་འཕྲིན་སྒྲིག་ཆས་འདི་དང་། Readest Cloud། དེ་དང་མཐུད་མེད་པའི་ཁྱེད་ཀྱི་སྒྲིག་ཆས་གཞན་དག་ནས་སུབ་རྒྱུ་ཡིན། ཞབས་ཞུ་འཕྲུལ་ཆས་ཐོག་གི་ཡིག་ཆར་ཐེ་གཏོགས་མི་བྱེད།",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "S3 སྣོད་འདི་བརྗེད་དགོས་སམ། དེའི་མཐའ་ཚེག་དང་ལྡེ་མིག་སྒྲིག་ཆས་འདི་དང་། Readest Cloud། དེ་དང་མཐུད་མེད་པའི་ཁྱེད་ཀྱི་སྒྲིག་ཆས་གཞན་དག་ནས་སུབ་རྒྱུ་ཡིན། སྣོད་ནང་གི་ཡིག་ཆར་ཐེ་གཏོགས་མི་བྱེད།"
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "S3 སྣོད་འདི་བརྗེད་དགོས་སམ། དེའི་མཐའ་ཚེག་དང་ལྡེ་མིག་སྒྲིག་ཆས་འདི་དང་། Readest Cloud། དེ་དང་མཐུད་མེད་པའི་ཁྱེད་ཀྱི་སྒྲིག་ཆས་གཞན་དག་ནས་སུབ་རྒྱུ་ཡིན། སྣོད་ནང་གི་ཡིག་ཆར་ཐེ་གཏོགས་མི་བྱེད།",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "དེ་དག་གི་ཀློག་དུས་ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཚང་མའི་ཐོག་དཔེ་དེབ་གཞན་དེར་སྤོ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "དེ་དག་གི་ཀློག་དུས་སྒྲིག་ཆས་འདིའི་ཐོག་དཔེ་དེབ་གཞན་དེར་སྤོ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
+  "Merge {{count}} entries into “{{target}}”?_other": "ཚན་པ་ {{count}} “{{target}}” ནང་མཉམ་སྡེབ་བྱེད་དམ།",
+  "Their reading time is removed from all your devices. This can’t be undone.": "དེ་དག་གི་ཀློག་དུས་ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཚང་མ་ནས་བསུབ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
+  "Their reading time is removed from this device. This can’t be undone.": "དེ་དག་གི་ཀློག་དུས་སྒྲིག་ཆས་འདི་ནས་བསུབ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
+  "Delete the reading statistics of {{count}} books?_other": "དཔེ་དེབ་ {{count}} ཡི་ཀློག་པའི་གྲངས་ཐོ་བསུབ་བམ།",
+  "Merge {{count}} entries into:_other": "ཚན་པ་ {{count}} མཉམ་སྡེབ་ས།"
 }

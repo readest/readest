@@ -90,7 +90,7 @@ describe('mergeBookStats', () => {
       Array.from({ length: 600 }, (_, i) => ({ page: i + 1, startTime: i + 1, duration: 5 })),
     );
     const c = client();
-    await mergeBookStats(stats, c, OLD, NEW);
+    await mergeBookStats(stats, c, [OLD], NEW);
 
     expect(c.pullChanges).toHaveBeenCalled();
     const pushes = c.pushChanges.mock.calls.map((call) => call[0]);
@@ -111,12 +111,36 @@ describe('mergeBookStats', () => {
     expect((await stats.getBookStats('new'))[0]!.seconds).toBe(3000);
   });
 
+  it('merges several entries with one pull and one deletion (#7812)', async () => {
+    const stats = await db();
+    await seed(stats, 'old', [{ page: 1, startTime: 100, duration: 30 }]);
+    await seed(stats, 'older', [{ page: 2, startTime: 50, duration: 20 }]);
+    await seed(stats, 'new', [{ page: 3, startTime: 200, duration: 10 }]);
+    const c = client();
+    await mergeBookStats(stats, c, [OLD, { bookMd5: 'older', title: 'OLDER', authors: 'A' }], NEW);
+
+    expect(c.pullChanges).toHaveBeenCalledTimes(1);
+    const pushes = c.pushChanges.mock.calls.map((call) => call[0]);
+    expect(
+      pushes.map((p) =>
+        (p.statPages ?? []).map(
+          (e: { book_hash: string; start_time: number }) => `${e.book_hash}@${e.start_time}`,
+        ),
+      ),
+    ).toEqual([['new@100'], ['new@50'], []]);
+    expect(pushes[2].statBooks).toEqual([
+      { book_hash: 'old', title: 'OLD', authors: 'A', deleted_at: expect.any(String) },
+      { book_hash: 'older', title: 'OLDER', authors: 'A', deleted_at: expect.any(String) },
+    ]);
+    expect((await stats.getBookStats()).map((b) => [b.md5, b.seconds])).toEqual([['new', 60]]);
+  });
+
   it('merges nothing when the pull fails, so no event is left behind', async () => {
     const stats = await db();
     await seed(stats, 'old', [{ page: 1, startTime: 100, duration: 30 }]);
     const c = client();
     c.pullChanges.mockRejectedValue(new Error('offline'));
-    await expect(mergeBookStats(stats, c, OLD, NEW)).rejects.toThrow('offline');
+    await expect(mergeBookStats(stats, c, [OLD], NEW)).rejects.toThrow('offline');
     expect(c.pushChanges).not.toHaveBeenCalled();
     expect(await stats.getBookByMd5('old')).not.toBeNull();
   });
@@ -126,7 +150,7 @@ describe('mergeBookStats', () => {
     await seed(stats, 'old', [{ page: 1, startTime: 100, duration: 30 }]);
     const c = client();
     c.pushChanges.mockRejectedValue(new Error('offline'));
-    await expect(mergeBookStats(stats, c, OLD, NEW)).rejects.toThrow('offline');
+    await expect(mergeBookStats(stats, c, [OLD], NEW)).rejects.toThrow('offline');
     expect(c.pushChanges).toHaveBeenCalledTimes(1); // no deletion was sent
     expect(await stats.getBookByMd5('old')).not.toBeNull();
     expect(await stats.getBookByMd5('new')).toBeNull();
@@ -135,7 +159,7 @@ describe('mergeBookStats', () => {
   it('merges locally only when stats aren’t synced', async () => {
     const stats = await db();
     await seed(stats, 'old', [{ page: 1, startTime: 100, duration: 30 }]);
-    await mergeBookStats(stats, null, OLD, NEW);
+    await mergeBookStats(stats, null, [OLD], NEW);
     expect((await stats.getBookStats()).map((b) => b.md5)).toEqual(['new']);
   });
 });

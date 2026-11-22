@@ -2842,5 +2842,12 @@
   "The text is too long for Apple Intelligence on this device.": "ข้อความยาวเกินไปสำหรับ Apple Intelligence บนอุปกรณ์นี้",
   "Forget": "ลืม",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "ลืมเซิร์ฟเวอร์ WebDAV นี้หรือไม่? ที่อยู่และข้อมูลเข้าสู่ระบบจะถูกลบออกจากอุปกรณ์นี้ จาก Readest Cloud และจากอุปกรณ์อื่นของคุณที่ไม่ได้เชื่อมต่อกับเซิร์ฟเวอร์นี้ ไฟล์บนเซิร์ฟเวอร์จะไม่ถูกแตะต้อง",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "ลืมบักเก็ต S3 นี้หรือไม่? เอนด์พอยต์และคีย์จะถูกลบออกจากอุปกรณ์นี้ จาก Readest Cloud และจากอุปกรณ์อื่นของคุณที่ไม่ได้เชื่อมต่อกับบักเก็ตนี้ ไฟล์ในบักเก็ตจะไม่ถูกแตะต้อง"
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "ลืมบักเก็ต S3 นี้หรือไม่? เอนด์พอยต์และคีย์จะถูกลบออกจากอุปกรณ์นี้ จาก Readest Cloud และจากอุปกรณ์อื่นของคุณที่ไม่ได้เชื่อมต่อกับบักเก็ตนี้ ไฟล์ในบักเก็ตจะไม่ถูกแตะต้อง",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "เวลาอ่านของรายการเหล่านี้จะย้ายไปยังหนังสืออีกเล่มในอุปกรณ์ทั้งหมดของคุณ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "เวลาอ่านของรายการเหล่านี้จะย้ายไปยังหนังสืออีกเล่มในอุปกรณ์นี้ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+  "Merge {{count}} entries into “{{target}}”?_other": "รวม {{count}} รายการเข้ากับ “{{target}}” หรือไม่",
+  "Their reading time is removed from all your devices. This can’t be undone.": "เวลาอ่านของหนังสือเหล่านี้จะถูกลบออกจากอุปกรณ์ทั้งหมดของคุณ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+  "Their reading time is removed from this device. This can’t be undone.": "เวลาอ่านของหนังสือเหล่านี้จะถูกลบออกจากอุปกรณ์นี้ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+  "Delete the reading statistics of {{count}} books?_other": "ลบสถิติการอ่านของหนังสือ {{count}} เล่มหรือไม่",
+  "Merge {{count}} entries into:_other": "รวม {{count}} รายการเข้ากับ:"
 }

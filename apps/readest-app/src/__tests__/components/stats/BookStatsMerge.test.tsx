@@ -43,13 +43,13 @@ const entry = (md5: string, title: string, seconds: number, lastRead: number): B
 const fakeDb = (books: BookStats[]) => {
   let left = books;
   sync.mergeBookStats.mockImplementation(
-    async (_db, _client, source: StatBook, target: StatBook) => {
-      const from = left.find((b) => b.md5 === source.bookMd5)!;
+    async (_db, _client, sources: StatBook[], target: StatBook) => {
+      const from = left.filter((b) => sources.some((s) => s.bookMd5 === b.md5));
       const into = left.find((b) => b.md5 === target.bookMd5);
-      left = left.filter((b) => b !== from && b !== into);
+      left = left.filter((b) => !from.includes(b) && b !== into);
       left.unshift({
-        ...(into ?? entry(target.bookMd5, target.title, 0, from.lastRead)),
-        seconds: (into?.seconds ?? 0) + from.seconds,
+        ...(into ?? entry(target.bookMd5, target.title, 0, from[0]!.lastRead)),
+        seconds: from.reduce((s, b) => s + b.seconds, into?.seconds ?? 0),
       });
     },
   );
@@ -114,10 +114,51 @@ describe('Statistics by Book: Merge', () => {
     expect(sync.mergeBookStats).toHaveBeenCalledWith(
       fake,
       null,
-      { bookMd5: 'old', title: 'Dune', authors: 'Author' },
+      [{ bookMd5: 'old', title: 'Dune', authors: 'Author' }],
       { bookMd5: 'new', title: 'Dune', authors: 'Author' },
     );
     expect(screen.getByText(/^3h 30m · /)).toBeTruthy();
+  });
+
+  it('merges several selected entries into the one picked from them (#7812)', async () => {
+    const fake = fakeDb([...LIBRARY(), entry('oldest', 'Dune', 300, 500)]);
+    await openBooksPage();
+    fireEvent.click(screen.getByRole('button', { name: 'Select' }));
+    const merge = screen.getByRole('button', { name: 'Merge' });
+    const [, , dune2, dune3] = screen.getAllByRole('checkbox');
+    fireEvent.click(dune2!);
+    // merging needs two entries
+    expect((merge as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(dune3!);
+    fireEvent.click(screen.getAllByRole('checkbox', { name: 'Dune' })[0]!);
+    fireEvent.click(merge);
+
+    expect(screen.getByText('Merge 3 entries into:')).toBeTruthy();
+    // only the selected entries are offered, Emma is not
+    expect(pickerRows().map((b) => b.textContent)).toEqual([
+      expect.stringMatching(/^Dune3h 20m/),
+      expect.stringMatching(/^Dune10m/),
+      expect.stringMatching(/^Dune5m/),
+      'Cancel',
+    ]);
+    fireEvent.click(pickerRows()[0]!);
+    const alert = await screen.findByRole('alert');
+    expect(within(alert).getByText('Merge 2 entries into “Dune”?')).toBeTruthy();
+    fireEvent.click(within(alert).getByRole('button', { name: 'Merge' }));
+
+    await waitFor(() => expect(screen.getAllByText('Dune')).toHaveLength(1));
+    expect(sync.mergeBookStats).toHaveBeenCalledTimes(1);
+    expect(sync.mergeBookStats).toHaveBeenCalledWith(
+      fake,
+      null,
+      [
+        { bookMd5: 'old', title: 'Dune', authors: 'Author' },
+        { bookMd5: 'oldest', title: 'Dune', authors: 'Author' },
+      ],
+      { bookMd5: 'new', title: 'Dune', authors: 'Author' },
+    );
+    expect(screen.getByText(/^3h 35m · /)).toBeTruthy();
+    expect(screen.queryByRole('checkbox')).toBeNull();
   });
 
   it('cancels back to the list', async () => {
@@ -177,9 +218,9 @@ describe('Book Details: Merge', () => {
     fireEvent.click(within(alert).getByRole('button', { name: 'Merge' }));
 
     expect(await screen.findByText('3h 30m')).toBeTruthy();
-    const [, client, source, target] = sync.mergeBookStats.mock.calls[0]!;
+    const [, client, sources, target] = sync.mergeBookStats.mock.calls[0]!;
     expect(client.constructor.name).toBe('SyncClient');
-    expect(source).toEqual({ bookMd5: 'old', title: 'Dune', authors: 'Author' });
+    expect(sources).toEqual([{ bookMd5: 'old', title: 'Dune', authors: 'Author' }]);
     // the target keeps its statistics' title and authors
     expect(target).toEqual({ bookMd5: 'new', title: 'Dune', authors: 'Author' });
   });

@@ -2917,5 +2917,15 @@
   "The text is too long for Apple Intelligence on this device.": "Texten är för lång för Apple Intelligence på den här enheten.",
   "Forget": "Glöm",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Glöm den här WebDAV-servern? Dess adress och inloggning tas bort från den här enheten, från Readest Cloud och från dina andra enheter som inte är anslutna till den. Filerna på servern påverkas inte.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Glöm den här S3-bucketen? Dess slutpunkt och nycklar tas bort från den här enheten, från Readest Cloud och från dina andra enheter som inte är anslutna till den. Filerna i bucketen påverkas inte."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Glöm den här S3-bucketen? Dess slutpunkt och nycklar tas bort från den här enheten, från Readest Cloud och från dina andra enheter som inte är anslutna till den. Filerna i bucketen påverkas inte.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Deras lästid flyttas till den andra boken på alla dina enheter. Det går inte att ångra.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Deras lästid flyttas till den andra boken på den här enheten. Det går inte att ångra.",
+  "Merge {{count}} entries into “{{target}}”?_one": "Slå ihop {{count}} post med ”{{target}}”?",
+  "Merge {{count}} entries into “{{target}}”?_other": "Slå ihop {{count}} poster med ”{{target}}”?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Deras lästid tas bort från alla dina enheter. Det går inte att ångra.",
+  "Their reading time is removed from this device. This can’t be undone.": "Deras lästid tas bort från den här enheten. Det går inte att ångra.",
+  "Delete the reading statistics of {{count}} books?_one": "Ta bort lässtatistiken för {{count}} bok?",
+  "Delete the reading statistics of {{count}} books?_other": "Ta bort lässtatistiken för {{count}} böcker?",
+  "Merge {{count}} entries into:_one": "Slå ihop {{count}} post med:",
+  "Merge {{count}} entries into:_other": "Slå ihop {{count}} poster med:"
 }

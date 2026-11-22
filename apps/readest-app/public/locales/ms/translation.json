@@ -2842,5 +2842,12 @@
   "The text is too long for Apple Intelligence on this device.": "Teks terlalu panjang untuk Apple Intelligence pada peranti ini.",
   "Forget": "Lupakan",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Lupakan pelayan WebDAV ini? Alamat dan maklumat log masuknya akan dibuang daripada peranti ini, daripada Readest Cloud dan daripada peranti anda yang lain yang tidak bersambung dengannya. Fail pada pelayan tidak terjejas.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Lupakan baldi S3 ini? Titik akhir dan kuncinya akan dibuang daripada peranti ini, daripada Readest Cloud dan daripada peranti anda yang lain yang tidak bersambung dengannya. Fail dalam baldi tidak terjejas."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Lupakan baldi S3 ini? Titik akhir dan kuncinya akan dibuang daripada peranti ini, daripada Readest Cloud dan daripada peranti anda yang lain yang tidak bersambung dengannya. Fail dalam baldi tidak terjejas.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Masa membaca entri-entri ini akan dipindahkan ke buku lain pada semua peranti anda. Tindakan ini tidak boleh dibuat asal.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Masa membaca entri-entri ini akan dipindahkan ke buku lain pada peranti ini. Tindakan ini tidak boleh dibuat asal.",
+  "Merge {{count}} entries into “{{target}}”?_other": "Gabungkan {{count}} entri ke dalam “{{target}}”?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Masa membaca buku-buku ini akan dialih keluar daripada semua peranti anda. Tindakan ini tidak boleh dibuat asal.",
+  "Their reading time is removed from this device. This can’t be undone.": "Masa membaca buku-buku ini akan dialih keluar daripada peranti ini. Tindakan ini tidak boleh dibuat asal.",
+  "Delete the reading statistics of {{count}} books?_other": "Padam statistik membaca {{count}} buku?",
+  "Merge {{count}} entries into:_other": "Gabungkan {{count}} entri ke dalam:"
 }

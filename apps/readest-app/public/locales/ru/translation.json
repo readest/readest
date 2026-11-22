@@ -3067,5 +3067,21 @@
   "The text is too long for Apple Intelligence on this device.": "Текст слишком длинный для Apple Intelligence на этом устройстве.",
   "Forget": "Забыть",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Забыть этот сервер WebDAV? Его адрес и данные для входа будут удалены с этого устройства, из Readest Cloud и с ваших других устройств, которые к нему не подключены. Файлы на сервере не затрагиваются.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Забыть этот бакет S3? Его конечная точка и ключи будут удалены с этого устройства, из Readest Cloud и с ваших других устройств, которые к нему не подключены. Файлы в бакете не затрагиваются."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Забыть этот бакет S3? Его конечная точка и ключи будут удалены с этого устройства, из Readest Cloud и с ваших других устройств, которые к нему не подключены. Файлы в бакете не затрагиваются.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Время чтения этих записей будет перенесено в другую книгу на всех ваших устройствах. Это действие нельзя отменить.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Время чтения этих записей будет перенесено в другую книгу на этом устройстве. Это действие нельзя отменить.",
+  "Merge {{count}} entries into “{{target}}”?_one": "Объединить {{count}} запись с «{{target}}»?",
+  "Merge {{count}} entries into “{{target}}”?_few": "Объединить {{count}} записи с «{{target}}»?",
+  "Merge {{count}} entries into “{{target}}”?_many": "Объединить {{count}} записей с «{{target}}»?",
+  "Merge {{count}} entries into “{{target}}”?_other": "Объединить {{count}} записи с «{{target}}»?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Время чтения этих книг будет удалено со всех ваших устройств. Это действие нельзя отменить.",
+  "Their reading time is removed from this device. This can’t be undone.": "Время чтения этих книг будет удалено с этого устройства. Это действие нельзя отменить.",
+  "Delete the reading statistics of {{count}} books?_one": "Удалить статистику чтения {{count}} книги?",
+  "Delete the reading statistics of {{count}} books?_few": "Удалить статистику чтения {{count}} книг?",
+  "Delete the reading statistics of {{count}} books?_many": "Удалить статистику чтения {{count}} книг?",
+  "Delete the reading statistics of {{count}} books?_other": "Удалить статистику чтения {{count}} книги?",
+  "Merge {{count}} entries into:_one": "Объединить {{count}} запись с:",
+  "Merge {{count}} entries into:_few": "Объединить {{count}} записи с:",
+  "Merge {{count}} entries into:_many": "Объединить {{count}} записей с:",
+  "Merge {{count}} entries into:_other": "Объединить {{count}} записи с:"
 }
