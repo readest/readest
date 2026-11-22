@@ -435,6 +435,43 @@ describe('publishReplicaUpsert credentials gate', () => {
     expect(row.fields_jsonb['password']?.v).toEqual({ v: 'pw', kdf: 'mock' });
     expect(cryptoMocks.encryptField).toHaveBeenCalledTimes(2);
   });
+
+  test.each([
+    { name: 'credentials sync is off', credentials: false, unlocked: true },
+    { name: 'the session is locked', credentials: true, unlocked: false },
+  ])('ships fields a Forget cleared as empty values while $name (#7799)', async ({
+    credentials,
+    unlocked,
+  }) => {
+    await setCredentialsCategory(credentials);
+    cryptoMocks.isUnlocked.mockReturnValue(unlocked);
+    const { settingsAdapter } = await import('@/services/sync/adapters/settings');
+    registerReplicaAdapter(settingsAdapter);
+    const ctx = makeFakeCtx();
+    (getReplicaSync as ReturnType<typeof vi.fn>).mockReturnValue(ctx);
+    (getUserID as ReturnType<typeof vi.fn>).mockResolvedValue('user-1');
+
+    await publishReplicaUpsert(
+      'settings',
+      {
+        name: 'singleton',
+        patch: {
+          webdav: { serverUrl: '', username: '', password: '', rootPath: '/' },
+          kosync: { password: 'still-secret' },
+        },
+      },
+      'singleton',
+      undefined,
+      ['webdav.username', 'webdav.password'],
+    );
+
+    const fields = (ctx.manager.markDirty.mock.calls[0]![0] as ReplicaRow).fields_jsonb;
+    expect(fields['webdav.serverUrl']?.v).toBe('');
+    expect(fields['webdav.username']?.v).toBe('');
+    expect(fields['webdav.password']?.v).toBe('');
+    // Other credentials stay behind the toggle and the lock.
+    expect(fields['kosync.password']).toBeUndefined();
+  });
 });
 
 // Suppress unused import lint when running standalone

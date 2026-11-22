@@ -116,22 +116,10 @@ export const markExplicitProviderOrderPublish = (): void => {
 };
 
 /**
- * Connections the user forgot this session (#7799). Cleared credential
- * fields normally stay local; for these the cleared values publish so the
- * cloud copy goes too. Not consumed per pass like the provider-order
- * opt-in: a pass already running when Forget was pressed reads the old
- * values and would use it up. The stored push-hashes keep the cleared
- * values from shipping twice.
+ * Publish passes still running. A Forget waits for them so its cleared
+ * values are stamped after anything a pass read before the Forget (#7799).
  */
-const forgetPending = new Set<string>();
-
-/**
- * Let `publishSettingsIfChanged` upload `kind`'s cleared address and login.
- * Call it before the `setSettings` that clears them.
- */
-export const markConnectionForgetPublish = (kind: ForgettableConnection): void => {
-  forgetPending.add(kind);
-};
+const inFlightPasses = new Set<Promise<void>>();
 
 /**
  * The field whose being empty in a remote patch means "this connection was
@@ -283,7 +271,40 @@ const setStoredLastSeenCipher = (val: Record<string, string>): void => {
   }
 };
 
-export const publishSettingsIfChanged = async (settings: SystemSettings): Promise<void> => {
+export const publishSettingsIfChanged = (settings: SystemSettings): Promise<void> => {
+  const pass = runPublishPass(settings);
+  inFlightPasses.add(pass);
+  const done = () => inFlightPasses.delete(pass);
+  pass.then(done, done);
+  return pass;
+};
+
+/**
+ * Publish a Forget (#7799): the connection's whitelisted fields at their
+ * cleared values, read back from the store after the Forget wrote them.
+ * The cleared login ships as empty values even with credentials sync off
+ * or the session locked, since an empty value carries no secret; every
+ * other credential stays behind those gates. Recording the push-hashes
+ * keeps the next ordinary pass from seeing a change.
+ */
+export const publishConnectionForget = async (kind: ForgettableConnection): Promise<void> => {
+  await Promise.allSettled([...inFlightPasses]);
+  const settings = useSettingsStore.getState().settings;
+  const paths = SETTINGS_WHITELIST.filter((path) => path.startsWith(`${kind}.`));
+  const patch: Record<string, unknown> = {};
+  for (const path of paths) writePath(patch, path, readPath(settings, path));
+  const record: SettingsRemoteRecord = {
+    name: 'singleton',
+    patch: patch as Partial<SystemSettings>,
+  };
+  const clearedLogin = paths.filter((path) => ENCRYPTED_PATHS.has(path));
+  await publishReplicaUpsert(SETTINGS_KIND, record, SETTINGS_REPLICA_ID, undefined, clearedLogin);
+  for (const path of paths) {
+    setStoredEncryptedHash(path, await sha256Hex(readPath(settings, path)));
+  }
+};
+
+const runPublishPass = async (settings: SystemSettings): Promise<void> => {
   // Pass 1: figure out what's changed. Plaintext paths use the
   // in-memory snapshot; encrypted paths AND credential connection
   // metadata compare against the persisted SHA-256 hash so
@@ -312,30 +333,24 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
     if (current === undefined) continue;
     if (!dictionarySync && DICTIONARY_PATHS.has(path)) continue;
 
-    // A Forget (#7799) is the one case where a cleared value is published.
-    const forgetting = forgetPending.has(path.split('.')[0]!);
-
     if (ENCRYPTED_PATHS.has(path)) {
       if (!credentialsSync) continue;
       // Skip empty / cleared credentials entirely — there's nothing
       // useful to encrypt and pushing a plaintext "" would make the
       // server-side schema mix cipher envelopes with bare empty
-      // strings for the same field. Local-clear stays local, unless the
-      // user forgot the connection.
-      if (!isMeaningful(current) && !forgetting) continue;
+      // strings for the same field. Local-clear stays local; only an
+      // explicit Forget publishes a cleared value (publishConnectionForget).
+      if (!isMeaningful(current)) continue;
       const currentHash = await sha256Hex(current);
       if (currentHash === getStoredEncryptedHash(path)) continue;
       encryptedChanged.push({ path, value: current, hash: currentHash });
-      // The push middleware drops every encrypted field while locked, a
-      // cleared one included, so a Forget needs the session as well.
       hasNewEncryptedContent = true;
     } else if (CONNECTION_PATHS.has(path)) {
       // Credential connection metadata: tracked by a persisted push-hash like
       // the encrypted fields (NOT the disk-seeded snapshot) so a URL that was
       // configured before it was ever published still reaches the other
-      // devices alongside its credentials (#5141). Empty values stay local,
-      // unless the user forgot the connection.
-      if (!isMeaningful(current) && !forgetting) continue;
+      // devices alongside its credentials (#5141). Empty values stay local.
+      if (!isMeaningful(current)) continue;
       const currentHash = await sha256Hex(current);
       if (currentHash === getStoredEncryptedHash(path)) continue;
       connectionChanged.push({ path, value: current, hash: currentHash });
@@ -376,9 +391,9 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
   }
 
   // Proactive prompt: only fire when the user has actually entered a
-  // meaningful encrypted value (not just blanked out, unless by a Forget)
-  // AND we don't have an unlocked session to encrypt it. This is the
-  // user's first moment of opting into credential sync — show the modal.
+  // meaningful encrypted value (not just blanked out) AND we don't
+  // have an unlocked session to encrypt it. This is the user's first
+  // moment of opting into credential sync — show the modal.
   // Plaintext-only changes never trigger the prompt.
   if (hasNewEncryptedContent && !cryptoSession.isUnlocked()) {
     try {
@@ -407,7 +422,8 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
     name: 'singleton',
     patch: patch as Partial<SystemSettings>,
   };
-  void publishReplicaUpsert(SETTINGS_KIND, record, SETTINGS_REPLICA_ID);
+  // Awaited so a pass ends only once its fields are stamped (see inFlightPasses).
+  await publishReplicaUpsert(SETTINGS_KIND, record, SETTINGS_REPLICA_ID);
 
   // Connection metadata is plaintext — its publish always ships, so record
   // its push-hash unconditionally.
@@ -614,7 +630,7 @@ export const initSettingsSync = (initialSettings?: SystemSettings): void => {
 export const __resetSettingsSyncForTests = (): void => {
   lastPublishedFields.clear();
   explicitPublishPending.clear();
-  forgetPending.clear();
+  inFlightPasses.clear();
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;

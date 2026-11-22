@@ -25,7 +25,7 @@ import {
   __resetSettingsSyncForTests,
   applyRemoteSettings,
   initSettingsSync,
-  markConnectionForgetPublish,
+  publishConnectionForget,
   publishSettingsIfChanged,
 } from '@/services/sync/replicaSettingsSync';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -1089,34 +1089,61 @@ describe('Forget a WebDAV / S3 connection (#7799)', () => {
     enableCredentialsSync();
   });
 
-  test.each(kinds)('Forget publishes the cleared %s connection to the cloud', async (kind) => {
+  const clearedLogin = {
+    webdav: ['webdav.username', 'webdav.password'],
+    s3: ['s3.accessKeyId', 's3.secretAccessKey'],
+  };
+
+  // What the Integrations page does: write the cleared connection, then publish it.
+  const forget = async (kind: Kind, credentials = true) => {
+    useSettingsStore.setState({
+      ...useSettingsStore.getState(),
+      settings: withConnection(kind, connections[kind].forgotten),
+    });
+    if (credentials) enableCredentialsSync();
+    await publishConnectionForget(kind);
+  };
+
+  test.each(kinds)('Forget publishes the cleared %s connection, login included', async (kind) => {
     await publishSettingsIfChanged(withConnection(kind, connections[kind].saved));
     publishMock.mockClear();
 
-    markConnectionForgetPublish(kind);
-    await publishSettingsIfChanged(withConnection(kind, connections[kind].forgotten));
+    await forget(kind);
 
     expect(publishMock).toHaveBeenCalledTimes(1);
-    expect(publishMock.mock.calls[0]![1].patch[kind]).toEqual(connections[kind].forgotten);
+    const [, record, , , cleared] = publishMock.mock.calls[0]!;
+    expect(record.patch[kind]).toEqual(connections[kind].forgotten);
+    expect(cleared).toEqual(clearedLogin[kind]);
 
     // Recorded as published: the next save does not send it again.
     publishMock.mockClear();
-    await publishSettingsIfChanged(withConnection(kind, connections[kind].forgotten));
+    await publishSettingsIfChanged(useSettingsStore.getState().settings);
     expect(publishMock).not.toHaveBeenCalled();
   });
 
-  test('a publish pass already running when Forget is pressed does not swallow it', async () => {
-    const saved = withConnection('webdav', connections.webdav.saved);
-    await publishSettingsIfChanged(saved);
+  test('Forget clears the login with credentials sync off and the session locked, without a passphrase prompt', async () => {
+    isUnlocked = false;
+
+    await forget('webdav', false);
+
+    expect(ensurePassphraseMock).not.toHaveBeenCalled();
+    expect(publishMock.mock.calls[0]![4]).toEqual(clearedLogin.webdav);
+  });
+
+  test('Forget waits for a publish pass already in flight, so the cleared values are stamped last', async () => {
+    await publishSettingsIfChanged(withConnection('webdav', connections.webdav.saved));
     publishMock.mockClear();
 
-    markConnectionForgetPublish('webdav');
-    // A pass that read the settings before the Forget wrote them finishes first.
-    await publishSettingsIfChanged(saved);
-    await publishSettingsIfChanged(withConnection('webdav', connections.webdav.forgotten));
+    // A new password still on its way out when Forget is pressed.
+    const inFlight = publishSettingsIfChanged(
+      withConnection('webdav', { ...connections.webdav.saved, password: 'new-pass' }),
+    );
+    await forget('webdav');
+    await inFlight;
 
-    expect(publishMock).toHaveBeenCalledTimes(1);
-    expect(publishMock.mock.calls[0]![1].patch.webdav).toEqual(connections.webdav.forgotten);
+    const webdavPatches = publishMock.mock.calls.map(([, record]) => record.patch.webdav);
+    expect(webdavPatches[0]).toMatchObject({ password: 'new-pass' });
+    expect(webdavPatches.at(-1)).toEqual(connections.webdav.forgotten);
   });
 
   test.each(kinds)('a %s field cleared without Forget still stays local', async (kind) => {
@@ -1130,14 +1157,16 @@ describe('Forget a WebDAV / S3 connection (#7799)', () => {
     expect(Object.values(shipped)).not.toContain('');
   });
 
-  test('Forget while the passphrase is locked asks for it so the cleared login can ship', async () => {
+  test('a Forget leaves no lasting permission to publish cleared fields', async () => {
+    await forget('webdav');
+    // Reconnect, then clear the fields some other way than Forget.
     await publishSettingsIfChanged(withConnection('webdav', connections.webdav.saved));
-    isUnlocked = false;
+    publishMock.mockClear();
 
-    markConnectionForgetPublish('webdav');
     await publishSettingsIfChanged(withConnection('webdav', connections.webdav.forgotten));
 
-    expect(ensurePassphraseMock).toHaveBeenCalledTimes(1);
+    const shipped = publishMock.mock.calls[0]?.[1].patch.webdav ?? {};
+    expect(Object.values(shipped)).not.toContain('');
   });
 
   test.each(

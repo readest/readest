@@ -6,7 +6,7 @@ vi.mock('@/utils/settingsSync', () => ({
 }));
 
 vi.mock('@/services/sync/replicaSettingsSync', () => ({
-  markConnectionForgetPublish: vi.fn(),
+  publishConnectionForget: vi.fn(async () => {}),
 }));
 
 import {
@@ -15,7 +15,7 @@ import {
   persistReadestCloudChoice,
   withCloudProviderEnabled,
 } from '@/services/sync/cloudSyncActivation';
-import { markConnectionForgetPublish } from '@/services/sync/replicaSettingsSync';
+import { publishConnectionForget } from '@/services/sync/replicaSettingsSync';
 import { useSettingsStore } from '@/store/settingsStore';
 import { broadcastGlobalSettings } from '@/utils/settingsSync';
 import { CLOUD_SYNC_REQUIRES_PREMIUM, isCloudSyncAllowed, isCloudSyncInPlan } from '@/utils/access';
@@ -329,10 +329,10 @@ describe('forgetCloudProviderConnection (#7799)', () => {
       settings: { version: 1, [kind]: { ...perDevice, ...saved } } as unknown as SystemSettings,
     });
     mockBroadcastGlobalSettings.mockClear();
-    // The store write fires the publish pass, so the opt-in must come first.
-    let storeWhenMarked: unknown;
-    vi.mocked(markConnectionForgetPublish).mockImplementation(() => {
-      storeWhenMarked = useSettingsStore.getState().settings[kind];
+    // The publish reads the cleared connection back from the store.
+    let storeWhenPublished: unknown;
+    vi.mocked(publishConnectionForget).mockImplementation(async () => {
+      storeWhenPublished = useSettingsStore.getState().settings[kind];
     });
     const saveSettings = vi.fn().mockResolvedValue(undefined);
     const envConfig = {
@@ -341,8 +341,8 @@ describe('forgetCloudProviderConnection (#7799)', () => {
 
     const next = await forgetCloudProviderConnection(envConfig, kind);
 
-    expect(markConnectionForgetPublish).toHaveBeenCalledWith(kind);
-    expect(storeWhenMarked).toMatchObject(saved);
+    expect(publishConnectionForget).toHaveBeenCalledWith(kind);
+    expect(storeWhenPublished).toMatchObject(forgotten);
     expect(next[kind]).toEqual({ ...perDevice, ...forgotten });
     expect(useSettingsStore.getState().settings).toBe(next);
     expect(saveSettings).toHaveBeenCalledWith(next);

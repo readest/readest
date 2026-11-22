@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
@@ -67,6 +67,19 @@ const S3Form: React.FC = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
 
+  // Drop the drafts once the saved connection is gone, whether this window,
+  // another window or another device forgot it: useState keeps its initial
+  // values, and Connect would otherwise save the forgotten bucket again.
+  useEffect(() => {
+    if (hasSavedConnection) return;
+    setEndpoint('');
+    setRegion('auto');
+    setBucket('');
+    setAccessKeyId('');
+    setSecretAccessKey('');
+    setShowSecret(false);
+  }, [hasSavedConnection]);
+
   const canSubmit = !!(endpoint && bucket && accessKeyId && secretAccessKey);
 
   const handleConnect = async () => {
@@ -118,12 +131,6 @@ const S3Form: React.FC = () => {
     );
     if (!confirmed) return;
     await forgetCloudProviderConnection(envConfig, 's3');
-    setEndpoint('');
-    setRegion('auto');
-    setBucket('');
-    setAccessKeyId('');
-    setSecretAccessKey('');
-    setShowSecret(false);
   };
 
   const persistS3 = async (patch: Partial<typeof stored>) => {
@@ -268,7 +275,9 @@ const S3Form: React.FC = () => {
           <button
             type='button'
             onClick={handleForget}
-            className='text-error me-auto min-h-11 min-w-11 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-offset-2'
+            // A pending Connect would save the bucket again after a Forget.
+            disabled={isConnecting}
+            className='text-error me-auto min-h-11 min-w-11 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
           >
             {_('Forget')}
           </button>

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { useSettingsStore } from '@/store/settingsStore';
@@ -29,7 +29,16 @@ vi.mock('@/utils/settingsSync', () => ({
 }));
 
 vi.mock('@/services/sync/replicaSettingsSync', () => ({
-  markConnectionForgetPublish: vi.fn(),
+  publishConnectionForget: vi.fn(async () => {}),
+}));
+
+// A Connect whose server never answers, to hold it pending.
+vi.mock('@/services/sync/providers/webdav/client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/sync/providers/webdav/client')>()),
+  checkConnection: vi.fn(() => new Promise(() => {})),
+}));
+vi.mock('@/services/sync/providers/s3/S3Provider', () => ({
+  createS3Provider: () => ({ list: () => new Promise(() => {}) }),
 }));
 
 import WebDAVForm from '@/components/settings/integrations/WebDAVForm';
@@ -115,6 +124,27 @@ describe.each(forms)('$kind connect form: Forget (#7799)', ({
 
     await waitFor(() => expect(ask).toHaveBeenCalledTimes(1));
     expect(useSettingsStore.getState().settings[kind]).toMatchObject(saved);
+  });
+
+  test('an open form drops the saved values when the connection is forgotten elsewhere', () => {
+    setConnection(kind, saved);
+    render(<Form />);
+
+    // Another window's broadcast, or a pull from a device that forgot it.
+    act(() => setConnection(kind, forgotten));
+
+    for (const [id, value] of Object.entries(inputs)) {
+      expect((document.getElementById(id) as HTMLInputElement).value).toBe(value);
+    }
+  });
+
+  test('Forget is disabled while a Connect is pending', () => {
+    setConnection(kind, saved);
+    render(<Form />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Connect' }));
+
+    expect(screen.getByRole('button', { name: 'Forget' })).toHaveProperty('disabled', true);
   });
 
   test('no Forget when nothing is saved', () => {

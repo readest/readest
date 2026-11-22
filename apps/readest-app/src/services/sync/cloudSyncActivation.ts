@@ -5,7 +5,7 @@ import type {
   ForgettableConnection,
 } from '@/services/sync/cloudSyncProvider';
 import { settingsKeyForBackend, withConnectionForgotten } from '@/services/sync/cloudSyncProvider';
-import { markConnectionForgetPublish } from '@/services/sync/replicaSettingsSync';
+import { publishConnectionForget } from '@/services/sync/replicaSettingsSync';
 import { useSettingsStore } from '@/store/settingsStore';
 import { broadcastGlobalSettings } from '@/utils/settingsSync';
 
@@ -139,11 +139,16 @@ export const persistReadestCloudChoice = async (
  * using that server drop them too, and tell other windows. Disconnect keeps
  * them so a reconnect is one click; this is the way to remove them.
  */
-export const forgetCloudProviderConnection = (
+export const forgetCloudProviderConnection = async (
   envConfig: EnvConfigType,
   kind: ForgettableConnection,
 ): Promise<SystemSettings> => {
-  // Before the store write, which fires the publish pass.
-  markConnectionForgetPublish(kind);
-  return persistCloudSyncSelection(envConfig, (s) => withConnectionForgotten(s, kind), kind);
+  const next = await persistCloudSyncSelection(
+    envConfig,
+    (s) => withConnectionForgotten(s, kind),
+    kind,
+  );
+  // Only after the save succeeded, so a failed save leaves the cloud as is.
+  await publishConnectionForget(kind);
+  return next;
 };

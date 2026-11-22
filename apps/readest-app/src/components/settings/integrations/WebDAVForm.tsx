@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
@@ -63,6 +63,18 @@ const WebDAVForm: React.FC = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Drop the drafts once the saved connection is gone, whether this window,
+  // another window or another device forgot it: useState keeps its initial
+  // values, and Connect would otherwise save the forgotten server again.
+  useEffect(() => {
+    if (hasSavedConnection) return;
+    setUrl('');
+    setUsername('');
+    setPassword('');
+    setRootPath('/');
+    setShowPassword(false);
+  }, [hasSavedConnection]);
+
   const handleConnect = async () => {
     if (!url || !username) return;
     setIsConnecting(true);
@@ -109,11 +121,6 @@ const WebDAVForm: React.FC = () => {
     );
     if (!confirmed) return;
     await forgetCloudProviderConnection(envConfig, 'webdav');
-    setUrl('');
-    setUsername('');
-    setPassword('');
-    setRootPath('/');
-    setShowPassword(false);
   };
 
   const persistWebdav = async (patch: Partial<typeof stored>) => {
@@ -245,7 +252,9 @@ const WebDAVForm: React.FC = () => {
           <button
             type='button'
             onClick={handleForget}
-            className='text-error me-auto min-h-11 min-w-11 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-offset-2'
+            // A pending Connect would save the server again after a Forget.
+            disabled={isConnecting}
+            className='text-error me-auto min-h-11 min-w-11 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
           >
             {_('Forget')}
           </button>
