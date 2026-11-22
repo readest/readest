@@ -56,7 +56,7 @@ describe('bookshelf layouts from the View menu', () => {
     render(<ViewMenu />);
     const custom = screen.getByText('Custom').closest('button')!;
     expect(custom.querySelector('svg')).toBeTruthy();
-    fireEvent.click(screen.getAllByText('Title')[0]!);
+    fireEvent.click(screen.getByText('Title'));
     await waitFor(() =>
       expect(
         readBookshelves(useSettingsStore.getState().settings).find(
@@ -79,11 +79,15 @@ describe('bookshelf layouts from the View menu', () => {
       expect(getGlobalBookshelfSort(useSettingsStore.getState().settings).by).toBe('custom'),
     );
     expect(useSettingsStore.getState().settings.librarySortBy).toBe('updated');
-    fireEvent.click(screen.getAllByText('Title')[0]!);
+    fireEvent.click(screen.getByText('Title'));
     await waitFor(() =>
-      expect(getGlobalBookshelfSort(useSettingsStore.getState().settings).by).toBe('title'),
+      expect(getGlobalBookshelfSort(useSettingsStore.getState().settings).by).toBe('updated'),
     );
-    expect(useSettingsStore.getState().settings.librarySortBy).toBe('title');
+    expect(useSettingsStore.getState().settings.librarySortBy).toBe('updated');
+    const titleEntry = useSettingsStore
+      .getState()
+      .settings.librarySortOrder?.find((c) => c.by === 'title');
+    expect(titleEntry?.ascending).toBe(false);
   });
 
   it('changes global sorting without rewriting shelf definitions or their pending edits', async () => {
@@ -96,8 +100,13 @@ describe('bookshelf layouts from the View menu', () => {
     const before = readBookshelves(useSettingsStore.getState().settings);
     const pending = readPendingBookshelves();
     render(<ViewMenu />);
-    fireEvent.click(screen.getAllByText('Title')[0]!);
-    await waitFor(() => expect(useSettingsStore.getState().settings.librarySortBy).toBe('title'));
+    fireEvent.click(screen.getByText('Title'));
+    await waitFor(() =>
+      expect(
+        useSettingsStore.getState().settings.librarySortOrder?.find((c) => c.by === 'title')
+          ?.ascending,
+      ).toBe(false),
+    );
     expect(readBookshelves(useSettingsStore.getState().settings)).toEqual(before);
     expect(readPendingBookshelves()).toEqual(pending);
   });
@@ -105,13 +114,92 @@ describe('bookshelf layouts from the View menu', () => {
     render(<ViewMenu />);
     expect(screen.queryByText('Ignore A, An, The in titles')).toBeNull();
   });
-  it('offers the same sort labels as the bookshelf editor, except Size', () => {
+  it('offers each sort label exactly once without duplicating primary and secondary lists', () => {
     render(<ViewMenu />);
     for (const [value, label] of Object.entries(BOOKSHELF_SORT_LABELS))
       if (value === 'size') expect(screen.queryByText(label)).toBeNull();
-      else expect(screen.getAllByText(label).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Date Published').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Progress Read').length).toBeGreaterThan(0);
+      // 'Series' also appears once in Group by..., so it appears twice total instead of three times.
+      else expect(screen.getAllByText(label)).toHaveLength(value === 'series' ? 2 : 1);
+    expect(screen.queryByText('Then by...')).toBeNull();
+    expect(screen.getAllByText('Date Published')).toHaveLength(1);
+    expect(screen.getAllByText('Progress Read')).toHaveLength(1);
+  });
+  // Group by Author with no Then by picks Series automatically (#4307); the
+  // list marks it "(Auto)" at rank 2, as the old Then by menu did.
+  it('marks an automatic rank-2 pick as Auto until the list is customized', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        libraryGroupBy: 'author',
+        libraryThenSortBy: 'none',
+      } as SystemSettings,
+    });
+    render(<ViewMenu />);
+    expect(screen.getByText('Series (Auto)')).toBeTruthy();
+  });
+
+  it('toggles direction per criterion independently with arrow indicators', async () => {
+    render(<ViewMenu />);
+    const titleBtn = screen.getByRole('menuitem', { name: /Title \(Ascending\)/i });
+    expect(titleBtn.textContent).toContain('↑');
+    fireEvent.click(titleBtn);
+    await waitFor(() =>
+      expect(
+        useSettingsStore.getState().settings.librarySortOrder?.find((c) => c.by === 'title')
+          ?.ascending,
+      ).toBe(false),
+    );
+    expect(screen.getByRole('menuitem', { name: /Title \(Descending\)/i }).textContent).toContain(
+      '↓',
+    );
+  });
+
+  it('preserves global metadata direction when a local Custom shelf has ascending: true', async () => {
+    useSettingsStore.setState({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        librarySortBy: 'updated',
+        librarySortAscending: false,
+      } as SystemSettings,
+    });
+    const base = readBookshelves(useSettingsStore.getState().settings);
+    await saveBookshelfDraft(
+      env,
+      base,
+      base.map((shelf) =>
+        shelf.id === 'default'
+          ? {
+              ...shelf,
+              useGlobalSort: false,
+              sort: { by: 'custom', ascending: true, thenBy: 'none', thenAscending: true },
+            }
+          : shelf,
+      ),
+    );
+    render(<ViewMenu />);
+    expect(screen.getByRole('menuitem', { name: /Date Read \(Descending\)/i })).toBeTruthy();
+    fireEvent.click(screen.getByText('Custom'));
+    await waitFor(() =>
+      expect(
+        readBookshelves(useSettingsStore.getState().settings).find((s) => s.id === 'default')
+          ?.useGlobalSort,
+      ).toBe(true),
+    );
+    expect(useSettingsStore.getState().settings.librarySortOrder?.[0]).toEqual({
+      by: 'updated',
+      ascending: false,
+    });
+  });
+
+  it('serializes rapid consecutive direction toggles so both updates land', async () => {
+    render(<ViewMenu />);
+    fireEvent.click(screen.getByRole('menuitem', { name: /Title \(Ascending\)/i }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Author \(Ascending\)/i }));
+    await waitFor(() => {
+      const order = useSettingsStore.getState().settings.librarySortOrder;
+      expect(order?.find((c) => c.by === 'title')?.ascending).toBe(false);
+      expect(order?.find((c) => c.by === 'author')?.ascending).toBe(false);
+    });
   });
   it('keeps shelf visibility and cover visibility in Bookshelves settings', () => {
     render(<ViewMenu />);

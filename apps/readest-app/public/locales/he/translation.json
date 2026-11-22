@@ -1600,7 +1600,6 @@
   "Share anonymous data": "שתף נתונים אנונימיים",
   "Not now": "לא עכשיו",
   "You can change this anytime in Settings.": "אפשר לשנות זאת בכל עת בהגדרות.",
-  "Then by...": "ואז לפי...",
   "Some files could not be added to your library.": "לא ניתן היה להוסיף חלק מהקבצים לספרייה שלך.",
   "Failed to import {{count}} books_one": "ייבוא ספר אחד נכשל",
   "Failed to import {{count}} books_two": "ייבוא שני ספרים נכשל",
@@ -2971,5 +2970,13 @@
   "Restore from Backup": "שחזור מגיבוי",
   "Your backup has been saved to the selected location.": "הגיבוי נשמר במיקום שנבחר.",
   "Cover only": "כריכות בלבד",
-  "Look up text in the system dictionary after selection": "חפש טקסט במילון המערכת לאחר הבחירה"
+  "Look up text in the system dictionary after selection": "חפש טקסט במילון המערכת לאחר הבחירה",
+  "Drag to reorder {{label}}": "גררו כדי לשנות את הסדר של {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "כדי להרים קריטריון מיון, הקישו רווח או Enter. השתמשו בחצים למעלה ולמטה כדי לשנות את הסדר, ואז הקישו רווח או Enter כדי לשחרר, או Escape כדי לבטל.",
+  "Picked up {{label}}.": "{{label}} הורם.",
+  "{{label}} moved over {{target}}.": "{{label}} הועבר מעל {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} כבר לא נמצא מעל מיקום שחרור.",
+  "Dropped {{label}} at {{target}}.": "{{label}} שוחרר ב-{{target}}.",
+  "Dropped {{label}}.": "{{label}} שוחרר.",
+  "Reordering {{label}} cancelled.": "שינוי הסדר של {{label}} בוטל."
 }

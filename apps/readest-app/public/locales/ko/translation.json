@@ -1540,7 +1540,6 @@
   "Share anonymous data": "익명 데이터 공유",
   "Not now": "나중에",
   "You can change this anytime in Settings.": "설정에서 언제든지 변경할 수 있습니다.",
-  "Then by...": "다음 기준...",
   "Some files could not be added to your library.": "일부 파일을 라이브러리에 추가하지 못했습니다.",
   "Failed to import {{count}} books_other": "{{count}}권의 책 가져오기 실패",
   "Add to My Catalogs": "내 카탈로그에 추가",
@@ -2821,5 +2820,13 @@
   "Restore from Backup": "백업에서 복원",
   "Your backup has been saved to the selected location.": "백업이 선택한 위치에 저장되었습니다.",
   "Cover only": "표지만",
-  "Look up text in the system dictionary after selection": "선택 후 텍스트를 시스템 사전에서 찾기"
+  "Look up text in the system dictionary after selection": "선택 후 텍스트를 시스템 사전에서 찾기",
+  "Drag to reorder {{label}}": "드래그하여 {{label}} 순서 변경",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "정렬 기준을 집으려면 스페이스 또는 Enter를 누르세요. 위아래 화살표 키로 순서를 바꾼 다음 스페이스 또는 Enter로 놓거나 Escape로 취소하세요.",
+  "Picked up {{label}}.": "{{label}}을(를) 집었습니다.",
+  "{{label}} moved over {{target}}.": "{{label}}을(를) {{target}} 위로 이동했습니다.",
+  "{{label}} is no longer over a droppable position.": "{{label}}이(가) 더 이상 놓을 수 있는 위치 위에 있지 않습니다.",
+  "Dropped {{label}} at {{target}}.": "{{label}}을(를) {{target}}에 놓았습니다.",
+  "Dropped {{label}}.": "{{label}}을(를) 놓았습니다.",
+  "Reordering {{label}} cancelled.": "{{label}} 순서 변경을 취소했습니다."
 }

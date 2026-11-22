@@ -1570,7 +1570,6 @@
   "Share anonymous data": "Anonieme gegevens delen",
   "Not now": "Niet nu",
   "You can change this anytime in Settings.": "Je kunt dit op elk moment wijzigen in Instellingen.",
-  "Then by...": "Vervolgens op...",
   "Some files could not be added to your library.": "Sommige bestanden konden niet aan je bibliotheek worden toegevoegd.",
   "Failed to import {{count}} books_one": "Importeren van {{count}} boek mislukt",
   "Failed to import {{count}} books_other": "Importeren van {{count}} boeken mislukt",
@@ -2896,5 +2895,13 @@
   "Restore from Backup": "Herstellen vanuit back-up",
   "Your backup has been saved to the selected location.": "Je back-up is op de gekozen locatie opgeslagen.",
   "Cover only": "Alleen omslagen",
-  "Look up text in the system dictionary after selection": "Zoek tekst op in het systeemwoordenboek na selectie"
+  "Look up text in the system dictionary after selection": "Zoek tekst op in het systeemwoordenboek na selectie",
+  "Drag to reorder {{label}}": "Sleep om {{label}} te herschikken",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Druk op spatie of Enter om een sorteercriterium op te pakken. Herschik met de pijltjestoetsen omhoog en omlaag en druk daarna op spatie of Enter om neer te zetten, of op Escape om te annuleren.",
+  "Picked up {{label}}.": "{{label}} opgepakt.",
+  "{{label}} moved over {{target}}.": "{{label}} verplaatst boven {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} bevindt zich niet meer boven een neerzetpositie.",
+  "Dropped {{label}} at {{target}}.": "{{label}} neergezet bij {{target}}.",
+  "Dropped {{label}}.": "{{label}} neergezet.",
+  "Reordering {{label}} cancelled.": "Herschikken van {{label}} geannuleerd."
 }

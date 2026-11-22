@@ -1540,7 +1540,6 @@
   "Share anonymous data": "Bagikan data anonim",
   "Not now": "Nanti saja",
   "You can change this anytime in Settings.": "Anda dapat mengubahnya kapan saja di Pengaturan.",
-  "Then by...": "Lalu berdasarkan...",
   "Some files could not be added to your library.": "Beberapa file tidak dapat ditambahkan ke pustaka Anda.",
   "Failed to import {{count}} books_other": "Gagal mengimpor {{count}} buku",
   "Add to My Catalogs": "Tambahkan ke Katalog Saya",
@@ -2821,5 +2820,13 @@
   "Restore from Backup": "Pulihkan dari Cadangan",
   "Your backup has been saved to the selected location.": "Cadangan Anda telah disimpan ke lokasi yang dipilih.",
   "Cover only": "Hanya sampul",
-  "Look up text in the system dictionary after selection": "Cari teks di kamus sistem setelah pemilihan"
+  "Look up text in the system dictionary after selection": "Cari teks di kamus sistem setelah pemilihan",
+  "Drag to reorder {{label}}": "Seret untuk mengurutkan ulang {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Untuk mengambil kriteria urutan, tekan spasi atau Enter. Gunakan tombol panah atas dan bawah untuk mengurutkan ulang, lalu tekan spasi atau Enter untuk meletakkan, atau Escape untuk membatalkan.",
+  "Picked up {{label}}.": "{{label}} diambil.",
+  "{{label}} moved over {{target}}.": "{{label}} dipindahkan ke atas {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} tidak lagi berada di atas posisi yang dapat diletakkan.",
+  "Dropped {{label}} at {{target}}.": "{{label}} diletakkan di {{target}}.",
+  "Dropped {{label}}.": "{{label}} diletakkan.",
+  "Reordering {{label}} cancelled.": "Pengurutan ulang {{label}} dibatalkan."
 }

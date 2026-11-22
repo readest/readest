@@ -1540,7 +1540,6 @@
   "Share anonymous data": "匿名データを共有",
   "Not now": "後で",
   "You can change this anytime in Settings.": "この設定はいつでも設定画面から変更できます。",
-  "Then by...": "次に並び替え...",
   "Some files could not be added to your library.": "一部のファイルをライブラリに追加できませんでした。",
   "Failed to import {{count}} books_other": "{{count}} 冊の書籍のインポートに失敗しました",
   "Add to My Catalogs": "マイカタログに追加",
@@ -2821,5 +2820,13 @@
   "Restore from Backup": "バックアップから復元",
   "Your backup has been saved to the selected location.": "バックアップを選択した場所に保存しました。",
   "Cover only": "表紙のみ",
-  "Look up text in the system dictionary after selection": "選択後のテキストをシステム辞書で調べる"
+  "Look up text in the system dictionary after selection": "選択後のテキストをシステム辞書で調べる",
+  "Drag to reorder {{label}}": "ドラッグして{{label}}を並べ替え",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "並べ替え条件を持ち上げるには、スペースまたはEnterを押します。上下の矢印キーで並べ替え、スペースまたはEnterで配置、Escapeでキャンセルします。",
+  "Picked up {{label}}.": "{{label}}を持ち上げました。",
+  "{{label}} moved over {{target}}.": "{{label}}を{{target}}の上に移動しました。",
+  "{{label}} is no longer over a droppable position.": "{{label}}はドロップ可能な位置の上にありません。",
+  "Dropped {{label}} at {{target}}.": "{{label}}を{{target}}に配置しました。",
+  "Dropped {{label}}.": "{{label}}を配置しました。",
+  "Reordering {{label}} cancelled.": "{{label}}の並べ替えをキャンセルしました。"
 }

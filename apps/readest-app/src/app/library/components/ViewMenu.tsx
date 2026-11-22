@@ -1,6 +1,10 @@
 import { eventDispatcher } from '@/utils/event';
 import { BOOKSHELF_GROUP_LABELS, BOOKSHELF_SORT_LABELS } from '@/services/bookshelves/definitions';
-import { getGlobalBookshelfSort } from '@/services/bookshelves/sorting';
+import {
+  METADATA_SORT_BY_ORDER,
+  getGlobalBookshelfSort,
+  resolveLibrarySortOrder,
+} from '@/services/bookshelves/sorting';
 import { updateBookshelf } from '@/services/bookshelves/persistence';
 import { readBookshelves } from '@/services/bookshelves/state';
 import React from 'react';
@@ -11,33 +15,21 @@ import { useTranslation } from '@/hooks/useTranslation';
 import {
   LibraryViewModeType,
   LibraryGroupByType,
-  LibrarySecondarySortByType,
+  LibraryMetadataSortByType,
   LibrarySortByType,
+  LibrarySortCriterion,
 } from '@/types/settings';
 import { saveSysSettings } from '@/helpers/settings';
 import { navigateToLibrary } from '@/utils/nav';
 import NumberInput from '@/components/settings/NumberInput';
 import MenuItem from '@/components/MenuItem';
 import Menu from '@/components/Menu';
+import SortPriorityList from './SortPriorityList';
 import { ensureLibraryGroupByType } from '../utils/libraryUtils';
 
 interface ViewMenuProps {
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
-
-const SORT_BY_ORDER: LibrarySortByType[] = [
-  LibrarySortByType.Custom,
-  LibrarySortByType.Title,
-  LibrarySortByType.Author,
-  LibrarySortByType.Format,
-  LibrarySortByType.Pages,
-  LibrarySortByType.Series,
-  LibrarySortByType.Updated,
-  LibrarySortByType.Created,
-  LibrarySortByType.Published,
-  LibrarySortByType.Progress,
-  LibrarySortByType.TimeRemaining,
-];
 
 const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const _ = useTranslation();
@@ -59,21 +51,32 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   );
   const displayedSort = customShelf?.sort ?? globalSort;
   const sortBy = displayedSort.by;
-  const isAscending = displayedSort.ascending;
-  const primaryEffective = displayedSort.by;
   const primaryIsImplicit =
     !customShelf &&
     !searchParams?.get('sort') &&
     (settings.librarySortByAuto ?? true) &&
     globalSort.by !== settings.librarySortBy;
-  const thenSortBy = displayedSort.thenBy;
-  const secondaryEffective = displayedSort.thenBy;
   const secondaryIsImplicit =
     !customShelf &&
     !searchParams?.get('thenSort') &&
     (!settings.libraryThenSortBy || settings.libraryThenSortBy === 'none') &&
     globalSort.thenBy !== 'none';
-  const isThenAscending = displayedSort.thenAscending;
+  const autoSortKeys = [
+    primaryIsImplicit && globalSort.by,
+    secondaryIsImplicit && globalSort.thenBy,
+  ].filter(Boolean) as LibraryMetadataSortByType[];
+
+  const priorityOrder = resolveLibrarySortOrder(settings, globalSort, searchParams);
+  const commitQueueRef = React.useRef<Promise<void>>(Promise.resolve());
+  const pendingCommitsRef = React.useRef(0);
+  const latestPriorityOrderRef = React.useRef(priorityOrder);
+  if (pendingCommitsRef.current === 0) {
+    latestPriorityOrderRef.current = priorityOrder;
+  }
+
+  const sortLabels = Object.fromEntries(
+    METADATA_SORT_BY_ORDER.map((value) => [value, _(BOOKSHELF_SORT_LABELS[value])]),
+  ) as Record<LibraryMetadataSortByType, string>;
 
   const viewOptions = [
     { label: _('List'), value: 'list' },
@@ -84,22 +87,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     value,
     label: _(label),
   }));
-
-  // Menu order, deliberately excluding Size: the library has never offered it.
-  const sortByOptions = SORT_BY_ORDER.map((value) => ({
-    value,
-    label: _(BOOKSHELF_SORT_LABELS[value]),
-  }));
-
-  const thenSortByOptions: { label: string; value: LibrarySecondarySortByType }[] = [
-    { label: _('None'), value: 'none' },
-    ...sortByOptions.filter((option) => option.value !== 'custom'),
-  ];
-
-  const sortingOptions = [
-    { label: _('Ascending'), value: true },
-    { label: _('Descending'), value: false },
-  ];
 
   const handleSetViewMode = async (value: LibraryViewModeType) => {
     await saveSysSettings(envConfig, 'libraryViewMode', value);
@@ -134,49 +121,85 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleSetSortBy = async (value: LibrarySortByType) => {
-    const custom = value === LibrarySortByType.Custom;
-    await saveSysSettings(envConfig, 'librarySortCustom', custom);
-    if (!custom) await saveSysSettings(envConfig, 'librarySortBy', value);
-    // Any explicit primary pick locks in the choice and disables the auto
-    // smart-default so future groupBy changes don't override the user.
-    await saveSysSettings(envConfig, 'librarySortByAuto', false);
-
+  const applyShelfSortNavigation = async (mutateParams: (params: URLSearchParams) => void) => {
     const params = new URLSearchParams(window.location.search);
     // An explicit menu choice also exits the custom order enabled by a drop.
     await updateBookshelf(envConfig, params.get('shelf') || 'default', (shelf) =>
       shelf.sort.by === 'custom' ? { ...shelf, useGlobalSort: true } : shelf,
     );
-    params.set('sort', value);
+    mutateParams(params);
     navigateToLibrary(router, `${params.toString()}`);
   };
 
-  const handleSetSortAscending = async (value: boolean) => {
-    await saveSysSettings(envConfig, 'librarySortAscending', value);
+  const commitSortOrder = async (next: LibrarySortCriterion[]) => {
+    const [primary, secondary] = next;
+    if (!primary) return;
 
-    const params = new URLSearchParams(window.location.search);
-    params.set('order', value ? 'asc' : 'desc');
-    navigateToLibrary(router, `${params.toString()}`);
+    await saveSysSettings(envConfig, 'librarySortCustom', false);
+    await saveSysSettings(envConfig, 'librarySortByAuto', false);
+    await saveSysSettings(envConfig, 'librarySortBy', primary.by);
+    await saveSysSettings(envConfig, 'librarySortAscending', primary.ascending);
+    await saveSysSettings(envConfig, 'libraryThenSortBy', secondary ? secondary.by : 'none');
+    await saveSysSettings(
+      envConfig,
+      'libraryThenSortAscending',
+      secondary ? secondary.ascending : true,
+    );
+    await saveSysSettings(envConfig, 'librarySortOrder', next);
+
+    await applyShelfSortNavigation((params) => {
+      params.set('sort', primary.by);
+      params.set('order', primary.ascending ? 'asc' : 'desc');
+      if (secondary) {
+        params.set('thenSort', secondary.by);
+        params.set('thenOrder', secondary.ascending ? 'asc' : 'desc');
+      } else {
+        params.delete('thenSort');
+        params.delete('thenOrder');
+      }
+    });
   };
 
-  const handleSetThenSortBy = async (value: LibrarySecondarySortByType) => {
-    await saveSysSettings(envConfig, 'libraryThenSortBy', value);
+  const enqueueSortCommit = (task: () => Promise<void>) => {
+    pendingCommitsRef.current += 1;
+    const runTask = async () => {
+      try {
+        await task();
+      } finally {
+        pendingCommitsRef.current = Math.max(0, pendingCommitsRef.current - 1);
+      }
+    };
+    const run = commitQueueRef.current.then(runTask, runTask);
+    commitQueueRef.current = run.catch(() => {});
+    return run;
+  };
 
-    const params = new URLSearchParams(window.location.search);
-    if (value === 'none') {
-      params.delete('thenSort');
-    } else {
-      params.set('thenSort', value);
+  const handleReorder = (next: LibrarySortCriterion[]) => {
+    latestPriorityOrderRef.current = next;
+    return enqueueSortCommit(() => commitSortOrder(next));
+  };
+
+  const handleToggleCustom = () => {
+    if (sortBy === LibrarySortByType.Custom) {
+      const next = latestPriorityOrderRef.current;
+      return enqueueSortCommit(() => commitSortOrder(next));
     }
-    navigateToLibrary(router, `${params.toString()}`);
+    return enqueueSortCommit(async () => {
+      await saveSysSettings(envConfig, 'librarySortCustom', true);
+      await saveSysSettings(envConfig, 'librarySortByAuto', false);
+
+      await applyShelfSortNavigation((params) => {
+        params.set('sort', LibrarySortByType.Custom);
+      });
+    });
   };
 
-  const handleSetThenSortAscending = async (value: boolean) => {
-    await saveSysSettings(envConfig, 'libraryThenSortAscending', value);
-
-    const params = new URLSearchParams(window.location.search);
-    params.set('thenOrder', value ? 'asc' : 'desc');
-    navigateToLibrary(router, `${params.toString()}`);
+  const handleToggleCriterionDirection = (by: LibraryMetadataSortByType) => {
+    const next = latestPriorityOrderRef.current.map((criterion) =>
+      criterion.by === by ? { ...criterion, ascending: !criterion.ascending } : criterion,
+    );
+    latestPriorityOrderRef.current = next;
+    return enqueueSortCommit(() => commitSortOrder(next));
   };
 
   return (
@@ -252,78 +275,27 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
         </ul>
       </MenuItem>
 
-      {/* Sort By - Collapsible */}
+      {/* Sort By - Unified Priority List */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
       <MenuItem label={_('Sort by...')} detailsOpen={false} buttonClass='py-1!'>
-        <ul className='ms-0 flex flex-col ps-0 before:hidden'>
-          {sortByOptions.map((option) => {
-            const isImplicit = primaryIsImplicit && option.value === primaryEffective;
-            const toggled = isImplicit || (!primaryIsImplicit && sortBy === option.value);
-            return (
-              <MenuItem
-                key={option.value}
-                label={isImplicit ? `${option.label} (${_('Auto')})` : option.label}
-                buttonClass='min-h-8 py-1!'
-                toggled={toggled}
-                onClick={() => handleSetSortBy(option.value as LibrarySortByType)}
-                transient
-              />
-            );
-          })}
+        <div className='ms-0 flex flex-col ps-0 before:hidden'>
+          <MenuItem
+            label={_(BOOKSHELF_SORT_LABELS[LibrarySortByType.Custom])}
+            buttonClass='min-h-8 py-1!'
+            toggled={sortBy === LibrarySortByType.Custom}
+            onClick={handleToggleCustom}
+          />
           <hr aria-hidden='true' className='border-base-200 my-1' />
-          {sortingOptions.map((option) => (
-            <MenuItem
-              key={option.value.toString()}
-              label={option.label}
-              buttonClass='min-h-8 py-1!'
-              toggled={isAscending === option.value}
-              disabled={sortBy === 'custom'}
-              onClick={() => handleSetSortAscending(option.value)}
-              transient
-            />
-          ))}
-        </ul>
-      </MenuItem>
-
-      {/* Then by - secondary sort, collapsible */}
-      <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem
-        label={_('Then by...')}
-        disabled={sortBy === 'custom'}
-        detailsOpen={false}
-        buttonClass='py-1!'
-      >
-        <ul className='ms-0 flex flex-col ps-0 before:hidden'>
-          {thenSortByOptions.map((option) => {
-            const isImplicit = secondaryIsImplicit && option.value === secondaryEffective;
-            const isExplicit = thenSortBy === option.value;
-            return (
-              <MenuItem
-                key={option.value}
-                label={isImplicit ? `${option.label} (${_('Auto')})` : option.label}
-                buttonClass='min-h-8 py-1!'
-                toggled={isExplicit || isImplicit}
-                onClick={() => handleSetThenSortBy(option.value)}
-                transient
-              />
-            );
-          })}
-          {secondaryEffective !== 'none' && (
-            <>
-              <hr aria-hidden='true' className='border-base-200 my-1' />
-              {sortingOptions.map((option) => (
-                <MenuItem
-                  key={option.value.toString()}
-                  label={option.label}
-                  buttonClass='min-h-8 py-1!'
-                  toggled={isThenAscending === option.value}
-                  onClick={() => handleSetThenSortAscending(option.value)}
-                  transient
-                />
-              ))}
-            </>
-          )}
-        </ul>
+          <SortPriorityList
+            items={priorityOrder}
+            labels={sortLabels}
+            dimmed={sortBy === LibrarySortByType.Custom}
+            autoLabel={_('Auto')}
+            autoKeys={autoSortKeys}
+            onReorder={handleReorder}
+            onToggleDirection={handleToggleCriterionDirection}
+          />
+        </div>
       </MenuItem>
     </Menu>
   );

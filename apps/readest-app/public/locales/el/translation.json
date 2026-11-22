@@ -1570,7 +1570,6 @@
   "Share anonymous data": "Κοινοποίηση ανώνυμων δεδομένων",
   "Not now": "Όχι τώρα",
   "You can change this anytime in Settings.": "Μπορείτε να το αλλάξετε ανά πάσα στιγμή από τις Ρυθμίσεις.",
-  "Then by...": "Στη συνέχεια κατά...",
   "Some files could not be added to your library.": "Ορισμένα αρχεία δεν ήταν δυνατό να προστεθούν στη βιβλιοθήκη σας.",
   "Failed to import {{count}} books_one": "Αποτυχία εισαγωγής {{count}} βιβλίου",
   "Failed to import {{count}} books_other": "Αποτυχία εισαγωγής {{count}} βιβλίων",
@@ -2896,5 +2895,13 @@
   "Restore from Backup": "Επαναφορά από αντίγραφο ασφαλείας",
   "Your backup has been saved to the selected location.": "Το αντίγραφο ασφαλείας αποθηκεύτηκε στην επιλεγμένη τοποθεσία.",
   "Cover only": "Μόνο εξώφυλλα",
-  "Look up text in the system dictionary after selection": "Αναζήτηση κειμένου στο λεξικό συστήματος μετά την επιλογή"
+  "Look up text in the system dictionary after selection": "Αναζήτηση κειμένου στο λεξικό συστήματος μετά την επιλογή",
+  "Drag to reorder {{label}}": "Σύρετε για αναδιάταξη του {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Για να πιάσετε ένα κριτήριο ταξινόμησης, πατήστε Space ή Enter. Χρησιμοποιήστε τα βέλη πάνω και κάτω για αναδιάταξη και μετά πατήστε Space ή Enter για απόθεση ή Escape για ακύρωση.",
+  "Picked up {{label}}.": "Πιάσατε το {{label}}.",
+  "{{label}} moved over {{target}}.": "Το {{label}} μετακινήθηκε πάνω από το {{target}}.",
+  "{{label}} is no longer over a droppable position.": "Το {{label}} δεν βρίσκεται πλέον πάνω από θέση απόθεσης.",
+  "Dropped {{label}} at {{target}}.": "Το {{label}} αποτέθηκε στο {{target}}.",
+  "Dropped {{label}}.": "Το {{label}} αποτέθηκε.",
+  "Reordering {{label}} cancelled.": "Η αναδιάταξη του {{label}} ακυρώθηκε."
 }

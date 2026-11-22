@@ -1540,7 +1540,6 @@
   "Share anonymous data": "Chia sẻ dữ liệu ẩn danh",
   "Not now": "Để sau",
   "You can change this anytime in Settings.": "Bạn có thể thay đổi tùy chọn này bất cứ lúc nào trong Cài đặt.",
-  "Then by...": "Sau đó theo...",
   "Some files could not be added to your library.": "Một số tệp không thể được thêm vào thư viện của bạn.",
   "Failed to import {{count}} books_other": "Không thể nhập {{count}} sách",
   "Add to My Catalogs": "Thêm vào Danh mục của tôi",
@@ -2821,5 +2820,13 @@
   "Restore from Backup": "Khôi phục từ bản sao lưu",
   "Your backup has been saved to the selected location.": "Bản sao lưu của bạn đã được lưu vào vị trí đã chọn.",
   "Cover only": "Chỉ ảnh bìa",
-  "Look up text in the system dictionary after selection": "Tra cứu văn bản trong từ điển hệ thống sau khi chọn"
+  "Look up text in the system dictionary after selection": "Tra cứu văn bản trong từ điển hệ thống sau khi chọn",
+  "Drag to reorder {{label}}": "Kéo để sắp xếp lại {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Để chọn một tiêu chí sắp xếp, nhấn phím cách hoặc Enter. Dùng phím mũi tên lên và xuống để sắp xếp lại, sau đó nhấn phím cách hoặc Enter để thả, hoặc Escape để hủy.",
+  "Picked up {{label}}.": "Đã chọn {{label}}.",
+  "{{label}} moved over {{target}}.": "Đã di chuyển {{label}} lên trên {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} không còn ở trên vị trí có thể thả.",
+  "Dropped {{label}} at {{target}}.": "Đã thả {{label}} tại {{target}}.",
+  "Dropped {{label}}.": "Đã thả {{label}}.",
+  "Reordering {{label}} cancelled.": "Đã hủy sắp xếp lại {{label}}."
 }

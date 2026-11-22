@@ -1570,7 +1570,6 @@
   "Share anonymous data": "அநாமதேய தரவைப் பகிர்",
   "Not now": "இப்போது வேண்டாம்",
   "You can change this anytime in Settings.": "அமைப்புகளில் எப்போது வேண்டுமானாலும் இதை மாற்றலாம்.",
-  "Then by...": "பிறகு...",
   "Some files could not be added to your library.": "சில கோப்புகளை உங்கள் நூலகத்தில் சேர்க்க முடியவில்லை.",
   "Failed to import {{count}} books_one": "{{count}} புத்தகத்தை இறக்குமதி செய்ய முடியவில்லை",
   "Failed to import {{count}} books_other": "{{count}} புத்தகங்களை இறக்குமதி செய்ய முடியவில்லை",
@@ -2896,5 +2895,13 @@
   "Restore from Backup": "காப்புப்பிரதியிலிருந்து மீட்டமை",
   "Your backup has been saved to the selected location.": "உங்கள் காப்புப்பிரதி தேர்ந்தெடுத்த இடத்தில் சேமிக்கப்பட்டது.",
   "Cover only": "அட்டைகள் மட்டும்",
-  "Look up text in the system dictionary after selection": "தேர்வுக்குப் பிறகு கணினி அகராதியில் உரையைத் தேடு"
+  "Look up text in the system dictionary after selection": "தேர்வுக்குப் பிறகு கணினி அகராதியில் உரையைத் தேடு",
+  "Drag to reorder {{label}}": "{{label}} ஐ மறுவரிசைப்படுத்த இழுக்கவும்",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "ஒரு வரிசைப்படுத்தல் அளவுகோலை எடுக்க ஸ்பேஸ் அல்லது என்டரை அழுத்தவும். மறுவரிசைப்படுத்த மேல் மற்றும் கீழ் அம்புக்குறி விசைகளைப் பயன்படுத்தி, விட ஸ்பேஸ் அல்லது என்டரை, ரத்துசெய்ய எஸ்கேப்பை அழுத்தவும்.",
+  "Picked up {{label}}.": "{{label}} எடுக்கப்பட்டது.",
+  "{{label}} moved over {{target}}.": "{{label}} {{target}} மேல் நகர்த்தப்பட்டது.",
+  "{{label}} is no longer over a droppable position.": "{{label}} இனி விடக்கூடிய நிலையின் மேல் இல்லை.",
+  "Dropped {{label}} at {{target}}.": "{{label}} {{target}} இல் விடப்பட்டது.",
+  "Dropped {{label}}.": "{{label}} விடப்பட்டது.",
+  "Reordering {{label}} cancelled.": "{{label}} மறுவரிசைப்படுத்தல் ரத்துசெய்யப்பட்டது."
 }

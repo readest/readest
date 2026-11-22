@@ -1555,7 +1555,6 @@
   "Share anonymous data": "分享匿名資料",
   "Not now": "暫不",
   "You can change this anytime in Settings.": "您可以隨時在「設定」中變更此項目。",
-  "Then by...": "其次按...",
   "Some files could not be added to your library.": "部分檔案無法新增到您的書庫。",
   "Failed to import {{count}} books_other": "匯入 {{count}} 本書籍失敗",
   "Add to My Catalogs": "新增到我的目錄",
@@ -2821,5 +2820,13 @@
   "Restore from Backup": "從備份還原",
   "Your backup has been saved to the selected location.": "備份已儲存至所選位置。",
   "Cover only": "僅顯示封面",
-  "Look up text in the system dictionary after selection": "在系統字典中查找選取後的文字"
+  "Look up text in the system dictionary after selection": "在系統字典中查找選取後的文字",
+  "Drag to reorder {{label}}": "拖曳以重新排序{{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "若要拾取排序條件，請按空白鍵或 Enter 鍵。使用上下方向鍵調整順序，然後按空白鍵或 Enter 鍵放下，或按 Esc 鍵取消。",
+  "Picked up {{label}}.": "已拾取{{label}}。",
+  "{{label}} moved over {{target}}.": "{{label}}已移到{{target}}上方。",
+  "{{label}} is no longer over a droppable position.": "{{label}}已不在可放置的位置上方。",
+  "Dropped {{label}} at {{target}}.": "已將{{label}}放到{{target}}。",
+  "Dropped {{label}}.": "已放下{{label}}。",
+  "Reordering {{label}} cancelled.": "已取消重新排序{{label}}。"
 }

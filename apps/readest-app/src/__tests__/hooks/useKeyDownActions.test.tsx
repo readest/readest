@@ -82,5 +82,67 @@ describe('useKeyDownActions', () => {
       fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
       expect(onCancel).toHaveBeenCalledOnce();
     });
+
+    it('lets dnd-kit handle activation and drag keys without dismissing the menu', () => {
+      const onCancel = vi.fn();
+      const onConfirm = vi.fn();
+      const DndHost = ({ dragging }: { dragging: boolean }) => {
+        const ref = useRef<HTMLDivElement>(null);
+        useKeyDownActions({ onCancel, onConfirm, elementRef: ref });
+        return (
+          <div ref={ref} role='dialog'>
+            <div data-dnd-dragging={dragging ? 'true' : undefined}>
+              <button type='button' data-dnd-sortable-handle='true'>
+                Drag
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      const { rerender } = render(<DndHost dragging={false} />);
+      const handle = screen.getByText('Drag');
+      fireEvent.keyDown(handle, { key: ' ' });
+      fireEvent.keyDown(handle, { key: 'Enter' });
+      expect(onConfirm).not.toHaveBeenCalled();
+
+      rerender(<DndHost dragging />);
+      fireEvent.keyDown(handle, { key: 'ArrowDown' });
+      fireEvent.keyDown(handle, { key: 'Escape' });
+      expect(onCancel).not.toHaveBeenCalled();
+
+      rerender(<DndHost dragging={false} />);
+      fireEvent.keyDown(handle, { key: 'Escape' });
+      expect(onCancel).toHaveBeenCalledOnce();
+    });
+
+    it('keeps a single Escape from cancelling the menu even if dnd-kit clears dragging before window handles it', () => {
+      const onCancel = vi.fn();
+      const DndCancelHost = () => {
+        const ref = useRef<HTMLDivElement>(null);
+        useKeyDownActions({ onCancel, elementRef: ref });
+        return (
+          <div ref={ref} role='dialog'>
+            <div id='dnd-list' data-dnd-dragging='true'>
+              <button type='button' data-dnd-sortable-handle='true'>
+                Drag
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      render(<DndCancelHost />);
+      const list = document.getElementById('dnd-list')!;
+      const clearDraggingOnDocument = () => list.removeAttribute('data-dnd-dragging');
+      document.addEventListener('keydown', clearDraggingOnDocument, { once: true });
+
+      const handle = screen.getByText('Drag');
+      fireEvent.keyDown(handle, { key: 'Escape' });
+      expect(onCancel).not.toHaveBeenCalled();
+
+      fireEvent.keyDown(handle, { key: 'Escape' });
+      expect(onCancel).toHaveBeenCalledOnce();
+    });
   });
 });

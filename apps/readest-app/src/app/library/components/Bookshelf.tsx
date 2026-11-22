@@ -44,6 +44,7 @@ import {
   getGlobalBookshelfSort,
   resolveBookshelfSort,
   resolveBookshelfMetadataSort,
+  resolveLibrarySortOrder,
 } from '@/services/bookshelves/sorting';
 import {
   getActiveBookshelfGroupBy,
@@ -187,8 +188,16 @@ const Bookshelf: React.FC<BookshelfProps> = ({
       settings.librarySortAscending,
       settings.libraryThenSortBy,
       settings.libraryThenSortAscending,
+      settings.librarySortOrder,
       searchParams,
     ],
+  );
+  const globalSortOrder = useMemo(
+    () =>
+      Array.isArray(settings.librarySortOrder) && settings.librarySortOrder.length > 0
+        ? resolveLibrarySortOrder(settings, globalSort, searchParams)
+        : undefined,
+    [settings, globalSort, searchParams],
   );
   const definitions = useMemo(
     () =>
@@ -208,6 +217,10 @@ const Bookshelf: React.FC<BookshelfProps> = ({
   // Inside a series the breadcrumb names it, so each cover only needs its number.
   const showSeriesIndex = !!groupId && !queryTerm && groupBy === LibraryGroupByType.Series;
   const activeShelf = definitions.find((s) => s.id === activeShelfId);
+  // Reading pace loads only when Time Remaining is rank 1 or 2 (mirrored into
+  // by/thenBy). The saved list always holds every criterion, so checking all of
+  // it would query reading statistics on every library load; deeper ranks use
+  // the default pace.
   const showTimeRemaining = queryTerm
     ? globalSort.by === 'timeRemaining' || globalSort.thenBy === 'timeRemaining'
     : definitions.some((s) => {
@@ -316,8 +329,9 @@ const Bookshelf: React.FC<BookshelfProps> = ({
         pageDurations,
         rawMatches,
         ownership,
+        globalSortOrder,
       ),
-    [visibleBooks, definitions, uiLanguage, pageDurations, rawMatches, ownership],
+    [visibleBooks, definitions, uiLanguage, pageDurations, rawMatches, ownership, globalSortOrder],
   );
   // Searching book contents inside an opened group stays inside that group,
   // read from the same shelf the group was opened from.
@@ -347,6 +361,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
               globalSort.ascending,
               globalSort.thenAscending,
               pageDurations,
+              globalSortOrder,
             ),
           ),
         },
@@ -383,6 +398,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
             pageDurations,
             groupId,
             manualGroupName,
+            globalSortOrder,
           ),
         };
       })
@@ -400,6 +416,7 @@ const Bookshelf: React.FC<BookshelfProps> = ({
     groupBy,
     globalGroupBy,
     globalSort,
+    globalSortOrder,
     uiLanguage,
     pageDurations,
     manualGroupName,

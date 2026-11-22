@@ -1570,7 +1570,6 @@
   "Share anonymous data": "اشتراک داده ناشناس",
   "Not now": "اکنون نه",
   "You can change this anytime in Settings.": "می‌توانید این تنظیم را هر زمان از تنظیمات تغییر دهید.",
-  "Then by...": "سپس بر اساس...",
   "Some files could not be added to your library.": "برخی از فایل‌ها به کتابخانه‌ی شما اضافه نشدند.",
   "Failed to import {{count}} books_one": "وارد کردن {{count}} کتاب ناموفق بود",
   "Failed to import {{count}} books_other": "وارد کردن {{count}} کتاب ناموفق بود",
@@ -2896,5 +2895,13 @@
   "Restore from Backup": "بازیابی از پشتیبان",
   "Your backup has been saved to the selected location.": "پشتیبان شما در مکان انتخاب‌شده ذخیره شد.",
   "Cover only": "فقط جلدها",
-  "Look up text in the system dictionary after selection": "جستجوی متن در فرهنگ‌نامه سیستم پس از انتخاب"
+  "Look up text in the system dictionary after selection": "جستجوی متن در فرهنگ‌نامه سیستم پس از انتخاب",
+  "Drag to reorder {{label}}": "برای تغییر ترتیب {{label}} بکشید",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "برای برداشتن یک معیار مرتب‌سازی، Space یا Enter را فشار دهید. با کلیدهای جهت‌نمای بالا و پایین ترتیب را تغییر دهید، سپس برای رها کردن Space یا Enter و برای لغو Escape را فشار دهید.",
+  "Picked up {{label}}.": "{{label}} برداشته شد.",
+  "{{label}} moved over {{target}}.": "{{label}} روی {{target}} جابه‌جا شد.",
+  "{{label}} is no longer over a droppable position.": "{{label}} دیگر روی موقعیتی برای رها کردن نیست.",
+  "Dropped {{label}} at {{target}}.": "{{label}} در {{target}} رها شد.",
+  "Dropped {{label}}.": "{{label}} رها شد.",
+  "Reordering {{label}} cancelled.": "تغییر ترتیب {{label}} لغو شد."
 }

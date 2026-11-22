@@ -1600,7 +1600,6 @@
   "Share anonymous data": "Condividi dati anonimi",
   "Not now": "Non ora",
   "You can change this anytime in Settings.": "Puoi modificarlo in qualsiasi momento dalle Impostazioni.",
-  "Then by...": "Poi per...",
   "Some files could not be added to your library.": "Alcuni file non è stato possibile aggiungerli alla tua libreria.",
   "Failed to import {{count}} books_one": "Impossibile importare {{count}} libro",
   "Failed to import {{count}} books_many": "Impossibile importare {{count}} libri",
@@ -2971,5 +2970,13 @@
   "Restore from Backup": "Ripristina da backup",
   "Your backup has been saved to the selected location.": "Il backup è stato salvato nella posizione selezionata.",
   "Cover only": "Solo copertine",
-  "Look up text in the system dictionary after selection": "Cerca testo nel dizionario di sistema dopo la selezione"
+  "Look up text in the system dictionary after selection": "Cerca testo nel dizionario di sistema dopo la selezione",
+  "Drag to reorder {{label}}": "Trascina per riordinare {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Per prendere un criterio di ordinamento, premi Spazio o Invio. Usa le frecce su e giù per riordinare, poi premi Spazio o Invio per rilasciare oppure Esc per annullare.",
+  "Picked up {{label}}.": "{{label}} preso.",
+  "{{label}} moved over {{target}}.": "{{label}} spostato sopra {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} non è più sopra una posizione di rilascio.",
+  "Dropped {{label}} at {{target}}.": "{{label}} rilasciato su {{target}}.",
+  "Dropped {{label}}.": "{{label}} rilasciato.",
+  "Reordering {{label}} cancelled.": "Riordinamento di {{label}} annullato."
 }

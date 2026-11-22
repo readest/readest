@@ -1600,7 +1600,6 @@
   "Share anonymous data": "Partajează date anonime",
   "Not now": "Nu acum",
   "You can change this anytime in Settings.": "Poți modifica această opțiune oricând din Setări.",
-  "Then by...": "Apoi după...",
   "Some files could not be added to your library.": "Unele fișiere nu au putut fi adăugate în biblioteca dvs.",
   "Failed to import {{count}} books_one": "Importul a {{count}} carte a eșuat",
   "Failed to import {{count}} books_few": "Importul a {{count}} cărți a eșuat",
@@ -2971,5 +2970,13 @@
   "Restore from Backup": "Restaurează din copie de rezervă",
   "Your backup has been saved to the selected location.": "Copia de rezervă a fost salvată în locația selectată.",
   "Cover only": "Doar coperți",
-  "Look up text in the system dictionary after selection": "Căutați text în dicționarul sistemului după selecție"
+  "Look up text in the system dictionary after selection": "Căutați text în dicționarul sistemului după selecție",
+  "Drag to reorder {{label}}": "Trageți pentru a reordona {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Pentru a prelua un criteriu de sortare, apăsați spațiu sau Enter. Folosiți săgețile sus și jos pentru a reordona, apoi apăsați spațiu sau Enter pentru a plasa sau Escape pentru a anula.",
+  "Picked up {{label}}.": "{{label}} a fost preluat.",
+  "{{label}} moved over {{target}}.": "{{label}} a fost mutat peste {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} nu mai este deasupra unei poziții de plasare.",
+  "Dropped {{label}} at {{target}}.": "{{label}} a fost plasat la {{target}}.",
+  "Dropped {{label}}.": "{{label}} a fost plasat.",
+  "Reordering {{label}} cancelled.": "Reordonarea {{label}} a fost anulată."
 }

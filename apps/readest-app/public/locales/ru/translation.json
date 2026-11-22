@@ -1630,7 +1630,6 @@
   "Share anonymous data": "Поделиться анонимными данными",
   "Not now": "Не сейчас",
   "You can change this anytime in Settings.": "Это можно изменить в любое время в Настройках.",
-  "Then by...": "Затем по...",
   "Some files could not be added to your library.": "Некоторые файлы не удалось добавить в вашу библиотеку.",
   "Failed to import {{count}} books_one": "Не удалось импортировать {{count}} книгу",
   "Failed to import {{count}} books_few": "Не удалось импортировать {{count}} книги",
@@ -3046,5 +3045,13 @@
   "Restore from Backup": "Восстановить из резервной копии",
   "Your backup has been saved to the selected location.": "Резервная копия сохранена в выбранном месте.",
   "Cover only": "Только обложки",
-  "Look up text in the system dictionary after selection": "Искать текст в системном словаре после выделения"
+  "Look up text in the system dictionary after selection": "Искать текст в системном словаре после выделения",
+  "Drag to reorder {{label}}": "Перетащите, чтобы изменить порядок {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Чтобы взять критерий сортировки, нажмите пробел или Enter. Меняйте порядок клавишами со стрелками вверх и вниз, затем нажмите пробел или Enter, чтобы отпустить, или Escape для отмены.",
+  "Picked up {{label}}.": "{{label}} взят.",
+  "{{label}} moved over {{target}}.": "{{label}} перемещён над {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} больше не над позицией для сброса.",
+  "Dropped {{label}} at {{target}}.": "{{label}} отпущен на {{target}}.",
+  "Dropped {{label}}.": "{{label}} отпущен.",
+  "Reordering {{label}} cancelled.": "Изменение порядка {{label}} отменено."
 }

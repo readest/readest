@@ -366,7 +366,6 @@
   "Auto": "ავტომატური",
   "Group by...": "დაჯგუფება...",
   "Sort by...": "დალაგება...",
-  "Then by...": "შემდეგ...",
   "Readest re-scans these folders when it opens or returns to the foreground and imports any new books. Each folder keeps the structure it was imported with.": "Readest ხელახლა სკანირებს ამ საქაღალდეებს გახსნისას ან წინა პლანზე დაბრუნებისას და აიმპორტებს ყველა ახალ წიგნს. თითოეული საქაღალდე ინარჩუნებს იმ სტრუქტურას, რომლითაც დაიმპორტდა.",
   "No folders are watched.": "დაკვირვებული საქაღალდეები არ არის.",
   "Flat": "ბრტყელი",
@@ -2896,5 +2895,13 @@
   "Restore from Backup": "სარეზერვო ასლიდან აღდგენა",
   "Your backup has been saved to the selected location.": "სარეზერვო ასლი შენახულია არჩეულ ადგილას.",
   "Cover only": "მხოლოდ ყდები",
-  "Look up text in the system dictionary after selection": "ტექსტის მოძებნა სისტემურ ლექსიკონში მონიშვნის შემდეგ"
+  "Look up text in the system dictionary after selection": "ტექსტის მოძებნა სისტემურ ლექსიკონში მონიშვნის შემდეგ",
+  "Drag to reorder {{label}}": "გადაათრიეთ {{label}}-ის გადასალაგებლად",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "დახარისხების კრიტერიუმის ასაღებად დააჭირეთ Space-ს ან Enter-ს. გადასალაგებლად გამოიყენეთ ზემოთ და ქვემოთ ისრები, შემდეგ დასადებად დააჭირეთ Space-ს ან Enter-ს, ან გასაუქმებლად Escape-ს.",
+  "Picked up {{label}}.": "{{label}} აღებულია.",
+  "{{label}} moved over {{target}}.": "{{label}} გადაადგილდა {{target}}-ის თავზე.",
+  "{{label}} is no longer over a droppable position.": "{{label}} აღარ არის დასადები პოზიციის თავზე.",
+  "Dropped {{label}} at {{target}}.": "{{label}} დადებულია {{target}}-ზე.",
+  "Dropped {{label}}.": "{{label}} დადებულია.",
+  "Reordering {{label}} cancelled.": "{{label}}-ის გადალაგება გაუქმდა."
 }

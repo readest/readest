@@ -1630,7 +1630,6 @@
   "Share anonymous data": "Deli anonimne podatke",
   "Not now": "Ne zdaj",
   "You can change this anytime in Settings.": "To lahko kadar koli spremenite v Nastavitvah.",
-  "Then by...": "Nato po...",
   "Some files could not be added to your library.": "Nekaterih datotek ni bilo mogoče dodati v vašo knjižnico.",
   "Failed to import {{count}} books_one": "Uvoz {{count}} knjige ni uspel",
   "Failed to import {{count}} books_two": "Uvoz {{count}} knjig ni uspel",
@@ -3046,5 +3045,13 @@
   "Restore from Backup": "Obnovi iz varnostne kopije",
   "Your backup has been saved to the selected location.": "Varnostna kopija je shranjena na izbrano mesto.",
   "Cover only": "Samo naslovnice",
-  "Look up text in the system dictionary after selection": "Poišči besedilo v sistemskem slovarju po izbiri"
+  "Look up text in the system dictionary after selection": "Poišči besedilo v sistemskem slovarju po izbiri",
+  "Drag to reorder {{label}}": "Povlecite za prerazporeditev {{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Za izbiro merila razvrščanja pritisnite preslednico ali Enter. S puščicama gor in dol spremenite vrstni red, nato pritisnite preslednico ali Enter za spust ali Escape za preklic.",
+  "Picked up {{label}}.": "{{label}} izbrano.",
+  "{{label}} moved over {{target}}.": "{{label}} premaknjeno nad {{target}}.",
+  "{{label}} is no longer over a droppable position.": "{{label}} ni več nad mestom za spust.",
+  "Dropped {{label}} at {{target}}.": "{{label}} spuščeno na {{target}}.",
+  "Dropped {{label}}.": "{{label}} spuščeno.",
+  "Reordering {{label}} cancelled.": "Prerazporejanje {{label}} preklicano."
 }

@@ -1540,7 +1540,6 @@
   "Share anonymous data": "แชร์ข้อมูลแบบไม่ระบุตัวตน",
   "Not now": "ไม่ใช่ตอนนี้",
   "You can change this anytime in Settings.": "คุณสามารถเปลี่ยนแปลงสิ่งนี้ได้ทุกเมื่อในการตั้งค่า",
-  "Then by...": "จากนั้น...",
   "Some files could not be added to your library.": "ไม่สามารถเพิ่มบางไฟล์ลงในคลังของคุณได้",
   "Failed to import {{count}} books_other": "นำเข้าหนังสือ {{count}} เล่มไม่สำเร็จ",
   "Add to My Catalogs": "เพิ่มในแคตตาล็อกของฉัน",
@@ -2821,5 +2820,13 @@
   "Restore from Backup": "กู้คืนจากข้อมูลสำรอง",
   "Your backup has been saved to the selected location.": "บันทึกข้อมูลสำรองไปยังตำแหน่งที่เลือกแล้ว",
   "Cover only": "เฉพาะหน้าปก",
-  "Look up text in the system dictionary after selection": "ค้นหาข้อความในพจนานุกรมของระบบหลังการเลือก"
+  "Look up text in the system dictionary after selection": "ค้นหาข้อความในพจนานุกรมของระบบหลังการเลือก",
+  "Drag to reorder {{label}}": "ลากเพื่อจัดลำดับ {{label}} ใหม่",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "หากต้องการหยิบเกณฑ์การเรียง ให้กด Space หรือ Enter ใช้ปุ่มลูกศรขึ้นและลงเพื่อจัดลำดับใหม่ แล้วกด Space หรือ Enter เพื่อวาง หรือ Escape เพื่อยกเลิก",
+  "Picked up {{label}}.": "หยิบ {{label}} แล้ว",
+  "{{label}} moved over {{target}}.": "ย้าย {{label}} ไปเหนือ {{target}} แล้ว",
+  "{{label}} is no longer over a droppable position.": "{{label}} ไม่ได้อยู่เหนือตำแหน่งที่วางได้แล้ว",
+  "Dropped {{label}} at {{target}}.": "วาง {{label}} ที่ {{target}} แล้ว",
+  "Dropped {{label}}.": "วาง {{label}} แล้ว",
+  "Reordering {{label}} cancelled.": "ยกเลิกการจัดลำดับ {{label}} ใหม่แล้ว"
 }

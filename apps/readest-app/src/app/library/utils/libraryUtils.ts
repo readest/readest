@@ -3,6 +3,7 @@ import {
   LibraryGroupByType,
   LibrarySecondarySortByType,
   LibrarySortByType,
+  LibrarySortCriterion,
 } from '@/types/settings';
 import {
   formatAuthors,
@@ -538,12 +539,18 @@ const getShelfItemTimeRemaining = (item: Book | BooksGroup): number | undefined 
  * sort-order multiplier, otherwise descending would float those items to the top.
  */
 export const withTimeRemainingLast =
-  <T extends Book | BooksGroup>(sortBy: LibrarySortByType, compare: (a: T, b: T) => number) =>
+  <T extends Book | BooksGroup>(
+    sortBy: LibrarySortByType,
+    compare: (a: T, b: T) => number,
+    tieBreakWhenBothUnavailable = false,
+  ) =>
   (a: T, b: T): number => {
     if (sortBy !== LibrarySortByType.TimeRemaining) return compare(a, b);
     const aTime = getShelfItemTimeRemaining(a);
     const bTime = getShelfItemTimeRemaining(b);
-    if (aTime === undefined && bTime === undefined) return 0;
+    if (aTime === undefined && bTime === undefined) {
+      return tieBreakWhenBothUnavailable ? compare(a, b) : 0;
+    }
     if (aTime === undefined) return 1;
     if (bTime === undefined) return -1;
     return compare(a, b);
@@ -657,8 +664,16 @@ export const createBookSorter =
     sortAscending: boolean = true,
     secondaryAscending: boolean = true,
     pageDurations?: Readonly<Record<string, number>>,
+    sortOrder?: LibrarySortCriterion[],
   ) =>
   (a: Book, b: Book): number => {
+    if (sortOrder && sortOrder.length > 0) {
+      for (const criterion of sortOrder) {
+        const cmp = compareBookByKey(a, b, criterion.by, uiLanguage, pageDurations);
+        if (cmp !== 0) return cmp * (criterion.ascending ? 1 : -1);
+      }
+      return 0;
+    }
     const primary = compareBookByKey(a, b, sortBy, uiLanguage, pageDurations);
     if (primary !== 0) return primary * (sortAscending ? 1 : -1);
     if (secondarySortBy === 'none') return 0;
@@ -944,19 +959,28 @@ export const resolveCurrentShelfBooks = (
  * @param secondaryAscending - Direction of the secondary key, independent of `sortAscending`
  *   (issue #5119).
  */
-export const createWithinGroupSorter =
-  (
-    groupBy: LibraryGroupByType,
-    sortBy: LibrarySortByType,
-    uiLanguage: string,
-    sortAscending: boolean = true,
-    secondarySortBy: LibrarySecondarySortByType = 'none',
-    secondaryAscending: boolean = true,
-    pageDurations?: Readonly<Record<string, number>>,
-  ) =>
-  (a: Book, b: Book): number => {
-    const sortDirection = sortAscending ? 1 : -1;
+export const createWithinGroupSorter = (
+  groupBy: LibraryGroupByType,
+  sortBy: LibrarySortByType,
+  uiLanguage: string,
+  sortAscending: boolean = true,
+  secondarySortBy: LibrarySecondarySortByType = 'none',
+  secondaryAscending: boolean = true,
+  pageDurations?: Readonly<Record<string, number>>,
+  sortOrder?: LibrarySortCriterion[],
+) => {
+  const hasSortOrder = Boolean(sortOrder && sortOrder.length > 0);
+  const fallbackCompare = createBookSorter(
+    sortBy,
+    uiLanguage,
+    'none',
+    sortAscending,
+    secondaryAscending,
+    pageDurations,
+    hasSortOrder ? sortOrder : undefined,
+  );
 
+  return (a: Book, b: Book): number => {
     if (groupBy === LibraryGroupByType.Series) {
       const aIndex = a.metadata?.seriesIndex;
       const bIndex = b.metadata?.seriesIndex;
@@ -971,10 +995,7 @@ export const createWithinGroupSorter =
       if (bIndex != null) return 1;
 
       // Neither has series index - fall back to global sort with direction
-      return (
-        createBookSorter(sortBy, uiLanguage, 'none', true, true, pageDurations)(a, b) *
-        sortDirection
-      );
+      return fallbackCompare(a, b);
     }
 
     // For author and other non-series groupings: when a secondary key is provided,
@@ -982,16 +1003,11 @@ export const createWithinGroupSorter =
     if (secondarySortBy !== 'none') {
       const bySecondary = compareBookByKey(a, b, secondarySortBy, uiLanguage, pageDurations);
       if (bySecondary !== 0) return bySecondary * (secondaryAscending ? 1 : -1);
-      return (
-        createBookSorter(sortBy, uiLanguage, 'none', true, true, pageDurations)(a, b) *
-        sortDirection
-      );
     }
 
-    return (
-      createBookSorter(sortBy, uiLanguage, 'none', true, true, pageDurations)(a, b) * sortDirection
-    );
+    return fallbackCompare(a, b);
   };
+};
 
 /**
  * Get the sort value from a book for comparison with groups.
@@ -1131,6 +1147,7 @@ export const compareSortValues = (
 
   // Numeric comparison for date-based sorts
   if (typeof aValue === 'number' && typeof bValue === 'number') {
+    if (aValue === bValue || (!Number.isFinite(aValue) && !Number.isFinite(bValue))) return 0;
     return aValue - bValue;
   }
 

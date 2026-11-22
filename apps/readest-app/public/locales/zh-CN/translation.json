@@ -1555,7 +1555,6 @@
   "Share anonymous data": "分享匿名数据",
   "Not now": "暂不",
   "You can change this anytime in Settings.": "您可以随时在“设置”中更改此选项。",
-  "Then by...": "其次按...",
   "Some files could not be added to your library.": "部分文件无法添加到您的书库。",
   "Failed to import {{count}} books_other": "导入 {{count}} 本书籍失败",
   "Add to My Catalogs": "添加到我的目录",
@@ -2821,5 +2820,13 @@
   "Restore from Backup": "从备份恢复",
   "Your backup has been saved to the selected location.": "备份已保存到所选位置。",
   "Cover only": "仅显示封面",
-  "Look up text in the system dictionary after selection": "在系统词典中查找选中文本"
+  "Look up text in the system dictionary after selection": "在系统词典中查找选中文本",
+  "Drag to reorder {{label}}": "拖动以重新排序{{label}}",
+  "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "要拾取排序条件，请按空格键或回车键。使用上下方向键调整顺序，然后按空格键或回车键放下，或按 Esc 键取消。",
+  "Picked up {{label}}.": "已拾取{{label}}。",
+  "{{label}} moved over {{target}}.": "{{label}}已移到{{target}}上方。",
+  "{{label}} is no longer over a droppable position.": "{{label}}已不在可放置的位置上方。",
+  "Dropped {{label}} at {{target}}.": "已将{{label}}放到{{target}}。",
+  "Dropped {{label}}.": "已放下{{label}}。",
+  "Reordering {{label}} cancelled.": "已取消重新排序{{label}}。"
 }
