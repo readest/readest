@@ -1000,6 +1000,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         setTtsClientsInitialized(false);
         setAudioTransport(false);
         setSupportsLyrics(false);
+        setVoiceId('');
 
         // Show the mini player immediately, in the "playing" state: client
         // init below can take a while and the session is conceptually already
