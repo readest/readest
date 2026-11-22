@@ -764,6 +764,16 @@ const getPageLayoutStyles = (
      went a page further and left a blank page. Ending the line 1px early lets
      WebKit drop that margin; :where() lets a book's own margin win.
      -webkit-line-box-contain is supported only by WebKit (#6676). */
+  @supports (-webkit-line-box-contain: replaced) {
+    body.paginated-mode img.alone-on-line:not(.has-text-siblings),
+    body.paginated-mode .lone-image {
+      vertical-align: top;
+    }
+    :where(body.paginated-mode img.alone-on-line:not(.has-text-siblings)) {
+      margin-block-end: -1px;
+    }
+  }
+
   body.scroll-mode img {
     max-width: 100%;
     object-fit: contain;
