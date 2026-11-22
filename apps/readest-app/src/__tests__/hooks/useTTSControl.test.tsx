@@ -1580,6 +1580,61 @@ describe('useTTSControl background session lifecycle', () => {
     expect(liveController.setSkipInlineAnnotations).toHaveBeenCalledWith(false);
   });
 
+  // #7787: the engine resolves its voice on the first utterance, after the
+  // clients report ready, and nothing announces it.
+  it('picks up the voice the engine resolves once reading starts', async () => {
+    vi.useFakeTimers();
+    try {
+      const liveController = makeLiveController();
+      mockSessionManager.getSessionByHash.mockReturnValue({
+        bookHash: 'book',
+        bookKey: 'book-old',
+        controller: liveController,
+      });
+      render(<ApiHarness />);
+      await act(async () => {
+        for (let i = 0; i < 10; i++) await Promise.resolve();
+      });
+      expect(hookApi!.voiceId).toBe('');
+      liveController.getVoiceId.mockReturnValue('en-US-AvaNeural');
+      await act(async () => {
+        vi.advanceTimersByTime(400);
+      });
+      expect(hookApi!.voiceId).toBe('en-US-AvaNeural');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  // A sheet opened as a new session starts must not take the last session's
+  // voice before the next poll (#7787).
+  it('clears the voice when a new session starts', async () => {
+    const liveController = makeLiveController();
+    liveController.getVoiceId.mockReturnValue('en-US-AvaNeural');
+    mockSessionManager.getSessionByHash.mockReturnValue({
+      bookHash: 'book',
+      bookKey: 'book-old',
+      controller: liveController,
+    });
+    render(<ApiHarness />);
+    await act(async () => {
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+    });
+    expect(hookApi!.voiceId).toBe('en-US-AvaNeural');
+    let speaking: Promise<unknown> | undefined;
+    await act(async () => {
+      speaking = eventDispatcher.dispatch('tts-speak', { bookKey: 'book-1' });
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+    });
+    // The new clients are still initializing.
+    expect(pendingInitResolvers.length).toBeGreaterThan(0);
+    expect(hookApi!.voiceId).toBe('');
+    await act(async () => {
+      while (pendingInitResolvers.length > 0) pendingInitResolvers.shift()!();
+      await speaking;
+    });
+  });
+
   // Back from another route the reader remounts under the same book key; the
   // store still holds the previous, detached view until the new one opens.
   // Attaching to that one would draw every highlight off screen.

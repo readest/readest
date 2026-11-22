@@ -157,6 +157,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onGetVoices: vi.fn().mockResolvedValue(voiceGroups),
   onSetVoice: vi.fn(),
   onGetVoiceId: vi.fn().mockReturnValue('ava'),
+  voiceId: 'ava',
   onSelectTimeout: vi.fn(),
   onSeek: vi.fn().mockResolvedValue(undefined),
   onSeekPreview: vi.fn(),
@@ -235,10 +236,30 @@ describe('TTSPlayerSheet', () => {
     expect((screen.getByLabelText('Previous Paragraph') as HTMLButtonElement).disabled).toBe(true);
     props.onGetVoices.mockResolvedValue(voiceGroups);
     props.onGetVoiceId.mockReturnValue('ava');
-    rerender(<TTSPlayerSheet {...props} clientsReady />);
+    rerender(<TTSPlayerSheet {...props} clientsReady voiceId='ava' />);
     expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
     expect(props.onGetVoices).toHaveBeenCalledTimes(2);
     expect((screen.getByLabelText('Previous Paragraph') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  // #7787: the engine resolves its voice on the first utterance, after the
+  // clients report ready.
+  test('shows the voice the engine resolves while the sheet is open', async () => {
+    const props = makeProps({ onGetVoiceId: vi.fn().mockReturnValue(''), voiceId: '' });
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    await waitFor(() => expect(props.onGetVoices).toHaveBeenCalled());
+    expect(screen.queryByText('Ava')).toBeNull();
+    rerender(<TTSPlayerSheet {...props} voiceId='ava' />);
+    expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
+  });
+
+  test('keeps the voice it shows when the engine reports another', async () => {
+    const props = makeProps();
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
+    rerender(<TTSPlayerSheet {...props} voiceId='guy' />);
+    expect(screen.getByText('Ava')).toBeTruthy();
+    expect(screen.queryByText('Guy')).toBeNull();
   });
 
   test('a voice list that arrives after a newer one is discarded', async () => {

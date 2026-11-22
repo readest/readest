@@ -114,6 +114,8 @@ type TTSPlayerSheetProps = {
   // `resume`: start reading again with the voice (a preview stopped reading).
   onSetVoice: (voice: string, lang: string, resume?: boolean) => void;
   onGetVoiceId: () => string;
+  // The voice the engine reads with, once it has resolved one.
+  voiceId: string;
   onSelectTimeout: (bookKey: string, value: number) => void;
   onSeek: (seconds: number) => Promise<void>;
   onSeekPreview: (seconds: number) => void;
@@ -161,6 +163,7 @@ const TTSPlayerSheet = ({
   onGetVoices,
   onSetVoice,
   onGetVoiceId,
+  voiceId,
   onSelectTimeout,
   onSeek,
   onSeekPreview,
@@ -294,12 +297,13 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  // Opened while the clients initialized: pick up the voice once they are
-  // ready, without leaving the view the user is on.
+  // Opened before the engine resolved its voice (on the first utterance, after
+  // the clients are ready): pick it up then, without leaving the view the user
+  // is on. A voice already shown stays.
   useEffect(() => {
-    if (isOpen && clientsReady) setSelectedVoice(onGetVoiceId());
+    if (isOpen && voiceId) setSelectedVoice((prev) => prev || voiceId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientsReady]);
+  }, [voiceId]);
 
   useEffect(() => {
     if (!isOpen) return;
