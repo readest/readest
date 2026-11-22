@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { userEvent } from 'vitest/browser';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
 import type { SystemSettings } from '@/types/settings';
-import { clearPendingLibrarySortUrlSync } from '@/services/bookshelves/sorting';
 import { useSettingsStore } from '@/store/settingsStore';
 
 let mockSearchParams = new URLSearchParams();
@@ -31,13 +30,6 @@ vi.mock('@/helpers/settings', () => ({
       settings: { ...useSettingsStore.getState().settings, [key]: value },
     });
   },
-  saveSysSettingsFields: async (_env: unknown, patch: Partial<SystemSettings>) => {
-    await Promise.resolve();
-    useSettingsStore.setState({
-      settings: { ...useSettingsStore.getState().settings, ...patch },
-    });
-    await Promise.resolve();
-  },
 }));
 
 const { default: ViewMenu } = await import('@/app/library/components/ViewMenu');
@@ -47,17 +39,13 @@ beforeEach(() => {
   localStorage.clear();
   mockSearchParams = new URLSearchParams();
   navigateToLibrary.mockReset();
-  clearPendingLibrarySortUrlSync();
   useSettingsStore.setState({
     settings: { ...DEFAULT_SYSTEM_SETTINGS, libraryViewMode: 'grid' } as SystemSettings,
     saveSettings: vi.fn().mockResolvedValue(undefined),
   });
 });
 
-afterEach(() => {
-  clearPendingLibrarySortUrlSync();
-  cleanup();
-});
+afterEach(cleanup);
 
 describe('ViewMenu priority sort reorder in Chromium', () => {
   it('keeps a criterion dragged from bottom to rank 1 at rank 1 without flashing rank 3 while URL searchParams lag', async () => {
@@ -135,6 +123,12 @@ describe('ViewMenu priority sort reorder in Chromium', () => {
       expect.stringContaining('sort=timeRemaining&order=asc&thenSort=author&thenOrder=asc'),
     );
 
+    // router.replace lands, then a later URL change is honored again.
+    mockSearchParams = new URLSearchParams(
+      'sort=timeRemaining&order=asc&thenSort=author&thenOrder=asc',
+    );
+    rerender(<ViewMenu />);
+    expect(getRowOrder().slice(0, 3)).toEqual(['Time Remaining', 'Author', 'Date Added']);
     mockSearchParams = new URLSearchParams('sort=title&order=asc&thenSort=author&thenOrder=asc');
     rerender(<ViewMenu />);
     await waitFor(() => expect(getRowOrder().slice(0, 2)).toEqual(['Title', 'Author']));

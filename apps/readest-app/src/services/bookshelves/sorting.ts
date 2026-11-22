@@ -44,83 +44,6 @@ const DEFAULT_ASCENDING_BY_KEY: Record<LibraryMetadataSortByType, boolean> = {
 const isMetadataSortKey = (value: string): value is LibraryMetadataSortByType =>
   METADATA_SORT_KEY_SET.has(value);
 
-type SortUrlParams = {
-  sort: string | null;
-  order: string | null;
-  thenSort: string | null;
-  thenOrder: string | null;
-};
-
-const readSortUrlParams = (params?: Pick<URLSearchParams, 'get'> | null): SortUrlParams => ({
-  sort: params?.get('sort') ?? null,
-  order: params?.get('order') ?? null,
-  thenSort: params?.get('thenSort') ?? null,
-  thenOrder: params?.get('thenOrder') ?? null,
-});
-
-const sortUrlParamsEqual = (a: SortUrlParams, b: SortUrlParams): boolean =>
-  a.sort === b.sort &&
-  a.order === b.order &&
-  a.thenSort === b.thenSort &&
-  a.thenOrder === b.thenOrder;
-
-type PendingSortUrlSync = {
-  superseded: SortUrlParams[];
-  expected: SortUrlParams;
-};
-
-let pendingSortUrlSync: PendingSortUrlSync | null = null;
-
-/**
- * Record an in-flight sort URL navigation from `ViewMenu` so stale `searchParams`
- * (including superseded intermediate targets from rapid consecutive commits)
- * captured before `router.replace` settles do not demote newly committed ranks.
- */
-export function markPendingLibrarySortUrlSync(
-  staleParams?: Pick<URLSearchParams, 'get'> | null,
-  expectedParams?: Pick<URLSearchParams, 'get'> | null,
-): void {
-  const stale = readSortUrlParams(staleParams);
-  const expected = readSortUrlParams(expectedParams);
-  if (sortUrlParamsEqual(stale, expected)) {
-    pendingSortUrlSync = null;
-    return;
-  }
-  const candidates: SortUrlParams[] = pendingSortUrlSync
-    ? [...pendingSortUrlSync.superseded, pendingSortUrlSync.expected, stale]
-    : [stale];
-  const superseded: SortUrlParams[] = [];
-  for (const candidate of candidates) {
-    if (
-      !sortUrlParamsEqual(candidate, expected) &&
-      !superseded.some((existing) => sortUrlParamsEqual(existing, candidate))
-    ) {
-      superseded.push(candidate);
-    }
-  }
-  pendingSortUrlSync = superseded.length > 0 ? { superseded, expected } : null;
-}
-
-export function clearPendingLibrarySortUrlSync(): void {
-  pendingSortUrlSync = null;
-}
-
-export function resolveEffectiveLibrarySortSearchParams(
-  params?: Pick<URLSearchParams, 'get'> | null,
-): Pick<URLSearchParams, 'get'> | null | undefined {
-  if (!pendingSortUrlSync || !params) return params;
-  const current = readSortUrlParams(params);
-  if (sortUrlParamsEqual(current, pendingSortUrlSync.expected)) {
-    pendingSortUrlSync = null;
-    return params;
-  }
-  if (pendingSortUrlSync.superseded.some((stale) => sortUrlParamsEqual(current, stale))) {
-    return null;
-  }
-  pendingSortUrlSync = null;
-  return params;
-}
-
 /**
  * Resolve a complete, deduplicated priority list of all metadata sort criteria.
  * Preserves stored `librarySortOrder` when present and reconciles URL overrides
@@ -163,16 +86,15 @@ export function resolveLibrarySortOrder(
     });
   };
 
-  const effectiveParams = resolveEffectiveLibrarySortSearchParams(params);
   const hasStoredOrder =
     Array.isArray(settings.librarySortOrder) && settings.librarySortOrder.length > 0;
   if (hasStoredOrder) {
     const parseOrder = (value?: string | null) =>
       value === 'asc' ? true : value === 'desc' ? false : undefined;
-    const urlSort = effectiveParams?.get('sort');
-    const urlOrder = parseOrder(effectiveParams?.get('order'));
-    const urlThenSort = effectiveParams?.get('thenSort');
-    const urlThenOrder = parseOrder(effectiveParams?.get('thenOrder'));
+    const urlSort = params?.get('sort');
+    const urlOrder = parseOrder(params?.get('order'));
+    const urlThenSort = params?.get('thenSort');
+    const urlThenOrder = parseOrder(params?.get('thenOrder'));
 
     if (urlSort && isMetadataSortKey(urlSort)) {
       promote(urlSort, 0, urlOrder);
@@ -207,16 +129,15 @@ export function getGlobalBookshelfSort(
   settings: Partial<SystemSettings>,
   params?: Pick<URLSearchParams, 'get'> | null,
 ): BookshelfSort {
-  const effectiveParams = resolveEffectiveLibrarySortSearchParams(params);
   const groupBy = ensureLibraryGroupByType(
     params?.get('groupBy'),
     settings.libraryGroupBy || 'group',
   );
-  const order = effectiveParams?.get('order');
-  const thenOrder = effectiveParams?.get('thenOrder');
+  const order = params?.get('order');
+  const thenOrder = params?.get('thenOrder');
   return {
     by: ensureLibrarySortByType(
-      effectiveParams?.get('sort'),
+      params?.get('sort'),
       settings.librarySortCustom
         ? 'custom'
         : resolveEffectivePrimarySort(
@@ -231,7 +152,7 @@ export function getGlobalBookshelfSort(
         : (settings.librarySortAscending ?? false),
     thenBy: resolveEffectiveSecondarySort(
       ensureLibrarySecondarySortByType(
-        effectiveParams?.get('thenSort'),
+        params?.get('thenSort'),
         settings.libraryThenSortBy || 'none',
       ),
       groupBy,

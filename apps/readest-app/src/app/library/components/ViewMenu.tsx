@@ -2,9 +2,7 @@ import { eventDispatcher } from '@/utils/event';
 import { BOOKSHELF_GROUP_LABELS, BOOKSHELF_SORT_LABELS } from '@/services/bookshelves/definitions';
 import {
   METADATA_SORT_BY_ORDER,
-  clearPendingLibrarySortUrlSync,
   getGlobalBookshelfSort,
-  markPendingLibrarySortUrlSync,
   resolveLibrarySortOrder,
 } from '@/services/bookshelves/sorting';
 import { updateBookshelf } from '@/services/bookshelves/persistence';
@@ -21,7 +19,7 @@ import {
   LibrarySortByType,
   LibrarySortCriterion,
 } from '@/types/settings';
-import { saveSysSettings, saveSysSettingsFields } from '@/helpers/settings';
+import { saveSysSettings } from '@/helpers/settings';
 import { navigateToLibrary } from '@/utils/nav';
 import NumberInput from '@/components/settings/NumberInput';
 import MenuItem from '@/components/MenuItem';
@@ -69,16 +67,22 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   ].filter(Boolean) as LibraryMetadataSortByType[];
 
   const priorityOrder = resolveLibrarySortOrder(settings, globalSort, searchParams);
-  const latestSearchParamsRef = React.useRef(searchParams);
-  latestSearchParamsRef.current = searchParams;
   const commitQueueRef = React.useRef<Promise<void>>(Promise.resolve());
   const pendingCommitsRef = React.useRef(0);
   const latestPriorityOrderRef = React.useRef(priorityOrder);
-  if (pendingCommitsRef.current === 0) {
+  // A commit updates settings before router.replace lands, and the stale ?sort=&thenSort=
+  // would re-promote the old criteria meanwhile: hold the committed order until it resolves.
+  const awaitingResolvedOrderRef = React.useRef(false);
+  const orderKey = (order: LibrarySortCriterion[]) =>
+    order.map((c) => `${c.by}:${c.ascending}`).join(',');
+  if (
+    pendingCommitsRef.current === 0 &&
+    (!awaitingResolvedOrderRef.current ||
+      orderKey(priorityOrder) === orderKey(latestPriorityOrderRef.current))
+  ) {
+    awaitingResolvedOrderRef.current = false;
     latestPriorityOrderRef.current = priorityOrder;
   }
-  const displayedPriorityOrder =
-    pendingCommitsRef.current > 0 ? latestPriorityOrderRef.current : priorityOrder;
 
   const sortLabels = Object.fromEntries(
     METADATA_SORT_BY_ORDER.map((value) => [value, _(BOOKSHELF_SORT_LABELS[value])]),
@@ -140,8 +144,21 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
   const commitSortOrder = async (next: LibrarySortCriterion[]) => {
     const [primary, secondary] = next;
     if (!primary) return;
+    awaitingResolvedOrderRef.current = true;
 
-    const applySortParams = (params: URLSearchParams) => {
+    await saveSysSettings(envConfig, 'librarySortCustom', false);
+    await saveSysSettings(envConfig, 'librarySortByAuto', false);
+    await saveSysSettings(envConfig, 'librarySortBy', primary.by);
+    await saveSysSettings(envConfig, 'librarySortAscending', primary.ascending);
+    await saveSysSettings(envConfig, 'libraryThenSortBy', secondary ? secondary.by : 'none');
+    await saveSysSettings(
+      envConfig,
+      'libraryThenSortAscending',
+      secondary ? secondary.ascending : true,
+    );
+    await saveSysSettings(envConfig, 'librarySortOrder', next);
+
+    await applyShelfSortNavigation((params) => {
       params.set('sort', primary.by);
       params.set('order', primary.ascending ? 'asc' : 'desc');
       if (secondary) {
@@ -151,28 +168,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
         params.delete('thenSort');
         params.delete('thenOrder');
       }
-    };
-
-    const expectedParams = new URLSearchParams(window.location.search);
-    applySortParams(expectedParams);
-    markPendingLibrarySortUrlSync(latestSearchParamsRef.current, expectedParams);
-
-    try {
-      await saveSysSettingsFields(envConfig, {
-        librarySortCustom: false,
-        librarySortByAuto: false,
-        librarySortBy: primary.by,
-        librarySortAscending: primary.ascending,
-        libraryThenSortBy: secondary ? secondary.by : 'none',
-        libraryThenSortAscending: secondary ? secondary.ascending : true,
-        librarySortOrder: next,
-      });
-
-      await applyShelfSortNavigation(applySortParams);
-    } catch (error) {
-      clearPendingLibrarySortUrlSync();
-      throw error;
-    }
+    });
   };
 
   const enqueueSortCommit = (task: () => Promise<void>) => {
@@ -200,23 +196,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
       return enqueueSortCommit(() => commitSortOrder(next));
     }
     return enqueueSortCommit(async () => {
-      const expectedParams = new URLSearchParams(window.location.search);
-      expectedParams.set('sort', LibrarySortByType.Custom);
-      markPendingLibrarySortUrlSync(latestSearchParamsRef.current, expectedParams);
+      await saveSysSettings(envConfig, 'librarySortCustom', true);
+      await saveSysSettings(envConfig, 'librarySortByAuto', false);
 
-      try {
-        await saveSysSettingsFields(envConfig, {
-          librarySortCustom: true,
-          librarySortByAuto: false,
-        });
-
-        await applyShelfSortNavigation((params) => {
-          params.set('sort', LibrarySortByType.Custom);
-        });
-      } catch (error) {
-        clearPendingLibrarySortUrlSync();
-        throw error;
-      }
+      await applyShelfSortNavigation((params) => {
+        params.set('sort', LibrarySortByType.Custom);
+      });
     });
   };
 
@@ -313,7 +298,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
           />
           <hr aria-hidden='true' className='border-base-200 my-1' />
           <SortPriorityList
-            items={displayedPriorityOrder}
+            items={latestPriorityOrderRef.current}
             labels={sortLabels}
             dimmed={sortBy === LibrarySortByType.Custom}
             autoLabel={_('Auto')}
