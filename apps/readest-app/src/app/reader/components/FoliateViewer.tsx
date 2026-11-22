@@ -213,6 +213,7 @@ const FoliateViewer: React.FC<{
   const getViewSettings = useReaderStore((s) => s.getViewSettings);
   const setViewSettings = useReaderStore((s) => s.setViewSettings);
   const getParallels = useParallelViewStore((s) => s.getParallels);
+  const getSectionOffset = useParallelViewStore((s) => s.getSectionOffset);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const getConfig = useBookDataStore((s) => s.getConfig);
   const setConfig = useBookDataStore((s) => s.setConfig);
@@ -913,7 +914,8 @@ const FoliateViewer: React.FC<{
         if (key !== bookKey) {
           const target = getView(key)?.renderer;
           if (target) {
-            target.goTo?.({ index: detail.index, anchor: detail.fraction });
+            const index = detail.index + getSectionOffset(bookKey, key);
+            target.goTo?.({ index, anchor: detail.fraction });
           }
         }
       });

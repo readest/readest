@@ -15,7 +15,8 @@ const { setProgress, readerState, wipe, linked } = vi.hoisted(() => {
     commitRef: null as { current: (() => void) | null } | null,
   };
   // A book open in parallel reading with this one.
-  const linked = { keys: new Set<string>(), goTo: vi.fn() };
+  // `offset`: the section gap kept since Enter Parallel Sync (#4991).
+  const linked = { keys: new Set<string>(), offset: 0, goTo: vi.fn() };
   return {
     setProgress,
     wipe,
@@ -38,10 +39,10 @@ vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: (select: (s: { getBookData: () => null }) => unknown) =>
     select({ getBookData: () => null }),
 }));
-vi.mock('@/store/parallelViewStore', () => ({
-  useParallelViewStore: (select: (s: { getParallels: () => Set<string> }) => unknown) =>
-    select({ getParallels: () => linked.keys }),
-}));
+vi.mock('@/store/parallelViewStore', () => {
+  const state = { getParallels: () => linked.keys, getSectionOffset: () => linked.offset };
+  return { useParallelViewStore: (select: (s: typeof state) => unknown) => select(state) };
+});
 vi.mock('@/store/settingsStore', () => ({ useSettingsStore: () => ({ settings: {} }) }));
 vi.mock('@/store/themeStore', () => {
   const state = { isIPhoneDuo: false, duoFold: null, safeAreaInsets: null };
@@ -213,6 +214,7 @@ describe('reader relocation during an Auto Scroll wipe', () => {
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
     wipe.ahead = false;
     linked.keys = new Set();
+    linked.offset = 0;
   });
   afterEach(() => {
     cleanup();
@@ -265,5 +267,34 @@ describe('reader relocation during an Auto Scroll wipe', () => {
     wipe.ahead = false;
     wipe.commitRef?.current?.();
     expect(linked.goTo).not.toHaveBeenCalled();
+  });
+});
+
+describe('parallel reading', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    wipe.ahead = false;
+    linked.keys = new Set(['test-book', 'linked-book']);
+    linked.offset = 0;
+  });
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('moves a linked book to the same section and position', () => {
+    render(<FoliateViewer {...props} />);
+    rendererRelocate({ reason: 'page', index: 4, fraction: 0.25 });
+
+    expect(linked.goTo).toHaveBeenCalledWith({ index: 4, anchor: 0.25 });
+  });
+
+  // One book open twice, its English half beside its Swedish half: Enter
+  // Parallel Sync keeps the two halves apart.
+  it('moves a linked book by the section gap kept since sync was entered (#4991)', () => {
+    linked.offset = 10;
+    render(<FoliateViewer {...props} />);
+    rendererRelocate({ reason: 'page', index: 4, fraction: 0.25 });
+
+    expect(linked.goTo).toHaveBeenCalledWith({ index: 14, anchor: 0.25 });
   });
 });
