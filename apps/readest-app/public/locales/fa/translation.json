@@ -2895,6 +2895,7 @@
   "Restore from Backup": "بازیابی از پشتیبان",
   "Your backup has been saved to the selected location.": "پشتیبان شما در مکان انتخاب‌شده ذخیره شد.",
   "Cover only": "فقط جلدها",
+  "Look up text in the system dictionary after selection": "جستجوی متن در فرهنگ‌نامه سیستم پس از انتخاب",
   "Drag to reorder {{label}}": "برای تغییر ترتیب {{label}} بکشید",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "برای برداشتن یک معیار مرتب‌سازی، Space یا Enter را فشار دهید. با کلیدهای جهت‌نمای بالا و پایین ترتیب را تغییر دهید، سپس برای رها کردن Space یا Enter و برای لغو Escape را فشار دهید.",
   "Picked up {{label}}.": "{{label}} برداشته شد.",

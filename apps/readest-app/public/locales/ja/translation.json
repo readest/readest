@@ -2820,6 +2820,7 @@
   "Restore from Backup": "バックアップから復元",
   "Your backup has been saved to the selected location.": "バックアップを選択した場所に保存しました。",
   "Cover only": "表紙のみ",
+  "Look up text in the system dictionary after selection": "選択後のテキストをシステム辞書で調べる",
   "Drag to reorder {{label}}": "ドラッグして{{label}}を並べ替え",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "並べ替え条件を持ち上げるには、スペースまたはEnterを押します。上下の矢印キーで並べ替え、スペースまたはEnterで配置、Escapeでキャンセルします。",
   "Picked up {{label}}.": "{{label}}を持ち上げました。",

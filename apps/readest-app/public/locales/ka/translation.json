@@ -2895,6 +2895,7 @@
   "Restore from Backup": "სარეზერვო ასლიდან აღდგენა",
   "Your backup has been saved to the selected location.": "სარეზერვო ასლი შენახულია არჩეულ ადგილას.",
   "Cover only": "მხოლოდ ყდები",
+  "Look up text in the system dictionary after selection": "ტექსტის მოძებნა სისტემურ ლექსიკონში მონიშვნის შემდეგ",
   "Drag to reorder {{label}}": "გადაათრიეთ {{label}}-ის გადასალაგებლად",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "დახარისხების კრიტერიუმის ასაღებად დააჭირეთ Space-ს ან Enter-ს. გადასალაგებლად გამოიყენეთ ზემოთ და ქვემოთ ისრები, შემდეგ დასადებად დააჭირეთ Space-ს ან Enter-ს, ან გასაუქმებლად Escape-ს.",
   "Picked up {{label}}.": "{{label}} აღებულია.",

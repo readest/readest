@@ -2895,6 +2895,7 @@
   "Restore from Backup": "උපස්ථයෙන් ප්‍රතිසාධනය කරන්න",
   "Your backup has been saved to the selected location.": "ඔබගේ උපස්ථය තෝරාගත් ස්ථානයට සුරකින ලදී.",
   "Cover only": "කවර පමණි",
+  "Look up text in the system dictionary after selection": "තේරීමෙන් පසු පද්ධතියේ ශබ්දකෝෂයේ පෙළ සෙවීම",
   "Drag to reorder {{label}}": "{{label}} නැවත පෙළගැස්වීමට අදින්න",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "වර්ග කිරීමේ නිර්ණායකයක් ගැනීමට space හෝ Enter ඔබන්න. නැවත පෙළගැස්වීමට ඉහළ සහ පහළ ඊතල යතුරු භාවිත කර, අතහැරීමට space හෝ Enter, නැතහොත් අවලංගු කිරීමට Escape ඔබන්න.",
   "Picked up {{label}}.": "{{label}} ගන්නා ලදී.",

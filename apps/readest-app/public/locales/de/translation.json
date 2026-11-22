@@ -2895,6 +2895,7 @@
   "Restore from Backup": "Aus Sicherung wiederherstellen",
   "Your backup has been saved to the selected location.": "Ihre Sicherung wurde am ausgewählten Ort gespeichert.",
   "Cover only": "Nur Cover",
+  "Look up text in the system dictionary after selection": "Text nach Auswahl im Systemwörterbuch nachschlagen",
   "Drag to reorder {{label}}": "{{label}} ziehen, um neu anzuordnen",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Drücken Sie Leertaste oder Eingabe, um ein Sortierkriterium aufzunehmen. Ordnen Sie es mit den Pfeiltasten nach oben und unten neu an und drücken Sie dann Leertaste oder Eingabe zum Ablegen oder Escape zum Abbrechen.",
   "Picked up {{label}}.": "{{label}} aufgenommen.",

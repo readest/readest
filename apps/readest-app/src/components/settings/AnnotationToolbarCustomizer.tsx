@@ -34,6 +34,7 @@ import {
   reorderToolbar,
 } from '@/utils/annotationToolbar';
 import { canShareText } from '@/utils/share';
+import { isSystemDictionarySupported } from '@/services/dictionaries/systemDictionary';
 import SubPageHeader from './SubPageHeader';
 
 type ZoneId = 'toolbar' | 'available';
@@ -156,19 +157,29 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
   const viewSettings = getViewSettings(bookKey) || settings.globalViewSettings;
 
   const canShare = canShareText(appService);
+  const canLookUpSystem = isSystemDictionarySupported();
 
-  // `share` is hidden on platforms that can't share (Windows/Linux desktop).
-  // If the user enabled it on a share-capable device (e.g. their phone) and it
-  // synced here, we must not drop it just because the user edits the toolbar on
-  // this device — preserve it across persists so the capable device keeps it.
-  const savedHasShare = getToolbarToolTypes(viewSettings.annotationToolbarItems, true).includes(
-    'share',
+  // `share` is hidden on platforms that can't share (Windows/Linux desktop),
+  // and `systemdictionary` off macOS/iOS/Android. If the user enabled one on a
+  // device that offers it (e.g. their phone) and it synced here, we must not
+  // drop it just because the user edits the toolbar on this device — preserve
+  // it across persists so that device keeps it.
+  const shownHere = getToolbarToolTypes(
+    viewSettings.annotationToolbarItems,
+    canShare,
+    canLookUpSystem,
   );
-  const preserveHiddenShare = !canShare && savedHasShare;
+  const hiddenSaved = getToolbarToolTypes(viewSettings.annotationToolbarItems, true, true).filter(
+    (type) => !shownHere.includes(type),
+  );
 
   const [items, setItems] = useState<Record<ZoneId, AnnotationToolType[]>>(() => ({
-    toolbar: getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare),
-    available: getAvailableToolTypes(viewSettings.annotationToolbarItems, canShare),
+    toolbar: shownHere,
+    available: getAvailableToolTypes(
+      viewSettings.annotationToolbarItems,
+      canShare,
+      canLookUpSystem,
+    ),
   }));
   // dnd-kit invokes onDragEnd with the handler captured at drag start, so the
   // closed-over `items` is stale by the time a cross-zone drag finishes. Read
@@ -211,17 +222,14 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
   );
 
   const persist = (toolbar: AnnotationToolType[]) => {
-    const toSave =
-      preserveHiddenShare && !toolbar.includes('share')
-        ? [...toolbar, 'share' as AnnotationToolType]
-        : toolbar;
+    const toSave = [...toolbar, ...hiddenSaved.filter((type) => !toolbar.includes(type))];
     saveViewSettings(envConfig, bookKey, 'annotationToolbarItems', toSave, false, true);
   };
 
   // Commit a new toolbar order: keep the user's arrangement, recompute the
   // available tray as its canonical-order complement, and persist.
   const commit = (toolbar: AnnotationToolType[]) => {
-    setItems({ toolbar, available: getAvailableToolTypes(toolbar, canShare) });
+    setItems({ toolbar, available: getAvailableToolTypes(toolbar, canShare, canLookUpSystem) });
     persist(toolbar);
   };
 
@@ -239,7 +247,8 @@ const AnnotationToolbarCustomizer: React.FC<AnnotationToolbarCustomizerProps> = 
 
   // "Add all" rebuilds the toolbar in the canonical predefined order (not the
   // user's prior arrangement); "Clear all" empties it.
-  const addAll = () => commit(ALL_ANNOTATION_TOOL_TYPES.filter((t) => canShare || t !== 'share'));
+  const addAll = () =>
+    commit(getToolbarToolTypes(ALL_ANNOTATION_TOOL_TYPES, canShare, canLookUpSystem));
   const clearAll = () => commit([]);
 
   const handleDragStart = () => {

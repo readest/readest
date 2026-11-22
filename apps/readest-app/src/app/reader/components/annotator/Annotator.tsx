@@ -27,7 +27,10 @@ import { saveSysSettings } from '@/helpers/settings';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useVocabularyStore } from '@/store/vocabularyStore';
 import { isSystemDictionaryEnabled } from '@/services/dictionaries/registry';
-import { invokeSystemDictionary } from '@/services/dictionaries/systemDictionary';
+import {
+  invokeSystemDictionary,
+  isSystemDictionarySupported,
+} from '@/services/dictionaries/systemDictionary';
 import { buildSelectionContext } from '@/services/dictionaries/contextDictionary';
 import { getContextTranslator } from '@/services/dictionaries/providers/contextProvider';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
@@ -393,7 +396,11 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const globalToggleActive = !!currentAnnotation?.global;
   const annotPopupMaxWidth = Math.min(useResponsiveSize(300), maxWidth);
   const annotPopupToolSize = useResponsiveSize(44);
-  const toolbarToolTypes = getToolbarToolTypes(viewSettings.annotationToolbarItems, canShare);
+  const toolbarToolTypes = getToolbarToolTypes(
+    viewSettings.annotationToolbarItems,
+    canShare,
+    isSystemDictionarySupported(),
+  );
   const highlightOptionsGap = toolbarToolTypes.length <= 4 ? 4 : 8;
   // Three 30px styles, a four- or five-color pill (100px or 122px), and three gaps;
   // the global toggle adds a 30px button and a gap. Keep in sync with HighlightOptions.
@@ -2044,37 +2051,44 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // opening the in-app popup. Exclusivity is enforced at the store
     // level (enabling system disables everything else and vice versa),
     // so a single check on the system flag is sufficient.
-    const dictSettings = useCustomDictionaryStore.getState().settings;
-    if (isSystemDictionaryEnabled(dictSettings)) {
-      // Build the macOS HUD anchor: the selection rect (so the HUD
-      // appears at the original word) and the underlying paragraph's
-      // text style (so AppKit re-draws the small label at the same
-      // font size / colour as the original, matching the system
-      // right-click → Look Up presentation).
-      const rect = selection.range ? getRangeRectInWebview(selection.range) : null;
-      const style = selection.range ? getRangeTextStyleInWebview(selection.range) : null;
-      const word = selection.text;
-      const lookup = invokeSystemDictionary(
-        word,
-        rect ? { rect, style: style ?? undefined } : undefined,
-      );
-      const capture = getDictionaryCapture();
-      if (capture?.occurrence) {
-        const { lang, occurrence } = capture;
-        const saveLookups = dictSettings.saveLookupsToVocabulary !== false;
-        void lookup.then((launched) => {
-          // A marked word keeps its sentences with saving off (#7691); read
-          // the mark once launched, after any change made in the meantime.
-          const vocabulary = useVocabularyStore.getState();
-          if (launched && (saveLookups || vocabulary.isMarked(word, lang))) {
-            vocabulary.recordLookup({ word, lang, occurrence });
-          }
-        });
-      }
-      handleDismissPopupAndSelection();
+    if (isSystemDictionaryEnabled(useCustomDictionaryStore.getState().settings)) {
+      handleSystemDictionary();
       return false;
     }
     return lookUpInApp(false);
+  };
+
+  // The System Dictionary tool hands the word to the OS whether or not System
+  // Dictionary is on in the list, so Dictionary can keep the in-app ones (#6728).
+  const handleSystemDictionary = () => {
+    if (!selection || !selection.text) return;
+    const dictSettings = useCustomDictionaryStore.getState().settings;
+    // Build the macOS HUD anchor: the selection rect (so the HUD
+    // appears at the original word) and the underlying paragraph's
+    // text style (so AppKit re-draws the small label at the same
+    // font size / colour as the original, matching the system
+    // right-click → Look Up presentation).
+    const rect = selection.range ? getRangeRectInWebview(selection.range) : null;
+    const style = selection.range ? getRangeTextStyleInWebview(selection.range) : null;
+    const word = selection.text;
+    const lookup = invokeSystemDictionary(
+      word,
+      rect ? { rect, style: style ?? undefined } : undefined,
+    );
+    const capture = getDictionaryCapture();
+    if (capture?.occurrence) {
+      const { lang, occurrence } = capture;
+      const saveLookups = dictSettings.saveLookupsToVocabulary !== false;
+      void lookup.then((launched) => {
+        // A marked word keeps its sentences with saving off (#7691); read
+        // the mark once launched, after any change made in the meantime.
+        const vocabulary = useVocabularyStore.getState();
+        if (launched && (saveLookups || vocabulary.isMarked(word, lang))) {
+          vocabulary.recordLookup({ word, lang, occurrence });
+        }
+      });
+    }
+    handleDismissPopupAndSelection();
   };
 
   // Asks the AI context dictionary alone, so it can stay off in the dictionary
@@ -2815,6 +2829,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         return { tooltipText: _(label), Icon, onClick: handleSearch };
       case 'dictionary':
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
+      case 'systemdictionary':
+        return { tooltipText: _(label), Icon, onClick: handleSystemDictionary };
       case 'contextdictionary':
         return {
           tooltipText: _(label),

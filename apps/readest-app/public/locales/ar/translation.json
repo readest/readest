@@ -3195,6 +3195,7 @@
   "Restore from Backup": "الاستعادة من نسخة احتياطية",
   "Your backup has been saved to the selected location.": "تم حفظ النسخة الاحتياطية في الموقع المحدد.",
   "Cover only": "الأغلفة فقط",
+  "Look up text in the system dictionary after selection": "البحث عن النص في قاموس النظام بعد التحديد",
   "Drag to reorder {{label}}": "اسحب لإعادة ترتيب {{label}}",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "لالتقاط معيار فرز، اضغط على المسافة أو Enter. استخدم مفتاحي السهم لأعلى ولأسفل لإعادة الترتيب، ثم اضغط على المسافة أو Enter للإفلات، أو Escape للإلغاء.",
   "Picked up {{label}}.": "تم التقاط {{label}}.",

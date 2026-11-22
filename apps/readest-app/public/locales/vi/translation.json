@@ -2820,6 +2820,7 @@
   "Restore from Backup": "Khôi phục từ bản sao lưu",
   "Your backup has been saved to the selected location.": "Bản sao lưu của bạn đã được lưu vào vị trí đã chọn.",
   "Cover only": "Chỉ ảnh bìa",
+  "Look up text in the system dictionary after selection": "Tra cứu văn bản trong từ điển hệ thống sau khi chọn",
   "Drag to reorder {{label}}": "Kéo để sắp xếp lại {{label}}",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Để chọn một tiêu chí sắp xếp, nhấn phím cách hoặc Enter. Dùng phím mũi tên lên và xuống để sắp xếp lại, sau đó nhấn phím cách hoặc Enter để thả, hoặc Escape để hủy.",
   "Picked up {{label}}.": "Đã chọn {{label}}.",

@@ -2970,6 +2970,7 @@
   "Restore from Backup": "Restaurar desde copia de seguridad",
   "Your backup has been saved to the selected location.": "Tu copia de seguridad se ha guardado en la ubicación seleccionada.",
   "Cover only": "Solo portadas",
+  "Look up text in the system dictionary after selection": "Buscar texto en el diccionario del sistema después de la selección",
   "Drag to reorder {{label}}": "Arrastra para reordenar {{label}}",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Para tomar un criterio de orden, pulsa espacio o Intro. Usa las flechas arriba y abajo para reordenar y luego pulsa espacio o Intro para soltar, o Escape para cancelar.",
   "Picked up {{label}}.": "Se tomó {{label}}.",

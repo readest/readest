@@ -2895,6 +2895,7 @@
   "Restore from Backup": "Zaxira nusxadan tiklash",
   "Your backup has been saved to the selected location.": "Zaxira nusxangiz tanlangan joyga saqlandi.",
   "Cover only": "Faqat muqovalar",
+  "Look up text in the system dictionary after selection": "Tanlovdan keyin matnni tizim lug‘atida qidirish",
   "Drag to reorder {{label}}": "{{label}} tartibini o‘zgartirish uchun torting",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Saralash mezonini olish uchun probel yoki Enter tugmasini bosing. Tartibni o‘zgartirish uchun yuqori va pastki strelkalardan foydalaning, so‘ng qo‘yish uchun probel yoki Enter, bekor qilish uchun Escape tugmasini bosing.",
   "Picked up {{label}}.": "{{label}} olindi.",

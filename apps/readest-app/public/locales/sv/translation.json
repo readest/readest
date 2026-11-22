@@ -2895,6 +2895,7 @@
   "Restore from Backup": "Återställ från säkerhetskopia",
   "Your backup has been saved to the selected location.": "Din säkerhetskopia har sparats på den valda platsen.",
   "Cover only": "Endast omslag",
+  "Look up text in the system dictionary after selection": "Slå upp text i systemets ordbok efter markering",
   "Drag to reorder {{label}}": "Dra för att ändra ordning på {{label}}",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Tryck på blanksteg eller Enter för att plocka upp ett sorteringskriterium. Ändra ordning med upp- och nedpilarna och tryck sedan på blanksteg eller Enter för att släppa, eller Escape för att avbryta.",
   "Picked up {{label}}.": "{{label}} upplockad.",

@@ -2820,6 +2820,7 @@
   "Restore from Backup": "從備份還原",
   "Your backup has been saved to the selected location.": "備份已儲存至所選位置。",
   "Cover only": "僅顯示封面",
+  "Look up text in the system dictionary after selection": "在系統字典中查找選取後的文字",
   "Drag to reorder {{label}}": "拖曳以重新排序{{label}}",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "若要拾取排序條件，請按空白鍵或 Enter 鍵。使用上下方向鍵調整順序，然後按空白鍵或 Enter 鍵放下，或按 Esc 鍵取消。",
   "Picked up {{label}}.": "已拾取{{label}}。",

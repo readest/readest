@@ -2820,6 +2820,7 @@
   "Restore from Backup": "གྲབས་ཉར་ནས་སླར་གསོ།",
   "Your backup has been saved to the selected location.": "ཁྱེད་ཀྱི་གྲབས་ཉར་འདེམས་ཟིན་པའི་གནས་སུ་ཉར་ཚགས་བྱས་ཟིན།",
   "Cover only": "ཕྱི་ཤོག་ཁོ་ན།",
+  "Look up text in the system dictionary after selection": "ཡིག་ཆ་འདེམས་རྗེས་མ་ལག་ཚིག་མཛོད་ནང་འཚོལ།",
   "Drag to reorder {{label}}": "{{label}} གོ་རིམ་བསྐྱར་སྒྲིག་བྱེད་པར་འཐེན།",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "རིམ་སྒྲིག་ཚད་གཞི་ཞིག་ལེན་པར་བར་སྟོང་ངམ་Enter མནན། གོ་རིམ་བསྐྱར་སྒྲིག་བྱེད་པར་སྟེང་འོག་གི་མདའ་རྟགས་མཐེབ་སྤྱོད། དེ་ནས་འཇོག་པར་བར་སྟོང་ངམ་Enter དང་། འདོར་བར་Escape མནན།",
   "Picked up {{label}}.": "{{label}} བླངས་ཟིན།",

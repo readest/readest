@@ -2820,6 +2820,7 @@
   "Restore from Backup": "กู้คืนจากข้อมูลสำรอง",
   "Your backup has been saved to the selected location.": "บันทึกข้อมูลสำรองไปยังตำแหน่งที่เลือกแล้ว",
   "Cover only": "เฉพาะหน้าปก",
+  "Look up text in the system dictionary after selection": "ค้นหาข้อความในพจนานุกรมของระบบหลังการเลือก",
   "Drag to reorder {{label}}": "ลากเพื่อจัดลำดับ {{label}} ใหม่",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "หากต้องการหยิบเกณฑ์การเรียง ให้กด Space หรือ Enter ใช้ปุ่มลูกศรขึ้นและลงเพื่อจัดลำดับใหม่ แล้วกด Space หรือ Enter เพื่อวาง หรือ Escape เพื่อยกเลิก",
   "Picked up {{label}}.": "หยิบ {{label}} แล้ว",

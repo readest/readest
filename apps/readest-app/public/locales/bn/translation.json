@@ -2895,6 +2895,7 @@
   "Restore from Backup": "ব্যাকআপ থেকে পুনরুদ্ধার করুন",
   "Your backup has been saved to the selected location.": "আপনার ব্যাকআপ নির্বাচিত স্থানে সংরক্ষিত হয়েছে।",
   "Cover only": "শুধু প্রচ্ছদ",
+  "Look up text in the system dictionary after selection": "নির্বাচনের পরে টেক্সট সিস্টেম অভিধানে দেখুন",
   "Drag to reorder {{label}}": "{{label}} পুনর্বিন্যাস করতে টেনে আনুন",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "একটি সাজানোর মানদণ্ড তুলতে স্পেস বা এন্টার চাপুন। পুনর্বিন্যাস করতে উপর ও নিচের তীর কী ব্যবহার করুন, তারপর ছাড়তে স্পেস বা এন্টার, অথবা বাতিল করতে এস্কেপ চাপুন।",
   "Picked up {{label}}.": "{{label}} তোলা হয়েছে।",

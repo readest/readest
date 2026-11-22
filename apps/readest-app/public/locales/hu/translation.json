@@ -2895,6 +2895,7 @@
   "Restore from Backup": "Visszaállítás biztonsági mentésből",
   "Your backup has been saved to the selected location.": "A biztonsági mentés a kiválasztott helyre mentve.",
   "Cover only": "Csak borítók",
+  "Look up text in the system dictionary after selection": "Szöveg kikeresése a rendszerszótárban kijelölés után",
   "Drag to reorder {{label}}": "Húzza a(z) {{label}} átrendezéséhez",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Egy rendezési szempont felvételéhez nyomja meg a szóközt vagy az Entert. Az átrendezéshez használja a fel és le nyilakat, majd a lerakáshoz nyomja meg a szóközt vagy az Entert, a megszakításhoz az Escape-et.",
   "Picked up {{label}}.": "{{label}} felvéve.",

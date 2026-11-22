@@ -19,6 +19,7 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'search',
   'dictionary',
   'contextdictionary',
+  'systemdictionary',
   'translate',
   'tts',
   'proofread',
@@ -31,7 +32,8 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
 // 'copylink' is opt-in the same way (#5452) — a niche action most readers
 // never need, reachable by adding it in Customize Toolbar. So is
 // 'contextdictionary', which asks the AI alone and spends the user's tokens
-// (#7497).
+// (#7497), and 'systemdictionary', which hands the word to the OS Look Up
+// while Dictionary keeps the in-app dictionaries (#6728).
 export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
   'copy',
   'highlight',
@@ -58,11 +60,18 @@ const sanitize = (items: AnnotationToolType[] | undefined): AnnotationToolType[]
   return out;
 };
 
+// Share needs a share sheet, and the system dictionary tool the macOS, iOS or
+// Android handoff: elsewhere neither is offered.
+const isOffered = (type: AnnotationToolType, canShare: boolean, canLookUpSystem: boolean) =>
+  (canShare || type !== 'share') && (canLookUpSystem || type !== 'systemdictionary');
+
 // Visible tools to render in the live selection toolbar, in order.
 export const getToolbarToolTypes = (
   items: AnnotationToolType[] | undefined,
   canShare: boolean,
-): AnnotationToolType[] => sanitize(items).filter((type) => canShare || type !== 'share');
+  canLookUpSystem = false,
+): AnnotationToolType[] =>
+  sanitize(items).filter((type) => isOffered(type, canShare, canLookUpSystem));
 
 // One-tap highlighting (#5983): whenever the highlight tool is on the toolbar,
 // the style/color strip shows as soon as text is selected, so picking a color
@@ -82,10 +91,11 @@ export const shouldShowHighlightOptions = (
 export const getAvailableToolTypes = (
   items: AnnotationToolType[] | undefined,
   canShare: boolean,
+  canLookUpSystem = false,
 ): AnnotationToolType[] => {
   const visible = new Set(sanitize(items));
   return ALL_ANNOTATION_TOOL_TYPES.filter(
-    (type) => !visible.has(type) && (canShare || type !== 'share'),
+    (type) => !visible.has(type) && isOffered(type, canShare, canLookUpSystem),
   );
 };
 

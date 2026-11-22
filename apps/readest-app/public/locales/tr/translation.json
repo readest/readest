@@ -2895,6 +2895,7 @@
   "Restore from Backup": "Yedekten geri yükle",
   "Your backup has been saved to the selected location.": "Yedeğiniz seçilen konuma kaydedildi.",
   "Cover only": "Yalnızca kapaklar",
+  "Look up text in the system dictionary after selection": "Seçimden sonra metni sistem sözlüğünde ara",
   "Drag to reorder {{label}}": "{{label}} ögesini yeniden sıralamak için sürükleyin",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Bir sıralama ölçütünü almak için boşluk veya Enter tuşuna basın. Yukarı ve aşağı ok tuşlarıyla yeniden sıralayın, ardından bırakmak için boşluk veya Enter, iptal etmek için Escape tuşuna basın.",
   "Picked up {{label}}.": "{{label}} alındı.",

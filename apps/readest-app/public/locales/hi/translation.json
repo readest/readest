@@ -2895,6 +2895,7 @@
   "Restore from Backup": "बैकअप से पुनर्स्थापित करें",
   "Your backup has been saved to the selected location.": "आपका बैकअप चुने गए स्थान पर सहेज लिया गया है।",
   "Cover only": "केवल कवर",
+  "Look up text in the system dictionary after selection": "चयन के बाद सिस्टम शब्दकोश में पाठ देखें",
   "Drag to reorder {{label}}": "{{label}} का क्रम बदलने के लिए खींचें",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "किसी क्रमबद्ध मानदंड को उठाने के लिए स्पेस या एंटर दबाएँ। क्रम बदलने के लिए ऊपर और नीचे तीर कुंजियों का उपयोग करें, फिर छोड़ने के लिए स्पेस या एंटर, या रद्द करने के लिए एस्केप दबाएँ।",
   "Picked up {{label}}.": "{{label}} उठाया गया।",

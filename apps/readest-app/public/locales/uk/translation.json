@@ -3045,6 +3045,7 @@
   "Restore from Backup": "Відновити з резервної копії",
   "Your backup has been saved to the selected location.": "Резервну копію збережено у вибраному місці.",
   "Cover only": "Лише обкладинки",
+  "Look up text in the system dictionary after selection": "Шукати текст у системному словнику після виділення",
   "Drag to reorder {{label}}": "Перетягніть, щоб змінити порядок {{label}}",
   "To pick up a sort criterion, press space or enter. Use the up and down arrow keys to reorder, then press space or enter to drop, or escape to cancel.": "Щоб узяти критерій сортування, натисніть пробіл або Enter. Змінюйте порядок клавішами зі стрілками вгору й униз, потім натисніть пробіл або Enter, щоб відпустити, або Escape, щоб скасувати.",
   "Picked up {{label}}.": "Узято {{label}}.",
