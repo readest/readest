@@ -2091,6 +2091,21 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     handleDismissPopupAndSelection();
   };
 
+  // Saves the word without the dictionary popup, whether or not lookups are
+  // saved: adding it is the point of the tool.
+  const handleAddToVocabulary = () => {
+    const capture = getDictionaryCapture();
+    if (!selection?.text || !capture) return;
+    useVocabularyStore.getState().recordLookup({ word: selection.text, ...capture });
+    eventDispatcher.dispatch('toast', {
+      type: 'info',
+      message: _('Added to vocabulary'),
+      className: 'whitespace-nowrap',
+      timeout: 2000,
+    });
+    handleDismissPopupAndSelection();
+  };
+
   // Asks the AI context dictionary alone, so it can stay off in the dictionary
   // list and spend no tokens on everyday lookups (#7497).
   const handleContextDictionary = () => {
@@ -2831,6 +2846,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         return { tooltipText: _(label), Icon, onClick: handleDictionary };
       case 'systemdictionary':
         return { tooltipText: _(label), Icon, onClick: handleSystemDictionary };
+      case 'vocabulary':
+        return { tooltipText: _(label), Icon, onClick: handleAddToVocabulary };
       case 'contextdictionary':
         return {
           tooltipText: _(label),

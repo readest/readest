@@ -64,12 +64,20 @@ describe('annotationToolbar helpers', () => {
       'search',
       'dictionary',
       'contextdictionary',
+      'vocabulary',
       'translate',
       'tts',
       'proofread',
       'share',
       'quotecard',
     ]);
+  });
+
+  test('vocabulary is opt-in: off the default toolbar, offered in the available tray', () => {
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('vocabulary');
+    expect(getToolbarToolTypes(undefined, true)).not.toContain('vocabulary');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, false)).toContain('vocabulary');
+    expect(getToolbarToolTypes(['copy', 'vocabulary'], false)).toEqual(['copy', 'vocabulary']);
   });
 
   test('contextdictionary is opt-in: off the default toolbar, offered in the available tray (#7497)', () => {

@@ -20,6 +20,7 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'dictionary',
   'contextdictionary',
   'systemdictionary',
+  'vocabulary',
   'translate',
   'tts',
   'proofread',
@@ -33,7 +34,8 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
 // never need, reachable by adding it in Customize Toolbar. So is
 // 'contextdictionary', which asks the AI alone and spends the user's tokens
 // (#7497), and 'systemdictionary', which hands the word to the OS Look Up
-// while Dictionary keeps the in-app dictionaries (#6728).
+// while Dictionary keeps the in-app dictionaries (#6728), and 'vocabulary', which
+// saves the word to the vocabulary list without opening the dictionary.
 export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
   'copy',
   'highlight',

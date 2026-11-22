@@ -2978,5 +2978,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} כבר לא נמצא מעל מיקום שחרור.",
   "Dropped {{label}} at {{target}}.": "{{label}} שוחרר ב-{{target}}.",
   "Dropped {{label}}.": "{{label}} שוחרר.",
-  "Reordering {{label}} cancelled.": "שינוי הסדר של {{label}} בוטל."
+  "Reordering {{label}} cancelled.": "שינוי הסדר של {{label}} בוטל.",
+  "Add to Vocabulary": "הוספה לאוצר המילים",
+  "Add the selected word to the vocabulary list": "הוספת המילה שנבחרה לרשימת אוצר המילים",
+  "Added to vocabulary": "נוסף לאוצר המילים"
 }

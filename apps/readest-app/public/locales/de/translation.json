@@ -2903,5 +2903,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} befindet sich nicht mehr über einer Ablageposition.",
   "Dropped {{label}} at {{target}}.": "{{label}} bei {{target}} abgelegt.",
   "Dropped {{label}}.": "{{label}} abgelegt.",
-  "Reordering {{label}} cancelled.": "Neuanordnung von {{label}} abgebrochen."
+  "Reordering {{label}} cancelled.": "Neuanordnung von {{label}} abgebrochen.",
+  "Add to Vocabulary": "Zu Vokabeln hinzufügen",
+  "Add the selected word to the vocabulary list": "Das ausgewählte Wort zur Vokabelliste hinzufügen",
+  "Added to vocabulary": "Zu Vokabeln hinzugefügt"
 }

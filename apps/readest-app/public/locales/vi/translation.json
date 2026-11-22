@@ -2828,5 +2828,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} không còn ở trên vị trí có thể thả.",
   "Dropped {{label}} at {{target}}.": "Đã thả {{label}} tại {{target}}.",
   "Dropped {{label}}.": "Đã thả {{label}}.",
-  "Reordering {{label}} cancelled.": "Đã hủy sắp xếp lại {{label}}."
+  "Reordering {{label}} cancelled.": "Đã hủy sắp xếp lại {{label}}.",
+  "Add to Vocabulary": "Thêm vào từ vựng",
+  "Add the selected word to the vocabulary list": "Thêm từ đã chọn vào danh sách từ vựng",
+  "Added to vocabulary": "Đã thêm vào từ vựng"
 }

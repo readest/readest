@@ -3053,5 +3053,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} больше не над позицией для сброса.",
   "Dropped {{label}} at {{target}}.": "{{label}} отпущен на {{target}}.",
   "Dropped {{label}}.": "{{label}} отпущен.",
-  "Reordering {{label}} cancelled.": "Изменение порядка {{label}} отменено."
+  "Reordering {{label}} cancelled.": "Изменение порядка {{label}} отменено.",
+  "Add to Vocabulary": "Добавить в словарь",
+  "Add the selected word to the vocabulary list": "Добавить выбранное слово в список слов",
+  "Added to vocabulary": "Добавлено в словарь"
 }

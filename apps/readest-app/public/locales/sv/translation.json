@@ -2903,5 +2903,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}} är inte längre över en släppbar position.",
   "Dropped {{label}} at {{target}}.": "{{label}} släppt vid {{target}}.",
   "Dropped {{label}}.": "{{label}} släppt.",
-  "Reordering {{label}} cancelled.": "Omordning av {{label}} avbruten."
+  "Reordering {{label}} cancelled.": "Omordning av {{label}} avbruten.",
+  "Add to Vocabulary": "Lägg till i ordförråd",
+  "Add the selected word to the vocabulary list": "Lägg till det markerade ordet i ordlistan",
+  "Added to vocabulary": "Tillagt i ordförråd"
 }

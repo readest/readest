@@ -2828,5 +2828,8 @@
   "{{label}} is no longer over a droppable position.": "{{label}}이(가) 더 이상 놓을 수 있는 위치 위에 있지 않습니다.",
   "Dropped {{label}} at {{target}}.": "{{label}}을(를) {{target}}에 놓았습니다.",
   "Dropped {{label}}.": "{{label}}을(를) 놓았습니다.",
-  "Reordering {{label}} cancelled.": "{{label}} 순서 변경을 취소했습니다."
+  "Reordering {{label}} cancelled.": "{{label}} 순서 변경을 취소했습니다.",
+  "Add to Vocabulary": "단어장에 추가",
+  "Add the selected word to the vocabulary list": "선택한 단어를 단어장에 추가",
+  "Added to vocabulary": "단어장에 추가됨"
 }
