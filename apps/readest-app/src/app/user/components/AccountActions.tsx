@@ -115,6 +115,7 @@ interface AccountActionsProps {
   userPlan: UserPlan;
   customizationPurchased: boolean;
   iapAvailable: boolean;
+  giftOnly?: boolean;
   onLogout: () => void;
   onResetPassword: () => void;
   onUpdateEmail: () => void;
@@ -133,6 +134,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
   userPlan,
   customizationPurchased,
   iapAvailable,
+  giftOnly = false,
   onLogout,
   onResetPassword,
   onUpdateEmail,
@@ -202,7 +204,8 @@ const AccountActions: React.FC<AccountActionsProps> = ({
             {_('Restore Purchase')}
           </button>
         ) : (
-          userPlan !== 'free' && (
+          userPlan !== 'free' &&
+          !giftOnly && (
             <button
               onClick={onManageSubscription}
               className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'

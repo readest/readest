@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { GiftTier } from '@/types/gift';
 import { AvailablePlan, PlanInterval, PlanType, UserPlan } from '@/types/quota';
 import { getPlanDetails, getSubscriptionIntervals, getYearlySavingsPercent } from '../utils/plan';
 import BillingIntervalToggle from './BillingIntervalToggle';
@@ -9,6 +10,7 @@ interface PlansComparisonProps {
   userPlan: UserPlan;
   /** Defaults to false: an unknown state shows the buy button, never hides it. */
   customizationPurchased?: boolean;
+  gift?: { plan: GiftTier; activeUntil: string; giftOnly: boolean };
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
@@ -19,6 +21,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   availablePlans,
   customizationPurchased = false,
   userPlan,
+  gift,
   onSubscribe,
 }) => {
   const [interval, setInterval] = useState<PlanInterval>('month');
@@ -49,6 +52,8 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
             recommended={plan.plan === RECOMMENDED_PLAN}
             canSwitchInterval={intervals.length > 1}
             customizationPurchased={customizationPurchased}
+            giftUntil={gift?.plan === plan.plan ? gift.activeUntil : undefined}
+            giftOnly={gift?.plan === plan.plan ? gift.giftOnly : undefined}
             upgradable={index > 0 && (index > userPlanIndex || userPlan === 'purchase')}
             onSubscribe={onSubscribe}
           />

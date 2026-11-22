@@ -14,7 +14,11 @@ vi.mock('@/hooks/useTranslation', () => ({
       params ? key.replace(/\{\{(\w+)\}\}/g, (_match, name) => String(params[name] ?? '')) : key,
 }));
 
-const renderActions = (userPlan: UserPlan = 'free', customizationPurchased = false) => {
+const renderActions = (
+  userPlan: UserPlan = 'free',
+  customizationPurchased = false,
+  giftOnly = false,
+) => {
   const onConfirmDelete = vi.fn();
   const onConfirmDeleteAllBooks = vi.fn();
   render(
@@ -24,6 +28,7 @@ const renderActions = (userPlan: UserPlan = 'free', customizationPurchased = fal
       userPlan={userPlan}
       customizationPurchased={customizationPurchased}
       iapAvailable={false}
+      giftOnly={giftOnly}
       onLogout={vi.fn()}
       onResetPassword={vi.fn()}
       onUpdateEmail={vi.fn()}
@@ -160,5 +165,17 @@ describe('account deletion confirmation (#7251)', () => {
     expect(onConfirmDeleteAllBooks).toHaveBeenCalledTimes(1);
     expect(onConfirmDelete).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+});
+
+describe('gift-only holders', () => {
+  it('hides Manage Subscription for a gift-only holder', () => {
+    renderActions('plus', false, true);
+    expect(screen.queryByRole('button', { name: 'Manage Subscription' })).toBeNull();
+  });
+
+  it('keeps Manage Subscription for a paying holder', () => {
+    renderActions('plus', false, false);
+    expect(screen.getByRole('button', { name: 'Manage Subscription' })).toBeTruthy();
   });
 });

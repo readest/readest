@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getLocale } from '@/utils/misc';
 import { PlanType } from '@/types/quota';
 import { PlanAccent, PlanDetails } from '../utils/plan';
 
@@ -10,6 +11,8 @@ interface PlanActionButtonProps {
   recommended?: boolean;
   upgradable?: boolean;
   canSwitchInterval?: boolean;
+  giftUntil?: string;
+  giftOnly?: boolean;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
 }
 
@@ -20,6 +23,8 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
   recommended,
   upgradable,
   canSwitchInterval,
+  giftUntil,
+  giftOnly,
   onSubscribe,
 }) => {
   const _ = useTranslation();
@@ -52,18 +57,24 @@ const PlanActionButton: React.FC<PlanActionButtonProps> = ({
           aria-disabled='true'
           className={clsx('btn eink-bordered pointer-events-none w-full', accent.current)}
         >
-          {_('Current Plan')}
+          {giftUntil
+            ? _('Gift, until {{date}}', {
+                date: new Date(giftUntil).toLocaleDateString(getLocale()),
+              })
+            : _('Current Plan')}
         </div>
         {/* The account's billing interval isn't carried on the session token, so
             this stays neutrally worded rather than claiming which one they are
             on. It routes to the Stripe portal, which swaps the subscription in
             place instead of stacking a second one. */}
-        {canSwitchInterval && plan.plan !== 'free' && plan.productId && (
+        {(giftOnly || canSwitchInterval) && plan.plan !== 'free' && plan.productId && (
           <button
             onClick={() => onSubscribe(plan.productId)}
             className='btn btn-ghost btn-sm text-base-content/70 hover:text-base-content w-full font-normal'
           >
-            {_('Change billing period')}
+            {giftOnly
+              ? _('Subscribe to {{plan}}', { plan: _(plan.name) })
+              : _('Change billing period')}
           </button>
         )}
       </div>

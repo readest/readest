@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import PlansComparison from '@/app/user/components/PlansComparison';
 import { AvailablePlan, PlanInterval, UserPlan } from '@/types/quota';
+import { getLocale } from '@/utils/misc';
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation:
@@ -128,5 +129,63 @@ describe('PlansComparison', () => {
     const lifetimeCard = planCard('Lifetime Plan');
     expect(lifetimeCard.textContent).toContain('On-Demand Purchase');
     expect(lifetimeCard.textContent).not.toContain('billed yearly');
+  });
+
+  describe('gift holders', () => {
+    const GIFT_UNTIL = '2027-06-15T12:00:00.000Z';
+    const gift = (giftOnly: boolean) => ({
+      plan: 'plus' as const,
+      activeUntil: GIFT_UNTIL,
+      giftOnly,
+    });
+
+    it('shows the gift chip with its end date on the gifted tier', () => {
+      render(
+        <PlansComparison
+          availablePlans={WITH_YEARLY}
+          userPlan='plus'
+          gift={gift(true)}
+          onSubscribe={vi.fn()}
+        />,
+      );
+
+      const date = new Date(GIFT_UNTIL).toLocaleDateString(getLocale());
+      const plusCard = planCard('Plus Plan');
+      expect(within(plusCard).getByText(`Gift, until ${date}`)).toBeTruthy();
+      expect(within(plusCard).queryByText('Current Plan')).toBeNull();
+      expect(within(planCard('Pro Plan')).queryByText(/^Gift, until/)).toBeNull();
+    });
+
+    it('a gift-only holder gets Subscribe, not Change billing period', () => {
+      const onSubscribe = vi.fn();
+      render(
+        <PlansComparison
+          availablePlans={WITH_YEARLY}
+          userPlan='plus'
+          gift={gift(true)}
+          onSubscribe={onSubscribe}
+        />,
+      );
+
+      const plusCard = planCard('Plus Plan');
+      expect(within(plusCard).queryByText('Change billing period')).toBeNull();
+      fireEvent.click(within(plusCard).getByText('Subscribe to Plus Plan'));
+      expect(onSubscribe).toHaveBeenCalledWith('price_month_plus');
+    });
+
+    it('a gift holder with a paid plan keeps Change billing period', () => {
+      render(
+        <PlansComparison
+          availablePlans={WITH_YEARLY}
+          userPlan='plus'
+          gift={gift(false)}
+          onSubscribe={vi.fn()}
+        />,
+      );
+
+      const plusCard = planCard('Plus Plan');
+      expect(within(plusCard).getByText('Change billing period')).toBeTruthy();
+      expect(within(plusCard).queryByText('Subscribe to Plus Plan')).toBeNull();
+    });
   });
 });
