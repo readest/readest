@@ -219,7 +219,7 @@ export class GiftDb {
         // gift_cards_guard in 034_gift_cards.sql.
         guard: (before, after) =>
           after['recipient_email'] !== before['recipient_email'] &&
-          (before['recipient_email'] !== null || before['redeemed_by'] !== null)
+          (before['recipient_email'] !== null || before['redeemed_at'] !== null)
             ? 'gift card recipient email cannot be changed'
             : null,
       },
@@ -244,6 +244,15 @@ export class GiftDb {
 
   spec(table: string): TableSpec {
     return this.specs[table] ?? NO_SPEC;
+  }
+
+  /** Deletes an auth user: `buyer_id` and `redeemed_by` are ON DELETE SET NULL. */
+  deleteUser(id: string) {
+    this.users = this.users.filter((user) => user.id !== id);
+    for (const row of this.rows('gift_cards')) {
+      if (row['buyer_id'] === id) row['buyer_id'] = null;
+      if (row['redeemed_by'] === id) row['redeemed_by'] = null;
+    }
   }
 
   /** Puts a card straight into the table, outside the code under test. */

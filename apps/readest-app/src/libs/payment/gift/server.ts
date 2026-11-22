@@ -60,7 +60,7 @@ export const createGiftDraft = async (
  * there is one. Otherwise the recipient claims it at sign-in, or the cron does.
  */
 const claimForRecipient = async (card: GiftCardRow): Promise<GiftCardRow> => {
-  if (card.status !== 'active' || !card.recipient_email || card.redeemed_by) return card;
+  if (card.status !== 'active' || !card.recipient_email || card.redeemed_at) return card;
   const { data: userId, error } = await createSupabaseAdminClient().rpc('gift_user_id_for_email', {
     p_email: card.recipient_email,
   });
@@ -87,7 +87,7 @@ const mergeDraft = async (card: GiftCardRow, draft: GiftCardRow): Promise<GiftCa
       ...(setEmail ? { recipient_email: draft.recipient_email } : {}),
     })
     .eq('id', card.id)
-    .is('redeemed_by', null);
+    .is('redeemed_at', null);
   if (setEmail) update = update.is('recipient_email', null);
   const { data, error } = await update.select();
   if (error) throw error;
@@ -141,9 +141,10 @@ const activate = async ({
     if (draft.error) throw draft.error;
     const card = existing.data as GiftCardRow | null;
     const pending = draft.data as GiftCardRow | null;
-    // Never write one buyer's draft onto another buyer's card: its email
-    // would redirect the gift.
-    if (card && pending && card.buyer_id === buyerId) return mergeDraft(card, pending);
+    // Never hand one buyer's card (and its code) to another, nor write their
+    // draft onto it: its email would redirect the gift.
+    if (card && card.buyer_id !== buyerId) throw new Error('gift card belongs to another buyer');
+    if (card && pending) return mergeDraft(card, pending);
     if (card) return card;
 
     const paid = {
@@ -182,7 +183,7 @@ export const activateGiftCard = async (payment: GiftPayment): Promise<GiftCardRo
 
 const sentStatus = (card: GiftCardRow): SentGiftStatus => {
   if (card.status === 'refunded') return 'refunded';
-  if (card.redeemed_by) return 'redeemed';
+  if (card.redeemed_at) return 'redeemed';
   if (card.recipient_email) return 'waiting';
   return 'unredeemed';
 };
@@ -194,49 +195,65 @@ const cardFace = (card: GiftCardRow) => ({
   message: card.message ?? '',
 });
 
-// Built field by field: the buyer must never learn who redeemed a code.
-const toSentCard = (card: GiftCardRow): SentGiftCard => ({
+/**
+ * What the buyer may see of a card they sent. Routes return this, never the
+ * row: it is built field by field so the buyer never learns who redeemed a
+ * code.
+ */
+export const toSentGiftCard = (card: GiftCardRow): SentGiftCard => ({
   ...cardFace(card),
   id: card.id,
   status: sentStatus(card),
   recipientEmail: card.recipient_email,
-  code: card.redeemed_by ? null : formatGiftCode(card.code),
+  code: card.redeemed_at ? null : formatGiftCode(card.code),
   purchasedAt: card.purchased_at ?? card.created_at,
   redeemedAt: card.redeemed_at,
 });
 
 /**
- * Edit a card the buyer sent, until it is claimed. The email can be set once.
+ * Edit a card the buyer sent, until it is claimed. The email can be set once;
+ * sending the email the card already has leaves it as it is.
  */
 export const updateSentGiftCard = async (
   buyerId: string,
   cardId: string,
   patch: GiftCardPatch,
 ): Promise<SentGiftCard | 'not_found' | 'email_locked'> => {
-  const email = patch.recipientEmail || null;
-  const values = {
+  const face = {
     ...(patch.recipientName !== undefined ? { recipient_name: patch.recipientName } : {}),
     ...(patch.senderName !== undefined ? { sender_name: patch.senderName } : {}),
     ...(patch.message !== undefined ? { message: patch.message } : {}),
-    ...(email ? { recipient_email: email } : {}),
     // Keeps the update non-empty for a patch with nothing to write; the
     // trigger stamps the real time.
     updated_at: new Date().toISOString(),
   };
-  let update = createSupabaseAdminClient()
-    .from('gift_cards')
-    .update(values)
-    .eq('id', cardId)
-    .eq('buyer_id', buyerId)
-    .eq('status', 'active')
-    .is('redeemed_by', null);
-  if (email) update = update.is('recipient_email', null);
-  const { data, error } = await update.select();
-  if (error) throw error;
+  const editable = (values: Record<string, string>) =>
+    createSupabaseAdminClient()
+      .from('gift_cards')
+      .update(values)
+      .eq('id', cardId)
+      .eq('buyer_id', buyerId)
+      .eq('status', 'active')
+      .is('redeemed_at', null);
+  const firstRow = ({ data, error }: { data: unknown; error: unknown }) => {
+    if (error) throw error;
+    return ((data ?? []) as GiftCardRow[])[0];
+  };
 
-  const card = ((data ?? []) as GiftCardRow[])[0];
-  if (!card) return email ? 'email_locked' : 'not_found';
-  return toSentCard(email ? await claimForRecipient(card) : card);
+  const email = patch.recipientEmail || null;
+  if (!email) {
+    const card = firstRow(await editable(face).select());
+    return card ? toSentGiftCard(card) : 'not_found';
+  }
+
+  const added = firstRow(
+    await editable({ ...face, recipient_email: email })
+      .is('recipient_email', null)
+      .select(),
+  );
+  if (added) return toSentGiftCard(await claimForRecipient(added));
+  const unchanged = firstRow(await editable(face).eq('recipient_email', email).select());
+  return unchanged ? toSentGiftCard(unchanged) : 'email_locked';
 };
 
 /** Take back the gift bought with a refunded payment. */
@@ -298,7 +315,7 @@ export const listGiftCards = async (
   }
 
   return {
-    sent: ((sent.data ?? []) as GiftCardRow[]).map(toSentCard),
+    sent: ((sent.data ?? []) as GiftCardRow[]).map(toSentGiftCard),
     received: receivedCards.map(
       (card): ReceivedGiftCard => ({
         ...cardFace(card),

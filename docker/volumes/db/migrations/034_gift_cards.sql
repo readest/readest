@@ -7,6 +7,10 @@
 -- One row per card. RLS is on with no policies: only the API (service role)
 -- reads and writes. The recipient email is set once; the guard trigger blocks
 -- later changes unless support reassigns it through reassign_gift_email().
+--
+-- A card is claimed when redeemed_at is set. redeemed_by is cleared if the
+-- recipient deletes their account (ON DELETE SET NULL), and that must not
+-- make the card claimable again, so every claim check keys on redeemed_at.
 
 CREATE TABLE IF NOT EXISTS public.gift_cards (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -17,7 +21,7 @@ CREATE TABLE IF NOT EXISTS public.gift_cards (
   recipient_name text CHECK (char_length(recipient_name) <= 60),
   sender_name text CHECK (char_length(sender_name) <= 60),
   message text CHECK (char_length(message) <= 300),
-  recipient_email text,
+  recipient_email text CHECK (recipient_email IS NULL OR recipient_email = lower(btrim(recipient_email))),
   code text NOT NULL UNIQUE,
   provider text CHECK (provider IN ('stripe', 'apple', 'google')),
   stripe_payment_intent_id text UNIQUE,
@@ -32,7 +36,7 @@ CREATE TABLE IF NOT EXISTS public.gift_cards (
 CREATE INDEX IF NOT EXISTS idx_gift_cards_buyer_id ON public.gift_cards (buyer_id);
 CREATE INDEX IF NOT EXISTS idx_gift_cards_redeemed_by ON public.gift_cards (redeemed_by);
 CREATE INDEX IF NOT EXISTS idx_gift_cards_unredeemed_email ON public.gift_cards (recipient_email)
-  WHERE redeemed_by IS NULL;
+  WHERE redeemed_at IS NULL;
 
 ALTER TABLE public.gift_cards ENABLE ROW LEVEL SECURITY;
 
@@ -40,11 +44,12 @@ ALTER TABLE public.gift_cards ENABLE ROW LEVEL SECURITY;
 -- reassign_gift_email() raised its transaction-local flag.
 CREATE OR REPLACE FUNCTION public.gift_cards_guard() RETURNS trigger
 LANGUAGE plpgsql
+SET search_path = ''
 AS $$
 BEGIN
   IF NEW.recipient_email IS DISTINCT FROM OLD.recipient_email
      AND coalesce(current_setting('readest.gift_email_reassign', true), '') <> 'on'
-     AND (OLD.recipient_email IS NOT NULL OR OLD.redeemed_by IS NOT NULL) THEN
+     AND (OLD.recipient_email IS NOT NULL OR OLD.redeemed_at IS NOT NULL) THEN
     RAISE EXCEPTION 'gift card recipient email cannot be changed';
   END IF;
   NEW.updated_at := now();
@@ -77,7 +82,7 @@ AS $$
   SET redeemed_by = u.id, redeemed_at = now()
   FROM auth.users u
   WHERE g.status = 'active'
-    AND g.redeemed_by IS NULL
+    AND g.redeemed_at IS NULL
     AND g.recipient_email = u.email
     AND u.email_confirmed_at IS NOT NULL
   RETURNING g.redeemed_by;
@@ -92,11 +97,15 @@ AS $$
 DECLARE
   changed integer;
 BEGIN
+  IF coalesce(btrim(p_email), '') = '' THEN
+    RETURN false;
+  END IF;
   PERFORM set_config('readest.gift_email_reassign', 'on', true);
   UPDATE public.gift_cards
-  SET recipient_email = lower(trim(p_email))
-  WHERE id = p_card_id AND redeemed_by IS NULL;
+  SET recipient_email = lower(btrim(p_email))
+  WHERE id = p_card_id AND redeemed_at IS NULL;
   GET DIAGNOSTICS changed = ROW_COUNT;
+  PERFORM set_config('readest.gift_email_reassign', 'off', true);
   RETURN changed > 0;
 END;
 $$;

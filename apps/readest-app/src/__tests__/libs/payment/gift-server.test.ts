@@ -50,6 +50,7 @@ import {
   createGiftDraft,
   listGiftCards,
   revokeGiftCardForPayment,
+  toSentGiftCard,
   updateSentGiftCard,
 } from '@/libs/payment/gift/server';
 import { claimGiftCardByCode } from '@/libs/payment/gift/claim';
@@ -239,15 +240,18 @@ describe('activateGiftCard', () => {
     );
     const made = await activateGiftCard(applePayment());
     await claimGiftCardByCode(made.code, 'friend-2');
+    // Still claimed once the recipient's account is gone.
+    db().deleteUser('friend-2');
 
     const card = await activateGiftCard(applePayment(draftId));
 
     expect(card).toMatchObject({
       id: made.id,
-      redeemed_by: 'friend-2',
+      redeemed_by: null,
       message: '',
       recipient_email: null,
     });
+    expect(card.redeemed_at).not.toBeNull();
     expect(db().card(draftId)).toBeUndefined();
   });
 
@@ -266,16 +270,20 @@ describe('activateGiftCard', () => {
     });
   });
 
-  it("does not write a draft onto another buyer's card", async () => {
+  it("never hands back another buyer's card", async () => {
     const made = await activateGiftCard(applePayment());
     const { id: draftId } = await createGiftDraft(
       'buyer-2',
       draftInput({ recipientEmail: 'thief@example.com' }),
     );
 
-    const card = await activateGiftCard({ ...applePayment(draftId), buyerId: 'buyer-2' });
-
-    expect(card).toMatchObject({ id: made.id, buyer_id: 'buyer-1', recipient_email: null });
+    await expect(activateGiftCard({ ...applePayment(), buyerId: 'buyer-2' })).rejects.toThrow(
+      'gift card belongs to another buyer',
+    );
+    await expect(
+      activateGiftCard({ ...applePayment(draftId), buyerId: 'buyer-2' }),
+    ).rejects.toThrow('gift card belongs to another buyer');
+    expect(db().card(made.id)).toMatchObject({ buyer_id: 'buyer-1', recipient_email: null });
     expect(db().card(draftId)?.status).toBe('pending');
   });
 
@@ -359,6 +367,31 @@ describe('updateSentGiftCard', () => {
     expect(await updateSentGiftCard('buyer-1', card.id, { message: 'See you soon' })).toMatchObject(
       { status: 'waiting', message: 'See you soon' },
     );
+  });
+
+  it("re-sending the card's own email doesn't lock the edit", async () => {
+    const card = await activateGiftCard(stripePayment());
+    await updateSentGiftCard('buyer-1', card.id, { recipientEmail: 'new@example.com' });
+
+    const same = await updateSentGiftCard('buyer-1', card.id, {
+      recipientEmail: 'new@example.com',
+      message: 'Edited',
+    });
+    const different = await updateSentGiftCard('buyer-1', card.id, {
+      recipientEmail: 'other@example.com',
+      message: 'Lost',
+    });
+
+    expect(same).toMatchObject({
+      status: 'waiting',
+      recipientEmail: 'new@example.com',
+      message: 'Edited',
+    });
+    expect(different).toBe('email_locked');
+    expect(db().card(card.id)).toMatchObject({
+      recipient_email: 'new@example.com',
+      message: 'Edited',
+    });
   });
 
   it('adding an email claims at once for a confirmed account', async () => {
@@ -468,6 +501,7 @@ describe('listGiftCards', () => {
       ].sort(),
     );
     expect(JSON.stringify(response)).not.toContain('friend-1');
+    expect(toSentGiftCard(db().card(redeemed.id)!)).toEqual(card);
   });
 
   it('lists received cards with their timeline dates', async () => {

@@ -27,6 +27,7 @@ import {
   claimGiftCardsForEmail,
   syncUserPlan,
 } from '@/libs/payment/gift/claim';
+import { listGiftCards, updateSentGiftCard } from '@/libs/payment/gift/server';
 
 const CODE = 'AB01CD23EF45GH67';
 
@@ -90,6 +91,29 @@ describe('claimGiftCardByCode', () => {
     const claimed = await claimGiftCardByCode('ab0l-cd23-ef45-gh67', 'friend-2');
 
     expect(claimed?.id).toBe(card.id);
+  });
+
+  it('a card stays claimed after the recipient account is deleted', async () => {
+    const card = db().addCard({
+      buyer_id: 'buyer-1',
+      status: 'active',
+      code: CODE,
+      recipient_email: 'sam@example.com',
+      purchased_at: '2026-11-01T00:00:00Z',
+    });
+    await claimGiftCardsForEmail('friend-1', 'sam@example.com');
+    // redeemed_by is ON DELETE SET NULL; redeemed_at stays.
+    db().deleteUser('friend-1');
+    expect(db().card(card.id)).toMatchObject({ redeemed_by: null });
+    expect(db().card(card.id)?.redeemed_at).not.toBeNull();
+
+    expect(await claimGiftCardByCode(CODE, 'friend-2')).toBeNull();
+    // The same address signing up again doesn't get a second year.
+    expect(await claimGiftCardsForEmail('friend-3', 'sam@example.com')).toBe(0);
+    expect(await updateSentGiftCard('buyer-1', card.id, { message: 'Again?' })).toBe('not_found');
+    const { sent } = await listGiftCards('buyer-1');
+    expect(sent).toMatchObject([{ id: card.id, status: 'redeemed', code: null }]);
+    expect(db().card(card.id)?.redeemed_by).toBeNull();
   });
 
   it("a refunded card can't be redeemed", async () => {

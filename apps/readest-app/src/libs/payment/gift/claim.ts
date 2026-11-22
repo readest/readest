@@ -26,7 +26,9 @@ export const syncUserPlan = async (userId: string): Promise<UserPlan> => {
 
 // Every claim, by email or by code, is this one conditional update on a paid,
 // unclaimed card. An email claim and a code redeemed at the same moment race
-// on the row lock, and the second finds no row.
+// on the row lock, and the second finds no row. "Claimed" is `redeemed_at`:
+// `redeemed_by` goes null when the recipient deletes their account, and the
+// card must not be claimable again.
 const claimCards = async (
   userId: string,
   column: 'code' | 'recipient_email',
@@ -37,7 +39,7 @@ const claimCards = async (
     .update({ redeemed_by: userId, redeemed_at: new Date().toISOString() })
     .eq(column, value)
     .eq('status', 'active')
-    .is('redeemed_by', null)
+    .is('redeemed_at', null)
     .select();
   if (error) throw error;
   const claimed = (data ?? []) as GiftCardRow[];
