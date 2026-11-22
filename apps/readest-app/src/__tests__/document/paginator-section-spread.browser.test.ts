@@ -165,6 +165,10 @@ describe('paginator starts sections and page breaks on a new spread (browser)', 
       `<div id="x" style="break-after: column">x</div><span id="t">t</span>`,
     ],
     [
+      'a block after a break and a hidden element',
+      `<div id="x" style="break-after: column">x</div><span style="display: none">h</span><div id="t">t</div>`,
+    ],
+    [
       'text after a break',
       // the text and the span share a line: both start the next spread
       `<div id="x" style="break-after: column">x</div>hello <span id="t">t</span>`,
