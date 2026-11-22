@@ -70,4 +70,46 @@ describe('giftTimeline', () => {
     expect(iso(t1.perCard['a']!.startsAt)).toBe('2027-01-01');
     expect(iso(t1.perCard['b']!.startsAt)).toBe('2028-01-01');
   });
+
+  it('skips back-to-back Pro cards: Plus runs only after both (A 2027-01-01..2028-01-01, B ..2028-12-31, Plus 2028-12-31..2029-12-31)', () => {
+    const cards = [
+      card('plus', 'plus', '2027-06-01'),
+      card('a', 'pro', '2027-01-01'),
+      card('b', 'pro', '2027-01-01'),
+    ];
+    const t = giftTimeline(cards, d('2027-06-02'));
+    expect(iso(t.perCard['b']!.endsAt)).toBe('2028-12-31');
+    expect(iso(t.perCard['plus']!.startsAt)).toBe('2028-12-31');
+    expect(iso(t.perCard['plus']!.endsAt)).toBe('2029-12-31');
+  });
+
+  it('chains Plus from a previous Plus end into two Pro cards (Plus 2 runs 2029-12-24..2030-12-24)', () => {
+    const cards = [
+      card('p1', 'plus', '2026-12-25'),
+      card('p2', 'plus', '2027-01-10'),
+      card('a', 'pro', '2027-12-25'),
+      card('b', 'pro', '2027-12-25'),
+    ];
+    const t = giftTimeline(cards, d('2027-06-01'));
+    expect(iso(t.perCard['p1']!.endsAt)).toBe('2027-12-25');
+    expect(iso(t.perCard['b']!.endsAt)).toBe('2029-12-24');
+    expect(iso(t.perCard['p2']!.startsAt)).toBe('2029-12-24');
+    expect(iso(t.perCard['p2']!.endsAt)).toBe('2030-12-24');
+  });
+
+  it('starts a Plus redeemed inside a Pro run when Pro ends', () => {
+    const cards = [card('pro', 'pro', '2027-01-01'), card('plus', 'plus', '2027-06-01')];
+    const t = giftTimeline(cards, d('2027-06-02'));
+    expect(iso(t.perCard['plus']!.startsAt)).toBe('2028-01-01');
+    expect(iso(t.perCard['plus']!.endsAt)).toBe('2028-12-31');
+  });
+
+  it('includes a card start instant and excludes its end instant', () => {
+    const cards = [card('a', 'plus', '2026-12-25')];
+    expect(giftTimeline(cards, d('2026-12-25')).plan).toBe('plus');
+    expect(giftTimeline(cards, d('2026-12-24')).plan).toBe('free');
+    const atEnd = giftTimeline(cards, d('2027-12-25'));
+    expect(atEnd.plan).toBe('free');
+    expect(atEnd.activeUntil).toBeNull();
+  });
 });

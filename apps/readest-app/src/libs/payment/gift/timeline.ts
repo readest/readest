@@ -42,19 +42,29 @@ export const giftTimeline = (cards: GiftTimelineCard[], now: Date): GiftTimeline
   const plusIntervals: Interval[] = [];
   let plusEnd = -Infinity;
   for (const c of cards.filter((c) => c.tier === 'plus').sort(byRedeemed)) {
-    const start = Math.max(c.redeemedAt.getTime(), plusEnd);
-    let cursor = start;
+    // Skip out of any Pro run (queued Pro cards touch end to start).
+    const skipPro = (t: number) => {
+      let at = t;
+      for (
+        let p = proIntervals.find((i) => within(at, i));
+        p;
+        p = proIntervals.find((i) => within(at, i))
+      ) {
+        at = p.end;
+      }
+      return at;
+    };
+    let cursor = skipPro(Math.max(c.redeemedAt.getTime(), plusEnd));
+    const start = cursor;
     let remaining = c.days * DAY_MS;
     for (;;) {
-      const inPro = proIntervals.find((p) => within(cursor, p));
-      if (inPro) cursor = inPro.end;
       const nextPro = proIntervals.find((p) => p.start > cursor);
       if (!nextPro || cursor + remaining <= nextPro.start) {
         cursor += remaining;
         break;
       }
       remaining -= nextPro.start - cursor;
-      cursor = nextPro.end;
+      cursor = skipPro(nextPro.end);
     }
     plusEnd = cursor;
     plusIntervals.push({ start, end: plusEnd });
