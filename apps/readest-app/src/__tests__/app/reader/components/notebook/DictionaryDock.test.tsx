@@ -55,6 +55,7 @@ vi.mock('@/services/dictionaries/registry', () => ({
 }));
 
 import DictionaryPopup from '@/app/reader/components/annotator/DictionaryPopup';
+import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import DictionaryView from '@/app/reader/components/notebook/DictionaryView';
 
 const passage = { before: 'It was pure ', after: '.', bookTitle: 'Luck' };
@@ -82,22 +83,40 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe('Pin to Notebook in the dictionary popup', () => {
-  const renderPopup = (onPin: (lookup: unknown) => void) =>
-    render(
-      <DictionaryPopup
-        word='serendipity'
-        lang='en'
-        selection={passage}
-        capture={capture}
-        position={{ point: { x: 100, y: 100 }, dir: 'up' }}
-        trianglePosition={{ point: { x: 200, y: 460 }, dir: 'up' }}
-        popupWidth={480}
-        popupHeight={360}
-        onPin={onPin}
-      />,
-    );
-
+// The sheet too: a phone in landscape is wide enough to pin the Notebook (#7789).
+describe.each([
+  [
+    'popup',
+    (onPin: (lookup: unknown) => void) =>
+      render(
+        <DictionaryPopup
+          word='serendipity'
+          lang='en'
+          selection={passage}
+          capture={capture}
+          position={{ point: { x: 100, y: 100 }, dir: 'up' }}
+          trianglePosition={{ point: { x: 200, y: 460 }, dir: 'up' }}
+          popupWidth={480}
+          popupHeight={360}
+          onPin={onPin}
+        />,
+      ),
+  ],
+  [
+    'sheet',
+    (onPin: (lookup: unknown) => void) =>
+      render(
+        <DictionarySheet
+          word='serendipity'
+          lang='en'
+          selection={passage}
+          capture={capture}
+          onDismiss={vi.fn()}
+          onPin={onPin}
+        />,
+      ),
+  ],
+])('Pin to Notebook in the dictionary %s', (_kind, renderPopup) => {
   it('hands the lookup to the Notebook with its passage and sentence', () => {
     const onPin = vi.fn();
     renderPopup(onPin);

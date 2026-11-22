@@ -85,6 +85,17 @@ export interface UseDictionaryResultsArgs {
   contextOnly?: boolean;
 }
 
+// The lookup Pin to Notebook hands over. A word reached through a link wasn't
+// selected in the passage or sentence, so it goes without them, as the popup
+// itself asks and saves it.
+export const lookupToPin = (
+  { word, lang, selection, capture, contextOnly }: UseDictionaryResultsArgs,
+  { canGoBack, currentWord }: Pick<DictionaryResultsState, 'canGoBack' | 'currentWord'>,
+): UseDictionaryResultsArgs =>
+  canGoBack
+    ? { word: currentWord, lang, capture: capture && { lang: capture.lang }, contextOnly }
+    : { word, lang, selection, capture, contextOnly };
+
 export interface VocabularyCapture {
   /** Vocabulary language of the book (see `vocabularyLang`). */
   lang: string;

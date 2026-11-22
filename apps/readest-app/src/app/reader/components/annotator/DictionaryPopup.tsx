@@ -9,6 +9,7 @@ import {
   useDictionaryResults,
   DictionaryResultsHeader,
   DictionaryResultsBody,
+  lookupToPin,
   type UseDictionaryResultsArgs,
   type VocabularyCapture,
 } from './DictionaryResultsView';
@@ -145,14 +146,8 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   onPin,
 }) => {
   const state = useDictionaryResults({ word, lang, selection, capture, contextOnly });
-  // A word reached through a link wasn't selected in the passage or sentence,
-  // so it goes without them, as the popup itself asks and saves it.
   const handlePin = () =>
-    onPin?.(
-      state.canGoBack
-        ? { word: state.currentWord, lang, capture: capture && { lang: capture.lang }, contextOnly }
-        : { word, lang, selection, capture, contextOnly },
-    );
+    onPin?.(lookupToPin({ word, lang, selection, capture, contextOnly }, state));
   const { box, gripProps, moveProps } = usePopupBox(useResponsiveSize(10));
   return (
     <Popup

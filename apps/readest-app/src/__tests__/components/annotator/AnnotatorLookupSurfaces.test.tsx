@@ -365,10 +365,12 @@ vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
     word,
     onDismiss,
     contextOnly,
+    onPin,
   }: {
     word: string;
     onDismiss: () => void;
     contextOnly?: boolean;
+    onPin?: (lookup: { word: string; lang?: string }) => void;
   }) => (
     <div
       data-testid='dictionary-surface'
@@ -377,6 +379,13 @@ vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
       data-word={word.trim()}
     >
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
+      {onPin && (
+        <button
+          type='button'
+          data-testid='dictionary-pin'
+          onClick={() => onPin({ word: word.trim(), lang: 'en' })}
+        />
+      )}
     </div>
   ),
 }));
@@ -1253,6 +1262,42 @@ describe('the dictionary docked in the Notebook', () => {
     expect(h.sidebar.setSideBarPin).not.toHaveBeenCalled();
     expect(screen.queryByTestId('dictionary-surface')).toBeNull();
     expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+  });
+
+  // The Notebook pins beside the page from 640 px wide; a phone in landscape
+  // is that wide but too short for the popup, so it gets the sheet (#7789).
+  test.each([
+    ['a phone in landscape', 890, 411, true],
+    ['a phone in portrait', 390, 844, false],
+  ])('the dictionary sheet on %s (%i×%i) offers Pin to Notebook: %s', async (_name, width, height, pins) => {
+    const setViewport = (w: number, hgt: number) => {
+      Object.defineProperty(window, 'innerWidth', { value: w, configurable: true });
+      Object.defineProperty(window, 'innerHeight', { value: hgt, configurable: true });
+    };
+    const { innerWidth, innerHeight } = window;
+    try {
+      setViewport(width, height);
+      h.viewSettings.annotationToolbarItems = ['dictionary'];
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await selectText('serendipity');
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
+      });
+
+      expect(screen.getByTestId('dictionary-surface').dataset['kind']).toBe('sheet');
+      expect(!!screen.queryByTestId('dictionary-pin')).toBe(pins);
+      if (!pins) return;
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('dictionary-pin'));
+      });
+      expect(docked()).toMatchObject({ word: 'serendipity', lang: 'en' });
+      expect(h.notebook.setNotebookPin).toHaveBeenCalledWith(true);
+      expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    } finally {
+      setViewport(innerWidth, innerHeight);
+    }
   });
 
   // Pin hands the word back as closing the popup does. From the instant
