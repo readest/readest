@@ -27,14 +27,13 @@ const makeBook = (dir: string, writingMode: string) => {
   };
 };
 
-// A section of `columns` columns, one block each.
+// A section of `columns` columns, one block each. Each block fills a column:
+// a forced break in a two-column spread would start the next spread.
 const makeColumns = (name: string, columns: number) => {
   const html = `<?xml version="1.0" encoding="utf-8"?>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><style>body { font: 16px/1.5 serif; }</style></head>
-<body>${Array.from(
-    { length: columns },
-    (_, i) => `<div${i ? ' style="break-before: column"' : ''}>${name} column ${i}</div>`,
-  ).join('')}</body></html>`;
+<html xmlns="http://www.w3.org/1999/xhtml"><head><style>body { font: 16px/1.5 serif; }
+div { height: calc(var(--available-height) * 1px); }</style></head>
+<body>${Array.from({ length: columns }, (_, i) => `<div>${name} column ${i}</div>`).join('')}</body></html>`;
   const src = URL.createObjectURL(new Blob([html], { type: 'application/xhtml+xml' }));
   return { id: name, linear: 'yes', size: html.length, load: async () => src };
 };

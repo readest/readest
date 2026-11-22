@@ -11,8 +11,9 @@ import type { Renderer } from '@/types/view';
 // the paginator also miscounted that page: either it never reported the end
 // of the book, or it stopped one page early and never showed the last column.
 
-// A section of exactly `columns` columns: every block after the first starts a
-// new column.
+// A section of `columns` blocks, every block after the first breaking before
+// itself. In a two-column spread a break starts the next spread (readest#6873),
+// so each block starts a spread and the section ends on a left column.
 const makeSection = (name: string, columns: number, writingMode = 'horizontal-tb') => {
   const blocks = Array.from(
     { length: columns },
