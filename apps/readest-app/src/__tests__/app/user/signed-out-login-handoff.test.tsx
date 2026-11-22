@@ -113,7 +113,12 @@ it('stays out of the way while its Sign Out opens the library', () => {
 it('keeps a gift link as the redirect', () => {
   vi.useFakeTimers();
   mocks.params = new URLSearchParams({ gift: 'ABCD1234EFGH5678' });
-  render(<ProfilePage />);
+  // The page takes the code out of its URL first, as a real router would.
+  mocks.router.replace.mockImplementationOnce((url: string) => {
+    mocks.params = new URLSearchParams(url.split('?')[1]);
+  });
+  const { rerender } = render(<ProfilePage />);
+  rerender(<ProfilePage />);
 
   act(() => vi.advanceTimersByTime(1000));
 

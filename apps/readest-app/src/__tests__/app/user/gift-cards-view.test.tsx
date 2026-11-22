@@ -6,14 +6,15 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import ProfilePage from '@/app/user/page';
 
+const STRIPE_RETURN = { section: 'gifts', session_id: 'cs_returning' };
+
 const mocks = vi.hoisted(() => ({
   router: { push: vi.fn(), replace: vi.fn(), back: vi.fn() },
   sectionProps: vi.fn(),
+  params: new URLSearchParams(),
 }));
 
-vi.mock('next/navigation', () => ({
-  useSearchParams: () => new URLSearchParams({ section: 'gifts', session_id: 'cs_returning' }),
-}));
+vi.mock('next/navigation', () => ({ useSearchParams: () => mocks.params }));
 vi.mock('@/hooks/useAppRouter', () => ({ useAppRouter: () => mocks.router }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: { getState: () => ({ viewStates: {} }) },
@@ -82,7 +83,11 @@ vi.mock('@/app/user/components/gift/GiftCardsSection', () => ({
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  mocks.params = new URLSearchParams(STRIPE_RETURN);
+  window.history.replaceState(null, '', '/');
 });
+
+mocks.params = new URLSearchParams(STRIPE_RETURN);
 
 it('opens the Gift Cards view from a Stripe return and sells through the store on an IAP build', () => {
   render(<ProfilePage />);
@@ -91,5 +96,26 @@ it('opens the Gift Cards view from a Stripe return and sells through the store o
   expect(screen.queryByText('usage stats')).toBeNull();
   expect(mocks.sectionProps).toHaveBeenLastCalledWith(
     expect.objectContaining({ useIAP: true, stripeSessionId: 'cs_returning' }),
+  );
+});
+
+// A gift code in the URL stays in history and analytics, and fills the form
+// again on every reload.
+it('takes a gift link code out of the URL and keeps it in the redeem form', () => {
+  const CODE = 'ABCD1234EFGH5678';
+  window.history.replaceState(null, '', `/user?gift=${CODE}`);
+  mocks.params = new URLSearchParams({ gift: CODE });
+  mocks.router.replace.mockImplementationOnce((url: string) => {
+    window.history.replaceState(null, '', url);
+    mocks.params = new URLSearchParams(url.split('?')[1]);
+  });
+
+  const { rerender } = render(<ProfilePage />);
+  rerender(<ProfilePage />);
+
+  expect(mocks.router.replace).toHaveBeenCalledWith('/user?section=gifts');
+  expect(screen.getByText('gift cards view')).toBeTruthy();
+  expect(mocks.sectionProps).toHaveBeenLastCalledWith(
+    expect.objectContaining({ initialCode: CODE }),
   );
 });

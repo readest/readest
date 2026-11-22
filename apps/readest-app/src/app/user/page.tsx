@@ -76,7 +76,8 @@ const ProfilePage = () => {
   const [showSyncManager, setShowSyncManager] = useState(
     () => searchParams?.get('section') === 'sync',
   );
-  const giftCode = searchParams?.get('gift') || undefined;
+  // Read once: the code is taken out of the URL as soon as the page opens.
+  const [giftCode] = useState(() => searchParams?.get('gift') || undefined);
   const [showGiftCards, setShowGiftCards] = useState(
     () => searchParams?.get('section') === 'gifts' || !!giftCode,
   );
@@ -108,16 +109,26 @@ const ProfilePage = () => {
 
     const timer = setTimeout(() => {
       // A gift link comes back here after sign-in, with its code.
-      const gift = searchParams?.get('gift');
-      const redirect = gift
-        ? `/user?gift=${encodeURIComponent(gift)}`
+      const redirect = giftCode
+        ? `/user?gift=${encodeURIComponent(giftCode)}`
         : searchParams?.get('redirect') || '/library';
       // Replace, so leaving the login page goes back to the opener (#7567).
       router.replace(`/auth?redirect=${encodeURIComponent(redirect)}`);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [mounted, user, token, appService, router, searchParams, signingOut]);
+  }, [mounted, user, token, appService, router, searchParams, signingOut, giftCode]);
+
+  useEffect(() => {
+    if (!giftCode) return;
+    // Keep the code out of the URL, history and analytics. A reload opens the
+    // Gift Cards view without it; the redeem form keeps the code it was given.
+    const params = new URLSearchParams(window.location.search);
+    params.delete('gift');
+    params.set('section', 'gifts');
+    router.replace(`${window.location.pathname}?${params}`);
+    // Once on open.
+  }, []);
 
   useTheme({ systemUIVisible: false });
 
