@@ -539,6 +539,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
     gridTemplateRows: gridTemplate.rows,
   };
   const isHoveredAnim = bookKeys.length > 2;
+  // Stacked, a shown header starts its buttons 6px below the seam: while a
+  // book's bars are shown, the divider keeps to the 12px between them.
+  const barsAtSeam = isStacked && (!!hoveredBookKey || !!dropdownOpenBook);
   const appServiceHasRoundedWindow = !!appService?.hasRoundedWindow;
 
   return (
@@ -580,7 +583,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
           className={clsx(
             'drag-handle absolute z-10 flex items-center justify-center',
             isStacked
-              ? 'inset-x-0 -mt-4 h-8 cursor-row-resize'
+              ? ['inset-x-0 cursor-row-resize', barsAtSeam ? '-mt-1.5 h-3' : '-mt-4 h-8']
               : 'inset-y-0 -ms-4 w-8 cursor-col-resize',
           )}
           style={isStacked ? { top: `${split ?? 50}%` } : { insetInlineStart: `${split ?? 50}%` }}
