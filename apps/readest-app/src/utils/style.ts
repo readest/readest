@@ -756,19 +756,20 @@ const getPageLayoutStyles = (
   /* WebKit never moves anything taller than a page: it cuts it where it falls.
      An image sized to the page sits on the baseline with the line's descent
      under it, so its line is a few px taller than the page and the image is
-     cut across two pages. Chromium moves it whole. Aligning images that have
-     no text beside them to the top drops the descent, so their line fits.
+     cut across two pages. Chromium moves it whole. Aligning an image alone on
+     its line to the top drops the descent, so its line fits; an image that
+     shares its line with text keeps the book's alignment.
      A block that ends exactly on a page boundary also carries the margin after
      it onto the next page, where Chromium drops it, so a second page-tall image
      went a page further and left a blank page. Ending the line 1px early lets
      WebKit drop that margin; :where() lets a book's own margin win.
      -webkit-line-box-contain is supported only by WebKit (#6676). */
   @supports (-webkit-line-box-contain: replaced) {
-    body.paginated-mode img:not(.has-text-siblings),
+    body.paginated-mode img.alone-on-line:not(.has-text-siblings),
     body.paginated-mode .lone-image {
       vertical-align: top;
     }
-    :where(body.paginated-mode img:not(.has-text-siblings)) {
+    :where(body.paginated-mode img.alone-on-line:not(.has-text-siblings)) {
       margin-block-end: -1px;
     }
   }
@@ -2011,6 +2012,27 @@ const INLINE_IMAGE_CONTAINER_TAGS = new Set([
   'q',
 ]);
 
+// Block-level tags that end a line, so text past them is on another line
+const LINE_BREAKING_TAGS =
+  /^(br|p|div|li|dd|dt|td|th|tr|table|ul|ol|dl|figure|figcaption|blockquote|section|article|aside|header|footer|nav|main|body|center|pre|hr|h[1-6])$/;
+
+// Whether text shares the image's line: look at the siblings of the image and
+// of each inline element around it (links included), up to a <br> or a block.
+const hasTextOnLine = (img: Element): boolean => {
+  for (let node: Element = img; node.parentElement; node = node.parentElement) {
+    for (const forward of [false, true]) {
+      let sib = forward ? node.nextSibling : node.previousSibling;
+      for (; sib; sib = forward ? sib.nextSibling : sib.previousSibling) {
+        const isElement = sib.nodeType === Node.ELEMENT_NODE;
+        if (isElement && LINE_BREAKING_TAGS.test((sib as Element).localName)) break;
+        if ((isElement || sib.nodeType === Node.TEXT_NODE) && sib.textContent?.trim()) return true;
+      }
+    }
+    if (LINE_BREAKING_TAGS.test(node.parentElement.localName)) return false;
+  }
+  return false;
+};
+
 const hasInlineTextSibling = (container: Element, targetNode: Node): boolean => {
   const childNodes = Array.from(container.childNodes);
   const idx = childNodes.indexOf(targetNode as ChildNode);
@@ -2116,6 +2138,7 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
       keepBaseline,
       noEnlarge,
       leadingImageParagraph,
+      aloneOnLine: !hasTextOnLine(img),
     };
   });
 
@@ -2144,8 +2167,10 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
     keepBaseline,
     noEnlarge,
     leadingImageParagraph,
+    aloneOnLine,
   } of plans) {
     leadingImageParagraph?.classList.add('leading-image');
+    if (aloneOnLine) img.classList.add('alone-on-line');
     if (!isNaN(percentWidth)) {
       img.style.width = `${(percentWidth / 100) * baseWidth}px`;
       img.removeAttribute('width');

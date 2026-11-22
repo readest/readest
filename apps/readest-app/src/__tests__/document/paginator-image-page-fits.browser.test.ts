@@ -180,4 +180,12 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(second!.getClientRects()).toHaveLength(1);
     expect(middleOf(el, second!) - middleOf(el, first!)).toBeCloseTo(1, 1);
   });
+
+  // Only an image alone on its line is top-aligned: a linked icon before text
+  // keeps the book's own alignment
+  it("keeps the book's alignment for a linked icon before text", async () => {
+    const icon = `<style>img.icon { vertical-align: middle; }</style><p><a href="#n"><img class="icon" alt="" src="${COVER}" height="16"/></a> Text after the icon.</p>`;
+    const { img } = await open(icon, '');
+    expect(getComputedStyle(img).verticalAlign).toBe('middle');
+  });
 });
