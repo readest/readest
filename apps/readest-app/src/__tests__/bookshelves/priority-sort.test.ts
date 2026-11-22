@@ -355,6 +355,53 @@ describe('priority-based library sorting', () => {
     ]);
   });
 
+  // Books of one series order by index; a group named like that series must sit
+  // at one fixed place among them. Comparing it by Title instead made a cycle
+  // (Apple < [Saga] < Zulu < Apple), so a pair and the full list disagreed.
+  it('orders a group named like a series at one place among that series', () => {
+    const sortOrder: LibrarySortCriterion[] = [
+      { by: LibrarySortByType.Series, ascending: true },
+      { by: LibrarySortByType.Title, ascending: true },
+    ];
+    const settings = {
+      libraryGroupBy: LibraryGroupByType.Group,
+      librarySortBy: LibrarySortByType.Series,
+      librarySortAscending: true,
+      libraryThenSortBy: LibrarySortByType.Title,
+      libraryThenSortAscending: true,
+      librarySortOrder: sortOrder,
+    };
+    const baseDef = defaultBookshelves(settings).find((s) => s.id === 'default')!;
+    const def = {
+      ...baseDef,
+      sort: resolveBookshelfSort(baseDef, getGlobalBookshelfSort(settings)),
+    };
+    const inSaga = (hash: string, title: string, seriesIndex: number) =>
+      makeBook({
+        hash,
+        title,
+        metadata: { title, author: 'X', language: 'en', series: 'Saga', seriesIndex },
+      });
+    const sagaBooks = [inSaga('a', 'Zulu', 1), inSaga('b', 'Apple', 2)];
+    const grouped = makeBook({ hash: 'g', title: 'Grouped', groupName: 'Saga' });
+    const present = (input: Book[]) => {
+      const [result] = evaluateBookshelves(
+        input,
+        [def],
+        'en',
+        undefined,
+        undefined,
+        undefined,
+        sortOrder,
+      );
+      return presentBookshelf(result!, settings, 'en', undefined, '', undefined, sortOrder).map(
+        (item) => ('books' in item ? `[${item.displayName}]` : item.title),
+      );
+    };
+    expect(present([...sagaBooks, grouped])).toEqual(['[Saga]', 'Zulu', 'Apple']);
+    for (const book of sagaBooks) expect(present([book, grouped])[0]).toBe('[Saga]');
+  });
+
   it('continues past Infinity vs Infinity TimeRemaining ties and compares book Series in mixed groups', () => {
     const sortOrder: LibrarySortCriterion[] = [
       { by: LibrarySortByType.Pages, ascending: true },

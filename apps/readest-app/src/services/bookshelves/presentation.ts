@@ -176,17 +176,17 @@ export const presentBookshelf = (
   // Merge groups and ungrouped books, then sort them together
   const allItems: (Book | BooksGroup)[] = [...groups, ...ungroupedBooks];
   const groupSorter = createGroupSorter(sortBy, uiLanguage, groupBy);
+  // `seriesTie` places a group named like a book's series before that series'
+  // books (as if its index were lowest), matching book-to-book order by index;
+  // falling through to Title there made the comparator cycle.
   const compareByPriorityOrder = (
     getA: (by: LibrarySortByType) => string | number,
     getB: (by: LibrarySortByType) => string | number,
+    seriesTie: number,
   ) => {
     for (const criterion of order!) {
-      const cmp = compareSortValues(
-        getA(criterion.by),
-        getB(criterion.by),
-        uiLanguage,
-        criterion.by,
-      );
+      let cmp = compareSortValues(getA(criterion.by), getB(criterion.by), uiLanguage, criterion.by);
+      if (cmp === 0 && criterion.by === LibrarySortByType.Series) cmp = seriesTie;
       if (Number.isNaN(cmp)) continue;
       if (cmp !== 0) return cmp * (criterion.ascending ? 1 : -1);
     }
@@ -223,6 +223,7 @@ export const presentBookshelf = (
           return compareByPriorityOrder(
             (by) => getVal(a, by),
             (by) => getVal(b, by),
+            isAGroup === isBGroup ? 0 : isAGroup ? -1 : 1,
           );
         }
 
