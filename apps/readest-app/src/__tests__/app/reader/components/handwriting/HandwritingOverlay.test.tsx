@@ -4,7 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import HandwritingOverlay from '@/app/reader/components/handwriting/HandwritingOverlay';
 
-const h = vi.hoisted(() => ({ enabled: false, setHoveredBookKey: vi.fn(), setErasing: vi.fn() }));
+const h = vi.hoisted(() => ({
+  enabled: false,
+  layers: [] as { strokes: unknown[]; rect: unknown }[],
+  setHoveredBookKey: vi.fn(),
+  setErasing: vi.fn(),
+}));
 
 vi.mock('@/app/reader/hooks/useHandwriting', () => ({
   useHandwriting: () => ({
@@ -13,7 +18,7 @@ vi.mock('@/app/reader/hooks/useHandwriting', () => ({
     enabled: h.enabled,
     setEnabled: vi.fn(),
     hitTest: () => false,
-    layers: [],
+    layers: h.layers,
     cellRect: { left: 0, top: 0, width: 400, height: 800 },
     containerRef: vi.fn(),
     attach: vi.fn(),
@@ -45,6 +50,7 @@ vi.mock('@/app/reader/components/handwriting/HandwritingBars', () => ({
 
 afterEach(() => {
   cleanup();
+  h.layers = [];
   h.setHoveredBookKey.mockClear();
   h.setErasing.mockClear();
 });
@@ -75,5 +81,34 @@ describe('HandwritingOverlay', () => {
     h.enabled = false;
     render(<HandwritingOverlay bookKey='book-1' gridInsets={insets} />);
     expect(h.setHoveredBookKey).not.toHaveBeenCalled();
+  });
+
+  // The ink layer spans the whole book cell, scrolled mode's scrollbar
+  // included. Painted while empty, it kept Chromium from seeing the pointer on
+  // that overlay scrollbar, which then faded mid-drag and lost the drag (#7796).
+  describe('cell-wide ink layer', () => {
+    const inkLayer = () => document.querySelector('canvas')!.parentElement!;
+    const rect = { left: 0, top: 0, width: 400, height: 800 };
+
+    it('paints nothing while the page has no ink and the pen is off', () => {
+      h.enabled = false;
+      h.layers = [{ strokes: [], rect }];
+      render(<HandwritingOverlay bookKey='book-1' gridInsets={insets} />);
+      expect(getComputedStyle(inkLayer()).visibility).toBe('hidden');
+    });
+
+    it('shows the ink on the page', () => {
+      h.enabled = false;
+      h.layers = [{ strokes: [{ points: [[0.1, 0.1, 0.5]], width: 0.004, color: '#000' }], rect }];
+      render(<HandwritingOverlay bookKey='book-1' gridInsets={insets} />);
+      expect(getComputedStyle(inkLayer()).visibility).not.toBe('hidden');
+    });
+
+    it('takes the pen on a page with no ink yet', () => {
+      h.enabled = true;
+      h.layers = [{ strokes: [], rect }];
+      render(<HandwritingOverlay bookKey='book-1' gridInsets={insets} />);
+      expect(getComputedStyle(inkLayer()).visibility).not.toBe('hidden');
+    });
   });
 });

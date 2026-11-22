@@ -65,11 +65,20 @@ const HandwritingCanvas: React.FC<HandwritingCanvasProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interactive]);
 
+  // With no ink on the page and the pen off there is nothing to show. Painted
+  // anyway, this cell-wide layer kept Chromium from seeing the pointer over
+  // scrolled mode's overlay scrollbar, which faded mid-drag and lost the drag
+  // (#7796). `visibility` keeps the box laid out, so `cellRect` still measures.
+  const idle = !interactive && layers.every((layer) => layer.strokes.length === 0);
+
   return (
     <div
       ref={overlayRef}
       className='pointer-events-none absolute inset-0'
-      style={{ touchAction: interactive ? 'none' : undefined }}
+      style={{
+        touchAction: interactive ? 'none' : undefined,
+        visibility: idle ? 'hidden' : undefined,
+      }}
     >
       <canvas
         ref={canvasRef}
