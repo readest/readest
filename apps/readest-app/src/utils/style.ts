@@ -2024,9 +2024,9 @@ const scanLine = (node: Node, forward: boolean, win: Window): 'text' | 'break' |
   if (node.nodeType === Node.TEXT_NODE) return node.textContent?.trim() ? 'text' : null;
   if (node.nodeType !== Node.ELEMENT_NODE) return null;
   const el = node as Element;
-  if (el.localName === 'br') return 'break';
   const display = win.getComputedStyle(el).display;
   if (display === 'none') return null;
+  if (el.localName === 'br') return 'break';
   if (display.startsWith('inline-')) return el.textContent?.trim() ? 'text' : null;
   if (!flowsInLine(display)) return 'break';
   const children = Array.from(el.childNodes);
@@ -2038,15 +2038,21 @@ const scanLine = (node: Node, forward: boolean, win: Window): 'text' | 'break' |
 };
 
 // Whether text shares the image's line: read out from the image and from each
-// inline element around it (links included), up to a <br> or a block.
+// inline element around it (links included), up to a <br> or a block. A break
+// ends the line in that direction for every element further out too.
 const hasTextOnLine = (img: Element, win: Window): boolean => {
+  const open = { backward: true, forward: true };
   for (let node: Element = img; node.parentElement; node = node.parentElement) {
     for (const forward of [false, true]) {
-      let sib = forward ? node.nextSibling : node.previousSibling;
+      const side = forward ? 'forward' : 'backward';
+      let sib = open[side] ? (forward ? node.nextSibling : node.previousSibling) : null;
       for (; sib; sib = forward ? sib.nextSibling : sib.previousSibling) {
         const found = scanLine(sib, forward, win);
         if (found === 'text') return true;
-        if (found === 'break') break;
+        if (found === 'break') {
+          open[side] = false;
+          break;
+        }
       }
     }
     if (!flowsInLine(win.getComputedStyle(node.parentElement).display)) return false;

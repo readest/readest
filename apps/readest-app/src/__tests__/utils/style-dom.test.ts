@@ -832,6 +832,11 @@ describe('applyImageStyle', () => {
       true,
     ],
     [
+      'an image after a break inside its span',
+      '<p>Caption<span><br /><img src="c.png" /></span></p>',
+      true,
+    ],
+    [
       'an image in a span made a block, before text',
       '<p><span style="display: block"><img src="c.png" /></span>Text</p>',
       true,
@@ -856,6 +861,11 @@ describe('applyImageStyle', () => {
     [
       'an image before a span with text, then a break',
       '<p><img src="c.png" /><span>Note<br />Caption</span></p>',
+      false,
+    ],
+    [
+      'an image before a hidden break and text',
+      '<p><img src="c.png" /><br style="display: none" />Text</p>',
       false,
     ],
     [
