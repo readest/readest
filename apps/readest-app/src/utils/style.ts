@@ -2156,10 +2156,18 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
     }
   });
   classifyAndTagStandaloneDiagrams(document, isDarkMode, isFixedLayout);
-  // A section holding only one image, with no text, is a picture page
+  // A section holding only one image, with no text, is a picture page.
+  // An svg's title and desc are never drawn.
   const images = document.body?.querySelectorAll('img, svg');
-  if (images?.length === 1 && !document.body.textContent?.trim()) {
-    images[0]!.classList.add('lone-image');
+  if (images?.length === 1) {
+    const texts = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let hasText = false;
+    for (let node = texts.nextNode(); node && !hasText; node = texts.nextNode()) {
+      hasText =
+        !!node.textContent?.trim() &&
+        !node.parentElement?.closest('title, desc, metadata, style, script');
+    }
+    if (!hasText) images[0]!.classList.add('lone-image');
   }
 };
 
