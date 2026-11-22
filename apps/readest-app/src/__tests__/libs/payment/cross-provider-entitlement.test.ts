@@ -241,7 +241,9 @@ describe('gifts in resolveUserPlan', () => {
 
   it('keeps Plus from an active gift when the Stripe subscription is deleted', async () => {
     db.existingStripeSubscription = { id: 1 };
-    db.gifts = [gift('plus', '2026-10-01T00:00:00Z')];
+    // The handler resolves the plan at the real now, so the gift is redeemed
+    // relative to it: a fixed date would end the gift a year later.
+    db.gifts = [gift('plus', new Date(Date.now() - 30 * 86_400_000).toISOString())];
     stripeMocks.subscriptionsRetrieve.mockResolvedValue(
       makeStripeSub('sub_plus', 'plus', 'canceled'),
     );
