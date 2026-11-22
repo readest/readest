@@ -239,6 +239,16 @@ describe('paginator starts sections and page breaks on a new spread (browser)', 
     expect(pageOf(el, 'b-0')).toBe(3);
   });
 
+  it('drops the blank pages when the book scrolls', async () => {
+    const body = `<div id="x">x</div><div id="t" ${BREAK}>t</div>`;
+    const el = await open({ sections: [makeSection(body)] });
+    const { doc } = el.getContents()[0]!;
+    expect(doc.querySelectorAll('[data-foliate-spread-spacer]')).toHaveLength(1);
+    el.setAttribute('flow', 'scrolled');
+    await frames(6);
+    expect(doc.querySelectorAll('[data-foliate-spread-spacer]')).toHaveLength(0);
+  });
+
   it('drops the blank pages when the layout goes back to one page', async () => {
     const body = `<div id="x">x</div><div id="t" ${BREAK}>t</div>`;
     const el = await open({ sections: [makeSection(body)] });

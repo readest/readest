@@ -842,3 +842,28 @@ describe('epubcfi cfi-inert element filtering', () => {
     });
   });
 });
+
+// A range that ends where an inert block starts, as a selection to the end of
+// a paragraph can, before a spread spacer the paginator inserts before a page
+// break (readest#6873). The end stopped at the inert node and was written as
+// the body, which reads back as its start: the range came back collapsed.
+describe('range end before an inert element', () => {
+  const page = (spacer: string) =>
+    XHTML(`<html xmlns="http://www.w3.org/1999/xhtml"><head><title>T</title></head>
+<body><p>First</p>${spacer}<p>Second</p></body></html>`);
+
+  const firstToBreak = (doc: Document) => {
+    const [first, second] = Array.from(doc.querySelectorAll('p'));
+    const range = doc.createRange();
+    range.setStart(first!.firstChild!, 0);
+    range.setEnd(doc.body, Array.from(doc.body.childNodes).indexOf(second!));
+    return range;
+  };
+
+  it('keeps the text before the inert element', () => {
+    const doc = page('<foliate-spacer cfi-inert="" aria-hidden="true"></foliate-spacer>');
+    const cfi = CFI.fromRange(firstToBreak(doc));
+    expect(cfi).toBe(CFI.fromRange(firstToBreak(page(''))));
+    expect(CFI.toRange(doc, CFI.parse(cfi)).toString()).toBe('First');
+  });
+});
