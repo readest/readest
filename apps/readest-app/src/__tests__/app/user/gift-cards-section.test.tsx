@@ -315,6 +315,57 @@ describe('GiftCardsSection', () => {
     expect(screen.getByText('300 / 300')).toBeTruthy();
   });
 
+  it('the preview card shows the To and message placeholders until the buyer types', async () => {
+    renderSection();
+    await buyButton();
+    const preview = () => document.querySelector('[data-tier]') as HTMLElement;
+
+    expect(within(preview()).getByText('Their name')).toBeTruthy();
+    expect(within(preview()).getByText('Write a few words for them')).toBeTruthy();
+    // From is filled from the account, so its placeholder stays off the card.
+    expect(within(preview()).queryByText('Your name')).toBeNull();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'To' }), { target: { value: 'Sam' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
+      target: { value: 'Enjoy the year' },
+    });
+    expect(within(preview()).queryByText('Their name')).toBeNull();
+    expect(within(preview()).queryByText('Write a few words for them')).toBeNull();
+    expect(within(preview()).getByText('Sam')).toBeTruthy();
+    expect(within(preview()).getByText('Enjoy the year')).toBeTruthy();
+  });
+
+  it('the message counter reads left to right in an RTL layout', async () => {
+    renderSection();
+
+    expect((await screen.findByText('0 / 300')).getAttribute('dir')).toBe('ltr');
+  });
+
+  it('a sent card shows the message being edited, and the saved one after', async () => {
+    const card = sentCard();
+    h.fetchGiftCards
+      .mockResolvedValueOnce(response({ sent: [card] }))
+      .mockRejectedValue(new Error('offline'));
+    h.updateGiftCard.mockResolvedValue(sentCard({ message: 'Happy reading' }));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderSection();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit message' }));
+    const face = () => sentRegion().querySelector('[data-tier]') as HTMLElement;
+    fireEvent.change(within(sentRegion()).getByRole('textbox', { name: 'Message' }), {
+      target: { value: 'Happy reading' },
+    });
+    expect(within(face()).getByText('Happy reading')).toBeTruthy();
+
+    fireEvent.click(within(sentRegion()).getByRole('button', { name: 'Save' }));
+    await waitFor(() =>
+      expect(within(sentRegion()).queryByRole('textbox', { name: 'Message' })).toBeNull(),
+    );
+    // The reload after the save failed; the card still shows what was saved.
+    expect(within(face()).getByText('Happy reading')).toBeTruthy();
+    expect(within(face()).queryByText('Enjoy the year')).toBeNull();
+  });
+
   it('adding an email asks for confirmation and hides the Add email action after', async () => {
     const card = sentCard();
     const waiting = sentCard({ status: 'waiting', recipientEmail: 'sam@example.test' });

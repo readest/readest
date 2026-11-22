@@ -141,7 +141,8 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; onUpdate: UpdateGift }> = ({
 
   return (
     <li className='flex flex-col gap-3'>
-      <GiftCard face={card} />
+      {/* The card face follows the message while it's edited. */}
+      <GiftCard face={editing === 'message' ? { ...card, ...face } : card} />
       <div className='flex flex-col gap-2 px-1'>
         <div className='flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1'>
           <span className='min-w-0 break-words font-medium'>{status}</span>

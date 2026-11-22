@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import GiftCard from '@/app/user/components/gift/GiftCard';
+import GiftCard, { messageSize } from '@/app/user/components/gift/GiftCard';
 import type { GiftCardFace } from '@/types/gift';
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -56,5 +56,18 @@ describe('GiftCard', () => {
 
     rerender(<GiftCard face={face({ tier: 'pro' })} />);
     expect(container.querySelector('[data-tier]')?.getAttribute('data-tier')).toBe('pro');
+  });
+
+  it('sizes the message by its lines as well as its length', () => {
+    expect(messageSize('Happy holidays! More time for the books you keep meaning to read.')).toBe(
+      'text-base',
+    );
+    // Short, but six lines: set small enough that the sign-off isn't what gets cut.
+    expect(
+      messageSize('Dear Sam,\n\nHappy holidays! A whole year of reading, on me.\n\nLove,\nAlex'),
+    ).toBe('text-xs');
+    expect(messageSize('Happy reading, Sam!\nAlex')).toBe('text-base');
+    expect(messageSize('word '.repeat(30))).toBe('text-sm');
+    expect(messageSize('word '.repeat(60))).toBe('text-xs');
   });
 });

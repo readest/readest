@@ -208,7 +208,15 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
   const handleUpdate = useCallback(
     async (id: string, patch: GiftCardPatch) => {
       try {
-        await updateGiftCard(id, patch);
+        const updated = await updateGiftCard(id, patch);
+        // Show the saved card at once; the reload brings any change of status.
+        setCards(
+          (current) =>
+            current && {
+              ...current,
+              sent: current.sent.map((card) => (card.id === id ? updated : card)),
+            },
+        );
       } catch (error) {
         console.error('Failed to update the gift card:', error);
         toast(_('Failed to update the gift card'));

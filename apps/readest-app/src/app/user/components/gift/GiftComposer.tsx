@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { useId, useState } from 'react';
-import { useTranslation } from '@/hooks/useTranslation';
+import { type TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import {
   BoxedList,
   SettingLabel,
@@ -16,11 +16,17 @@ import {
   type GiftTier,
 } from '@/types/gift';
 import { getPlanAccent } from '../../utils/plan';
-import GiftCard, { giftTierName } from './GiftCard';
+import GiftCard, { type GiftCardPlaceholders, giftTierName } from './GiftCard';
 
 export type GiftFaceText = Pick<GiftDraftInput, 'recipientName' | 'senderName' | 'message'>;
 
 const TIERS: GiftTier[] = ['plus', 'pro'];
+
+const facePlaceholders = (_: TranslationFunc): GiftCardPlaceholders => ({
+  recipientName: _('Their name'),
+  senderName: _('Your name'),
+  message: _('Write a few words for them'),
+});
 
 const formatPrice = ({ price, currency }: GiftPrice) =>
   new Intl.NumberFormat(getLocale(), { style: 'currency', currency }).format(price / 100);
@@ -32,6 +38,7 @@ export const GiftFaceFields: React.FC<{
 }> = ({ value, onChange }) => {
   const _ = useTranslation();
   const messageId = useId();
+  const placeholders = facePlaceholders(_);
   // Programmatic and pasted input skip `maxLength`, so cut here too.
   const update =
     (key: keyof GiftFaceText, max: number) =>
@@ -45,7 +52,7 @@ export const GiftFaceFields: React.FC<{
           aria-label={_('To')}
           value={value.recipientName}
           maxLength={GIFT_NAME_MAX}
-          placeholder={_('Their name')}
+          placeholder={placeholders.recipientName}
           onChange={update('recipientName', GIFT_NAME_MAX)}
         />
       </SettingsRow>
@@ -54,7 +61,7 @@ export const GiftFaceFields: React.FC<{
           aria-label={_('From')}
           value={value.senderName}
           maxLength={GIFT_NAME_MAX}
-          placeholder={_('Your name')}
+          placeholder={placeholders.senderName}
           onChange={update('senderName', GIFT_NAME_MAX)}
         />
       </SettingsRow>
@@ -63,7 +70,7 @@ export const GiftFaceFields: React.FC<{
           <SettingLabel as='label' htmlFor={messageId}>
             {_('Message')}
           </SettingLabel>
-          <span className='text-base-content/65 text-[0.8em] tabular-nums'>
+          <span dir='ltr' className='text-base-content/65 text-[0.8em] tabular-nums'>
             {`${value.message.length} / ${GIFT_MESSAGE_MAX}`}
           </span>
         </div>
@@ -73,7 +80,7 @@ export const GiftFaceFields: React.FC<{
           rows={3}
           value={value.message}
           maxLength={GIFT_MESSAGE_MAX}
-          placeholder={_('Write a few words for them')}
+          placeholder={placeholders.message}
           onChange={update('message', GIFT_MESSAGE_MAX)}
           className={clsx(
             'textarea settings-content -ms-2 min-h-20 w-[calc(100%+0.5rem)] resize-none rounded-md px-2! leading-snug',
@@ -120,10 +127,19 @@ const GiftComposer: React.FC<GiftComposerProps> = ({ prices, defaultSenderName, 
   };
 
   return (
-    <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
-      <GiftCard face={{ tier, ...face }} className='mx-auto max-w-sm' />
+    <form onSubmit={handleSubmit} className='@container flex flex-col gap-4'>
+      <GiftCard
+        face={{ tier, ...face }}
+        placeholders={facePlaceholders(_)}
+        className='mx-auto max-w-sm'
+      />
 
-      <div role='radiogroup' aria-label={_('Plan')} className='grid grid-cols-2 gap-3'>
+      {/* Side by side only where each option fits on two lines. */}
+      <div
+        role='radiogroup'
+        aria-label={_('Plan')}
+        className='@min-[21.25rem]:grid-cols-2 grid grid-cols-1 gap-3'
+      >
         {TIERS.map((option) => {
           const optionPrice = prices.find((p) => p.tier === option);
           const selected = option === tier;
@@ -146,7 +162,7 @@ const GiftComposer: React.FC<GiftComposerProps> = ({ prices, defaultSenderName, 
                 checked={selected}
                 disabled={!optionPrice}
                 onChange={() => setTier(option)}
-                className='radio radio-sm shrink-0'
+                className='radio radio-sm eink:border-base-content shrink-0'
               />
               <span className='flex min-w-0 flex-col'>
                 <SettingLabel>
@@ -178,6 +194,7 @@ const GiftComposer: React.FC<GiftComposerProps> = ({ prices, defaultSenderName, 
             autoCapitalize='off'
             spellCheck={false}
             onChange={(event) => setEmail(event.target.value)}
+            className='min-w-0 flex-1'
           />
         </SettingsRow>
       </BoxedList>
