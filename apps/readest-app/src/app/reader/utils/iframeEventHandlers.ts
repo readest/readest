@@ -633,6 +633,15 @@ export const handleClick = (
 ) => {
   const now = Date.now();
   if (consumeSuppressedDomClick(bookKey, event, now)) return;
+  // A tap the book's own script handled (it cancelled the click; Foliate
+  // cancels only link clicks), or one on a form control in the book, belongs to
+  // the book, e.g. a Go diagram's replay controls (#7769).
+  const tapped = event.target as Element | null;
+  if (
+    (event.defaultPrevented && !tapped?.closest('a[href]')) ||
+    tapped?.closest('button, input, select, textarea')
+  )
+    return;
   const dismissedSelection =
     !!event.currentTarget &&
     event.button === 0 &&
