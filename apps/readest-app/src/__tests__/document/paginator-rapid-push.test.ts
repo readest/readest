@@ -564,6 +564,52 @@ describe('push page-turn handover', () => {
       t.p.destroy();
     });
 
+    it('finishes a caught turn to the last page on a further forward swipe', async () => {
+      const t = await setupPaginator({ vertical: true });
+      for (let i = 0; i < 3; i++) {
+        t.p.next();
+        await flush();
+        await vi.advanceTimersByTimeAsync(500);
+      }
+      expect(t.scrollTop()).toBe(1200);
+      const turn = t.p.next();
+      await flush();
+      t.setTx(120);
+      t.p.dispatchEvent(touchEvent('touchstart', 200, 1000));
+      t.p.dispatchEvent(touchEvent('touchmove', 320, 1100));
+      t.p.dispatchEvent(touchEvent('touchmove', 450, 1200));
+      t.p.dispatchEvent(touchEvent('touchend', 450, 1300));
+      await t.frame();
+      await vi.advanceTimersByTimeAsync(500);
+      await turn;
+      // There is no page past the last: the caught turn still lands.
+      expect(t.scrollTop()).toBe(1600);
+      expect(t.view().style.transform).toBe('');
+      t.p.destroy();
+    });
+
+    it('finishes the caught turn when the moving touch is cancelled', async () => {
+      const t = await setupPaginator({ vertical: true });
+      const turn = t.p.next();
+      await flush();
+      t.setTx(120);
+      t.p.dispatchEvent(touchEvent('touchstart', 200, 1000));
+      t.p.dispatchEvent(touchEvent('touchmove', 210, 1040));
+      t.p.dispatchEvent(touchEvent('touchcancel', 210, 1080));
+      await t.frame();
+      await vi.advanceTimersByTimeAsync(500);
+      await turn;
+      expect(t.scrollTop()).toBe(400);
+      // Nothing is left over for a later tap to resume.
+      t.p.dispatchEvent(touchEvent('touchstart', 200, 3000));
+      t.p.dispatchEvent(touchEvent('touchend', 200, 3050));
+      await t.frame();
+      await vi.advanceTimersByTimeAsync(500);
+      expect(t.scrollTop()).toBe(400);
+      expect(t.view().style.transform).toBe('');
+      t.p.destroy();
+    });
+
     it('lets the next tap turn on past the caught turn', async () => {
       const t = await setupPaginator({ vertical: true });
       t.p.next();
