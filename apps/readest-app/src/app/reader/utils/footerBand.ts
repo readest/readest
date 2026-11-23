@@ -23,6 +23,16 @@ export const footerInfoVisible = (viewSettings: ViewSettings): boolean =>
   );
 
 /**
+ * Whether the footer occupies the bottom edge of the page (its marginBottomPx
+ * strip), so overlays anchored there must sit above it. In vertical books the
+ * footer is a side column instead.
+ */
+export const footerAtBottom = (viewSettings: ViewSettings): boolean =>
+  viewSettings.showFooter &&
+  !viewSettings.vertical &&
+  (footerInfoVisible(viewSettings) || viewSettings.showStickyProgressBar);
+
+/**
  * Inline padding (px) the footer needs so its text keeps clear of a rounded
  * screen corner of `radius` px, given the height (px above the screen bottom)
  * of the text's lowest point. At height h the corner arc reaches
