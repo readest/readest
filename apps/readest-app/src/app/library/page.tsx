@@ -33,10 +33,7 @@ import { saveBookMetadataEdit } from '@/services/bookMetadataEdit';
 import { eventDispatcher } from '@/utils/event';
 import { transferManager } from '@/services/transferManager';
 import { purgeCloudBookData } from '@/services/purgeCloudBookData';
-import {
-  isReadestCloudEnabled,
-  isReadestCloudStorageActive,
-} from '@/services/sync/cloudSyncProvider';
+import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
 import { getFilename, getFolderImportGroupName, joinScannedPath } from '@/utils/path';
 import {
   extractCollectionPack,
@@ -1268,14 +1265,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       try {
         // Purge also erases the book's synced progress and notes, or the next
         // open pulls them straight back (#6532). It runs first: if the network
-        // step fails, nothing irreversible has happened locally yet. Only runs
-        // when Readest Cloud is enabled (#7826); file-sync backends propagate
-        // the purge through the tombstoned book row below.
-        if (
-          deleteAction === 'purge' &&
-          user &&
-          isReadestCloudEnabled(useSettingsStore.getState().settings)
-        ) {
+        // step fails, nothing irreversible has happened locally yet.
+        if (deleteAction === 'purge' && user) {
           await purgeCloudBookData(book.hash);
         }
 

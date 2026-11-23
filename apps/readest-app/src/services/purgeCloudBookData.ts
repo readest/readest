@@ -3,7 +3,6 @@ import { DBBookConfig, DBBookNote } from '@/types/records';
 import { SyncClient } from '@/libs/sync';
 import { isReadestCloudEnabled } from '@/services/sync/cloudSyncProvider';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { SystemSettings } from '@/types/settings';
 import { transformBookNoteFromDB } from '@/utils/transform';
 
 /**
@@ -15,14 +14,11 @@ import { transformBookNoteFromDB } from '@/utils/transform';
  * erase propagates to other signed-in devices through the normal pull: notes
  * get a `deletedAt` tombstone, and the config's position fields are nulled.
  *
- * Skips any Readest server request when Readest Cloud is disabled (#7826).
+ * A device with Readest Cloud switched off doesn't sync progress or notes
+ * with it, so the purge sends nothing there and works offline (#7826).
  */
-export const purgeCloudBookData = async (
-  bookHash: string,
-  syncClient = new SyncClient(),
-  settings: SystemSettings | null | undefined = useSettingsStore.getState().settings,
-) => {
-  if (!isReadestCloudEnabled(settings)) return;
+export const purgeCloudBookData = async (bookHash: string, syncClient = new SyncClient()) => {
+  if (!isReadestCloudEnabled(useSettingsStore.getState().settings)) return;
   const [{ configs }, { notes }] = await Promise.all([
     syncClient.pullChanges(0, 'configs', bookHash),
     syncClient.pullChanges(0, 'notes', bookHash),
