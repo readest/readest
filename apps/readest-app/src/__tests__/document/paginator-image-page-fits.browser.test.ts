@@ -192,7 +192,9 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     Number(doc.documentElement.style.getPropertyValue('--available-height'));
 
   // A box that starts a new formatting context keeps its own top margin apart
-  // from its children's, so the two add up instead of collapsing into one
+  // from its children's, so the two add up instead of collapsing into one; a
+  // negative margin collapses with a positive one by adding to it. Text that
+  // isn't shown doesn't count as text before the plate.
   it.each([
     ['with only its caption', PLATE, 16],
     ['opening a chapter', `${PLATE}<h1>Chapter</h1><p>${'Chapter text. '.repeat(400)}</p>`, 16],
@@ -201,6 +203,8 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
       `<div style="display: flow-root; margin-top: 1em">${PLATE}</div>`,
       32,
     ],
+    ['in a box with a negative margin', `<div style="margin-top: -0.5em">${PLATE}</div>`, 8],
+    ['after a hidden heading', `<h1 style="display: none">Plate</h1>${PLATE}`, 16],
   ])('keeps a page-tall plate %s whole on the first page', async (_, body, space) => {
     const { el, doc, img } = await open(body, '');
     expect(img.getClientRects()).toHaveLength(1);
@@ -217,10 +221,17 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(img.getBoundingClientRect().height).toBe(availableHeight(doc));
   });
 
-  // Only a plate that fills the page changes: a small image opening a section
-  // keeps its margin, the page-height clamp and the book's alignment
-  it('leaves a small image that opens a section as the book set it', async () => {
-    const small = `<style>p.image { margin: 1em 0 0 0; }</style><p class="image"><img alt="" src="${COVER}" height="100"/></p><p>Text after the ornament.</p>`;
+  // Only a plate that fills the page changes: a short image, or a wide one
+  // that the column width keeps short, opening a section keeps its margin,
+  // the page-height clamp and the book's alignment
+  const WIDE = `data:image/svg+xml,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="900"><rect width="1800" height="900" fill="#393"/></svg>',
+  )}`;
+  it.each([
+    ['a short', `<img alt="" src="${COVER}" height="100"/>`],
+    ['a wide', `<img alt="" src="${WIDE}"/>`],
+  ])('leaves %s image that opens a section as the book set it', async (_, image) => {
+    const small = `<style>p.image { margin: 1em 0 0 0; }</style><p class="image">${image}</p><p>Text after the ornament.</p>`;
     const { doc, img } = await open(small, '');
     const root = doc.documentElement;
     const pageTop =
