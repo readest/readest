@@ -23,6 +23,8 @@ const TabNavigation: React.FC<{
 
   const forceMobileLayout = isForcedMobileLayout(appService?.isMobile, isIPhoneDuo);
   const isMobile = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
+  // The footer bar's desktop layout (`sm:h-[52px]`) depends on width alone.
+  const besideDesktopFooter = !forceMobileLayout && window.innerWidth >= 640;
   const tabs = ['toc', 'annotations', 'bookmarks', ...(aiEnabled ? ['history'] : [])];
 
   const getTabLabel = (tab: string) => {
@@ -49,7 +51,8 @@ const TabNavigation: React.FC<{
         'bottom-tab border-base-300/50 bg-base-200 flex w-full border-t',
         'eink:border-base-content eink:bg-base-100',
         appService?.hasRoundedWindow && 'rounded-window-bottom-left',
-        isMobile ? 'h-[65px]' : 'eink:h-[52px]',
+        isMobile && 'h-[65px]',
+        besideDesktopFooter && 'eink:h-[52px]',
       )}
       dir='ltr'
     >

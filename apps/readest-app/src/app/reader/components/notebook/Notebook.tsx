@@ -208,7 +208,8 @@ const Notebook: React.FC = () => {
           viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
           appService?.hasRoundedWindow && 'rounded-window-top-right rounded-window-bottom-right',
           isNotebookPinned ? 'z-20' : 'z-[45] shadow-2xl',
-          viewSettings?.isEink && 'border-base-content border-s',
+          // Physical edge: the notebook sits on the right whatever the book's `dir`.
+          viewSettings?.isEink && 'border-base-content border-l',
         )}
         role='group'
         aria-label={_('Notebook')}

@@ -139,6 +139,21 @@ describe('e-ink chrome without grey (#7817)', () => {
     expect(iconTop(active)).toBe(iconTop(inactive));
   });
 
+  // Under 640px tall the sidebar takes its 65px phone tab bar, but the footer
+  // keeps 52px while the window is 640px wide or more.
+  it.each([
+    { w: 1024, h: 600, eink: true, height: 52 },
+    { w: 1024, h: 600, eink: false, height: 65 },
+    { w: 400, h: 800, eink: true, height: 65 },
+  ])('makes the tab bar $height px at $w x $h, e-ink $eink', async ({ w, h, eink, height }) => {
+    await page.viewport(w, h);
+    setMode(eink);
+    renderChrome();
+
+    expect(document.querySelector('.bottom-tab')!.getBoundingClientRect().height).toBe(height);
+    await page.viewport(1024, 768);
+  });
+
   it('leaves them as they were off e-ink', () => {
     setMode(false);
     const { paper, ink } = themeColors();
@@ -223,10 +238,24 @@ describe('e-ink chrome without grey (#7817)', () => {
         </div>
       </>,
     );
-    const fill = (id: string) =>
-      style(document.querySelector(`[data-testid="${id}"] polygon`)!).fill;
+    const polygon = (id: string) => style(document.querySelector(`[data-testid="${id}"] polygon`)!);
 
-    expect(fill('bw')).toBe(ink);
-    expect(fill('color')).toBe('rgb(244, 67, 54)');
+    expect(polygon('bw').fill).toBe(ink);
+    expect(polygon('color').fill).toBe('rgb(244, 67, 54)');
+    expect(polygon('color').stroke).toBe('none');
+  });
+
+  // A dark theme's ink is light, and a PDF page left unthemed stays white, so
+  // the ink ribbon is outlined in the theme's paper to stay visible on it.
+  it('outlines the ink ribbon in paper so it shows on an unthemed page', () => {
+    document.documentElement.setAttribute('data-theme', 'default-dark');
+    document.documentElement.setAttribute('data-eink', 'true');
+    const { paper } = themeColors();
+    render(<Ribbon isBwEink />);
+    const polygon = style(document.querySelector('polygon')!);
+
+    expect(polygon.stroke).toBe(paper);
+    expect(parseFloat(polygon.strokeWidth)).toBeGreaterThanOrEqual(2);
+    expect(polygon.vectorEffect).toBe('non-scaling-stroke');
   });
 });
