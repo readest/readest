@@ -190,6 +190,7 @@ describe('makeMarkdownBook', () => {
     ['是 $\\sqrt{12}$ 倍（记为 $N_T$）。', [null, null]],
     ['$a$ and $b$', [null, null]],
     ['Display $$ \\int_0^1 x^2dx $$ inline', ['block']],
+    ['A run of $$$x$$$ that opens no math stays text.', []],
   ])('takes only math between $ signs as math: %s', async (text, displays) => {
     const book = await make(`${text}\n`);
     const doc = await book.sections[0]!.createDocument();

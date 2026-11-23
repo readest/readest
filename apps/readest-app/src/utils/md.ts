@@ -32,9 +32,15 @@ const INLINE_MATH =
 const inlineMath: TokenizerAndRendererExtension = {
   name: 'inlineMath',
   level: 'inline',
+  // Only where math opens: a `$` run that opens none (`$$$x$$$`) is skipped
+  // whole, or its `$$x$$` tail would be retried one `$` later.
   start: (src) => {
-    const index = src.indexOf('$');
-    return index < 0 ? undefined : index;
+    for (let index = src.indexOf('$'); index >= 0; ) {
+      const rest = src.slice(index);
+      if (INLINE_MATH.test(rest)) return index;
+      index = src.indexOf('$', index + (/^\$+/.exec(rest)?.[0].length ?? 1));
+    }
+    return undefined;
   },
   tokenizer: (src) => {
     const match = INLINE_MATH.exec(src);
