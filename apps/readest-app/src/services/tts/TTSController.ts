@@ -27,7 +27,7 @@ import { CachingProvider } from './providers/cache';
 import { ReadestVoiceProvider } from './providers/readest';
 import { OpenAICompatibleSpeechProvider } from './providers/openaiCompatible';
 import type { CustomTTSService } from '@/types/customTTS';
-import { getAccessToken, isCustomTTSAllowed } from '@/utils/access';
+import { getSignedInToken, isCustomTTSAllowed } from '@/utils/access';
 import { SectionTimeline, TimelineSentence } from './SectionTimeline';
 import { estimateSentenceSeconds, hydrateProvisionalDurations } from './ttsDuration';
 import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDownloader';
@@ -340,7 +340,7 @@ export class TTSController extends EventTarget {
     );
     const customProvider = new OpenAICompatibleSpeechProvider(
       () => this.#customTTSServices(),
-      async () => isCustomTTSAllowed(await getAccessToken()),
+      async () => isCustomTTSAllowed(getSignedInToken()),
     );
     this.ttsCustomClient = new BufferedTTSClient(
       cacheStore ? new CachingProvider(customProvider, cacheStore) : customProvider,

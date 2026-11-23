@@ -299,6 +299,15 @@ export const getAccessToken = async (): Promise<string | null> => {
   return data?.session?.access_token ?? null;
 };
 
+/**
+ * The token of the account the app shows as signed in, for the plan claims of
+ * client-side premium gates (the same token `useAuth()` hands the translator
+ * popup). AuthContext keeps it through offline spells and login-server
+ * outages, while {@link getAccessToken} returns null once the session expires
+ * and can't refresh (#7827). It may be expired, so never send it to a server.
+ */
+export const getSignedInToken = (): string | null => localStorage.getItem('token');
+
 export const getUserID = async (): Promise<string | null> => {
   if (isWebAppPlatform()) {
     const user = localStorage.getItem('user') ?? '{}';

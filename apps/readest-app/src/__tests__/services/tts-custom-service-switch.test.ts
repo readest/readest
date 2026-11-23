@@ -12,7 +12,7 @@ import type { CustomTTSService } from '@/types/customTTS';
 // The voices are typed into each service, so nothing is fetched.
 vi.mock('@/services/ai/utils/httpFetch', () => ({ getAIFetch: () => vi.fn() }));
 vi.mock('@/utils/access', () => ({
-  getAccessToken: async () => 'token',
+  getSignedInToken: () => 'token',
   isCustomTTSAllowed: () => true,
 }));
 

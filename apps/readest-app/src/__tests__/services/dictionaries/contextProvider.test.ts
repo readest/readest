@@ -9,7 +9,7 @@ vi.mock('@/services/dictionaries/contextDictionary', () => ({
   lookupInContext: mocks.lookupInContext,
 }));
 vi.mock('@/utils/access', () => ({
-  getAccessToken: async () => 'token',
+  getSignedInToken: () => 'token',
   isCustomTranslatorAllowed: () => mocks.premium,
 }));
 
