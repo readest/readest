@@ -26,6 +26,8 @@ const decodeBase64Json = (b64: string) =>
   JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))));
 
 const API = 'https://web.readest.com/api/crosspoint';
+// Device sign-in, shared with KOReader and Readest's own QR code sign-in.
+const SIGN_IN = 'https://web.readest.com/api/auth/device';
 const TOKEN_FILE = deviceJson.token.file;
 const ACCOUNT_FILE = '/.crosspoint/readest-account.json';
 const EMAIL = 'reader@example.com';
@@ -117,8 +119,8 @@ const mount = async (account: unknown = null) => {
 const field = (name: string) => container.querySelector(`[name="${name}"]`) as HTMLInputElement;
 const shown = (el: Element | null) => (el as HTMLElement | null)?.style.display !== 'none';
 const statusText = () => container.querySelector('[data-status]')?.textContent ?? '';
-const relayCalls = (method: string, path = '') =>
-  api.relay.mock.calls.filter(([m, url]) => m === method && String(url).startsWith(API + path));
+const relayCalls = (method: string, path = '', base = API) =>
+  api.relay.mock.calls.filter(([m, url]) => m === method && String(url).startsWith(base + path));
 // The last content written to each file.
 const files = () =>
   Object.fromEntries(
@@ -150,8 +152,8 @@ const readest = ({
   let polls = 0;
   api.relay.mockImplementation(async (method: string, url: string) => {
     sink.push(`${method} ${url.replace(API, '')}`);
-    if (url === `${API}/device/code`) return json(200, CODE);
-    if (url === `${API}/device/token`) return token(polls++);
+    if (url === `${SIGN_IN}/code`) return json(200, CODE);
+    if (url === `${SIGN_IN}/token`) return token(polls++);
     if (method === 'DELETE') return json(revokeStatus, { revoked: revokeStatus === 200 });
     return json(404, {});
   });
@@ -213,7 +215,7 @@ describe('Readest CrossPoint plugin', () => {
     expect((container.querySelector('[data-code]') as HTMLElement).hidden).toBe(true);
     expect(api.relay).toHaveBeenCalledWith(
       'POST',
-      `${API}/device/token`,
+      `${SIGN_IN}/token`,
       { 'Content-Type': 'application/json' },
       JSON.stringify({ device_code: 'dc' }),
     );
@@ -340,7 +342,7 @@ describe('Readest CrossPoint plugin', () => {
     field('signin').click();
     await vi.waitFor(() => expect(statusText()).toBe('Waiting for approval…'));
     expect(field('signin').disabled).toBe(true);
-    expect(relayCalls('POST', '/device/code')).toHaveLength(1);
+    expect(relayCalls('POST', '/code', SIGN_IN)).toHaveLength(1);
     field('signout').click(); // stop polling
   });
 
@@ -348,14 +350,14 @@ describe('Readest CrossPoint plugin', () => {
     readest({ token: () => PENDING });
     await mount();
     field('signin').click();
-    await vi.waitFor(() => expect(relayCalls('POST', '/device/token').length).toBeGreaterThan(0));
+    await vi.waitFor(() => expect(relayCalls('POST', '/token', SIGN_IN).length).toBeGreaterThan(0));
 
     field('signout').click();
     await vi.waitFor(() => expect(statusText()).toBe('Signed out.'));
     await vi.waitFor(() => expect(field('signin').disabled).toBe(false));
-    const polls = relayCalls('POST', '/device/token').length;
+    const polls = relayCalls('POST', '/token', SIGN_IN).length;
     await new Promise((r) => setTimeout(r, 20));
-    expect(relayCalls('POST', '/device/token')).toHaveLength(polls);
+    expect(relayCalls('POST', '/token', SIGN_IN)).toHaveLength(polls);
     expect(files()[TOKEN_FILE]).toEqual({});
   });
 
@@ -365,7 +367,7 @@ describe('Readest CrossPoint plugin', () => {
     readest({ token: () => new Promise((r) => (approve = r)) });
     await mount();
     field('signin').click();
-    await vi.waitFor(() => expect(relayCalls('POST', '/device/token')).toHaveLength(1));
+    await vi.waitFor(() => expect(relayCalls('POST', '/token', SIGN_IN)).toHaveLength(1));
     field('signout').click();
     approve(json(200, KEY));
 
