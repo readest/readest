@@ -49,12 +49,12 @@
       "expected_status": [200, 400, 301, 401, 403]
     },
     "requestDeviceCode": {
-      "path": "/crosspoint/device/code",
+      "path": "/auth/device/code",
       "method": "POST",
       "expected_status": [200, 500]
     },
     "pollDeviceToken": {
-      "path": "/crosspoint/device/token",
+      "path": "/auth/device/token",
       "method": "POST",
       "required_params": ["device_code", "grant"],
       "payload": ["device_code", "grant"],
