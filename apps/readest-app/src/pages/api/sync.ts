@@ -1234,6 +1234,14 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// Next's default body limit (1mb) rejected the single-request books push of
+// clients before #7814 for a library of ~800+ changed books. The body is parsed
+// before auth at about 4x its size in heap, so the limit stays bounded: 8mb
+// takes ~7000 books in one push.
+export const config = {
+  api: { bodyParser: { sizeLimit: '8mb' } },
+};
+
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!req.url) {
     return res.status(400).json({ error: 'Invalid request URL' });
