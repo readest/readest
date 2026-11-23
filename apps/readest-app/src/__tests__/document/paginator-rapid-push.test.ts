@@ -3,21 +3,21 @@ import { describe, expect, it, vi, afterEach } from 'vitest';
 
 import { Paginator, startCssAnimateScroll, startRafAnimateScroll } from 'foliate-js/paginator.js';
 
-const rect = (width: number) =>
+const rect = (width: number, height = 600) =>
   ({
     left: 0,
     top: 0,
     right: width,
-    bottom: 600,
+    bottom: height,
     width,
-    height: 600,
+    height,
     x: 0,
     y: 0,
     toJSON: () => ({}),
   }) as DOMRect;
 
-const touchEvent = (type: string, x: number, timeStamp?: number) => {
-  const touch = { identifier: 1, screenX: x, screenY: 200 } as unknown as Touch;
+const touchEvent = (type: string, x: number, timeStamp?: number, y = 200) => {
+  const touch = { identifier: 1, screenX: x, screenY: y } as unknown as Touch;
   const ev = Object.assign(new Event(type, { bubbles: true, cancelable: true }), {
     touches: type === 'touchend' || type === 'touchcancel' ? [] : [touch],
     changedTouches: [touch],
@@ -26,9 +26,10 @@ const touchEvent = (type: string, x: number, timeStamp?: number) => {
   return ev;
 };
 
-// A one-section, five-page (400px pages) horizontal book whose compositor
-// transform during a push turn is whatever `setTx` last set.
-const setupPaginator = async () => {
+// A one-section, five-page (400px pages) book whose compositor transform
+// during a push turn is whatever `setTx` last set. A vertical-rl book pages
+// along scrollTop and turns with a horizontal two-phase slide.
+const setupPaginator = async ({ vertical = false } = {}) => {
   vi.useFakeTimers();
   const rafQueue: Array<{ id: number; cb: FrameRequestCallback }> = [];
   let nextRafId = 1;
@@ -76,7 +77,7 @@ const setupPaginator = async () => {
   const background = root!.getElementById('background') as HTMLElement;
   let scrollLeft = 0;
   let clampTo = Infinity;
-  Object.defineProperty(container, 'scrollLeft', {
+  Object.defineProperty(container, vertical ? 'scrollTop' : 'scrollLeft', {
     get: () => scrollLeft,
     set: (v: number) => {
       scrollLeft = Math.min(v, clampTo);
@@ -94,7 +95,7 @@ const setupPaginator = async () => {
     for (const n of nodes) {
       if (!(n instanceof HTMLElement)) continue;
       viewEl = n;
-      vi.spyOn(n, 'getBoundingClientRect').mockReturnValue(rect(2000));
+      vi.spyOn(n, 'getBoundingClientRect').mockReturnValue(vertical ? rect(400, 2000) : rect(2000));
     }
   });
 
@@ -102,10 +103,17 @@ const setupPaginator = async () => {
   const origGCS = window.getComputedStyle.bind(window);
   vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
     if (el === viewEl) return { transform: `matrix(1, 0, 0, 1, ${tx}, 0)` } as CSSStyleDeclaration;
+    if (el === doc.body && vertical) {
+      return {
+        direction: 'ltr',
+        writingMode: 'vertical-rl',
+        getPropertyValue: () => '',
+      } as unknown as CSSStyleDeclaration;
+    }
     if (el === doc.documentElement) {
       return {
         direction: 'ltr',
-        writingMode: 'horizontal-tb',
+        writingMode: vertical ? 'vertical-rl' : 'horizontal-tb',
         background: '',
         backgroundColor: 'rgb(255, 255, 255)',
         getPropertyValue: () => '',
@@ -128,6 +136,8 @@ const setupPaginator = async () => {
     p,
     view: () => viewEl!,
     scrollLeft: () => scrollLeft,
+    // A vertical book's offset, on its own scroll axis.
+    scrollTop: () => scrollLeft,
     setTx: (value: number) => {
       tx = value;
     },
@@ -485,6 +495,137 @@ describe('push page-turn handover', () => {
       expect(t.view().style.transform).toBe('translateX(-300px)');
       await t.endTransition();
       expect(t.scrollLeft()).toBe(400);
+      t.p.destroy();
+    });
+  });
+
+  // #7830: a tap during a vertical book's turn caught the outgoing page and
+  // put it back, so rapid taps never got past it.
+  describe('a tap during a vertical slide turn', () => {
+    const flush = async () => {
+      for (let i = 0; i < 10; i++) await Promise.resolve();
+    };
+
+    it('finishes the turn it caught', async () => {
+      const t = await setupPaginator({ vertical: true });
+      const turn = t.p.next();
+      await flush();
+      // vertical-rl: the outgoing page exits to the right.
+      expect(t.view().style.transform).toBe('translateX(400px)');
+
+      t.setTx(120);
+      t.p.dispatchEvent(touchEvent('touchstart', 200));
+      expect(t.view().style.transform).toBe('translateX(120px)');
+      t.p.dispatchEvent(touchEvent('touchend', 200));
+      await vi.advanceTimersByTimeAsync(500);
+      await turn;
+      expect(t.scrollTop()).toBe(400);
+      expect(t.view().style.transform).toBe('');
+      t.p.destroy();
+    });
+
+    // A finger rarely lifts where it landed. A tap that moves a little is
+    // released through snap(), which must still finish the caught turn.
+    for (const [name, x, y] of [
+      ['sideways', 203, 200],
+      ['mostly up or down', 202, 208],
+    ] as const) {
+      it(`finishes the turn it caught when the tap moves a little ${name}`, async () => {
+        const t = await setupPaginator({ vertical: true });
+        const turn = t.p.next();
+        await flush();
+        t.setTx(120);
+        t.p.dispatchEvent(touchEvent('touchstart', 200, 1000));
+        t.p.dispatchEvent(touchEvent('touchmove', x, 1040, y));
+        t.p.dispatchEvent(touchEvent('touchend', x, 1080, y));
+        await t.frame();
+        await vi.advanceTimersByTimeAsync(500);
+        await turn;
+        expect(t.scrollTop()).toBe(400);
+        expect(t.view().style.transform).toBe('');
+        t.p.destroy();
+      });
+    }
+
+    it('still turns back on a swipe back after catching the turn', async () => {
+      const t = await setupPaginator({ vertical: true });
+      const turn = t.p.next();
+      await flush();
+      t.setTx(120);
+      t.p.dispatchEvent(touchEvent('touchstart', 200, 1000));
+      t.p.dispatchEvent(touchEvent('touchmove', 80, 1100));
+      t.p.dispatchEvent(touchEvent('touchmove', -50, 1200));
+      t.p.dispatchEvent(touchEvent('touchend', -50, 1300));
+      await t.frame();
+      await vi.advanceTimersByTimeAsync(500);
+      await turn;
+      expect(t.scrollTop()).toBe(0);
+      expect(t.view().style.transform).toBe('');
+      t.p.destroy();
+    });
+
+    it('finishes a caught turn to the last page on a further forward swipe', async () => {
+      const t = await setupPaginator({ vertical: true });
+      for (let i = 0; i < 3; i++) {
+        t.p.next();
+        await flush();
+        await vi.advanceTimersByTimeAsync(500);
+      }
+      expect(t.scrollTop()).toBe(1200);
+      const turn = t.p.next();
+      await flush();
+      t.setTx(120);
+      t.p.dispatchEvent(touchEvent('touchstart', 200, 1000));
+      t.p.dispatchEvent(touchEvent('touchmove', 320, 1100));
+      t.p.dispatchEvent(touchEvent('touchmove', 450, 1200));
+      t.p.dispatchEvent(touchEvent('touchend', 450, 1300));
+      await t.frame();
+      await vi.advanceTimersByTimeAsync(500);
+      await turn;
+      // There is no page past the last: the caught turn still lands.
+      expect(t.scrollTop()).toBe(1600);
+      expect(t.view().style.transform).toBe('');
+      t.p.destroy();
+    });
+
+    it('finishes the caught turn when the moving touch is cancelled', async () => {
+      const t = await setupPaginator({ vertical: true });
+      const turn = t.p.next();
+      await flush();
+      t.setTx(120);
+      t.p.dispatchEvent(touchEvent('touchstart', 200, 1000));
+      t.p.dispatchEvent(touchEvent('touchmove', 210, 1040));
+      t.p.dispatchEvent(touchEvent('touchcancel', 210, 1080));
+      await t.frame();
+      await vi.advanceTimersByTimeAsync(500);
+      await turn;
+      expect(t.scrollTop()).toBe(400);
+      // Nothing is left over for a later tap to resume.
+      t.p.dispatchEvent(touchEvent('touchstart', 200, 3000));
+      t.p.dispatchEvent(touchEvent('touchend', 200, 3050));
+      await t.frame();
+      await vi.advanceTimersByTimeAsync(500);
+      expect(t.scrollTop()).toBe(400);
+      expect(t.view().style.transform).toBe('');
+      t.p.destroy();
+    });
+
+    it('lets the next tap turn on past the caught turn', async () => {
+      const t = await setupPaginator({ vertical: true });
+      t.p.next();
+      await flush();
+      t.setTx(120);
+      t.p.dispatchEvent(touchEvent('touchstart', 200));
+      t.p.dispatchEvent(touchEvent('touchend', 200));
+      await flush();
+      // The tap's click: continues from where the resumed turn is going, and
+      // from where its page is on screen.
+      t.p.next();
+      await flush();
+      expect(t.view().style.transform).toBe('translateX(400px)');
+      await vi.advanceTimersByTimeAsync(500);
+      expect(t.scrollTop()).toBe(800);
+      expect(t.view().style.transform).toBe('');
       t.p.destroy();
     });
   });

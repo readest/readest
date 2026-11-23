@@ -1036,6 +1036,34 @@ describe('useCapturedTurn scroll-lock gate', () => {
     expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
   });
 
+  // #7831: an RTL book turns forward from the left edge, inside the strip.
+  // Each rapid tap there discarded the capture of the turn the tap before it
+  // had started, so nothing turned until the taps stopped.
+  test('keeps the capture of a programmatic turn when a tap lands in the brightness strip', async () => {
+    let resolveTurn!: () => void;
+    h.controller.turn.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveTurn = resolve;
+        }),
+    );
+    h.renderer.getAttribute.mockReturnValue('0.1');
+    const cell = document.createElement('div');
+    cell.id = 'gridcell-book-1';
+    vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 300, 500));
+    document.body.appendChild(cell);
+    const view = makeView();
+    renderHook(() => useCapturedTurn('book-1', { current: view }));
+
+    const turning = view.next() as unknown as Promise<void>;
+    dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 10));
+
+    expect(h.controller.invalidatePreparedCapture).not.toHaveBeenCalled();
+    expect(h.controller.invalidatePendingPreparedCapture).toHaveBeenCalledOnce();
+    resolveTurn();
+    await act(async () => turning);
+  });
+
   test('claims the first inward sample from the right edge', () => {
     const cell = document.createElement('div');
     cell.id = 'gridcell-book-1';
