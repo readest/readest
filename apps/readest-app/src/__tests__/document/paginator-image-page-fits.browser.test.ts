@@ -22,7 +22,8 @@ import {
 // bottom margin; WebKit carries it onto the next page, so on macOS and iOS the
 // bottom of the cover showed at the top of the next page and the cover lost
 // its centred spread (readest#6676). `pnpm test:browser:webkit` runs this file
-// in WebKit, as CI does; Chromium passes either way.
+// in WebKit, as CI does; Chromium passes the cover tests either way, while a
+// plate that opens its section broke in both.
 
 const makeViewSettings = () =>
   ({
@@ -179,6 +180,60 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(first!.getClientRects()).toHaveLength(1);
     expect(second!.getClientRects()).toHaveLength(1);
     expect(middleOf(el, second!) - middleOf(el, first!)).toBeCloseTo(1, 1);
+  });
+
+  // Plates that open their section, as in the reporter's second book. A top
+  // margin on the image's <p> put a page-tall image below the top of the first
+  // page, where nothing before it could move to an earlier page: WebKit cut
+  // its bottom onto the next page, and Chromium moved it there whole and left
+  // the first page blank. The plate now gives up that 1em of its height.
+  const PLATE = `<style>p.image { margin: 1em 0 0 0; text-align: center; }</style><div class="wrap"><p class="image"><span id="page_1"></span><img alt="" src="${COVER}"/></p><p>IMAGE SUBTITLE</p></div>`;
+  const availableHeight = (doc: Document) =>
+    Number(doc.documentElement.style.getPropertyValue('--available-height'));
+
+  it.each([
+    ['with only its caption', PLATE],
+    ['opening a chapter', `${PLATE}<h1>Chapter</h1><p>${'Chapter text. '.repeat(400)}</p>`],
+  ])('keeps a page-tall plate %s whole on the first page', async (_, body) => {
+    const { el, doc, img } = await open(body, '');
+    expect(img.getClientRects()).toHaveLength(1);
+    expect(middleOf(el, img)).toBeCloseTo(0.5, 1);
+    expect(img.getBoundingClientRect().height).toBe(availableHeight(doc) - 16);
+  });
+
+  // After text, the plate moves to the next page and its margin is dropped
+  // at the break, so it keeps the whole page height
+  it('keeps the full page height for a plate after text', async () => {
+    const { el, doc, img } = await open(`<p>${'Some text before. '.repeat(40)}</p>${PLATE}`, '');
+    expect(img.getClientRects()).toHaveLength(1);
+    expect(middleOf(el, img)).toBeCloseTo(1.5, 1);
+    expect(img.getBoundingClientRect().height).toBe(availableHeight(doc));
+  });
+
+  // Only a plate that fills the page changes: a small image opening a section
+  // keeps its margin, the page-height clamp and the book's alignment
+  it('leaves a small image that opens a section as the book set it', async () => {
+    const small = `<style>p.image { margin: 1em 0 0 0; }</style><p class="image"><img alt="" src="${COVER}" height="100"/></p><p>Text after the ornament.</p>`;
+    const { doc, img } = await open(small, '');
+    const root = doc.documentElement;
+    const pageTop =
+      root.getBoundingClientRect().top + parseFloat(getComputedStyle(root).paddingTop);
+    expect(img.getBoundingClientRect().top - pageTop).toBe(16);
+    expect((img as HTMLElement).style.maxHeight).toBe(`${availableHeight(doc)}px`);
+    expect((img as HTMLElement).style.verticalAlign).toBe('');
+  });
+
+  // A plate that stops filling the page after a resize gets the book's
+  // alignment and the whole page-height clamp back
+  it('restores a plate that no longer fills the page after a resize', async () => {
+    const { el, doc, img } = await open(PLATE, '');
+    expect((img as HTMLElement).style.verticalAlign).toBe('top');
+    const stabilized = waitForStabilized(el);
+    el.style.height = '2000px';
+    await stabilized;
+    await frames(6);
+    expect((img as HTMLElement).style.verticalAlign).toBe('');
+    expect((img as HTMLElement).style.maxHeight).toBe(`${availableHeight(doc)}px`);
   });
 
   // Only an image alone on its line is top-aligned: a linked icon before text
