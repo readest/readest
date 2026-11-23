@@ -89,13 +89,13 @@ const setDictionarySync = (enabled: boolean): void => {
   } as never);
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  await __resetSettingsSyncForTests();
   publishMock.mockReset();
   ensurePassphraseMock.mockReset();
   ensurePassphraseMock.mockImplementation(async () => {
     isUnlocked = true;
   });
-  __resetSettingsSyncForTests();
   isUnlocked = true;
   useSettingsStore.setState({
     settings: makeSettings(),
@@ -105,8 +105,8 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof useSettingsStore.getState>);
 });
 
-afterEach(() => {
-  __resetSettingsSyncForTests();
+afterEach(async () => {
+  await __resetSettingsSyncForTests();
 });
 
 describe('publishSettingsIfChanged', () => {
@@ -119,7 +119,7 @@ describe('publishSettingsIfChanged', () => {
     settings.globalReadSettings.customThemes = [];
     await publishSettingsIfChanged(settings);
     if (source === 'startup') {
-      __resetSettingsSyncForTests();
+      await __resetSettingsSyncForTests();
       initSettingsSync(settings);
     } else if (source === 'remote') {
       applyRemoteSettings(makeEnvConfig(), {
@@ -1174,6 +1174,23 @@ describe('Forget a WebDAV / S3 connection (#7799)', () => {
     const [forgot, connected] = publishMock.mock.calls.map(([, record]) => record.patch.webdav);
     expect(forgot).toEqual(connections.webdav.forgotten);
     expect(connected).toMatchObject(other);
+  });
+
+  test('the reset between specs lets a pass still uploading finish first, so the next spec starts clean (#7845)', async () => {
+    let release = () => {};
+    publishMock.mockImplementationOnce(() => new Promise<void>((resolve) => (release = resolve)));
+    const saved = withConnection('webdav', connections.webdav.saved);
+    const uploading = publishSettingsIfChanged(saved);
+    await vi.waitFor(() => expect(publishMock).toHaveBeenCalledTimes(1));
+
+    const resetting = __resetSettingsSyncForTests();
+    release();
+    await Promise.all([uploading, resetting]);
+
+    // Nothing the pass stamped survives the reset, so the connection publishes again.
+    publishMock.mockClear();
+    await publishSettingsIfChanged(saved);
+    expect(publishMock.mock.calls[0]?.[1].patch.webdav).toMatchObject(connections.webdav.saved);
   });
 
   test.each(kinds)('a %s field cleared without Forget still stays local', async (kind) => {

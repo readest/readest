@@ -631,8 +631,13 @@ export const initSettingsSync = (initialSettings?: SystemSettings): void => {
   });
 };
 
-/** Test seam — drop the snapshot + subscription between specs. */
-export const __resetSettingsSyncForTests = (): void => {
+/**
+ * Test seam — drop the snapshot + subscription between specs. Passes still
+ * running finish first: one left running would read the hashes cleared here
+ * and publish into the next spec (#7845).
+ */
+export const __resetSettingsSyncForTests = async (): Promise<void> => {
+  await Promise.allSettled([...inFlightPasses]);
   lastPublishedFields.clear();
   explicitPublishPending.clear();
   inFlightPasses.clear();
