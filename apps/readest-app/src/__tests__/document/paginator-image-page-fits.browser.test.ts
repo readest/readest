@@ -206,6 +206,17 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     ['in a box with a negative margin', `<div style="margin-top: -0.5em">${PLATE}</div>`, 8],
     ['after a hidden heading', `<h1 style="display: none">Plate</h1>${PLATE}`, 16],
     ['after a hidden image', `<img alt="" style="display: none" src="${COVER}"/>${PLATE}`, 16],
+    // like the reader's "skip to last reading position" link
+    [
+      'after an out-of-flow element',
+      `<div style="position: absolute; width: 1px; height: 1px; overflow: hidden"></div>${PLATE}`,
+      16,
+    ],
+    [
+      'alone, with its own top margin',
+      `<p class="image" style="text-align: center"><img alt="" style="margin-top: 1em" src="${COVER}"/></p>`,
+      16,
+    ],
   ])('keeps a page-tall plate %s whole on the first page', async (_, body, space) => {
     const { el, doc } = await open(body, '');
     const img = doc.querySelector('p.image img')!;
@@ -214,10 +225,15 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(img.getBoundingClientRect().height).toBe(availableHeight(doc) - space);
   });
 
-  // After text, the plate moves to the next page and its margin is dropped
-  // at the break, so it keeps the whole page height
-  it('keeps the full page height for a plate after text', async () => {
-    const { el, doc, img } = await open(`<p>${'Some text before. '.repeat(40)}</p>${PLATE}`, '');
+  // After text or an empty block with a height, the plate moves to the next
+  // page and its margin is dropped at the break, so it keeps the whole page
+  // height
+  it.each([
+    ['text', `<p>${'Some text before. '.repeat(40)}</p>`],
+    ['an empty block', '<div style="height: 100px"></div>'],
+  ])('keeps the full page height for a plate after %s', async (_, before) => {
+    const { el, doc } = await open(`${before}${PLATE}`, '');
+    const img = doc.querySelector('p.image img')!;
     expect(img.getClientRects()).toHaveLength(1);
     expect(middleOf(el, img)).toBeCloseTo(1.5, 1);
     expect(img.getBoundingClientRect().height).toBe(availableHeight(doc));
