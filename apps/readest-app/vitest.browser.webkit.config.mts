@@ -10,7 +10,10 @@ export default defineConfig({
   ...base,
   test: {
     ...base.test,
-    include: ['src/__tests__/document/paginator-image-page-fits.browser.test.ts'],
+    include: [
+      'src/__tests__/document/paginator-image-page-fits.browser.test.ts',
+      'src/__tests__/app/user/gift-card-layout.browser.test.tsx',
+    ],
     browser: { ...base.test?.browser, instances: [{ browser: 'webkit' }] },
   },
 });

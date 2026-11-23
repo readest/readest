@@ -48,6 +48,28 @@ const renderCard = async (width: number, message: string) => {
   };
 };
 
+// The cover's cloth is navy and the bookplate cream, so one pixel left of the
+// title, below the middle, tells which side is showing.
+const pixel = async (element: HTMLElement) => {
+  const png = await page.screenshot({ element, save: false });
+  const image = new Image();
+  image.src = `data:image/png;base64,${png}`;
+  await image.decode();
+  const canvas = document.createElement('canvas');
+  canvas.width = image.width;
+  canvas.height = image.height;
+  const context = canvas.getContext('2d')!;
+  context.drawImage(image, 0, 0);
+  const x = Math.round(image.width * 0.16);
+  const y = Math.round(image.height * 0.6);
+  const [r, g, b] = context.getImageData(x, y, 1, 1).data;
+  return [r!, g!, b!];
+};
+const near = (rgb: number[], target: number[]) =>
+  rgb.every((value, i) => Math.abs(value - target[i]!) <= 24);
+const NAVY_CLOTH = [31, 44, 76];
+const CREAM_PLATE = [244, 236, 216];
+
 afterEach(() => cleanup());
 
 describe('gift card layout', () => {
@@ -74,5 +96,38 @@ describe('gift card layout', () => {
     // Nothing clamped away, and the last line clears the signature.
     expect(message.scrollHeight).toBeLessThanOrEqual(message.clientHeight + 1);
     expect(messageBox.bottom).toBeLessThanOrEqual(signature.top);
+  });
+
+  // WebKit drew the bookplate, mirrored, over the cover: it draws a face's
+  // positioned children through `backface-visibility: hidden`.
+  it('shows only the cover at rest, and only the bookplate once turned', async () => {
+    const style = document.createElement('style');
+    style.textContent =
+      '* { transition-duration: 0s !important; transition-delay: 0s !important; }';
+    document.head.append(style);
+    await page.viewport(390, 900);
+    render(
+      <div className='px-6 py-10'>
+        <GiftCard
+          face={{
+            tier: 'plus',
+            recipientName: 'Sam',
+            senderName: 'Alex',
+            message: 'Enjoy the year',
+          }}
+          className='mx-auto max-w-sm'
+        />
+      </div>,
+    );
+    const card = document.querySelector('[data-tier]') as HTMLElement;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const atRest = await pixel(card);
+    expect(near(atRest, NAVY_CLOTH), `cover's navy cloth at rest, got rgb(${atRest})`).toBe(true);
+
+    screen.getByRole('button', { name: 'Turn over' }).click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const turned = await pixel(card);
+    expect(near(turned, CREAM_PLATE), `cream bookplate once turned, got rgb(${turned})`).toBe(true);
+    style.remove();
   });
 });

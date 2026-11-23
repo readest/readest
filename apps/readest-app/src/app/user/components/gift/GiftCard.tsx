@@ -171,13 +171,15 @@ const Fleuron = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// One face of the card. Each hides its back, so the inner box's turn shows one
-// at a time; reduced motion and e-ink skip the turn and swap them instead.
+// One face of the card. The face turned away is hidden outright: WebKit draws
+// a face's positioned children through `backface-visibility`. The faces swap
+// as the turn passes edge-on, about 100ms into its curve; reduced motion and
+// e-ink skip the turn and swap them at once.
 const FACE = clsx(
   'absolute inset-0 overflow-hidden rounded-2xl border backface-hidden',
   'bg-base-100 text-base-content eink-bordered',
   'border-black/10 not-eink:shadow-lg theme-dark:border-white/20',
-  'motion-reduce:transition-opacity motion-reduce:aria-hidden:opacity-0 eink:aria-hidden:invisible',
+  'transition-[visibility] delay-100 duration-0 aria-hidden:invisible motion-reduce:delay-0 eink:delay-0',
 );
 
 interface GiftCardProps {
