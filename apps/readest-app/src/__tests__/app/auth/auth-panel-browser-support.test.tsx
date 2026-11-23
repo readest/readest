@@ -22,7 +22,7 @@ vi.mock('@/app/auth/components/ReadestCloudOptIn', () => ({ default: () => null 
 import AuthPanel from '@/app/auth/components/AuthPanel';
 
 const renderPanel = () =>
-  render(<AuthPanel supabaseClient={{} as SupabaseClient} onProviderSignIn={vi.fn()} />);
+  render(<AuthPanel supabaseClient={{} as SupabaseClient} magicLink onProviderSignIn={vi.fn()} />);
 
 afterEach(() => {
   cleanup();
@@ -37,6 +37,7 @@ describe('AuthPanel provider sign-in', () => {
     }
     expect(queryByText('Sign in with a QR code')).not.toBeNull();
     expect(queryByText('or continue with email')).not.toBeNull();
+    expect(queryByText('Send a magic link email')).not.toBeNull();
     getByLabelText('Email address');
   });
 
@@ -46,6 +47,7 @@ describe('AuthPanel provider sign-in', () => {
     for (const provider of ['Google', 'Apple', 'GitHub', 'Discord']) {
       expect(queryByText(`Sign in with ${provider}`), `Sign in with ${provider}`).toBeNull();
     }
+    expect(queryByText('Send a magic link email'), 'the magic link').toBeNull();
     // Approved on another device, so it needs no browser here.
     expect(queryByText('Sign in with a QR code'), 'the QR code sign-in').not.toBeNull();
     expect(queryByText('or continue with email'), 'the email divider').not.toBeNull();

@@ -27,8 +27,9 @@ export default function AuthPanel({
   const _ = useTranslation();
   const { appService } = useEnv();
   const [codeSignIn, setCodeSignIn] = useState(false);
-  // Provider sign-in opens the provider's page in a browser: without one (Readest Lite) the
-  // password and the QR code, approved on another device, are what work.
+  // Provider sign-in opens the provider's page in a browser, and a magic link signs in the
+  // browser that opens it: without a browser (Readest Lite) the password and the QR code,
+  // approved on another device, are what work.
   const hasBrowser = appService?.isBrowserSupported !== false;
   // `signInWithOAuth` redirects the whole page on web, which can cut off the
   // opt-in's settings write. Hold sign-in until it has landed. Null until the
@@ -97,7 +98,7 @@ export default function AuthPanel({
           <EmailPasswordAuth
             supabaseClient={supabaseClient}
             redirectTo={redirectTo}
-            magicLink={magicLink}
+            magicLink={magicLink && hasBrowser}
           />
         </>
       )}
