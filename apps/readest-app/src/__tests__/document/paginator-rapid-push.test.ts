@@ -16,8 +16,8 @@ const rect = (width: number, height = 600) =>
     toJSON: () => ({}),
   }) as DOMRect;
 
-const touchEvent = (type: string, x: number, timeStamp?: number) => {
-  const touch = { identifier: 1, screenX: x, screenY: 200 } as unknown as Touch;
+const touchEvent = (type: string, x: number, timeStamp?: number, y = 200) => {
+  const touch = { identifier: 1, screenX: x, screenY: y } as unknown as Touch;
   const ev = Object.assign(new Event(type, { bubbles: true, cancelable: true }), {
     touches: type === 'touchend' || type === 'touchcancel' ? [] : [touch],
     changedTouches: [touch],
@@ -520,6 +520,46 @@ describe('push page-turn handover', () => {
       await vi.advanceTimersByTimeAsync(500);
       await turn;
       expect(t.scrollTop()).toBe(400);
+      expect(t.view().style.transform).toBe('');
+      t.p.destroy();
+    });
+
+    // A finger rarely lifts where it landed. A tap that moves a little is
+    // released through snap(), which must still finish the caught turn.
+    for (const [name, x, y] of [
+      ['sideways', 203, 200],
+      ['mostly up or down', 202, 208],
+    ] as const) {
+      it(`finishes the turn it caught when the tap moves a little ${name}`, async () => {
+        const t = await setupPaginator({ vertical: true });
+        const turn = t.p.next();
+        await flush();
+        t.setTx(120);
+        t.p.dispatchEvent(touchEvent('touchstart', 200, 1000));
+        t.p.dispatchEvent(touchEvent('touchmove', x, 1040, y));
+        t.p.dispatchEvent(touchEvent('touchend', x, 1080, y));
+        await t.frame();
+        await vi.advanceTimersByTimeAsync(500);
+        await turn;
+        expect(t.scrollTop()).toBe(400);
+        expect(t.view().style.transform).toBe('');
+        t.p.destroy();
+      });
+    }
+
+    it('still turns back on a swipe back after catching the turn', async () => {
+      const t = await setupPaginator({ vertical: true });
+      const turn = t.p.next();
+      await flush();
+      t.setTx(120);
+      t.p.dispatchEvent(touchEvent('touchstart', 200, 1000));
+      t.p.dispatchEvent(touchEvent('touchmove', 80, 1100));
+      t.p.dispatchEvent(touchEvent('touchmove', -50, 1200));
+      t.p.dispatchEvent(touchEvent('touchend', -50, 1300));
+      await t.frame();
+      await vi.advanceTimersByTimeAsync(500);
+      await turn;
+      expect(t.scrollTop()).toBe(0);
       expect(t.view().style.transform).toBe('');
       t.p.destroy();
     });
