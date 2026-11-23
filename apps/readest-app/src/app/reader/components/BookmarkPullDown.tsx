@@ -54,6 +54,10 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
   const _ = useTranslation();
   const { safeAreaInsets, isIPhoneDuo } = useThemeStore();
   const ribbonVisible = useReaderStore((s) => !!s.viewStates[bookKey]?.ribbonVisible);
+  const isBwEink = useReaderStore((s) => {
+    const viewSettings = s.viewStates[bookKey]?.viewSettings;
+    return !!viewSettings?.isEink && !viewSettings.isColorEink;
+  });
 
   const [pulling, setPulling] = useState(false);
   const [pastThreshold, setPastThreshold] = useState(false);
@@ -354,7 +358,7 @@ const BookmarkPullDown: React.FC<BookmarkPullDownProps> = ({ bookKey, ribbonHidd
 
   return (
     <>
-      {!pulling && ribbonVisible && !ribbonHidden && <Ribbon />}
+      {!pulling && ribbonVisible && !ribbonHidden && <Ribbon isBwEink={isBwEink} />}
       {pulling && (
         <div className='pointer-events-none absolute inset-0 z-20'>
           <div

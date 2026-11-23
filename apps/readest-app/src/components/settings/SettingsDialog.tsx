@@ -478,7 +478,9 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
       <button
         onClick={handleClose}
         aria-label={_('Close')}
-        className={'bg-base-300/65 btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 p-0 sm:flex'}
+        className={
+          'bg-base-300/65 eink:bg-transparent btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 p-0 sm:flex'
+        }
       >
         <MdClose size={closeIconSize} />
       </button>
@@ -545,7 +547,7 @@ const SettingsDialog: React.FC<{ bookKey: string }> = ({ bookKey }) => {
                     title={label}
                     className={clsx(
                       'btn btn-ghost text-base-content btn-sm gap-1 px-2 max-[350px]:px-1',
-                      activePanel === tab ? 'btn-active' : '',
+                      activePanel === tab ? 'btn-active eink-bordered' : '',
                     )}
                     onClick={() => handleSetActivePanel(tab)}
                   >

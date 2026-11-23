@@ -822,6 +822,8 @@ override layer in `src/styles/globals.css:484-622` that:
 - Adds 1px contrast borders to `.eink-bordered`, `.modal-box`, `.menu-container`,
   `.popup-container`, `.alert`, `.opds-navigation .card`, `.booknote-item`,
   `.bookitem-main`.
+- Draws daisyUI switches in ink: filled knob when on, hollow knob when off, and a dashed
+  track (knob kept on its side) when disabled.
 
 What this means for new components:
 
@@ -833,6 +835,8 @@ What this means for new components:
 | Cancel / secondary action            | `btn-ghost` (no border) | Reads as "outlined" only after pairing with the CTA           |
 | Card / panel using `border-base-200` | `eink-bordered`         | Otherwise the soft border vanishes in eink                    |
 | Modal / Popup                        | (auto)                  | `modal-box` and `.popup-container` are handled in globals.css |
+| Active tab / selected segment        | `eink-bordered`         | Outline the active item instead of a grey fill                |
+| Grey plate behind an icon button     | `eink:bg-transparent`   | The icon (filled vs outline pin, ×) carries the state         |
 
 Verification checklist before shipping a new UI:
 

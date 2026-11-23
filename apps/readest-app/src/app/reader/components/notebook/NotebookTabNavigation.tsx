@@ -51,10 +51,12 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
     }
   };
 
+  // Lines up with the footer bar's top rule on e-ink, as the sidebar's does.
   return (
     <div
       className={clsx(
         'bottom-tab border-base-300/50 bg-base-200/20 flex min-h-[52px] w-full border-t',
+        'eink:border-base-content eink:bg-base-100 eink:h-[52px]',
         appService?.hasRoundedWindow && 'rounded-window-bottom-right',
       )}
       dir='ltr'
@@ -66,7 +68,8 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
           role='button'
           className={clsx(
             'm-1.5 flex-1 cursor-pointer rounded-lg p-2 transition-colors duration-200',
-            activeTab === tab && 'bg-base-300/85',
+            'eink:flex eink:items-center eink:justify-center eink:py-0',
+            activeTab === tab && 'bg-base-300/85 eink-bordered',
           )}
           onClick={() => onTabChange(tab)}
           onKeyDown={(e) => {

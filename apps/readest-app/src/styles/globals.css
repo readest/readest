@@ -1204,6 +1204,25 @@
     border-color: var(--color-base-content) !important;
   }
 
+  /* daisyUI switches on e-ink (#7817): an unchecked one is drawn at 50% ink and
+   * a disabled one at 30% opacity, both grey on a mono panel. Draw them in ink:
+   * a filled knob when on, a hollow knob when off, and a dashed track with a
+   * hollow knob that stays on its side when disabled, so its value still reads. */
+  [data-eink='true'] .toggle {
+    --input-color: var(--color-base-content);
+  }
+
+  [data-eink='true'] .toggle:not(:checked)::before,
+  [data-eink='true'] .toggle:disabled::before {
+    border: var(--border) solid currentColor;
+    background-color: transparent;
+  }
+
+  [data-eink='true'] .toggle:disabled {
+    opacity: 1;
+    border-style: dashed;
+  }
+
   /* Dictionary popup font size (#4443).
    *
    * `--dict-font-scale` is set per content card by DictionaryResultsView; `1`

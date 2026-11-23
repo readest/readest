@@ -263,7 +263,7 @@ export const CurrentPositionRow: React.FC<{
         onClick={onClick ? handleClick : undefined}
         className={clsx(
           'flex w-full items-center rounded-md py-4 sm:py-2',
-          'text-bold-in-eink sm:bg-base-300/65 sm:text-base-content text-blue-500',
+          'text-bold-in-eink sm:bg-base-300/65 eink:bg-transparent sm:text-base-content text-blue-500',
           onClick && 'cursor-pointer sm:hover:bg-base-300/75',
           isFocused && FOCUS_RING,
         )}
