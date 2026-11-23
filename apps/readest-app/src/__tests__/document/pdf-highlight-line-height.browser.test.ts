@@ -121,16 +121,25 @@ describe('PDF highlights stay within their line (#7853)', () => {
     }
   });
 
-  it('leaves text outside a PDF text layer at its font height', async () => {
+  // Only a text layer pdf.js rendered is clipped. A book's own markup keeps
+  // the text's height, even a `textLayer` class with a box shorter than its
+  // text.
+  it.each([
+    ['a paragraph', '<p><span>One line of book text.</span></p>'],
+    [
+      "a book's own .textLayer",
+      '<div class="textLayer"><span style="display:inline-block;height:10px">One line of book text.</span></div>',
+    ],
+  ])('leaves text in %s at its font height', async (_, html) => {
     await addTallFont(window);
     container = document.createElement('div');
-    container.style.cssText = `position:absolute;left:0;top:0;width:600px;font:20px/1 ${TALL_FONT}`;
-    container.innerHTML = '<p>One line of book text.</p>';
+    container.style.cssText = `position:absolute;left:0;top:100px;width:600px;font:20px/1 ${TALL_FONT}`;
+    container.innerHTML = html;
     document.body.append(container);
     const overlayer = new Overlayer(document);
     container.append(overlayer.element);
     const range = document.createRange();
-    range.selectNodeContents(container.querySelector('p')!.firstChild!);
+    range.selectNodeContents(container.querySelector('span')!.firstChild!);
     overlayer.add('highlight', range, Overlayer.highlight);
 
     const [strip] = strips(overlayer);
