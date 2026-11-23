@@ -64,14 +64,15 @@ fn main() {
         .setup(|app| {
             // Books opened with the app: readable through the fs plugin, and handed to the
             // library's open-with import (readest-app's `window.OPEN_WITH_FILES`). Lite has one
-            // window and creates no others, so books open in it (`__READEST_SINGLE_WINDOW`).
+            // window and creates no others, so books open in it (`__READEST_SINGLE_WINDOW`), and
+            // no browser to open links or a provider's sign-in page in (`__READEST_NO_BROWSER`).
             let files = files_from_args();
             for file in &files {
                 app.fs_scope().allow_file(file)?;
             }
             let files: Vec<_> = files.iter().map(|f| f.to_string_lossy()).collect();
             let mut script = format!(
-                "window.OPEN_WITH_FILES = {}; window.__READEST_SINGLE_WINDOW = true;",
+                "window.OPEN_WITH_FILES = {}; window.__READEST_SINGLE_WINDOW = true; window.__READEST_NO_BROWSER = true;",
                 serde_json::to_string(&files)?
             );
             // READEST_LITE_EINK=1 (the Kindle launcher): Readest starts in its e-ink mode, as on

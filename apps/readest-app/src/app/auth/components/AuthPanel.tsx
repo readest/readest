@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple, FaGithub, FaDiscord } from 'react-icons/fa';
 import { MdQrCode2 } from 'react-icons/md';
+import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ProviderLogin, SignInButton, type OAuthProvider } from './ProviderLogin';
 import CodeSignIn from './CodeSignIn';
@@ -24,7 +25,11 @@ export default function AuthPanel({
   onProviderSignIn,
 }: AuthPanelProps) {
   const _ = useTranslation();
+  const { appService } = useEnv();
   const [codeSignIn, setCodeSignIn] = useState(false);
+  // Provider sign-in opens the provider's page in a browser: without one (Readest Lite) the
+  // password and the QR code, approved on another device, are what work.
+  const hasBrowser = appService?.isBrowserSupported !== false;
   // `signInWithOAuth` redirects the whole page on web, which can cut off the
   // opt-in's settings write. Hold sign-in until it has landed. Null until the
   // user actually touches the checkbox, so the common path adds no delay.
@@ -50,30 +55,34 @@ export default function AuthPanel({
       ) : (
         <>
           <div className='flex w-full flex-col gap-2.5'>
-            <ProviderLogin
-              provider='google'
-              handleSignIn={handleProviderSignIn}
-              Icon={FcGoogle}
-              label={_('Sign in with {{provider}}', { provider: 'Google' })}
-            />
-            <ProviderLogin
-              provider='apple'
-              handleSignIn={handleProviderSignIn}
-              Icon={FaApple}
-              label={_('Sign in with {{provider}}', { provider: 'Apple' })}
-            />
-            <ProviderLogin
-              provider='github'
-              handleSignIn={handleProviderSignIn}
-              Icon={FaGithub}
-              label={_('Sign in with {{provider}}', { provider: 'GitHub' })}
-            />
-            <ProviderLogin
-              provider='discord'
-              handleSignIn={handleProviderSignIn}
-              Icon={FaDiscord}
-              label={_('Sign in with {{provider}}', { provider: 'Discord' })}
-            />
+            {hasBrowser && (
+              <>
+                <ProviderLogin
+                  provider='google'
+                  handleSignIn={handleProviderSignIn}
+                  Icon={FcGoogle}
+                  label={_('Sign in with {{provider}}', { provider: 'Google' })}
+                />
+                <ProviderLogin
+                  provider='apple'
+                  handleSignIn={handleProviderSignIn}
+                  Icon={FaApple}
+                  label={_('Sign in with {{provider}}', { provider: 'Apple' })}
+                />
+                <ProviderLogin
+                  provider='github'
+                  handleSignIn={handleProviderSignIn}
+                  Icon={FaGithub}
+                  label={_('Sign in with {{provider}}', { provider: 'GitHub' })}
+                />
+                <ProviderLogin
+                  provider='discord'
+                  handleSignIn={handleProviderSignIn}
+                  Icon={FaDiscord}
+                  label={_('Sign in with {{provider}}', { provider: 'Discord' })}
+                />
+              </>
+            )}
             <SignInButton
               Icon={MdQrCode2}
               label={_('Sign in with a QR code')}

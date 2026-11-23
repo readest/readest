@@ -82,6 +82,7 @@ export abstract class BaseAppService implements AppService {
   distChannel = 'readest' as DistChannel;
   storefrontRegionCode: string | null = null;
   isOnlineCatalogsAccessible = true;
+  isBrowserSupported = true;
 
   protected CURRENT_MIGRATION_VERSION = 20260706;
 

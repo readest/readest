@@ -130,6 +130,8 @@ export interface AppService {
   distChannel: DistChannel;
   storefrontRegionCode: string | null;
   isOnlineCatalogsAccessible: boolean;
+  /** False when the runtime has no browser to open a link or a provider's sign-in page in. */
+  isBrowserSupported: boolean;
 
   /**
    * The configured library root when it turned out to be unreachable this

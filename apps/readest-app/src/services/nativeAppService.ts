@@ -76,6 +76,7 @@ declare global {
     __READEST_IS_EINK?: boolean;
     __READEST_IS_APPIMAGE?: boolean;
     __READEST_SINGLE_WINDOW?: boolean;
+    __READEST_NO_BROWSER?: boolean;
     __READEST_UPDATER_DISABLED?: boolean;
   }
 }
@@ -632,6 +633,8 @@ export class NativeAppService extends BaseAppService {
   override distChannel = DIST_CHANNEL;
   override storefrontRegionCode: string | null = null;
   override isOnlineCatalogsAccessible = true;
+  // Readest Lite on a Kindle has no browser to open (`__READEST_NO_BROWSER`).
+  override isBrowserSupported = !window.__READEST_NO_BROWSER;
 
   private execDir?: string = undefined;
   private customRootDir?: string = undefined;

@@ -165,6 +165,19 @@ describe('NativeAppService on a single-window runtime', () => {
   });
 });
 
+describe('NativeAppService on a runtime without a browser', () => {
+  // Readest Lite on a Kindle has no browser to open a link or a provider's sign-in page in.
+  test('says no browser when the runtime has none', async () => {
+    expect((await loadServiceWithOS('linux')).isBrowserSupported).toBe(true);
+    window.__READEST_NO_BROWSER = true;
+    try {
+      expect((await loadServiceWithOS('linux')).isBrowserSupported).toBe(false);
+    } finally {
+      delete window.__READEST_NO_BROWSER;
+    }
+  });
+});
+
 describe('NativeAppService cover optimization', () => {
   test('keeps original covers and only queues a visible cover on demand', async () => {
     let finishOptimization = () => {};
