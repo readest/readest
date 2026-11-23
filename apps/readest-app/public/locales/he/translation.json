@@ -3005,5 +3005,8 @@
   "Delete the reading statistics of {{count}} books?_other": "למחוק את סטטיסטיקת הקריאה של {{count}} ספרים?",
   "Merge {{count}} entries into:_one": "מיזוג {{count}} רשומה לתוך:",
   "Merge {{count}} entries into:_two": "מיזוג {{count}} רשומות לתוך:",
-  "Merge {{count}} entries into:_other": "מיזוג {{count}} רשומות לתוך:"
+  "Merge {{count}} entries into:_other": "מיזוג {{count}} רשומות לתוך:",
+  "Sign in with a QR code": "התחברות באמצעות קוד QR",
+  "Unable to connect to Readest. Please check your network connection.": "לא ניתן להתחבר ל-Readest. בדקו את חיבור הרשת.",
+  "Approve on a phone or computer signed in to Readest.": "אשרו בטלפון או במחשב שמחוברים ל-Readest."
 }

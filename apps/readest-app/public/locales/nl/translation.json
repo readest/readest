@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "Leesstatistieken van {{count}} boek verwijderen?",
   "Delete the reading statistics of {{count}} books?_other": "Leesstatistieken van {{count}} boeken verwijderen?",
   "Merge {{count}} entries into:_one": "{{count}} item samenvoegen in:",
-  "Merge {{count}} entries into:_other": "{{count}} items samenvoegen in:"
+  "Merge {{count}} entries into:_other": "{{count}} items samenvoegen in:",
+  "Sign in with a QR code": "Inloggen met een QR-code",
+  "Unable to connect to Readest. Please check your network connection.": "Kan geen verbinding maken met Readest. Controleer je netwerkverbinding.",
+  "Approve on a phone or computer signed in to Readest.": "Keur goed op een telefoon of computer die bij Readest is ingelogd."
 }

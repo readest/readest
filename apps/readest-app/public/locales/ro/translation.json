@@ -3005,5 +3005,8 @@
   "Delete the reading statistics of {{count}} books?_other": "Ștergi statisticile de lectură pentru {{count}} de cărți?",
   "Merge {{count}} entries into:_one": "Combină {{count}} intrare cu:",
   "Merge {{count}} entries into:_few": "Combină {{count}} intrări cu:",
-  "Merge {{count}} entries into:_other": "Combină {{count}} de intrări cu:"
+  "Merge {{count}} entries into:_other": "Combină {{count}} de intrări cu:",
+  "Sign in with a QR code": "Conectează-te cu un cod QR",
+  "Unable to connect to Readest. Please check your network connection.": "Nu se poate conecta la Readest. Verifică conexiunea la rețea.",
+  "Approve on a phone or computer signed in to Readest.": "Aprobă de pe un telefon sau computer conectat la Readest."
 }

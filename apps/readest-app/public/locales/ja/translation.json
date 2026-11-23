@@ -2849,5 +2849,8 @@
   "Their reading time is removed from all your devices. This can’t be undone.": "これらの本の読書時間がすべてのデバイスから削除されます。この操作は元に戻せません。",
   "Their reading time is removed from this device. This can’t be undone.": "これらの本の読書時間がこのデバイスから削除されます。この操作は元に戻せません。",
   "Delete the reading statistics of {{count}} books?_other": "{{count}} 冊の読書統計を削除しますか？",
-  "Merge {{count}} entries into:_other": "{{count}} 件の項目の統合先:"
+  "Merge {{count}} entries into:_other": "{{count}} 件の項目の統合先:",
+  "Sign in with a QR code": "QRコードでサインイン",
+  "Unable to connect to Readest. Please check your network connection.": "Readestに接続できません。ネットワーク接続を確認してください。",
+  "Approve on a phone or computer signed in to Readest.": "Readestにサインイン済みのスマートフォンまたはパソコンで承認してください。"
 }

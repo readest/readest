@@ -2849,5 +2849,8 @@
   "Their reading time is removed from all your devices. This can’t be undone.": "这些书的阅读时长将从你的所有设备中移除。此操作无法撤销。",
   "Their reading time is removed from this device. This can’t be undone.": "这些书的阅读时长将从此设备中移除。此操作无法撤销。",
   "Delete the reading statistics of {{count}} books?_other": "要删除 {{count}} 本书的阅读统计吗？",
-  "Merge {{count}} entries into:_other": "将 {{count}} 个条目合并到："
+  "Merge {{count}} entries into:_other": "将 {{count}} 个条目合并到：",
+  "Sign in with a QR code": "使用二维码登录",
+  "Unable to connect to Readest. Please check your network connection.": "无法连接到 Readest。请检查您的网络连接。",
+  "Approve on a phone or computer signed in to Readest.": "请在已登录 Readest 的手机或电脑上批准。"
 }

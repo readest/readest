@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "{{count}} kitabın okuma istatistikleri silinsin mi?",
   "Delete the reading statistics of {{count}} books?_other": "{{count}} kitabın okuma istatistikleri silinsin mi?",
   "Merge {{count}} entries into:_one": "{{count}} kayıt şununla birleştirilsin:",
-  "Merge {{count}} entries into:_other": "{{count}} kayıt şununla birleştirilsin:"
+  "Merge {{count}} entries into:_other": "{{count}} kayıt şununla birleştirilsin:",
+  "Sign in with a QR code": "QR koduyla oturum aç",
+  "Unable to connect to Readest. Please check your network connection.": "Readest'e bağlanılamıyor. Lütfen ağ bağlantınızı kontrol edin.",
+  "Approve on a phone or computer signed in to Readest.": "Readest'te oturum açmış bir telefon veya bilgisayardan onaylayın."
 }

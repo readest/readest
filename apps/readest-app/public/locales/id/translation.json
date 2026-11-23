@@ -2849,5 +2849,8 @@
   "Their reading time is removed from all your devices. This can’t be undone.": "Waktu membaca buku-buku ini akan dihapus dari semua perangkat Anda. Tindakan ini tidak dapat dibatalkan.",
   "Their reading time is removed from this device. This can’t be undone.": "Waktu membaca buku-buku ini akan dihapus dari perangkat ini. Tindakan ini tidak dapat dibatalkan.",
   "Delete the reading statistics of {{count}} books?_other": "Hapus statistik membaca {{count}} buku?",
-  "Merge {{count}} entries into:_other": "Gabungkan {{count}} entri ke:"
+  "Merge {{count}} entries into:_other": "Gabungkan {{count}} entri ke:",
+  "Sign in with a QR code": "Masuk dengan kode QR",
+  "Unable to connect to Readest. Please check your network connection.": "Tidak dapat terhubung ke Readest. Periksa koneksi jaringan Anda.",
+  "Approve on a phone or computer signed in to Readest.": "Setujui di ponsel atau komputer yang sudah masuk ke Readest."
 }

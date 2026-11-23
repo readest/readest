@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "Törlöd {{count}} könyv olvasási statisztikáját?",
   "Delete the reading statistics of {{count}} books?_other": "Törlöd {{count}} könyv olvasási statisztikáját?",
   "Merge {{count}} entries into:_one": "{{count}} bejegyzés egyesítése ezzel:",
-  "Merge {{count}} entries into:_other": "{{count}} bejegyzés egyesítése ezzel:"
+  "Merge {{count}} entries into:_other": "{{count}} bejegyzés egyesítése ezzel:",
+  "Sign in with a QR code": "Bejelentkezés QR-kóddal",
+  "Unable to connect to Readest. Please check your network connection.": "Nem sikerült csatlakozni a Readesthez. Ellenőrizze a hálózati kapcsolatot.",
+  "Approve on a phone or computer signed in to Readest.": "Hagyja jóvá egy Readestbe bejelentkezett telefonon vagy számítógépen."
 }

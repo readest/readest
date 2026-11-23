@@ -19,8 +19,9 @@ type Status = 'idle' | 'linking' | 'linked' | 'failed';
 
 /**
  * Approves a reader's sign-in: a CrossPoint reader (the Readest card on its web
- * Settings page) or KOReader (Readest > Sign in with a code). Both link to this
- * page with the code filled in, and wait until its owner approves here.
+ * Settings page), KOReader (Readest > Sign in with a code) or Readest itself
+ * (Sign in with a QR code). All link to this page with the code filled in, and
+ * wait until its owner approves here.
  */
 export default function LinkDevice() {
   const _ = useTranslation();

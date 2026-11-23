@@ -32,7 +32,7 @@ const startSession = async (userId: string) => {
 // POST /api/crosspoint/device/token {device_code, grant?} — poll a reader sign-in.
 // Answers like an OAuth device access token request: 400 authorization_pending
 // until the owner approves the code, then, once, the reader's own key, or
-// with grant "session" (the KOReader plugin) a Readest session.
+// with grant "session" (the KOReader plugin, Readest's QR code sign-in) a Readest session.
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {
     device_code?: unknown;

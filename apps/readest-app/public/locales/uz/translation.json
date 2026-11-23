@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "{{count}} ta kitobning oʻqish statistikasi oʻchirilsinmi?",
   "Delete the reading statistics of {{count}} books?_other": "{{count}} ta kitobning oʻqish statistikasi oʻchirilsinmi?",
   "Merge {{count}} entries into:_one": "{{count}} ta yozuv quyidagi bilan birlashtirilsin:",
-  "Merge {{count}} entries into:_other": "{{count}} ta yozuv quyidagi bilan birlashtirilsin:"
+  "Merge {{count}} entries into:_other": "{{count}} ta yozuv quyidagi bilan birlashtirilsin:",
+  "Sign in with a QR code": "QR kod bilan kirish",
+  "Unable to connect to Readest. Please check your network connection.": "Readest'ga ulanib bo'lmadi. Tarmoq ulanishingizni tekshiring.",
+  "Approve on a phone or computer signed in to Readest.": "Readest'ga kirilgan telefon yoki kompyuterda tasdiqlang."
 }

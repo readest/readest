@@ -3083,5 +3083,8 @@
   "Merge {{count}} entries into:_one": "Объединить {{count}} запись с:",
   "Merge {{count}} entries into:_few": "Объединить {{count}} записи с:",
   "Merge {{count}} entries into:_many": "Объединить {{count}} записей с:",
-  "Merge {{count}} entries into:_other": "Объединить {{count}} записи с:"
+  "Merge {{count}} entries into:_other": "Объединить {{count}} записи с:",
+  "Sign in with a QR code": "Войти по QR-коду",
+  "Unable to connect to Readest. Please check your network connection.": "Не удаётся подключиться к Readest. Проверьте подключение к сети.",
+  "Approve on a phone or computer signed in to Readest.": "Подтвердите вход на телефоне или компьютере, где выполнен вход в Readest."
 }
