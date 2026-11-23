@@ -106,6 +106,39 @@ describe('getFootnoteRange and multi-paragraph footnote extraction', () => {
     expect(popupDoc2.body.textContent).not.toContain('Third footnote content');
   });
 
+  // Some books give every paragraph an id. A note's next paragraph that
+  // carries its own, unrelated id is still part of the note.
+  it('keeps a continuation paragraph that has an unrelated id of its own', () => {
+    const doc = parseHtml(`
+      <div class="notes">
+        <p id="fn1"><a href="#ref1">1</a> First paragraph of the note.</p>
+        <p id="p0042">Second paragraph of the note.</p>
+        <p id="fn2"><a href="#ref2">2</a> The next note.</p>
+      </div>
+    `);
+
+    const popupDoc = parseHtml('<!DOCTYPE html><html><body></body></html>');
+    extractToBody(popupDoc, getFootnoteRange(doc, doc.getElementById('fn1')!));
+    expect(popupDoc.body.textContent).toContain('First paragraph of the note');
+    expect(popupDoc.body.textContent).toContain('Second paragraph of the note');
+    expect(popupDoc.body.textContent).not.toContain('The next note');
+  });
+
+  // An id that merely starts with the note's id can be another note's.
+  it('stops before note fn10 that follows note fn1', () => {
+    const doc = parseHtml(`
+      <div class="notes">
+        <p id="fn1"><a href="#ref1">1</a> First note.</p>
+        <p id="fn10">Tenth note.</p>
+      </div>
+    `);
+
+    const popupDoc = parseHtml('<!DOCTYPE html><html><body></body></html>');
+    extractToBody(popupDoc, getFootnoteRange(doc, doc.getElementById('fn1')!));
+    expect(popupDoc.body.textContent).toContain('First note');
+    expect(popupDoc.body.textContent).not.toContain('Tenth note');
+  });
+
   it('stops before adjacent footnotes distinguished by leading marker text without IDs', () => {
     const doc = parseHtml(`
       <div class="footnote-list">
