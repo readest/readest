@@ -193,8 +193,8 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
 
   // A box that starts a new formatting context keeps its own top margin apart
   // from its children's, so the two add up instead of collapsing into one; a
-  // negative margin collapses with a positive one by adding to it. Text that
-  // isn't shown doesn't count as text before the plate.
+  // negative margin collapses with a positive one by adding to it. Text or an
+  // image that isn't shown doesn't count as coming before the plate.
   it.each([
     ['with only its caption', PLATE, 16],
     ['opening a chapter', `${PLATE}<h1>Chapter</h1><p>${'Chapter text. '.repeat(400)}</p>`, 16],
@@ -205,8 +205,10 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     ],
     ['in a box with a negative margin', `<div style="margin-top: -0.5em">${PLATE}</div>`, 8],
     ['after a hidden heading', `<h1 style="display: none">Plate</h1>${PLATE}`, 16],
+    ['after a hidden image', `<img alt="" style="display: none" src="${COVER}"/>${PLATE}`, 16],
   ])('keeps a page-tall plate %s whole on the first page', async (_, body, space) => {
-    const { el, doc, img } = await open(body, '');
+    const { el, doc } = await open(body, '');
+    const img = doc.querySelector('p.image img')!;
     expect(img.getClientRects()).toHaveLength(1);
     expect(middleOf(el, img)).toBeCloseTo(0.5, 1);
     expect(img.getBoundingClientRect().height).toBe(availableHeight(doc) - space);
@@ -221,15 +223,23 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(img.getBoundingClientRect().height).toBe(availableHeight(doc));
   });
 
-  // Only a plate that fills the page changes: a short image, or a wide one
-  // that the column width keeps short, opening a section keeps its margin,
-  // the page-height clamp and the book's alignment
+  // Only a plate that fills the page changes: a short image, or one that the
+  // column width keeps short (even when the book lifts the width cap, which
+  // the paginator puts back), opening a section keeps its margin, the
+  // page-height clamp and the book's alignment
+  const SQUARE = `data:image/svg+xml,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900"><rect width="900" height="900" fill="#339"/></svg>',
+  )}`;
   const WIDE = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="900"><rect width="1800" height="900" fill="#393"/></svg>',
   )}`;
   it.each([
     ['a short', `<img alt="" src="${COVER}" height="100"/>`],
     ['a wide', `<img alt="" src="${WIDE}"/>`],
+    [
+      'an uncapped square',
+      `<style>img { max-width: none !important; }</style><img alt="" src="${SQUARE}"/>`,
+    ],
   ])('leaves %s image that opens a section as the book set it', async (_, image) => {
     const small = `<style>p.image { margin: 1em 0 0 0; }</style><p class="image">${image}</p><p>Text after the ornament.</p>`;
     const { doc, img } = await open(small, '');
