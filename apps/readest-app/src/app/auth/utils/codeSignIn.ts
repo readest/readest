@@ -64,13 +64,21 @@ export const pollSignInSession = async (
     await sleep(code.interval * 1000);
     if (signal?.aborted) throw new CodeSignInError('aborted');
     if (now() >= deadline) throw new CodeSignInError('expired_token');
-    const body = await fetch(`${getAPIBaseUrl()}/auth/device/token`, {
+    const ask = fetch(`${getAPIBaseUrl()}/auth/device/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ device_code: code.deviceCode, grant: 'session' }),
     })
       .then((res) => res.json())
       .catch(() => null);
+    // An ask that never answers (a stalled connection) gives up when the code expires, so
+    // the view can offer a new one.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const expiry = new Promise<null>((r) => {
+      timer = setTimeout(() => r(null), Math.max(0, deadline - now()));
+    });
+    const body = await Promise.race([ask, expiry]);
+    clearTimeout(timer);
     if (signal?.aborted) throw new CodeSignInError('aborted');
     if (body?.access_token && body?.refresh_token) {
       return { access_token: body.access_token, refresh_token: body.refresh_token };

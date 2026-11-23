@@ -138,6 +138,17 @@ describe('pollSignInSession', () => {
     expect(fetch).toHaveBeenCalledTimes(119);
   });
 
+  test('gives up on an ask that never answers once the code expires', async () => {
+    // A stalled connection: no answer, no error.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    await expect(
+      pollSignInSession({ ...code, expiresIn: 0.05, interval: 0.001 }, { sleep: noSleep }),
+    ).rejects.toThrow(new CodeSignInError('expired_token'));
+  });
+
   test('stops when the sign-in is cancelled', async () => {
     const abort = new AbortController();
     const fetch = vi.fn(async () => {
