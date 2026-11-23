@@ -1,3 +1,4 @@
+import { toDateKey } from '@/services/statistics/readingStats';
 import type { VocabularyEntry } from './types';
 
 // Vocabulary export (#789): an Anki text-import file (the header lines make it
@@ -67,7 +68,8 @@ const csvField = (v: string | number) => {
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+// The local day: in UTC an early-morning lookup was dated the day before.
+const day = (ms: number) => toDateKey(new Date(ms));
 
 export const toCsv = (entries: VocabularyEntry[]): string => {
   const rows = [
