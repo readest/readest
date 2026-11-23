@@ -1176,6 +1176,23 @@ describe('Forget a WebDAV / S3 connection (#7799)', () => {
     expect(connected).toMatchObject(other);
   });
 
+  test('the reset between specs lets a pass still uploading finish first, so the next spec starts clean (#7845)', async () => {
+    let release = () => {};
+    publishMock.mockImplementationOnce(() => new Promise<void>((resolve) => (release = resolve)));
+    const saved = withConnection('webdav', connections.webdav.saved);
+    const uploading = publishSettingsIfChanged(saved);
+    await vi.waitFor(() => expect(publishMock).toHaveBeenCalledTimes(1));
+
+    const resetting = __resetSettingsSyncForTests();
+    release();
+    await Promise.all([uploading, resetting]);
+
+    // Nothing the pass stamped survives the reset, so the connection publishes again.
+    publishMock.mockClear();
+    await publishSettingsIfChanged(saved);
+    expect(publishMock.mock.calls[0]?.[1].patch.webdav).toMatchObject(connections.webdav.saved);
+  });
+
   test.each(kinds)('a %s field cleared without Forget still stays local', async (kind) => {
     await publishSettingsIfChanged(withConnection(kind, connections[kind].saved));
     publishMock.mockClear();
