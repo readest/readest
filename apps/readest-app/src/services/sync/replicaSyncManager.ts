@@ -250,7 +250,7 @@ export class ReplicaSyncManager {
     const since = opts && 'since' in opts ? (opts.since ?? null) : this.opts.cursorStore.get(kind);
     const rows = await this.opts.client.pull(kind, since);
     this.observeAndAdvanceCursor(kind, rows);
-    return rows;
+    return this.withQueuedFields(rows);
   }
 
   /**
@@ -311,9 +311,22 @@ export class ReplicaSyncManager {
     }
     for (const { kind, rows } of results) {
       this.observeAndAdvanceCursor(kind, rows);
-      out.set(kind, rows);
+      out.set(kind, this.withQueuedFields(rows));
     }
     return out;
+  }
+
+  // A push doesn't move the pull cursor, so a pull brings this device's own
+  // last push back. A change queued since then must not lose to that older
+  // copy (#7670): lay the queued fields over the pulled ones, the per-field
+  // merge the server makes once the push lands.
+  private withQueuedFields(rows: ReplicaRow[]): ReplicaRow[] {
+    return rows.map((row) => {
+      const queued = this.dirty.get(dirtyKeyOf(row));
+      return queued
+        ? { ...row, fields_jsonb: mergeFields(row.fields_jsonb, queued.fields_jsonb) }
+        : row;
+    });
   }
 
   private observeAndAdvanceCursor(kind: string, rows: ReplicaRow[]): void {
