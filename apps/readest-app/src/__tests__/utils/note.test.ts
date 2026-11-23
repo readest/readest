@@ -404,6 +404,15 @@ describe('renderNoteTemplate', () => {
       expect(render('> {{ a.text }} · {{ a.page }}', 'One\nTwo')).toBe('> One\n> Two · 3');
       expect(render('>  {{- a.text -}}  ', 'One\nTwo')).toBe('>One\n> Two');
       expect(render('{% if a.text %}> {{ a.text }}{% endif %}', 'One\nTwo')).toBe('> One\n> Two');
+      expect(render('{% if a.page % 2 %}> {{ a.text }}{% endif %}', 'One\nTwo')).toBe(
+        '> One\n> Two',
+      );
+    });
+
+    it('scans a line of many tags in linear time', () => {
+      const start = performance.now();
+      render(`{%${'%}{%'.repeat(26)}`, '');
+      expect(performance.now() - start).toBeLessThan(200);
     });
 
     it('leaves lines that do not open with > alone', () => {

@@ -247,7 +247,8 @@ env.addFilter('quoteRest', (value: unknown, prefix: string) =>
 
 const quoteTemplateLines = (template: string) =>
   template.replace(
-    /^((?:[ \t]*\{%.*?%\})*)([ \t]*(?:>[ \t]*)+)(.*)$/gm,
+    // A tag's body can't run past `%}`, so a line of many tags stays linear.
+    /^((?:[ \t]*\{%(?:[^%]|%(?!\}))*%\})*)([ \t]*(?:>[ \t]*)+)(.*)$/gm,
     (_line, tags: string, markers: string, rest: string) => {
       const prefix = JSON.stringify(markers.replace(/>[ \t]*/g, '> '));
       return (
