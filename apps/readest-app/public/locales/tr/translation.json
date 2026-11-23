@@ -3007,5 +3007,7 @@
   "Add recipient email": "Alıcı e-postası ekle",
   "Edit message": "Mesajı düzenle",
   "Subscribe to {{plan}}": "{{plan}} planına abone ol",
-  "Gift, until {{date}}": "Hediye, {{date}} tarihine kadar"
+  "Gift, until {{date}}": "Hediye, {{date}} tarihine kadar",
+  "Ex dono": "Armağan",
+  "Turn over": "Kartı çevir"
 }

@@ -3086,5 +3086,7 @@
   "Add recipient email": "Ajouter l'e-mail du destinataire",
   "Edit message": "Modifier le message",
   "Subscribe to {{plan}}": "Passer à {{plan}}",
-  "Gift, until {{date}}": "Cadeau, jusqu'au {{date}}"
+  "Gift, until {{date}}": "Cadeau, jusqu'au {{date}}",
+  "Ex dono": "Ex dono",
+  "Turn over": "Retourner la carte"
 }

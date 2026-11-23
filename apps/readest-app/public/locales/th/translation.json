@@ -2928,5 +2928,7 @@
   "Add recipient email": "เพิ่มอีเมลผู้รับ",
   "Edit message": "แก้ไขข้อความ",
   "Subscribe to {{plan}}": "สมัคร {{plan}}",
-  "Gift, until {{date}}": "ของขวัญ ถึง {{date}}"
+  "Gift, until {{date}}": "ของขวัญ ถึง {{date}}",
+  "Ex dono": "ด้วยรัก",
+  "Turn over": "พลิกบัตร"
 }

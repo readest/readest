@@ -3165,5 +3165,7 @@
   "Add recipient email": "Добавить email получателя",
   "Edit message": "Изменить сообщение",
   "Subscribe to {{plan}}": "Подписаться на {{plan}}",
-  "Gift, until {{date}}": "Подарок, до {{date}}"
+  "Gift, until {{date}}": "Подарок, до {{date}}",
+  "Ex dono": "В дар",
+  "Turn over": "Перевернуть карту"
 }

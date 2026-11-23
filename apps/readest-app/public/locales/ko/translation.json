@@ -2928,5 +2928,7 @@
   "Add recipient email": "받는 사람 이메일 추가",
   "Edit message": "메시지 수정",
   "Subscribe to {{plan}}": "{{plan}} 구독",
-  "Gift, until {{date}}": "선물, {{date}}까지"
+  "Gift, until {{date}}": "선물, {{date}}까지",
+  "Ex dono": "증정",
+  "Turn over": "카드 뒤집기"
 }

@@ -16,7 +16,7 @@ import {
   type GiftTier,
 } from '@/types/gift';
 import { getPlanAccent } from '../../utils/plan';
-import GiftCard, { type GiftCardPlaceholders, giftTierName } from './GiftCard';
+import GiftCard, { type GiftCardPlaceholders, type GiftCardSide, giftTierName } from './GiftCard';
 
 export type GiftFaceText = Pick<GiftDraftInput, 'recipientName' | 'senderName' | 'message'>;
 
@@ -109,6 +109,8 @@ const GiftComposer: React.FC<GiftComposerProps> = ({ prices, defaultSenderName, 
     message: '',
   });
   const [email, setEmail] = useState('');
+  // The preview shows the bookplate while they write on it, the cover when they pick a plan.
+  const [side, setSide] = useState<GiftCardSide>('front');
   const price = prices.find((p) => p.tier === tier);
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -131,6 +133,8 @@ const GiftComposer: React.FC<GiftComposerProps> = ({ prices, defaultSenderName, 
       <GiftCard
         face={{ tier, ...face }}
         placeholders={facePlaceholders(_)}
+        side={side}
+        onSideChange={setSide}
         className='mx-auto max-w-sm'
       />
 
@@ -161,7 +165,10 @@ const GiftComposer: React.FC<GiftComposerProps> = ({ prices, defaultSenderName, 
                 value={option}
                 checked={selected}
                 disabled={!optionPrice}
-                onChange={() => setTier(option)}
+                onChange={() => {
+                  setTier(option);
+                  setSide('front');
+                }}
                 className='radio radio-sm eink:border-base-content shrink-0'
               />
               <span className='flex min-w-0 flex-col'>
@@ -177,7 +184,9 @@ const GiftComposer: React.FC<GiftComposerProps> = ({ prices, defaultSenderName, 
         })}
       </div>
 
-      <GiftFaceFields value={face} onChange={setFace} />
+      <div onFocus={() => setSide('back')}>
+        <GiftFaceFields value={face} onChange={setFace} />
+      </div>
 
       <BoxedList
         description={_(

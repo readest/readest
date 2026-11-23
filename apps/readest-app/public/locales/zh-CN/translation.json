@@ -2928,5 +2928,7 @@
   "Add recipient email": "添加收件人邮箱",
   "Edit message": "编辑留言",
   "Subscribe to {{plan}}": "订阅 {{plan}}",
-  "Gift, until {{date}}": "礼品，有效期至 {{date}}"
+  "Gift, until {{date}}": "礼品，有效期至 {{date}}",
+  "Ex dono": "敬赠",
+  "Turn over": "翻转卡片"
 }

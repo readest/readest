@@ -3007,5 +3007,7 @@
   "Add recipient email": "მიმღების ელფოსტის დამატება",
   "Edit message": "შეტყობინების რედაქტირება",
   "Subscribe to {{plan}}": "გამოიწერეთ {{plan}}",
-  "Gift, until {{date}}": "საჩუქარი, {{date}}-მდე"
+  "Gift, until {{date}}": "საჩუქარი, {{date}}-მდე",
+  "Ex dono": "საჩუქრად",
+  "Turn over": "ბარათის გადაბრუნება"
 }

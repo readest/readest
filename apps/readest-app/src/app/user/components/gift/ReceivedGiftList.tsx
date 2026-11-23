@@ -23,7 +23,7 @@ const ReceivedGiftList: React.FC<ReceivedGiftListProps> = ({ cards, now }) => {
     <ul className='grid gap-8 sm:grid-cols-2'>
       {cards.map((card) => (
         <li key={card.id} className='flex flex-col gap-3'>
-          <GiftCard face={card} />
+          <GiftCard face={card} year={new Date(card.startsAt).getFullYear()} />
           <span className='px-1 font-medium'>{status(card)}</span>
         </li>
       ))}

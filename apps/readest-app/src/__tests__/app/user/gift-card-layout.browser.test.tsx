@@ -1,8 +1,8 @@
 /**
- * The gift card keeps ID-1 proportions while its text is sized in rem, so a
- * narrow card leaves little room for the message. Whatever its length, the
- * message must stay between the title and the To/From row, with its last line
- * (and the ellipsis on it) inside the card.
+ * The gift card keeps ID-1 proportions and the message sits on a bookplate
+ * inside its back cover, so a narrow card leaves little room for it. Whatever
+ * its length, the message must stay between the To line and the signature,
+ * with its last line (and the ellipsis on it) inside the bookplate.
  *
  * Needs real layout and real Tailwind, so it runs as a browser test.
  */
@@ -32,6 +32,7 @@ const renderCard = async (width: number, message: string) => {
     <div className='px-6 py-10'>
       <GiftCard
         face={{ tier: 'plus', recipientName: 'Sam', senderName: 'Alex', message }}
+        side='back'
         className='mx-auto max-w-sm'
       />
     </div>,
@@ -41,8 +42,9 @@ const renderCard = async (width: number, message: string) => {
   return {
     message: messageEl,
     messageBox: messageEl.getBoundingClientRect(),
-    title: screen.getByText('Readest Plus').getBoundingClientRect(),
-    names: screen.getByText('To').parentElement!.parentElement!.getBoundingClientRect(),
+    to: screen.getByText('Sam').getBoundingClientRect(),
+    signature: screen.getByText('Alex').getBoundingClientRect(),
+    plate: screen.getByText('Ex dono').closest('[data-plate]')!.getBoundingClientRect(),
   };
 };
 
@@ -51,18 +53,26 @@ afterEach(() => cleanup());
 describe('gift card layout', () => {
   it.each([
     320, 360, 375, 390, 414, 1280,
-  ])('a 300-character message stays between the title and To/From at %ipx', async (width) => {
-    const { messageBox, title, names } = await renderCard(width, LONG);
+  ])('a 300-character message stays between To and the signature at %ipx', async (width) => {
+    const { messageBox, to, signature, plate } = await renderCard(width, LONG);
 
-    expect(messageBox.top).toBeGreaterThanOrEqual(title.bottom);
-    expect(messageBox.bottom).toBeLessThanOrEqual(names.top);
+    expect(messageBox.top).toBeGreaterThanOrEqual(to.bottom);
+    expect(messageBox.bottom).toBeLessThanOrEqual(signature.top);
+    expect(messageBox.left).toBeGreaterThanOrEqual(plate.left);
+    expect(messageBox.right).toBeLessThanOrEqual(plate.right);
+  });
+
+  it.each([390, 1280])('a 300-character message is shown whole at %ipx', async (width) => {
+    const { message } = await renderCard(width, LONG);
+
+    expect(message.scrollHeight).toBeLessThanOrEqual(message.clientHeight + 1);
   });
 
   it('a six-line letter keeps its sign-off on a phone-width card', async () => {
-    const { message, messageBox, names } = await renderCard(390, LETTER);
+    const { message, messageBox, signature } = await renderCard(390, LETTER);
 
-    // Nothing clamped away, and the last line clears the To/From row.
+    // Nothing clamped away, and the last line clears the signature.
     expect(message.scrollHeight).toBeLessThanOrEqual(message.clientHeight + 1);
-    expect(messageBox.bottom).toBeLessThanOrEqual(names.top);
+    expect(messageBox.bottom).toBeLessThanOrEqual(signature.top);
   });
 });

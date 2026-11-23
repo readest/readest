@@ -3323,5 +3323,7 @@
   "Add recipient email": "إضافة البريد الإلكتروني للمستلم",
   "Edit message": "تحرير الرسالة",
   "Subscribe to {{plan}}": "الاشتراك في {{plan}}",
-  "Gift, until {{date}}": "هدية، حتى {{date}}"
+  "Gift, until {{date}}": "هدية، حتى {{date}}",
+  "Ex dono": "إهداء",
+  "Turn over": "اقلب البطاقة"
 }

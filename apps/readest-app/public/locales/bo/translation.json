@@ -2928,5 +2928,7 @@
   "Add recipient email": "ལེན་མཁན་གྱི་གློག་འཕྲིན་ཁ་སྣོན།",
   "Edit message": "འཕྲིན་ཡིག་རྩོམ་སྒྲིག",
   "Subscribe to {{plan}}": "{{plan}} མཁོ་མངགས་བྱེད།",
-  "Gift, until {{date}}": "ལེགས་སྐྱེས། {{date}} བར།"
+  "Gift, until {{date}}": "ལེགས་སྐྱེས། {{date}} བར།",
+  "Ex dono": "ལེགས་སྐྱེས།",
+  "Turn over": "ཤོག་བྱང་སློག་པ།"
 }

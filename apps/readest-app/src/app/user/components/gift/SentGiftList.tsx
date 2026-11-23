@@ -7,7 +7,7 @@ import { writeTextToClipboard } from '@/utils/clipboard';
 import { eventDispatcher } from '@/utils/event';
 import { getLocale } from '@/utils/misc';
 import type { GiftCardPatch, SentGiftCard } from '@/types/gift';
-import GiftCard from './GiftCard';
+import GiftCard, { type GiftCardSide } from './GiftCard';
 import { GiftFaceFields, type GiftFaceText } from './GiftComposer';
 
 type UpdateGift = (id: string, patch: GiftCardPatch) => Promise<void>;
@@ -100,6 +100,7 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; onUpdate: UpdateGift }> = ({
   const [editing, setEditing] = useState<'email' | 'message' | null>(null);
   const [face, setFace] = useState<GiftFaceText>(card);
   const [saving, setSaving] = useState(false);
+  const [side, setSide] = useState<GiftCardSide>('front');
   const open = card.status === 'unredeemed' || card.status === 'waiting';
   const code = open ? card.code : null;
 
@@ -142,7 +143,12 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; onUpdate: UpdateGift }> = ({
   return (
     <li className='flex flex-col gap-3'>
       {/* The card face follows the message while it's edited. */}
-      <GiftCard face={editing === 'message' ? { ...card, ...face } : card} />
+      <GiftCard
+        face={editing === 'message' ? { ...card, ...face } : card}
+        year={new Date(card.purchasedAt).getFullYear()}
+        side={side}
+        onSideChange={setSide}
+      />
       <div className='flex flex-col gap-2 px-1'>
         <div className='flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1'>
           <span className='min-w-0 break-words font-medium'>{status}</span>
@@ -182,6 +188,7 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; onUpdate: UpdateGift }> = ({
               onClick={() => {
                 setFace(card);
                 setEditing('message');
+                setSide('back');
               }}
             />
           </div>

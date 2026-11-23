@@ -3007,5 +3007,7 @@
   "Add recipient email": "Oluvchi elektron pochtasini qo'shish",
   "Edit message": "Xabarni tahrirlash",
   "Subscribe to {{plan}}": "{{plan}} ga obuna bo'lish",
-  "Gift, until {{date}}": "Sovg'a, {{date}} gacha"
+  "Gift, until {{date}}": "Sovg'a, {{date}} gacha",
+  "Ex dono": "Sovg'a",
+  "Turn over": "Kartani aylantirish"
 }

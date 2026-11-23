@@ -335,6 +335,26 @@ describe('GiftCardsSection', () => {
     expect(within(preview()).getByText('Enjoy the year')).toBeTruthy();
   });
 
+  it('the preview turns to the bookplate while the buyer writes, and to the cover on a plan pick', async () => {
+    renderSection();
+    await buyButton();
+    const preview = () => document.querySelector('[data-tier]') as HTMLElement;
+    expect(preview().getAttribute('data-side')).toBe('front');
+
+    fireEvent.focus(screen.getByRole('textbox', { name: 'Message' }));
+    expect(preview().getAttribute('data-side')).toBe('back');
+
+    fireEvent.click(screen.getByRole('radio', { name: /Readest Pro/ }));
+    expect(preview().getAttribute('data-side')).toBe('front');
+
+    fireEvent.focus(screen.getByRole('textbox', { name: 'To' }));
+    expect(preview().getAttribute('data-side')).toBe('back');
+
+    // The buyer can still turn it over by hand.
+    fireEvent.click(within(preview()).getByRole('button', { name: 'Turn over' }));
+    expect(preview().getAttribute('data-side')).toBe('front');
+  });
+
   it('the message counter reads left to right in an RTL layout', async () => {
     renderSection();
 
@@ -350,8 +370,10 @@ describe('GiftCardsSection', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     renderSection();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit message' }));
     const face = () => sentRegion().querySelector('[data-tier]') as HTMLElement;
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit message' }));
+    // The message is on the bookplate, so editing it shows that side.
+    expect(face().getAttribute('data-side')).toBe('back');
     fireEvent.change(within(sentRegion()).getByRole('textbox', { name: 'Message' }), {
       target: { value: 'Happy reading' },
     });

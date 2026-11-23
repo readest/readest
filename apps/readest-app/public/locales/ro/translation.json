@@ -3086,5 +3086,7 @@
   "Add recipient email": "Adăugați e-mailul destinatarului",
   "Edit message": "Editați mesajul",
   "Subscribe to {{plan}}": "Abonați-vă la {{plan}}",
-  "Gift, until {{date}}": "Cadou, până la {{date}}"
+  "Gift, until {{date}}": "Cadou, până la {{date}}",
+  "Ex dono": "Ex dono",
+  "Turn over": "Întoarce cardul"
 }

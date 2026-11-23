@@ -3007,5 +3007,7 @@
   "Add recipient email": "பெறுநரின் மின்னஞ்சலைச் சேர்",
   "Edit message": "செய்தியைத் திருத்து",
   "Subscribe to {{plan}}": "{{plan}} க்கு சந்தா செய்யவும்",
-  "Gift, until {{date}}": "பரிசு, {{date}} வரை"
+  "Gift, until {{date}}": "பரிசு, {{date}} வரை",
+  "Ex dono": "அன்புப் பரிசு",
+  "Turn over": "அட்டையைத் திருப்பு"
 }

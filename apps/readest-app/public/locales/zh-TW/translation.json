@@ -2928,5 +2928,7 @@
   "Add recipient email": "新增收件人電子郵件",
   "Edit message": "編輯留言",
   "Subscribe to {{plan}}": "訂閱 {{plan}}",
-  "Gift, until {{date}}": "禮物，有效期限至 {{date}}"
+  "Gift, until {{date}}": "禮物，有效期限至 {{date}}",
+  "Ex dono": "敬贈",
+  "Turn over": "翻轉卡片"
 }

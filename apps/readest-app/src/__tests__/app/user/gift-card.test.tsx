@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import GiftCard, { messageSize } from '@/app/user/components/gift/GiftCard';
+import GiftCard, {
+  messageSize,
+  romanYear,
+  slantsAndSpaces,
+} from '@/app/user/components/gift/GiftCard';
 import type { GiftCardFace } from '@/types/gift';
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -19,28 +23,35 @@ const face = (overrides: Partial<GiftCardFace> = {}): GiftCardFace => ({
   ...overrides,
 });
 
+const card = () => document.querySelector('[data-tier]') as HTMLElement;
+const sideOf = (text: string) =>
+  screen.getByText(text).closest('[data-face]')?.getAttribute('data-face');
+const hidden = (name: 'front' | 'back') =>
+  document.querySelector(`[data-face='${name}']`)?.getAttribute('aria-hidden') === 'true';
+
 afterEach(cleanup);
 
 describe('GiftCard', () => {
-  it('renders tier, message, To and From', () => {
-    render(<GiftCard face={face()} />);
+  it('the cover carries the plan and the year; the bookplate the names and message', () => {
+    render(<GiftCard face={face()} year={2026} />);
 
-    expect(screen.getByText('Readest Pro')).toBeTruthy();
-    expect(screen.getByText('1 year')).toBeTruthy();
-    expect(
-      screen.getByText('Happy holidays! More time for the books you keep meaning to read.'),
-    ).toBeTruthy();
-    expect(screen.getByText('To')).toBeTruthy();
-    expect(screen.getByText('Sam')).toBeTruthy();
-    expect(screen.getByText('From')).toBeTruthy();
-    expect(screen.getByText('Alex')).toBeTruthy();
+    expect(sideOf('Pro')).toBe('front');
+    expect(sideOf('1 year')).toBe('front');
+    expect(sideOf('Gift card')).toBe('front');
+    expect(sideOf('Happy holidays! More time for the books you keep meaning to read.')).toBe(
+      'back',
+    );
+    expect(sideOf('Sam')).toBe('back');
+    expect(sideOf('Alex')).toBe('back');
+    expect(sideOf('Ex dono')).toBe('back');
+    expect(screen.getAllByText('MMXXVI').length).toBeGreaterThan(0);
   });
 
-  it('omits To/From when empty', () => {
+  it('omits To and the signature when the names are empty', () => {
     render(<GiftCard face={face({ recipientName: '', senderName: '  ' })} />);
 
     expect(screen.queryByText('To')).toBeNull();
-    expect(screen.queryByText('From')).toBeNull();
+    expect(screen.queryByText('—', { exact: false })).toBeNull();
   });
 
   it('the message has dir="auto"', () => {
@@ -50,24 +61,85 @@ describe('GiftCard', () => {
   });
 
   it('data-tier matches', () => {
-    const { container, rerender } = render(<GiftCard face={face({ tier: 'plus' })} />);
-    expect(container.querySelector('[data-tier]')?.getAttribute('data-tier')).toBe('plus');
-    expect(screen.getByText('Readest Plus')).toBeTruthy();
+    const { rerender } = render(<GiftCard face={face({ tier: 'plus' })} />);
+    expect(card().getAttribute('data-tier')).toBe('plus');
+    expect(screen.getByText('Plus')).toBeTruthy();
 
     rerender(<GiftCard face={face({ tier: 'pro' })} />);
-    expect(container.querySelector('[data-tier]')?.getAttribute('data-tier')).toBe('pro');
+    expect(card().getAttribute('data-tier')).toBe('pro');
+  });
+
+  it('shows the cover first and turns over on Turn over, and back again', () => {
+    render(<GiftCard face={face()} />);
+    expect(card().getAttribute('data-side')).toBe('front');
+    expect(hidden('back')).toBe(true);
+    expect(hidden('front')).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Turn over' }));
+    expect(card().getAttribute('data-side')).toBe('back');
+    expect(hidden('front')).toBe(true);
+    expect(hidden('back')).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Turn over' }));
+    expect(card().getAttribute('data-side')).toBe('front');
+  });
+
+  it('follows a side it is given and reports the turn instead', () => {
+    const onSideChange = vi.fn();
+    const { rerender } = render(<GiftCard face={face()} side='back' onSideChange={onSideChange} />);
+    expect(card().getAttribute('data-side')).toBe('back');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Turn over' }));
+    expect(onSideChange).toHaveBeenCalledWith('front');
+    // Still the side it was given until the parent changes it.
+    expect(card().getAttribute('data-side')).toBe('back');
+
+    rerender(<GiftCard face={face()} side='front' onSideChange={onSideChange} />);
+    expect(card().getAttribute('data-side')).toBe('front');
+  });
+
+  it('slants and letter-spaces only scripts that take it', () => {
+    expect(slantsAndSpaces('Ex dono')).toBe(true);
+    expect(slantsAndSpaces('Karte umdrehen')).toBe(true);
+    expect(slantsAndSpaces('Подарочная карта')).toBe(true);
+    expect(slantsAndSpaces('Δωροκάρτα')).toBe(true);
+    // Spacing breaks joined letters; a synthesized slant reads as a mistake.
+    expect(slantsAndSpaces('إهداء')).toBe(false);
+    expect(slantsAndSpaces('שי')).toBe(false);
+    expect(slantsAndSpaces('सप्रेम भेंट')).toBe(false);
+    expect(slantsAndSpaces('敬赠')).toBe(false);
+    expect(slantsAndSpaces('증정')).toBe(false);
+    expect(slantsAndSpaces('พลิกบัตร')).toBe(false);
+  });
+
+  it('sets an Arabic or Chinese message upright, an English one in italics', () => {
+    const { rerender } = render(<GiftCard face={face({ message: 'Happy reading' })} />);
+    expect(screen.getByText('Happy reading').className).toContain('italic');
+
+    rerender(<GiftCard face={face({ message: 'عطلة سعيدة' })} />);
+    expect(screen.getByText('عطلة سعيدة').className).not.toContain('italic');
+
+    rerender(<GiftCard face={face({ message: '新年快乐，多读书' })} />);
+    expect(screen.getByText('新年快乐，多读书').className).not.toContain('italic');
+  });
+
+  it('writes the year in Roman numerals', () => {
+    expect(romanYear(2026)).toBe('MMXXVI');
+    expect(romanYear(2027)).toBe('MMXXVII');
+    expect(romanYear(1999)).toBe('MCMXCIX');
+    expect(romanYear(2049)).toBe('MMXLIX');
   });
 
   it('sizes the message by its lines as well as its length', () => {
     expect(messageSize('Happy holidays! More time for the books you keep meaning to read.')).toBe(
-      'text-base',
+      'large',
     );
     // Short, but six lines: set small enough that the sign-off isn't what gets cut.
     expect(
       messageSize('Dear Sam,\n\nHappy holidays! A whole year of reading, on me.\n\nLove,\nAlex'),
-    ).toBe('text-xs');
-    expect(messageSize('Happy reading, Sam!\nAlex')).toBe('text-base');
-    expect(messageSize('word '.repeat(30))).toBe('text-sm');
-    expect(messageSize('word '.repeat(60))).toBe('text-xs');
+    ).toBe('small');
+    expect(messageSize('Happy reading, Sam!\nAlex')).toBe('large');
+    expect(messageSize('word '.repeat(30))).toBe('medium');
+    expect(messageSize('word '.repeat(60))).toBe('small');
   });
 });

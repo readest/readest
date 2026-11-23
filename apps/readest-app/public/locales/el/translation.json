@@ -3007,5 +3007,7 @@
   "Add recipient email": "Προσθήκη email παραλήπτη",
   "Edit message": "Επεξεργασία μηνύματος",
   "Subscribe to {{plan}}": "Συνδρομή στο {{plan}}",
-  "Gift, until {{date}}": "Δώρο, έως {{date}}"
+  "Gift, until {{date}}": "Δώρο, έως {{date}}",
+  "Ex dono": "Δώρο",
+  "Turn over": "Αναποδογύρισμα κάρτας"
 }

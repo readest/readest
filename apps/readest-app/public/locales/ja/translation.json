@@ -2928,5 +2928,7 @@
   "Add recipient email": "受取人のメールを追加",
   "Edit message": "メッセージを編集",
   "Subscribe to {{plan}}": "{{plan}} に登録",
-  "Gift, until {{date}}": "ギフト、{{date}} まで"
+  "Gift, until {{date}}": "ギフト、{{date}} まで",
+  "Ex dono": "謹呈",
+  "Turn over": "カードを裏返す"
 }

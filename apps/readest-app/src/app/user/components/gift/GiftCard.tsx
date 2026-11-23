@@ -1,6 +1,5 @@
 import clsx from 'clsx';
-import Image from 'next/image';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { type TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import type { GiftCardFace, GiftTier } from '@/types/gift';
 
@@ -10,82 +9,202 @@ export const giftTierName = (tier: GiftTier, _: TranslationFunc) =>
 /** What the composer's preview shows, faintly, in a field not filled in yet. */
 export type GiftCardPlaceholders = Pick<GiftCardFace, 'recipientName' | 'senderName' | 'message'>;
 
+/** The cover (plan and year) or the inside cover (names and message). */
+export type GiftCardSide = 'front' | 'back';
+
 /**
- * Each tier's palette, from the plan accents' sky and violet families. The card
- * is a printed object, so it keeps these in dark themes too. Ink is tier-950
- * and secondary ink tier-900: both pass WCAG AA on the darker gradient stop.
- * Every colour is `not-eink:`; under e-ink the card is paper, ink and a 1px
- * border, and the ribbon is an outline.
+ * The card is an old cloth-bound book: gilt stamping on the cover, and a
+ * bookplate pasted on marbled endpaper inside. It is a printed object, so it
+ * keeps its colours in dark themes. Every colour is `not-eink:`; under e-ink
+ * the card is paper, ink and 1px rules.
  */
-const TIER_STYLES: Record<GiftTier, { card: string; ink: string; muted: string; accent: string }> =
+const TIERS: Record<GiftTier, { cloth: string; endpaper: string; ink: string; marble: string[] }> =
   {
     plus: {
-      card: 'border-sky-900/10 not-eink:from-sky-100 not-eink:to-sky-300 not-eink:shadow-sky-900/20',
-      ink: 'not-eink:text-sky-950',
-      muted: 'not-eink:text-sky-900',
-      accent: 'not-eink:text-sky-700',
+      cloth: 'not-eink:bg-[#1f2c4c]',
+      endpaper: 'not-eink:bg-[#22304f]',
+      ink: 'not-eink:[--gift-ink:#1f3a6b]',
+      marble: ['#22304f', '#b8955a', '#e9dcc0', '#2c3d63', '#6d2a33', '#d8c39a', '#1b2640'],
     },
     pro: {
-      card: 'border-violet-900/10 not-eink:from-violet-100 not-eink:to-violet-300 not-eink:shadow-violet-900/20',
-      ink: 'not-eink:text-violet-950',
-      muted: 'not-eink:text-violet-900',
-      accent: 'not-eink:text-violet-700',
+      cloth: 'not-eink:bg-[#4d1823]',
+      endpaper: 'not-eink:bg-[#561c27]',
+      ink: 'not-eink:[--gift-ink:#6e1f2c]',
+      marble: ['#561c27', '#b8955a', '#e9dcc0', '#3a2a35', '#7a2a36', '#d8c39a', '#41222b'],
     },
   };
 
+const SERIF = "'Iowan Old Style', Palatino, 'Palatino Linotype', 'Book Antiqua', Georgia, serif";
+
+// Gold foil: a metallic gradient through the letters, pressed into the cloth.
+const GILT =
+  'not-eink:bg-[linear-gradient(165deg,#9c7633_0%,#f4dd98_38%,#c69b4b_55%,#f6e3a6_72%,#a77f38_100%)] not-eink:bg-clip-text not-eink:[-webkit-background-clip:text] not-eink:text-transparent not-eink:drop-shadow-[0_0.6px_0_rgb(0_0_0/0.6)]';
+
+// Book cloth: a fine weave under a soft light from above.
+const CLOTH: React.CSSProperties = {
+  backgroundImage: [
+    'radial-gradient(130% 100% at 55% 38%, rgb(255 255 255 / 0.07), transparent 45%, rgb(0 0 0 / 0.5) 100%)',
+    'repeating-linear-gradient(0deg, rgb(255 255 255 / 0.04) 0 1px, transparent 1px 3px)',
+    'repeating-linear-gradient(90deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 3px)',
+  ].join(','),
+};
+
+// Bands of colour that the turbulence filter combs into marbling.
+const marbleBands = (colors: string[]) => {
+  const bands: { y: number; height: number; fill: string }[] = [];
+  for (let i = 0, y = -40; y < 280; i++) {
+    const height = 1.6 + ((i * 7) % 5) * 0.7;
+    bands.push({ y, height, fill: colors[i % colors.length]! });
+    y += height;
+  }
+  return bands;
+};
+const MARBLE_BANDS: Record<GiftTier, ReturnType<typeof marbleBands>> = {
+  plus: marbleBands(TIERS.plus.marble),
+  pro: marbleBands(TIERS.pro.marble),
+};
+
+const ROMAN: [number, string][] = [
+  [1000, 'M'],
+  [900, 'CM'],
+  [500, 'D'],
+  [400, 'CD'],
+  [100, 'C'],
+  [90, 'XC'],
+  [50, 'L'],
+  [40, 'XL'],
+  [10, 'X'],
+  [9, 'IX'],
+  [5, 'V'],
+  [4, 'IV'],
+  [1, 'I'],
+];
+
+/** The year as an old title page prints it. */
+export const romanYear = (year: number) => {
+  let rest = year;
+  let out = '';
+  for (const [value, numeral] of ROMAN) {
+    while (rest >= value) {
+      out += numeral;
+      rest -= value;
+    }
+  }
+  return out;
+};
+
+// Hebrew, Arabic, Indic, Thai, Tibetan, CJK and Hangul: wide letter-spacing
+// breaks joined letters and a synthesized slant reads as a mistake.
+const UPRIGHT_SCRIPTS =
+  /[\u0590-\u08ff\u0900-\u0dff\u0e00-\u0fff\u1100-\u11ff\u3000-\u9fff\uac00-\ud7af\uf900-\ufaff]/;
+
+/** Whether text can take the card's italics and spaced capitals. */
+export const slantsAndSpaces = (text: string) => !UPRIGHT_SCRIPTS.test(text);
+
+export type GiftMessageSize = 'large' | 'medium' | 'small';
+
 // Long messages set smaller. A line break starts a new line however short the
 // one before it, so lines count as well as characters: about 40 characters
-// fill a line of the largest size on a phone-width card.
-export const messageSize = (message: string) => {
+// fill a line of the largest size.
+export const messageSize = (message: string): GiftMessageSize => {
   const lines = message
     .split('\n')
     .reduce((sum, line) => sum + Math.max(1, Math.ceil(line.length / 40)), 0);
-  if (lines > 4) return 'text-xs';
-  if (lines > 2) return 'text-sm';
-  return 'text-base';
+  if (lines > 4) return 'small';
+  if (lines > 2) return 'medium';
+  return 'large';
 };
 
-// `leading-snug`, in em so the ruled lines below match the message's lines.
-const LEADING = 1.375;
-const RULED_LINES: React.CSSProperties = {
-  backgroundImage: `linear-gradient(to bottom, transparent calc(${LEADING}em - 1px), var(--gift-rule, transparent) 0)`,
-  backgroundSize: `100% ${LEADING}em`,
+// In card widths, so the bookplate reads the same at every size, but never
+// below 11px.
+const MESSAGE_SIZES: Record<GiftMessageSize, string> = {
+  large: 'text-[max(11px,3.9cqw)]',
+  medium: 'text-[max(11px,3.4cqw)]',
+  small: 'text-[max(11px,3cqw)]',
 };
 
-// A bookmark ribbon hanging from the top edge. It sits at the card's end
-// padding and stops beside the title, in the room the top rows reserve with
-// `pe-8`. E-ink draws it as an outline left open at the top, where the card's
-// border already runs, with the sides inset half a stroke so neither is clipped.
-const Ribbon = ({ className }: { className?: string }) => (
-  <svg
-    aria-hidden='true'
-    viewBox='0 0 20 64'
-    className={clsx(
-      'pointer-events-none absolute end-4 top-0 h-16 w-5 overflow-visible',
-      className,
-    )}
-  >
-    <path d='M0 0H20V64L10 54L0 64Z' className='eink:hidden fill-current' />
-    {/* Satin sheen down the leading half, colour only. */}
-    <path d='M0 0H8V56L0 64Z' className='eink:hidden fill-white/20' />
-    <path
-      d='M0.5 0V63L10 53.5L19.5 63V0'
-      fill='none'
-      strokeWidth={1}
-      className='not-eink:hidden stroke-base-content'
-    />
+// The cover's double rule with a curl in each corner, set off the spine.
+const FRAME = (
+  <>
+    <rect x='40' y='14' width='302' height='198' rx='3' strokeWidth='1.6' />
+    <rect x='47' y='21' width='288' height='184' rx='2' strokeWidth='0.7' />
+    {(
+      [
+        [47, 21, 1, 1],
+        [335, 21, -1, 1],
+        [47, 205, 1, -1],
+        [335, 205, -1, -1],
+      ] as const
+    ).map(([x, y, sx, sy]) => (
+      <path
+        key={`${x},${y}`}
+        strokeWidth='0.9'
+        d={`M${x + sx * 4},${y + sy * 14} C${x + sx * 4},${y + sy * 7} ${x + sx * 7},${y + sy * 4} ${x + sx * 14},${y + sy * 4} M${x + sx * 7},${y + sy * 9} a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0`}
+      />
+    ))}
+  </>
+);
+
+// An open book with a ribbon, after the Readest icon, cut as an engraving.
+const Emblem = ({ className }: { className?: string }) => (
+  <svg aria-hidden='true' viewBox='0 0 64 44' className={className}>
+    <g fill='none' stroke='currentColor' strokeLinecap='round' strokeLinejoin='round'>
+      <path strokeWidth='1.3' d='M32 36 C24 32 13 31.5 4 34.5 V8.5 C13 5.5 24 6 32 10.5 Z' />
+      <path strokeWidth='1.3' d='M32 36 C40 32 51 31.5 60 34.5 V8.5 C51 5.5 40 6 32 10.5 Z' />
+      <path strokeWidth='0.9' d='M2 37.5 C12 34.5 24 35 32 39 C40 35 52 34.5 62 37.5' />
+      <path
+        strokeWidth='0.7'
+        d='M8 13 C14 11 21 11.5 28 14 M8 17 C14 15 21 15.5 28 18 M8 21 C14 19 21 19.5 28 22 M8 25 C14 23 21 23.5 28 26 M8 29 C14 27 19 27.5 22 28.5 M36 14 C43 11.5 50 11 56 13 M36 18 C43 15.5 50 15 56 17 M36 22 C43 19.5 50 19 56 21 M36 26 C43 23.5 50 23 56 25 M42 28.5 C46 27.5 51 27 56 29'
+      />
+    </g>
+    <path fill='currentColor' d='M35 33 V44 L37.5 41.4 L40 44 V32.2 Z' />
   </svg>
+);
+
+const Fleuron = ({ className }: { className?: string }) => (
+  <svg aria-hidden='true' viewBox='0 0 80 12' className={className}>
+    <g fill='none' stroke='currentColor' strokeWidth='0.8' strokeLinecap='round'>
+      <path d='M2 6 H30 M50 6 H78' />
+      <path d='M30 6 C34 2 37 2 40 6 C43 2 46 2 50 6 M30 6 C34 10 37 10 40 6 C43 10 46 10 50 6' />
+    </g>
+    <circle cx='40' cy='6' r='1.3' fill='currentColor' />
+  </svg>
+);
+
+// One face of the card. Each hides its back, so the inner box's turn shows one
+// at a time; reduced motion and e-ink skip the turn and swap them instead.
+const FACE = clsx(
+  'absolute inset-0 overflow-hidden rounded-2xl border backface-hidden',
+  'bg-base-100 text-base-content eink-bordered',
+  'border-black/10 not-eink:shadow-lg theme-dark:border-white/20',
+  'motion-reduce:transition-opacity motion-reduce:aria-hidden:opacity-0 eink:aria-hidden:invisible',
 );
 
 interface GiftCardProps {
   face: GiftCardFace;
   placeholders?: GiftCardPlaceholders;
+  /** The year printed on the cover and the bookplate; this year by default. */
+  year?: number;
+  /** The side to show. Without it the card turns over by itself. */
+  side?: GiftCardSide;
+  onSideChange?: (side: GiftCardSide) => void;
   className?: string;
 }
 
-const GiftCard: React.FC<GiftCardProps> = ({ face, placeholders, className }) => {
+const GiftCard: React.FC<GiftCardProps> = ({
+  face,
+  placeholders,
+  year = new Date().getFullYear(),
+  side,
+  onSideChange,
+  className,
+}) => {
   const _ = useTranslation();
-  const tier = TIER_STYLES[face.tier];
+  const tier = TIERS[face.tier];
+  const ids = useId().replace(/[^\w-]/g, '');
+  const goldId = `gift-gold-${ids}`;
+  const marbleId = `gift-marble-${ids}`;
+
   const recipientName = face.recipientName.trim();
   const senderName = face.senderName.trim();
   const message = face.message.trim();
@@ -96,13 +215,43 @@ const GiftCard: React.FC<GiftCardProps> = ({ face, placeholders, className }) =>
   };
   const faint = (filled: string) => !filled && 'not-eink:opacity-55';
   const size = messageSize(shown.message);
-  const nameLabel = clsx(
-    'shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.12em]',
-    tier.muted,
-  );
+  const roman = romanYear(year);
+  const label = _('Gift card');
+  const exDono = _('Ex dono');
+  const plan = `${giftTierName(face.tier, _)} · ${_('1 year')}`;
+  const italic = (text: string) => slantsAndSpaces(text) && 'italic';
 
-  // As many whole lines as the ruled middle holds at this width, so the
-  // message never runs under the title or the names and its ellipsis shows.
+  const [ownSide, setOwnSide] = useState<GiftCardSide>('front');
+  const current = side ?? ownSide;
+  const turn = () => {
+    const next = current === 'front' ? 'back' : 'front';
+    if (side === undefined) setOwnSide(next);
+    onSideChange?.(next);
+  };
+
+  // Lift the card off the page while it turns, as a hand would.
+  const card = useRef<HTMLDivElement>(null);
+  const turned = useRef(current);
+  useEffect(() => {
+    if (turned.current === current) return;
+    turned.current = current;
+    const element = card.current;
+    const still =
+      document.documentElement.getAttribute('data-eink') === 'true' ||
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (still || !element?.animate) return;
+    element.animate(
+      [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.06) translateY(-2%)', offset: 0.35 },
+        { transform: 'scale(1)' },
+      ],
+      { duration: 800, easing: 'cubic-bezier(0.3, 0.7, 0.4, 1)' },
+    );
+  }, [current]);
+
+  // As many whole lines as the bookplate holds at this width, so the message
+  // never runs into the signature and its ellipsis shows.
   const messageArea = useRef<HTMLDivElement>(null);
   const [lines, setLines] = useState<number>();
   useLayoutEffect(() => {
@@ -120,102 +269,246 @@ const GiftCard: React.FC<GiftCardProps> = ({ face, placeholders, className }) =>
 
   return (
     <div
+      ref={card}
       data-tier={face.tier}
+      data-side={current}
+      style={{ fontFamily: SERIF }}
       className={clsx(
-        '@container relative isolate flex aspect-[1.586/1] w-full flex-col overflow-hidden rounded-2xl border bg-clip-padding p-4',
-        'bg-base-100 text-base-content eink-bordered',
-        'not-eink:bg-linear-to-br not-eink:shadow-lg',
-        // A hairline rim over the page keeps the light card apart from a dark one.
-        'theme-dark:border-white/30',
-        tier.card,
-        tier.ink,
+        '@container relative aspect-[1.586/1] w-full perspective-[1400px]',
         className,
       )}
     >
-      <Ribbon className={tier.accent} />
-
-      <div className='flex items-center justify-between gap-3 pe-8'>
-        <span className='flex min-w-0 items-center gap-1.5'>
-          <Image
-            src='/icon.png'
-            alt=''
-            width={20}
-            height={20}
-            className='eink:grayscale size-5 shrink-0'
-          />
-          <span className='truncate text-sm font-semibold tracking-tight'>Readest</span>
-        </span>
-        <span
-          className={clsx(
-            'shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.16em]',
-            tier.muted,
-          )}
-        >
-          {_('Gift card')}
-        </span>
-      </div>
-
-      <p className='mt-1 flex flex-wrap items-baseline gap-x-2 pe-8 leading-tight'>
-        <span className='text-xl font-semibold leading-tight tracking-tight'>
-          {_('Readest {{plan}}', { plan: giftTierName(face.tier, _) })}
-        </span>
-        <span aria-hidden='true' className={tier.muted}>
-          ·
-        </span>
-        <span className={clsx('text-sm font-medium leading-tight', tier.muted)}>{_('1 year')}</span>
-      </p>
-
-      {/* The ruled writing area: a rule under every line, none in e-ink. The
-          narrowest cards set every message small. */}
       <div
-        ref={messageArea}
-        style={RULED_LINES}
         className={clsx(
-          'mb-0.5 mt-2 min-h-0 flex-1 overflow-hidden font-serif leading-snug',
-          'not-eink:[--gift-rule:color-mix(in_srgb,currentColor_14%,transparent)]',
-          size,
-          '@max-[16rem]:text-xs',
+          'absolute inset-0 transform-3d transition-transform duration-[800ms] ease-[cubic-bezier(0.3,1.3,0.45,1)]',
+          'motion-reduce:transform-none motion-reduce:transition-none eink:transform-none eink:transition-none',
+          current === 'back' && 'rotate-y-180',
         )}
       >
-        {shown.message && (
-          <p
-            dir='auto'
-            style={{ '--gift-lines': lines } as React.CSSProperties}
+        {/* The cover. */}
+        <div
+          data-face='front'
+          aria-hidden={current !== 'front'}
+          className={clsx(FACE, tier.cloth, 'not-eink:text-[#e9cf86]')}
+        >
+          <div aria-hidden='true' className='eink:hidden absolute inset-0' style={CLOTH} />
+          {/* The spine's hinge, on the side a book in this language opens from. */}
+          <div
+            aria-hidden='true'
             className={clsx(
-              'line-clamp-(--gift-lines) whitespace-pre-line break-words italic [&:dir(rtl)]:not-italic',
-              faint(message),
+              'eink:hidden absolute inset-y-0 start-0 w-[6.5%]',
+              'bg-[linear-gradient(90deg,rgb(0_0_0/0.42),rgb(0_0_0/0.12)_62%,rgb(255_255_255/0.08)_78%,rgb(0_0_0/0.3)_92%,transparent)]',
+              'rtl:bg-[linear-gradient(270deg,rgb(0_0_0/0.42),rgb(0_0_0/0.12)_62%,rgb(255_255_255/0.08)_78%,rgb(0_0_0/0.3)_92%,transparent)]',
+            )}
+          />
+          {/* E-ink keeps the hinge as a rule, so the frame still reads as set off a spine. */}
+          <div
+            aria-hidden='true'
+            className='not-eink:hidden border-base-content absolute inset-y-0 start-[6.5%] border-s'
+          />
+          <svg
+            aria-hidden='true'
+            viewBox='0 0 360 227'
+            className='absolute inset-0 size-full rtl:-scale-x-100'
+          >
+            <defs>
+              <linearGradient id={goldId} x1='0' y1='0' x2='1' y2='1'>
+                <stop offset='0' stopColor='#9c7633' />
+                <stop offset='0.38' stopColor='#f4dd98' />
+                <stop offset='0.55' stopColor='#c69b4b' />
+                <stop offset='0.72' stopColor='#f6e3a6' />
+                <stop offset='1' stopColor='#a77f38' />
+              </linearGradient>
+            </defs>
+            <g fill='none' stroke={`url(#${goldId})`} className='eink:hidden'>
+              {FRAME}
+            </g>
+            <g fill='none' stroke='currentColor' className='not-eink:hidden'>
+              {FRAME}
+            </g>
+          </svg>
+
+          <div className='absolute inset-0 flex flex-col items-center justify-center ps-[6.5%] text-center'>
+            <Emblem className='mb-[2.2cqw] h-auto w-[14cqw] not-eink:drop-shadow-[0_0.6px_0_rgb(0_0_0/0.6)]' />
+            <span
+              className={clsx(
+                'mb-[1.2cqw] leading-tight',
+                // Scripts without capitals lose the spacing, so they get the size instead.
+                slantsAndSpaces(label)
+                  ? 'text-[max(8px,2.9cqw)] uppercase tracking-[0.34em]'
+                  : 'text-[max(10px,3.4cqw)]',
+                GILT,
+              )}
+            >
+              {label}
+            </span>
+            <span
+              className={clsx(
+                'ms-[0.16em] text-[10cqw] font-semibold uppercase leading-none tracking-[0.16em]',
+                GILT,
+              )}
+            >
+              Readest
+            </span>
+            <Fleuron className='mb-[1.2cqw] mt-[1.6cqw] h-auto w-[24cqw] not-eink:text-[#d9bd72]' />
+            <span className={clsx('text-[max(12px,4.4cqw)] leading-tight', italic(plan), GILT)}>
+              <span>{giftTierName(face.tier, _)}</span>
+              {' · '}
+              <span>{_('1 year')}</span>
+            </span>
+          </div>
+          <span
+            aria-hidden='true'
+            className={clsx(
+              'absolute inset-x-0 bottom-[12.5%] ps-[6.5%] text-center text-[max(7px,2.6cqw)] tracking-[0.3em]',
+              GILT,
             )}
           >
-            {shown.message}
-          </p>
-        )}
+            {roman}
+          </span>
+        </div>
+
+        {/* The inside cover: a bookplate on marbled endpaper. */}
+        <div
+          data-face='back'
+          aria-hidden={current !== 'back'}
+          className={clsx(
+            FACE,
+            tier.endpaper,
+            tier.ink,
+            'eink:[--gift-ink:currentColor] rotate-y-180 motion-reduce:transform-none eink:transform-none',
+          )}
+        >
+          <svg
+            aria-hidden='true'
+            viewBox='0 0 360 227'
+            preserveAspectRatio='xMidYMid slice'
+            className='eink:hidden absolute inset-0 size-full'
+          >
+            <defs>
+              <filter id={marbleId} x='0' y='0' width='100%' height='100%'>
+                <feTurbulence
+                  type='fractalNoise'
+                  baseFrequency='0.014 0.05'
+                  numOctaves={3}
+                  seed={11}
+                  result='noise'
+                />
+                <feDisplacementMap
+                  in='SourceGraphic'
+                  in2='noise'
+                  scale={46}
+                  xChannelSelector='R'
+                  yChannelSelector='G'
+                />
+              </filter>
+            </defs>
+            <g filter={`url(#${marbleId})`}>
+              {MARBLE_BANDS[face.tier].map(({ y, height, fill }) => (
+                <rect key={y} x='-40' y={y} width='440' height={height} fill={fill} />
+              ))}
+            </g>
+          </svg>
+          <div
+            aria-hidden='true'
+            className='eink:hidden absolute inset-0 bg-[radial-gradient(120%_100%_at_50%_50%,transparent_55%,rgb(0_0_0/0.35))]'
+          />
+
+          <div
+            data-plate
+            className={clsx(
+              'absolute inset-x-[6.5%] inset-y-[7%] flex flex-col rounded-[2px]',
+              'bg-base-100 text-base-content not-eink:bg-[#f4ecd8] not-eink:text-[#2b2116]',
+              'not-eink:shadow-[0_1px_1px_rgb(0_0_0/0.35),0_3px_10px_rgb(0_0_0/0.35)]',
+              'px-[6cqw] pb-[3.6cqw] pt-[5.6cqw]',
+            )}
+          >
+            <div
+              aria-hidden='true'
+              className='pointer-events-none absolute inset-[2cqw] border border-(--gift-ink) opacity-75'
+            />
+            <div
+              aria-hidden='true'
+              className='pointer-events-none absolute inset-[3cqw] border-[0.5px] border-(--gift-ink) opacity-75'
+            />
+            <span className='absolute inset-x-0 top-[2cqw] -translate-y-1/2 text-center leading-none'>
+              <span
+                className={clsx(
+                  'bg-base-100 px-[1.6cqw] text-(--gift-ink) not-eink:bg-[#f4ecd8]',
+                  slantsAndSpaces(exDono)
+                    ? 'text-[max(7px,2.5cqw)] uppercase tracking-[0.36em]'
+                    : 'text-[max(9px,3cqw)]',
+                )}
+              >
+                {exDono}
+              </span>
+            </span>
+
+            {shown.recipientName && (
+              <p className='flex min-w-0 items-baseline gap-[1.2cqw] text-[max(11px,3.4cqw)] leading-snug'>
+                <span className={clsx('shrink-0 text-(--gift-ink)', italic(_('To')))}>
+                  {_('To')}
+                </span>
+                <span
+                  dir='auto'
+                  className={clsx('truncate', italic(shown.recipientName), faint(recipientName))}
+                >
+                  {shown.recipientName}
+                </span>
+              </p>
+            )}
+
+            <div
+              ref={messageArea}
+              className={clsx(
+                'mt-[1cqw] min-h-0 flex-1 overflow-hidden leading-[1.38]',
+                MESSAGE_SIZES[size],
+              )}
+            >
+              {shown.message && (
+                <p
+                  dir='auto'
+                  style={{ '--gift-lines': lines } as React.CSSProperties}
+                  className={clsx(
+                    'line-clamp-(--gift-lines) whitespace-pre-line break-words',
+                    italic(shown.message),
+                    faint(message),
+                  )}
+                >
+                  {shown.message}
+                </p>
+              )}
+            </div>
+
+            <div className='mt-[0.6cqw] flex items-baseline justify-between gap-[3cqw]'>
+              <span
+                aria-hidden='true'
+                className='shrink-0 text-[max(7px,2.2cqw)] uppercase tracking-[0.22em] text-(--gift-ink) opacity-80'
+              >
+                {`Readest · ${roman}`}
+              </span>
+              {shown.senderName && (
+                <span className='flex min-w-0 items-baseline gap-[1cqw] text-[max(11px,3.4cqw)]'>
+                  <span aria-hidden='true'>—</span>
+                  <span
+                    dir='auto'
+                    className={clsx('truncate', italic(shown.senderName), faint(senderName))}
+                  >
+                    {shown.senderName}
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {(shown.recipientName || shown.senderName) && (
-        <div className='flex items-baseline justify-between gap-4'>
-          {shown.recipientName ? (
-            <span className='flex min-w-0 items-baseline gap-1.5'>
-              <span className={nameLabel}>{_('To')}</span>
-              <span
-                dir='auto'
-                className={clsx('truncate text-sm font-medium', faint(recipientName))}
-              >
-                {shown.recipientName}
-              </span>
-            </span>
-          ) : (
-            <span />
-          )}
-          {shown.senderName && (
-            <span className='flex min-w-0 items-baseline gap-1.5'>
-              <span className={nameLabel}>{_('From')}</span>
-              <span dir='auto' className={clsx('truncate text-sm font-medium', faint(senderName))}>
-                {shown.senderName}
-              </span>
-            </span>
-          )}
-        </div>
-      )}
+      <button
+        type='button'
+        aria-label={_('Turn over')}
+        onClick={turn}
+        className='absolute inset-0 z-10 cursor-pointer rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2'
+      />
     </div>
   );
 };

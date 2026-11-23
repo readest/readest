@@ -3165,5 +3165,7 @@
   "Add recipient email": "Додати email отримувача",
   "Edit message": "Змінити повідомлення",
   "Subscribe to {{plan}}": "Підписатися на {{plan}}",
-  "Gift, until {{date}}": "Подарунок, до {{date}}"
+  "Gift, until {{date}}": "Подарунок, до {{date}}",
+  "Ex dono": "У дарунок",
+  "Turn over": "Перевернути картку"
 }

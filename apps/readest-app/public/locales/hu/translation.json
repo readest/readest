@@ -3007,5 +3007,7 @@
   "Add recipient email": "Címzett e-mail-címének hozzáadása",
   "Edit message": "Üzenet szerkesztése",
   "Subscribe to {{plan}}": "Előfizetés: {{plan}}",
-  "Gift, until {{date}}": "Ajándék, eddig: {{date}}"
+  "Gift, until {{date}}": "Ajándék, eddig: {{date}}",
+  "Ex dono": "Ex dono",
+  "Turn over": "Kártya megfordítása"
 }
