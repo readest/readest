@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { CryptoSession } from '@/libs/crypto/session';
+import { HlcGenerator } from '@/libs/crdt';
+import { ReplicaSyncManager } from '@/services/sync/replicaSyncManager';
 import {
   captureCipherTexts,
   cipherTextsChanged,
@@ -9,7 +11,7 @@ import {
   encryptPackedFields,
 } from '@/services/sync/replicaCryptoMiddleware';
 import { isCipherEnvelope } from '@/types/replica';
-import type { CipherEnvelope, FieldsObject, Hlc } from '@/types/replica';
+import type { CipherEnvelope, FieldsObject, Hlc, ReplicaRow } from '@/types/replica';
 import type { ReplicaKeyRow } from '@/libs/replicaSyncClient';
 
 const ITER = 1000;
@@ -289,6 +291,46 @@ describe('replicaCryptoMiddleware', () => {
       const out = collectDecryptSuccess(fields, before);
       expect(out['username']).toBe(userCipher.c);
       expect(out['password']).toBeUndefined();
+    });
+  });
+
+  // A pull lays a queued change over the pulled row (#7670), and the apply
+  // path then decrypts that row in place. The queued cipher must stay a
+  // cipher, or the next push sends the plaintext.
+  describe('a pulled row with a newer queued encrypted field', () => {
+    test('decrypting the pulled row leaves the queued cipher to push', async () => {
+      await session.setup('pw');
+      const cipherOf = async (password: string) => {
+        const packed: Record<string, unknown> = { password };
+        await encryptPackedFields(packed, ['password'], session);
+        return packed['password'];
+      };
+      const row = (password: unknown, t: Hlc): ReplicaRow => ({
+        user_id: 'u1',
+        kind: 'opds_catalog',
+        replica_id: 'c1',
+        fields_jsonb: { password: { v: password, t, s: 'dev' } },
+        manifest_jsonb: null,
+        deleted_at_ts: null,
+        reincarnation: null,
+        updated_at_ts: t,
+        schema_version: 1,
+      });
+      const older = row(await cipherOf('old'), '00000000001-00000000-dev' as Hlc);
+      const push = vi.fn(async (rows: ReplicaRow[]) => rows);
+      const manager = new ReplicaSyncManager({
+        hlc: new HlcGenerator('dev', () => 0),
+        client: { push, pull: vi.fn(async () => [older]), pullBatch: vi.fn(async () => []) },
+        cursorStore: { get: () => null, set: () => {} },
+      });
+      manager.markDirty(row(await cipherOf('hunter2'), '00000000002-00000000-dev' as Hlc));
+
+      const [pulled] = await manager.pull('opds_catalog');
+      await decryptRowFields(pulled!.fields_jsonb, ['password'], session);
+      expect(pulled!.fields_jsonb['password']!.v).toBe('hunter2');
+      await manager.flush();
+
+      expect(isCipherEnvelope(push.mock.calls[0]![0][0]!.fields_jsonb['password']!.v)).toBe(true);
     });
   });
 });

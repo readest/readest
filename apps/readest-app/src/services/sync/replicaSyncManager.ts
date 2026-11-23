@@ -1,7 +1,7 @@
 import { MAX_PUSH_BATCH } from '@/types/replica';
 import { HlcGenerator, hlcCompare, hlcMax, mergeFields } from '@/libs/crdt';
 import { isSyncError } from '@/libs/errors';
-import type { Hlc, ReplicaRow } from '@/types/replica';
+import type { FieldsObject, Hlc, ReplicaRow } from '@/types/replica';
 import type { ReplicaSyncClient } from '@/libs/replicaSyncClient';
 
 /** "This backend's kind allowlist predates the client" — never a row/data problem. */
@@ -93,6 +93,12 @@ const mergeDirtyRows = (a: ReplicaRow, b: ReplicaRow): ReplicaRow => {
     schema_version: Math.max(a.schema_version, b.schema_version),
   };
 };
+
+// The apply path decrypts envelopes in place (decryptRowFields): a queued
+// envelope handed to it must be a copy, or the plaintext lands in the queue
+// and the next push sends it.
+const copyEnvelopes = (fields: FieldsObject): FieldsObject =>
+  Object.fromEntries(Object.entries(fields).map(([key, envelope]) => [key, { ...envelope }]));
 
 export class ReplicaSyncManager {
   private readonly dirty = new Map<string, ReplicaRow>();
@@ -357,7 +363,7 @@ export class ReplicaSyncManager {
       const key = dirtyKeyOf(row);
       let fields = row.fields_jsonb;
       for (const local of [this.pushedDuringPull.get(key), this.dirty.get(key)]) {
-        if (local) fields = mergeFields(fields, local.fields_jsonb);
+        if (local) fields = mergeFields(fields, copyEnvelopes(local.fields_jsonb));
       }
       return fields === row.fields_jsonb ? row : { ...row, fields_jsonb: fields };
     });
