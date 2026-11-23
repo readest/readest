@@ -1,5 +1,6 @@
 // Web APIs a Tauri page needs that blitz-qjs-script's bootstrap.js does not provide: fetch (to the
-// webview's custom-scheme handlers, which is how Tauri's IPC and asset protocols are reached),
+// webview's custom-scheme handlers, which is how Tauri's IPC and asset protocols are reached, and
+// to http(s) URLs, net.rs),
 // Headers/Request/Response, URL/URLSearchParams, TextEncoder/TextDecoder, crypto.getRandomValues,
 // structuredClone, and window.ipc.postMessage. Rust ops live on `__tauri` (webview.rs).
 (() => {
@@ -683,7 +684,7 @@
     },
     // What wry gives a page for Tauri's postMessage IPC fallback.
     ipc: { postMessage: (s) => t.postMessage(String(s)) },
-    // Called by the runtime when a custom-scheme handler responds: (id, status, [k, v, ...], ArrayBuffer).
+    // Called by the runtime when a custom-scheme handler or the network answers: (id, status, [k, v, ...], ArrayBuffer).
     __tauriFetchDone(id, status, headers, body) {
       const p = pending.get(id);
       if (!p) return;
@@ -691,6 +692,13 @@
       const h = new Headers();
       for (let i = 0; i < headers.length; i += 2) h.append(headers[i], headers[i + 1]);
       p.resolve(new Response(body, { status, headers: h, url: p.url }));
+    },
+    // A network error, rejected as a browser does (with the cause, which a browser keeps to itself).
+    __tauriFetchFailed(id, message) {
+      const p = pending.get(id);
+      if (!p) return;
+      pending.delete(id);
+      p.reject(new TypeError(`Failed to fetch ${p.url}: ${message}`));
     },
   });
 })();

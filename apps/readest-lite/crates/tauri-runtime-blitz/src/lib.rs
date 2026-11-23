@@ -13,6 +13,7 @@
 mod display;
 mod fonts;
 mod frame;
+mod net;
 mod webview;
 
 use blitz_qjs_script::eline;
@@ -40,7 +41,6 @@ use windows::Win32::Foundation::HWND;
 
 use std::{
     any::Any,
-    borrow::Cow,
     cell::RefCell,
     collections::HashMap,
     fmt,
@@ -63,11 +63,12 @@ pub(crate) enum Message {
         webview: u32,
         script: String,
     },
-    /// A custom-scheme handler answered the page's `fetch` number `id`.
+    /// The page's `fetch` number `id` got its answer: a custom-scheme handler's, the network's,
+    /// or a network error.
     FetchDone {
         webview: u32,
         id: u32,
-        response: http::Response<Cow<'static, [u8]>>,
+        response: webview::FetchResult,
     },
     Navigate {
         webview: u32,

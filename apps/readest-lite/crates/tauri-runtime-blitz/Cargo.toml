@@ -35,6 +35,8 @@ http = "1"
 bytes = "1"
 # CompressionStream/DecompressionStream (zip.js reads EPUBs through them).
 flate2 = "1"
+# fetch to http(s) URLs (net.rs): rustls with webpki-roots, gzip.
+ureq = "3.4"
 raw-window-handle = "0.6"
 log = "0.4"
 x11rb = { version = "0.13", optional = true }

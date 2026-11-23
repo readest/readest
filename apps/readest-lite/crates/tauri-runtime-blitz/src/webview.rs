@@ -206,6 +206,60 @@ struct OpState {
     url: Arc<Mutex<String>>,
 }
 
+/// What the page's `fetch` number `id` gets: a response, or why it failed (a network error).
+pub(crate) type FetchResult = Result<http::Response<Cow<'static, [u8]>>, String>;
+
+/// Settles the page's `fetch` number `id` (web.js `__tauriFetchDone`/`__tauriFetchFailed`).
+fn answer_fetch(doc: &mut QjsDocument, id: u32, res: FetchResult) {
+    let res = match res {
+        Ok(res) => res,
+        Err(e) => {
+            if std::env::var_os("BLITZ_TAURI_TRACE_FETCH").is_some() {
+                eline!("fetch #{id} failed @{:.1} {e}", t_ms());
+            }
+            doc.context().with(|ctx| {
+                let Ok(f) = ctx.globals().get::<_, Function>("__tauriFetchFailed") else {
+                    return;
+                };
+                if let Err(e) = f.call::<_, ()>((id, e)) {
+                    log::error!("__tauriFetchFailed: {e}");
+                }
+            });
+            doc.run_jobs();
+            return;
+        }
+    };
+    let status = res.status().as_u16();
+    if std::env::var_os("BLITZ_TAURI_TRACE_FETCH").is_some() {
+        let body =
+            String::from_utf8_lossy(&res.body()[..res.body().len().min(160)]).replace('\n', " ");
+        eline!("fetch #{id} -> {status} @{:.1} {body}", t_ms());
+    }
+    let headers: Vec<String> = res
+        .headers()
+        .iter()
+        .flat_map(|(k, v)| {
+            [
+                k.as_str().to_owned(),
+                v.to_str().unwrap_or_default().to_owned(),
+            ]
+        })
+        .collect();
+    let body = res.into_body().into_owned();
+    doc.context().with(|ctx| {
+        let Ok(f) = ctx.globals().get::<_, Function>("__tauriFetchDone") else {
+            return;
+        };
+        let Ok(buf) = ArrayBuffer::new(ctx.clone(), body) else {
+            return;
+        };
+        if let Err(e) = f.call::<_, ()>((id, status, headers, buf)) {
+            log::error!("__tauriFetchDone: {e}");
+        }
+    });
+    doc.run_jobs();
+}
+
 pub(crate) struct BlitzWebview {
     pub id: u32,
     pub label: String,
@@ -468,37 +522,10 @@ impl BlitzWebview {
         }
     }
 
-    pub fn fetch_done(&mut self, id: u32, res: http::Response<Cow<'static, [u8]>>) {
-        let Some(doc) = self.doc.as_mut() else { return };
-        let status = res.status().as_u16();
-        if std::env::var_os("BLITZ_TAURI_TRACE_FETCH").is_some() {
-            let body = String::from_utf8_lossy(&res.body()[..res.body().len().min(160)])
-                .replace('\n', " ");
-            eline!("fetch #{id} -> {status} @{:.1} {body}", t_ms());
+    pub fn fetch_done(&mut self, id: u32, res: FetchResult) {
+        if let Some(doc) = self.doc.as_mut() {
+            answer_fetch(doc, id, res);
         }
-        let headers: Vec<String> = res
-            .headers()
-            .iter()
-            .flat_map(|(k, v)| {
-                [
-                    k.as_str().to_owned(),
-                    v.to_str().unwrap_or_default().to_owned(),
-                ]
-            })
-            .collect();
-        let body = res.into_body().into_owned();
-        doc.context().with(|ctx| {
-            let Ok(f) = ctx.globals().get::<_, Function>("__tauriFetchDone") else {
-                return;
-            };
-            let Ok(buf) = ArrayBuffer::new(ctx.clone(), body) else {
-                return;
-            };
-            if let Err(e) = f.call::<_, ()>((id, status, headers, buf)) {
-                log::error!("__tauriFetchDone: {e}");
-            }
-        });
-        doc.run_jobs();
     }
 
     /// When the loop should wake for this webview: a due JS timer, a pending paint or tap.
@@ -1180,12 +1207,11 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
         if std::env::var_os("BLITZ_TAURI_TRACE_FETCH").is_some() {
             eline!("fetch #{id} {method} @{:.1} {url}", t_ms());
         }
-        let Some(handler) = s.protocols.get(parsed.scheme()) else {
-            return Some(format!(
-                "no handler for {}: (only the webview's custom schemes)",
-                parsed.scheme()
-            ));
-        };
+        // The webview's custom schemes (Tauri's IPC and asset protocols), else the network.
+        let handler = s.protocols.get(parsed.scheme());
+        if handler.is_none() && !matches!(parsed.scheme(), "http" | "https") {
+            return Some(format!("no handler for {}:", parsed.scheme()));
+        }
         let mut req = http::Request::builder()
             .uri(url.as_str())
             .method(method.as_str());
@@ -1200,24 +1226,24 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
             Err(e) => return Some(e.to_string()),
         };
         let (tx, webview) = (s.tx.clone(), s.id);
-        handler(
-            &s.label,
-            req,
-            Box::new(move |response| {
-                if std::env::var_os("BLITZ_TAURI_TRACE_FETCH").is_some() {
-                    eline!(
-                        "fetch #{id} responded @{:.1} on {:?}",
-                        t_ms(),
-                        std::thread::current().name()
-                    );
-                }
-                let _ = tx.send(Message::FetchDone {
-                    webview,
-                    id,
-                    response,
-                });
-            }),
-        );
+        let done = move |response: FetchResult| {
+            if std::env::var_os("BLITZ_TAURI_TRACE_FETCH").is_some() {
+                eline!(
+                    "fetch #{id} responded @{:.1} on {:?}",
+                    t_ms(),
+                    std::thread::current().name()
+                );
+            }
+            let _ = tx.send(Message::FetchDone {
+                webview,
+                id,
+                response,
+            });
+        };
+        match handler {
+            Some(handler) => handler(&s.label, req, Box::new(move |res| done(Ok(res)))),
+            None => crate::net::send(req, done),
+        }
         None
     });
     ctx.globals().set("__tauri", t).unwrap();
@@ -1229,6 +1255,12 @@ mod tests {
 
     /// Runs `script` after web.js, as on a page; returns the console.log lines.
     fn page(script: &str) -> Vec<String> {
+        let mut doc = page_doc(script, std::sync::mpsc::channel().0);
+        logs(&mut doc)
+    }
+
+    /// The page `script` runs on, whose runtime messages (fetch answers) go to `tx`.
+    fn page_doc(script: &str, tx: Sender<Message>) -> QjsDocument {
         let url = Url::parse("tauri://localhost/").unwrap();
         let st = Rc::new(OpState {
             id: 0,
@@ -1236,21 +1268,118 @@ mod tests {
             protocols: Arc::new(HashMap::new()),
             blobs: Blobs::default(),
             ipc: None,
-            tx: std::sync::mpsc::channel().0,
+            tx,
             url: Arc::new(Mutex::new(url.to_string())),
         });
-        let mut doc =
-            QjsDocument::from_html("<html><body></body></html>", DocumentConfig::default());
+        // At the app's URL, as a page is (fetch resolves against it).
+        let config = DocumentConfig {
+            base_url: Some(url.to_string()),
+            ..Default::default()
+        };
+        let mut doc = QjsDocument::from_html("<html><body></body></html>", config);
         doc.context().with(|ctx| install_ops(&ctx, st, &url));
         doc.eval(STREAMS_JS, "web-streams-polyfill.js");
         doc.eval(WEB_JS, "web.js");
         doc.eval(script, "test");
         doc.run_jobs();
+        doc
+    }
+
+    /// The page's console.log lines so far; fails on a JS error.
+    fn logs(doc: &mut QjsDocument) -> Vec<String> {
         assert_eq!(doc.take_js_errors(), Vec::<String>::new());
         doc.take_messages()
             .into_iter()
             .filter_map(|m| m.strip_prefix("log: ").map(str::to_owned))
             .collect()
+    }
+
+    /// Runs `script`, hands its one fetch answer from the runtime back to it, and returns the
+    /// console.log lines; with no answer, fails with what the page logged.
+    fn page_fetching(script: &str) -> Vec<String> {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mut doc = page_doc(script, tx);
+        match rx.recv_timeout(Duration::from_secs(10)) {
+            Ok(Message::FetchDone { id, response, .. }) => answer_fetch(&mut doc, id, response),
+            _ => panic!("no fetch answer; the page logged {:?}", logs(&mut doc)),
+        }
+        logs(&mut doc)
+    }
+
+    /// Readest's sign-in and sync talk to its servers: `fetch` to an http(s) URL goes out to
+    /// the network, with the page's method, headers and body, and answers with the server's
+    /// status, headers and body whatever the status.
+    #[test]
+    fn fetch_reaches_the_network() {
+        use std::io::{BufRead, BufReader, Read, Write};
+        let server = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = server.local_addr().unwrap().port();
+        let request = std::thread::spawn(move || {
+            let (stream, _) = server.accept().unwrap();
+            let mut reader = BufReader::new(stream);
+            let mut head = String::new();
+            while !head.ends_with("\r\n\r\n") {
+                reader.read_line(&mut head).unwrap();
+            }
+            let len = head
+                .lines()
+                .find_map(|l| {
+                    l.to_ascii_lowercase()
+                        .strip_prefix("content-length: ")
+                        .map(str::to_owned)
+                })
+                .map_or(0, |n| n.trim().parse().unwrap());
+            let mut body = vec![0; len];
+            reader.read_exact(&mut body).unwrap();
+            let answer = r#"{"error":"authorization_pending"}"#;
+            write!(
+                reader.get_mut(),
+                "HTTP/1.1 400 Bad Request\r\nContent-Type: application/json\r\n\
+                 Content-Length: {}\r\nConnection: close\r\n\r\n{answer}",
+                answer.len()
+            )
+            .unwrap();
+            (head, String::from_utf8(body).unwrap())
+        });
+
+        let logged = page_fetching(&format!(
+            r#"fetch("http://127.0.0.1:{port}/api/crosspoint/device/token", {{
+                 method: "POST",
+                 headers: {{ "Content-Type": "application/json" }},
+                 body: JSON.stringify({{ device_code: "d", grant: "session" }}),
+               }})
+               .then((r) => r.json().then((b) => console.log(r.status, r.headers.get("content-type"), b.error)))
+               .catch((e) => console.log(String(e)));"#
+        ));
+
+        assert_eq!(logged, ["400 application/json authorization_pending"]);
+        let (head, body) = request.join().unwrap();
+        assert!(
+            head.starts_with("POST /api/crosspoint/device/token HTTP/1.1\r\n"),
+            "{head}"
+        );
+        assert!(
+            head.to_ascii_lowercase()
+                .contains("content-type: application/json\r\n"),
+            "{head}"
+        );
+        assert_eq!(body, r#"{"device_code":"d","grant":"session"}"#);
+    }
+
+    /// With no server to answer, `fetch` rejects with a TypeError, as in a browser, and the
+    /// page's own error handling (Readest's "check your network connection") takes over.
+    #[test]
+    fn fetch_rejects_when_the_network_fails() {
+        let port = {
+            let gone = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            gone.local_addr().unwrap().port()
+        };
+        let logged = page_fetching(&format!(
+            r#"fetch("http://127.0.0.1:{port}/api/crosspoint/device/code", {{ method: "POST" }})
+               .then((r) => console.log("answered", r.status))
+               .catch((e) => console.log(e.name, e.message.startsWith("Failed to fetch http://127.0.0.1:")));"#
+        ));
+        assert_eq!(logged, ["TypeError true"]);
     }
 
     /// readest-app's image viewer shows a book image as a `data:` URL.
