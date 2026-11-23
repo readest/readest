@@ -191,14 +191,21 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
   const availableHeight = (doc: Document) =>
     Number(doc.documentElement.style.getPropertyValue('--available-height'));
 
+  // A box that starts a new formatting context keeps its own top margin apart
+  // from its children's, so the two add up instead of collapsing into one
   it.each([
-    ['with only its caption', PLATE],
-    ['opening a chapter', `${PLATE}<h1>Chapter</h1><p>${'Chapter text. '.repeat(400)}</p>`],
-  ])('keeps a page-tall plate %s whole on the first page', async (_, body) => {
+    ['with only its caption', PLATE, 16],
+    ['opening a chapter', `${PLATE}<h1>Chapter</h1><p>${'Chapter text. '.repeat(400)}</p>`, 16],
+    [
+      'in a box with its own margin',
+      `<div style="display: flow-root; margin-top: 1em">${PLATE}</div>`,
+      32,
+    ],
+  ])('keeps a page-tall plate %s whole on the first page', async (_, body, space) => {
     const { el, doc, img } = await open(body, '');
     expect(img.getClientRects()).toHaveLength(1);
     expect(middleOf(el, img)).toBeCloseTo(0.5, 1);
-    expect(img.getBoundingClientRect().height).toBe(availableHeight(doc) - 16);
+    expect(img.getBoundingClientRect().height).toBe(availableHeight(doc) - space);
   });
 
   // After text, the plate moves to the next page and its margin is dropped
@@ -224,15 +231,19 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
   });
 
   // A plate that stops filling the page after a resize gets the book's
-  // alignment and the whole page-height clamp back
-  it('restores a plate that no longer fills the page after a resize', async () => {
-    const { el, doc, img } = await open(PLATE, '');
+  // alignment, its own inline one included, and the whole page-height clamp
+  // back
+  it.each([
+    ['', PLATE],
+    ['middle', PLATE.replace('<img ', '<img style="vertical-align: middle" ')],
+  ])('restores a plate that no longer fills the page after a resize (%j)', async (align, body) => {
+    const { el, doc, img } = await open(body, '');
     expect((img as HTMLElement).style.verticalAlign).toBe('top');
     const stabilized = waitForStabilized(el);
     el.style.height = '2000px';
     await stabilized;
     await frames(6);
-    expect((img as HTMLElement).style.verticalAlign).toBe('');
+    expect((img as HTMLElement).style.verticalAlign).toBe(align);
     expect((img as HTMLElement).style.maxHeight).toBe(`${availableHeight(doc)}px`);
   });
 
