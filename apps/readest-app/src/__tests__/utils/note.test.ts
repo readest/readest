@@ -407,11 +407,23 @@ describe('renderNoteTemplate', () => {
       expect(render('{% if a.page % 2 %}> {{ a.text }}{% endif %}', 'One\nTwo')).toBe(
         '> One\n> Two',
       );
+      expect(render('> {{ a.text\n | upper }}', 'one\ntwo')).toBe('> ONE\n> TWO');
+      expect(render('> {# {{ a.page }} #}{{ a.text }}', 'One\nTwo')).toBe('> One\n> Two');
+    });
+
+    it('reads expressions, tags and raw blocks the way nunjucks does', () => {
+      expect(render('> {{ "}}" }}', '')).toBe('> }}');
+      expect(render('> {{ a.text ~ "}}" }}', 'One\nTwo')).toBe('> One\n> Two}}');
+      expect(render('{% raw %}> {{ a.text }}{% endraw %}', 'One')).toBe('> {{ a.text }}');
+      expect(render('{% verbatim %}\n> {{ a.text }}\n{% endverbatim %}', 'One')).toBe(
+        '\n> {{ a.text }}\n',
+      );
+      expect(render('> {% set s = "{{ a.text }}" %}{{ s }}', 'One')).toBe('> {{ a.text }}');
     });
 
     it('scans a line of many tags in linear time', () => {
       const start = performance.now();
-      render(`{%${'%}{%'.repeat(26)}`, '');
+      render(`{%${'%}{%'.repeat(26)}%}{{ a.text }}`, '');
       expect(performance.now() - start).toBeLessThan(200);
     });
 

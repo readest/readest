@@ -245,21 +245,31 @@ env.addFilter('quoteRest', (value: unknown, prefix: string) =>
   value === undefined || value === null ? '' : String(value).replace(/\n/g, `\n${prefix}`),
 );
 
+// The template's tokens as nunjucks' lexer reads them: raw/verbatim bodies,
+// comments and block tags are kept as written, and a quoted string may hold
+// `}}`. Every alternative has one way to match, so the scan stays linear.
+const STRING = String.raw`"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'`;
+const TEMPLATE_TOKEN = new RegExp(
+  [
+    String.raw`\{%-?\s*(raw|verbatim)\s*-?%\}[\s\S]*?\{%-?\s*end\1\s*-?%\}`,
+    String.raw`\{#[\s\S]*?#\}`,
+    String.raw`\{%(?:${STRING}|[^"'%]|%(?!\}))*%\}`,
+    String.raw`\{\{(-?)((?:${STRING}|[^"'}]|\}(?!\}))*?)(-?)\}\}`,
+  ].join('|'),
+  'g',
+);
+const QUOTE_LINE_HEAD = /^(?:[ \t]*\{%(?:[^%]|%(?!\}))*%\})*([ \t]*(?:>[ \t]*)+)/;
+
 const quoteTemplateLines = (template: string) =>
   template.replace(
-    // A tag's body can't run past `%}`, so a line of many tags stays linear.
-    /^((?:[ \t]*\{%(?:[^%]|%(?!\}))*%\})*)([ \t]*(?:>[ \t]*)+)(.*)$/gm,
-    (_line, tags: string, markers: string, rest: string) => {
+    TEMPLATE_TOKEN,
+    (token, _raw, open: string, expr: string | undefined, close: string, offset: number) => {
+      if (expr === undefined) return token;
+      const head = template.slice(template.lastIndexOf('\n', offset - 1) + 1, offset);
+      const markers = QUOTE_LINE_HEAD.exec(head)?.[1];
+      if (!markers) return token;
       const prefix = JSON.stringify(markers.replace(/>[ \t]*/g, '> '));
-      return (
-        tags +
-        markers +
-        rest.replace(
-          /\{\{(-?)(.*?)(-?)\}\}/g,
-          (_output, open: string, expr: string, close: string) =>
-            `{{${open} (${expr}) | quoteRest(${prefix}) ${close}}}`,
-        )
-      );
+      return `{{${open} (${expr}) | quoteRest(${prefix}) ${close}}}`;
     },
   );
 
