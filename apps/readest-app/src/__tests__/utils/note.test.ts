@@ -374,6 +374,47 @@ describe('renderNoteTemplate', () => {
     });
   });
 
+  describe('Quote marker typed before a value', () => {
+    const render = (template: string, text: string, note = '') =>
+      renderNoteTemplate(template, { ...sampleData, a: { text, note, page: 3 } });
+
+    it('carries the > onto every line of a multi-paragraph highlight', () => {
+      const data: NoteTemplateData = {
+        ...sampleData,
+        chapters: [{ title: 'Ch1', annotations: [{ text: 'Alpha.\n\nBravo.\nCharlie.' }] }],
+      };
+      const template = [
+        '{% for chapter in chapters %}',
+        '{% for annotation in chapter.annotations %}',
+        '> {{ annotation.text }}',
+        '{% endfor %}',
+        '{% endfor %}',
+      ].join('\n');
+      expect(renderNoteTemplate(template, data)).toBe('\n\n> Alpha.\n> \n> Bravo.\n> Charlie.\n\n');
+    });
+
+    it('carries nested markers, indentation and text before the value', () => {
+      expect(render('> > {{ a.note }}', '', 'One\nTwo')).toBe('> > One\n> > Two');
+      expect(render('>  > {{ a.text }}', 'One\nTwo')).toBe('>  > One\n> > Two');
+      expect(render('  > {{ a.text }}', 'One\nTwo')).toBe('  > One\n  > Two');
+      expect(render('>{{ a.text }}', 'One\nTwo')).toBe('>One\n> Two');
+      expect(render('> **Note:** {{ a.note | upper }}', '', 'one\ntwo')).toBe(
+        '> **Note:** ONE\n> TWO',
+      );
+      expect(render('> {{ a.text }} · {{ a.page }}', 'One\nTwo')).toBe('> One\n> Two · 3');
+      expect(render('>  {{- a.text -}}  ', 'One\nTwo')).toBe('>One\n> Two');
+      expect(render('{% if a.text %}> {{ a.text }}{% endif %}', 'One\nTwo')).toBe('> One\n> Two');
+    });
+
+    it('leaves lines that do not open with > alone', () => {
+      expect(render('- {{ a.text }}', 'One\nTwo')).toBe('- One\nTwo');
+      expect(render('{{ a.text }}', 'One\nTwo')).toBe('One\nTwo');
+      expect(render('a > {{ a.text }}', 'One\nTwo')).toBe('a > One\nTwo');
+      expect(render('{{ a.text | blockquote }}', 'One\nTwo')).toBe('> One\n> Two');
+      expect(render('> {{ a.text }}\n{{ a.text }}', 'One\nTwo')).toBe('> One\n> Two\nOne\nTwo');
+    });
+  });
+
   describe('Newline to BR filter', () => {
     it('should convert newlines to br tags', () => {
       const dataWithNewlines: NoteTemplateData = {

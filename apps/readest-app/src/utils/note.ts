@@ -237,6 +237,31 @@ env.addFilter('blockquote', (value: string) => {
   return formatBlockQuote(value);
 });
 
+// A `>` typed before `{{ annotation.text }}` would only quote the value's first
+// line, so a highlight spanning paragraphs fell out of the quote. On a template
+// line that opens with `>` (after any `{% %}` tags), every later line of each
+// printed value gets the line's quote markers too.
+env.addFilter('quoteRest', (value: unknown, prefix: string) =>
+  value === undefined || value === null ? '' : String(value).replace(/\n/g, `\n${prefix}`),
+);
+
+const quoteTemplateLines = (template: string) =>
+  template.replace(
+    /^((?:[ \t]*\{%.*?%\})*)([ \t]*(?:>[ \t]*)+)(.*)$/gm,
+    (_line, tags: string, markers: string, rest: string) => {
+      const prefix = JSON.stringify(markers.replace(/>[ \t]*/g, '> '));
+      return (
+        tags +
+        markers +
+        rest.replace(
+          /\{\{(-?)(.*?)(-?)\}\}/g,
+          (_output, open: string, expr: string, close: string) =>
+            `{{${open} (${expr}) | quoteRest(${prefix}) ${close}}}`,
+        )
+      );
+    },
+  );
+
 /**
  * Builds the markdown for copying a single annotation (highlight/note) together
  * with a deep link back to its position, ready to paste into note apps like
@@ -273,7 +298,7 @@ export function buildAnnotationCopyMarkdown({
  */
 export function renderNoteTemplate(template: string, data: object): string {
   try {
-    return env.renderString(template, data);
+    return env.renderString(quoteTemplateLines(template), data);
   } catch (error) {
     // Return error message in the output for debugging
     const errorMessage = error instanceof Error ? error.message : 'Unknown template error';
@@ -288,7 +313,7 @@ export function renderNoteTemplate(template: string, data: object): string {
  */
 export function validateNoteTemplate(template: string): { isValid: boolean; error?: string } {
   try {
-    env.renderString(template, {
+    env.renderString(quoteTemplateLines(template), {
       title: '',
       author: '',
       exportDate: '',
