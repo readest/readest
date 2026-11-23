@@ -419,6 +419,9 @@ describe('renderNoteTemplate', () => {
         '\n> {{ a.text }}\n',
       );
       expect(render('> {% set s = "{{ a.text }}" %}{{ s }}', 'One')).toBe('> {{ a.text }}');
+      expect(render('{% if a.note == "%}" %}> {{ a.text }}{% endif %}', 'One\nTwo', '%}')).toBe(
+        '> One\n> Two',
+      );
     });
 
     it('scans a line of many tags in linear time', () => {

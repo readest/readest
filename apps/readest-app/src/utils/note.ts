@@ -249,16 +249,17 @@ env.addFilter('quoteRest', (value: unknown, prefix: string) =>
 // comments and block tags are kept as written, and a quoted string may hold
 // `}}`. Every alternative has one way to match, so the scan stays linear.
 const STRING = String.raw`"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'`;
+const TAG = String.raw`\{%(?:${STRING}|[^"'%]|%(?!\}))*%\}`;
 const TEMPLATE_TOKEN = new RegExp(
   [
     String.raw`\{%-?\s*(raw|verbatim)\s*-?%\}[\s\S]*?\{%-?\s*end\1\s*-?%\}`,
     String.raw`\{#[\s\S]*?#\}`,
-    String.raw`\{%(?:${STRING}|[^"'%]|%(?!\}))*%\}`,
+    TAG,
     String.raw`\{\{(-?)((?:${STRING}|[^"'}]|\}(?!\}))*?)(-?)\}\}`,
   ].join('|'),
   'g',
 );
-const QUOTE_LINE_HEAD = /^(?:[ \t]*\{%(?:[^%]|%(?!\}))*%\})*([ \t]*(?:>[ \t]*)+)/;
+const QUOTE_LINE_HEAD = new RegExp(String.raw`^(?:[ \t]*${TAG})*([ \t]*(?:>[ \t]*)+)`);
 
 const quoteTemplateLines = (template: string) =>
   template.replace(
