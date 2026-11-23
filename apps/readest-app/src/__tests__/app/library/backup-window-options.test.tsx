@@ -81,15 +81,9 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-// Half past midnight local time is still the day before in UTC east of
-// Greenwich; west of it, half past eleven at night is already the next day.
-const localNov23 = new Date(
-  2026,
-  10,
-  23,
-  new Date(2026, 10, 23).getTimezoneOffset() > 0 ? 23 : 0,
-  30,
-);
+// Half past midnight is still the day before in UTC: the unit tests run in
+// Asia/Tokyo (vitest.config.mts).
+const localNov23 = new Date(2026, 10, 23, 0, 30);
 
 describe('BackupWindow backup file name', () => {
   afterEach(() => {
