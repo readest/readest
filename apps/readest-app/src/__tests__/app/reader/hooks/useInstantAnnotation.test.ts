@@ -12,14 +12,18 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
-vi.mock('@/store/settingsStore', () => ({
-  useSettingsStore: () => ({
-    settings: {
-      globalReadSettings: {
-        highlightStyle: 'highlight',
-        highlightStyles: { highlight: '#ffff00' },
-      },
+const settingsStore = vi.hoisted(() => {
+  const initial = () => ({
+    globalReadSettings: {
+      highlightStyle: 'highlight',
+      highlightStyles: { highlight: '#ffff00' } as Record<string, string>,
     },
+  });
+  return { initial, state: { settings: initial() } };
+});
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: Object.assign(() => settingsStore.state, {
+    getState: () => settingsStore.state,
   }),
 }));
 const stores = vi.hoisted(() => ({
@@ -89,6 +93,7 @@ const pointer = (x: number, y: number) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  settingsStore.state.settings = settingsStore.initial();
   stores.booknotes = [];
   stores.isFixedLayout = true;
   scrolled = false;
@@ -235,6 +240,37 @@ describe('useInstantAnnotation hold-a-word engage and commit', () => {
     );
 
     expect(handled).toBe(false);
+  });
+});
+
+// #7842: a settings edit made while the book is open (the highlight opacity in
+// the Theme panel, say) stores a new settings object, and a default color
+// picked afterwards lands on that object. An
+// instant highlight must use the current default, not the one the book was
+// opened with, and save the book against the current settings.
+describe('useInstantAnnotation reads the current settings', () => {
+  test('a default color chosen after the settings object was replaced is used', async () => {
+    settingsStore.state.settings.globalReadSettings.highlightStyles = { highlight: 'purple' };
+    const { result, rerender } = setup();
+
+    const next = {
+      ...settingsStore.state.settings,
+      globalReadSettings: {
+        ...settingsStore.state.settings.globalReadSettings,
+        highlightStyles: { highlight: 'yellow' },
+      },
+    };
+    settingsStore.state.settings = next;
+    rerender();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationPointerMove(document, 0, pointer(60, 10));
+    expect(h.view.addAnnotation.mock.lastCall?.[0]).toMatchObject({ color: 'yellow' });
+
+    await result.current.handleInstantAnnotationPointerUp(document, 0, pointer(60, 10));
+    const saved = (stores.updateBooknotes.mock.lastCall as unknown as [string, BookNote[]])[1];
+    expect(saved[0]).toMatchObject({ color: 'yellow' });
+    expect(stores.saveConfig.mock.lastCall?.[3]).toBe(next);
   });
 });
 

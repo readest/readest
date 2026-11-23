@@ -25,7 +25,6 @@ export const useInstantAnnotation = ({
   setExternalDragPoint,
 }: UseInstantAnnotationProps) => {
   const { envConfig } = useEnv();
-  const { settings } = useSettingsStore();
   const getConfig = useBookDataStore((s) => s.getConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
   const saveConfig = useBookDataStore((s) => s.saveConfig);
@@ -211,9 +210,14 @@ export const useInstantAnnotation = ({
     [bookKey, getBookData, findPositionAtPoint, rangeFromPositions],
   );
 
+  // Read settings from the store when used: these callbacks are memoized for
+  // as long as the book is open, and most settings edits (highlight opacity or
+  // colors in the Theme panel, any global view setting) store a new settings
+  // object (#7842).
   const createAnnotation = useCallback((cfi: string, text?: string) => {
-    const style = settings.globalReadSettings.highlightStyle;
-    const color = settings.globalReadSettings.highlightStyles[style];
+    const { globalReadSettings } = useSettingsStore.getState().settings;
+    const style = globalReadSettings.highlightStyle;
+    const color = globalReadSettings.highlightStyles[style];
     const annotation: BookNote = {
       id: annotationIdRef.current,
       type: 'annotation',
@@ -258,7 +262,7 @@ export const useInstantAnnotation = ({
 
       const updatedConfig = updateBooknotes(bookKey, annotations);
       if (updatedConfig) {
-        saveConfig(envConfig, bookKey, updatedConfig, settings);
+        saveConfig(envConfig, bookKey, updatedConfig, useSettingsStore.getState().settings);
       }
       return stored;
     },
