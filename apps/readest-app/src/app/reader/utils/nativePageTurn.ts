@@ -304,14 +304,16 @@ export class NativePageTurn extends CapturedPageTurn {
           // A not-yet-loaded section is prepared under the native current sheet.
           await this.#navigate(forward);
           scene.navigated = true;
-          destination = this.#key();
+          // A section in the other writing mode names no pages (#7829): its
+          // sheet is keyed for this turn only.
+          destination = this.#key() ?? `turn:${session.id}`;
           if (destination === key) {
             // A boundary clamp is not a page turn. In particular, do not
             // roll a cancelled no-op forwards or cache a fictitious sheet.
             scene.navigated = false;
             return false;
           }
-          if (destination) await this.#capture(destination, rect);
+          await this.#capture(destination, rect);
         }
         if (!destination || !this.#keys.has(destination) || !this.#allowed()) return false;
         const result = await this.#call({

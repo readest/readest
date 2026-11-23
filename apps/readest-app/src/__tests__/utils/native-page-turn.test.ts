@@ -303,6 +303,29 @@ describe('Android native page-turn pipeline', () => {
     }
   });
 
+  // A horizontal page between vertical sections (#7829). A vertical layout
+  // names no pages, so the page a cold turn lands on there has no key.
+  it('turns into a section in the other writing mode instead of rolling back', async () => {
+    for (const forward of [true, false]) {
+      const f = fixture();
+      const key = f.renderer.getPageTurnKey!;
+      f.renderer.getPageTurnKey = (delta = 0) => (key(delta) === '1' ? '1' : null);
+      try {
+        const started = await f.controller.turn(forward, true);
+        // Not navigated back to the horizontal page.
+        expect(f.navigate.mock.calls).toEqual([[forward]]);
+        expect(started).toBe(true);
+        const start = f.call.mock.calls.find(([args]) => args.op === 'start')?.[0];
+        expect(start).toMatchObject({ key: '1', forward });
+        const captured = f.call.mock.calls.map(([args]) => args.op === 'capture' && args.key);
+        expect(captured).toContain(start?.destination);
+        expect(start?.destination).not.toBe('1');
+      } finally {
+        f.controller.dispose();
+      }
+    }
+  });
+
   it('does not roll a cancelled boundary clamp forwards and keeps the next turn usable', async () => {
     const f = fixture();
     const key = f.renderer.getPageTurnKey!;

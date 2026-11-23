@@ -1082,11 +1082,13 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           currentView.renderer.scrollLocked ||
           intent.earlyClaimBlocked
         ) {
+          // A tap on the brightness strip leaves a programmatic turn's capture
+          // alone: it would discard the turn the tap before it started (#7831).
           if (
             overlayBlocksCapture ||
             selectionActive ||
             currentView.renderer.scrollLocked ||
-            intent.earlyClaimBlocked
+            (intent.earlyClaimBlocked && !programmaticInputBlocked)
           ) {
             controller.invalidatePreparedCapture();
           } else {
