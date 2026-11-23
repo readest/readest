@@ -213,6 +213,16 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
       16,
     ],
     [
+      'after an out-of-flow label',
+      `<div style="position: absolute; top: 0; left: 0">Label</div>${PLATE}`,
+      16,
+    ],
+    [
+      'after an out-of-flow image',
+      `<img alt="" style="position: absolute; width: 10px; height: 10px" src="${COVER}"/>${PLATE}`,
+      16,
+    ],
+    [
       'alone, with its own top margin',
       `<p class="image" style="text-align: center"><img alt="" style="margin-top: 1em" src="${COVER}"/></p>`,
       16,
