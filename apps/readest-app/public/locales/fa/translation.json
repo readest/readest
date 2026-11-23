@@ -2917,5 +2917,15 @@
   "The text is too long for Apple Intelligence on this device.": "متن برای Apple Intelligence در این دستگاه بیش از حد طولانی است.",
   "Forget": "فراموش کردن",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "این سرور WebDAV فراموش شود؟ نشانی و اطلاعات ورود آن از این دستگاه، از Readest Cloud و از دیگر دستگاه‌های شما که به آن متصل نیستند حذف می‌شود. فایل‌های روی سرور دست‌نخورده می‌مانند.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "این باکت S3 فراموش شود؟ نقطه پایانی و کلیدهای آن از این دستگاه، از Readest Cloud و از دیگر دستگاه‌های شما که به آن متصل نیستند حذف می‌شود. فایل‌های داخل باکت دست‌نخورده می‌مانند."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "این باکت S3 فراموش شود؟ نقطه پایانی و کلیدهای آن از این دستگاه، از Readest Cloud و از دیگر دستگاه‌های شما که به آن متصل نیستند حذف می‌شود. فایل‌های داخل باکت دست‌نخورده می‌مانند.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "زمان مطالعه آن‌ها در همه دستگاه‌های شما به کتاب دیگر منتقل می‌شود. این کار قابل بازگشت نیست.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "زمان مطالعه آن‌ها در این دستگاه به کتاب دیگر منتقل می‌شود. این کار قابل بازگشت نیست.",
+  "Merge {{count}} entries into “{{target}}”?_one": "{{count}} مورد در «{{target}}» ادغام شود؟",
+  "Merge {{count}} entries into “{{target}}”?_other": "{{count}} مورد در «{{target}}» ادغام شود؟",
+  "Their reading time is removed from all your devices. This can’t be undone.": "زمان مطالعه آن‌ها از همه دستگاه‌های شما حذف می‌شود. این کار قابل بازگشت نیست.",
+  "Their reading time is removed from this device. This can’t be undone.": "زمان مطالعه آن‌ها از این دستگاه حذف می‌شود. این کار قابل بازگشت نیست.",
+  "Delete the reading statistics of {{count}} books?_one": "آمار مطالعه {{count}} کتاب حذف شود؟",
+  "Delete the reading statistics of {{count}} books?_other": "آمار مطالعه {{count}} کتاب حذف شود؟",
+  "Merge {{count}} entries into:_one": "ادغام {{count}} مورد در:",
+  "Merge {{count}} entries into:_other": "ادغام {{count}} مورد در:"
 }

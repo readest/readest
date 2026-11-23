@@ -2842,5 +2842,12 @@
   "The text is too long for Apple Intelligence on this device.": "텍스트가 너무 길어 이 기기의 Apple Intelligence에서 처리할 수 없습니다.",
   "Forget": "삭제",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "이 WebDAV 서버 정보를 삭제할까요? 주소와 로그인 정보가 이 기기, Readest Cloud, 그리고 이 서버에 연결되지 않은 다른 기기에서 삭제됩니다. 서버의 파일은 그대로 유지됩니다.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "이 S3 버킷 정보를 삭제할까요? 엔드포인트와 키가 이 기기, Readest Cloud, 그리고 이 버킷에 연결되지 않은 다른 기기에서 삭제됩니다. 버킷의 파일은 그대로 유지됩니다."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "이 S3 버킷 정보를 삭제할까요? 엔드포인트와 키가 이 기기, Readest Cloud, 그리고 이 버킷에 연결되지 않은 다른 기기에서 삭제됩니다. 버킷의 파일은 그대로 유지됩니다.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "이 항목들의 독서 시간이 모든 기기에서 다른 책으로 옮겨집니다. 이 작업은 되돌릴 수 없습니다.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "이 항목들의 독서 시간이 이 기기에서 다른 책으로 옮겨집니다. 이 작업은 되돌릴 수 없습니다.",
+  "Merge {{count}} entries into “{{target}}”?_other": "항목 {{count}}개를 “{{target}}”에 병합할까요?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "이 책들의 독서 시간이 모든 기기에서 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+  "Their reading time is removed from this device. This can’t be undone.": "이 책들의 독서 시간이 이 기기에서 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+  "Delete the reading statistics of {{count}} books?_other": "책 {{count}}권의 독서 통계를 삭제할까요?",
+  "Merge {{count}} entries into:_other": "항목 {{count}}개를 병합할 대상:"
 }

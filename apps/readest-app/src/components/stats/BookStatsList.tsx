@@ -13,16 +13,33 @@ interface BookStatsListProps {
   reloadKey: unknown;
   /** Called after the entries changed, so totals can be read again. */
   onChange: () => void;
+  /** Entries are checked to merge or delete several at once (#7812). */
+  selecting: boolean;
+  /** Called once a merge or deletion of the checked entries is done. */
+  onSelectingDone: () => void;
 }
 
 /** Every book in the statistics, most recently read first; each can be merged or deleted (#7494). */
-const BookStatsList: React.FC<BookStatsListProps> = ({ db, reloadKey, onChange }) => {
+const BookStatsList: React.FC<BookStatsListProps> = ({
+  db,
+  reloadKey,
+  onChange,
+  selecting,
+  onSelectingDone,
+}) => {
   const _ = useTranslation();
   const [books, setBooks] = useState<BookStats[] | null>(null);
   const [failed, setFailed] = useState(false);
-  // the entry being merged into another, while its target is picked
-  const [merging, setMerging] = useState<BookStats | null>(null);
+  // the entries being merged into another, while their target is picked
+  const [merging, setMerging] = useState<BookStats[] | null>(null);
   const [action, setAction] = useState<BookStatsAction | null>(null);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+
+  // Entering or leaving selection starts over, closing a merge being picked.
+  useEffect(() => {
+    setChecked(new Set());
+    setMerging(null);
+  }, [selecting]);
 
   const load = useCallback(() => {
     db.getBookStats()
@@ -59,6 +76,7 @@ const BookStatsList: React.FC<BookStatsListProps> = ({ db, reloadKey, onChange }
       onClose={() => setAction(null)}
       onDone={() => {
         setMerging(null);
+        onSelectingDone();
         load();
         onChange();
       }}
@@ -66,17 +84,93 @@ const BookStatsList: React.FC<BookStatsListProps> = ({ db, reloadKey, onChange }
   );
 
   if (merging) {
+    // One entry merges into any other; checked entries merge into one of them.
+    const [first] = merging;
     return (
       <>
         <BookStatsPicker
-          prompt={_('Merge “{{title}}” into:', { title: merging.title })}
-          books={books.filter((b) => b.md5 !== merging.md5)}
-          title={merging.title}
+          prompt={
+            merging.length === 1
+              ? _('Merge “{{title}}” into:', { title: first!.title })
+              : _('Merge {{count}} entries into:', { count: merging.length })
+          }
+          books={merging.length === 1 ? books.filter((b) => b !== first) : merging}
+          title={first!.title}
           onPick={(target) =>
-            setAction({ type: 'merge', source: toStatBook(merging), target: toStatBook(target) })
+            setAction({
+              type: 'merge',
+              sources: merging.filter((b) => b !== target).map(toStatBook),
+              target: toStatBook(target),
+            })
           }
           onCancel={() => setMerging(null)}
         />
+        {alert}
+      </>
+    );
+  }
+
+  if (selecting) {
+    const picked = books.filter((b) => checked.has(b.md5));
+    const all = picked.length === books.length;
+    const toggle = (md5: string) =>
+      setChecked((prev) => {
+        const next = new Set(prev);
+        if (!next.delete(md5)) next.add(md5);
+        return next;
+      });
+    return (
+      <>
+        <div className='bg-base-100 sticky top-0 z-10 mb-2 flex flex-wrap items-center gap-2 py-2'>
+          <span className='text-base-content/70 px-1 text-sm tabular-nums'>
+            {_('{{count}} selected', { count: picked.length })}
+          </span>
+          <button
+            type='button'
+            className='btn btn-ghost btn-sm px-2'
+            onClick={() => setChecked(all ? new Set() : new Set(books.map((b) => b.md5)))}
+          >
+            {all ? _('Deselect') : _('Select All')}
+          </button>
+          <div className='ms-auto flex items-center gap-1'>
+            <button
+              type='button'
+              className='btn btn-ghost btn-sm gap-1 px-2'
+              disabled={picked.length < 2}
+              onClick={() => setMerging(picked)}
+            >
+              <MdCallMerge className='h-5 w-5' />
+              {_('Merge')}
+            </button>
+            <button
+              type='button'
+              className='btn btn-ghost btn-sm text-error gap-1 px-2'
+              disabled={picked.length === 0}
+              onClick={() => setAction({ type: 'delete', books: picked.map(toStatBook) })}
+            >
+              <MdOutlineDelete className='h-5 w-5' />
+              {_('Delete')}
+            </button>
+          </div>
+        </div>
+        <BoxedList>
+          {books.map((book) => (
+            <SettingsRow
+              key={book.md5}
+              asLabel
+              label={book.title}
+              description={describeBookStats(book, _)}
+            >
+              <input
+                type='checkbox'
+                className='checkbox checkbox-sm'
+                aria-label={book.title}
+                checked={checked.has(book.md5)}
+                onChange={() => toggle(book.md5)}
+              />
+            </SettingsRow>
+          ))}
+        </BoxedList>
         {alert}
       </>
     );
@@ -93,7 +187,7 @@ const BookStatsList: React.FC<BookStatsListProps> = ({ db, reloadKey, onChange }
                 className='btn btn-ghost btn-sm px-1'
                 title={_('Merge Statistics')}
                 aria-label={_('Merge statistics of {{title}}', { title: book.title })}
-                onClick={() => setMerging(book)}
+                onClick={() => setMerging([book])}
               >
                 <MdCallMerge className='h-5 w-5' />
               </button>
@@ -102,7 +196,7 @@ const BookStatsList: React.FC<BookStatsListProps> = ({ db, reloadKey, onChange }
                 className='btn btn-ghost btn-sm px-1'
                 title={_('Delete Statistics')}
                 aria-label={_('Delete statistics of {{title}}', { title: book.title })}
-                onClick={() => setAction({ type: 'delete', book: toStatBook(book) })}
+                onClick={() => setAction({ type: 'delete', books: [toStatBook(book)] })}
               >
                 <MdOutlineDelete className='text-error h-5 w-5' />
               </button>

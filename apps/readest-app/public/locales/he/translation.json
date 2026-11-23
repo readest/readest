@@ -2992,5 +2992,18 @@
   "The text is too long for Apple Intelligence on this device.": "הטקסט ארוך מדי עבור Apple Intelligence במכשיר זה.",
   "Forget": "שכח",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "לשכוח את שרת ה-WebDAV הזה? הכתובת ופרטי ההתחברות שלו יוסרו מהמכשיר הזה, מ-Readest Cloud ומהמכשירים האחרים שלך שאינם מחוברים אליו. הקבצים בשרת לא ייפגעו.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "לשכוח את דלי ה-S3 הזה? נקודת הקצה והמפתחות שלו יוסרו מהמכשיר הזה, מ-Readest Cloud ומהמכשירים האחרים שלך שאינם מחוברים אליו. הקבצים בדלי לא ייפגעו."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "לשכוח את דלי ה-S3 הזה? נקודת הקצה והמפתחות שלו יוסרו מהמכשיר הזה, מ-Readest Cloud ומהמכשירים האחרים שלך שאינם מחוברים אליו. הקבצים בדלי לא ייפגעו.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "זמן הקריאה שלהן יועבר לספר האחר בכל המכשירים שלך. לא ניתן לבטל פעולה זו.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "זמן הקריאה שלהן יועבר לספר האחר במכשיר הזה. לא ניתן לבטל פעולה זו.",
+  "Merge {{count}} entries into “{{target}}”?_one": "למזג {{count}} רשומה לתוך “{{target}}”?",
+  "Merge {{count}} entries into “{{target}}”?_two": "למזג {{count}} רשומות לתוך “{{target}}”?",
+  "Merge {{count}} entries into “{{target}}”?_other": "למזג {{count}} רשומות לתוך “{{target}}”?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "זמן הקריאה שלהם יוסר מכל המכשירים שלך. לא ניתן לבטל פעולה זו.",
+  "Their reading time is removed from this device. This can’t be undone.": "זמן הקריאה שלהם יוסר מהמכשיר הזה. לא ניתן לבטל פעולה זו.",
+  "Delete the reading statistics of {{count}} books?_one": "למחוק את סטטיסטיקת הקריאה של {{count}} ספר?",
+  "Delete the reading statistics of {{count}} books?_two": "למחוק את סטטיסטיקת הקריאה של {{count}} ספרים?",
+  "Delete the reading statistics of {{count}} books?_other": "למחוק את סטטיסטיקת הקריאה של {{count}} ספרים?",
+  "Merge {{count}} entries into:_one": "מיזוג {{count}} רשומה לתוך:",
+  "Merge {{count}} entries into:_two": "מיזוג {{count}} רשומות לתוך:",
+  "Merge {{count}} entries into:_other": "מיזוג {{count}} רשומות לתוך:"
 }

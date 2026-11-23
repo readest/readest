@@ -2917,5 +2917,15 @@
   "The text is too long for Apple Intelligence on this device.": "A szöveg túl hosszú az Apple Intelligence számára ezen az eszközön.",
   "Forget": "Elfelejtés",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Elfelejti ezt a WebDAV-kiszolgálót? A címe és a bejelentkezési adatai törlődnek erről az eszközről, a Readest Cloudból és azokról a többi eszközéről, amelyek nem csatlakoznak hozzá. A kiszolgálón lévő fájlok érintetlenek maradnak.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Elfelejti ezt az S3-tárolót? A végpontja és a kulcsai törlődnek erről az eszközről, a Readest Cloudból és azokról a többi eszközéről, amelyek nem csatlakoznak hozzá. A tárolóban lévő fájlok érintetlenek maradnak."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Elfelejti ezt az S3-tárolót? A végpontja és a kulcsai törlődnek erről az eszközről, a Readest Cloudból és azokról a többi eszközéről, amelyek nem csatlakoznak hozzá. A tárolóban lévő fájlok érintetlenek maradnak.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Az olvasási idejük minden eszközödön átkerül a másik könyvhöz. Ez nem vonható vissza.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Az olvasási idejük ezen az eszközön átkerül a másik könyvhöz. Ez nem vonható vissza.",
+  "Merge {{count}} entries into “{{target}}”?_one": "Egyesítesz {{count}} bejegyzést ezzel: „{{target}}”?",
+  "Merge {{count}} entries into “{{target}}”?_other": "Egyesítesz {{count}} bejegyzést ezzel: „{{target}}”?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Az olvasási idejük minden eszközödről törlődik. Ez nem vonható vissza.",
+  "Their reading time is removed from this device. This can’t be undone.": "Az olvasási idejük erről az eszközről törlődik. Ez nem vonható vissza.",
+  "Delete the reading statistics of {{count}} books?_one": "Törlöd {{count}} könyv olvasási statisztikáját?",
+  "Delete the reading statistics of {{count}} books?_other": "Törlöd {{count}} könyv olvasási statisztikáját?",
+  "Merge {{count}} entries into:_one": "{{count}} bejegyzés egyesítése ezzel:",
+  "Merge {{count}} entries into:_other": "{{count}} bejegyzés egyesítése ezzel:"
 }

@@ -2842,5 +2842,12 @@
   "The text is too long for Apple Intelligence on this device.": "テキストが長すぎて、この端末の Apple Intelligence では処理できません。",
   "Forget": "削除",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "このWebDAVサーバーの登録を削除しますか？アドレスとログイン情報が、このデバイス、Readest Cloud、およびこのサーバーに接続していない他のデバイスから削除されます。サーバー上のファイルには影響しません。",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "このS3バケットの登録を削除しますか？エンドポイントとキーが、このデバイス、Readest Cloud、およびこのバケットに接続していない他のデバイスから削除されます。バケット内のファイルには影響しません。"
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "このS3バケットの登録を削除しますか？エンドポイントとキーが、このデバイス、Readest Cloud、およびこのバケットに接続していない他のデバイスから削除されます。バケット内のファイルには影響しません。",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "これらの読書時間は、すべてのデバイスでもう一方の本に移されます。この操作は元に戻せません。",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "これらの読書時間は、このデバイスでもう一方の本に移されます。この操作は元に戻せません。",
+  "Merge {{count}} entries into “{{target}}”?_other": "{{count}} 件の項目を「{{target}}」に統合しますか？",
+  "Their reading time is removed from all your devices. This can’t be undone.": "これらの本の読書時間がすべてのデバイスから削除されます。この操作は元に戻せません。",
+  "Their reading time is removed from this device. This can’t be undone.": "これらの本の読書時間がこのデバイスから削除されます。この操作は元に戻せません。",
+  "Delete the reading statistics of {{count}} books?_other": "{{count}} 冊の読書統計を削除しますか？",
+  "Merge {{count}} entries into:_other": "{{count}} 件の項目の統合先:"
 }

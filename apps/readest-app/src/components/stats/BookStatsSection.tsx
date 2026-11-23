@@ -96,7 +96,9 @@ const BookStatsSection: React.FC<BookStatsSectionProps> = ({ book }) => {
               prompt={_('Merge another entry into this book:')}
               books={others}
               title={target.title}
-              onPick={(source) => setAction({ type: 'merge', source: toStatBook(source), target })}
+              onPick={(source) =>
+                setAction({ type: 'merge', sources: [toStatBook(source)], target })
+              }
               onCancel={() => setOthers(null)}
             />
           ) : stats ? (
@@ -124,7 +126,7 @@ const BookStatsSection: React.FC<BookStatsSectionProps> = ({ book }) => {
                 <button
                   type='button'
                   className={clsx(TEXT_ACTION, 'text-error')}
-                  onClick={() => setAction({ type: 'delete', book: target })}
+                  onClick={() => setAction({ type: 'delete', books: [target] })}
                 >
                   {_('Delete Statistics')}
                 </button>

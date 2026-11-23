@@ -8,10 +8,10 @@ import type { StatisticsDb } from '@/services/statistics/statisticsDb';
 import type { StatBook } from '@/types/statistics';
 import { eventDispatcher } from '@/utils/event';
 
-/** A change to the statistics entries (#7494). */
+/** A change to the statistics entries (#7494), of one entry or several (#7812). */
 export type BookStatsAction =
-  | { type: 'delete'; book: StatBook }
-  | { type: 'merge'; source: StatBook; target: StatBook };
+  | { type: 'delete'; books: StatBook[] }
+  | { type: 'merge'; sources: StatBook[]; target: StatBook };
 
 interface BookStatsAlertProps {
   db: StatisticsDb;
@@ -21,7 +21,7 @@ interface BookStatsAlertProps {
 }
 
 /**
- * Confirms, then deletes a book's reading statistics or merges one entry into
+ * Confirms, then deletes books' reading statistics or merges entries into
  * another: on every device when stats sync is on, otherwise on this one.
  */
 const BookStatsAlert: React.FC<BookStatsAlertProps> = ({ db, action, onClose, onDone }) => {
@@ -40,9 +40,9 @@ const BookStatsAlert: React.FC<BookStatsAlertProps> = ({ db, action, onClose, on
       ]);
       const client = synced ? new SyncClient() : null;
       if (action.type === 'merge') {
-        await sync.mergeBookStats(db, client, action.source, action.target);
+        await sync.mergeBookStats(db, client, action.sources, action.target);
       } else {
-        await sync.deleteBookStats(db, client, action.book);
+        await sync.deleteBookStats(db, client, action.books);
       }
       onDone();
     } catch (err) {
@@ -57,40 +57,73 @@ const BookStatsAlert: React.FC<BookStatsAlertProps> = ({ db, action, onClose, on
     onClose();
   };
 
-  return (
-    <ModalPortal>
-      {action.type === 'merge' ? (
+  if (action.type === 'merge') {
+    const { sources, target } = action;
+    const many = sources.length > 1;
+    let message = _(
+      'Its reading time moves to the other book on this device. This can’t be undone.',
+    );
+    if (many && synced) {
+      message = _(
+        'Their reading time moves to the other book on all your devices. This can’t be undone.',
+      );
+    } else if (many) {
+      message = _(
+        'Their reading time moves to the other book on this device. This can’t be undone.',
+      );
+    } else if (synced) {
+      message = _(
+        'Its reading time moves to the other book on all your devices. This can’t be undone.',
+      );
+    }
+    return (
+      <ModalPortal>
         <Alert
-          title={_('Merge “{{source}}” into “{{target}}”?', {
-            source: action.source.title,
-            target: action.target.title,
-          })}
-          message={
-            synced
-              ? _(
-                  'Its reading time moves to the other book on all your devices. This can’t be undone.',
-                )
-              : _('Its reading time moves to the other book on this device. This can’t be undone.')
+          title={
+            many
+              ? _('Merge {{count}} entries into “{{target}}”?', {
+                  count: sources.length,
+                  target: target.title,
+                })
+              : _('Merge “{{source}}” into “{{target}}”?', {
+                  source: sources[0]!.title,
+                  target: target.title,
+                })
           }
+          message={message}
           confirmLabel={_('Merge')}
           confirmButtonClassName='btn-contrast'
           onCancel={onClose}
           onConfirm={handleConfirm}
         />
-      ) : (
-        <Alert
-          title={_('Delete the reading statistics of “{{title}}”?', { title: action.book.title })}
-          message={
-            synced
-              ? _('Its reading time is removed from all your devices. This can’t be undone.')
-              : _('Its reading time is removed from this device. This can’t be undone.')
-          }
-          confirmLabel={_('Delete')}
-          confirmButtonClassName='btn-error'
-          onCancel={onClose}
-          onConfirm={handleConfirm}
-        />
-      )}
+      </ModalPortal>
+    );
+  }
+
+  const { books } = action;
+  const many = books.length > 1;
+  let message = _('Its reading time is removed from this device. This can’t be undone.');
+  if (many && synced) {
+    message = _('Their reading time is removed from all your devices. This can’t be undone.');
+  } else if (many) {
+    message = _('Their reading time is removed from this device. This can’t be undone.');
+  } else if (synced) {
+    message = _('Its reading time is removed from all your devices. This can’t be undone.');
+  }
+  return (
+    <ModalPortal>
+      <Alert
+        title={
+          many
+            ? _('Delete the reading statistics of {{count}} books?', { count: books.length })
+            : _('Delete the reading statistics of “{{title}}”?', { title: books[0]!.title })
+        }
+        message={message}
+        confirmLabel={_('Delete')}
+        confirmButtonClassName='btn-error'
+        onCancel={onClose}
+        onConfirm={handleConfirm}
+      />
     </ModalPortal>
   );
 };

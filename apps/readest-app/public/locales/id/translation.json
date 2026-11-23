@@ -2842,5 +2842,12 @@
   "The text is too long for Apple Intelligence on this device.": "Teks terlalu panjang untuk Apple Intelligence di perangkat ini.",
   "Forget": "Lupakan",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Lupakan server WebDAV ini? Alamat dan info masuknya akan dihapus dari perangkat ini, dari Readest Cloud, dan dari perangkat Anda lainnya yang tidak terhubung dengannya. File di server tidak diubah.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Lupakan bucket S3 ini? Endpoint dan kuncinya akan dihapus dari perangkat ini, dari Readest Cloud, dan dari perangkat Anda lainnya yang tidak terhubung dengannya. File di bucket tidak diubah."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Lupakan bucket S3 ini? Endpoint dan kuncinya akan dihapus dari perangkat ini, dari Readest Cloud, dan dari perangkat Anda lainnya yang tidak terhubung dengannya. File di bucket tidak diubah.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Waktu membaca entri-entri ini akan dipindahkan ke buku lain di semua perangkat Anda. Tindakan ini tidak dapat dibatalkan.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Waktu membaca entri-entri ini akan dipindahkan ke buku lain di perangkat ini. Tindakan ini tidak dapat dibatalkan.",
+  "Merge {{count}} entries into “{{target}}”?_other": "Gabungkan {{count}} entri ke “{{target}}”?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Waktu membaca buku-buku ini akan dihapus dari semua perangkat Anda. Tindakan ini tidak dapat dibatalkan.",
+  "Their reading time is removed from this device. This can’t be undone.": "Waktu membaca buku-buku ini akan dihapus dari perangkat ini. Tindakan ini tidak dapat dibatalkan.",
+  "Delete the reading statistics of {{count}} books?_other": "Hapus statistik membaca {{count}} buku?",
+  "Merge {{count}} entries into:_other": "Gabungkan {{count}} entri ke:"
 }

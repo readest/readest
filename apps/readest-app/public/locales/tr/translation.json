@@ -2917,5 +2917,15 @@
   "The text is too long for Apple Intelligence on this device.": "Metin, bu cihazdaki Apple Intelligence için çok uzun.",
   "Forget": "Unut",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Bu WebDAV sunucusu unutulsun mu? Adresi ve oturum açma bilgileri bu cihazdan, Readest Cloud'dan ve ona bağlı olmayan diğer cihazlarınızdan kaldırılır. Sunucudaki dosyalara dokunulmaz.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Bu S3 kovası unutulsun mu? Uç noktası ve anahtarları bu cihazdan, Readest Cloud'dan ve ona bağlı olmayan diğer cihazlarınızdan kaldırılır. Kovadaki dosyalara dokunulmaz."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Bu S3 kovası unutulsun mu? Uç noktası ve anahtarları bu cihazdan, Readest Cloud'dan ve ona bağlı olmayan diğer cihazlarınızdan kaldırılır. Kovadaki dosyalara dokunulmaz.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Bunların okuma süresi tüm cihazlarınızda diğer kitaba taşınır. Bu işlem geri alınamaz.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Bunların okuma süresi bu cihazda diğer kitaba taşınır. Bu işlem geri alınamaz.",
+  "Merge {{count}} entries into “{{target}}”?_one": "{{count}} kayıt “{{target}}” ile birleştirilsin mi?",
+  "Merge {{count}} entries into “{{target}}”?_other": "{{count}} kayıt “{{target}}” ile birleştirilsin mi?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Bunların okuma süresi tüm cihazlarınızdan kaldırılır. Bu işlem geri alınamaz.",
+  "Their reading time is removed from this device. This can’t be undone.": "Bunların okuma süresi bu cihazdan kaldırılır. Bu işlem geri alınamaz.",
+  "Delete the reading statistics of {{count}} books?_one": "{{count}} kitabın okuma istatistikleri silinsin mi?",
+  "Delete the reading statistics of {{count}} books?_other": "{{count}} kitabın okuma istatistikleri silinsin mi?",
+  "Merge {{count}} entries into:_one": "{{count}} kayıt şununla birleştirilsin:",
+  "Merge {{count}} entries into:_other": "{{count}} kayıt şununla birleştirilsin:"
 }

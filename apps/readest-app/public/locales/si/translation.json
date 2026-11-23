@@ -2917,5 +2917,15 @@
   "The text is too long for Apple Intelligence on this device.": "මෙම උපාංගයේ Apple Intelligence සඳහා පෙළ ඉතා දිගයි.",
   "Forget": "අමතක කරන්න",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "මෙම WebDAV සේවාදායකය අමතක කරන්නද? එහි ලිපිනය සහ පිවිසුම් තොරතුරු මෙම උපාංගයෙන්, Readest Cloud වෙතින් සහ එයට සම්බන්ධ නොවූ ඔබේ අනෙකුත් උපාංගවලින් ඉවත් කෙරේ. සේවාදායකයේ ගොනු වෙනස් නොවේ.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "මෙම S3 බාල්දිය අමතක කරන්නද? එහි අන්ත ලක්ෂ්‍යය සහ යතුරු මෙම උපාංගයෙන්, Readest Cloud වෙතින් සහ එයට සම්බන්ධ නොවූ ඔබේ අනෙකුත් උපාංගවලින් ඉවත් කෙරේ. බාල්දියේ ගොනු වෙනස් නොවේ."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "මෙම S3 බාල්දිය අමතක කරන්නද? එහි අන්ත ලක්ෂ්‍යය සහ යතුරු මෙම උපාංගයෙන්, Readest Cloud වෙතින් සහ එයට සම්බන්ධ නොවූ ඔබේ අනෙකුත් උපාංගවලින් ඉවත් කෙරේ. බාල්දියේ ගොනු වෙනස් නොවේ.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "ඒවායේ කියවීමේ කාලය ඔබගේ සියලු උපාංගවල අනෙක් පොතට ගෙන යනු ලැබේ. මෙය අහෝසි කළ නොහැක.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "ඒවායේ කියවීමේ කාලය මෙම උපාංගයේ අනෙක් පොතට ගෙන යනු ලැබේ. මෙය අහෝසි කළ නොහැක.",
+  "Merge {{count}} entries into “{{target}}”?_one": "ඇතුළත් කිරීම් {{count}}ක් “{{target}}” සමඟ ඒකාබද්ධ කරන්නද?",
+  "Merge {{count}} entries into “{{target}}”?_other": "ඇතුළත් කිරීම් {{count}}ක් “{{target}}” සමඟ ඒකාබද්ධ කරන්නද?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "ඒවායේ කියවීමේ කාලය ඔබගේ සියලු උපාංගවලින් ඉවත් කෙරේ. මෙය අහෝසි කළ නොහැක.",
+  "Their reading time is removed from this device. This can’t be undone.": "ඒවායේ කියවීමේ කාලය මෙම උපාංගයෙන් ඉවත් කෙරේ. මෙය අහෝසි කළ නොහැක.",
+  "Delete the reading statistics of {{count}} books?_one": "පොත් {{count}}ක කියවීමේ සංඛ්‍යාලේඛන මකන්නද?",
+  "Delete the reading statistics of {{count}} books?_other": "පොත් {{count}}ක කියවීමේ සංඛ්‍යාලේඛන මකන්නද?",
+  "Merge {{count}} entries into:_one": "ඇතුළත් කිරීම් {{count}}ක් ඒකාබද්ධ කළ යුත්තේ:",
+  "Merge {{count}} entries into:_other": "ඇතුළත් කිරීම් {{count}}ක් ඒකාබද්ධ කළ යුත්තේ:"
 }

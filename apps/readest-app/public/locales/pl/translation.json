@@ -3067,5 +3067,21 @@
   "The text is too long for Apple Intelligence on this device.": "Tekst jest za długi dla Apple Intelligence na tym urządzeniu.",
   "Forget": "Zapomnij",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Zapomnieć ten serwer WebDAV? Jego adres i dane logowania zostaną usunięte z tego urządzenia, z Readest Cloud i z innych urządzeń, które nie są z nim połączone. Pliki na serwerze pozostaną nietknięte.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Zapomnieć ten zasobnik S3? Jego punkt końcowy i klucze zostaną usunięte z tego urządzenia, z Readest Cloud i z innych urządzeń, które nie są z nim połączone. Pliki w zasobniku pozostaną nietknięte."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Zapomnieć ten zasobnik S3? Jego punkt końcowy i klucze zostaną usunięte z tego urządzenia, z Readest Cloud i z innych urządzeń, które nie są z nim połączone. Pliki w zasobniku pozostaną nietknięte.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Czas czytania tych wpisów zostanie przeniesiony do drugiej książki na wszystkich Twoich urządzeniach. Tej operacji nie można cofnąć.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Czas czytania tych wpisów zostanie przeniesiony do drugiej książki na tym urządzeniu. Tej operacji nie można cofnąć.",
+  "Merge {{count}} entries into “{{target}}”?_one": "Scalić {{count}} wpis z „{{target}}”?",
+  "Merge {{count}} entries into “{{target}}”?_few": "Scalić {{count}} wpisy z „{{target}}”?",
+  "Merge {{count}} entries into “{{target}}”?_many": "Scalić {{count}} wpisów z „{{target}}”?",
+  "Merge {{count}} entries into “{{target}}”?_other": "Scalić {{count}} wpisu z „{{target}}”?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Czas czytania tych książek zostanie usunięty ze wszystkich Twoich urządzeń. Tej operacji nie można cofnąć.",
+  "Their reading time is removed from this device. This can’t be undone.": "Czas czytania tych książek zostanie usunięty z tego urządzenia. Tej operacji nie można cofnąć.",
+  "Delete the reading statistics of {{count}} books?_one": "Usunąć statystyki czytania {{count}} książki?",
+  "Delete the reading statistics of {{count}} books?_few": "Usunąć statystyki czytania {{count}} książek?",
+  "Delete the reading statistics of {{count}} books?_many": "Usunąć statystyki czytania {{count}} książek?",
+  "Delete the reading statistics of {{count}} books?_other": "Usunąć statystyki czytania {{count}} książki?",
+  "Merge {{count}} entries into:_one": "Scal {{count}} wpis z:",
+  "Merge {{count}} entries into:_few": "Scal {{count}} wpisy z:",
+  "Merge {{count}} entries into:_many": "Scal {{count}} wpisów z:",
+  "Merge {{count}} entries into:_other": "Scal {{count}} wpisu z:"
 }

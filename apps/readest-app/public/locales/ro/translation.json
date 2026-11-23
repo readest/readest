@@ -2992,5 +2992,18 @@
   "The text is too long for Apple Intelligence on this device.": "Textul este prea lung pentru Apple Intelligence pe acest dispozitiv.",
   "Forget": "Uită",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Uitați acest server WebDAV? Adresa și datele de autentificare vor fi eliminate de pe acest dispozitiv, din Readest Cloud și de pe celelalte dispozitive ale dvs. care nu sunt conectate la el. Fișierele de pe server nu sunt afectate.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Uitați acest bucket S3? Endpointul și cheile vor fi eliminate de pe acest dispozitiv, din Readest Cloud și de pe celelalte dispozitive ale dvs. care nu sunt conectate la el. Fișierele din bucket nu sunt afectate."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Uitați acest bucket S3? Endpointul și cheile vor fi eliminate de pe acest dispozitiv, din Readest Cloud și de pe celelalte dispozitive ale dvs. care nu sunt conectate la el. Fișierele din bucket nu sunt afectate.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Timpul lor de lectură trece la cealaltă carte pe toate dispozitivele tale. Acțiunea nu poate fi anulată.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Timpul lor de lectură trece la cealaltă carte pe acest dispozitiv. Acțiunea nu poate fi anulată.",
+  "Merge {{count}} entries into “{{target}}”?_one": "Combini {{count}} intrare cu „{{target}}”?",
+  "Merge {{count}} entries into “{{target}}”?_few": "Combini {{count}} intrări cu „{{target}}”?",
+  "Merge {{count}} entries into “{{target}}”?_other": "Combini {{count}} de intrări cu „{{target}}”?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Timpul lor de lectură va fi eliminat de pe toate dispozitivele tale. Acțiunea nu poate fi anulată.",
+  "Their reading time is removed from this device. This can’t be undone.": "Timpul lor de lectură va fi eliminat de pe acest dispozitiv. Acțiunea nu poate fi anulată.",
+  "Delete the reading statistics of {{count}} books?_one": "Ștergi statisticile de lectură pentru {{count}} carte?",
+  "Delete the reading statistics of {{count}} books?_few": "Ștergi statisticile de lectură pentru {{count}} cărți?",
+  "Delete the reading statistics of {{count}} books?_other": "Ștergi statisticile de lectură pentru {{count}} de cărți?",
+  "Merge {{count}} entries into:_one": "Combină {{count}} intrare cu:",
+  "Merge {{count}} entries into:_few": "Combină {{count}} intrări cu:",
+  "Merge {{count}} entries into:_other": "Combină {{count}} de intrări cu:"
 }

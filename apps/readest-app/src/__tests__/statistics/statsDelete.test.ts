@@ -108,7 +108,7 @@ describe('deleteBookStats', () => {
     const stats = await db();
     await seed(stats, 'a', [100]);
     const client = { pushChanges: vi.fn().mockResolvedValue({}) };
-    await deleteBookStats(stats, client, { bookMd5: 'a', title: 'A', authors: 'A' });
+    await deleteBookStats(stats, client, [{ bookMd5: 'a', title: 'A', authors: 'A' }]);
     const sent = client.pushChanges.mock.calls[0]![0];
     expect(sent.statBooks).toEqual([
       { book_hash: 'a', title: 'A', authors: 'A', deleted_at: expect.any(String) },
@@ -116,12 +116,30 @@ describe('deleteBookStats', () => {
     expect(await stats.getBookByMd5('a')).toBeNull();
   });
 
+  it('deletes several books with one request (#7812)', async () => {
+    const stats = await db();
+    await seed(stats, 'a', [100]);
+    await seed(stats, 'b', [200]);
+    await seed(stats, 'c', [300]);
+    const client = { pushChanges: vi.fn().mockResolvedValue({}) };
+    await deleteBookStats(stats, client, [
+      { bookMd5: 'a', title: 'A', authors: 'A' },
+      { bookMd5: 'b', title: 'B', authors: 'A' },
+    ]);
+    expect(client.pushChanges).toHaveBeenCalledTimes(1);
+    expect(client.pushChanges.mock.calls[0]![0].statBooks).toEqual([
+      { book_hash: 'a', title: 'A', authors: 'A', deleted_at: expect.any(String) },
+      { book_hash: 'b', title: 'B', authors: 'A', deleted_at: expect.any(String) },
+    ]);
+    expect((await stats.getBookStats()).map((b) => b.md5)).toEqual(['c']);
+  });
+
   it('keeps the local statistics when the server rejects the deletion', async () => {
     const stats = await db();
     await seed(stats, 'a', [100]);
     const client = { pushChanges: vi.fn().mockRejectedValue(new Error('offline')) };
     await expect(
-      deleteBookStats(stats, client, { bookMd5: 'a', title: 'A', authors: 'A' }),
+      deleteBookStats(stats, client, [{ bookMd5: 'a', title: 'A', authors: 'A' }]),
     ).rejects.toThrow('offline');
     expect(await stats.getBookByMd5('a')).not.toBeNull();
   });
@@ -129,7 +147,7 @@ describe('deleteBookStats', () => {
   it('deletes locally only when stats aren’t synced', async () => {
     const stats = await db();
     await seed(stats, 'a', [100]);
-    await deleteBookStats(stats, null, { bookMd5: 'a', title: 'A', authors: 'A' });
+    await deleteBookStats(stats, null, [{ bookMd5: 'a', title: 'A', authors: 'A' }]);
     expect(await stats.getBookByMd5('a')).toBeNull();
   });
 });

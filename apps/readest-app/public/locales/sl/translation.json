@@ -3067,5 +3067,21 @@
   "The text is too long for Apple Intelligence on this device.": "Besedilo je predolgo za Apple Intelligence v tej napravi.",
   "Forget": "Pozabi",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "Želite pozabiti ta strežnik WebDAV? Njegov naslov in prijavni podatki bodo odstranjeni s te naprave, iz Readest Cloud in z vaših drugih naprav, ki niso povezane z njim. Datoteke na strežniku ostanejo nedotaknjene.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Želite pozabiti to vedro S3? Njegova končna točka in ključi bodo odstranjeni s te naprave, iz Readest Cloud in z vaših drugih naprav, ki niso povezane z njim. Datoteke v vedru ostanejo nedotaknjene."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "Želite pozabiti to vedro S3? Njegova končna točka in ključi bodo odstranjeni s te naprave, iz Readest Cloud in z vaših drugih naprav, ki niso povezane z njim. Datoteke v vedru ostanejo nedotaknjene.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "Njihov čas branja bo na vseh vaših napravah prenesen na drugo knjigo. Tega ni mogoče razveljaviti.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "Njihov čas branja bo na tej napravi prenesen na drugo knjigo. Tega ni mogoče razveljaviti.",
+  "Merge {{count}} entries into “{{target}}”?_one": "Želite združiti {{count}} vnos v »{{target}}«?",
+  "Merge {{count}} entries into “{{target}}”?_two": "Želite združiti {{count}} vnosa v »{{target}}«?",
+  "Merge {{count}} entries into “{{target}}”?_few": "Želite združiti {{count}} vnose v »{{target}}«?",
+  "Merge {{count}} entries into “{{target}}”?_other": "Želite združiti {{count}} vnosov v »{{target}}«?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "Njihov čas branja bo odstranjen z vseh vaših naprav. Tega ni mogoče razveljaviti.",
+  "Their reading time is removed from this device. This can’t be undone.": "Njihov čas branja bo odstranjen s te naprave. Tega ni mogoče razveljaviti.",
+  "Delete the reading statistics of {{count}} books?_one": "Želite izbrisati statistiko branja za {{count}} knjigo?",
+  "Delete the reading statistics of {{count}} books?_two": "Želite izbrisati statistiko branja za {{count}} knjigi?",
+  "Delete the reading statistics of {{count}} books?_few": "Želite izbrisati statistiko branja za {{count}} knjige?",
+  "Delete the reading statistics of {{count}} books?_other": "Želite izbrisati statistiko branja za {{count}} knjig?",
+  "Merge {{count}} entries into:_one": "Združi {{count}} vnos v:",
+  "Merge {{count}} entries into:_two": "Združi {{count}} vnosa v:",
+  "Merge {{count}} entries into:_few": "Združi {{count}} vnose v:",
+  "Merge {{count}} entries into:_other": "Združi {{count}} vnosov v:"
 }

@@ -2917,5 +2917,15 @@
   "The text is too long for Apple Intelligence on this device.": "ტექსტი ზედმეტად გრძელია ამ მოწყობილობის Apple Intelligence-ისთვის.",
   "Forget": "დავიწყება",
   "Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.": "დავივიწყოთ ეს WebDAV სერვერი? მისი მისამართი და შესვლის მონაცემები წაიშლება ამ მოწყობილობიდან, Readest Cloud-იდან და თქვენი სხვა მოწყობილობებიდან, რომლებიც მას არ არის დაკავშირებული. სერვერზე არსებულ ფაილებს არაფერი მოუვა.",
-  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "დავივიწყოთ ეს S3 bucket? მისი endpoint და გასაღებები წაიშლება ამ მოწყობილობიდან, Readest Cloud-იდან და თქვენი სხვა მოწყობილობებიდან, რომლებიც მას არ არის დაკავშირებული. bucket-ში არსებულ ფაილებს არაფერი მოუვა."
+  "Forget this S3 bucket? Its endpoint and keys are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files in the bucket are not touched.": "დავივიწყოთ ეს S3 bucket? მისი endpoint და გასაღებები წაიშლება ამ მოწყობილობიდან, Readest Cloud-იდან და თქვენი სხვა მოწყობილობებიდან, რომლებიც მას არ არის დაკავშირებული. bucket-ში არსებულ ფაილებს არაფერი მოუვა.",
+  "Their reading time moves to the other book on all your devices. This can’t be undone.": "მათი კითხვის დრო ყველა თქვენს მოწყობილობაზე გადავა მეორე წიგნზე. ამის გაუქმება შეუძლებელია.",
+  "Their reading time moves to the other book on this device. This can’t be undone.": "მათი კითხვის დრო ამ მოწყობილობაზე გადავა მეორე წიგნზე. ამის გაუქმება შეუძლებელია.",
+  "Merge {{count}} entries into “{{target}}”?_one": "გაერთიანდეს {{count}} ჩანაწერი „{{target}}“-ში?",
+  "Merge {{count}} entries into “{{target}}”?_other": "გაერთიანდეს {{count}} ჩანაწერი „{{target}}“-ში?",
+  "Their reading time is removed from all your devices. This can’t be undone.": "მათი კითხვის დრო წაიშლება ყველა თქვენი მოწყობილობიდან. ამის გაუქმება შეუძლებელია.",
+  "Their reading time is removed from this device. This can’t be undone.": "მათი კითხვის დრო წაიშლება ამ მოწყობილობიდან. ამის გაუქმება შეუძლებელია.",
+  "Delete the reading statistics of {{count}} books?_one": "წაიშალოს {{count}} წიგნის კითხვის სტატისტიკა?",
+  "Delete the reading statistics of {{count}} books?_other": "წაიშალოს {{count}} წიგნის კითხვის სტატისტიკა?",
+  "Merge {{count}} entries into:_one": "{{count}} ჩანაწერის გაერთიანება:",
+  "Merge {{count}} entries into:_other": "{{count}} ჩანაწერის გაერთიანება:"
 }
