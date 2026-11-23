@@ -1,6 +1,8 @@
 import { BookConfig, BookNote } from '@/types/book';
 import { DBBookConfig, DBBookNote } from '@/types/records';
 import { SyncClient } from '@/libs/sync';
+import { isReadestCloudEnabled } from '@/services/sync/cloudSyncProvider';
+import { useSettingsStore } from '@/store/settingsStore';
 import { transformBookNoteFromDB } from '@/utils/transform';
 
 /**
@@ -11,8 +13,12 @@ import { transformBookNoteFromDB } from '@/utils/transform';
  * Both are overwritten with newer records rather than hard-deleted, so the
  * erase propagates to other signed-in devices through the normal pull: notes
  * get a `deletedAt` tombstone, and the config's position fields are nulled.
+ *
+ * A device with Readest Cloud switched off doesn't sync progress or notes
+ * with it, so the purge sends nothing there and works offline (#7826).
  */
 export const purgeCloudBookData = async (bookHash: string, syncClient = new SyncClient()) => {
+  if (!isReadestCloudEnabled(useSettingsStore.getState().settings)) return;
   const [{ configs }, { notes }] = await Promise.all([
     syncClient.pullChanges(0, 'configs', bookHash),
     syncClient.pullChanges(0, 'notes', bookHash),
