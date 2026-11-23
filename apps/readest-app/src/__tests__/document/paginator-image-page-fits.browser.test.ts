@@ -222,6 +222,12 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
       `<img alt="" style="position: absolute; width: 10px; height: 10px" src="${COVER}"/>${PLATE}`,
       16,
     ],
+    // a block image's own margin collapses with its parents'
+    [
+      "shown as a block, its margin joining its box's",
+      `<div class="wrap" style="margin-top: 1em"><p class="image" style="margin: 0"><img alt="" style="display: block; margin: 1em auto 0" src="${COVER}"/></p><p>IMAGE SUBTITLE</p></div>`,
+      16,
+    ],
     [
       'alone, with its own top margin',
       `<p class="image" style="text-align: center"><img alt="" style="margin-top: 1em" src="${COVER}"/></p>`,
@@ -292,6 +298,22 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     await frames(6);
     expect((img as HTMLElement).style.verticalAlign).toBe(align);
     expect((img as HTMLElement).style.maxHeight).toBe(`${availableHeight(doc)}px`);
+  });
+
+  // A restyle that grows the space above the plate (a bigger font under an
+  // em margin) fits it again without a new layout
+  it('fits a plate again after a restyle grows the space above it', async () => {
+    const { el, doc } = await open(PLATE, '');
+    const img = doc.querySelector('p.image img')!;
+    expect(img.getBoundingClientRect().height).toBe(availableHeight(doc) - 16);
+    el.setStyles?.(
+      `${getStyles(makeViewSettings(), undefined, [])} p.image { margin-top: 2em !important; }`,
+    );
+    await doc.fonts.ready;
+    await frames(10);
+    expect(img.getClientRects()).toHaveLength(1);
+    expect(middleOf(el, img)).toBeCloseTo(0.5, 1);
+    expect(img.getBoundingClientRect().height).toBe(availableHeight(doc) - 32);
   });
 
   // Only an image alone on its line is top-aligned: a linked icon before text
