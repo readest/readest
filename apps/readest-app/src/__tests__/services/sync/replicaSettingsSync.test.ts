@@ -89,13 +89,13 @@ const setDictionarySync = (enabled: boolean): void => {
   } as never);
 };
 
-beforeEach(() => {
+beforeEach(async () => {
+  await __resetSettingsSyncForTests();
   publishMock.mockReset();
   ensurePassphraseMock.mockReset();
   ensurePassphraseMock.mockImplementation(async () => {
     isUnlocked = true;
   });
-  __resetSettingsSyncForTests();
   isUnlocked = true;
   useSettingsStore.setState({
     settings: makeSettings(),
@@ -105,8 +105,8 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof useSettingsStore.getState>);
 });
 
-afterEach(() => {
-  __resetSettingsSyncForTests();
+afterEach(async () => {
+  await __resetSettingsSyncForTests();
 });
 
 describe('publishSettingsIfChanged', () => {
@@ -119,7 +119,7 @@ describe('publishSettingsIfChanged', () => {
     settings.globalReadSettings.customThemes = [];
     await publishSettingsIfChanged(settings);
     if (source === 'startup') {
-      __resetSettingsSyncForTests();
+      await __resetSettingsSyncForTests();
       initSettingsSync(settings);
     } else if (source === 'remote') {
       applyRemoteSettings(makeEnvConfig(), {
