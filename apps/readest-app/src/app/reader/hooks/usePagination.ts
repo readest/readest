@@ -20,7 +20,7 @@ import { tauriGetWindowLogicalPosition } from '@/utils/window';
 import { getReadingRulerMoveDirection } from '../utils/readingRuler';
 import { isPageOverflowing } from '../utils/pageOverflow';
 import { isDragPastPanEdge } from '../utils/turnGestureArena';
-import { hasReaderOverlay, subscribeReaderOverlays } from '../utils/readerOverlay';
+import { hasReaderControlsOverlay, subscribeReaderOverlays } from '../utils/readerOverlay';
 import { useTouchInterceptor } from './useTouchInterceptor';
 
 export type ScrollSource = 'touch' | 'mouse';
@@ -300,7 +300,11 @@ export const usePagination = (
   // handlers themselves re-read via getState() to avoid stale closures.
   const hardwarePageTurner = useSettingsStore((s) => s.settings.hardwarePageTurner);
   const isSettingsDialogOpen = useSettingsStore((s) => s.isSettingsDialogOpen);
-  const overlayOpen = useSyncExternalStore(subscribeReaderOverlays, hasReaderOverlay, () => false);
+  const overlayOpen = useSyncExternalStore(
+    subscribeReaderOverlays,
+    hasReaderControlsOverlay,
+    () => false,
+  );
   const readerControlsOpen = !!hoveredBookKey || isSettingsDialogOpen || overlayOpen;
   // While this book's TTS is actively playing, the volume keys must control the
   // system volume instead of flipping pages (#4691). A paused or stopped session
@@ -465,7 +469,7 @@ export const usePagination = (
         !ttsPlayingRef.current &&
         !useReaderStore.getState().hoveredBookKey &&
         !useSettingsStore.getState().isSettingsDialogOpen &&
-        !hasReaderOverlay()
+        !hasReaderControlsOverlay()
       ) {
         const { keyName } = msg.detail;
         setHoveredBookKey('');

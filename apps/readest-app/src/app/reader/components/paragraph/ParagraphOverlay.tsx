@@ -922,6 +922,7 @@ const ParagraphOverlay: React.FC<ParagraphOverlayProps> = ({
       role='dialog'
       aria-modal='true'
       aria-label='Paragraph reading mode'
+      data-reading-surface='paragraph'
       tabIndex={-1}
       className={clsx(
         'fixed inset-0 z-40',

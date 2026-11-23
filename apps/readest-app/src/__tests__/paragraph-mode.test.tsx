@@ -14,6 +14,7 @@ import Popup from '@/components/Popup';
 import { useParagraphMode } from '@/app/reader/hooks/useParagraphMode';
 import type { FoliateView } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
+import { hasReaderControlsOverlay, hasReaderModal } from '@/app/reader/utils/readerOverlay';
 import { ParagraphIterator } from '@/utils/paragraph';
 import {
   getParagraphActionForKey,
@@ -678,6 +679,16 @@ describe('paragraph mode', () => {
     expect(dialog.className).toContain('bg-base-100');
     expect(dialog.getAttribute('style') ?? '').not.toContain('blur');
     expect(dialog.getAttribute('style') ?? '').not.toContain('background');
+  });
+
+  it('stays modal to the book but is not reader controls for the volume keys (#7227)', async () => {
+    const { container } = await renderVisibleOverlay(vi.fn());
+    expect(getDialog(container)).not.toBeNull();
+
+    // Keys typed in the book behind it still must not turn the page.
+    expect(hasReaderModal()).toBe(true);
+    // The volume keys step through its paragraphs instead of the system volume.
+    expect(hasReaderControlsOverlay()).toBe(false);
   });
 
   it('focuses the dialog when it opens so it receives keys directly (#4717)', async () => {
