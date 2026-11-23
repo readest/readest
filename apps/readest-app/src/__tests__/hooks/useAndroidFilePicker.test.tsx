@@ -83,9 +83,10 @@ describe('useAndroidPickedBooks', () => {
     });
 
     await waitFor(() => expect(onPickedBooks).toHaveBeenCalledTimes(1));
-    expect(onPickedBooks).toHaveBeenCalledWith([
-      { path: 'content://com.android.providers.media.documents/document/1', name: 'novel.epub' },
-    ]);
+    expect(onPickedBooks).toHaveBeenCalledWith(
+      [{ path: 'content://com.android.providers.media.documents/document/1', name: 'novel.epub' }],
+      ['photo.png', 'msf%3A20'],
+    );
   });
 
   test('ignores an empty payload without invoking the import callback', async () => {
@@ -138,7 +139,9 @@ describe('useAndroidPickedBooks with a duplicate-download marker', () => {
 });
 
 describe('useAndroidPickedBooks with a mixed selection', () => {
-  test('imports the books and still names the file it dropped', async () => {
+  // The names go to the caller, which reports them with the import's own
+  // result: a toast of their own was replaced by its success toast (#6991).
+  test('hands over the books and the names of the files it dropped', async () => {
     const onPickedBooks = vi.fn();
     const dispatchSpy = vi.spyOn(eventDispatcher, 'dispatch').mockResolvedValue();
     // .doc stays unsupported; .docx converts to EPUB on import and is accepted.
@@ -154,10 +157,19 @@ describe('useAndroidPickedBooks with a mixed selection', () => {
     expect(onPickedBooks.mock.calls[0]![0]).toEqual([
       expect.objectContaining({ name: 'novel.epub' }),
     ]);
-    expect(dispatchSpy).toHaveBeenCalledWith(
-      'toast',
-      expect.objectContaining({ message: expect.stringContaining('resume.doc') }),
-    );
+    expect(onPickedBooks.mock.calls[0]![1]).toEqual(['resume.doc']);
+    expect(dispatchSpy).not.toHaveBeenCalled();
     dispatchSpy.mockRestore();
+  });
+
+  test('hands over the dropped names when nothing in the pick is a book', async () => {
+    const onPickedBooks = vi.fn();
+    basenameMock.mockImplementation(async () => 'notes.xyz');
+    renderHook(() => useAndroidPickedBooks(makeAppService(true), onPickedBooks));
+
+    await waitFor(() => expect(listeners).toHaveLength(1));
+    await listeners[0]!.handler({ uris: ['content://downloads/2'] });
+
+    await waitFor(() => expect(onPickedBooks).toHaveBeenCalledWith([], ['notes.xyz']));
   });
 });

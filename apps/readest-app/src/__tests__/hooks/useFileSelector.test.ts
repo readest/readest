@@ -199,13 +199,9 @@ describe('useFileSelector book selection with a duplicate-download marker', () =
     const result = await select({ type: 'books', multiple: true });
 
     expect(result.files).toHaveLength(0);
-    expect(dispatchSpy).toHaveBeenCalledWith(
-      'toast',
-      expect.objectContaining({
-        type: 'error',
-        message: expect.stringContaining('resume.doc'),
-      }),
-    );
+    expect(result.skipped).toEqual(['resume.doc']);
+    // The caller names them once the rest has imported (#6991).
+    expect(dispatchSpy).not.toHaveBeenCalled();
     dispatchSpy.mockRestore();
   });
 
@@ -235,13 +231,10 @@ describe('useFileSelector reports every file it skips', () => {
     const result = await select({ type: 'books', multiple: true });
 
     expect(result.files).toEqual([expect.objectContaining({ name: 'novel.epub' })]);
-    expect(dispatchSpy).toHaveBeenCalledWith(
-      'toast',
-      expect.objectContaining({ message: expect.stringContaining('resume.doc') }),
-    );
-    // Only the rejected file is named.
-    const [, toast] = dispatchSpy.mock.calls[0]!;
-    expect((toast as { message: string }).message).not.toContain('novel.epub');
+    // Only the rejected file is named, and the caller toasts it after the
+    // import, whose own success toast would replace it (#6991).
+    expect(result.skipped).toEqual(['resume.doc']);
+    expect(dispatchSpy).not.toHaveBeenCalled();
     dispatchSpy.mockRestore();
   });
 
@@ -256,6 +249,7 @@ describe('useFileSelector reports every file it skips', () => {
     const result = await select({ type: 'audio', multiple: true });
 
     expect(result.files).toHaveLength(0);
+    expect(result.skipped).toBeUndefined();
     // The only message we have translated talks about books; an audio pick
     // must not borrow it.
     for (const [, payload] of dispatchSpy.mock.calls) {
