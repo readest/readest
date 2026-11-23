@@ -560,6 +560,25 @@ describe('ReplicaSyncManager pull with a change still queued', () => {
     expect(rows.map((row) => row.fields_jsonb['name']!.v)).toEqual(['on']);
   });
 
+  // The online handler flushes while the online pull is in flight: the push
+  // lands, its queued entry goes, then the pull answers with the older copy.
+  test('pull keeps a value pushed while it was in flight over the older pulled one', async () => {
+    const older = nameRow('r1', 'off', hlcPack(NOW + 100, 0, DEV) as Hlc);
+    let answer!: (rows: ReplicaRow[]) => void;
+    const { manager } = makeManager({
+      pull: vi.fn(() => new Promise<ReplicaRow[]>((resolve) => (answer = resolve))),
+    });
+    manager.markDirty(nameRow('r1', 'on', hlcPack(NOW + 200, 0, DEV) as Hlc));
+
+    const pulling = manager.pull('dictionary');
+    await manager.flush();
+    expect(manager.pendingCount()).toBe(0);
+    answer([older]);
+    const [row] = await pulling;
+
+    expect(row!.fields_jsonb['name']!.v).toBe('on');
+  });
+
   test('a newer remote value still wins over an older queued one', async () => {
     const remote = nameRow('r1', 'remote', hlcPack(NOW + 300, 0, 'dev-b') as Hlc);
     const { manager } = makeManager({ pull: vi.fn(async () => [remote]) });
