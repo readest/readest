@@ -136,7 +136,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
     >
       <button
         tabIndex={0}
-        className='btn btn-sm flex items-center px-[10px] font-normal normal-case sm:px-[20px]'
+        className='btn btn-sm eink-bordered flex items-center px-[10px] font-normal normal-case sm:px-[20px]'
         onClick={(e) => e.currentTarget.focus()}
       >
         <div className='flex items-center gap-x-1'>
@@ -155,7 +155,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
         role='listbox'
         tabIndex={0}
         className={clsx(
-          'dropdown-content bgcolor-base-200 no-triangle menu rounded-box absolute z-[1] mt-4 shadow-sm',
+          'dropdown-content bgcolor-base-200 eink-bordered no-triangle menu rounded-box absolute z-[1] mt-4 shadow-sm',
           'right-[-32px] w-[46vw] px-0! sm:right-0 sm:w-44',
           moreOptions?.length ? '' : 'inline overflow-hidden',
         )}
@@ -211,7 +211,7 @@ const FontDropdown: React.FC<DropdownProps> = ({
               role='listbox'
               tabIndex={0}
               className={clsx(
-                'dropdown-content bgcolor-base-200 menu rounded-box z-[1] shadow-sm',
+                'dropdown-content bgcolor-base-200 eink-bordered menu rounded-box z-[1] shadow-sm',
                 'mr-4! -bottom-2.5 inline w-[46vw] overflow-hidden px-0! sm:w-[200px]',
               )}
             >

@@ -1061,7 +1061,7 @@ export default function BookshelvesDialog() {
             type='button'
             aria-label={_('Close')}
             onClick={() => void close()}
-            className='bg-base-300/65 btn btn-ghost btn-circle mt-[1.125rem] hidden h-6 min-h-6 w-6 shrink-0 focus:outline-hidden sm:flex'
+            className='bg-base-300/65 eink:bg-transparent btn btn-ghost btn-circle mt-[1.125rem] hidden h-6 min-h-6 w-6 shrink-0 focus:outline-hidden sm:flex'
           >
             <MdClose aria-hidden className='h-4 w-4' />
           </button>

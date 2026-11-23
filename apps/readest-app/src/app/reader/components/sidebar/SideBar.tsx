@@ -210,7 +210,7 @@ const SideBar = ({}) => {
           viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           isSideBarPinned ? 'z-20' : 'z-[45] shadow-2xl',
-          !isSideBarPinned && viewSettings?.isEink && 'border-base-content border-e',
+          viewSettings?.isEink && 'border-base-content border-e',
         )}
         role='navigation'
         aria-label={_('Sidebar')}
