@@ -33,6 +33,7 @@ vi.mock('@/utils/nav', () => ({
 }));
 
 import LinkDevice from '@/app/link/LinkDevice';
+import { getAPIBaseUrl } from '@/services/environment';
 
 beforeEach(() => {
   query = 'code=RQGF-WDCF';
@@ -104,6 +105,23 @@ describe('LinkDevice', () => {
     query = 'code=BCDF-GHJK';
     rerender(<LinkDevice />);
     expect((screen.getByLabelText('Code') as HTMLInputElement).value).toBe('BCDF-GHJK');
+  });
+
+  // The apps' /link approves through web.readest.com, which may not serve /api/auth/device
+  // yet; the CrossPoint path answers on every server.
+  it('approves the code shown, signed in as the page’s user', async () => {
+    user = { email: 'reader@example.com' };
+    query = 'code=LMNP-QRST';
+    fetchWithAuthMock.mockResolvedValue(undefined);
+    render(<LinkDevice />);
+    fireEvent.click(screen.getByText('Link Reader'));
+
+    await screen.findByText('Your reader is linked. It finishes signing in on its own.');
+    expect(fetchWithAuthMock).toHaveBeenCalledWith(`${getAPIBaseUrl()}/crosspoint/device/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_code: 'LMNP-QRST' }),
+    });
   });
 
   // Approving code A must not mark code B linked when B's link arrives while

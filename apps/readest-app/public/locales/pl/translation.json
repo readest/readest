@@ -3083,5 +3083,8 @@
   "Merge {{count}} entries into:_one": "Scal {{count}} wpis z:",
   "Merge {{count}} entries into:_few": "Scal {{count}} wpisy z:",
   "Merge {{count}} entries into:_many": "Scal {{count}} wpisów z:",
-  "Merge {{count}} entries into:_other": "Scal {{count}} wpisu z:"
+  "Merge {{count}} entries into:_other": "Scal {{count}} wpisu z:",
+  "Sign in with a QR code": "Zaloguj się kodem QR",
+  "Unable to connect to Readest. Please check your network connection.": "Nie można połączyć się z Readest. Sprawdź połączenie sieciowe.",
+  "Approve on a phone or computer signed in to Readest.": "Zatwierdź na telefonie lub komputerze zalogowanym do Readest."
 }

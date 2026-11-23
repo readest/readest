@@ -2849,5 +2849,8 @@
   "Their reading time is removed from all your devices. This can’t be undone.": "Thời gian đọc của các sách này sẽ bị xóa khỏi tất cả thiết bị của bạn. Không thể hoàn tác thao tác này.",
   "Their reading time is removed from this device. This can’t be undone.": "Thời gian đọc của các sách này sẽ bị xóa khỏi thiết bị này. Không thể hoàn tác thao tác này.",
   "Delete the reading statistics of {{count}} books?_other": "Xóa thống kê đọc của {{count}} sách?",
-  "Merge {{count}} entries into:_other": "Gộp {{count}} mục vào:"
+  "Merge {{count}} entries into:_other": "Gộp {{count}} mục vào:",
+  "Sign in with a QR code": "Đăng nhập bằng mã QR",
+  "Unable to connect to Readest. Please check your network connection.": "Không thể kết nối với Readest. Vui lòng kiểm tra kết nối mạng.",
+  "Approve on a phone or computer signed in to Readest.": "Phê duyệt trên điện thoại hoặc máy tính đã đăng nhập Readest."
 }

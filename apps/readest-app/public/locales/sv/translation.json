@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "Ta bort lässtatistiken för {{count}} bok?",
   "Delete the reading statistics of {{count}} books?_other": "Ta bort lässtatistiken för {{count}} böcker?",
   "Merge {{count}} entries into:_one": "Slå ihop {{count}} post med:",
-  "Merge {{count}} entries into:_other": "Slå ihop {{count}} poster med:"
+  "Merge {{count}} entries into:_other": "Slå ihop {{count}} poster med:",
+  "Sign in with a QR code": "Logga in med en QR-kod",
+  "Unable to connect to Readest. Please check your network connection.": "Det går inte att ansluta till Readest. Kontrollera din nätverksanslutning.",
+  "Approve on a phone or computer signed in to Readest.": "Godkänn på en telefon eller dator som är inloggad på Readest."
 }

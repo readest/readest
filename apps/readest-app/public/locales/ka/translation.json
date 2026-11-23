@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "წაიშალოს {{count}} წიგნის კითხვის სტატისტიკა?",
   "Delete the reading statistics of {{count}} books?_other": "წაიშალოს {{count}} წიგნის კითხვის სტატისტიკა?",
   "Merge {{count}} entries into:_one": "{{count}} ჩანაწერის გაერთიანება:",
-  "Merge {{count}} entries into:_other": "{{count}} ჩანაწერის გაერთიანება:"
+  "Merge {{count}} entries into:_other": "{{count}} ჩანაწერის გაერთიანება:",
+  "Sign in with a QR code": "შესვლა QR კოდით",
+  "Unable to connect to Readest. Please check your network connection.": "Readest-თან დაკავშირება ვერ მოხერხდა. გთხოვთ, შეამოწმოთ ქსელთან კავშირი.",
+  "Approve on a phone or computer signed in to Readest.": "დაადასტურეთ Readest-ში შესულ ტელეფონზე ან კომპიუტერზე."
 }

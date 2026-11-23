@@ -3005,5 +3005,8 @@
   "Delete the reading statistics of {{count}} books?_other": "Excluir as estatísticas de leitura de {{count}} livros?",
   "Merge {{count}} entries into:_one": "Mesclar {{count}} entrada em:",
   "Merge {{count}} entries into:_many": "Mesclar {{count}} entradas em:",
-  "Merge {{count}} entries into:_other": "Mesclar {{count}} entradas em:"
+  "Merge {{count}} entries into:_other": "Mesclar {{count}} entradas em:",
+  "Sign in with a QR code": "Entrar com um código QR",
+  "Unable to connect to Readest. Please check your network connection.": "Não foi possível conectar ao Readest. Verifique sua conexão de rede.",
+  "Approve on a phone or computer signed in to Readest.": "Aprove em um celular ou computador conectado ao Readest."
 }

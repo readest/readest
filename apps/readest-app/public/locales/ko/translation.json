@@ -2849,5 +2849,8 @@
   "Their reading time is removed from all your devices. This can’t be undone.": "이 책들의 독서 시간이 모든 기기에서 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
   "Their reading time is removed from this device. This can’t be undone.": "이 책들의 독서 시간이 이 기기에서 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
   "Delete the reading statistics of {{count}} books?_other": "책 {{count}}권의 독서 통계를 삭제할까요?",
-  "Merge {{count}} entries into:_other": "항목 {{count}}개를 병합할 대상:"
+  "Merge {{count}} entries into:_other": "항목 {{count}}개를 병합할 대상:",
+  "Sign in with a QR code": "QR 코드로 로그인",
+  "Unable to connect to Readest. Please check your network connection.": "Readest에 연결할 수 없습니다. 네트워크 연결을 확인해 주세요.",
+  "Approve on a phone or computer signed in to Readest.": "Readest에 로그인된 휴대폰이나 컴퓨터에서 승인하세요."
 }

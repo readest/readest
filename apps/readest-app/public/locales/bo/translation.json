@@ -2849,5 +2849,8 @@
   "Their reading time is removed from all your devices. This can’t be undone.": "དེ་དག་གི་ཀློག་དུས་ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཚང་མ་ནས་བསུབ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
   "Their reading time is removed from this device. This can’t be undone.": "དེ་དག་གི་ཀློག་དུས་སྒྲིག་ཆས་འདི་ནས་བསུབ་རྒྱུ་ཡིན། འདི་ཕྱིར་ལྡོག་བྱེད་མི་ཐུབ།",
   "Delete the reading statistics of {{count}} books?_other": "དཔེ་དེབ་ {{count}} ཡི་ཀློག་པའི་གྲངས་ཐོ་བསུབ་བམ།",
-  "Merge {{count}} entries into:_other": "ཚན་པ་ {{count}} མཉམ་སྡེབ་ས།"
+  "Merge {{count}} entries into:_other": "ཚན་པ་ {{count}} མཉམ་སྡེབ་ས།",
+  "Sign in with a QR code": "QR ཨང་རྟགས་ཀྱིས་ནང་འཛུལ།",
+  "Unable to connect to Readest. Please check your network connection.": "Readest ལ་འབྲེལ་མཐུད་བྱེད་མ་ཐུབ། ཁྱེད་ཀྱི་དྲ་རྒྱའི་འབྲེལ་མཐུད་ལ་ཞིབ་བཤེར་གནང་།",
+  "Approve on a phone or computer signed in to Readest.": "Readest ལ་ནང་འཛུལ་བྱས་པའི་ཁ་པར་རམ་གློག་ཀླད་ནས་ཆོག་མཆན་སྤྲོད།"
 }

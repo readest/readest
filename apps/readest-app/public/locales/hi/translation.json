@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "{{count}} किताब के पढ़ने के आँकड़े हटाएं?",
   "Delete the reading statistics of {{count}} books?_other": "{{count}} किताबों के पढ़ने के आँकड़े हटाएं?",
   "Merge {{count}} entries into:_one": "{{count}} प्रविष्टि को इसमें मिलाएं:",
-  "Merge {{count}} entries into:_other": "{{count}} प्रविष्टियों को इसमें मिलाएं:"
+  "Merge {{count}} entries into:_other": "{{count}} प्रविष्टियों को इसमें मिलाएं:",
+  "Sign in with a QR code": "QR कोड से साइन इन करें",
+  "Unable to connect to Readest. Please check your network connection.": "Readest से कनेक्ट नहीं हो सका। कृपया अपना नेटवर्क कनेक्शन जांचें।",
+  "Approve on a phone or computer signed in to Readest.": "Readest में साइन इन किए हुए फ़ोन या कंप्यूटर से स्वीकृति दें।"
 }

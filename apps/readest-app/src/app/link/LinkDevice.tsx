@@ -19,8 +19,9 @@ type Status = 'idle' | 'linking' | 'linked' | 'failed';
 
 /**
  * Approves a reader's sign-in: a CrossPoint reader (the Readest card on its web
- * Settings page) or KOReader (Readest > Sign in with a code). Both link to this
- * page with the code filled in, and wait until its owner approves here.
+ * Settings page), KOReader (Readest > Sign in with a code) or Readest itself
+ * (Sign in with a QR code). All link to this page with the code filled in, and
+ * wait until its owner approves here.
  */
 export default function LinkDevice() {
   const _ = useTranslation();
@@ -59,6 +60,8 @@ export default function LinkDevice() {
     const current = ++approval.current;
     setStatus('linking');
     try {
+      // The CrossPoint path, which every server has: in the apps this goes to web.readest.com,
+      // which may not serve /api/auth/device yet.
       await fetchWithAuth(`${getAPIBaseUrl()}/crosspoint/device/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

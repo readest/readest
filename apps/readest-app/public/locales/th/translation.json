@@ -2849,5 +2849,8 @@
   "Their reading time is removed from all your devices. This can’t be undone.": "เวลาอ่านของหนังสือเหล่านี้จะถูกลบออกจากอุปกรณ์ทั้งหมดของคุณ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
   "Their reading time is removed from this device. This can’t be undone.": "เวลาอ่านของหนังสือเหล่านี้จะถูกลบออกจากอุปกรณ์นี้ การดำเนินการนี้ไม่สามารถย้อนกลับได้",
   "Delete the reading statistics of {{count}} books?_other": "ลบสถิติการอ่านของหนังสือ {{count}} เล่มหรือไม่",
-  "Merge {{count}} entries into:_other": "รวม {{count}} รายการเข้ากับ:"
+  "Merge {{count}} entries into:_other": "รวม {{count}} รายการเข้ากับ:",
+  "Sign in with a QR code": "ลงชื่อเข้าใช้ด้วยคิวอาร์โค้ด",
+  "Unable to connect to Readest. Please check your network connection.": "ไม่สามารถเชื่อมต่อกับ Readest ได้ โปรดตรวจสอบการเชื่อมต่อเครือข่ายของคุณ",
+  "Approve on a phone or computer signed in to Readest.": "อนุมัติบนโทรศัพท์หรือคอมพิวเตอร์ที่ลงชื่อเข้าใช้ Readest อยู่"
 }

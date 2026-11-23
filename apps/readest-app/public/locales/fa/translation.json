@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "آمار مطالعه {{count}} کتاب حذف شود؟",
   "Delete the reading statistics of {{count}} books?_other": "آمار مطالعه {{count}} کتاب حذف شود؟",
   "Merge {{count}} entries into:_one": "ادغام {{count}} مورد در:",
-  "Merge {{count}} entries into:_other": "ادغام {{count}} مورد در:"
+  "Merge {{count}} entries into:_other": "ادغام {{count}} مورد در:",
+  "Sign in with a QR code": "ورود با کد QR",
+  "Unable to connect to Readest. Please check your network connection.": "اتصال به Readest ممکن نیست. لطفاً اتصال شبکه خود را بررسی کنید.",
+  "Approve on a phone or computer signed in to Readest.": "از تلفن یا رایانه‌ای که وارد Readest شده است تأیید کنید."
 }

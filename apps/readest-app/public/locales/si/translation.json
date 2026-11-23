@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "පොත් {{count}}ක කියවීමේ සංඛ්‍යාලේඛන මකන්නද?",
   "Delete the reading statistics of {{count}} books?_other": "පොත් {{count}}ක කියවීමේ සංඛ්‍යාලේඛන මකන්නද?",
   "Merge {{count}} entries into:_one": "ඇතුළත් කිරීම් {{count}}ක් ඒකාබද්ධ කළ යුත්තේ:",
-  "Merge {{count}} entries into:_other": "ඇතුළත් කිරීම් {{count}}ක් ඒකාබද්ධ කළ යුත්තේ:"
+  "Merge {{count}} entries into:_other": "ඇතුළත් කිරීම් {{count}}ක් ඒකාබද්ධ කළ යුත්තේ:",
+  "Sign in with a QR code": "QR කේතයකින් පුරන්න",
+  "Unable to connect to Readest. Please check your network connection.": "Readest වෙත සම්බන්ධ විය නොහැක. කරුණාකර ඔබගේ ජාල සම්බන්ධතාවය පරීක්ෂා කරන්න.",
+  "Approve on a phone or computer signed in to Readest.": "Readest වෙත පුරනය වූ දුරකථනයකින් හෝ පරිගණකයකින් අනුමත කරන්න."
 }

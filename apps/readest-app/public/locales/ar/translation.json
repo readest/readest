@@ -3239,5 +3239,8 @@
   "Merge {{count}} entries into:_two": "دمج إدخالين في:",
   "Merge {{count}} entries into:_few": "دمج {{count}} إدخالات في:",
   "Merge {{count}} entries into:_many": "دمج {{count}} إدخالًا في:",
-  "Merge {{count}} entries into:_other": "دمج {{count}} إدخال في:"
+  "Merge {{count}} entries into:_other": "دمج {{count}} إدخال في:",
+  "Sign in with a QR code": "تسجيل الدخول باستخدام رمز QR",
+  "Unable to connect to Readest. Please check your network connection.": "تعذّر الاتصال بـ Readest. يرجى التحقق من اتصالك بالشبكة.",
+  "Approve on a phone or computer signed in to Readest.": "وافق من هاتف أو كمبيوتر مسجّل الدخول إلى Readest."
 }

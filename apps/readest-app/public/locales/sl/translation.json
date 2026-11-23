@@ -3083,5 +3083,8 @@
   "Merge {{count}} entries into:_one": "Združi {{count}} vnos v:",
   "Merge {{count}} entries into:_two": "Združi {{count}} vnosa v:",
   "Merge {{count}} entries into:_few": "Združi {{count}} vnose v:",
-  "Merge {{count}} entries into:_other": "Združi {{count}} vnosov v:"
+  "Merge {{count}} entries into:_other": "Združi {{count}} vnosov v:",
+  "Sign in with a QR code": "Prijava s kodo QR",
+  "Unable to connect to Readest. Please check your network connection.": "Povezava z Readest ni mogoča. Preverite omrežno povezavo.",
+  "Approve on a phone or computer signed in to Readest.": "Odobrite v telefonu ali računalniku, ki je prijavljen v Readest."
 }

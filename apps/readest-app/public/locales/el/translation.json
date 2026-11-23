@@ -2927,5 +2927,8 @@
   "Delete the reading statistics of {{count}} books?_one": "Διαγραφή των στατιστικών ανάγνωσης {{count}} βιβλίου;",
   "Delete the reading statistics of {{count}} books?_other": "Διαγραφή των στατιστικών ανάγνωσης {{count}} βιβλίων;",
   "Merge {{count}} entries into:_one": "Συγχώνευση {{count}} καταχώρισης σε:",
-  "Merge {{count}} entries into:_other": "Συγχώνευση {{count}} καταχωρίσεων σε:"
+  "Merge {{count}} entries into:_other": "Συγχώνευση {{count}} καταχωρίσεων σε:",
+  "Sign in with a QR code": "Σύνδεση με κωδικό QR",
+  "Unable to connect to Readest. Please check your network connection.": "Δεν είναι δυνατή η σύνδεση στο Readest. Ελέγξτε τη σύνδεση δικτύου σας.",
+  "Approve on a phone or computer signed in to Readest.": "Εγκρίνετε από ένα τηλέφωνο ή υπολογιστή συνδεδεμένο στο Readest."
 }
