@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSyncContext } from '@/context/SyncContext';
@@ -14,7 +14,6 @@ import { transformBookFromDB } from '@/utils/transform';
 import { DBBook, DBBookConfig, DBBookNote } from '@/types/records';
 import { Book, BookConfig, BookDataRecord, BookNote } from '@/types/book';
 import { navigateToLogin } from '@/utils/nav';
-import { getBookChangedAt } from '@/utils/book';
 import { useReaderStore } from '@/store/readerStore';
 
 const transformsFromDB = {
@@ -160,8 +159,6 @@ export function useSync(bookKey?: string) {
   const [syncedNotes, setSyncedNotes] = useState<BookNote[] | null>(null);
 
   const { syncClient } = useSyncContext();
-  // Upper bound on the books cursor while a failed push left changes unsent.
-  const booksCursorBoundRef = useRef(Infinity);
 
   useEffect(() => {
     if (!bookKey) return;
@@ -214,7 +211,6 @@ export function useSync(bookKey?: string) {
     setSyncing: React.Dispatch<React.SetStateAction<boolean>>,
     bookId?: string,
     metaHash?: string,
-    maxCursor = Infinity,
   ) => {
     setSyncing(true);
     setSyncError(null);
@@ -231,9 +227,9 @@ export function useSync(bookKey?: string) {
           (cursor) => {
             // Persist the cursor per page so an interrupted initial sync
             // resumes from the last page instead of restarting from `since`.
-            setLastSyncedAt(Math.min(cursor, maxCursor));
+            setLastSyncedAt(cursor);
             const settings = useSettingsStore.getState().settings;
-            settings.lastSyncedAtBooks = Math.min(cursor, maxCursor);
+            settings.lastSyncedAtBooks = cursor;
             setSettings(settings);
           },
         );
@@ -248,10 +244,7 @@ export function useSync(bookKey?: string) {
       recordCloudFlow('pull', type, countSyncedRecords(type, newRecords));
       if (since > 1000 && !records?.length) return 0;
       // For since <= 1000, we set lastSyncedAt to now if no records returned
-      const maxTime = Math.min(
-        records?.length ? computeMaxTimestamp(records) : Date.now(),
-        maxCursor,
-      );
+      const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();
       setLastSyncedAt(maxTime);
 
       // due to closures in React hooks the settings might be stale
@@ -348,18 +341,7 @@ export function useSync(bookKey?: string) {
       if (!lastSyncedAtInited) return;
       if (!isSyncCategoryEnabled('book')) return;
       if ((op === 'push' || op === 'both') && books?.length) {
-        if (await pushChanges({ books })) {
-          booksCursorBoundRef.current = Infinity;
-        } else {
-          // The next push sends a synced book only if it changed after the
-          // cursor (getNewBooks), so no pull may move the cursor past the
-          // changes this push left unsent until a push sends them.
-          for (const book of books) {
-            if (!book.syncedAt) continue;
-            const changedAt = Math.max(getBookChangedAt(book), book.deletedAt ?? 0);
-            booksCursorBoundRef.current = Math.min(booksCursorBoundRef.current, changedAt - 1);
-          }
-        }
+        await pushChanges({ books });
       }
       if (op === 'pull' || op === 'both') {
         return await pullChanges(
@@ -367,9 +349,6 @@ export function useSync(bookKey?: string) {
           since ?? lastSyncedAtBooks + 1,
           setLastSyncedAtBooks,
           setSyncingBooks,
-          undefined,
-          undefined,
-          booksCursorBoundRef.current,
         );
       }
       return;

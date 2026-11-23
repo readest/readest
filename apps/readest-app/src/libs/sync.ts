@@ -103,7 +103,8 @@ export class SyncClient {
    * Push local changes to the server.
    * Uses last-writer-wins logic as implemented on the server side.
    * Books go BOOKS_PUSH_BATCH_SIZE per request, returned as one result; the
-   * first failed request throws, and the books after it go on the next sync.
+   * first failed request throws. Which unsent books a later push picks up
+   * again is getNewBooks' cursor rule (#7824).
    */
   async pushChanges(payload: SyncData): Promise<SyncResult> {
     const books = payload.books ?? [];
