@@ -4,7 +4,7 @@ import { getAPIBaseUrl } from '@/services/environment';
 // Readest > Sign in with a code does it: the app shows a code, a device signed
 // in to Readest approves it on /link, and the app's next ask gets a session.
 
-/** A code to show, from /crosspoint/device/code. */
+/** A code to show, from /auth/device/code. */
 export interface SignInCode {
   deviceCode: string;
   userCode: string;
@@ -27,7 +27,7 @@ export class CodeSignInError extends Error {
 }
 
 export const requestSignInCode = async (): Promise<SignInCode> => {
-  const res = await fetch(`${getAPIBaseUrl()}/crosspoint/device/code`, { method: 'POST' });
+  const res = await fetch(`${getAPIBaseUrl()}/auth/device/code`, { method: 'POST' });
   const d = await res.json().catch(() => null);
   if (!res.ok || typeof d?.device_code !== 'string') throw new CodeSignInError('request_failed');
   return {
@@ -64,7 +64,7 @@ export const pollSignInSession = async (
     await sleep(code.interval * 1000);
     if (signal?.aborted) throw new CodeSignInError('aborted');
     if (now() >= deadline) throw new CodeSignInError('expired_token');
-    const body = await fetch(`${getAPIBaseUrl()}/crosspoint/device/token`, {
+    const body = await fetch(`${getAPIBaseUrl()}/auth/device/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ device_code: code.deviceCode, grant: 'session' }),

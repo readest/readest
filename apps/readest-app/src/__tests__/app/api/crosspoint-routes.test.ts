@@ -64,9 +64,12 @@ vi.mock('@/utils/supabase', () => ({
   }),
 }));
 
-import { POST as codePOST } from '@/app/api/crosspoint/device/code/route';
-import { POST as tokenPOST } from '@/app/api/crosspoint/device/token/route';
-import { POST as approvePOST } from '@/app/api/crosspoint/device/approve/route';
+import { POST as codePOST } from '@/app/api/auth/device/code/route';
+import { POST as tokenPOST } from '@/app/api/auth/device/token/route';
+import { POST as approvePOST } from '@/app/api/auth/device/approve/route';
+import { POST as crosspointCodePOST } from '@/app/api/crosspoint/device/code/route';
+import { POST as crosspointTokenPOST } from '@/app/api/crosspoint/device/token/route';
+import { POST as crosspointApprovePOST } from '@/app/api/crosspoint/device/approve/route';
 import { GET as booksGET } from '@/app/api/crosspoint/books/route';
 import { GET as bookGET } from '@/app/api/crosspoint/books/[hash]/route';
 import { POST as sessionsPOST } from '@/app/api/crosspoint/sessions/route';
@@ -125,6 +128,14 @@ afterEach(() => {
 });
 
 describe('device sign-in', () => {
+  // Readest's QR code sign-in uses /api/auth/device/*; CrossPoint readers and KOReader
+  // plugins already out there call /api/crosspoint/device/*, which must keep answering.
+  it('answers on the CrossPoint paths too', () => {
+    expect(crosspointCodePOST).toBe(codePOST);
+    expect(crosspointTokenPOST).toBe(tokenPOST);
+    expect(crosspointApprovePOST).toBe(approvePOST);
+  });
+
   const start = () => codePOST(new Request(`${BASE}/device/code`, { method: 'POST' }));
 
   it('starts a sign-in with a code to approve and a secret device code to poll with', async () => {

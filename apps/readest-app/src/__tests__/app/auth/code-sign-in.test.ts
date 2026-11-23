@@ -10,8 +10,8 @@ import { getAPIBaseUrl } from '@/services/environment';
 
 /**
  * Sign-in with a code, as KOReader's Readest > Sign in with a code does it: the
- * app asks /crosspoint/device/code for a code, shows it, and asks
- * /crosspoint/device/token for a session until a device signed in to Readest
+ * app asks /auth/device/code for a code, shows it, and asks
+ * /auth/device/token for a session until a device signed in to Readest
  * approves the code on /link.
  */
 
@@ -61,7 +61,7 @@ describe('requestSignInCode', () => {
     vi.stubGlobal('fetch', fetch);
 
     expect(await requestSignInCode()).toEqual(code);
-    expect(fetch).toHaveBeenCalledWith(`${getAPIBaseUrl()}/crosspoint/device/code`, {
+    expect(fetch).toHaveBeenCalledWith(`${getAPIBaseUrl()}/auth/device/code`, {
       method: 'POST',
     });
   });
@@ -91,7 +91,7 @@ describe('pollSignInSession', () => {
     expect(fetch).toHaveBeenCalledTimes(3);
     expect(noSleep).toHaveBeenCalledTimes(3);
     expect(noSleep).toHaveBeenCalledWith(5000);
-    expect(fetch).toHaveBeenCalledWith(`${getAPIBaseUrl()}/crosspoint/device/token`, {
+    expect(fetch).toHaveBeenCalledWith(`${getAPIBaseUrl()}/auth/device/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ device_code: 'device-secret', grant: 'session' }),

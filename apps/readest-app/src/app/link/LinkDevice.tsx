@@ -60,7 +60,7 @@ export default function LinkDevice() {
     const current = ++approval.current;
     setStatus('linking');
     try {
-      await fetchWithAuth(`${getAPIBaseUrl()}/crosspoint/device/approve`, {
+      await fetchWithAuth(`${getAPIBaseUrl()}/auth/device/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_code: code }),

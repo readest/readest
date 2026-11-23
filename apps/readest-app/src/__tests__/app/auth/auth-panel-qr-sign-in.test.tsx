@@ -65,7 +65,7 @@ const renderPanel = () => {
 /** Answers the code request with each of `codes` in turn, and token polls with `token`. */
 const serve = (codes: string[], token: () => Response) => {
   const fetch = vi.fn(async (url: string) => {
-    if (url.endsWith('/crosspoint/device/code')) return json(200, deviceCode(codes.shift()!));
+    if (url.endsWith('/auth/device/code')) return json(200, deviceCode(codes.shift()!));
     return token();
   });
   vi.stubGlobal('fetch', fetch);
