@@ -1871,7 +1871,8 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // preserving structure we leave groupId undefined so importBooks
     // derives nested groupNames from each file's basePath.
     const targetGroupId = result.flatten ? searchParams?.get('group') || '' : undefined;
-    importBooks(toImportFiles, targetGroupId);
+    // Awaited, so a drop waiting on its folders waits for the books too.
+    await importBooks(toImportFiles, targetGroupId);
   };
 
   const handleSetSelectMode = (selectMode: boolean) => {

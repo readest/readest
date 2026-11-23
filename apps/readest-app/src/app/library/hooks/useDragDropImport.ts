@@ -71,21 +71,22 @@ export const useDragDropImport = () => {
     // reason (#5959). An all-unsupported drop is answered above with the
     // supported-format list instead.
     const skipped = skippedItems.map(itemName);
+    // Folders first: import runs are serialized, and a folder imported after
+    // the loose files would toast its result over the one naming the skipped
+    // files (#6991).
+    await Promise.allSettled(
+      directoryPaths.map((path) => eventDispatcher.dispatch('import-book-directory', { path })),
+    );
     if (fileSelections.length > 0) {
       // Reported with the import's own result: a toast of their own was
-      // replaced by its success or failure toast (#6991).
+      // replaced by its success or failure toast.
       eventDispatcher.dispatch('import-book-files', {
         files: fileSelections,
         groupId: group,
         skipped,
       });
-    }
-    const folderImports = directoryPaths.map((path) =>
-      eventDispatcher.dispatch('import-book-directory', { path }),
-    );
-    if (fileSelections.length === 0) {
+    } else {
       // Folders and unsupported files only: named once the folders are in.
-      await Promise.all(folderImports);
       toastSkippedBooks(_, skipped);
     }
   };

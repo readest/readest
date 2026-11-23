@@ -149,6 +149,35 @@ describe('useDragDropImport skipped-file toast', () => {
     }
   });
 
+  // Import runs are serialized: a folder imported after the loose files would
+  // toast its result over the one that names the skipped files.
+  it('imports the folders of a mixed drop before its loose files, which name the skipped ones', async () => {
+    isDirectory.mockImplementation(async (path: string) => path === 'C:\\Library');
+    const spy = vi.spyOn(eventDispatcher, 'dispatch');
+    const order: string[] = [];
+    const importFolder = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      order.push('folder');
+    };
+    const importFiles = async () => {
+      order.push('files');
+    };
+    eventDispatcher.on('import-book-directory', importFolder);
+    eventDispatcher.on('import-book-files', importFiles);
+    try {
+      renderHook(() => useDragDropImport());
+      await dropTauriPaths(['C:\\Library', 'C:\\a.epub', 'C:\\notes.xyz']);
+
+      await waitFor(() => expect(order).toEqual(['folder', 'files']));
+      const importPayload = spy.mock.calls.find((call) => call[0] === 'import-book-files')?.[1];
+      expect(importPayload).toMatchObject({ skipped: ['notes.xyz'] });
+      expect(toastPayloads(spy)).toHaveLength(0);
+    } finally {
+      eventDispatcher.off('import-book-directory', importFolder);
+      eventDispatcher.off('import-book-files', importFiles);
+    }
+  });
+
   it('keeps the supported-formats hint when nothing in the drop is supported', async () => {
     const spy = vi.spyOn(eventDispatcher, 'dispatch');
     renderHook(() => useDragDropImport());
