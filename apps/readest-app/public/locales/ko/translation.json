@@ -2874,5 +2874,11 @@
   "All Profiles": "모든 프로필",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "카드에서 ‘책 링크’를 열려면 AnkiDroid의 고급 설정에서 ‘카드에서 다른 앱으로 이동 허용’을 켜세요",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "‘단어’, ‘힌트’, ‘사전 항목’은 ‘{{name}}’에서와 같은 필드를 써야 합니다",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "단어 {{count}}개를 보내지 못함: 프로필의 노트 유형이 AnkiDroid에 없거나 ‘단어’ 필드가 없습니다"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "단어 {{count}}개를 보내지 못함: 프로필의 노트 유형이 AnkiDroid에 없거나 ‘단어’ 필드가 없습니다",
+  "File Name Format": "파일 이름 형식",
+  "Original": "원본",
+  "Author - Title": "저자 - 제목",
+  "Title - Author": "제목 - 저자",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "'파일 이름 형식'은 KOReader가 OPDS 다운로드 이름을 정하는 방식대로 제목과 저자로 이름을 만듭니다.",
+  "Set a single book's file name in the reader's Sync Info.": "책 한 권의 파일 이름은 리더의 동기화 정보에서 설정하세요."
 }

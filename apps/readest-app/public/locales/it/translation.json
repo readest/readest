@@ -3032,5 +3032,11 @@
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "«Parola», «Suggerimento» e «Voce del dizionario» devono usare gli stessi campi di «{{name}}»",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} parole non inviate: il tipo di nota del loro profilo non è in AnkiDroid o non ha un campo «Parola»",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_many": "{{count}} parole non inviate: il tipo di nota del loro profilo non è in AnkiDroid o non ha un campo «Parola»",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} parole non inviate: il tipo di nota del loro profilo non è in AnkiDroid o non ha un campo «Parola»"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} parole non inviate: il tipo di nota del loro profilo non è in AnkiDroid o non ha un campo «Parola»",
+  "File Name Format": "Formato del nome file",
+  "Original": "Originale",
+  "Author - Title": "Autore - Titolo",
+  "Title - Author": "Titolo - Autore",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"Formato del nome file\" compone il nome da titolo e autori, come KOReader nomina i download OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "Imposta il nome file di un singolo libro in Info di sincronizzazione della vista di lettura."
 }

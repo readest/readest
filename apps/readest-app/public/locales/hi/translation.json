@@ -2953,5 +2953,11 @@
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "कार्ड से “पुस्तक का लिंक” खोलने के लिए AnkiDroid की सेटिंग में उन्नत के अंतर्गत “Allow cards to launch other apps” चालू करें",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“शब्द”, “संकेत” और “शब्दकोश प्रविष्टि” को “{{name}}” वाले फ़ील्ड ही इस्तेमाल करने होंगे",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} शब्द नहीं भेजे गए: उनकी प्रोफ़ाइल का नोट प्रकार AnkiDroid में नहीं है या उसमें “शब्द” फ़ील्ड नहीं है",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} शब्द नहीं भेजे गए: उनकी प्रोफ़ाइल का नोट प्रकार AnkiDroid में नहीं है या उसमें “शब्द” फ़ील्ड नहीं है"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} शब्द नहीं भेजे गए: उनकी प्रोफ़ाइल का नोट प्रकार AnkiDroid में नहीं है या उसमें “शब्द” फ़ील्ड नहीं है",
+  "File Name Format": "फाइल नाम फॉर्मेट",
+  "Original": "मूल",
+  "Author - Title": "लेखक - शीर्षक",
+  "Title - Author": "शीर्षक - लेखक",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"फाइल नाम फॉर्मेट\" शीर्षक और लेखकों से नाम बनाता है, जैसे KOReader OPDS डाउनलोड को नाम देता है।",
+  "Set a single book's file name in the reader's Sync Info.": "किसी एक पुस्तक का फाइल नाम रीडर की सिंक जानकारी में सेट करें।"
 }

@@ -356,6 +356,9 @@ msgstr "Bokens fingeravtryck"
 msgid "Identifiers"
 msgstr "Identifierare"
 
+msgid "File Name"
+msgstr "Filnamn"
+
 msgid "Last Synced"
 msgstr "Senast synkroniserad"
 

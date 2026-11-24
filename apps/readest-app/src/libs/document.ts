@@ -114,6 +114,10 @@ export type BookMetadata = {
   // The partial MD5 of an ABS ebook's file, which KOReader uses as the
   // book's id; the hash comes from the abs:// path instead (#7088).
   absFileHash?: string;
+  // The file name KOSync's File Name checksum hashes for this book, set in
+  // Sync Info to match the other reader's file. Overrides the File Name
+  // Format, and syncs here so every Readest device sends the same name (#7864).
+  kosyncFilename?: string;
 };
 
 export type BookMediaSource =

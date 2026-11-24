@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
 import { KOSyncClient } from '@/services/sync/KOSyncClient';
-import { KOSyncChecksumMethod, KOSyncStrategy } from '@/types/settings';
+import { KOSyncChecksumMethod, KOSyncFilenameFormat, KOSyncStrategy } from '@/types/settings';
 import { debounce } from '@/utils/debounce';
 import { getOSPlatform } from '@/utils/misc';
 import {
@@ -190,6 +190,16 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
     await saveSettings(envConfig, newSettings);
   };
 
+  const handleFilenameFormatChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const kosync = {
+      ...settings.kosync,
+      filenameFormat: e.target.value as KOSyncFilenameFormat,
+    };
+    const newSettings = { ...settings, kosync };
+    setSettings(newSettings);
+    await saveSettings(envConfig, newSettings);
+  };
+
   const handleToggleSelfSignedCert = async () => {
     const kosync = {
       ...settings.kosync,
@@ -262,6 +272,21 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
                   ]}
                 />
               </div>
+              {settings.kosync.checksumMethod === 'filename' && (
+                <div className='flex min-h-14 items-center justify-between gap-3 px-4'>
+                  <SettingLabel>{_('File Name Format')}</SettingLabel>
+                  <SettingsSelect
+                    value={settings.kosync.filenameFormat ?? 'original'}
+                    onChange={handleFilenameFormatChange}
+                    ariaLabel={_('File Name Format')}
+                    options={[
+                      { value: 'original', label: _('Original') },
+                      { value: 'author-title', label: _('Author - Title') },
+                      { value: 'title-author', label: _('Title - Author') },
+                    ]}
+                  />
+                </div>
+              )}
               {/* Mirrors KOReader's "Send document metadata" setting: include
                   filename/title/authors in progress uploads so custom sync
                   servers can tell which book a document hash is. Off by
@@ -288,7 +313,14 @@ const KOSyncForm: React.FC<KOSyncFormProps> = ({ onBack }) => {
 
           {settings.kosync.checksumMethod === 'filename' && (
             <Tips>
-              <li>{_('File Name uses the original filename, including its extension.')}</li>
+              <li>
+                {(settings.kosync.filenameFormat ?? 'original') === 'original'
+                  ? _('File Name uses the original filename, including its extension.')
+                  : _(
+                      'File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.',
+                    )}
+              </li>
+              <li>{_("Set a single book's file name in the reader's Sync Info.")}</li>
             </Tips>
           )}
 

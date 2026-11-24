@@ -356,6 +356,9 @@ msgstr "පොතේ ඇඟිලි සලකුණ"
 msgid "Identifiers"
 msgstr "හඳුනාගැනීම්"
 
+msgid "File Name"
+msgstr "ගොනුවේ නම"
+
 msgid "Last Synced"
 msgstr "අවසන් සමමුහූර්තකරණය"
 

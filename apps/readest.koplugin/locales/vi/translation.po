@@ -356,6 +356,9 @@ msgstr "Dấu vân tay sách"
 msgid "Identifiers"
 msgstr "Định Danh"
 
+msgid "File Name"
+msgstr "Tên tệp"
+
 msgid "Last Synced"
 msgstr "Lần đồng bộ cuối"
 

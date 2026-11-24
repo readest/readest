@@ -2874,5 +2874,11 @@
   "All Profiles": "Tất cả hồ sơ",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Để mở “Liên kết đến sách” từ thẻ, hãy bật “Allow cards to launch other apps” trong phần Tuỳ chọn nâng cao của cài đặt AnkiDroid",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Từ”, “Gợi ý” và “Mục từ điển” phải dùng cùng các trường như trong “{{name}}”",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} từ chưa được gửi: kiểu ghi chú trong hồ sơ của chúng không có trong AnkiDroid hoặc không có trường “Từ”"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} từ chưa được gửi: kiểu ghi chú trong hồ sơ của chúng không có trong AnkiDroid hoặc không có trường “Từ”",
+  "File Name Format": "Định dạng tên tệp",
+  "Original": "Gốc",
+  "Author - Title": "Tác giả - Tiêu đề",
+  "Title - Author": "Tiêu đề - Tác giả",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Định dạng tên tệp” tạo tên từ tiêu đề và tác giả, giống cách KOReader đặt tên cho các tệp tải về qua OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "Đặt tên tệp cho từng cuốn sách trong Thông tin đồng bộ của trình đọc."
 }

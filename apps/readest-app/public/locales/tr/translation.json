@@ -2953,5 +2953,11 @@
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Bir karttan “Kitaba bağlantı” açmak için AnkiDroid ayarlarının İleri Düzey bölümünde “Kartların uygulama başlatmasına izin ver” seçeneğini açın",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Kelime”, “İpucu” ve “Sözlük girdisi”, “{{name}}” içindekiyle aynı alanları kullanmalıdır",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} sözcük gönderilmedi: profillerinin not türü AnkiDroid'de yok ya da “Kelime” alanı yok",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} sözcük gönderilmedi: profillerinin not türü AnkiDroid'de yok ya da “Kelime” alanı yok"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} sözcük gönderilmedi: profillerinin not türü AnkiDroid'de yok ya da “Kelime” alanı yok",
+  "File Name Format": "Dosya Adı Biçimi",
+  "Original": "Orijinal",
+  "Author - Title": "Yazar - Başlık",
+  "Title - Author": "Başlık - Yazar",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Dosya Adı Biçimi”, KOReader'ın OPDS indirmelerini adlandırdığı gibi adı başlık ve yazarlardan oluşturur.",
+  "Set a single book's file name in the reader's Sync Info.": "Tek bir kitabın dosya adını okuma görünümündeki Senkronizasyon bilgisi bölümünden ayarlayın."
 }

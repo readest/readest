@@ -356,6 +356,9 @@ msgstr "དཔེ་ཆའི་མཛུབ་རྗེས།"
 msgid "Identifiers"
 msgstr "ངོས་འཛིན་བྱེད་མཁན"
 
+msgid "File Name"
+msgstr "ཡིག་ཆའི་མིང་།"
+
 msgid "Last Synced"
 msgstr "མཐའ་མའི་མཉམ་འགྱུར།"
 

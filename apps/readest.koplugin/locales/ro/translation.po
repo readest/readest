@@ -356,6 +356,9 @@ msgstr "Amprenta cărții"
 msgid "Identifiers"
 msgstr "Identificatori"
 
+msgid "File Name"
+msgstr "Numele fișierului"
+
 msgid "Last Synced"
 msgstr "Ultima sincronizare"
 

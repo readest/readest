@@ -356,6 +356,9 @@ msgstr "Kitob barmoq izi"
 msgid "Identifiers"
 msgstr "Identifikatorlar"
 
+msgid "File Name"
+msgstr "Fayl nomi"
+
 msgid "Last Synced"
 msgstr "Oxirgi sinxronlash"
 
