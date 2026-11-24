@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { themes } from '@/styles/themes';
+import { type CustomTheme, customThemeToTheme, themes } from '@/styles/themes';
 
 const h = vi.hoisted(() => ({
   isWeb: true,
   isEink: false,
+  customThemes: [] as CustomTheme[],
   onUpdateInsets: vi.fn(),
   appService: { isMobileApp: false, isIOSApp: false, isAndroidApp: false },
 }));
@@ -23,7 +24,9 @@ vi.mock('@/store/settingsStore', () => ({
         isEink: h.isEink,
         isColorEink: false,
       },
-      globalReadSettings: {},
+      globalReadSettings: {
+        customThemes: h.customThemes,
+      },
     },
   }),
 }));
@@ -57,6 +60,7 @@ beforeEach(() => {
   document.documentElement.style.backgroundColor = '';
   h.isWeb = true;
   h.isEink = false;
+  h.customThemes = [];
   useThemeStore.setState({
     themeMode: 'dark',
     themeColor: 'default',
@@ -136,6 +140,46 @@ describe('useTheme web theme-color and html background', () => {
     );
     expect(getMetaThemeColor()).toBeUndefined();
     expect(document.documentElement.style.backgroundColor).toBe('');
+    unmount();
+  });
+
+  it('updates theme-color and html backgroundColor when editing an active custom theme in place', () => {
+    const initialTheme: CustomTheme = {
+      name: 'atelier',
+      label: 'Atelier',
+      colors: {
+        light: { fg: '#111111', bg: '#f8f5ee', primary: '#2255aa' },
+        dark: { fg: '#eeeeee', bg: '#112233', primary: '#6699cc' },
+      },
+    };
+    const editedTheme: CustomTheme = {
+      ...initialTheme,
+      colors: {
+        ...initialTheme.colors,
+        dark: { fg: '#eeeeee', bg: '#334455', primary: '#6699cc' },
+      },
+    };
+    h.customThemes = [initialTheme];
+    useThemeStore.setState({
+      themeColor: 'atelier',
+      readerThemeColor: 'atelier',
+    });
+
+    const { rerender, unmount } = renderHook(() =>
+      useTheme({ systemUIVisible: true, appThemeColor: 'base-200', themeScope: 'library' }),
+    );
+
+    const firstExpected = customThemeToTheme(initialTheme).colors.dark['base-200'];
+    expect(getMetaThemeColor()).toBe(firstExpected);
+    const firstHtmlBg = document.documentElement.style.backgroundColor;
+
+    h.customThemes = [editedTheme];
+    rerender();
+
+    const editedExpected = customThemeToTheme(editedTheme).colors.dark['base-200'];
+    expect(editedExpected).not.toBe(firstExpected);
+    expect(getMetaThemeColor()).toBe(editedExpected);
+    expect(document.documentElement.style.backgroundColor).not.toBe(firstHtmlBg);
     unmount();
   });
 });

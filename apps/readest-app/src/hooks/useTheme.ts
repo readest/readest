@@ -177,7 +177,16 @@ export const useTheme = ({
       '--bg-texture-blend-mode',
       isDarkMode ? 'lighten' : 'multiply',
     );
-  }, [themeColor, isDarkMode, isEink, isBwEink, highlightOpacity, appThemeColor, updateAppTheme]);
+  }, [
+    themeColor,
+    isDarkMode,
+    isEink,
+    isBwEink,
+    highlightOpacity,
+    appThemeColor,
+    updateAppTheme,
+    settings.globalReadSettings?.customThemes,
+  ]);
 
   return { onUpdateInsets };
 };

@@ -84,7 +84,10 @@ const SideBar = ({}) => {
 
   useEffect(() => {
     if (isSideBarVisible) {
-      updateAppTheme('base-200');
+      const isEink =
+        (sideBarBookKey ? getViewSettings(sideBarBookKey)?.isEink : undefined) ??
+        settings.globalViewSettings?.isEink;
+      updateAppTheme(isEink ? 'base-100' : 'base-200');
       overlayRef.current = document.querySelector('.overlay') as HTMLDivElement | null;
     } else {
       updateAppTheme('base-100');

@@ -90,13 +90,23 @@ const Notebook: React.FC = () => {
 
   useEffect(() => {
     if (isNotebookVisible) {
-      updateAppTheme('base-200');
+      const isEink =
+        (sideBarBookKey ? getViewSettings(sideBarBookKey)?.isEink : undefined) ??
+        settings.globalViewSettings?.isEink;
+      updateAppTheme(isEink ? 'base-100' : 'base-200');
       overlayRef.current = document.querySelector('.overlay') as HTMLDivElement | null;
     } else {
       updateAppTheme('base-100');
       overlayRef.current = null;
     }
-  }, [isNotebookVisible, overlayRef, updateAppTheme]);
+  }, [
+    isNotebookVisible,
+    overlayRef,
+    sideBarBookKey,
+    settings.globalViewSettings?.isEink,
+    getViewSettings,
+    updateAppTheme,
+  ]);
 
   useEffect(() => {
     setNotebookWidth(settings.globalReadSettings.notebookWidth);
