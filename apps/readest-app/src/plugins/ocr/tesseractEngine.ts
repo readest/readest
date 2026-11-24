@@ -355,6 +355,7 @@ export class TesseractOcrEngine {
     signal?.throwIfAborted();
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     if (this.#mangaDetectorUnavailable) return this.#recognizeWholePage(prepared, signal);
+    this.#prepareRecognizer();
     this.#onProgress?.({ status: 'detecting manga text', progress: 0 });
     let detection: ComicTextDetectionResult;
     try {
@@ -522,6 +523,13 @@ export class TesseractOcrEngine {
       minimumConfidence: this.#minimumConfidence,
     });
     return this.#textLanguage ? { ...result, language: this.#textLanguage } : result;
+  }
+
+  /** Loads what reads the lines while they're being found. */
+  #prepareRecognizer(): void {
+    if (!isJapaneseLanguage(this.#textLanguage)) this.#getWorker().catch(() => undefined);
+    else if (!this.#japaneseMangaRecognizerUnavailable)
+      this.#getJapaneseMangaRecognizer().prepare();
   }
 
   #getMangaDetector(): MangaTextDetector {

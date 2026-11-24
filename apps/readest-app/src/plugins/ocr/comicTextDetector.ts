@@ -1,6 +1,7 @@
 import type { OcrBoundingBox } from '@/services/plugins/ocr';
 import type { InferenceSession } from 'onnxruntime-web/wasm';
 import { loadModelAsset, type ModelAsset } from './modelAssets';
+import { createOnnxSession, loadOnnxRuntime, type OnnxRuntime } from './onnxRuntime';
 import { createOcrCanvas, isHtmlCanvas } from './canvas';
 
 export const COMIC_TEXT_DETECTOR_INPUT_SIZE = 1024;
@@ -698,7 +699,7 @@ export class ComicTextDetector {
   #abortController: AbortController | null = null;
   readonly #activeRuns = new Set<Promise<InferenceSession.ReturnType>>();
   #sessionPromise: Promise<{
-    runtime: typeof import('onnxruntime-web/wasm');
+    runtime: OnnxRuntime;
     session: InferenceSession;
   }> | null = null;
   #terminated = false;
@@ -782,7 +783,7 @@ export class ComicTextDetector {
   }
 
   #getSession(): Promise<{
-    runtime: typeof import('onnxruntime-web/wasm');
+    runtime: OnnxRuntime;
     session: InferenceSession;
   }> {
     if (this.#terminated)
@@ -793,7 +794,7 @@ export class ComicTextDetector {
     this.#abortController = controller;
 
     const sessionPromise = Promise.all([
-      import('onnxruntime-web/wasm'),
+      loadOnnxRuntime(),
       loadModelAsset(COMIC_TEXT_DETECTOR_MODEL, {
         signal: controller.signal,
         onProgress: (loaded) =>
@@ -802,16 +803,7 @@ export class ComicTextDetector {
     ])
       .then(async ([runtime, model]) => {
         if (this.#terminated) throw new Error('Comic text detector has been terminated');
-        runtime.env.wasm.numThreads = globalThis.crossOriginIsolated
-          ? Math.min(8, Math.ceil((navigator.hardwareConcurrency || 1) / 2))
-          : 1;
-        runtime.env.wasm.proxy = typeof document !== 'undefined';
-        runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
-        const session = await runtime.InferenceSession.create(model, {
-          executionProviders: ['wasm'],
-          executionMode: 'sequential',
-          graphOptimizationLevel: 'all',
-        });
+        const session = await createOnnxSession(runtime, model);
         if (this.#terminated) {
           await session.release();
           throw new Error('Comic text detector has been terminated');

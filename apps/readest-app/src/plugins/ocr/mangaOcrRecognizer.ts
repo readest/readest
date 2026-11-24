@@ -1,6 +1,7 @@
 import type { InferenceSession } from 'onnxruntime-web';
 import { loadModelAsset, type ModelAsset } from './modelAssets';
 import { decodeMangaText } from './mangaOcrDecode';
+import { createOnnxSession, loadOnnxRuntime, type OnnxRuntime } from './onnxRuntime';
 import { createOcrCanvas } from './canvas';
 import { drawMangaTextCrop, type MangaTextCrop } from './mangaTextCrop';
 import {
@@ -33,9 +34,8 @@ const ASSETS = [
   },
 ] satisfies ModelAsset[];
 
-type Runtime = typeof import('onnxruntime-web/wasm');
 interface Model {
-  runtime: Runtime;
+  runtime: OnnxRuntime;
   encoder: InferenceSession;
   decoder: InferenceSession;
   vocabulary: string[];
@@ -52,6 +52,10 @@ export class MangaOcrRecognizer implements MangaRecognizer {
   constructor(options: { onDownloadProgress?: (progress: number) => void } = {}) {
     this.#onDownloadProgress = options.onDownloadProgress;
     this.#fast = new PaddleJapaneseRecognizer(options);
+  }
+
+  prepare(): void {
+    this.#fast.prepare();
   }
 
   async recognize(
@@ -206,7 +210,7 @@ export class MangaOcrRecognizer implements MangaRecognizer {
     const total = ASSETS.reduce((sum, entry) => sum + entry.bytes, 0);
     const sessions: InferenceSession[] = [];
     const model = Promise.all([
-      import('onnxruntime-web/wasm'),
+      loadOnnxRuntime(),
       Promise.all(
         ASSETS.map((entry, index) =>
           loadModelAsset(entry, {
@@ -224,15 +228,8 @@ export class MangaOcrRecognizer implements MangaRecognizer {
         const vocabulary = new TextDecoder().decode(buffers[2]).trimEnd().split(/\r?\n/u);
         if (vocabulary.length !== 6144)
           throw new Error('MangaOCR vocabulary has an invalid length');
-        runtime.env.wasm.proxy = typeof document !== 'undefined';
-        runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
         for (const buffer of buffers.slice(0, 2)) {
-          sessions.push(
-            await runtime.InferenceSession.create(buffer, {
-              executionProviders: ['wasm'],
-              graphOptimizationLevel: 'all',
-            }),
-          );
+          sessions.push(await createOnnxSession(runtime, buffer));
           signal.throwIfAborted();
         }
         return { runtime, encoder: sessions[0]!, decoder: sessions[1]!, vocabulary };

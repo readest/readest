@@ -116,6 +116,7 @@ describe('Tesseract manga OCR', () => {
     const worker = makeWorker();
     const createWorker = vi.fn(async () => worker);
     const recognizer = {
+      prepare: vi.fn(),
       recognize: vi.fn().mockResolvedValueOnce([
         { text: '一行目', confidence: 91 },
         { text: '二行目', confidence: 89 },
@@ -136,6 +137,9 @@ describe('Tesseract manga OCR', () => {
 
     expect(createWorker).not.toHaveBeenCalled();
     expect(recognizer.recognize).toHaveBeenCalledOnce();
+    expect(recognizer.prepare.mock.invocationCallOrder[0]).toBeLessThan(
+      detector.detect.mock.invocationCallOrder[0]!,
+    );
     expect(recognizer.recognize.mock.calls[0]![0]).toMatchObject([
       { width: 64, height: 427, vertical: true },
       { width: 64, height: 427, vertical: true },
@@ -213,6 +217,7 @@ describe('Tesseract manga OCR', () => {
         data: { text: '二', confidence: 90 },
       });
       const recognizer = {
+        prepare: vi.fn(),
         recognize: vi.fn(async () => {
           if (failure === 'throws') throw new Error('recognizer failed');
           return [
@@ -267,6 +272,7 @@ describe('Tesseract manga OCR', () => {
       terminate: vi.fn(async () => undefined),
     };
     const recognizer = {
+      prepare: vi.fn(),
       recognize: vi.fn(async () => [{ text: '第1話DRAGON BALL', confidence: 89 }]),
       terminate: vi.fn(async () => undefined),
     };

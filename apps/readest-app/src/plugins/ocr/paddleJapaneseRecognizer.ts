@@ -1,5 +1,6 @@
 import type { InferenceSession } from 'onnxruntime-web/wasm';
 import { loadModelAsset, type ModelAsset } from './modelAssets';
+import { createOnnxSession, loadOnnxRuntime, type OnnxRuntime } from './onnxRuntime';
 import { MANGA_CROP_BORDER, type MangaTextCrop } from './mangaTextCrop';
 import { yieldToCancellation } from './yieldToCancellation';
 
@@ -37,6 +38,8 @@ export interface MangaRecognition {
 }
 
 export interface MangaRecognizer {
+  /** Loads what the first lines need, so that they don't wait for it. */
+  prepare: () => void;
   /** Reads each crop, `null` where it finds no text. */
   recognize: (
     crops: readonly MangaTextCrop[],
@@ -51,9 +54,8 @@ export interface MangaRecognitionOptions {
   onProgress?: (recognized: number) => void;
 }
 
-type Runtime = typeof import('onnxruntime-web/wasm');
 interface Model {
-  runtime: Runtime;
+  runtime: OnnxRuntime;
   session: InferenceSession;
   characters: string[];
 }
@@ -164,6 +166,10 @@ export class PaddleJapaneseRecognizer implements MangaRecognizer {
     this.#onDownloadProgress = options.onDownloadProgress;
   }
 
+  prepare(): void {
+    this.#getModel().catch(() => undefined);
+  }
+
   async recognize(
     crops: readonly MangaTextCrop[],
     options: MangaRecognitionOptions = {},
@@ -232,7 +238,7 @@ export class PaddleJapaneseRecognizer implements MangaRecognizer {
   async #loadModel(): Promise<Model> {
     const { signal } = this.#abort;
     const [runtime, model, dictionary] = await Promise.all([
-      import('onnxruntime-web/wasm'),
+      loadOnnxRuntime(),
       loadModelAsset(MODEL, {
         signal,
         onProgress: (loaded) => this.#onDownloadProgress?.(loaded / MODEL.bytes),
@@ -244,13 +250,6 @@ export class PaddleJapaneseRecognizer implements MangaRecognizer {
       throw new Error('Japanese manga recognizer dictionary has an invalid length');
     }
     characters.push(' ');
-    runtime.env.wasm.proxy = typeof document !== 'undefined';
-    runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
-    const session = await runtime.InferenceSession.create(model, {
-      executionProviders: ['wasm'],
-      executionMode: 'sequential',
-      graphOptimizationLevel: 'all',
-    });
-    return { runtime, session, characters };
+    return { runtime, session: await createOnnxSession(runtime, model), characters };
   }
 }
