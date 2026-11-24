@@ -48,3 +48,37 @@ export interface VocabularyImport {
   state?: VocabularyState;
   hint?: string;
 }
+
+/** What Readest puts in a field of a card profile's note type (#7849). */
+export type AnkiFieldSource =
+  | 'word'
+  | 'sentence'
+  | 'hint'
+  | 'book'
+  | 'author'
+  | 'entry'
+  | 'audio'
+  | 'link'
+  | 'language';
+
+/** The deck, note type, fields and tags Sync with Anki uses for some words (#7849). */
+export interface AnkiProfile {
+  id: string;
+  name: string;
+  /** Deck name; empty for the word's language subdeck under Readest Vocabulary. */
+  deck: string;
+  /** Note type name; empty for Readest's own note type, whose fields Readest fills. */
+  noteType: string;
+  /** The source of each field of the note type, by field name; others stay empty. */
+  fields: Record<string, AnkiFieldSource>;
+  /** Added to every note the profile sends. */
+  tags: string[];
+}
+
+export interface AnkiProfileSettings {
+  profiles: AnkiProfile[];
+  /** Profile id by language (base code). */
+  languages: Record<string, string>;
+  /** Profile id by book hash; wins over the language's. */
+  books: Record<string, string>;
+}

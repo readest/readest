@@ -13,6 +13,7 @@ import type { AISettings } from '@/services/ai/types';
 import type { CoverSearchEngine } from '@/services/metadata/coverSearch';
 import type { NotebookTab } from '@/store/notebookStore';
 import type { DictionarySettings, ImportedDictionary } from '@/services/dictionaries/types';
+import type { AnkiProfileSettings } from '@/services/vocabulary/types';
 
 export type ThemeType = 'light' | 'dark' | 'auto';
 export type LibraryViewModeType = 'grid' | 'list';
@@ -611,6 +612,8 @@ export interface SystemSettings {
   customTextures: CustomTexture[];
   customDictionaries: ImportedDictionary[];
   dictionarySettings: DictionarySettings;
+  /** The card profiles Sync with Anki uses (#7849); Readest's own cards without one. */
+  ankiProfiles?: AnkiProfileSettings;
   opdsCatalogs: OPDSCatalog[];
   absServers: ABSServer[];
   /** User-configured translation backends; synced as `custom_translator`. */

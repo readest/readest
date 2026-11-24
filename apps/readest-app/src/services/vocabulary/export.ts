@@ -27,19 +27,30 @@ const latest = (e: VocabularyEntry) => e.occurrences[0];
 
 const bookTag = (title?: string) => (title ? title.trim().replace(/\s+/g, '_') : '');
 
+/**
+ * A word's pieces as card HTML, from its latest sentence: the sentence with the
+ * word in bold. Also what a card profile's fields are filled with (#7849).
+ */
+export const ankiPartsOf = (e: VocabularyEntry) => {
+  const occ = latest(e);
+  return {
+    word: escapeHtml(oneLine(e.word)),
+    sentence: occ ? boldWord(escapeHtml(oneLine(occ.sentence)), oneLine(e.word)) : '',
+    hint: escapeHtml(oneLine(e.hint ?? '')),
+    book: escapeHtml(oneLine(occ?.bookTitle ?? '')),
+    author: escapeHtml(oneLine(occ?.bookAuthor ?? '')),
+  };
+};
+
 /** The card a word becomes in Anki, for the file export and the AnkiDroid link. */
 export const ankiCardOf = (
   e: VocabularyEntry,
 ): { word: string; front: string; back: string; tags: string[] } => {
   const occ = latest(e);
-  const word = escapeHtml(oneLine(e.word));
-  const sentence = occ ? boldWord(escapeHtml(oneLine(occ.sentence)), oneLine(e.word)) : '';
+  const { word, sentence, hint } = ankiPartsOf(e);
   const front = `<div style="font-size:1.6em">${word}</div>${sentence ? `<div>${sentence}</div>` : ''}`;
   const source = [occ?.bookTitle, occ?.bookAuthor].filter(Boolean).map((s) => oneLine(s!));
-  const back = [
-    escapeHtml(oneLine(e.hint ?? '')),
-    source.length ? `<small>${escapeHtml(source.join(' — '))}</small>` : '',
-  ]
+  const back = [hint, source.length ? `<small>${escapeHtml(source.join(' — '))}</small>` : '']
     .filter(Boolean)
     .join('<br>');
   const tags = ['readest', bookTag(occ?.bookTitle)].filter(Boolean);

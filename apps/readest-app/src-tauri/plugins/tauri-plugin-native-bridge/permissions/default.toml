@@ -34,6 +34,7 @@ permissions = [
   "allow-anki-status",
   "allow-anki-request-permission",
   "allow-anki-list-decks",
+  "allow-anki-list-note-types",
   "allow-anki-read-deck",
   "allow-anki-add-notes",
   "allow-anki-update-tags",

@@ -139,6 +139,8 @@
   "Remove the downloaded files of {{count}} book(s) and keep them in the cloud._other": "Remove the downloaded files of {{count}} books and keep them in the cloud.",
   "Added {{count}} words to Anki_one": "Added {{count}} word to Anki",
   "Added {{count}} words to Anki_other": "Added {{count}} words to Anki",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} word not sent: its profile's note type is missing from AnkiDroid or has no Word field",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field",
   "Added audio to {{count}} cards_one": "Added audio to {{count}} card",
   "Added audio to {{count}} cards_other": "Added audio to {{count}} cards",
   "Added dictionary entries to {{count}} cards_one": "Added dictionary entries to {{count}} card",

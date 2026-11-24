@@ -2,10 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { useReaderStore } from '@/store/readerStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useSidebarStore } from '@/store/sidebarStore';
-import { useNotebookStore } from '@/store/notebookStore';
-import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { saveViewSettings } from '@/helpers/settings';
@@ -16,19 +12,8 @@ import {
   MIN_AUTO_SCROLL_SPEED,
 } from '@/services/constants';
 import { PacedScroller } from '../utils/autoscroller';
-import {
-  AUTO_SCROLL_GESTURE_EDGE_RATIO,
-  isInRightEdge,
-  shouldActivate,
-} from '../utils/autoScrollSpeedGesture';
-import { hasReaderOverlay, subscribeReaderOverlays } from '../utils/readerOverlay';
-import {
-  isPageWipeRevealBusy,
-  PageWiper,
-  type PageWiperHost,
-  revealPageWipe,
-  supportsPageWipeReveal,
-} from '../utils/pageWipe';
+import { getPageArea, PageWiper, type PageWiperHost, revealPageWipe } from '../utils/pageWipe';
+import { applyPageTurnAttributes } from './useCapturedTurn';
 
 // A stalled forward tick must persist this long before the session reacts
 // (section hop, or stop at the end of the book) — brief stalls can happen
@@ -43,13 +28,13 @@ export interface AutoScrollState {
   wipe: boolean;
   /** The line a page wipe draws. */
   wipeLineRef: React.RefObject<HTMLDivElement | null>;
+  /** A layer over the viewer for the copy of the page being read. */
+  wipeCopyRef: React.RefObject<HTMLDivElement | null>;
   /**
    * The live view is on the page a wipe is bringing in, not the page being
    * read: its relocation isn't the reading position yet.
    */
   isWipeAhead: () => boolean;
-  /** This book's wipe holds the document's snapshot (see revealPageWipe). */
-  isWipeCovering: () => boolean;
   togglePause: () => void;
   adjustSpeed: (dir: 1 | -1) => void;
   setSpeed: (value: number, persist?: boolean) => void;
@@ -63,8 +48,9 @@ export interface AutoScrollState {
 // every frame is a relative containerPosition step. Escape or switching
 // between scrolled and paginated mode stops the session.
 //
-// In paginated mode the page stays still and a line wipes the next page in
-// from the top at the same speed (#7575, see PageWiper).
+// In paginated mode the page stays still and a line wipes the next page in at
+// the same speed, down horizontal lines and across vertical ones (#7575, see
+// PageWiper).
 //
 // Whether a session is engaged is remembered per book (#5631): a book closed
 // mid-session reopens scrolling, so readers who use the mode all the time don't
@@ -89,8 +75,8 @@ export const useAutoScroll = (
   // The session's mode, for the scroller callbacks created once below.
   const wipeRef = useRef(false);
   const wipeLineRef = useRef<HTMLDivElement | null>(null);
+  const wipeCopyRef = useRef<HTMLDivElement | null>(null);
   const wiperRef = useRef<PageWiper | null>(null);
-  const overlayOpenRef = useRef(false);
   // Page turns of the wipe itself, so its relocations aren't taken for the
   // reader navigating away.
   const ownTurnsRef = useRef(0);
@@ -169,30 +155,45 @@ export const useAutoScroll = (
         }
         sessionCleanupRef.current?.();
         sessionCleanupRef.current = null;
+        // The session is over (the store says so): page turns animate as set
+        // again. Also after a scrolled session, which held them off when the
+        // View menu switched to paginated mode before it stopped.
+        const view = viewRef.current;
+        const settings = getViewSettings(bookKey);
+        if (view && settings) {
+          view.renderer.toggleAttribute('animated', !!settings.animated && !settings.isEink);
+          applyPageTurnAttributes(view, settings, !!view.isFixedLayout);
+        }
       },
     });
   }
 
   const wipeHostRef = useRef<PageWiperHost | null>(null);
   if (!wipeHostRef.current) {
-    const getCell = () => document.getElementById(`gridcell-${bookKey}`);
     wipeHostRef.current = {
       getLayout: () => {
-        const cell = getCell();
+        const host = wipeCopyRef.current;
         const renderer = viewRef.current?.renderer;
-        if (!cell || !renderer) return null;
+        const area = renderer && getPageArea(renderer);
+        if (!host || !area) return null;
+        const origin = host.getBoundingClientRect();
+        const rect = area.getBoundingClientRect();
+        const settings = getViewSettings(bookKey);
         return {
-          width: cell.clientWidth,
-          height: cell.clientHeight,
+          x: rect.left - origin.left,
+          y: rect.top - origin.top,
+          width: rect.width,
+          height: rect.height,
           columns: renderer.columnCount ?? 1,
-          rtl: !!getViewSettings(bookKey)?.rtl,
+          rtl: !!settings?.rtl,
+          vertical: !!settings?.vertical,
         };
       },
       turn: async (forward) => {
         const renderer = viewRef.current?.renderer;
         if (!renderer?.isConnected || renderer.scrolled) return;
         // The paginator animates only with `animated` set; without it the turn
-        // is an instant jump under the snapshot.
+        // is an instant jump under the copy.
         const animated = renderer.hasAttribute('animated');
         renderer.removeAttribute('animated');
         ownTurnsRef.current++;
@@ -200,48 +201,25 @@ export const useAutoScroll = (
           await (forward ? renderer.next() : renderer.prev());
         } finally {
           ownTurnsRef.current--;
-          if (animated) renderer.setAttribute('animated', '');
+          // Unless a wipe started meanwhile, which turns pages unanimated.
+          const wiping = scrollerRef.current?.active && wipeRef.current;
+          if (animated && !wiping) renderer.setAttribute('animated', '');
         }
       },
       atEnd: () => !!viewRef.current?.renderer.atEnd,
-      // The snapshot is painted above the whole document, so a menu, dialog,
-      // overlaid sidebar or the header and footer bars would vanish under it.
-      // And while it is up every click lands on <html>, so the session's own
-      // controls hold it off while they are on screen.
-      canReveal: () => {
-        const sidebar = useSidebarStore.getState();
-        const notebook = useNotebookStore.getState();
-        const cell = getCell();
-        return (
-          supportsPageWipeReveal() &&
-          !!cell &&
-          !isPageWipeRevealBusy(cell) &&
-          !cell.querySelector('[data-page-wipe-above][data-visible]') &&
-          !overlayOpenRef.current &&
-          !useSettingsStore.getState().isSettingsDialogOpen &&
-          useReaderStore.getState().hoveredBookKey !== bookKey &&
-          !(sidebar.isSideBarVisible && !sidebar.isSideBarPinned) &&
-          !(notebook.isNotebookVisible && !notebook.isNotebookPinned)
-        );
-      },
       reveal: async (turn) => {
-        const cell = getCell();
-        if (!cell) return null;
-        const doc = viewRef.current?.renderer.getContents()[0]?.doc;
-        const background = doc?.documentElement
-          ? doc.defaultView
-              ?.getComputedStyle(doc.documentElement)
-              .getPropertyValue('--theme-bg-color')
-              .trim()
-          : '';
-        return revealPageWipe(cell, turn, background || 'Canvas');
+        const host = wipeCopyRef.current;
+        const renderer = viewRef.current?.renderer;
+        return host && renderer ? revealPageWipe(host, renderer, turn) : null;
       },
       drawEdge: (edge) => {
         const line = wipeLineRef.current;
         if (!line) return;
         line.style.display = edge ? '' : 'none';
         if (!edge) return;
-        line.style.width = `${edge.width}px`;
+        line.dataset['axis'] = edge.vertical ? (edge.rtl ? 'rtl' : 'ltr') : 'h';
+        line.style.width = edge.vertical ? '' : `${edge.length}px`;
+        line.style.height = edge.vertical ? `${edge.length}px` : '';
         line.style.transform = `translate(${edge.x}px, ${edge.y}px)`;
       },
       onEnd: () => {
@@ -253,17 +231,14 @@ export const useAutoScroll = (
   }
 
   const isWipeAhead = useCallback(() => !!wiperRef.current?.ahead, []);
-  const isWipeCovering = useCallback(() => !!wiperRef.current?.covering, []);
 
   const togglePause = () => {
     const scroller = scrollerRef.current!;
     if (!scroller.active) return;
-    if (scroller.paused) {
-      scroller.resume();
-    } else {
-      scroller.pause();
-      void wiperRef.current?.suspend();
-    }
+    // A wipe pauses where it is: the next page above the line, the page being
+    // read below it.
+    if (scroller.paused) scroller.resume();
+    else scroller.pause();
     setPaused(scroller.paused);
   };
 
@@ -289,10 +264,9 @@ export const useAutoScroll = (
     const view = viewRef.current;
     const renderer = view?.renderer;
     if (!view || !renderer) return;
-    // The wipe runs down horizontal lines, so vertical and fixed-layout books
-    // keep Auto Scroll scrolled-only.
+    // Fixed-layout books keep Auto Scroll scrolled-only.
     const wipeMode = !renderer.scrolled;
-    if (wipeMode && (view.isFixedLayout || getViewSettings(bookKey)?.vertical)) return;
+    if (wipeMode && view.isFixedLayout) return;
     wipeRef.current = wipeMode;
     setWipe(wipeMode);
     const speedNow = getViewSettings(bookKey)?.autoScrollSpeed ?? 100;
@@ -326,45 +300,14 @@ export const useAutoScroll = (
       lastCfiRef.current = cfi;
       if (moved) wiper.reset();
     };
-    // A hidden document drops the snapshot; put the page being read back.
-    const onVisibilityChange = () => {
-      if (document.hidden) void wiper.suspend();
-    };
-    // While the snapshot is up the transition sends every press to <html>,
-    // not the page or a control. A press pauses, as a tap does otherwise.
-    // That includes the moment the snapshot is being put away: on desktop the
-    // move before a click shows the controls, which starts it.
-    // A touch on the right edge may be the speed swipe (useAutoScrollSpeedGesture
-    // also listens for it on the document), so only a tap there pauses.
-    let edgeTouch: { id: number; x: number; y: number; moved: boolean } | null = null;
-    const onPointerDown = (event: PointerEvent) => {
-      const scroller = scrollerRef.current!;
-      if (event.target !== document.documentElement || !wiper.covering || scroller.paused) return;
-      const { pointerId: id, clientX: x, clientY: y } = event;
-      // The swipe's zone ends before iPhone Duo's status strip (#6307).
-      const { isIPhoneDuo, safeAreaInsets } = useThemeStore.getState();
-      const inset = isIPhoneDuo ? safeAreaInsets?.right || 0 : 0;
-      if (
-        event.pointerType === 'touch' &&
-        isInRightEdge(x, window.innerWidth, AUTO_SCROLL_GESTURE_EDGE_RATIO, inset)
-      ) {
-        edgeTouch = { id, x, y, moved: false };
-        return;
-      }
+    // While the copy of the page being read is up, taps on it land on it, not
+    // on the book. A tap pauses or plays, as it does on the book, at its
+    // click: a swipe, such as the right-edge speed swipe
+    // (useAutoScrollSpeedGesture), makes none.
+    const onClick = (event: MouseEvent) => {
+      if (!wipeCopyRef.current?.contains(event.target as Node)) return;
+      event.stopPropagation();
       togglePause();
-    };
-    // Once the swipe has moved far enough to take over, it stays a swipe.
-    const onPointerMove = (event: PointerEvent) => {
-      const touch = edgeTouch;
-      if (touch?.id !== event.pointerId) return;
-      touch.moved ||= shouldActivate(event.clientX - touch.x, event.clientY - touch.y);
-    };
-    const onPointerUp = (event: PointerEvent) => {
-      const touch = edgeTouch;
-      if (touch?.id !== event.pointerId) return;
-      onPointerMove(event);
-      edgeTouch = null;
-      if (!touch.moved && !scrollerRef.current!.paused) togglePause();
     };
     // Manual turns (keys, buttons, page-turner remotes) go through view.next
     // and view.prev; the wipe turns the renderer itself (see yieldTo).
@@ -375,15 +318,14 @@ export const useAutoScroll = (
     const wipeNext = (distance?: number) => wiper.yieldTo(() => next.call(view, distance));
     const wipePrev = (distance?: number) => wiper.yieldTo(() => prev.call(view, distance));
     Object.assign(view, { next: wipeNext, prev: wipePrev });
-    overlayOpenRef.current = hasReaderOverlay();
-    const unsubscribeOverlays = subscribeReaderOverlays(() => {
-      overlayOpenRef.current = hasReaderOverlay();
-    });
     view.addEventListener('relocate', onRelocate);
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    window.addEventListener('pointerdown', onPointerDown, true);
-    window.addEventListener('pointermove', onPointerMove, true);
-    window.addEventListener('pointerup', onPointerUp, true);
+    window.addEventListener('click', onClick, true);
+    // No page turn animates during the session, so none plays over the wipe:
+    // not the paginator's slide, nor a curl, flip or slide of useCapturedTurn,
+    // which leaves an Auto Scroll session's turns alone.
+    view.renderer.removeAttribute('animated');
+    const settings = getViewSettings(bookKey);
+    if (settings) applyPageTurnAttributes(view, settings, false);
     return () => {
       // Page turns keep waiting behind the stop's turn back and any turn
       // queued after it, unless a new session has taken the view over.
@@ -396,11 +338,7 @@ export const useAutoScroll = (
       };
       restoreWhenIdle();
       view.removeEventListener('relocate', onRelocate);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('pointerdown', onPointerDown, true);
-      window.removeEventListener('pointermove', onPointerMove, true);
-      window.removeEventListener('pointerup', onPointerUp, true);
-      unsubscribeOverlays();
+      window.removeEventListener('click', onClick, true);
     };
   };
 
@@ -434,14 +372,11 @@ export const useAutoScroll = (
   }, [bookKey]);
 
   // Scrolled and paginated mode run different sessions; switching ends it.
-  // A wipe also ends on a vertical chapter, as it runs down horizontal lines.
   const scrolled = !!viewSettings?.scrolled;
-  const vertical = !!viewSettings?.vertical;
   useEffect(() => {
     const scroller = scrollerRef.current;
-    if (!scroller?.active) return;
-    if (wipeRef.current === scrolled || (wipeRef.current && vertical)) scroller.stop();
-  }, [scrolled, vertical]);
+    if (scroller?.active && wipeRef.current === scrolled) scroller.stop();
+  }, [scrolled]);
 
   // Resume the session the book was closed in (#5631). Waits for the view to
   // be inited: the renderer is in the store before init, but has no laid-out
@@ -472,8 +407,8 @@ export const useAutoScroll = (
     speed,
     wipe,
     wipeLineRef,
+    wipeCopyRef,
     isWipeAhead,
-    isWipeCovering,
     togglePause,
     adjustSpeed,
     setSpeed,

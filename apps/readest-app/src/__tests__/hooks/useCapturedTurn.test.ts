@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { applyPageTurnAttributes, getCapturedTurnStyle } from '@/app/reader/hooks/useCapturedTurn';
+import { useReaderStore } from '@/store/readerStore';
 import type { FoliateView } from '@/types/view';
 import type { ViewSettings } from '@/types/book';
 
@@ -269,5 +270,28 @@ describe('applyPageTurnAttributes', () => {
 
     expect(renderer.hasAttribute('no-swipe')).toBe(true);
     expect(renderer.hasAttribute('captured-turn-style')).toBe(false);
+  });
+
+  // #7575: an Auto Scroll session turns the pages itself. A curl, flip or
+  // slide would play over its wipe.
+  it.each(['tauri', 'web'])('turns no page animation on during Auto Scroll (%s)', (platform) => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', platform);
+    stubEngine({ startViewTransition: true, nestedGroups: true });
+    const { view, renderer } = makeView();
+    useReaderStore.setState({ viewStates: { book: { view, autoScrollEnabled: true } } } as never);
+    try {
+      for (const style of ['curl', 'flip', 'slide'] as const) {
+        applyPageTurnAttributes(view, settings(style), false, true);
+        expect(renderer.hasAttribute('captured-turn-style')).toBe(false);
+        expect(renderer.hasAttribute('turn-style')).toBe(false);
+        // The page copy takes the swipes most of the time: none turns a page.
+        expect(renderer.hasAttribute('no-swipe')).toBe(true);
+      }
+      // A scrolled session keeps the paginator's touch handling.
+      applyPageTurnAttributes(view, { ...settings('curl'), scrolled: true }, false, true);
+      expect(renderer.hasAttribute('no-swipe')).toBe(false);
+    } finally {
+      useReaderStore.setState({ viewStates: {} } as never);
+    }
   });
 });

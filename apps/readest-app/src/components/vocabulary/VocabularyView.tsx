@@ -6,6 +6,7 @@ import {
   PiArrowsClockwise,
   PiBookOpenText,
   PiBooks,
+  PiCards,
   PiCardsThree,
   PiDotsThreeVertical,
   PiDownloadSimple,
@@ -18,7 +19,9 @@ import type { IconType } from 'react-icons';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSettingsStore } from '@/store/settingsStore';
 import { useVocabularyStore } from '@/store/vocabularyStore';
+import { ankiProfileOf } from '@/services/vocabulary/anki';
 import {
   filterEntries,
   lastSeen,
@@ -37,8 +40,12 @@ import MenuItem from '@/components/MenuItem';
 import AnkiAudioPanel from './AnkiAudioPanel';
 import AnkiEntryPanel from './AnkiEntryPanel';
 import AnkiImportPanel from './AnkiImportPanel';
+import AnkiProfilesPanel from './AnkiProfilesPanel';
 import VocabularyDetail from './VocabularyDetail';
 import { useAnkiLink } from './useAnkiLink';
+
+// The Profile chip's value for words on Readest's own cards.
+const READEST_CARDS = 'readest';
 
 // The picker lines up with a chip's edge; a half-hidden chip at the end of the
 // row would open a half-hidden picker.
@@ -109,10 +116,14 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
   const [state, setState] = useState<VocabularyState | undefined>();
   const [bookHash, setBookHash] = useState('');
   const [lang, setLang] = useState('');
+  const [profileId, setProfileId] = useState('');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<VocabularySort>('recent');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const anki = useAnkiLink();
+  const ankiProfiles = useSettingsStore((s) => s.settings.ankiProfiles);
+  // Profiles shape Sync's cards, so the filter shows only where Sync runs.
+  const profiles = anki.available ? (ankiProfiles?.profiles ?? []) : [];
 
   const all = useMemo(() => Object.values(entries), [entries]);
   const books = useMemo(() => listBooks(all), [all]);
@@ -129,14 +140,26 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
   // Deleting a language's last word drops it from the list, and the filter with
   // it; the language coming back later doesn't turn the filter on again.
   if (lang && !languages.some((l) => l.value === lang)) setLang('');
+  // A profile deleted here or on another device takes its filter with it, and
+  // all of them go when AnkiDroid does.
+  const profileShown =
+    profileId === READEST_CARDS ? profiles.length > 0 : profiles.some((p) => p.id === profileId);
+  if (profileId && !profileShown) setProfileId('');
   const byBook = useMemo(
     () =>
       filterEntries(all, { bookHash: bookHash || undefined, lang: lang || undefined, query }, sort),
     [all, bookHash, lang, query, sort],
   );
+  const byProfile = useMemo(
+    () =>
+      profileId
+        ? byBook.filter((e) => (ankiProfileOf(e, ankiProfiles)?.id ?? READEST_CARDS) === profileId)
+        : byBook,
+    [byBook, profileId, ankiProfiles],
+  );
   const shown = useMemo(
-    () => (state ? byBook.filter((e) => e.state === state) : byBook),
-    [byBook, state],
+    () => (state ? byProfile.filter((e) => e.state === state) : byProfile),
+    [byProfile, state],
   );
   const selected = selectedId ? entries[selectedId] : undefined;
   const detail = selected && !selected.deletedAt ? selected : undefined;
@@ -172,6 +195,14 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
 
   const panel = anki.audioPrompt ? (
     <AnkiAudioPanel onAnswer={anki.answerAudioPrompt} />
+  ) : anki.profilesState ? (
+    <AnkiProfilesPanel
+      {...anki.profilesState}
+      languages={languages}
+      books={books}
+      onSave={anki.saveProfiles}
+      onCancel={anki.closeProfiles}
+    />
   ) : anki.entryPicker ? (
     <AnkiEntryPanel
       {...anki.entryPicker}
@@ -309,6 +340,15 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
             )}
             {anki.available && (
               <MenuItem
+                label={_('Anki Card Profiles...')}
+                description={anki.premiumBadge}
+                Icon={PiCards}
+                transient
+                onClick={() => void anki.openProfiles()}
+              />
+            )}
+            {anki.available && (
+              <MenuItem
                 label={_('Dictionary for Anki Cards...')}
                 description={anki.premiumBadge}
                 Icon={PiBookOpenText}
@@ -337,7 +377,9 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
       >
         {stateFilters.map((f) => {
           const active = state === f.state;
-          const count = f.state ? byBook.filter((e) => e.state === f.state).length : byBook.length;
+          const count = f.state
+            ? byProfile.filter((e) => e.state === f.state).length
+            : byProfile.length;
           return (
             <button
               key={f.label}
@@ -371,6 +413,19 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
             value={lang}
             onChange={setLang}
             options={[{ value: '', label: _('All Languages') }, ...languages]}
+          />
+        )}
+        {profiles.length > 0 && (
+          <FilterChip
+            icon={PiCards}
+            label={_('Profile')}
+            value={profileId}
+            onChange={setProfileId}
+            options={[
+              { value: '', label: _('All Profiles') },
+              { value: READEST_CARDS, label: _('Readest Vocabulary') },
+              ...profiles.map((p) => ({ value: p.id, label: p.name })),
+            ]}
           />
         )}
       </div>

@@ -1,0 +1,5 @@
+#!/bin/bash
+# Logs every open and opens nothing. Not even the sign-in page goes to the real browser: a
+# release frontend's OAuth callback is a readest:// link, which the real desktop session would
+# hand to an installed Readest (signing that one in), never to this isolated app.
+echo "$(date +%T) xdg-open $*" >> "$QA_DIR/portal.log"

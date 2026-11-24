@@ -29,8 +29,6 @@ const AutoScrollSpeedOverlay: React.FC<AutoScrollSpeedOverlayProps> = ({ visible
   return (
     <div
       aria-hidden
-      // Stays live above the page snapshot of a paginated wipe (pageWipe.ts).
-      data-page-wipe-above=''
       dir='ltr'
       className={clsx(
         'pointer-events-none absolute right-0 top-1/2 z-[15] -translate-y-1/2',
