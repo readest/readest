@@ -1,0 +1,308 @@
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const h = vi.hoisted(() => ({
+  premium: true,
+  location: '',
+  generateChatText: vi.fn(),
+  bookData: {} as Record<string, unknown>,
+  appService: {} as Record<string, unknown>,
+}));
+
+vi.mock('@/utils/access', () => ({
+  getSignedInToken: () => 'token',
+  isCustomTranslatorAllowed: () => h.premium,
+}));
+vi.mock('@/services/translators/custom/openaiCompatible', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/translators/custom/openaiCompatible')>()),
+  generateChatText: h.generateChatText,
+}));
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/environment')>()),
+  default: { getAppService: async () => h.appService },
+}));
+vi.mock('@/store/readerProgressStore', () => ({
+  getBookProgress: () => ({ location: h.location }),
+}));
+vi.mock('@/store/bookDataStore', () => ({
+  useBookDataStore: { getState: () => ({ getBookData: () => h.bookData }) },
+}));
+vi.mock('@/store/readerStore', () => ({
+  useReaderStore: { getState: () => ({ getViewSettings: () => ({ translateTargetLang: 'de' }) }) },
+}));
+
+import { migrate } from '@/services/database/migrate';
+import { getMigrations } from '@/services/database/migrations';
+import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
+import { xrayProvider } from '@/services/dictionaries/providers/xrayProvider';
+import { readPassages, type XRayPassage } from '@/services/xray/bookText';
+import { groundXRay } from '@/services/xray/extract';
+import { findEntity, linksOf, mergeXRay } from '@/services/xray/snapshot';
+import { findMentions } from '@/services/xray/mentions';
+import { __resetXRayStoreForTests } from '@/services/xray/store';
+import { clearBookXRay, getBookXRay, updateXRay, useXRayStore } from '@/services/xray/xrayService';
+import type { XRayData } from '@/services/xray/types';
+import type { BookDoc } from '@/libs/document';
+import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
+
+const BOOK = 'hash-1';
+const CHAPTERS = [
+  'Anna met Boris in Kazan. ',
+  'Boris betrayed Anna at sea. ',
+  'Anna forgave Boris. ',
+];
+
+const createBook = (repeat = 60) => {
+  const parsed: number[] = [];
+  const sections = CHAPTERS.map((text, index) => ({
+    createDocument: async () => {
+      parsed.push(index);
+      const doc = document.implementation.createHTMLDocument();
+      doc.body.innerHTML = `<p>${text.repeat(repeat)}</p>`;
+      return doc;
+    },
+  }));
+  return { bookDoc: { sections } as unknown as BookDoc, parsed };
+};
+const pageAt = (section: number, offset = 0) => `epubcfi(/6/${(section + 1) * 2}!/4/2/1:${offset})`;
+const collect = async (bookDoc: BookDoc, position: number, location: string) => {
+  const passages: XRayPassage[] = [];
+  for await (const passage of readPassages(bookDoc, position, location)) passages.push(passage);
+  return passages;
+};
+
+const entity = (name: string, quote: string, passage = 0, aliases: string[] = []) => ({
+  name,
+  type: 'character',
+  aliases,
+  description: `${name} description`,
+  facts: [{ key: 'Home', value: 'Kazan' }],
+  quotes: [{ passage, text: quote }],
+});
+const reply = (...entities: object[]) => JSON.stringify({ entities });
+
+let db: NodeDatabaseService;
+beforeEach(async () => {
+  db = (await NodeDatabaseService.open(':memory:')) as NodeDatabaseService;
+  await migrate(db, getMigrations('xray'));
+  h.appService = { openDatabase: async () => db };
+  h.premium = true;
+  h.generateChatText.mockReset();
+  useCustomTranslatorStore.setState({
+    loaded: true,
+    translators: [{ id: 'llm', type: 'openai-compatible', name: 'LLM', addedAt: 1, updatedAt: 1 }],
+  });
+  useXRayStore.setState({ updates: {}, revision: 0 });
+  __resetXRayStoreForTests();
+});
+afterEach(() => db.close());
+
+describe('readPassages', () => {
+  it('ends before the page being read and parses only the sections it needs', async () => {
+    const { bookDoc, parsed } = createBook();
+    const read = await collect(bookDoc, -1, pageAt(1, 1100));
+    expect(read.some(({ text }) => text.includes('met Boris'))).toBe(true);
+    expect(read.filter(({ text }) => text.includes('betrayed')).length).toBeGreaterThan(0);
+    expect(read.at(-1)!.text.length).toBeLessThan(1000);
+    expect(read.some(({ text }) => text.includes('forgave'))).toBe(false);
+
+    parsed.length = 0;
+    const next = await collect(bookDoc, read.at(-1)!.position, pageAt(2));
+    expect(next.every(({ text }) => text.includes('betrayed'))).toBe(true);
+    expect(parsed).not.toContain(0);
+    // Nothing is read twice, and nothing is skipped.
+    expect([...read, ...next].map(({ text }) => text).join('')).toBe(
+      `${CHAPTERS[0]!.repeat(60)}${CHAPTERS[1]!.repeat(60)}`,
+    );
+  });
+});
+
+describe('groundXRay', () => {
+  const passages: XRayPassage[] = [
+    { position: 0, text: 'Soon Anna met Boris.', cfiAt: (offset) => `cfi-${offset}` },
+  ];
+
+  it('keeps only items quoted from the passage they name', () => {
+    const data = groundXRay(
+      {
+        entities: [
+          entity('Anna', 'Anna met Boris.'),
+          entity('Boris', 'Boris is the killer.'),
+          entity('Clara', 'Anna met Boris.', 7),
+          { name: 'broken' },
+        ],
+        events: 'not a list',
+      },
+      passages,
+    );
+    expect(data.entities.map(({ name }) => name)).toEqual(['Anna']);
+    expect(data.entities[0]!.quotes).toEqual([{ text: 'Anna met Boris.', cfi: 'cfi-5' }]);
+    expect(data.events).toEqual([]);
+  });
+});
+
+describe('mergeXRay', () => {
+  it('joins one character met under several names', () => {
+    const batch = (name: string, aliases: string[], cfi: string): XRayData => ({
+      entities: [
+        {
+          name,
+          type: 'character',
+          aliases,
+          description: name,
+          facts: [],
+          quotes: [{ text: name, cfi }],
+        },
+      ],
+      relationships: [],
+      events: [],
+    });
+    const merged = mergeXRay([
+      batch('Anna', [], 'a'),
+      batch('Anna Petrovna', ['anna'], 'b'),
+      batch('Mrs. Petrovna', ['Anna Petrovna'], 'c'),
+    ]);
+    expect(merged.entities).toHaveLength(1);
+    expect(merged.entities[0]!.aliases).toEqual(['Anna Petrovna', 'Mrs. Petrovna']);
+    expect(findEntity(merged, ' mrs.  petrovna')?.name).toBe('Anna');
+  });
+});
+
+describe('linksOf', () => {
+  it('connects the two ends of a relationship, by any of their names', () => {
+    const person = (name: string, aliases: string[] = []) => ({
+      ...entity(name, ''),
+      type: 'character' as const,
+      aliases,
+      quotes: [],
+    });
+    const anna = person('Anna', ['Mrs. Petrovna']);
+    const boris = person('Boris');
+    const data: XRayData = {
+      entities: [anna, boris],
+      relationships: [{ source: 'mrs. petrovna', target: 'Boris', type: 'mother of', quotes: [] }],
+      events: [],
+    };
+    expect(linksOf(data, anna)[0]!.other).toBe(boris);
+    expect(linksOf(data, boris)[0]!.other).toBe(anna);
+  });
+});
+
+describe('findMentions', () => {
+  it('counts a name as a word up to the page, and keeps the first and latest', async () => {
+    const sections = [
+      '<p>Ann saw Anna. Annabel slept.</p>',
+      '<p>Later\n   Anna &amp; Boris left.</p><p>“No!” Anna wept.</p>',
+      '<p>Anna died.</p>',
+    ].map((html) => ({
+      createDocument: async () => {
+        const doc = document.implementation.createHTMLDocument();
+        doc.body.innerHTML = html;
+        return doc;
+      },
+    }));
+    const bookDoc = { sections } as unknown as BookDoc;
+    const { count, quotes } = await findMentions(bookDoc, pageAt(2), ['Anna'], 2);
+    expect(count).toBe(3);
+    expect(quotes.map(({ text }) => text)).toEqual(['Ann saw Anna.', 'Anna wept.']);
+    // The quote's CFI is the name's own place, past the collapsed white space.
+    const later = await findMentions(bookDoc, pageAt(2), ['Boris'], 2);
+    expect(later.quotes[0]!.cfi).toBe('epubcfi(/6/4!/4/2/1:16)');
+  });
+});
+
+describe('updateXRay', () => {
+  beforeEach(() => {
+    h.bookData = {
+      book: { title: 'Sea', author: 'A', primaryLanguage: 'en' },
+      bookDoc: createBook().bookDoc,
+    };
+  });
+
+  it('stays spoiler-free when the reader goes back, and never asks twice', async () => {
+    h.generateChatText.mockResolvedValueOnce(reply(entity('Anna', 'Anna met Boris in Kazan.')));
+    h.location = pageAt(1);
+    await updateXRay(BOOK);
+    h.generateChatText.mockResolvedValueOnce(reply(entity('Boris', 'Boris betrayed Anna at sea.')));
+    h.location = pageAt(2);
+    await updateXRay(BOOK);
+    await updateXRay(BOOK);
+    expect(h.generateChatText).toHaveBeenCalledTimes(2);
+    expect((await getBookXRay(BOOK))!.entities.map(({ name }) => name)).toEqual(['Anna', 'Boris']);
+
+    h.location = pageAt(1);
+    expect((await getBookXRay(BOOK))!.entities.map(({ name }) => name)).toEqual(['Anna']);
+    h.location = pageAt(0);
+    expect(await getBookXRay(BOOK)).toBeNull();
+
+    // Also from disk.
+    __resetXRayStoreForTests();
+    h.location = pageAt(1);
+    expect((await getBookXRay(BOOK))!.entities.map(({ name }) => name)).toEqual(['Anna']);
+  });
+
+  it('leaves a partial batch for later while reading', async () => {
+    h.location = pageAt(1);
+    await updateXRay(BOOK, { wholeBatches: true });
+    expect(h.generateChatText).not.toHaveBeenCalled();
+  });
+
+  it('tells the AI which names the X-Ray already has', async () => {
+    h.generateChatText.mockResolvedValue(reply(entity('Anna', 'Anna met Boris in Kazan.')));
+    h.location = pageAt(1);
+    await updateXRay(BOOK);
+    h.location = pageAt(2);
+    await updateXRay(BOOK);
+    const prompts = h.generateChatText.mock.calls.map(([, { prompt }]) => JSON.parse(prompt));
+    expect(prompts.map(({ known }) => known)).toEqual([[], ['Anna']]);
+  });
+
+  it('is cleared only once confirmed', async () => {
+    h.generateChatText.mockResolvedValue(reply(entity('Anna', 'Anna met Boris in Kazan.')));
+    h.location = pageAt(1);
+    await updateXRay(BOOK);
+    h.appService['ask'] = async () => false;
+    await clearBookXRay(BOOK, 'Sure?');
+    expect(await getBookXRay(BOOK)).not.toBeNull();
+    h.appService['ask'] = async () => true;
+    await clearBookXRay(BOOK, 'Sure?');
+    expect(await getBookXRay(BOOK)).toBeNull();
+  });
+
+  it('asks nothing without premium', async () => {
+    h.premium = false;
+    h.location = pageAt(2);
+    await updateXRay(BOOK);
+    expect(h.generateChatText).not.toHaveBeenCalled();
+  });
+
+  it('keeps a failure to show, and what was read before it', async () => {
+    h.generateChatText.mockResolvedValueOnce(reply(entity('Anna', 'Anna met Boris in Kazan.')));
+    h.location = pageAt(1);
+    await updateXRay(BOOK);
+    h.generateChatText.mockRejectedValueOnce(new Error('quota'));
+    h.location = pageAt(2);
+    await updateXRay(BOOK);
+    expect(useXRayStore.getState().updates['hash']).toEqual({ running: false, error: 'quota' });
+    expect((await getBookXRay(BOOK))!.entities).toHaveLength(1);
+  });
+
+  it('answers a lookup from what was read, without asking the AI', async () => {
+    h.generateChatText.mockResolvedValueOnce(reply(entity('Anna', 'Anna met Boris in Kazan.')));
+    h.location = pageAt(1);
+    await updateXRay(BOOK);
+    const container = document.createElement('div');
+    const lookUp = (word: string) =>
+      xrayProvider.lookup(word, {
+        container,
+        signal: new AbortController().signal,
+        selection: { before: '', after: '', bookKey: BOOK },
+      });
+    expect(await lookUp('anna')).toMatchObject({ ok: true, headword: 'Anna' });
+    expect(container.textContent).toContain('Anna met Boris in Kazan.');
+    expect(await lookUp('Zoe')).toEqual({ ok: false, reason: 'empty' });
+    expect(h.generateChatText).toHaveBeenCalledTimes(1);
+    h.premium = false;
+    expect(await lookUp('anna')).toEqual({ ok: false, reason: 'unsupported' });
+  });
+});

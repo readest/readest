@@ -119,7 +119,12 @@ const firstDefinition = (root: Element | ShadowRoot, numbered: boolean): string 
 
 /** The dictionaries a hint can be taken from: no web searches, no paid AI. */
 export const hintProviders = (providers: DictionaryProvider[]) =>
-  providers.filter((p) => p.kind !== 'web' && p.id !== BUILTIN_PROVIDER_IDS.context);
+  providers.filter(
+    (p) =>
+      p.kind !== 'web' &&
+      p.id !== BUILTIN_PROVIDER_IDS.context &&
+      p.id !== BUILTIN_PROVIDER_IDS.xray,
+  );
 
 export const hintFromDictionary = async (
   word: string,

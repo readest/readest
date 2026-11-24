@@ -50,7 +50,8 @@ export interface DictionaryLookupContext {
   autoPlayPronunciation?: boolean;
   /**
    * Where the looked-up text was selected in the book (#5544). Only the AI
-   * context dictionary reads it; absent for words reached by in-popup links.
+   * context dictionary and the X-Ray read it; absent for words reached by
+   * in-popup links.
    */
   selection?: DictionarySelectionContext;
 }
@@ -60,6 +61,7 @@ export interface DictionarySelectionContext {
   before: string;
   /** Text right after the selection (its paragraph and the next one). */
   after: string;
+  bookKey?: string;
   bookTitle?: string;
   bookAuthor?: string;
   /** Language to explain the selection in: the book's translation target. */
@@ -257,6 +259,8 @@ export interface DictionarySettings {
   contextSystemPrompt?: string;
   /** Dictionary-only output cap. Zero means the provider's default. */
   contextMaxOutputTokens?: number;
+  /** Read on into the X-Ray while reading. Off by default: it spends the user's tokens. */
+  xrayAutoUpdate?: boolean;
 }
 
 /** Stable ids for the built-in providers. */
@@ -265,6 +269,8 @@ export const BUILTIN_PROVIDER_IDS = {
   wikipedia: 'builtin:wikipedia',
   /** AI explanation of the selection in its passage, via a custom LLM translator (#5544). */
   context: 'builtin:context',
+  /** What the book has said about a name so far (#2709). */
+  xray: 'builtin:xray',
   /**
    * "Sentinel" id for the OS-native dictionary (macOS Dictionary.app via the
    * `dict://` URL scheme; iOS `UIReferenceLibraryViewController`; Android

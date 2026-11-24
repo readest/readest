@@ -24,6 +24,7 @@ import { isSystemDictionarySupported } from './systemDictionary';
 import { wiktionaryProvider } from './providers/wiktionaryProvider';
 import { wikipediaProvider } from './providers/wikipediaProvider';
 import { contextProvider } from './providers/contextProvider';
+import { xrayProvider } from './providers/xrayProvider';
 import { createStarDictProvider, type DictionaryFileOpener } from './providers/starDictProvider';
 import { createMdictProvider } from './providers/mdictProvider';
 import { createDictProvider } from './providers/dictProvider';
@@ -51,6 +52,7 @@ const builtinFor = (id: string): DictionaryProvider | undefined => {
   if (id === BUILTIN_PROVIDER_IDS.wiktionary) return wiktionaryProvider;
   if (id === BUILTIN_PROVIDER_IDS.wikipedia) return wikipediaProvider;
   if (id === BUILTIN_PROVIDER_IDS.context) return contextProvider;
+  if (id === BUILTIN_PROVIDER_IDS.xray) return xrayProvider;
   // System dictionary is a sentinel — it has no in-popup UI. The
   // annotator handles it before reaching the popup; the registry
   // filters it out of `getEnabledProviders` so no empty tab appears.
