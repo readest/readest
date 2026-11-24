@@ -28,6 +28,7 @@ const h = vi.hoisted(() => ({
   android: false,
   macos: false,
   ios: false,
+  autoScrollEnabled: false,
   nativeCommit: false,
   retainedCommit: null as (() => void) | null,
   controllerHost: null as null | {
@@ -123,7 +124,9 @@ vi.mock('@/store/readerStore', () => {
     setViewSettings: h.setViewSettings,
     hoveredBookKey: h.hoveredBookKey,
     bottomBarTab: '',
-    viewStates: { 'book-1': { inited: true, ttsEnabled: false } },
+    viewStates: {
+      'book-1': { inited: true, ttsEnabled: false, autoScrollEnabled: h.autoScrollEnabled },
+    },
   });
   useReaderStore.subscribe = (listener: Parameters<typeof h.readerListeners.add>[0]) => {
     h.readerListeners.add(listener);
@@ -825,6 +828,67 @@ describe('useCapturedTurn scroll-lock gate', () => {
     } finally {
       unmount();
       vi.useRealTimers();
+    }
+  });
+
+  // #7575: an Auto Scroll page wipe turns the pages itself. A warm-up parks
+  // the live view on a neighbouring page under a native cover, which showed
+  // as a frame of a stale page at each wipe turn, pause and play on Android.
+  test('does not warm a surface during an Auto Scroll session', async () => {
+    vi.useFakeTimers();
+    h.autoScrollEnabled = true;
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(h.controller.prepareCapture).not.toHaveBeenCalled();
+    } finally {
+      h.autoScrollEnabled = false;
+      unmount();
+      vi.useRealTimers();
+    }
+  });
+
+  // #7575: an Auto Scroll session turns the pages itself. A curl, flip or
+  // slide would play over its wipe.
+  test('turns a page without a curl during an Auto Scroll session', async () => {
+    h.android = true;
+    h.autoScrollEnabled = true;
+    const view = makeView();
+    const originalNext = vi.mocked(view.next);
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: view }));
+    try {
+      await act(async () => {
+        await view.next();
+      });
+      expect(h.controller.turn).not.toHaveBeenCalled();
+      expect(originalNext).toHaveBeenCalledOnce();
+    } finally {
+      h.autoScrollEnabled = false;
+      unmount();
+    }
+  });
+
+  // A tap pauses or plays the session: it must not take a native capture,
+  // whose cover showed a stale page over the wipe.
+  test('takes no capture for a touch during an Auto Scroll session', () => {
+    h.android = true;
+    h.renderer.previewPage = async () => null;
+    h.renderer.getPageTurnKey = () => '1';
+    h.autoScrollEnabled = true;
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    try {
+      const consumed = [
+        dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150)),
+        dispatchTouchInterceptors('book-1', detail('move', -60, 0, 16, 150)),
+      ];
+      expect(consumed).toEqual([false, false]);
+      expect(h.controller.prepareCapture).not.toHaveBeenCalled();
+      expect(h.controller.beginDrag).not.toHaveBeenCalled();
+    } finally {
+      h.autoScrollEnabled = false;
+      unmount();
     }
   });
 

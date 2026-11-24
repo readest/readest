@@ -33,14 +33,18 @@ interface LatestState {
  * Left-edge swipe-to-adjust-brightness gesture (iOS / Android only).
  *
  * Attaches capture-phase, non-passive touch listeners to the foliate iframe
- * document. Capture phase is required: foliate-js's own paginator registers its
+ * document, and to `surfaceRef`, an element laid over the page that takes its
+ * touches while it is up (the Auto Scroll page copy, #7575). Capture phase is required: foliate-js's own paginator registers its
  * touch listeners during `view.open()` (before any app listener) in the bubble
  * phase, so only a capture-phase `stopImmediatePropagation` can suppress them.
  *
  * The listener is attached once per document, so everything runtime-variable is
  * read through `latestRef` (updated each render), mirroring `useTouchInterceptor`.
  */
-export const useBrightnessGesture = (bookKey: string) => {
+export const useBrightnessGesture = (
+  bookKey: string,
+  surfaceRef?: React.RefObject<HTMLElement | null>,
+) => {
   const { appService, envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getView, getViewSettings } = useReaderStore();
@@ -168,8 +172,10 @@ export const useBrightnessGesture = (bookKey: string) => {
   }, [cancelRaf, resetGesture]);
 
   const registerBrightnessListeners = useCallback(
-    (doc: Document) => {
+    (doc: Document | HTMLElement) => {
       const opts = { capture: true, passive: false } as const;
+      // An element over the page holds no text selection of its own.
+      const getSelection = () => ('getSelection' in doc ? doc.getSelection() : null);
 
       const onTouchStart = (e: TouchEvent) => {
         abortGesture();
@@ -178,7 +184,7 @@ export const useBrightnessGesture = (bookKey: string) => {
         // particular, do not let the first finger keep brightness armed and
         // steal later moves from the paginator in capture phase.
         if (e.touches.length !== 1) return;
-        const selection = doc.getSelection?.();
+        const selection = getSelection();
         if (selection && !selection.isCollapsed) return; // don't hijack selection
         const t = e.touches[0];
         if (!t) return;
@@ -230,7 +236,7 @@ export const useBrightnessGesture = (bookKey: string) => {
         // permanently — one-way, as below — because iOS can transiently
         // collapse the selection while a handle is being dragged.
         if (!activeRef.current) {
-          const selection = doc.getSelection?.();
+          const selection = getSelection();
           if ((selection && !selection.isCollapsed) || latestRef.current.renderer?.scrollLocked) {
             resetGesture();
             return;
@@ -293,10 +299,20 @@ export const useBrightnessGesture = (bookKey: string) => {
         resetGesture();
       };
 
-      doc.addEventListener('touchstart', onTouchStart, opts);
-      doc.addEventListener('touchmove', onTouchMove, opts);
-      doc.addEventListener('touchend', onTouchEnd, opts);
-      doc.addEventListener('touchcancel', onTouchEnd, opts);
+      const listeners = [
+        ['touchstart', onTouchStart],
+        ['touchmove', onTouchMove],
+        ['touchend', onTouchEnd],
+        ['touchcancel', onTouchEnd],
+      ] as const;
+      for (const [type, listener] of listeners) {
+        doc.addEventListener(type, listener as EventListener, opts);
+      }
+      return () => {
+        for (const [type, listener] of listeners) {
+          doc.removeEventListener(type, listener as EventListener, opts);
+        }
+      };
     },
     [
       abortGesture,
@@ -308,6 +324,11 @@ export const useBrightnessGesture = (bookKey: string) => {
       envConfig,
     ],
   );
+
+  useEffect(() => {
+    const surface = surfaceRef?.current;
+    return surface ? registerBrightnessListeners(surface) : undefined;
+  }, [surfaceRef, registerBrightnessListeners]);
 
   useEffect(() => {
     return () => {
