@@ -67,17 +67,18 @@ mkdir -p "$QA_DIR/shots" "$QA_DIR/logs"
 ## 2. Build
 
 - `pnpm worktree:new qa/<from>-<to-sha>` (never build in the shared main
-  checkout). It starts from `origin/main`'s tip, and its dependencies,
-  `public/vendor` and `packages/simplecc-wasm/dist` come from that tip and
-  the main checkout. When To differs, bring all of them to To, in the
-  worktree, in this order:
+  checkout). It starts from `origin/main`'s tip and installs that tip's
+  dependencies, but copies `public/vendor` and `packages/simplecc-wasm/dist`
+  from the main checkout's working files, which can be older even when To is
+  the tip. Bring them all to To, in the worktree, in this order (steps 1-3
+  only when To differs from the tip; 4 and 5 every time):
   1. `git reset --hard <to-sha>`.
   2. `git submodule update <path>` for each path `git submodule status`
      lists as initialized (no leading `-`). Never a bare `submodule update`:
      it clones the submodules the script skips.
-  3. `pnpm install --frozen-lockfile`, then
-     `pnpm -C apps/readest-app setup-vendors` (it copies from foliate-js).
-  4. If `git ls-tree <to-sha> packages/simplecc-wasm` names another commit
+  3. `pnpm install --frozen-lockfile`.
+  4. `pnpm -C apps/readest-app setup-vendors` (it copies from foliate-js).
+  5. If `git ls-tree <to-sha> packages/simplecc-wasm` names another commit
      than the main checkout's `git -C packages/simplecc-wasm rev-parse HEAD`,
      replace the copied `dist` with that commit's: `git -C <main
      checkout>/packages/simplecc-wasm archive <commit> dist | tar -x -C
