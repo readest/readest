@@ -1,23 +1,24 @@
 import type { OcrBoundingBox } from '@/services/plugins/ocr';
 import type { InferenceSession } from 'onnxruntime-web/wasm';
 import { loadModelAsset, type ModelAsset } from './modelAssets';
+import { LazyModel } from './lazyModel';
 import { createOnnxSession, loadOnnxRuntime, type OnnxRuntime } from './onnxRuntime';
 import { createOcrCanvas, isHtmlCanvas } from './canvas';
 
-export const COMIC_TEXT_DETECTOR_INPUT_SIZE = 1024;
-const COMIC_TEXT_DETECTOR_MODEL: ModelAsset = {
+const INPUT_SIZE = 1024;
+const MODEL: ModelAsset = {
   url: 'https://huggingface.co/mayocream/koharu/resolve/15439cba09df388c51de6e47c6020bc31edab41f/comictextdetector.onnx',
   sha256: '1a86ace74961413cbd650002e7bb4dcec4980ffa21b2f19b86933372071d718f',
   bytes: 94_669_756,
 };
 
-export const COMIC_TEXT_DETECTOR_OUTPUT_SHAPES = {
-  blk: [1, 64_512, 7],
-  seg: [1, 1, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE],
-  det: [1, 2, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE],
-} as const;
+const OUTPUT_LENGTHS = {
+  blk: 64_512 * 7,
+  seg: INPUT_SIZE * INPUT_SIZE,
+  det: 2 * INPUT_SIZE * INPUT_SIZE,
+};
 
-export type ComicTextLanguage = 'eng' | 'ja' | 'unknown';
+type ComicTextLanguage = 'eng' | 'ja' | 'unknown';
 
 export interface ComicPageSize {
   width: number;
@@ -55,31 +56,8 @@ export interface ComicTextDetectionResult {
   blocks: readonly ComicTextBlock[];
 }
 
-export interface ComicDetectorTensor {
-  data: Float32Array;
-  dims: readonly number[];
-}
-
-export interface ComicDetectorOutputs {
-  blk: ComicDetectorTensor;
-  seg: ComicDetectorTensor;
-  det: ComicDetectorTensor;
-}
-
-export interface ComicTextDetectorOptions {
-  blockConfidence?: number;
-  blockIouThreshold?: number;
-  lineConfidence?: number;
-  lineThreshold?: number;
-  maximumBlocks?: number;
-  maximumLines?: number;
-  onDownloadProgress?: (progress: number) => void;
-}
-
-interface LetterboxTransform {
-  width: number;
-  height: number;
-}
+/** The text blocks, text mask and text lines of the model, in that order. */
+export type ComicDetectorOutputs = Record<keyof typeof OUTPUT_LENGTHS, Float32Array>;
 
 interface BlockCandidate extends ComicTextBlock {
   lines: ComicTextLine[];
@@ -95,86 +73,19 @@ interface LineComponent {
   edges: number[];
 }
 
-const DEFAULT_BLOCK_CONFIDENCE = 0.4;
-const DEFAULT_BLOCK_IOU_THRESHOLD = 0.35;
-const DEFAULT_LINE_CONFIDENCE = 0.5;
-const DEFAULT_LINE_THRESHOLD = 0.3;
-const DEFAULT_MAXIMUM_BLOCKS = 300;
-const DEFAULT_MAXIMUM_LINES = 1_000;
-const MASK_CHANNEL_SIZE = COMIC_TEXT_DETECTOR_INPUT_SIZE * COMIC_TEXT_DETECTOR_INPUT_SIZE;
+const BLOCK_CONFIDENCE = 0.4;
+const BLOCK_IOU_THRESHOLD = 0.35;
+const LINE_CONFIDENCE = 0.5;
+const LINE_THRESHOLD = 0.3;
+const MAXIMUM_BLOCKS = 300;
+const MAXIMUM_LINES = 1_000;
 
-const validatePositiveInteger = (name: string, value: number): void => {
-  if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new Error(`Comic text detector requires a positive integer ${name}`);
-  }
-};
-
-const validatePage = (page: ComicPageSize): void => {
-  validatePositiveInteger('page width', page.width);
-  validatePositiveInteger('page height', page.height);
-  if (!Number.isSafeInteger(page.width * page.height)) {
-    throw new Error('Comic text detector page is too large');
-  }
-};
-
-const validateOption = (name: string, value: number, minimum: number, maximum: number): void => {
-  if (!Number.isFinite(value) || value < minimum || value > maximum) {
-    throw new Error(`Comic text detector ${name} is outside its supported range`);
-  }
-};
-
-const resolveOptions = (options: ComicTextDetectorOptions = {}) => {
-  const resolved = {
-    blockConfidence: options.blockConfidence ?? DEFAULT_BLOCK_CONFIDENCE,
-    blockIouThreshold: options.blockIouThreshold ?? DEFAULT_BLOCK_IOU_THRESHOLD,
-    lineConfidence: options.lineConfidence ?? DEFAULT_LINE_CONFIDENCE,
-    lineThreshold: options.lineThreshold ?? DEFAULT_LINE_THRESHOLD,
-    maximumBlocks: options.maximumBlocks ?? DEFAULT_MAXIMUM_BLOCKS,
-    maximumLines: options.maximumLines ?? DEFAULT_MAXIMUM_LINES,
-  };
-  validateOption('block confidence', resolved.blockConfidence, 0, 1);
-  validateOption('block IoU threshold', resolved.blockIouThreshold, 0, 1);
-  validateOption('line confidence', resolved.lineConfidence, 0, 1);
-  validateOption('line threshold', resolved.lineThreshold, 0, 1);
-  validatePositiveInteger('maximum blocks', resolved.maximumBlocks);
-  validatePositiveInteger('maximum lines', resolved.maximumLines);
-  return resolved;
-};
-
-const assertTensorShape = (
-  name: keyof typeof COMIC_TEXT_DETECTOR_OUTPUT_SHAPES,
-  tensor: ComicDetectorTensor,
-): void => {
-  const expected = COMIC_TEXT_DETECTOR_OUTPUT_SHAPES[name];
-  if (
-    tensor.dims.length !== expected.length ||
-    expected.some((dimension, index) => tensor.dims[index] !== dimension)
-  ) {
-    throw new Error(
-      `Comic text detector output ${name} has invalid dimensions; expected [${expected.join(', ')}]`,
-    );
-  }
-  let expectedLength = 1;
-  for (const dimension of expected) expectedLength *= dimension;
-  if (tensor.data.length !== expectedLength) {
-    throw new Error(`Comic text detector output ${name} has incomplete data`);
-  }
-};
-
-const assertOutputs = (outputs: ComicDetectorOutputs): void => {
-  assertTensorShape('blk', outputs.blk);
-  assertTensorShape('seg', outputs.seg);
-  assertTensorShape('det', outputs.det);
-};
-
-const getLetterboxTransform = (page: ComicPageSize): LetterboxTransform => {
-  const scale = Math.min(
-    COMIC_TEXT_DETECTOR_INPUT_SIZE / page.width,
-    COMIC_TEXT_DETECTOR_INPUT_SIZE / page.height,
-  );
+/** The size of the page inside the model's input. */
+const getInputSize = (page: ComicPageSize): ComicPageSize => {
+  const scale = Math.min(INPUT_SIZE / page.width, INPUT_SIZE / page.height);
   return {
-    width: Math.max(1, Math.min(COMIC_TEXT_DETECTOR_INPUT_SIZE, Math.round(page.width * scale))),
-    height: Math.max(1, Math.min(COMIC_TEXT_DETECTOR_INPUT_SIZE, Math.round(page.height * scale))),
+    width: Math.max(1, Math.min(INPUT_SIZE, Math.round(page.width * scale))),
+    height: Math.max(1, Math.min(INPUT_SIZE, Math.round(page.height * scale))),
   };
 };
 
@@ -185,10 +96,10 @@ const mapInputPoint = (
   x: number,
   y: number,
   page: ComicPageSize,
-  transform: LetterboxTransform,
+  input: ComicPageSize,
 ): ComicPoint => ({
-  x: clamp((x * page.width) / transform.width, 0, page.width),
-  y: clamp((y * page.height) / transform.height, 0, page.height),
+  x: clamp((x * page.width) / input.width, 0, page.width),
+  y: clamp((y * page.height) / input.height, 0, page.height),
 });
 
 const mapInputBox = (
@@ -197,17 +108,17 @@ const mapInputBox = (
   xMax: number,
   yMax: number,
   page: ComicPageSize,
-  transform: LetterboxTransform,
+  input: ComicPageSize,
 ): OcrBoundingBox | null => {
-  const left = clamp(xMin, 0, transform.width);
-  const top = clamp(yMin, 0, transform.height);
-  const right = clamp(xMax, 0, transform.width);
-  const bottom = clamp(yMax, 0, transform.height);
+  const left = clamp(xMin, 0, input.width);
+  const top = clamp(yMin, 0, input.height);
+  const right = clamp(xMax, 0, input.width);
+  const bottom = clamp(yMax, 0, input.height);
   const box = {
-    xMin: (left * page.width) / transform.width,
-    yMin: (top * page.height) / transform.height,
-    xMax: (right * page.width) / transform.width,
-    yMax: (bottom * page.height) / transform.height,
+    xMin: (left * page.width) / input.width,
+    yMin: (top * page.height) / input.height,
+    xMax: (right * page.width) / input.width,
+    yMax: (bottom * page.height) / input.height,
   };
   return box.xMax > box.xMin && box.yMax > box.yMin ? box : null;
 };
@@ -232,37 +143,18 @@ const unionBoxes = (boxes: readonly OcrBoundingBox[]): OcrBoundingBox => ({
   yMax: Math.max(...boxes.map((box) => box.yMax)),
 });
 
-const blockLanguage = (classIndex: number): ComicTextLanguage => {
-  if (classIndex === 0) return 'eng';
-  if (classIndex === 1) return 'ja';
-  return 'unknown';
-};
-
 /** Decode the YOLOv5 block tensor into page-coordinate text block candidates. */
-export const decodeComicBlockPredictions = (
+const decodeBlocks = (
   data: Float32Array,
   page: ComicPageSize,
-  transform = getLetterboxTransform(page),
-  options: Pick<
-    ComicTextDetectorOptions,
-    'blockConfidence' | 'blockIouThreshold' | 'maximumBlocks'
-  > = {},
+  input: ComicPageSize,
 ): ComicTextBlock[] => {
-  validatePage(page);
-  const blockConfidence = options.blockConfidence ?? DEFAULT_BLOCK_CONFIDENCE;
-  const blockIouThreshold = options.blockIouThreshold ?? DEFAULT_BLOCK_IOU_THRESHOLD;
-  const maximumBlocks = options.maximumBlocks ?? DEFAULT_MAXIMUM_BLOCKS;
-  validateOption('block confidence', blockConfidence, 0, 1);
-  validateOption('block IoU threshold', blockIouThreshold, 0, 1);
-  validatePositiveInteger('maximum blocks', maximumBlocks);
-
-  const candidates: Array<ComicTextBlock & { classIndex: number; index: number }> = [];
-  for (let index = 0; index < data.length / 7; index += 1) {
-    const offset = index * 7;
+  const candidates: ComicTextBlock[] = [];
+  for (let offset = 0; offset < data.length; offset += 7) {
     const englishScore = data[offset + 5]!;
     const japaneseScore = data[offset + 6]!;
     const score = data[offset + 4]! * Math.max(englishScore, japaneseScore);
-    if (!(score >= blockConfidence)) continue;
+    if (!(score >= BLOCK_CONFIDENCE)) continue;
     const centerX = data[offset]!;
     const centerY = data[offset + 1]!;
     const halfWidth = data[offset + 2]! / 2;
@@ -273,43 +165,31 @@ export const decodeComicBlockPredictions = (
       centerX + halfWidth,
       centerY + halfHeight,
       page,
-      transform,
+      input,
     );
     if (!box) continue;
-    const classIndex = japaneseScore > englishScore ? 1 : 0;
-    candidates.push({
-      box,
-      score,
-      language: blockLanguage(classIndex),
-      vertical: false,
-      lines: [],
-      classIndex,
-      index,
-    });
+    const language = japaneseScore > englishScore ? 'ja' : 'eng';
+    candidates.push({ box, score, language, vertical: false, lines: [] });
   }
 
-  candidates.sort((left, right) => right.score - left.score || left.index - right.index);
-  const accepted: Array<ComicTextBlock & { classIndex: number; index: number }> = [];
+  candidates.sort((left, right) => right.score - left.score);
+  const accepted: ComicTextBlock[] = [];
   for (const candidate of candidates) {
-    if (
-      accepted.some(
-        (other) =>
-          other.classIndex === candidate.classIndex &&
-          intersectionOverUnion(other.box, candidate.box) >= blockIouThreshold,
-      )
-    ) {
-      continue;
-    }
-    accepted.push(candidate);
-    if (accepted.length >= maximumBlocks) break;
+    const repeated = accepted.some(
+      (other) =>
+        other.language === candidate.language &&
+        intersectionOverUnion(other.box, candidate.box) >= BLOCK_IOU_THRESHOLD,
+    );
+    if (!repeated) accepted.push(candidate);
+    if (accepted.length === MAXIMUM_BLOCKS) break;
   }
-  return accepted.map(({ classIndex: _classIndex, index: _index, ...block }) => block);
+  return accepted;
 };
 
 const componentPolygon = (
   component: LineComponent,
   page: ComicPageSize,
-  transform: LetterboxTransform,
+  input: ComicPageSize,
 ): { polygon: ComicPoint[]; vertical: boolean } => {
   // Row endpoints preserve the pixel hull without sorting every foreground pixel.
   const { edges, minY } = component;
@@ -396,7 +276,7 @@ const componentPolygon = (
   const left = points.slice(0, 2).sort((first, second) => first.y - second.y);
   const right = points.slice(2).sort((first, second) => first.y - second.y);
   const inputPolygon = [left[0]!, right[0]!, right[1]!, left[1]!];
-  const polygon = inputPolygon.map(({ x, y }) => mapInputPoint(x, y, page, transform));
+  const polygon = inputPolygon.map(({ x, y }) => mapInputPoint(x, y, page, input));
   const vertical = width >= height ? Math.abs(uy) > Math.abs(ux) : Math.abs(vy) > Math.abs(vx);
   return { polygon, vertical };
 };
@@ -414,7 +294,7 @@ const getLineBox = (polygon: readonly ComicPoint[]): OcrBoundingBox => ({
  * the row above.
  */
 const findLineComponents = (map: Float32Array, threshold: number): LineComponent[] => {
-  const size = COMIC_TEXT_DETECTOR_INPUT_SIZE;
+  const size = INPUT_SIZE;
   // Each run's first pixel, the pixel after its last, its sum, and an earlier run
   // of the same area (itself for the first).
   const starts: number[] = [];
@@ -473,29 +353,17 @@ const findLineComponents = (map: Float32Array, threshold: number): LineComponent
 };
 
 /** Extract oriented DB text-line polygons from the first `det` channel. */
-export const extractComicLinePolygons = (
+export const extractComicLines = (
   data: Float32Array,
   page: ComicPageSize,
-  transform = getLetterboxTransform(page),
-  options: Pick<ComicTextDetectorOptions, 'lineConfidence' | 'lineThreshold' | 'maximumLines'> = {},
+  input = getInputSize(page),
 ): ComicTextLine[] => {
-  validatePage(page);
-  const lineConfidence = options.lineConfidence ?? DEFAULT_LINE_CONFIDENCE;
-  const lineThreshold = options.lineThreshold ?? DEFAULT_LINE_THRESHOLD;
-  const maximumLines = options.maximumLines ?? DEFAULT_MAXIMUM_LINES;
-  validateOption('line confidence', lineConfidence, 0, 1);
-  validateOption('line threshold', lineThreshold, 0, 1);
-  validatePositiveInteger('maximum lines', maximumLines);
-  if (data.length < MASK_CHANNEL_SIZE) {
-    throw new Error('Comic text detector line output has incomplete data');
-  }
-
   const lines: ComicTextLine[] = [];
-  for (const component of findLineComponents(data, lineThreshold)) {
+  for (const component of findLineComponents(data, LINE_THRESHOLD)) {
     const score = component.sum / component.count;
     if (component.maxX === component.minX || component.edges.length === 2) continue;
-    if (score < lineConfidence) continue;
-    const { polygon, vertical } = componentPolygon(component, page, transform);
+    if (score < LINE_CONFIDENCE) continue;
+    const { polygon, vertical } = componentPolygon(component, page, input);
     lines.push({ polygon, box: getLineBox(polygon), score, vertical });
   }
   return lines
@@ -505,7 +373,7 @@ export const extractComicLinePolygons = (
         left.box.yMin - right.box.yMin ||
         left.box.xMin - right.box.xMin,
     )
-    .slice(0, maximumLines);
+    .slice(0, MAXIMUM_LINES);
 };
 
 const sampleMaskCoverage = (mask: ComicMask, box: OcrBoundingBox, page: ComicPageSize): number => {
@@ -524,16 +392,16 @@ const sampleMaskCoverage = (mask: ComicMask, box: OcrBoundingBox, page: ComicPag
   return count > 0 ? sum / count / 255 : 0;
 };
 
-const readInputMask = (data: Float32Array, transform: LetterboxTransform): ComicMask => {
-  const result = new Uint8Array(transform.width * transform.height);
-  for (let y = 0; y < transform.height; y += 1) {
-    const sourceOffset = y * COMIC_TEXT_DETECTOR_INPUT_SIZE;
-    const targetOffset = y * transform.width;
-    for (let x = 0; x < transform.width; x += 1) {
+const readInputMask = (data: Float32Array, input: ComicPageSize): ComicMask => {
+  const result = new Uint8Array(input.width * input.height);
+  for (let y = 0; y < input.height; y += 1) {
+    const sourceOffset = y * INPUT_SIZE;
+    const targetOffset = y * input.width;
+    for (let x = 0; x < input.width; x += 1) {
       result[targetOffset + x] = clamp(data[sourceOffset + x]!, 0, 1) * 255 + 0.5;
     }
   }
-  return { width: transform.width, height: transform.height, data: result };
+  return { width: input.width, height: input.height, data: result };
 };
 
 const sortLines = (lines: readonly ComicTextLine[], vertical: boolean): ComicTextLine[] =>
@@ -593,7 +461,7 @@ const rectangleLine = (box: OcrBoundingBox, score: number): ComicTextLine => ({
 });
 
 /** Associate DB lines with blocks and apply Mokuro's Japanese reading order. */
-export const groupComicText = (
+const groupComicText = (
   blocks: readonly ComicTextBlock[],
   lines: readonly ComicTextLine[],
   rawMask: ComicMask,
@@ -650,21 +518,12 @@ export const groupComicText = (
 export const postprocessComicDetectorOutputs = (
   outputs: ComicDetectorOutputs,
   page: ComicPageSize,
-  options: ComicTextDetectorOptions = {},
 ): ComicTextDetectionResult => {
-  validatePage(page);
-  assertOutputs(outputs);
-  const resolved = resolveOptions(options);
-  const transform = getLetterboxTransform(page);
-  const rawMask = readInputMask(outputs.seg.data, transform);
-  const blocks = decodeComicBlockPredictions(outputs.blk.data, page, transform, resolved);
-  const lines = extractComicLinePolygons(outputs.det.data, page, transform, resolved);
-  const grouped = groupComicText(blocks, lines, rawMask, page);
-  return {
-    page: { ...page },
-    mask: rawMask,
-    blocks: grouped,
-  };
+  const input = getInputSize(page);
+  const mask = readInputMask(outputs.seg, input);
+  const blocks = decodeBlocks(outputs.blk, page, input);
+  const lines = extractComicLines(outputs.det, page, input);
+  return { page, mask, blocks: groupComicText(blocks, lines, mask, page) };
 };
 
 const PIXEL_VALUES = Float32Array.from({ length: 256 }, (_, value) => value / 255);
@@ -684,154 +543,78 @@ const makeImageTensor = (pixels: Uint8ClampedArray): Float32Array => {
 const getOutput = (
   outputs: InferenceSession.ReturnType,
   name: keyof ComicDetectorOutputs,
-): ComicDetectorTensor => {
-  const output = outputs[name];
-  if (!output) throw new Error(`Comic text detector returned no ${name} output`);
-  if (!(output.data instanceof Float32Array)) {
-    throw new Error(`Comic text detector returned non-float ${name} output`);
+): Float32Array => {
+  const data = outputs[name]?.data;
+  if (!(data instanceof Float32Array) || data.length !== OUTPUT_LENGTHS[name]) {
+    throw new Error(`Comic text detector returned an invalid ${name} output`);
   }
-  return { data: output.data, dims: output.dims };
+  return data;
+};
+
+interface Model {
+  runtime: OnnxRuntime;
+  session: InferenceSession;
+}
+
+const loadModel = async (
+  signal: AbortSignal,
+  onProgress?: (progress: number) => void,
+): Promise<Model> => {
+  const [runtime, model] = await Promise.all([
+    loadOnnxRuntime(),
+    loadModelAsset(MODEL, {
+      signal,
+      onProgress: (loaded) => onProgress?.(loaded / MODEL.bytes),
+    }),
+  ]);
+  signal.throwIfAborted();
+  return { runtime, session: await createOnnxSession(runtime, model) };
 };
 
 export class ComicTextDetector {
-  readonly #options: ComicTextDetectorOptions;
-  readonly #onDownloadProgress?: (progress: number) => void;
-  #abortController: AbortController | null = null;
-  readonly #activeRuns = new Set<Promise<InferenceSession.ReturnType>>();
-  #sessionPromise: Promise<{
-    runtime: OnnxRuntime;
-    session: InferenceSession;
-  }> | null = null;
-  #terminated = false;
+  readonly #model: LazyModel<Model>;
 
-  constructor(options: ComicTextDetectorOptions = {}) {
-    this.#options = { ...options };
-    this.#onDownloadProgress = options.onDownloadProgress;
+  constructor(options: { onDownloadProgress?: (progress: number) => void } = {}) {
+    this.#model = new LazyModel(
+      (signal) => loadModel(signal, options.onDownloadProgress),
+      ({ session }) => session.release(),
+    );
   }
 
-  async detect(source: CanvasImageSource, page: ComicPageSize): Promise<ComicTextDetectionResult> {
-    validatePage(page);
-    if (this.#terminated) throw new Error('Comic text detector has been terminated');
-    const transform = getLetterboxTransform(page);
+  detect(source: CanvasImageSource, page: ComicPageSize): Promise<ComicTextDetectionResult> {
+    return this.#model.use((model) => this.#detect(model, source, page));
+  }
+
+  terminate(): Promise<void> {
+    return this.#model.terminate();
+  }
+
+  async #detect(
+    { runtime, session }: Model,
+    source: CanvasImageSource,
+    page: ComicPageSize,
+  ): Promise<ComicTextDetectionResult> {
+    const { width, height } = getInputSize(page);
     const canvas = createOcrCanvas(
-      COMIC_TEXT_DETECTOR_INPUT_SIZE,
-      COMIC_TEXT_DETECTOR_INPUT_SIZE,
+      INPUT_SIZE,
+      INPUT_SIZE,
       isHtmlCanvas(source) ? source : undefined,
     );
     const context = canvas.getContext('2d', { willReadFrequently: true });
     if (!context) throw new Error('Comic text detector could not create a canvas context');
-    context.drawImage(source, 0, 0, transform.width, transform.height);
-    const pixels = context.getImageData(
-      0,
-      0,
-      COMIC_TEXT_DETECTOR_INPUT_SIZE,
-      COMIC_TEXT_DETECTOR_INPUT_SIZE,
-    ).data;
-    const { runtime, session } = await this.#getSession();
-    if (this.#terminated) throw new Error('Comic text detector has been terminated');
-    const input = new runtime.Tensor('float32', makeImageTensor(pixels), [
-      1,
-      3,
-      COMIC_TEXT_DETECTOR_INPUT_SIZE,
-      COMIC_TEXT_DETECTOR_INPUT_SIZE,
-    ]);
-    let run: Promise<InferenceSession.ReturnType>;
-    try {
-      run = session.run({ images: input });
-    } catch (error) {
-      input.dispose();
-      throw error;
-    }
-    this.#activeRuns.add(run);
-    let rawOutputs: InferenceSession.ReturnType;
-    try {
-      rawOutputs = await run;
-    } catch (error) {
-      await this.#discardSession(session);
-      throw error;
-    } finally {
-      this.#activeRuns.delete(run);
-      input.dispose();
-    }
-    try {
-      if (this.#terminated) throw new Error('Comic text detector has been terminated');
-      const outputs = {
-        blk: getOutput(rawOutputs, 'blk'),
-        seg: getOutput(rawOutputs, 'seg'),
-        det: getOutput(rawOutputs, 'det'),
-      };
-      return postprocessComicDetectorOutputs(outputs, page, this.#options);
-    } finally {
-      for (const output of Object.values(rawOutputs)) output.dispose();
-    }
-  }
-
-  async terminate(): Promise<void> {
-    if (this.#terminated) return;
-    this.#terminated = true;
-    this.#abortController?.abort();
-    const sessionPromise = this.#sessionPromise;
-    this.#sessionPromise = null;
-    if (!sessionPromise) return;
-    try {
-      const { session } = await sessionPromise;
-      await Promise.allSettled([...this.#activeRuns]);
-      await session.release();
-    } catch {
-      return;
-    }
-  }
-
-  #getSession(): Promise<{
-    runtime: OnnxRuntime;
-    session: InferenceSession;
-  }> {
-    if (this.#terminated)
-      return Promise.reject(new Error('Comic text detector has been terminated'));
-    if (this.#sessionPromise) return this.#sessionPromise;
-
-    const controller = new AbortController();
-    this.#abortController = controller;
-
-    const sessionPromise = Promise.all([
-      loadOnnxRuntime(),
-      loadModelAsset(COMIC_TEXT_DETECTOR_MODEL, {
-        signal: controller.signal,
-        onProgress: (loaded) =>
-          this.#onDownloadProgress?.(loaded / COMIC_TEXT_DETECTOR_MODEL.bytes),
-      }),
-    ])
-      .then(async ([runtime, model]) => {
-        if (this.#terminated) throw new Error('Comic text detector has been terminated');
-        const session = await createOnnxSession(runtime, model);
-        if (this.#terminated) {
-          await session.release();
-          throw new Error('Comic text detector has been terminated');
-        }
-        return { runtime, session };
-      })
-      .catch((error: unknown) => {
-        controller.abort(error);
-        throw error;
-      });
-    this.#sessionPromise = sessionPromise;
-    void sessionPromise.catch(() => {
-      if (this.#sessionPromise === sessionPromise && !this.#terminated) this.#sessionPromise = null;
-    });
-    return sessionPromise;
-  }
-
-  async #discardSession(session: InferenceSession): Promise<void> {
-    const sessionPromise = this.#sessionPromise;
-    if (!sessionPromise) return;
-    let activeSession: InferenceSession;
-    try {
-      activeSession = (await sessionPromise).session;
-    } catch {
-      return;
-    }
-    if (activeSession !== session || this.#sessionPromise !== sessionPromise) return;
-    this.#sessionPromise = null;
-    await activeSession.release().catch(() => undefined);
+    context.drawImage(source, 0, 0, width, height);
+    const { data: pixels } = context.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
+    const shape = [1, 3, INPUT_SIZE, INPUT_SIZE];
+    const images = new runtime.Tensor('float32', makeImageTensor(pixels), shape);
+    const outputs = await session.run({ images });
+    this.#model.throwIfTerminated();
+    return postprocessComicDetectorOutputs(
+      {
+        blk: getOutput(outputs, 'blk'),
+        seg: getOutput(outputs, 'seg'),
+        det: getOutput(outputs, 'det'),
+      },
+      page,
+    );
   }
 }

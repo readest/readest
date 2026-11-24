@@ -14,6 +14,7 @@ import {
   type ComicTextDetectionResult,
   type ComicTextLine,
 } from './comicTextDetector';
+import { LazyModel } from './lazyModel';
 import { loadModelAsset } from './modelAssets';
 import {
   drawMangaTextCrop,
@@ -55,8 +56,6 @@ export interface TesseractOcrEngineOptions {
   languages?: readonly string[];
   mangaMode?: boolean;
   textLanguage?: string;
-  pageSegmentationMode?: PSM;
-  minimumConfidence?: number;
   onProgress?: (progress: OcrEngineProgress) => void;
 }
 
@@ -100,32 +99,25 @@ export type MangaRecognizerFactory = (
 
 export type MangaImageLoader = (source: string) => Promise<LoadedMangaImage>;
 
+type TesseractData = TesseractPageData & { text?: string; confidence?: number };
+
 export interface TesseractWorker {
   setParameters: (parameters: Partial<WorkerParams>) => Promise<unknown>;
   recognize: (
     image: ImageLike,
     options?: Partial<RecognizeOptions>,
     output?: Partial<OutputFormats>,
-  ) => Promise<{ data: TesseractPageData & { text?: string; confidence?: number } }>;
+  ) => Promise<{ data: TesseractData }>;
   terminate: () => Promise<unknown>;
 }
 
-export type TesseractWorkerLanguages = string[] | TesseractLang[];
-
 export type TesseractWorkerFactory = (
-  languages: TesseractWorkerLanguages,
+  languages: TesseractLang[],
   oem: OEM,
   options: Partial<WorkerOptions>,
 ) => Promise<TesseractWorker>;
 
 export type TesseractLanguageAssetLoader = typeof loadModelAsset;
-
-interface WorkerRequest {
-  creation: Promise<TesseractWorker>;
-  initialized: Promise<TesseractWorker>;
-  worker: TesseractWorker | null;
-  termination: Promise<void> | null;
-}
 
 interface MangaLineProgress {
   index: number;
@@ -190,40 +182,32 @@ const loadMangaImage: MangaImageLoader = async (source) => {
   return { image, width: image.naturalWidth, height: image.naturalHeight };
 };
 
-const prepareImage = (image: ImageLike, page: OcrImagePage): PreparedImage => {
-  if (!isOcrCanvas(image)) return { image, page };
-  const { width, height } = image;
-  const longEdge = Math.max(width, height);
-  const pixelCount = width * height;
-  if (longEdge <= 0 || pixelCount <= 0) return { image, page };
-
-  const detailScale = longEdge < MINIMUM_OCR_LONG_EDGE ? MINIMUM_OCR_LONG_EDGE / longEdge : 1;
-  const pixelScale = Math.sqrt(MAXIMUM_OCR_PIXELS / pixelCount);
+/** The size that shows enough detail, for a page of this size. */
+const getOcrSize = (width: number, height: number) => {
+  if (!(width > 0 && height > 0)) throw new Error('OCR received an empty page image');
+  const detailScale = Math.max(1, MINIMUM_OCR_LONG_EDGE / Math.max(width, height));
+  const pixelScale = Math.sqrt(MAXIMUM_OCR_PIXELS / (width * height));
   const scale = Math.min(MAXIMUM_OCR_SCALE, detailScale, pixelScale);
-  const targetWidth = scaleImageDimension(width, scale);
-  const targetHeight = scaleImageDimension(height, scale);
-  if (targetWidth === width && targetHeight === height) return { image, page };
-
-  const canvas = createOcrCanvas(
-    targetWidth,
-    targetHeight,
-    isHtmlCanvas(image) ? image : undefined,
-  );
-  const context = canvas.getContext('2d');
-  if (!context) return { image, page };
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = 'high';
-  context.drawImage(image, 0, 0, targetWidth, targetHeight);
-  return { image: canvas, page: { ...page, width: targetWidth, height: targetHeight } };
+  return { width: scaleImageDimension(width, scale), height: scaleImageDimension(height, scale) };
 };
 
-const getMangaScale = (width: number, height: number): number => {
-  const longEdge = Math.max(width, height);
-  const pixelCount = width * height;
-  if (longEdge <= 0 || pixelCount <= 0) return 1;
-  const detailScale = Math.max(1, MINIMUM_OCR_LONG_EDGE / longEdge);
-  const pixelScale = Math.sqrt(MAXIMUM_OCR_PIXELS / pixelCount);
-  return Math.min(MAXIMUM_OCR_SCALE, detailScale, pixelScale);
+const drawPage = (
+  image: CanvasImageSource,
+  { width, height }: { width: number; height: number },
+): OcrCanvas => {
+  const canvas = createOcrCanvas(width, height, isHtmlCanvas(image) ? image : undefined);
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('OCR could not prepare the page canvas');
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(image, 0, 0, width, height);
+  return canvas;
+};
+
+const prepareCanvas = (image: OcrCanvas, page: OcrImagePage): PreparedMangaImage => {
+  const size = getOcrSize(image.width, image.height);
+  const unchanged = size.width === image.width && size.height === image.height;
+  return { image: unchanged ? image : drawPage(image, size), page: { ...page, ...size } };
 };
 
 const prepareMangaImage = async (
@@ -231,38 +215,13 @@ const prepareMangaImage = async (
   page: OcrImagePage,
   loadImage: MangaImageLoader,
 ): Promise<PreparedMangaImage> => {
-  const canvasSource = isOcrCanvas(image) ? image : undefined;
-  const loaded = canvasSource
-    ? { image: canvasSource, width: canvasSource.width, height: canvasSource.height }
-    : await loadImage(String(image));
-  if (!Number.isFinite(loaded.width) || !Number.isFinite(loaded.height)) {
-    throw new Error('OCR received invalid manga page dimensions');
-  }
-  if (loaded.width <= 0 || loaded.height <= 0) {
-    throw new Error('OCR received an empty manga page image');
-  }
-
-  const scale = getMangaScale(loaded.width, loaded.height);
-  const targetWidth = scaleImageDimension(loaded.width, scale);
-  const targetHeight = scaleImageDimension(loaded.height, scale);
-  if (canvasSource && targetWidth === loaded.width && targetHeight === loaded.height) {
-    return { image: canvasSource, page: { ...page, width: targetWidth, height: targetHeight } };
-  }
-
-  const canvas = createOcrCanvas(
-    targetWidth,
-    targetHeight,
-    isHtmlCanvas(canvasSource) ? canvasSource : undefined,
-  );
+  if (isOcrCanvas(image)) return prepareCanvas(image, page);
+  const loaded = await loadImage(String(image));
   try {
-    const context = canvas.getContext('2d');
-    if (!context) throw new Error('OCR could not prepare the manga page canvas');
-    context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = 'high';
-    context.drawImage(loaded.image, 0, 0, targetWidth, targetHeight);
-    return { image: canvas, page: { ...page, width: targetWidth, height: targetHeight } };
+    const size = getOcrSize(loaded.width, loaded.height);
+    return { image: drawPage(loaded.image, size), page: { ...page, ...size } };
   } finally {
-    if ('close' in loaded.image && typeof loaded.image.close === 'function') loaded.image.close();
+    if ('close' in loaded.image) loaded.image.close();
   }
 };
 
@@ -270,7 +229,6 @@ export class TesseractOcrEngine {
   readonly #languages: string[];
   readonly #mangaMode: boolean;
   readonly #textLanguage?: string;
-  readonly #pageSegmentationMode: PSM;
   readonly #minimumConfidence: number;
   readonly #onProgress?: (progress: OcrEngineProgress) => void;
   readonly #createWorker: TesseractWorkerFactory;
@@ -278,8 +236,10 @@ export class TesseractOcrEngine {
   readonly #createJapaneseMangaRecognizer: MangaRecognizerFactory;
   readonly #loadMangaImage: MangaImageLoader;
   readonly #loadLanguageAsset: TesseractLanguageAssetLoader;
-  readonly #abortController = new AbortController();
-  #workerRequest: WorkerRequest | null = null;
+  readonly #worker = new LazyModel(
+    (signal) => this.#startWorker(signal),
+    (worker) => worker.terminate(),
+  );
   #mangaDetector: MangaTextDetector | null = null;
   #mangaDetectorUnavailable = false;
   #japaneseMangaRecognizer: MangaRecognizer | null = null;
@@ -296,11 +256,9 @@ export class TesseractOcrEngine {
     japaneseMangaRecognizerFactory: MangaRecognizerFactory = createJapaneseMangaRecognizer,
   ) {
     this.#languages = options.languages?.length ? [...options.languages] : [...DEFAULT_LANGUAGES];
-    this.#pageSegmentationMode = options.pageSegmentationMode ?? PSM.AUTO;
     this.#mangaMode = options.mangaMode ?? false;
     this.#textLanguage = options.textLanguage;
-    this.#minimumConfidence =
-      options.minimumConfidence ?? (this.#mangaMode ? MINIMUM_MANGA_CONFIDENCE : 0);
+    this.#minimumConfidence = this.#mangaMode ? MINIMUM_MANGA_CONFIDENCE : 0;
     this.#onProgress = options.onProgress;
     this.#createWorker = workerFactory;
     this.#createMangaDetector = mangaDetectorFactory;
@@ -311,39 +269,21 @@ export class TesseractOcrEngine {
 
   async recognize(image: ImageLike, page: OcrImagePage, signal?: AbortSignal): Promise<OcrPage> {
     signal?.throwIfAborted();
-    if (this.#mangaMode) return this.#recognizeManga(image, page, signal);
-    const worker = await this.#getWorker();
-    signal?.throwIfAborted();
-    if (this.#terminated) throw new Error('OCR engine has been terminated');
-    const prepared = prepareImage(image, page);
-    const { data } = await this.#runWorkerOperation(worker, () =>
-      worker.recognize(prepared.image, {}, { text: true, blocks: true }),
-    );
-    if (this.#terminated) throw new Error('OCR engine has been terminated');
-    const result = adaptTesseractPage(data, {
-      ...prepared.page,
-      minimumConfidence: this.#minimumConfidence,
-    });
-    return this.#textLanguage ? { ...result, language: this.#textLanguage } : result;
+    return this.#mangaMode
+      ? this.#recognizeManga(image, page, signal)
+      : this.#recognizeWholePage(
+          isOcrCanvas(image) ? prepareCanvas(image, page) : { image, page },
+          signal,
+        );
   }
 
   async terminate(): Promise<void> {
-    if (this.#terminated) return;
     this.#terminated = true;
-    this.#abortController.abort();
-    const workerRequest = this.#workerRequest;
-    this.#workerRequest = null;
-    const detector = this.#mangaDetector;
-    this.#mangaDetector = null;
-    const japaneseRecognizer = this.#japaneseMangaRecognizer;
-    this.#japaneseMangaRecognizer = null;
-
-    let workerTermination: Promise<void> | undefined;
-    if (workerRequest) {
-      const termination = this.#terminateWorker(workerRequest);
-      if (workerRequest.worker) workerTermination = termination;
-    }
-    await Promise.all([detector?.terminate(), japaneseRecognizer?.terminate(), workerTermination]);
+    await Promise.all([
+      this.#mangaDetector?.terminate(),
+      this.#japaneseMangaRecognizer?.terminate(),
+      this.#worker.terminate(),
+    ]);
   }
 
   async #recognizeManga(
@@ -365,9 +305,7 @@ export class TesseractOcrEngine {
       });
     } catch (error) {
       signal?.throwIfAborted();
-      if (this.#terminated || this.#abortController.signal.aborted) {
-        throw new Error('OCR engine has been terminated');
-      }
+      if (this.#terminated) throw new Error('OCR engine has been terminated');
       this.#mangaDetectorUnavailable = true;
       const detector = this.#mangaDetector;
       this.#mangaDetector = null;
@@ -488,17 +426,12 @@ export class TesseractOcrEngine {
     signal?: AbortSignal,
   ): Promise<MangaRecognition | null> {
     await yieldToCancellation(signal);
-    const worker = await this.#getWorker();
-    signal?.throwIfAborted();
-    const { data } = await this.#runWorkerOperation(worker, async () => {
-      await worker.setParameters({
-        tessedit_pageseg_mode: crop.vertical ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_LINE,
-        preserve_interword_spaces: '1',
-      });
-      const image = drawMangaTextCrop(crop, MANGA_CROP_BORDER, source);
-      return worker.recognize(image, {}, { text: true, blocks: false });
-    });
-    signal?.throwIfAborted();
+    const data = await this.#runTesseract(
+      drawMangaTextCrop(crop, MANGA_CROP_BORDER, source),
+      crop.vertical ? PSM.SINGLE_BLOCK_VERT_TEXT : PSM.SINGLE_LINE,
+      { text: true, blocks: false },
+      signal,
+    );
     const text = data.text?.replace(/\s+/gu, ' ').trim();
     const confidence = Number.isFinite(data.confidence) ? data.confidence : undefined;
     if (!text || confidence === undefined || confidence < this.#minimumConfidence) return null;
@@ -506,18 +439,8 @@ export class TesseractOcrEngine {
   }
 
   async #recognizeWholePage(prepared: PreparedImage, signal?: AbortSignal): Promise<OcrPage> {
-    signal?.throwIfAborted();
-    const worker = await this.#getWorker();
-    signal?.throwIfAborted();
-    const { data } = await this.#runWorkerOperation(worker, async () => {
-      await worker.setParameters({
-        tessedit_pageseg_mode: this.#pageSegmentationMode,
-        preserve_interword_spaces: '1',
-      });
-      return worker.recognize(prepared.image, {}, { text: true, blocks: true });
-    });
-    signal?.throwIfAborted();
-    if (this.#terminated) throw new Error('OCR engine has been terminated');
+    const output = { text: false, blocks: true };
+    const data = await this.#runTesseract(prepared.image, PSM.AUTO, output, signal);
     const result = adaptTesseractPage(data, {
       ...prepared.page,
       minimumConfidence: this.#minimumConfidence,
@@ -525,9 +448,33 @@ export class TesseractOcrEngine {
     return this.#textLanguage ? { ...result, language: this.#textLanguage } : result;
   }
 
+  async #runTesseract(
+    image: ImageLike,
+    segmentation: PSM,
+    output: Partial<OutputFormats>,
+    signal?: AbortSignal,
+  ): Promise<TesseractData> {
+    const worker = await this.#worker.load();
+    signal?.throwIfAborted();
+    const recognize = async () => {
+      await worker.setParameters({
+        tessedit_pageseg_mode: segmentation,
+        preserve_interword_spaces: '1',
+      });
+      return worker.recognize(image, {}, output);
+    };
+    const { data } = await recognize().catch(async (error: unknown) => {
+      await this.#worker.discard();
+      throw error;
+    });
+    signal?.throwIfAborted();
+    this.#worker.throwIfTerminated();
+    return data;
+  }
+
   /** Loads what reads the lines while they're being found. */
   #prepareRecognizer(): void {
-    if (!isJapaneseLanguage(this.#textLanguage)) this.#getWorker().catch(() => undefined);
+    if (!isJapaneseLanguage(this.#textLanguage)) this.#worker.load().catch(() => undefined);
     else if (!this.#japaneseMangaRecognizerUnavailable)
       this.#getJapaneseMangaRecognizer().prepare();
   }
@@ -548,65 +495,27 @@ export class TesseractOcrEngine {
     return this.#japaneseMangaRecognizer;
   }
 
-  #getWorker(): Promise<TesseractWorker> {
-    if (this.#terminated) return Promise.reject(new Error('OCR engine has been terminated'));
-    if (this.#workerRequest) return this.#workerRequest.initialized;
-
-    const workerRequest = {
-      creation: undefined as unknown as Promise<TesseractWorker>,
-      initialized: undefined as unknown as Promise<TesseractWorker>,
-      worker: null as TesseractWorker | null,
-      termination: null as Promise<void> | null,
-    };
-    workerRequest.creation = this.#loadLanguageData()
-      .then((languages) => {
-        if (this.#terminated) throw new Error('OCR engine has been terminated');
-        return this.#createWorker(languages, OEM.LSTM_ONLY, {
-          workerPath: WORKER_PATH,
-          corePath: CORE_PATH,
-          workerBlobURL: false,
-          cacheMethod: 'none',
-          gzip: false,
-          logger: ({ status, progress }) => this.#reportWorkerProgress(status, progress),
-        });
-      })
-      .then((worker) => {
-        workerRequest.worker = worker;
-        return worker;
-      });
-    workerRequest.initialized = workerRequest.creation.then(async (worker) => {
-      try {
-        if (this.#terminated || this.#workerRequest !== workerRequest) {
-          throw new Error('OCR engine has been terminated');
-        }
-        await worker.setParameters({
-          tessedit_pageseg_mode: this.#pageSegmentationMode,
-          preserve_interword_spaces: '1',
-        });
-        if (this.#terminated || this.#workerRequest !== workerRequest) {
-          throw new Error('OCR engine has been terminated');
-        }
-        return worker;
-      } catch (error) {
-        await this.#terminateWorker(workerRequest);
-        throw error;
-      }
+  async #startWorker(signal: AbortSignal): Promise<TesseractWorker> {
+    const languages = await this.#loadLanguageData(signal);
+    signal.throwIfAborted();
+    return this.#createWorker(languages, OEM.LSTM_ONLY, {
+      workerPath: WORKER_PATH,
+      corePath: CORE_PATH,
+      workerBlobURL: false,
+      cacheMethod: 'none',
+      gzip: false,
+      logger: ({ status, progress }) => this.#reportWorkerProgress(status, progress),
     });
-    this.#workerRequest = workerRequest;
-    void workerRequest.initialized.catch(() => {
-      if (this.#workerRequest === workerRequest) this.#workerRequest = null;
-    });
-    return workerRequest.initialized;
   }
 
-  async #loadLanguageData(): Promise<TesseractLang[]> {
+  async #loadLanguageData(signal: AbortSignal): Promise<TesseractLang[]> {
     const assets = this.#languages.map((code) => getTesseractLanguageAsset(code));
     const loaded = assets.map(() => 0);
     const total = assets.reduce((sum, { bytes }) => sum + bytes, 0);
     const buffers = await Promise.all(
       assets.map((asset, index) =>
         this.#loadLanguageAsset(asset, {
-          signal: this.#abortController.signal,
+          signal,
           onProgress: (bytes) => {
             loaded[index] = bytes;
             this.#onProgress?.({
@@ -617,20 +526,10 @@ export class TesseractOcrEngine {
         }),
       ),
     );
-    if (this.#terminated) throw new Error('OCR engine has been terminated');
     return buffers.map((buffer, index) => ({
       code: this.#languages[index]!,
       data: new Uint8Array(buffer),
     }));
-  }
-
-  async #runWorkerOperation<T>(worker: TesseractWorker, operation: () => Promise<T>): Promise<T> {
-    try {
-      return await operation();
-    } catch (error) {
-      await this.#discardWorker(worker);
-      throw error;
-    }
   }
 
   #reportWorkerProgress(status: string, progress: number): void {
@@ -639,38 +538,5 @@ export class TesseractOcrEngine {
       status,
       progress: line ? (line.index + Math.min(1, Math.max(0, progress))) / line.total : progress,
     });
-  }
-
-  async #discardWorker(worker: TesseractWorker): Promise<void> {
-    const workerRequest = this.#workerRequest;
-    if (!workerRequest) return;
-    const currentWorker = await workerRequest.initialized.catch(() => null);
-    if (this.#workerRequest !== workerRequest || currentWorker !== worker) return;
-    this.#workerRequest = null;
-    await this.#terminateWorker(workerRequest);
-  }
-
-  #terminateWorker(workerRequest: WorkerRequest): Promise<void> {
-    if (workerRequest.termination) return workerRequest.termination;
-    if (workerRequest.worker) {
-      workerRequest.termination = Promise.resolve()
-        .then(() => workerRequest.worker?.terminate())
-        .then(
-          () => undefined,
-          () => undefined,
-        );
-    } else {
-      workerRequest.termination = workerRequest.creation.then(
-        (worker) =>
-          Promise.resolve()
-            .then(() => worker.terminate())
-            .then(
-              () => undefined,
-              () => undefined,
-            ),
-        () => undefined,
-      );
-    }
-    return workerRequest.termination;
   }
 }

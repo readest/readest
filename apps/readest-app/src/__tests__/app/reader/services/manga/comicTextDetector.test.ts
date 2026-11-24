@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  COMIC_TEXT_DETECTOR_INPUT_SIZE,
-  COMIC_TEXT_DETECTOR_OUTPUT_SHAPES,
-  extractComicLinePolygons,
+  extractComicLines,
   postprocessComicDetectorOutputs,
 } from '@/plugins/ocr/comicTextDetector';
 
@@ -30,7 +28,6 @@ const createRuntime = () => {
       public data: Float32Array,
       public dims: number[],
     ) {}
-    dispose() {}
   }
   return {
     env: { wasm: {} },
@@ -38,25 +35,14 @@ const createRuntime = () => {
   };
 };
 
-const createDetectorOutputs = () => {
-  class OutputTensor {
-    readonly dims: number[];
-    readonly data: Float32Array;
-    constructor(dims: readonly number[]) {
-      this.dims = [...dims];
-      this.data = new Float32Array(dims.reduce((size, dimension) => size * dimension, 1));
-    }
-    dispose() {}
-  }
-  return {
-    blk: new OutputTensor(COMIC_TEXT_DETECTOR_OUTPUT_SHAPES.blk),
-    seg: new OutputTensor(COMIC_TEXT_DETECTOR_OUTPUT_SHAPES.seg),
-    det: new OutputTensor(COMIC_TEXT_DETECTOR_OUTPUT_SHAPES.det),
-  };
-};
+const createDetectorOutputs = () => ({
+  blk: { data: new Float32Array(64_512 * 7) },
+  seg: { data: new Float32Array(1024 * 1024) },
+  det: { data: new Float32Array(2 * 1024 * 1024) },
+});
 
 const mockCanvas = () => {
-  const imageData = { data: new Uint8ClampedArray(COMIC_TEXT_DETECTOR_INPUT_SIZE ** 2 * 4) };
+  const imageData = { data: new Uint8ClampedArray(1024 ** 2 * 4) };
   const context = {
     drawImage: vi.fn(),
     getImageData: vi.fn(() => imageData),
@@ -98,7 +84,7 @@ const fillRectangle = (
 ) => {
   for (let y = top; y < bottom; y += 1) {
     for (let x = left; x < right; x += 1) {
-      data[y * COMIC_TEXT_DETECTOR_INPUT_SIZE + x] = 0.9;
+      data[y * 1024 + x] = 0.9;
     }
   }
 };
@@ -196,7 +182,7 @@ describe('Comic text detection', () => {
       const termination = detector.terminate();
       expect(signal?.aborted).toBe(true);
       runtime.resolve(createRuntime());
-      await expect(inFlight).rejects.toThrow('Comic text detector has been terminated');
+      await expect(inFlight).rejects.toMatchObject({ name: 'AbortError' });
       await termination;
       expect(mocks.createSession).not.toHaveBeenCalled();
     } finally {
@@ -222,7 +208,7 @@ describe('Comic text detection', () => {
       await vi.waitFor(() => expect(mocks.createSession).toHaveBeenCalledOnce());
       const termination = detector.terminate();
       session.resolve({ release });
-      await expect(inFlight).rejects.toThrow('Comic text detector has been terminated');
+      await expect(inFlight).rejects.toMatchObject({ name: 'AbortError' });
       await termination;
       expect(release).toHaveBeenCalledOnce();
     } finally {
@@ -237,7 +223,7 @@ describe('Comic text detection', () => {
     fillRectangle(lines, 100, 100, 120, 160);
     fillRectangle(lines, 100, 100, 140, 110);
 
-    const [line] = extractComicLinePolygons(lines, { width: 1024, height: 1024 });
+    const [line] = extractComicLines(lines, { width: 1024, height: 1024 });
 
     expect(line?.vertical).toBe(true);
     expect(line?.box).toEqual({ xMin: 82, yMin: 82, xMax: 157, yMax: 177 });
@@ -253,9 +239,9 @@ describe('Comic text detection', () => {
 
     const result = postprocessComicDetectorOutputs(
       {
-        blk: { dims: [1, 64_512, 7], data: blocks },
-        seg: { dims: [1, 1, 1024, 1024], data: segmentation },
-        det: { dims: [1, 2, 1024, 1024], data: lines },
+        blk: blocks,
+        seg: segmentation,
+        det: lines,
       },
       { width: 1024, height: 1024 },
     );

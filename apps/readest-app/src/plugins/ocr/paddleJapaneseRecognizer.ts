@@ -1,5 +1,6 @@
 import type { InferenceSession } from 'onnxruntime-web/wasm';
 import { loadModelAsset, type ModelAsset } from './modelAssets';
+import { LazyModel } from './lazyModel';
 import { createOnnxSession, loadOnnxRuntime, type OnnxRuntime } from './onnxRuntime';
 import { MANGA_CROP_BORDER, type MangaTextCrop } from './mangaTextCrop';
 import { yieldToCancellation } from './yieldToCancellation';
@@ -18,7 +19,6 @@ const DICTIONARY: ModelAsset = {
   sha256: 'b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d',
   bytes: 74_947,
 };
-const DICTIONARY_LENGTH = 18_708;
 
 const LINE_HEIGHT = 48;
 // The model reads the end of a line better with space after it. Lines of the same
@@ -156,42 +156,54 @@ const decodeLine = (scores: Float32Array, characters: string[]): MangaRecognitio
   return text ? { text, confidence: (sum / count) * 100 } : null;
 };
 
+const loadModel = async (
+  signal: AbortSignal,
+  onProgress?: (progress: number) => void,
+): Promise<Model> => {
+  const [runtime, model, dictionary] = await Promise.all([
+    loadOnnxRuntime(),
+    loadModelAsset(MODEL, {
+      signal,
+      onProgress: (loaded) => onProgress?.(loaded / MODEL.bytes),
+    }),
+    loadModelAsset(DICTIONARY, { signal }),
+  ]);
+  signal.throwIfAborted();
+  const characters = new TextDecoder().decode(dictionary).trimEnd().split(/\r?\n/u);
+  characters.push(' ');
+  return { runtime, session: await createOnnxSession(runtime, model), characters };
+};
+
 export class PaddleJapaneseRecognizer implements MangaRecognizer {
-  readonly #onDownloadProgress?: (progress: number) => void;
-  readonly #abort = new AbortController();
-  #model: Promise<Model> | null = null;
-  #active: Promise<unknown> = Promise.resolve();
+  readonly #model: LazyModel<Model>;
 
   constructor(options: { onDownloadProgress?: (progress: number) => void } = {}) {
-    this.#onDownloadProgress = options.onDownloadProgress;
+    this.#model = new LazyModel(
+      (signal) => loadModel(signal, options.onDownloadProgress),
+      ({ session }) => session.release(),
+    );
   }
 
   prepare(): void {
-    this.#getModel().catch(() => undefined);
+    this.#model.load().catch(() => undefined);
   }
 
-  async recognize(
+  recognize(
     crops: readonly MangaTextCrop[],
     options: MangaRecognitionOptions = {},
   ): Promise<Array<MangaRecognition | null>> {
-    const run = this.#recognize(crops, options);
-    this.#active = run.catch(() => undefined);
-    return run;
+    return this.#model.use((model) => this.#recognize(model, crops, options));
   }
 
-  async terminate(): Promise<void> {
-    if (this.#abort.signal.aborted) return;
-    this.#abort.abort();
-    const model = await this.#model?.catch(() => null);
-    await this.#active;
-    await model?.session.release();
+  terminate(): Promise<void> {
+    return this.#model.terminate();
   }
 
   async #recognize(
+    { runtime, session, characters }: Model,
     crops: readonly MangaTextCrop[],
     { signal, onProgress }: MangaRecognitionOptions,
   ): Promise<Array<MangaRecognition | null>> {
-    const { runtime, session, characters } = await this.#getModel();
     const batches = new Map<number, number[]>();
     for (const [index, crop] of crops.entries()) {
       const width = getBatchWidth(getLineSize(crop).width);
@@ -204,7 +216,7 @@ export class PaddleJapaneseRecognizer implements MangaRecognizer {
     for (const [width, indexes] of batches) {
       for (let start = 0; start < indexes.length; start += BATCH_SIZE) {
         await yieldToCancellation(signal);
-        this.#abort.signal.throwIfAborted();
+        this.#model.throwIfTerminated();
         const batch = indexes.slice(start, start + BATCH_SIZE);
         const size = 3 * LINE_HEIGHT * width;
         const pixels = new Float32Array(batch.length * size);
@@ -225,31 +237,5 @@ export class PaddleJapaneseRecognizer implements MangaRecognizer {
       }
     }
     return results;
-  }
-
-  #getModel(): Promise<Model> {
-    this.#model ??= this.#loadModel().catch((error: unknown) => {
-      this.#model = null;
-      throw error;
-    });
-    return this.#model;
-  }
-
-  async #loadModel(): Promise<Model> {
-    const { signal } = this.#abort;
-    const [runtime, model, dictionary] = await Promise.all([
-      loadOnnxRuntime(),
-      loadModelAsset(MODEL, {
-        signal,
-        onProgress: (loaded) => this.#onDownloadProgress?.(loaded / MODEL.bytes),
-      }),
-      loadModelAsset(DICTIONARY, { signal }),
-    ]);
-    const characters = new TextDecoder().decode(dictionary).trimEnd().split(/\r?\n/u);
-    if (characters.length !== DICTIONARY_LENGTH) {
-      throw new Error('Japanese manga recognizer dictionary has an invalid length');
-    }
-    characters.push(' ');
-    return { runtime, session: await createOnnxSession(runtime, model), characters };
   }
 }
