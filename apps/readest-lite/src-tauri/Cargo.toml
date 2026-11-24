@@ -14,6 +14,8 @@ url = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-os = "2"
 tauri-plugin-persisted-scope = "2"
+# `download_file`: covers and books from Readest Cloud. The client tauri-runtime-blitz's fetch uses.
+ureq = "3.4"
 # The database Readest's reading statistics, library search, dictionaries and TTS cache use.
 tauri-plugin-turso = { path = "../../readest-app/src-tauri/plugins/tauri-plugin-turso" }
 

@@ -2,6 +2,7 @@
 //! startup reaches.
 
 mod picker;
+mod transfer;
 
 use tauri_plugin_fs::FsExt;
 
@@ -59,7 +60,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_executable_dir,
             set_webview_info,
-            is_updater_disabled
+            is_updater_disabled,
+            transfer::download_file
         ])
         .setup(|app| {
             // Books opened with the app: readable through the fs plugin, and handed to the
