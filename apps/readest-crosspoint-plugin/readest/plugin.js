@@ -8,6 +8,8 @@
 // from the reader's own screen, so a sign-in there left progress sync off.
 CrossPoint.registerPlugin(async (container, api) => {
   const API = 'https://web.readest.com/api/crosspoint';
+  // Device sign-in, shared with KOReader and Readest's own QR code sign-in.
+  const SIGN_IN = 'https://web.readest.com/api/auth/device';
   // The key lives in a dotfile, which the device web server refuses to serve.
   // The account file records who is signed in and the ids of keys to revoke.
   const TOKEN_PATH = '/.crosspoint/.readest-token.json';
@@ -111,7 +113,7 @@ CrossPoint.registerPlugin(async (container, api) => {
     while (Date.now() < deadline) {
       await sleep(interval);
       if (current !== attempt) return null;
-      const res = await relayJson(`${API}/device/token`, { device_code: code.device_code }).catch(
+      const res = await relayJson(`${SIGN_IN}/token`, { device_code: code.device_code }).catch(
         () => null, // offline for a moment: keep polling
       );
       if (res?.data.access_token) return res.data;
@@ -163,7 +165,7 @@ CrossPoint.registerPlugin(async (container, api) => {
     const current = ++attempt;
     signinButton.disabled = true;
     try {
-      const { status: httpStatus, data: code } = await relayJson(`${API}/device/code`, {});
+      const { status: httpStatus, data: code } = await relayJson(`${SIGN_IN}/code`, {});
       if (!code.device_code) throw new Error(`Readest is unreachable (HTTP ${httpStatus})`);
       $('[data-link]').href = code.verification_uri_complete;
       $('[data-link]').textContent = code.verification_uri;

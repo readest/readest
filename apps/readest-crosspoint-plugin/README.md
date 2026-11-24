@@ -118,9 +118,10 @@ first 256 highlights.
 
 Tests live with the app, in
 `apps/readest-app/src/__tests__/crosspoint-plugin/readest-plugin.test.ts`. The
-server side is the routes in `apps/readest-app/src/app/api/crosspoint/` (device
-sign-in, catalog, reading sessions, the KOSync-compatible progress routes and
-the clippings API under `api/v1/clippings`) and the `/link` page where codes are
+server side is the device sign-in routes in `apps/readest-app/src/app/api/auth/device/`,
+shared with KOReader and Readest, the routes in `apps/readest-app/src/app/api/crosspoint/`
+(catalog, reading sessions, the KOSync-compatible progress routes and the
+clippings API under `api/v1/clippings`) and the `/link` page where codes are
 approved. Reader keys and pending sign-ins live in the tables from
 `docker/volumes/db/migrations/024_crosspoint_devices.sql`; a clipping is a
 `book_notes` row with the `crosspoint` anchor from `033_add_book_notes_crosspoint.sql`.
