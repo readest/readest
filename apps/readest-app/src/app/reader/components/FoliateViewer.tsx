@@ -1692,27 +1692,36 @@ const FoliateViewer: React.FC<{
         {...touchHandlers}
       />
       {autoscrollAnchor && <AutoscrollIndicator anchor={autoscrollAnchor} />}
+      {/* The copy of the page being read during a page wipe (revealPageWipe):
+          over the page, under its header, footer and the controls. Kept
+          after a session ends, until the turn back under the copy lands. */}
+      <div ref={autoScroll.wipeCopyRef} className='pointer-events-none absolute inset-0' />
       {autoScroll.active && autoScroll.wipe && (
-        // The edge of a page wipe, moved by useAutoScroll every frame: the next
-        // page is pulled down over the page being read like a blind, and its
-        // edge casts a short shadow onto it, with a lit rim on dark themes.
-        // E-ink gets a plain 1px line (the global rule drops `shadow-`). The
-        // full-cell layer keeps the edge above the page snapshot.
-        <div
-          aria-hidden
-          data-page-wipe-above=''
-          className='pointer-events-none absolute inset-0 z-10 overflow-hidden'
-        >
-          <div
-            ref={autoScroll.wipeLineRef}
-            className={clsx(
-              'absolute left-0 top-0 h-2',
-              'not-eink:bg-linear-to-b theme-dark:from-black/55 from-black/30 to-transparent',
-              'theme-dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.4)]',
-              'eink:border-base-content eink:border-t',
-            )}
-          />
-        </div>
+        <>
+          {/* The edge of a page wipe, moved by useAutoScroll every frame: the
+              next page is pulled over the page being read like a blind, down
+              horizontal lines and across vertical ones in reading order, and
+              its edge casts a short shadow onto that page, with a lit rim on
+              dark themes. E-ink gets a plain 1px line (the global rule drops
+              `shadow-`). */}
+          <div aria-hidden className='pointer-events-none absolute inset-0 z-10 overflow-hidden'>
+            <div
+              ref={autoScroll.wipeLineRef}
+              className={clsx(
+                'absolute left-0 top-0',
+                'theme-dark:from-black/55 eink:border-base-content from-black/30 to-transparent',
+                !viewSettings?.vertical &&
+                  'not-eink:bg-linear-to-b theme-dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.4)] eink:border-t h-2',
+                viewSettings?.vertical &&
+                  viewSettings.rtl &&
+                  'not-eink:bg-linear-to-l theme-dark:shadow-[inset_-1px_0_0_rgb(255_255_255/0.4)] eink:border-r w-2 -translate-x-full',
+                viewSettings?.vertical &&
+                  !viewSettings.rtl &&
+                  'not-eink:bg-linear-to-r theme-dark:shadow-[inset_1px_0_0_rgb(255_255_255/0.4)] eink:border-l w-2',
+              )}
+            />
+          </div>
+        </>
       )}
       {autoScroll.active && (
         <AutoScrollControl
