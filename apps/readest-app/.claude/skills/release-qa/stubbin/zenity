@@ -1,0 +1,4 @@
+#!/bin/bash
+# Answers native dialogs with the exit code in $QA_DIR/zenity-answer (default 0 = OK).
+echo "$(date +%T) zenity $*" >> "$QA_DIR/portal.log"
+exit "$(cat "$QA_DIR/zenity-answer" 2>/dev/null || echo 0)"
