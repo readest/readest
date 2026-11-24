@@ -136,6 +136,8 @@ pub struct GetSysFontsListResponse {
 pub struct InterceptKeysRequest {
     pub volume_keys: Option<bool>,
     pub back_key: Option<bool>,
+    pub page_turner_keys: Option<bool>,
+    pub learn_mode: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -1155,4 +1157,34 @@ pub struct OnDeviceLlmGenerateResponse {
 #[serde(rename_all = "camelCase")]
 pub struct OnDeviceLlmCancelRequest {
     pub request_id: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::InterceptKeysRequest;
+    use serde_json::{json, Value};
+
+    // The JS payload is deserialized here and re-serialized for the Android and
+    // iOS plugins, so a field missing from the struct never reaches them.
+    #[test]
+    fn intercept_keys_request_forwards_every_field_to_the_mobile_plugins() {
+        let payload = json!({
+            "volumeKeys": true,
+            "backKey": false,
+            "pageTurnerKeys": true,
+            "learnMode": false,
+        });
+        let request: InterceptKeysRequest = serde_json::from_value(payload.clone()).unwrap();
+        assert_eq!(serde_json::to_value(request).unwrap(), payload);
+    }
+
+    #[test]
+    fn intercept_keys_request_leaves_unset_fields_null() {
+        let request: InterceptKeysRequest =
+            serde_json::from_value(json!({ "learnMode": true })).unwrap();
+        let forwarded = serde_json::to_value(request).unwrap();
+        assert_eq!(forwarded["learnMode"], Value::Bool(true));
+        assert_eq!(forwarded["pageTurnerKeys"], Value::Null);
+        assert_eq!(forwarded["volumeKeys"], Value::Null);
+    }
 }
