@@ -14,6 +14,8 @@ import type { XRay } from './snapshot';
 
 /** Book text in one request: enough for names and events to repeat within it. */
 const BATCH_CHARS = 12_000;
+/** Requests at once; as many as translating a page sends. */
+const IN_FLIGHT = 4;
 /** Names already in the X-Ray to send with it, the latest ones. */
 const KNOWN_NAMES = 200;
 
@@ -78,7 +80,10 @@ export const openMention = async (bookKey: string, mention: XRayMention) => {
 
 const controllers = new Map<string, AbortController>();
 
-export const stopXRayUpdate = (bookKey: string) => controllers.get(bookHashOf(bookKey))?.abort();
+const STOPPED = 'stopped';
+
+export const stopXRayUpdate = (bookKey: string) =>
+  controllers.get(bookHashOf(bookKey))?.abort(STOPPED);
 
 /** Forgets a book's X-Ray, once the reader confirms `question`. */
 export const clearBookXRay = async (bookKey: string, question: string): Promise<void> => {
@@ -115,10 +120,10 @@ export const updateXRay = async (
     const appService = await environmentConfig.getAppService();
     const targetLang =
       useReaderStore.getState().getViewSettings(bookKey)?.translateTargetLang || getTargetLang();
-    const batchChars =
-      translator.type === 'apple-intelligence'
-        ? onDeviceInputChars((await prepareOnDevice(targetLang)).contextSize)
-        : BATCH_CHARS;
+    const onDevice = translator.type === 'apple-intelligence';
+    const batchChars = onDevice
+      ? onDeviceInputChars((await prepareOnDevice(targetLang)).contextSize)
+      : BATCH_CHARS;
     const input = {
       bookTitle: book.title,
       bookAuthor: book.author,
@@ -131,22 +136,35 @@ export const updateXRay = async (
       getXRayEnd(appService, bookHash),
     ]);
     const known = new Set(names);
+    const inFlight: Promise<void>[] = [];
+    let saved: Promise<void> = Promise.resolve();
     let batch: XRayPassage[] = [];
     let chars = 0;
     const flush = async () => {
       setUpdate({ running: true });
-      const last = batch.at(-1)!;
-      const recent = [...known].slice(-KNOWN_NAMES);
-      const data = await extractXRay(translator, batch, recent, input, signal);
-      await saveXRayBatch(appService, bookHash, {
-        position: last.position,
-        endCfi: last.cfiAt(last.text.length),
-        data,
-      });
-      for (const { name } of data.entities) known.add(name);
-      bump();
+      const passages = batch;
       batch = [];
       chars = 0;
+      if (inFlight.length === (onDevice ? 1 : IN_FLIGHT)) await inFlight.shift();
+      const recent = [...known].slice(-KNOWN_NAMES);
+      const extracted = extractXRay(translator, passages, recent, input, signal);
+      extracted.catch(() => {});
+      // Saved in reading order, so that what is stored has no gaps; a failure
+      // keeps the ones before it and stops the ones after.
+      saved = saved.then(async () => {
+        const data = await extracted;
+        signal.throwIfAborted();
+        const last = passages.at(-1)!;
+        await saveXRayBatch(appService, bookHash, {
+          position: last.position,
+          endCfi: last.cfiAt(last.text.length),
+          data,
+        });
+        for (const { name } of data.entities) known.add(name);
+        bump();
+      });
+      saved.catch((err) => controller.abort(err));
+      inFlight.push(saved);
     };
     for await (const passage of readPassages(bookDoc, position, location)) {
       signal.throwIfAborted();
@@ -155,9 +173,10 @@ export const updateXRay = async (
       chars += passage.text.length;
     }
     if (batch.length && !wholeBatches) await flush();
+    await saved;
     if (known.size > names.length) await checkpointXRay(appService);
   } catch (err) {
-    if (!signal.aborted) error = err instanceof Error ? err.message : String(err);
+    if (signal.reason !== STOPPED) error = err instanceof Error ? err.message : String(err);
   } finally {
     controllers.delete(bookHash);
     setUpdate({ running: false, error });

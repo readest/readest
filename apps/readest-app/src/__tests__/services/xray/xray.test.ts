@@ -40,7 +40,13 @@ import { groundXRay } from '@/services/xray/extract';
 import { XRay } from '@/services/xray/snapshot';
 import { cfiOfMention, findMentions } from '@/services/xray/mentions';
 import { __resetXRayStoreForTests } from '@/services/xray/store';
-import { clearBookXRay, getBookXRay, updateXRay, useXRayStore } from '@/services/xray/xrayService';
+import {
+  clearBookXRay,
+  getBookXRay,
+  stopXRayUpdate,
+  updateXRay,
+  useXRayStore,
+} from '@/services/xray/xrayService';
 import type { XRayData } from '@/services/xray/types';
 import type { BookDoc } from '@/libs/document';
 import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
@@ -261,6 +267,63 @@ describe('updateXRay', () => {
     await updateXRay(BOOK);
     const prompts = h.generateChatText.mock.calls.map(([, { prompt }]) => JSON.parse(prompt));
     expect(prompts.map(({ known }) => known)).toEqual([[], ['Anna']]);
+  });
+
+  describe('with a long book', () => {
+    const passagesOf = ([, options]: unknown[]): string[] =>
+      JSON.parse((options as { prompt: string }).prompt).passages;
+    const answer = (index: number) => reply(entity(`Name ${index}`, 'Anna met Boris in Kazan.'));
+    beforeEach(() => {
+      h.bookData['bookDoc'] = createBook(2500).bookDoc;
+      h.location = pageAt(1);
+    });
+
+    it('asks several batches at once and saves them in reading order', async () => {
+      const waiting: ((text: string) => void)[] = [];
+      h.generateChatText.mockImplementation(() => new Promise((done) => waiting.push(done)));
+      const update = updateXRay(BOOK);
+      await vi.waitFor(() => expect(waiting).toHaveLength(4));
+      for (const index of [3, 2, 1]) waiting[index]!(answer(index));
+      await new Promise((done) => setTimeout(done, 20));
+      expect(await getBookXRay(BOOK)).toBeNull();
+      waiting[0]!(answer(0));
+      await vi.waitFor(() => expect(waiting.length).toBeGreaterThan(5));
+      for (let i = 4; i < 6; i++) waiting[i]!(answer(i));
+      await vi.waitFor(() => expect(useXRayStore.getState().revision).toBe(6));
+      await update;
+      expect(h.generateChatText).toHaveBeenCalledTimes(6);
+      const sent = h.generateChatText.mock.calls.flatMap(passagesOf).join('');
+      expect(sent).toBe(CHAPTERS[0]!.repeat(2500));
+    });
+
+    it('keeps the batches before a failure and reads on from there', async () => {
+      h.generateChatText.mockImplementation(async () => {
+        const call = h.generateChatText.mock.calls.length;
+        if (call === 3) throw new Error('quota');
+        return answer(call);
+      });
+      await updateXRay(BOOK);
+      expect(useXRayStore.getState().updates['hash']).toEqual({ running: false, error: 'quota' });
+      expect(useXRayStore.getState().revision).toBe(2);
+      h.generateChatText.mockClear();
+      h.generateChatText.mockImplementation(async () => answer(9));
+      await updateXRay(BOOK);
+      expect(h.generateChatText).toHaveBeenCalledTimes(4);
+    });
+
+    it('stops without an error when asked to', async () => {
+      h.generateChatText.mockImplementation(
+        (_translator: unknown, { abortSignal }: { abortSignal: AbortSignal }) =>
+          new Promise((_done, fail) =>
+            abortSignal.addEventListener('abort', () => fail(new Error('aborted'))),
+          ),
+      );
+      const update = updateXRay(BOOK);
+      await vi.waitFor(() => expect(h.generateChatText).toHaveBeenCalled());
+      stopXRayUpdate(BOOK);
+      await update;
+      expect(useXRayStore.getState().updates['hash']).toEqual({ running: false });
+    });
   });
 
   it('is cleared only once confirmed', async () => {
