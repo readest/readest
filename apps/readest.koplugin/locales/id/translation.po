@@ -356,6 +356,9 @@ msgstr "Sidik jari buku"
 msgid "Identifiers"
 msgstr "Pengenal"
 
+msgid "File Name"
+msgstr "Nama File"
+
 msgid "Last Synced"
 msgstr "Sinkronisasi terakhir"
 

@@ -68,6 +68,7 @@ export const LibraryGroupByType = {
 export type LibraryGroupByType = (typeof LibraryGroupByType)[keyof typeof LibraryGroupByType];
 
 export type KOSyncChecksumMethod = 'binary' | 'filename';
+export type KOSyncFilenameFormat = 'original' | 'author-title' | 'title-author';
 export type KOSyncStrategy = 'prompt' | 'silent' | 'send' | 'receive';
 
 export interface ReadSettings {
@@ -111,6 +112,11 @@ export interface KOSyncSettings {
   deviceId: string;
   deviceName: string;
   checksumMethod: KOSyncChecksumMethod;
+  /**
+   * The name the File Name checksum hashes for a book without a name of its
+   * own (`BookMetadata.kosyncFilename`). Unset means 'original'.
+   */
+  filenameFormat?: KOSyncFilenameFormat;
   strategy: KOSyncStrategy;
   customHeaders?: Record<string, string>;
   /**

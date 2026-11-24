@@ -356,6 +356,9 @@ msgstr "Vingerafdruk van boek"
 msgid "Identifiers"
 msgstr "Identificatoren"
 
+msgid "File Name"
+msgstr "Bestandsnaam"
+
 msgid "Last Synced"
 msgstr "Laatst gesynchroniseerd"
 

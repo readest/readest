@@ -2954,8 +2954,13 @@
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“சொல்”, “குறிப்பு”, “அகராதிப் பதிவு” ஆகியவை “{{name}}” இல் உள்ள அதே புலங்களைப் பயன்படுத்த வேண்டும்",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} சொற்கள் அனுப்பப்படவில்லை: அவற்றின் சுயவிவரத்தின் குறிப்பு வகை AnkiDroid-இல் இல்லை, அல்லது அதில் “சொல்” புலம் இல்லை",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} சொற்கள் அனுப்பப்படவில்லை: அவற்றின் சுயவிவரத்தின் குறிப்பு வகை AnkiDroid-இல் இல்லை, அல்லது அதில் “சொல்” புலம் இல்லை",
+  "File Name Format": "கோப்புப் பெயர் வடிவம்",
+  "Original": "அசல்",
+  "Author - Title": "ஆசிரியர் - தலைப்பு",
+  "Title - Author": "தலைப்பு - ஆசிரியர்",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"கோப்புப் பெயர் வடிவம்\", KOReader OPDS பதிவிறக்கங்களுக்குப் பெயரிடுவது போலவே, தலைப்பு மற்றும் ஆசிரியர்களைக் கொண்டு பெயரை உருவாக்குகிறது.",
+  "Set a single book's file name in the reader's Sync Info.": "ஒரு புத்தகத்தின் கோப்புப் பெயரை வாசிப்புப் பக்கத்தின் ஒத்திசைவு தகவலில் அமைக்கவும்.",
   "Xiaomi Pen Squeeze": "Xiaomi பேனா அழுத்துதல்",
-  "Xiaomi Pen Double Tap": "Xiaomi பேனா இரட்டைத் தட்டு",
   "Xiaomi Pen Slide Up": "Xiaomi பேனா மேலே சறுக்கல்",
   "Xiaomi Pen Slide Down": "Xiaomi பேனா கீழே சறுக்கல்"
 }

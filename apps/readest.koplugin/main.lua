@@ -800,6 +800,10 @@ function ReadestSync:showSyncInfo()
         _("Identifiers"),
         #info.identifiers > 0 and table.concat(info.identifiers, ", ") or placeholder,
     })
+    -- KOReader's KOSync "File name" checksum hashes this name; Readest's Sync
+    -- Info shows the one it hashes, so the two can be matched (#7864).
+    local _dir, filename = require("util").splitFilePathName(self.ui.document.file)
+    table.insert(kv_pairs, { _("File Name"), filename ~= "" and filename or placeholder })
     table.insert(kv_pairs, { _("Last Synced"), last_synced_label })
 
     UIManager:show(KeyValuePage:new{

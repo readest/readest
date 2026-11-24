@@ -3270,8 +3270,13 @@
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_few": "لم تُرسل كلمات: {{count}}، لأن نوع ملاحظة ملف تعريفها غير موجود في AnkiDroid أو ليس فيه حقل «كلمة»",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_many": "لم تُرسل كلمات: {{count}}، لأن نوع ملاحظة ملف تعريفها غير موجود في AnkiDroid أو ليس فيه حقل «كلمة»",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "لم تُرسل كلمات: {{count}}، لأن نوع ملاحظة ملف تعريفها غير موجود في AnkiDroid أو ليس فيه حقل «كلمة»",
+  "File Name Format": "تنسيق اسم الملف",
+  "Original": "الأصلي",
+  "Author - Title": "المؤلف - العنوان",
+  "Title - Author": "العنوان - المؤلف",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "يبني «تنسيق اسم الملف» الاسم من العنوان والمؤلفين، كما يسمّي KOReader تنزيلات OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "عيّن اسم الملف لكتاب واحد في «معلومات المزامنة» في واجهة القراءة.",
   "Xiaomi Pen Squeeze": "ضغط قلم Xiaomi",
-  "Xiaomi Pen Double Tap": "نقر مزدوج على قلم Xiaomi",
   "Xiaomi Pen Slide Up": "انزلاق قلم Xiaomi لأعلى",
   "Xiaomi Pen Slide Down": "انزلاق قلم Xiaomi لأسفل"
 }

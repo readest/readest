@@ -356,6 +356,9 @@ msgstr "Prstni odtis knjige"
 msgid "Identifiers"
 msgstr "Identifikatorji"
 
+msgid "File Name"
+msgstr "Ime datoteke"
+
 msgid "Last Synced"
 msgstr "Zadnja sinhronizacija"
 

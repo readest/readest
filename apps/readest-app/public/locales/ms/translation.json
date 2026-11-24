@@ -2875,8 +2875,13 @@
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Untuk membuka “Pautan ke buku” daripada kad, hidupkan “Allow cards to launch other apps” dalam bahagian Lanjutan tetapan AnkiDroid",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Perkataan”, “Petunjuk” dan “Entri kamus” mesti menggunakan medan yang sama seperti dalam “{{name}}”",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} perkataan tidak dihantar: jenis nota profilnya tiada dalam AnkiDroid atau tiada medan “Perkataan”",
+  "File Name Format": "Format Nama Fail",
+  "Original": "Asal",
+  "Author - Title": "Pengarang - Tajuk",
+  "Title - Author": "Tajuk - Pengarang",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Format Nama Fail” membina nama daripada tajuk dan pengarang, seperti KOReader menamakan muat turun OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "Tetapkan nama fail sebuah buku dalam Maklumat penyegerakan pada paparan bacaan.",
   "Xiaomi Pen Squeeze": "Picit Xiaomi Pen",
-  "Xiaomi Pen Double Tap": "Ketik Dua Kali Xiaomi Pen",
   "Xiaomi Pen Slide Up": "Luncur ke atas Xiaomi Pen",
   "Xiaomi Pen Slide Down": "Luncur ke bawah Xiaomi Pen"
 }

@@ -3033,8 +3033,13 @@
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} palabras sin enviar: el tipo de nota de su perfil no está en AnkiDroid o no tiene campo «Palabra»",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_many": "{{count}} palabras sin enviar: el tipo de nota de su perfil no está en AnkiDroid o no tiene campo «Palabra»",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} palabras sin enviar: el tipo de nota de su perfil no está en AnkiDroid o no tiene campo «Palabra»",
+  "File Name Format": "Formato del nombre de archivo",
+  "Original": "Original",
+  "Author - Title": "Autor - Título",
+  "Title - Author": "Título - Autor",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "«Formato del nombre de archivo» crea el nombre a partir del título y los autores, como KOReader nombra las descargas OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "Define el nombre de archivo de un libro concreto en la Información de sincronización del lector.",
   "Xiaomi Pen Squeeze": "Apretón del lápiz Xiaomi",
-  "Xiaomi Pen Double Tap": "Doble toque del lápiz Xiaomi",
   "Xiaomi Pen Slide Up": "Deslizamiento del lápiz Xiaomi hacia arriba",
   "Xiaomi Pen Slide Down": "Deslizamiento del lápiz Xiaomi hacia abajo"
 }

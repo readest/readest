@@ -2954,8 +2954,13 @@
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“শব্দ”, “ইঙ্গিত” ও “অভিধানের ভুক্তি”-কে “{{name}}”-এর মতো একই ফিল্ড ব্যবহার করতে হবে",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}}টি শব্দ পাঠানো হয়নি: সেগুলোর প্রোফাইলের নোটের ধরন AnkiDroid-এ নেই বা তাতে “শব্দ” ফিল্ড নেই",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}}টি শব্দ পাঠানো হয়নি: সেগুলোর প্রোফাইলের নোটের ধরন AnkiDroid-এ নেই বা তাতে “শব্দ” ফিল্ড নেই",
+  "File Name Format": "ফাইলের নামের ফরম্যাট",
+  "Original": "মূল",
+  "Author - Title": "লেখক - শিরোনাম",
+  "Title - Author": "শিরোনাম - লেখক",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"ফাইলের নামের ফরম্যাট\" শিরোনাম ও লেখকদের নাম থেকে নাম তৈরি করে, যেভাবে KOReader OPDS ডাউনলোডের নাম দেয়।",
+  "Set a single book's file name in the reader's Sync Info.": "রিডারের সিঙ্ক তথ্যে একটি বইয়ের ফাইলের নাম সেট করুন।",
   "Xiaomi Pen Squeeze": "Xiaomi পেন স্কুইজ",
-  "Xiaomi Pen Double Tap": "Xiaomi পেন ডাবল ট্যাপ",
   "Xiaomi Pen Slide Up": "Xiaomi পেন উপরে স্লাইড",
   "Xiaomi Pen Slide Down": "Xiaomi পেন নিচে স্লাইড"
 }

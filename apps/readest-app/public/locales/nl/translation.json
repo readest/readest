@@ -2954,8 +2954,13 @@
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "‘Woord’, ‘Hint’ en ‘Woordenboekitem’ moeten dezelfde velden gebruiken als in ‘{{name}}’",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} woorden niet verzonden: het notitietype van hun profiel staat niet in AnkiDroid of heeft geen veld ‘Woord’",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} woorden niet verzonden: het notitietype van hun profiel staat niet in AnkiDroid of heeft geen veld ‘Woord’",
+  "File Name Format": "Bestandsnaamindeling",
+  "Original": "Origineel",
+  "Author - Title": "Auteur - Titel",
+  "Title - Author": "Titel - Auteur",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "'Bestandsnaamindeling' stelt de naam samen uit titel en auteurs, zoals KOReader OPDS-downloads benoemt.",
+  "Set a single book's file name in the reader's Sync Info.": "Stel de bestandsnaam van één boek in via Synchronisatie-info in de leesweergave.",
   "Xiaomi Pen Squeeze": "Xiaomi Pen knijpen",
-  "Xiaomi Pen Double Tap": "Xiaomi Pen dubbel tikken",
   "Xiaomi Pen Slide Up": "Xiaomi Pen omhoog schuiven",
   "Xiaomi Pen Slide Down": "Xiaomi Pen omlaag schuiven"
 }

@@ -28,7 +28,6 @@ const NATIVE_KEY_LABELS: Record<string, string> = {
   PencilDoubleTap: _('Pencil Double Tap'),
   PencilSqueeze: _('Pencil Squeeze'),
   XiaomiSqueeze: _('Xiaomi Pen Squeeze'),
-  XiaomiDoubleTap: _('Xiaomi Pen Double Tap'),
   XiaomiSlideUp: _('Xiaomi Pen Slide Up'),
   XiaomiSlideDown: _('Xiaomi Pen Slide Down'),
 };
@@ -42,7 +41,6 @@ const PENCIL_NATIVE_KEYS = new Set([
   'PencilDoubleTap',
   'PencilSqueeze',
   'XiaomiSqueeze',
-  'XiaomiDoubleTap',
   'XiaomiSlideUp',
   'XiaomiSlideDown',
 ]);

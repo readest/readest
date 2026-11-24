@@ -9,12 +9,14 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Parcel
+import android.os.RemoteException
 import android.provider.Settings
 import android.util.Log
 
 /**
  * Registers with HyperOS's pencil engine so the system delivers the Focus Pen
- * Pro gesture keycodes (squeeze / double tap / slide) to thisActivity.
+ * Pro gesture keycodes to this Activity. Readest supports only squeeze, slide up
+ * and slide down; double tap is intentionally unsupported.
  * Uses the public Binder protocol, not the vendor SDK AAR; see docs at
  * https://github.com/LanRhyme/ReveriePaint/blob/main/docs/XIAOMI-STYLUS.md
  */
@@ -57,6 +59,8 @@ class XiaomiStylusService(context: Context) {
         }
     }
 
+    val isReady: Boolean get() = active && enabled
+
     fun start() {
         active = true
         if (connection == null) bind()
@@ -93,6 +97,11 @@ class XiaomiStylusService(context: Context) {
                 } catch (error: Exception) {
                     Log.w(TAG, "Cannot register pencil gesture service", error)
                     unbind()
+                    // DeadObjectException is a RemoteException too; retry only
+                    // transport failures, not unsupported protocols or settings.
+                    if (active && error is RemoteException) {
+                        handler.postDelayed(reconnect, 500L)
+                    }
                 }
             }
 
@@ -118,11 +127,11 @@ class XiaomiStylusService(context: Context) {
         try {
             val intent = Intent().setComponent(ComponentName(PACKAGE, SERVICE))
             if (!appContext.bindService(intent, newConnection, Context.BIND_AUTO_CREATE)) {
-                connection = null
+                if (connection === newConnection) unbind()
                 Log.w(TAG, "Pencil gesture service unavailable on this system")
             }
         } catch (error: Exception) {
-            connection = null
+            if (connection === newConnection) unbind()
             Log.w(TAG, "Cannot bind pencil gesture service", error)
         }
     }

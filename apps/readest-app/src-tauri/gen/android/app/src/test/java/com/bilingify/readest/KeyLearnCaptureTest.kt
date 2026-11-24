@@ -22,10 +22,10 @@ class KeyLearnCaptureTest {
     }
 
     @Test
-    fun `xiaomi stylus gestures use native learning`() {
-        assertTrue(shouldCaptureNativeLearnKey(XiaomiStylusKeys.SQUEEZE))
-        assertTrue(shouldCaptureNativeLearnKey(XiaomiStylusKeys.DOUBLE_TAP))
-        assertTrue(shouldCaptureNativeLearnKey(XiaomiStylusKeys.SLIDE_UP))
-        assertTrue(shouldCaptureNativeLearnKey(XiaomiStylusKeys.SLIDE_DOWN))
+    fun `xiaomi codes cannot bypass source filtering via learn mode`() {
+        assertFalse(shouldCaptureNativeLearnKey(XiaomiStylusKeys.SQUEEZE))
+        assertFalse(shouldCaptureNativeLearnKey(KeyEvent.KEYCODE_BUTTON_8))
+        assertFalse(shouldCaptureNativeLearnKey(XiaomiStylusKeys.SLIDE_UP))
+        assertFalse(shouldCaptureNativeLearnKey(XiaomiStylusKeys.SLIDE_DOWN))
     }
 }

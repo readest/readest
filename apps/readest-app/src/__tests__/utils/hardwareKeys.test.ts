@@ -303,11 +303,6 @@ describe('Xiaomi Focus Pen Pro native keys', () => {
       id: 'XiaomiSqueeze',
       label: 'Xiaomi Pen Squeeze',
     });
-    expect(normalizeNativeKey('XiaomiDoubleTap')).toEqual({
-      source: 'native',
-      id: 'XiaomiDoubleTap',
-      label: 'Xiaomi Pen Double Tap',
-    });
     expect(normalizeNativeKey('XiaomiSlideUp')).toEqual({
       source: 'native',
       id: 'XiaomiSlideUp',
@@ -322,7 +317,7 @@ describe('Xiaomi Focus Pen Pro native keys', () => {
 
   test('isPencilNativeKey treats xiaomi gestures as pencil keys', () => {
     expect(isPencilNativeKey('XiaomiSqueeze')).toBe(true);
-    expect(isPencilNativeKey('XiaomiDoubleTap')).toBe(true);
+    expect(isPencilNativeKey('XiaomiDoubleTap')).toBe(false);
     expect(isPencilNativeKey('XiaomiSlideUp')).toBe(true);
     expect(isPencilNativeKey('XiaomiSlideDown')).toBe(true);
   });

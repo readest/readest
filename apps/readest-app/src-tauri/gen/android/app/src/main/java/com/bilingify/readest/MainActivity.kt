@@ -27,18 +27,15 @@ import com.readest.native_bridge.SelectionMenuSuppressor
 import com.readest.native_bridge.XiaomiStylusKeys
 import com.readest.native_bridge.XiaomiStylusService
 
-internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when {
-    XiaomiStylusKeys.isStylusKey(keyCode) -> true
-    else -> when (keyCode) {
-        KeyEvent.KEYCODE_VOLUME_DOWN,
-        KeyEvent.KEYCODE_VOLUME_UP,
-        KeyEvent.KEYCODE_MEDIA_NEXT,
-        KeyEvent.KEYCODE_MEDIA_PREVIOUS,
-        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
-        KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
-        KeyEvent.KEYCODE_MEDIA_REWIND -> true
-        else -> false
-    }
+internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when (keyCode) {
+    KeyEvent.KEYCODE_VOLUME_DOWN,
+    KeyEvent.KEYCODE_VOLUME_UP,
+    KeyEvent.KEYCODE_MEDIA_NEXT,
+    KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+    KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+    KeyEvent.KEYCODE_MEDIA_REWIND -> true
+    else -> false
 }
 
 class MainActivity : TauriActivity(), KeyDownInterceptor {
@@ -214,7 +211,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         // DOWNs, so latch each gesture: forward only its first DOWN and clear the
         // latch on UP/cancel. Without this a gesture turns into repeated page
         // turns or chapter jumps.
-        if (XiaomiStylusKeys.isStylusKey(keyCode)) {
+        if (XiaomiStylusKeys.shouldCapture(keyCode, event.source, xiaomiStylus.isReady)) {
             if (event.action == KeyEvent.ACTION_UP || event.isCanceled) {
                 xiaomiStylusKeys.onUp(keyCode)
                 return true

@@ -3033,8 +3033,13 @@
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} מילים לא נשלחו: סוג ההערה של הפרופיל שלהן אינו ב-AnkiDroid או שאין בו שדה “מילה”",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_two": "{{count}} מילים לא נשלחו: סוג ההערה של הפרופיל שלהן אינו ב-AnkiDroid או שאין בו שדה “מילה”",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} מילים לא נשלחו: סוג ההערה של הפרופיל שלהן אינו ב-AnkiDroid או שאין בו שדה “מילה”",
+  "File Name Format": "תבנית שם קובץ",
+  "Original": "מקורי",
+  "Author - Title": "מחבר - כותרת",
+  "Title - Author": "כותרת - מחבר",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "„תבנית שם קובץ” בונה את השם מהכותרת ומהמחברים, כפי ש-KOReader נותן שמות להורדות OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "הגדירו שם קובץ לספר בודד ב„פרטי סנכרון” במצב קריאה.",
   "Xiaomi Pen Squeeze": "לחיצה על עט Xiaomi",
-  "Xiaomi Pen Double Tap": "הקשה כפולה על עט Xiaomi",
   "Xiaomi Pen Slide Up": "החלקת עט Xiaomi למעלה",
   "Xiaomi Pen Slide Down": "החלקת עט Xiaomi למטה"
 }

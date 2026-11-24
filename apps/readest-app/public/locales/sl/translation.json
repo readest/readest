@@ -3112,8 +3112,13 @@
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_two": "Neposlane besede: {{count}} — vrste zapiska njihovega profila ni v AnkiDroidu ali pa nima polja »Beseda«",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_few": "Neposlane besede: {{count}} — vrste zapiska njihovega profila ni v AnkiDroidu ali pa nima polja »Beseda«",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "Neposlane besede: {{count}} — vrste zapiska njihovega profila ni v AnkiDroidu ali pa nima polja »Beseda«",
+  "File Name Format": "Oblika imena datoteke",
+  "Original": "Izvirno",
+  "Author - Title": "Avtor - Naslov",
+  "Title - Author": "Naslov - Avtor",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "„Oblika imena datoteke“ sestavi ime iz naslova in avtorjev, tako kot KOReader poimenuje prenose OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "Ime datoteke posamezne knjige nastavite v Informacijah o sinhronizaciji v bralnem pogledu.",
   "Xiaomi Pen Squeeze": "Stisk svinčnika Xiaomi",
-  "Xiaomi Pen Double Tap": "Dvojni dotik svinčnika Xiaomi",
   "Xiaomi Pen Slide Up": "Drsenje navzgor s svinčnikom Xiaomi",
   "Xiaomi Pen Slide Down": "Drsenje navzdol s svinčnikom Xiaomi"
 }
