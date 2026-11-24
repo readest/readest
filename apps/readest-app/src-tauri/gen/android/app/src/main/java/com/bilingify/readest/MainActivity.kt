@@ -3,6 +3,7 @@ package com.bilingify.readest
 import android.os.Build
 import android.os.Bundle
 import android.view.ActionMode
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.webkit.WebView
@@ -24,8 +25,7 @@ import app.tauri.plugin.JSObject
 import com.readest.native_bridge.KeyDownInterceptor
 import com.readest.native_bridge.NativeBridgePlugin
 import com.readest.native_bridge.SelectionMenuSuppressor
-import com.readest.native_bridge.XiaomiStylusKeys
-import com.readest.native_bridge.XiaomiStylusService
+import com.readest.native_bridge.XiaomiPenEngine
 
 internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when (keyCode) {
     KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -38,14 +38,29 @@ internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when (keyCode)
     else -> false
 }
 
+// Xiaomi Focus Pen Pro gestures (#7875) reuse gamepad keycodes, so they are
+// pen gestures only while HyperOS's pen engine has registered Readest, and
+// never from a gamepad or joystick. Double tap (BUTTON_8) is left out: the
+// pen recognizes it unreliably.
+private val xiaomiPenKeys = mapOf(
+    KeyEvent.KEYCODE_BUTTON_7 to "XiaomiSqueeze",
+    KeyEvent.KEYCODE_BUTTON_9 to "XiaomiSlideUp",
+    KeyEvent.KEYCODE_BUTTON_10 to "XiaomiSlideDown",
+)
+
+internal fun xiaomiPenKeyName(keyCode: Int, source: Int, penEngineRegistered: Boolean): String? {
+    val fromController = source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+        source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+    return if (penEngineRegistered && !fromController) xiaomiPenKeys[keyCode] else null
+}
+
 class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var wv: WebView? = null
-    private val xiaomiStylus by lazy { XiaomiStylusService(this) }
-    private val xiaomiStylusKeys = XiaomiStylusKeys()
     private var interceptVolumeKeysEnabled = false
     private var interceptBackKeyEnabled = false
     private var interceptPageTurnerKeysEnabled = false
     private var keyLearnModeEnabled = false
+    private val xiaomiPen by lazy { XiaomiPenEngine(this) }
     // touchmove fires continuously; throttle its dispatch to ~10/s since each one
     // is an evaluateJavascript round-trip into the WebView.
     private val touchMoveThrottleMs = 100L
@@ -105,10 +120,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     )
 
     private fun keyNameFor(keyCode: Int): String =
-        keyEventMap[keyCode]
-            ?: mediaKeyMap[keyCode]
-            ?: XiaomiStylusKeys.nameFor(keyCode)
-            ?: "Keycode$keyCode"
+        keyEventMap[keyCode] ?: mediaKeyMap[keyCode] ?: "Keycode$keyCode"
 
     private fun forwardKeyToWebView(keyName: String, keyCode: Int) {
         wv?.evaluateJavascript(
@@ -203,34 +215,18 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val keyCode = event.keyCode
-
-        // Xiaomi Focus Pen Pro gestures are delivered as private keycodes once
-        // the pencil-engine service is registered. A single physical gesture can
-        // be dispatched twice (Activity then View) and long-press emits autorepeat
-        // DOWNs, so latch each gesture: forward only its first DOWN and clear the
-        // latch on UP/cancel. Without this a gesture turns into repeated page
-        // turns or chapter jumps.
-        if (XiaomiStylusKeys.shouldCapture(keyCode, event.source, xiaomiStylus.isReady)) {
-            if (event.action == KeyEvent.ACTION_UP || event.isCanceled) {
-                xiaomiStylusKeys.onUp(keyCode)
-                return true
-            }
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                val isFirstDown = xiaomiStylusKeys.onDown(keyCode, event.repeatCount) != null
-                if (isFirstDown) {
-                    android.util.Log.d(
-                        "XiaomiStylus",
-                        "gesture keycode=$keyCode name=${XiaomiStylusKeys.nameFor(keyCode)}",
-                    )
-                    forwardKeyToWebView(XiaomiStylusKeys.nameFor(keyCode)!!, keyCode)
-                }
-                return true
-            }
-            return true
-        }
-
         if (event.action == KeyEvent.ACTION_DOWN) {
+            val keyCode = event.keyCode
+
+            // Pen gestures are always forwarded, like Apple Pencil on iOS: JS
+            // binds them and turns pages without any interception. A held
+            // gesture auto-repeats, so forward only its first DOWN.
+            val penKeyName = xiaomiPenKeyName(keyCode, event.source, xiaomiPen.registered)
+            if (penKeyName != null) {
+                if (event.repeatCount == 0) forwardKeyToWebView(penKeyName, keyCode)
+                return true
+            }
+
             // Only keys forwarded natively at runtime are learned natively.
             // Keyboard, D-pad, and remote keys continue to WebView so their
             // DOM identity and complete modifier chord are preserved.
@@ -318,10 +314,6 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        // Xiaomi Focus Pen Pro gestures are only delivered to apps registered
-        // with the pencil engine. On other brands this bind simply no-ops.
-        xiaomiStylus.start()
-
         handleIncomingIntent(intent)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -380,20 +372,21 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         NativeBridgePlugin.deliverActivityResult(requestCode, resultCode, data)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        intent?.let { handleIncomingIntent(it) }
+    // The pen engine sends its gestures to the registered app instead of the
+    // system, so hold the registration only while Readest is in front.
+    override fun onResume() {
+        super.onResume()
+        xiaomiPen.register()
     }
 
     override fun onPause() {
-        xiaomiStylusKeys.reset()
+        xiaomiPen.unregister()
         super.onPause()
     }
 
-    override fun onDestroy() {
-        xiaomiStylusKeys.reset()
-        xiaomiStylus.stop()
-        super.onDestroy()
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent?.let { handleIncomingIntent(it) }
     }
 
     private fun handleIncomingIntent(intent: Intent) {
