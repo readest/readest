@@ -123,7 +123,7 @@ const ask = async (
   }
 };
 
-export interface XRayExtractInput {
+interface XRayExtractInput {
   bookTitle: string;
   bookAuthor: string;
   sourceLang: string;

@@ -37,7 +37,7 @@ export interface XRayRelationship {
   quotes: XRayQuote[];
 }
 
-export interface XRayEvent {
+interface XRayEvent {
   summary: string;
   quotes: XRayQuote[];
 }

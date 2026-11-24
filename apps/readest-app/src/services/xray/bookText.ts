@@ -19,7 +19,7 @@ interface TextNode {
 }
 
 /** A section's text with its white space collapsed, and the way back into its document. */
-export class SectionText {
+class SectionText {
   readonly text: string;
   private readonly nodes: TextNode[] = [];
 
@@ -127,7 +127,7 @@ export const loadSection = async (bookDoc: BookDoc, index: number): Promise<Sect
 };
 
 /** The sections up to the page at `location`, and where in the last one it starts. */
-export async function* readSections(
+async function* readSections(
   bookDoc: BookDoc,
   location: string,
   from = 0,

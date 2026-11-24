@@ -4,7 +4,7 @@ import type { AppService } from '@/types/system';
 import { XRay } from './snapshot';
 import type { XRayData } from './types';
 
-export interface XRayBatch {
+interface XRayBatch {
   position: number;
   endCfi: string;
   data: XRayData;

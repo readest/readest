@@ -38,7 +38,7 @@ const addFacts = (list: XRayFact[], facts: readonly XRayFact[]) => {
 
 const typedKey = (type: XRayEntity['type'], name: string) => `${type}\0${xrayKey(name)}`;
 
-export interface XRayLink {
+interface XRayLink {
   relationship: XRayRelationship;
   /** The entity on the other end, when the X-Ray has one. */
   other?: XRayEntity;
