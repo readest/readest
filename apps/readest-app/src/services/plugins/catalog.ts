@@ -1,8 +1,9 @@
 import { yomitanPluginManifest } from '@/plugins/yomitan/manifest';
+import { ocrPluginManifest } from '@/plugins/ocr/manifest';
 import type { PluginManifest } from './contract';
 import type { PluginWorkerLike } from './runtime';
 
-export type PluginWorkerRole = 'lookup' | 'build';
+export type PluginWorkerRole = 'lookup' | 'build' | 'recognize';
 
 export interface BundledPluginDefinition {
   manifest: PluginManifest;
@@ -15,7 +16,13 @@ const yomitanPlugin: BundledPluginDefinition = {
     new Worker(new URL('../../plugins/yomitan/worker.ts', import.meta.url), { type: 'module' }),
 };
 
-export const bundledPluginCatalog: readonly BundledPluginDefinition[] = [yomitanPlugin];
+const ocrPlugin: BundledPluginDefinition = {
+  manifest: ocrPluginManifest,
+  createWorker: () =>
+    new Worker(new URL('../../plugins/ocr/worker.ts', import.meta.url), { type: 'module' }),
+};
+
+export const bundledPluginCatalog: readonly BundledPluginDefinition[] = [yomitanPlugin, ocrPlugin];
 
 export const findDictionaryFormatPlugin = (
   extension: string,
