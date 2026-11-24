@@ -44,6 +44,7 @@ internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when {
 class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var wv: WebView? = null
     private val xiaomiStylus by lazy { XiaomiStylusService(this) }
+    private val xiaomiStylusKeys = XiaomiStylusKeys()
     private var interceptVolumeKeysEnabled = false
     private var interceptBackKeyEnabled = false
     private var interceptPageTurnerKeysEnabled = false
@@ -205,23 +206,39 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.action == KeyEvent.ACTION_DOWN) {
-            val keyCode = event.keyCode
+        val keyCode = event.keyCode
 
+        // Xiaomi Focus Pen Pro gestures are delivered as private keycodes once
+        // the pencil-engine service is registered. A single physical gesture can
+        // be dispatched twice (Activity then View) and long-press emits autorepeat
+        // DOWNs, so latch each gesture: forward only its first DOWN and clear the
+        // latch on UP/cancel. Without this a gesture turns into repeated page
+        // turns or chapter jumps.
+        if (XiaomiStylusKeys.isStylusKey(keyCode)) {
+            if (event.action == KeyEvent.ACTION_UP || event.isCanceled) {
+                xiaomiStylusKeys.onUp(keyCode)
+                return true
+            }
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                val isFirstDown = xiaomiStylusKeys.onDown(keyCode, event.repeatCount) != null
+                if (isFirstDown) {
+                    android.util.Log.d(
+                        "XiaomiStylus",
+                        "gesture keycode=$keyCode name=${XiaomiStylusKeys.nameFor(keyCode)}",
+                    )
+                    forwardKeyToWebView(XiaomiStylusKeys.nameFor(keyCode)!!, keyCode)
+                }
+                return true
+            }
+            return true
+        }
+
+        if (event.action == KeyEvent.ACTION_DOWN) {
             // Only keys forwarded natively at runtime are learned natively.
             // Keyboard, D-pad, and remote keys continue to WebView so their
             // DOM identity and complete modifier chord are preserved.
             if (keyLearnModeEnabled && shouldCaptureNativeLearnKey(keyCode)) {
                 forwardKeyToWebView(keyNameFor(keyCode), keyCode)
-                return true
-            }
-
-            // Xiaomi Focus Pen Pro gestures (squeeze / double tap / slide) are
-            // delivered as private keycodes once the pencil-engine service is
-            // registered. Forward them so the JS page-turn binding can resolve
-            // them; an unbound gesture is a no-op on the JS side.
-            if (XiaomiStylusKeys.isStylusKey(keyCode)) {
-                forwardKeyToWebView(XiaomiStylusKeys.nameFor(keyCode)!!, keyCode)
                 return true
             }
 
@@ -371,7 +388,13 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         intent?.let { handleIncomingIntent(it) }
     }
 
+    override fun onPause() {
+        xiaomiStylusKeys.reset()
+        super.onPause()
+    }
+
     override fun onDestroy() {
+        xiaomiStylusKeys.reset()
         xiaomiStylus.stop()
         super.onDestroy()
     }

@@ -24,4 +24,42 @@ class XiaomiStylusKeysTest {
         assertEquals("XiaomiSlideDown", XiaomiStylusKeys.nameFor(XiaomiStylusKeys.SLIDE_DOWN))
         assertEquals(null, XiaomiStylusKeys.nameFor(KeyEvent.KEYCODE_VOLUME_UP))
     }
+
+    @Test
+    fun `a gesture fires only once until it is released`() {
+        val keys = XiaomiStylusKeys()
+        // First DOWN of each gesture is delivered.
+        assertEquals(
+            XiaomiStylusKeys.SQUEEZE,
+            keys.onDown(XiaomiStylusKeys.SQUEEZE, 0),
+        )
+        // A repeated DOWN (long-press autorepeat) while still held is ignored.
+        assertEquals(null, keys.onDown(XiaomiStylusKeys.SQUEEZE, 1))
+        assertEquals(null, keys.onDown(XiaomiStylusKeys.SQUEEZE, 0))
+        // UP clears the latch; the next DOWN is delivered again.
+        keys.onUp(XiaomiStylusKeys.SQUEEZE)
+        assertEquals(
+            XiaomiStylusKeys.SQUEEZE,
+            keys.onDown(XiaomiStylusKeys.SQUEEZE, 0),
+        )
+    }
+
+    @Test
+    fun `gestures are latched independently`() {
+        val keys = XiaomiStylusKeys()
+        assertEquals(
+            XiaomiStylusKeys.DOUBLE_TAP,
+            keys.onDown(XiaomiStylusKeys.DOUBLE_TAP, 0),
+        )
+        assertEquals(
+            XiaomiStylusKeys.SLIDE_UP,
+            keys.onDown(XiaomiStylusKeys.SLIDE_UP, 0),
+        )
+        assertEquals(null, keys.onDown(XiaomiStylusKeys.DOUBLE_TAP, 0))
+        keys.reset()
+        assertEquals(
+            XiaomiStylusKeys.DOUBLE_TAP,
+            keys.onDown(XiaomiStylusKeys.DOUBLE_TAP, 0),
+        )
+    }
 }
