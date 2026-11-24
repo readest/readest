@@ -108,6 +108,41 @@ describe('saveSettings', () => {
     expect(JSON.parse(files.get(SETTINGS_FILENAME)!).replicaDeviceId).toBe('d3');
   });
 
+  // saveSysSettings changes the store's settings object in place, so a save can
+  // pass the very object an in-flight write already serialized.
+  it('writes a change saved on the same object while its previous write is in flight', async () => {
+    const { fs, files } = makeFs();
+    files.set(SETTINGS_FILENAME, '{}');
+    const writeFile = fs.writeFile.bind(fs);
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let inFlight!: () => void;
+    const started = new Promise<void>((resolve) => {
+      inFlight = resolve;
+    });
+    let holdNext = true;
+    fs.writeFile = async (path, base, content) => {
+      if (path === SETTINGS_FILENAME && holdNext) {
+        holdNext = false;
+        inFlight();
+        await held;
+      }
+      return writeFile(path, base, content);
+    };
+    const settings = settingsWith('device');
+
+    const first = saveSettings(fs, settings);
+    await started;
+    settings.replicaDeviceId = 'changed while writing';
+    const second = saveSettings(fs, settings);
+    release();
+    await Promise.all([first, second]);
+
+    expect(JSON.parse(files.get(SETTINGS_FILENAME)!).replicaDeviceId).toBe('changed while writing');
+  });
+
   it('rejects the caller whose write failed and still lands the queued data', async () => {
     const { fs, files, writes, failNextWrite } = makeFs();
     // A readable file on disk keeps safeLoadJSON off its backup-restore path,
