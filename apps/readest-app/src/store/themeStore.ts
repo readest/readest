@@ -15,7 +15,15 @@ import {
   resolveThemeIsDarkMode,
 } from '@/utils/ambientLight';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { CustomTheme, getDefaultThemeColor, Palette, ThemeMode, ThemeScope } from '@/styles/themes';
+import {
+  CustomTheme,
+  customThemeToTheme,
+  getDefaultThemeColor,
+  Palette,
+  ThemeMode,
+  ThemeScope,
+  themes,
+} from '@/styles/themes';
 import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
 import type { DuoFoldState } from '@/utils/bridge';
@@ -164,6 +172,25 @@ const persistAmbientIsDarkMode = (isDark: boolean) => {
   if (typeof window !== 'undefined' && localStorage) {
     localStorage.setItem('ambientIsDarkMode', isDark ? 'true' : 'false');
   }
+};
+
+const resolveThemePalette = (themeColor: string, isDarkMode: boolean): Palette => {
+  let matched = themes.find((theme) => theme.name === themeColor);
+  if (!matched && typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const customThemes = JSON.parse(
+        window.localStorage.getItem('customThemes') || '[]',
+      ) as CustomTheme[];
+      const custom = customThemes.find((theme) => theme.name === themeColor);
+      if (custom) {
+        matched = customThemeToTheme(custom);
+      }
+    } catch {
+      // Ignore malformed customThemes in storage
+    }
+  }
+  const resolved = matched ?? themes[0]!;
+  return isDarkMode ? resolved.colors.dark : resolved.colors.light;
 };
 
 const applyDataTheme = (themeColor: string, isDarkMode: boolean) => {
@@ -406,10 +433,18 @@ export const useThemeStore = create<ThemeState>((set, get) => {
       syncAmbientLightSubscription(activeMode);
     },
     updateAppTheme: (color) => {
-      if (isWebAppPlatform()) {
-        const { palette } = get().themeCode;
-        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', palette[color]);
+      if (!isWebAppPlatform() || typeof document === 'undefined') return;
+      const { themeColor, isDarkMode } = get();
+      const resolved = resolveThemePalette(themeColor, isDarkMode)[color];
+      if (!resolved) return;
+      let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        document.head.appendChild(meta);
       }
+      meta.setAttribute('content', resolved);
+      document.documentElement.style.backgroundColor = resolved;
     },
     saveCustomTheme: async (envConfig, settings, theme, isDelete) => {
       // A new list, not the one on screen changed in place: the footer Color
