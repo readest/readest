@@ -558,5 +558,45 @@ describe("library.syncbooks", function()
             assert.are.equal(1781740800000, store:getLastPushedAt())  -- updated_at 2026-06-18Z
             store:close()
         end)
+
+        -- #7576: deleted in the app, then pushed again (Calibre plugin). The
+        -- live cloud row arrives with deleted_at = null, which parseSyncRow
+        -- drops, so upsertBook kept the old local tombstone and hid the book.
+        it("un-deletes a book the cloud brought back (issue #7576)", function()
+            local store = LibraryStore.new({ user_id = "u1" })
+            pull(store, {
+                { book_hash = "h1", title = "B",
+                  updated_at = "2026-06-18T00:00:00+00:00",
+                  deleted_at = "2026-06-18T00:00:00+00:00" },
+            })
+            assert.is_not_nil(store:_getRowRaw("h1").deleted_at)
+            pull(store, {
+                { book_hash = "h1", title = "B",
+                  uploaded_at = "2026-06-20T00:00:00+00:00",
+                  updated_at  = "2026-06-20T00:00:00+00:00",
+                  deleted_at  = nil },
+            })
+            local row = store:_getRowRaw("h1")
+            assert.is_nil(row.deleted_at)
+            assert.are.equal(1, tonumber(row.cloud_present))
+            assert.are.equal(1, #store:listBooks({}))
+            store:close()
+        end)
+
+        it("keeps a local deletion newer than the cloud row (pull runs before push)", function()
+            local store = LibraryStore.new({ user_id = "u1" })
+            pull(store, {
+                { book_hash = "h1", title = "B",
+                  updated_at = "2026-06-18T00:00:00+00:00" },
+            })
+            -- Deleted on this device; the tombstone hasn't been pushed yet.
+            store:upsertBook({ hash = "h1", title = "B", deleted_at = 1781913600000 })  -- 2026-06-20Z
+            pull(store, {
+                { book_hash = "h1", title = "B",
+                  updated_at = "2026-06-18T00:00:00+00:00" },
+            })
+            assert.are.equal(1781913600000, tonumber(store:_getRowRaw("h1").deleted_at))
+            store:close()
+        end)
     end)
 end)

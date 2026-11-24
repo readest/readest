@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
 // Enter the BufferedTTSClient <-> constants import cycle where the app does.

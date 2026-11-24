@@ -23,6 +23,16 @@ export const footerInfoVisible = (viewSettings: ViewSettings): boolean =>
   );
 
 /**
+ * Whether the footer occupies the bottom edge of the page (its marginBottomPx
+ * strip), so overlays anchored there must sit above it. In vertical books the
+ * footer is a side column instead.
+ */
+export const footerAtBottom = (viewSettings: ViewSettings): boolean =>
+  viewSettings.showFooter &&
+  !viewSettings.vertical &&
+  (footerInfoVisible(viewSettings) || viewSettings.showStickyProgressBar);
+
+/**
  * Inline padding (px) the footer needs so its text keeps clear of a rounded
  * screen corner of `radius` px, given the height (px above the screen bottom)
  * of the text's lowest point. At height h the corner arc reaches
@@ -62,13 +72,15 @@ export const getCellCornerRadii = (
  * "solid bar" across the bottom of the screen: scrolled text clipped hard at
  * its edge, and it lingered even when the footer had nothing to show. Now:
  *   - the sticky progress bar (always-visible, display-only) keeps its band
- *   - scrolled mode never reserves it — the info floats over the text in
- *     shrink-wrapped pills (see ProgressBar) instead of a full-width strip
- *   - paginated mode reserves it only while some info actually renders
+ *   - scrolled mode reserves it only with Solid Footer on (#6793); otherwise
+ *     the info floats over the text in shrink-wrapped pills (see ProgressBar)
+ *     instead of a full-width strip
+ *   - paginated mode, and scrolled mode with Solid Footer on, reserve it only
+ *     while some info actually renders
  */
 export const footerReservesBand = (viewSettings: ViewSettings): boolean => {
   if (!viewSettings.showFooter) return false;
   if (viewSettings.showStickyProgressBar) return true;
-  if (viewSettings.scrolled) return false;
+  if (viewSettings.scrolled && !viewSettings.solidScrolledFooter) return false;
   return footerInfoVisible(viewSettings);
 };

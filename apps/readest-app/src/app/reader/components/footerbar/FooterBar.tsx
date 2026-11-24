@@ -1,7 +1,16 @@
 import clsx from 'clsx';
-import React, { useCallback, useMemo, useEffect, useRef } from 'react';
+import React, {
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
+import { useWindowFocusRestore } from '@/app/reader/hooks/useWindowFocusRestore';
+import { getBookProgress, useReaderProgressStore } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -12,6 +21,8 @@ import { useThemeStore } from '@/store/themeStore';
 import { eventDispatcher } from '@/utils/event';
 import type { FooterBarProps, NavigationHandlers, FooterBarChildProps } from './types';
 import { debounce } from '@/utils/debounce';
+import { getChapterScreensVersion, subscribeChapterScreens } from '@/utils/chapterScreens';
+import { getScreenPageFraction, getScreenPageInfo, usesScreenPages } from '../../utils/screenPages';
 import { isForcedMobileLayout } from '../../utils/mobileLayout';
 import { RSVPControl } from '../rsvp';
 import MobileFooterBar from './MobileFooterBar';
@@ -22,25 +33,25 @@ import TTSControl from '../tts/TTSControl';
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
   bookFormat,
-  section,
-  pageinfo,
   isHoveredAnim,
   gridInsets,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
-  const { getConfig, setConfig, getBookData } = useBookDataStore();
+  // The book's config and progress change on every page turn and progress
+  // save; the footer shows neither, and its callbacks read them when they run.
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const isFixedLayout = useBookDataStore((s) => !!s.getBookData(bookKey)?.isFixedLayout);
+  const sections = useBookDataStore((s) => s.getBookData(bookKey)?.bookDoc?.sections);
   const { hoveredBookKey, setHoveredBookKey, bottomBarTab, setBottomBarTab } = useReaderStore();
-  const { getView, getViewState, getProgress, getViewSettings } = useReaderStore();
+  const { getView, getViewState, getViewSettings } = useReaderStore();
   const { isSideBarVisible, isSideBarPinned, setSideBarVisible } = useSidebarStore();
   const { acquireBackKeyInterception, releaseBackKeyInterception } = useDeviceControlStore();
 
   const view = getView(bookKey);
-  const config = getConfig(bookKey);
-  const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
-  const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
   const actionTab = hoveredBookKey === bookKey ? bottomBarTab : '';
@@ -48,10 +59,40 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
+  const isWindowFocusRestore = useWindowFocusRestore();
 
+  // A hidden footer keeps the position it last showed and catches up in the
+  // render that shows it: following every page turn re-rendered all its
+  // panels and buttons for nothing. A shown footer follows the turns.
+  const progress = useReaderProgressStore((s) =>
+    isVisible ? (s.progresses[bookKey] ?? null) : null,
+  );
+  const [shown, setShown] = useState(() => getBookProgress(bookKey));
+  if (isVisible && progress !== shown) setShown(progress);
+  const shownProgress = isVisible ? progress : shown;
+  const { section: shownSection, pageinfo: shownPageinfo } = shownProgress ?? {};
+  // With Stable Page Numbers off the slider moves through the screen pages
+  // its label and the footer count.
+  const screenPages = usesScreenPages(viewSettings, isFixedLayout, sections);
+  const screensVersion = useSyncExternalStore(subscribeChapterScreens, getChapterScreensVersion);
   const progressInfo = useMemo(
-    () => (FIXED_LAYOUT_FORMATS.has(bookFormat) ? section : pageinfo),
-    [bookFormat, section, pageinfo],
+    () =>
+      FIXED_LAYOUT_FORMATS.has(bookFormat)
+        ? shownSection
+        : screenPages && shownProgress
+          ? getScreenPageInfo(bookKey, view, sections!, shownProgress)
+          : shownPageinfo,
+    [
+      bookFormat,
+      shownSection,
+      shownPageinfo,
+      screenPages,
+      bookKey,
+      view,
+      sections,
+      shownProgress,
+      screensVersion,
+    ],
   );
 
   const progressValid = !!progressInfo && progressInfo.total > 0 && progressInfo.current >= 0;
@@ -65,9 +106,19 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const handleProgressChange = useMemo(
     () =>
       debounce((value: number) => {
-        view?.goToFraction(value / 100.0);
+        if (!view) return;
+        if (screenPages) {
+          // The page the label previews: (page + 1) / total is the slider's
+          // position for a page.
+          const { total } = getScreenPageInfo(bookKey, view, sections!, getBookProgress(bookKey));
+          const page = Math.max(0, Math.ceil((value / 100) * total) - 1);
+          const fraction = getScreenPageFraction(bookKey, view, sections!, page);
+          if (fraction !== null) view.goToFraction(fraction);
+        } else {
+          view.goToFraction(value / 100.0);
+        }
       }, 100),
-    [view],
+    [view, screenPages, bookKey, sections],
   );
 
   const handleGoPrevPage = useCallback(() => {
@@ -95,14 +146,16 @@ const FooterBar: React.FC<FooterBarProps> = ({
   }, [view]);
 
   const handleSpeakText = useCallback(async () => {
-    if (!view || !progress || !viewState) return;
+    const viewState = getViewState(bookKey);
+    if (!view || !getBookProgress(bookKey) || !viewState) return;
 
     const eventType = viewState.ttsEnabled ? 'tts-stop' : 'tts-speak';
     eventDispatcher.dispatch(eventType, { bookKey });
-  }, [view, progress, viewState, bookKey]);
+  }, [view, getViewState, bookKey]);
 
   const handleSetActionTab = useCallback(
     (tab: string) => {
+      const config = getConfig(bookKey);
       setBottomBarTab(bottomBarTab === tab ? '' : tab);
 
       if (tab === 'tts') {
@@ -127,7 +180,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
       }
     },
     [
-      config,
+      getConfig,
       bookKey,
       bottomBarTab,
       viewState?.ttsEnabled,
@@ -215,11 +268,11 @@ const FooterBar: React.FC<FooterBarProps> = ({
 
   const needHorizontalScroll =
     (viewSettings?.vertical && viewSettings?.scrolled) ||
-    (bookData?.isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
+    (isFixedLayout && viewSettings?.zoomLevel && viewSettings.zoomLevel > 100);
 
   const containerClasses = clsx(
     'footer-bar shadow-xs bottom-0 left-0 z-10 flex w-full flex-col',
-    !forceMobileLayout && 'sm:h-[52px] sm:bg-base-100 sm:border-none',
+    !forceMobileLayout && 'sm:h-[52px] sm:bg-base-100 not-eink:sm:border-none',
     'not-eink:border-base-300/50 eink:border-base-content border-t',
     'transition-[opacity,transform] duration-300',
     getFooterBarPosition(forceMobileLayout || window.innerWidth < 640, isSideBarPinned),
@@ -252,6 +305,19 @@ const FooterBar: React.FC<FooterBarProps> = ({
         )}
         onMouseEnter={() => !isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !isMobile && setHoveredBookKey(bookKey)}
+        // A pointer that crosses the strip straight into the book (coming up
+        // from a taskbar that covers most of it) never enters the footer, so
+        // the footer's own mouseleave never comes (#6999).
+        onMouseLeave={(e) => {
+          const rect = footerBarRef.current?.getBoundingClientRect();
+          const inFooter =
+            !!rect &&
+            e.clientX >= rect.left &&
+            e.clientX < rect.right &&
+            e.clientY >= rect.top &&
+            e.clientY < rect.bottom;
+          if (!isMobile && !inFooter) setHoveredBookKey('');
+        }}
       />
 
       {/* Main footer container */}
@@ -261,7 +327,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
         aria-label={_('Footer Bar')}
         className={containerClasses}
         dir={viewSettings?.rtl ? 'rtl' : 'ltr'}
-        onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
+        onFocus={() =>
+          !appService?.isMobile && !isWindowFocusRestore() && setHoveredBookKey(bookKey)
+        }
         onMouseLeave={() => window.innerWidth >= 640 && setHoveredBookKey('')}
       >
         <MobileFooterBar {...commonProps} />

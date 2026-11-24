@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -27,6 +28,7 @@ const BOOKS_DIR = '/data/Books';
 const fs: Record<string, FileItem[]> = { Cache: [], Temp: [], Books: [] };
 
 const appService = {
+  isMobileApp: true,
   isIOSApp: false,
   isAndroidApp: false,
   resolveFilePath: vi.fn(async () => BOOKS_DIR),

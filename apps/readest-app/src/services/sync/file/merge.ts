@@ -1,6 +1,8 @@
+import { mergeTTSPacks } from '@/utils/ttsPacks';
 import { Book, BookConfig, BookNote } from '@/types/book';
 import { resolveReferencePageCount } from '@/utils/progress';
 import { bookGroupDiffers, pickFresherGroup } from '@/utils/book';
+import { incomingNoteWins } from '@/utils/booknoteStamp';
 import { RemoteBookConfig } from './wire';
 
 /**
@@ -22,17 +24,10 @@ import { RemoteBookConfig } from './wire';
 
 /**
  * Per-note merge: pick the locally-stored copy or the remote copy of each
- * note based on `updatedAt` / `deletedAt`. Mirrors `processNewNote` in
- * `useNotesSync.ts` so users get the same semantics regardless of which
- * sync backend produced the row.
- *
- * A note is keyed by `id`. When the same id exists on both sides the side
- * with the latest change, max(updatedAt, deletedAt), wins, and an exact tie
- * goes to a tombstone: a note edited or restored after a remote deletion
- * survives it, and a deletion made after a remote edit sticks (#6762).
+ * note by `incomingNoteWins`, the rule `useNotesSync.ts` applies too, so
+ * users get the same semantics regardless of which sync backend produced
+ * the row. A note is keyed by `id`.
  */
-const latestChangeAt = (note: BookNote) => Math.max(note.updatedAt ?? 0, note.deletedAt ?? 0);
-
 export const mergeNotes = (local: BookNote[], remote: BookNote[]): BookNote[] => {
   const byId = new Map<string, BookNote>();
   for (const n of local) byId.set(n.id, n);
@@ -42,10 +37,7 @@ export const mergeNotes = (local: BookNote[], remote: BookNote[]): BookNote[] =>
       byId.set(r.id, r);
       continue;
     }
-    const lAt = latestChangeAt(l);
-    const rAt = latestChangeAt(r);
-    const remoteWins = rAt > lAt || (rAt === lAt && !!r.deletedAt && !l.deletedAt);
-    const [winner, loser] = remoteWins ? [r, l] : [l, r];
+    const [winner, loser] = incomingNoteWins(l, r) ? [r, l] : [l, r];
     // Pin the winner's deletedAt so a live winner never inherits the loser's
     // tombstone through a key it doesn't carry.
     byId.set(r.id, { ...loser, ...winner, deletedAt: winner.deletedAt });
@@ -82,6 +74,10 @@ export const mergeBookConfig = (
       : ({ ...filteredRemote, ...local } as BookConfig);
   const notes = mergeNotes(local.booknotes ?? [], remote.booknotes ?? []);
   merged.booknotes = notes;
+  // A union, whichever side won the scalars: recording audio never bumps
+  // updatedAt, so the winner may lack the other side's packs.
+  const ttsPacks = mergeTTSPacks(local.ttsPacks, remote.ttsPacks);
+  if (ttsPacks) merged.ttsPacks = ttsPacks;
   // The reference page count is the one viewSettings key that crosses devices
   // (issue #5716) — it describes the book's print edition, not the screen. It
   // arrives as its own envelope key, so apply it to viewSettings by hand
@@ -200,6 +196,10 @@ export const mergeBookMetadata = (local: Book, remote: Book): Book => {
   // this a metadata-less peer erased every book's description across the fleet
   // (#5912).
   merged.metadata = merged.metadata ?? remote.metadata ?? local.metadata;
+  // Directory discovery cannot recover the original import name from the managed file.
+  if (!merged.originalFilename && remote.originalFilename) {
+    merged.originalFilename = remote.originalFilename;
+  }
   return merged;
 };
 
@@ -247,7 +247,7 @@ export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolea
  * trigger, and the pass that gets a device's own shelf back after #5911 / #5912
  * emptied it.
  *
- * Both cases are "an absent value must never win", and neither can loop:
+ * These cases are "an absent value must never win", and none can loop:
  * applying the merge makes the local row equal the resolution, after which this
  * is false again.
  *
@@ -257,6 +257,7 @@ export const shouldApplyRemoteBookMetadata = (local: Book, remote: Book): boolea
  *    has already returned true, so the only question left here is the tie — and
  *    on a tie the merge itself resolves the same way.
  *  - A description this device does not have and the peer does.
+ *  - An original import filename missing from a directory-discovered row.
  *
  * Never on the incremental path. It is true for an entire library at once on
  * the first run after the fix, and every hit costs a local library write
@@ -271,7 +272,8 @@ export const isRemoteBookMissingLocally = (local: Book, remote: Book): boolean =
   !remote.deletedAt &&
   !local.deletedAt &&
   (bookGroupDiffers(local, pickFresherGroup(local, remote, false)) ||
-    (!local.metadata && !!remote.metadata));
+    (!local.metadata && !!remote.metadata) ||
+    (!local.originalFilename && !!remote.originalFilename));
 
 /**
  * The row to PUBLISH into library.json for a book this device also holds,
@@ -307,12 +309,14 @@ export const resolvePublishedBook = (local: Book, remote: Book | undefined): Boo
   const meta = remoteMetaNewer ? remote : local;
   // Never delete a blob the remote has, whichever side won the clock.
   const metadata = meta.metadata ?? local.metadata ?? remote.metadata;
+  const originalFilename = local.originalFilename || remote.originalFilename;
   if (
     group.groupId === local.groupId &&
     group.groupName === local.groupName &&
     group.groupUpdatedAt === local.groupUpdatedAt &&
     !remoteMetaNewer &&
-    metadata === local.metadata
+    metadata === local.metadata &&
+    originalFilename === local.originalFilename
   ) {
     return local;
   }
@@ -329,5 +333,6 @@ export const resolvePublishedBook = (local: Book, remote: Book | undefined): Boo
         }
       : {}),
     metadata,
+    ...(originalFilename ? { originalFilename } : {}),
   };
 };

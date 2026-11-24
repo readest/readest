@@ -245,8 +245,14 @@ class S3ProviderImpl {
     const entries: FileEntry[] = [];
     let token: string | undefined;
     do {
+      // Bucket-root listing: the request path is `/<bucket>/` with a
+      // trailing slash. MinIO canonicalizes a bucket-only path with the
+      // slash appended when it verifies SigV4, so a listing signed over
+      // `/<bucket>` fails with SignatureDoesNotMatch (object paths such
+      // as `/<bucket>/<key>` are canonicalized verbatim and unaffected).
+      // AWS S3 and R2 accept the trailing-slash form as well.
       const url =
-        `${this.baseUrl}?list-type=2&prefix=${encodeSegment(prefix)}&delimiter=%2F` +
+        `${this.baseUrl}/?list-type=2&prefix=${encodeSegment(prefix)}&delimiter=%2F` +
         (token ? `&continuation-token=${encodeSegment(token)}` : '');
       const res = await this.request(HTTP_GET, url);
       await this.ensureOk(res, 'list', path);
@@ -313,11 +319,14 @@ class S3ProviderImpl {
   async ensureDir(_paths: string[]): Promise<void> {}
 
   async deleteDir(path: string): Promise<void> {
-    const prefix = `${keyFor(path)}/`;
+    const key = keyFor(path);
+    const prefix = key ? `${key}/` : '';
     let token: string | undefined;
     do {
+      // Prefix scan at the bucket root — same trailing-slash rule as
+      // list() above (MinIO canonicalizes `/<bucket>` as `/<bucket>/`).
       const url =
-        `${this.baseUrl}?list-type=2&prefix=${encodeSegment(prefix)}` +
+        `${this.baseUrl}/?list-type=2&prefix=${encodeSegment(prefix)}` +
         (token ? `&continuation-token=${encodeSegment(token)}` : '');
       const res = await this.request(HTTP_GET, url);
       await this.ensureOk(res, 'list', path);

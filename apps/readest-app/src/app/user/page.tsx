@@ -8,6 +8,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
+import { useReaderStore } from '@/store/readerStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
@@ -79,30 +80,34 @@ const ProfilePage = () => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  useEffect(() => {
-    if (!mounted) return;
-
-    const isAuthenticated = user && token && appService;
-    if (isAuthenticated) return;
-
-    const timer = setTimeout(() => {
-      const redirect = searchParams?.get('redirect') || '/library';
-      router.push(`/auth?redirect=${encodeURIComponent(redirect)}`);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [mounted, user, token, appService, router, searchParams]);
-
-  useTheme({ systemUIVisible: false });
-
-  const { quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
   const {
+    signingOut,
     handleLogout,
     handleResetPassword,
     handleUpdateEmail,
     handleConfirmDelete,
     handleDeleteAllBooks,
   } = useUserActions();
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    const isAuthenticated = user && token && appService;
+    // Signing out opens the library, not the login page (#7726).
+    if (isAuthenticated || signingOut) return;
+
+    const timer = setTimeout(() => {
+      const redirect = searchParams?.get('redirect') || '/library';
+      // Replace, so leaving the login page goes back to the opener (#7567).
+      router.replace(`/auth?redirect=${encodeURIComponent(redirect)}`);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [mounted, user, token, appService, router, searchParams, signingOut]);
+
+  useTheme({ systemUIVisible: false });
+
+  const { quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
 
   const { availablePlans, iapAvailable } = useAvailablePlans({
     hasIAP: appService?.hasIAP || false,
@@ -128,7 +133,9 @@ const ProfilePage = () => {
     } else if (showSyncManager) {
       setShowSyncManager(false);
     } else {
-      navigateBackFromProfile(router, searchParams?.get('redirect'));
+      // A book stays open beneath while this page sits over it (#6607).
+      const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
+      navigateBackFromProfile(router, searchParams?.get('redirect'), readerBeneath);
     }
   };
 
@@ -218,6 +225,9 @@ const ProfilePage = () => {
         // server, so re-verify those too.
         await verifyGooglePurchaseProducts(purchases);
         await verifyApplePurchaseProducts(purchases);
+        if (!(await refresh())) {
+          throw new Error('Failed to refresh session after restoring purchases');
+        }
         const restoredSubscriptions = purchases
           .filter((p) => !isPurchaseProduct(p.productId))
           .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
@@ -385,7 +395,10 @@ const ProfilePage = () => {
                     </div>
                     <div className='flex flex-col gap-y-8 px-6'>
                       <AccountActions
+                        userEmail={userEmail}
+                        planName={_(userPlanDetails.name)}
                         userPlan={userProfilePlan}
+                        customizationPurchased={customizationPurchased}
                         iapAvailable={iapAvailable}
                         onLogout={handleLogout}
                         onResetPassword={handleResetPassword}

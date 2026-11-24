@@ -28,6 +28,7 @@ import type { ABSEpisode, ABSMediaProgress } from '@/types/audiobookshelf';
 // calling start() instead of a flag frozen at claim time.
 const mocks = vi.hoisted(() => ({
   openAudiobookSession: vi.fn(),
+  openBookOrbitAudiobookSession: vi.fn(),
   loadAbsEpisodes: vi.fn(),
   getSessionByHash: vi.fn(() => null as { bookKey: string; controller: unknown } | null),
   // A real listener set (not a mock fn) so tests can simulate the manager
@@ -71,6 +72,10 @@ vi.mock('@/context/EnvContext', () => ({
 vi.mock('@/services/audiobook/openAudiobook', () => ({
   openAudiobookSession: mocks.openAudiobookSession,
   loadAbsEpisodes: mocks.loadAbsEpisodes,
+}));
+
+vi.mock('@/services/bookorbit/openBookOrbitAudiobook', () => ({
+  openBookOrbitAudiobookSession: mocks.openBookOrbitAudiobookSession,
 }));
 
 vi.mock('@/services/tts/TTSSessionManager', () => ({
@@ -127,6 +132,8 @@ vi.mock('@/app/player/components/PlayerView', () => ({
 // unexercised the first time around.
 import { useLibraryStore } from '@/store/libraryStore';
 import { navigateToLibrary } from '@/utils/nav';
+import { eventDispatcher } from '@/utils/event';
+import { BookOrbitAuthError } from '@/services/bookorbit/client';
 import PlayerPage from '@/app/player/page';
 
 const book: Book = {
@@ -630,5 +637,34 @@ describe('PlayerPage with a podcast show', () => {
       resolveClaim(null);
       await Promise.resolve();
     });
+  });
+});
+
+describe('PlayerPage with a BookOrbit audiobook', () => {
+  afterEach(() => {
+    cleanup();
+    useLibraryStore.getState().setLibrary([]);
+  });
+
+  // A revoked or expired API key, one sent to a server before BookOrbit 3.8,
+  // or a password that is not the account's: the server refuses the sign-in.
+  // The route used to keep spinning with nothing said (#7508).
+  it('says the sign-in failed and returns to the library', async () => {
+    useLibraryStore
+      .getState()
+      .setLibrary([{ ...book, format: 'BOOKORBIT', filePath: 'bookorbit://9' }]);
+    mocks.openBookOrbitAudiobookSession.mockRejectedValue(new BookOrbitAuthError());
+    const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+
+    render(<PlayerPage />);
+
+    await waitFor(() => expect(navigateToLibrary).toHaveBeenCalled());
+    expect(dispatch).toHaveBeenCalledWith(
+      'toast',
+      expect.objectContaining({
+        type: 'error',
+        message: 'Could not sign in to BookOrbit for audiobooks',
+      }),
+    );
   });
 });

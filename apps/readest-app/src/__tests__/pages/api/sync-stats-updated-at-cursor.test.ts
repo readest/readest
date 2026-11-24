@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { NextRequest } from 'next/server';
 
@@ -22,7 +23,7 @@ const makeBuilder = (table: string) => {
       calls.push({ table, method, args });
       return builder;
     };
-  for (const m of ['select', 'eq', 'or', 'gt', 'lt', 'in', 'is', 'order', 'range']) {
+  for (const m of ['select', 'eq', 'or', 'gt', 'lt', 'in', 'is', 'not', 'order', 'range']) {
     builder[m] = rec(m);
   }
   // Every chain terminal is awaited and destructured as { data, error }; the

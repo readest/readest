@@ -10,6 +10,8 @@ interface UseKeyDownOptions {
   elementRef?: RefObject<HTMLElement | null>;
 }
 
+const handledDndEvents = new WeakSet<KeyboardEvent>();
+
 export const useKeyDownActions = ({
   onCancel,
   onConfirm,
@@ -37,6 +39,32 @@ export const useKeyDownActions = ({
           return true;
         }
       } else {
+        if (handledDndEvents.has(event)) {
+          return false;
+        }
+        const isDndDragging = Boolean(
+          elementRef.current?.querySelector('[data-dnd-dragging="true"]'),
+        );
+        const isDndHandle =
+          event.target instanceof Element &&
+          Boolean(event.target.closest('[data-dnd-sortable-handle="true"]'));
+        if (
+          isDndDragging &&
+          (event.key === 'Escape' ||
+            event.key === ' ' ||
+            event.key === 'Enter' ||
+            event.key === 'ArrowUp' ||
+            event.key === 'ArrowDown' ||
+            event.key === 'ArrowLeft' ||
+            event.key === 'ArrowRight')
+        ) {
+          handledDndEvents.add(event);
+          return false;
+        }
+        if (isDndHandle && (event.key === ' ' || event.key === 'Enter')) {
+          handledDndEvents.add(event);
+          return false;
+        }
         if (event.key === 'Escape') {
           onCancelRef.current?.();
         } else if (event.key === 'Enter') {
@@ -47,11 +75,17 @@ export const useKeyDownActions = ({
       return false;
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    // With focus in the book, its keys arrive as an `iframe-keydown` message.
+    // Escape there still dismisses; Enter there confirms nothing.
+    const handleBookKey = (msg: MessageEvent) => {
+      if (msg.data?.type === 'iframe-keydown' && msg.data.key === 'Escape') onCancelRef.current?.();
+    };
 
-    if (elementRef.current) {
-      elementRef.current.addEventListener('keydown', handleKeyDown);
-    }
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('message', handleBookKey);
+
+    const element = elementRef.current;
+    element?.addEventListener('keydown', handleKeyDown);
 
     if (appService?.isAndroidApp) {
       acquireBackKeyInterception?.();
@@ -60,6 +94,8 @@ export const useKeyDownActions = ({
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('message', handleBookKey);
+      element?.removeEventListener('keydown', handleKeyDown);
 
       if (appService?.isAndroidApp) {
         releaseBackKeyInterception?.();

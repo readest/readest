@@ -436,7 +436,7 @@ export const getSelectionState = (page: CdpPage) =>
  * highlight tool is on the toolbar (#6031).
  */
 export const getCustomHandles = (page: CdpPage) =>
-  page.evaluate<{ x: number; y: number }[]>(`
+  page.evaluate<{ x: number; y: number; w: number; h: number }[]>(`
     return [...document.querySelectorAll('[data-testid="selection-handle"]')].map((el) => {
       const r = el.getBoundingClientRect();
       return { x: r.x, y: r.y, w: r.width, h: r.height };

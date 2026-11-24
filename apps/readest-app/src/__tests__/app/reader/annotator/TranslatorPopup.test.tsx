@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * TranslatorPopup error reporting (#5823): a failed lookup must say why it
  * failed, not just "try again later", and must only blame a missing login
@@ -152,6 +153,17 @@ describe('TranslatorPopup translated text', () => {
     const translated = await screen.findByText(expected);
     expect(translated.textContent).toBe(expected);
     expect(translated.childElementCount).toBe(0);
+  });
+});
+
+describe('TranslatorPopup text direction', () => {
+  it('lets the source and translated paragraphs take their direction from their text', async () => {
+    mockTranslate.mockResolvedValue(['שלום, עולם!']);
+    await renderPopup();
+
+    const translated = await screen.findByText('שלום, עולם!');
+    expect(translated.getAttribute('dir')).toBe('auto');
+    expect(screen.getByText('cohort').getAttribute('dir')).toBe('auto');
   });
 });
 

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { Book } from '@/types/book';
 import type { AppService } from '@/types/system';
@@ -80,5 +81,72 @@ describe('OPDS source map', () => {
         library: [book('book', Date.now())],
       }),
     ).toBeNull();
+  });
+
+  it('opens one connection at a time when lookups and writes overlap', async () => {
+    // On web opds.db is one OPFS file with a single exclusive access handle,
+    // so a second open while one is live fails ("database is locked"). The
+    // auto-download loop runs lookups and writes concurrently (#7489).
+    const db = new MockDatabase();
+    let open = 0;
+    const service = {
+      openDatabase: vi.fn(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        if (open > 0) throw new Error('database is locked');
+        open++;
+        return {
+          ...db,
+          close: vi.fn(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            open--;
+          }),
+        };
+      }),
+    } as unknown as AppService;
+
+    await expect(
+      Promise.all([
+        upsertOPDSSourceMapping(service, {
+          catalogId: 'calibre',
+          sourceUrl: 'https://example.com/a.epub',
+          bookHash: 'a',
+        }),
+        findBookByOPDSSources(service, {
+          catalogId: 'calibre',
+          sourceUrls: ['https://example.com/b.epub'],
+          library: [book('b')],
+        }),
+        upsertOPDSSourceMapping(service, {
+          catalogId: 'calibre',
+          sourceUrl: 'https://example.com/c.epub',
+          bookHash: 'c',
+        }),
+      ]),
+    ).resolves.toEqual([undefined, null, undefined]);
+    expect(db.rows.map((row) => row.book_hash)).toEqual(['a', 'c']);
+  });
+
+  it('keeps serving after a failed open', async () => {
+    const db = new MockDatabase();
+    const service = {
+      openDatabase: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('short read on page 1'))
+        .mockResolvedValue(db),
+    } as unknown as AppService;
+
+    await expect(
+      upsertOPDSSourceMapping(service, {
+        catalogId: 'calibre',
+        sourceUrl: 'https://example.com/a.epub',
+        bookHash: 'a',
+      }),
+    ).rejects.toThrow('short read on page 1');
+    await upsertOPDSSourceMapping(service, {
+      catalogId: 'calibre',
+      sourceUrl: 'https://example.com/a.epub',
+      bookHash: 'a',
+    });
+    expect(db.rows).toHaveLength(1);
   });
 });

@@ -1,7 +1,11 @@
 import type { SystemSettings } from '@/types/settings';
 import type { EnvConfigType } from '@/services/environment';
-import type { CloudSyncProviderKind } from '@/services/sync/cloudSyncProvider';
-import { settingsKeyForBackend } from '@/services/sync/cloudSyncProvider';
+import type {
+  CloudSyncProviderKind,
+  ForgettableConnection,
+} from '@/services/sync/cloudSyncProvider';
+import { settingsKeyForBackend, withConnectionForgotten } from '@/services/sync/cloudSyncProvider';
+import { publishConnectionForget } from '@/services/sync/replicaSettingsSync';
 import { useSettingsStore } from '@/store/settingsStore';
 import { broadcastGlobalSettings } from '@/utils/settingsSync';
 
@@ -86,6 +90,7 @@ export const withCloudProviderEnabled = (
 const persistCloudSyncSelection = async (
   envConfig: EnvConfigType,
   apply: (settings: SystemSettings) => SystemSettings,
+  forgottenConnection?: ForgettableConnection,
 ): Promise<SystemSettings> => {
   const store = useSettingsStore.getState();
   const appService = await envConfig.getAppService();
@@ -93,7 +98,7 @@ const persistCloudSyncSelection = async (
   const next = apply(current);
   store.setSettings(next);
   await appService.saveSettings(next);
-  void broadcastGlobalSettings(next, { includeCloudSyncProviders: true });
+  void broadcastGlobalSettings(next, { includeCloudSyncProviders: true, forgottenConnection });
   return next;
 };
 
@@ -127,3 +132,23 @@ export const persistReadestCloudChoice = async (
   enabled: boolean | undefined,
 ): Promise<SystemSettings> =>
   persistCloudSyncSelection(envConfig, (current) => withReadestCloudChoice(current, enabled));
+
+/**
+ * Forget a disconnected provider's server address and login (#7799):
+ * reset them here, upload the reset so Readest Cloud and the devices not
+ * using that server drop them too, and tell other windows. Disconnect keeps
+ * them so a reconnect is one click; this is the way to remove them.
+ */
+export const forgetCloudProviderConnection = async (
+  envConfig: EnvConfigType,
+  kind: ForgettableConnection,
+): Promise<SystemSettings> => {
+  const next = await persistCloudSyncSelection(
+    envConfig,
+    (s) => withConnectionForgotten(s, kind),
+    kind,
+  );
+  // Only after the save succeeded, so a failed save leaves the cloud as is.
+  await publishConnectionForget(kind);
+  return next;
+};

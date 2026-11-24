@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { pushStatsToBookOrbit } from '@/services/bookorbit/statsPush';
 import type { PageStatsBookWire } from '@/services/bookorbit/types';

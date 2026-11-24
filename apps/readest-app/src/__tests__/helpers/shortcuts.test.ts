@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 
 const getModule = async () => {
@@ -89,6 +90,9 @@ describe('No identical keybinding lists across actions (#3675)', () => {
   // class of bug as #3675.
   const KNOWN_PAIRS: ReadonlySet<string> = new Set([
     'onSearchSelection,onShowSearchBar', // ctrl+f / cmd+f
+    // n: Next Match only while a vim find is live; listed ahead of Toggle
+    // Notebook in one shortcut listener and falls through otherwise (#7281).
+    'onToggleNotebook,onVimNextMatch',
   ]);
 
   it('should not have two actions with exactly the same key list', async () => {

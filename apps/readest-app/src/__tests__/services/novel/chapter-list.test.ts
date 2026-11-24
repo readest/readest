@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { parseChapterList, parseWorkMetadata } from '@/services/novel/chapterList';
 
@@ -123,6 +124,217 @@ describe('parseChapterList', () => {
 </body></html>`;
     const toc = parseChapterList(page, 'https://www.example.com/book/2/')!;
     expect(toc.title).toBe('神墓');
+  });
+
+  it('reads chapters numbered 第N頁 over a 第N章 recommendations box (czbooks shape)', () => {
+    // Opaque chapter ids, so the href-template fallback can't find the list.
+    const ids = Array.from({ length: 40 }, (_, i) => `sk${(i * 7919).toString(36)}x`);
+    const page = `<!DOCTYPE html><html><head><title>某書 - 小說狂人</title></head><body>
+<ul class="chapter-list">
+${ids.map((id, i) => `<li><a href="//czbooks.net/n/skl6f083l/${id}">第${i + 1}頁</a></li>`).join('\n')}
+</ul>
+<div class="recommend"><ul>
+${[1837, 252, 150, 99, 132, 128].map((n, i) => `<li><a href="/n/other${i}/c${i}">第${n}章</a></li>`).join('\n')}
+</ul></div>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://czbooks.net/n/skl6f083l')!;
+    expect(toc.chapters).toHaveLength(40);
+    expect(toc.chapters[0]!.title).toBe('第1頁');
+    expect(toc.chapters[39]!.title).toBe('第40頁');
+  });
+
+  it.each(['節', '話', '页'])('reads a chapter list numbered 第N%s', (unit) => {
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${Array.from({ length: 8 }, (_, i) => `<li><a href="/b/${String.fromCharCode(97 + i)}x">第${'一二三四五六七八'[i]}${unit} 標題</a></li>`).join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/b/');
+    expect(toc?.chapters ?? []).toHaveLength(8);
+  });
+
+  it('reads traditional numerals 萬 and 兩 in chapter titles', () => {
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${Array.from({ length: 6 }, (_, i) => `<li><a href="/b/${String.fromCharCode(97 + i)}x">第一萬零${'兩三四五六七'[i]}章</a></li>`).join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/b/');
+    expect(toc?.chapters ?? []).toHaveLength(6);
+  });
+
+  // Newest-first lists numbered in Chinese numerals, with ids that carry no
+  // digits, so only the title can tell the list runs backwards.
+  const numerals = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '二十'];
+  const newestFirstPage = (
+    unit: string,
+  ) => `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${numerals
+    .map((n, i) => `<li><a href="/n/book/s${'abcdefghijkl'[i]}">第${n}${unit}</a></li>`)
+    .reverse()
+    .join('\n')}</ul>
+</body></html>`;
+
+  it.each(['章', '頁'])('reverses a newest-first list numbered in Chinese (第N%s)', (unit) => {
+    const toc = parseChapterList(newestFirstPage(unit), 'https://www.example.com/n/book/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual(numerals.map((n) => `第${n}${unit}`));
+  });
+
+  it.each([
+    ['第一卷 第%s章', ['一', '二', '三', '四', '五', '六']],
+    ['第1卷 第%s章', ['1', '2', '3', '4', '5', '6']],
+  ])('orders by the chapter number, not the volume (%s)', (template, nums) => {
+    const titles = nums.map((n) => template.replace('%s', n));
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${titles
+      .map((t, i) => `<li><a href="/n/book/s${'abcdef'[i]}">${t}</a></li>`)
+      .reverse()
+      .join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/n/book/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual(titles);
+  });
+
+  it('reverses a newest-first list numbered in full-width digits (第１２頁)', () => {
+    const titles = ['第１頁', '第２頁', '第３頁', '第９頁', '第１０頁', '第１２頁'];
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${titles
+      .map((t, i) => `<li><a href="/n/book/s${'abcdef'[i]}9">${t}</a></li>`)
+      .reverse()
+      .join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/n/book/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual(titles);
+  });
+
+  it('reads larger Chinese numerals in order (九十九, 一百, 一百零一, 一千, 一萬)', () => {
+    const titles = [
+      '第九十九章',
+      '第一百章',
+      '第一百零一章',
+      '第一千章',
+      '第一萬章',
+      '第一萬零一章',
+    ];
+    const page = `<!DOCTYPE html><html><head><title>某書</title></head><body>
+<ul>${titles
+      .map((t, i) => `<li><a href="/n/book/s${'abcdef'[i]}">${t}</a></li>`)
+      .reverse()
+      .join('\n')}</ul>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://www.example.com/n/book/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual(titles);
+  });
+});
+
+/** A serial hosted on a WordPress blog: every chapter is a dated post
+ *  (`/YYYY/MM/DD/slug/`), and the slug is free text, so the epilogue's
+ *  `/epilogue-2/` shares no href template with `/chapter-78/`. */
+const blogChapter = (path: string, title: string) =>
+  `<p><a href="https://serial.example.com/${path}/">${title}</a></p>`;
+
+describe('parseChapterList on a blog-hosted serial (#7484)', () => {
+  it('keeps unnumbered Epilogue posts between and after the numbered chapters (Pale Lights shape)', () => {
+    const page = `<!DOCTYPE html><html><head><title>Table of Contents – Serial</title></head><body>
+<div class="entry-content">
+<h2>Volume 1</h2>
+${[1, 2, 3, 4, 5].map((n) => blogChapter(`2022/08/1${n}/chapter-${n}`, `Chapter ${n}`)).join('\n')}
+${blogChapter('2023/06/22/epilogue', 'Epilogue')}
+<h2>Volume 2</h2>
+${[6, 7, 8].map((n) => blogChapter(`2025/03/0${n}/chapter-${n}`, `Chapter ${n}`)).join('\n')}
+${blogChapter('2025/03/14/epilogue-2', 'Epilogue')}
+<p><a href="https://serial.example.com/summary/">Summary</a></p>
+<a href="https://serial.example.com/table-of-contents/?share=twitter">Share on X</a>
+<a href="https://serial.example.com/2025/03/14/epilogue-2/?share=twitter">Share the Epilogue on X</a>
+</div>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://serial.example.com/table-of-contents/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual([
+      'Chapter 1',
+      'Chapter 2',
+      'Chapter 3',
+      'Chapter 4',
+      'Chapter 5',
+      'Epilogue',
+      'Chapter 6',
+      'Chapter 7',
+      'Chapter 8',
+      'Epilogue',
+    ]);
+    expect(toc.chapters[9]!.url).toBe('https://serial.example.com/2025/03/14/epilogue-2/');
+  });
+
+  it('keeps an epilogue arc whose titles and slugs differ from the arcs before it (Worm shape)', () => {
+    const page = `<!DOCTYPE html><html><head><title>Table of Contents | Serial</title></head><body>
+<div class="entry-content">
+<p><strong>Arc 30 (Speck)</strong></p>
+${[1, 2, 3, 4, 5].map((n) => blogChapter(`2013/10/1${n}/speck-30-${n}`, ` 30.${n}`)).join('\n')}
+<p><strong>Arc 31 (Teneral)</strong></p>
+${blogChapter('2013/11/02/teneral-e-1', 'E.1')}
+${blogChapter('2013/11/05/teneral-e-2', 'Teneral e.2')}
+${blogChapter('2013/11/09/teneral-e-3', 'E.3')}
+</div>
+</body></html>`;
+    const toc = parseChapterList(page, 'https://serial.example.com/table-of-contents/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual([
+      '30.1',
+      '30.2',
+      '30.3',
+      '30.4',
+      '30.5',
+      'E.1',
+      'Teneral e.2',
+      'E.3',
+    ]);
+  });
+
+  it('does not let the date in an unnumbered post URL reverse the list', () => {
+    // "E.x" carries no number, so the order vote would read the day (19) out
+    // of its URL and count 30 -> 19 as a newest-first list.
+    const page = `<!DOCTYPE html><html><head><title>Serial</title></head><body><div>
+${[1, 2, 3, 4, 5].map((n) => blogChapter(`2013/10/1${n}/speck-30-${n}`, `30.${n}`)).join('\n')}
+${blogChapter('2013/11/19/interlude-end', 'E.x (Interlude: End)')}
+</div></body></html>`;
+    const toc = parseChapterList(page, 'https://serial.example.com/table-of-contents/')!;
+    expect(toc.chapters.map((c) => c.title)).toEqual([
+      '30.1',
+      '30.2',
+      '30.3',
+      '30.4',
+      '30.5',
+      'E.x (Interlude: End)',
+    ]);
+  });
+
+  it('reads an href that names the site without a scheme as a link to the site', () => {
+    // Worm's TOC links its last chapter as `parahumans.wordpress.com/2013/…`;
+    // resolved as a relative path it lands under /table-of-contents/.
+    const page = `<!DOCTYPE html><html><head><title>Serial</title></head><body><div>
+${[1, 2, 3, 4, 5].map((n) => blogChapter(`2013/11/0${n}/teneral-e-${n}`, `E.${n}`)).join('\n')}
+<p><a href="serial.example.com/2013/11/19/interlude-end/">E.x (Interlude: End)</a></p>
+</div></body></html>`;
+    const toc = parseChapterList(page, 'https://serial.example.com/table-of-contents/')!;
+    expect(toc.chapters.at(-1)).toEqual({
+      title: 'E.x (Interlude: End)',
+      url: 'https://serial.example.com/2013/11/19/interlude-end/',
+    });
+  });
+
+  it('does not admit dated posts from another site, day archives, or posts when the chapters are not dated posts', () => {
+    const offsite = `<p><a href="https://other.example.org/2025/01/01/a-review/">A review</a></p>`;
+    const dayArchive = `<p><a href="https://serial.example.com/2022/08/15/">August 15</a></p>`;
+    const blogPage = `<!DOCTYPE html><html><head><title>Serial</title></head><body><div>
+${[1, 2, 3, 4, 5].map((n) => blogChapter(`2022/08/1${n}/chapter-${n}`, `Chapter ${n}`)).join('\n')}
+${offsite}
+${dayArchive}
+</div></body></html>`;
+    expect(
+      parseChapterList(blogPage, 'https://serial.example.com/toc/')!.chapters.map((c) => c.title),
+    ).toEqual(['Chapter 1', 'Chapter 2', 'Chapter 3', 'Chapter 4', 'Chapter 5']);
+
+    const sitePage = `<!DOCTYPE html><html><head><title>Novel</title></head><body><ul>
+${Array.from({ length: 6 }, (_, i) => enChapter(i + 1)).join('\n')}
+<li><a href="/2025/01/01/site-news/">Site news</a></li>
+</ul></body></html>`;
+    expect(parseChapterList(sitePage, 'https://novels.example.org/lotm/')!.chapters).toHaveLength(
+      6,
+    );
   });
 });
 

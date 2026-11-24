@@ -2,7 +2,7 @@ import clsx from 'clsx';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useSettingsStore } from '@/store/settingsStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData, useBookConfig } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -35,8 +35,7 @@ const SideBar = ({}) => {
     useSidebarStore();
   const { isSearchBarVisible, setSearchBarVisible } = useSidebarStore();
   const searchNavState = sideBarBookKey ? getSearchNavState(sideBarBookKey) : null;
-  const { searchResults = null } = searchNavState || {};
-  const { getBookData, getConfig } = useBookDataStore();
+  const { searchResults = null, searchTerm = '' } = searchNavState || {};
   const { getView, getViewSettings } = useReaderStore();
   const isMobile = window.innerWidth < 640;
   const [isFullHeightInMobile, setIsFullHeightInMobile] = useState(isMobile);
@@ -129,6 +128,15 @@ const SideBar = ({}) => {
     setTimeout(() => {
       setSideBarVisible(true);
       setSearchBarVisible(true);
+      // The iframe-forwarded keydown path is consumed by the first listener
+      // whose action returns anything other than false, so the book-level
+      // shortcut's own null-term 'search-term' dispatch may never run. Emit
+      // it here as well: the event is idempotent, and SearchBar depends on it
+      // to focus and select the existing term on a repeated Ctrl+F.
+      eventDispatcher.dispatch('search-term', {
+        term: null,
+        bookKey: useSidebarStore.getState().sideBarBookKey,
+      });
     }, 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -141,6 +149,15 @@ const SideBar = ({}) => {
     getView(sideBarBookKey)?.clearSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideBarBookKey, clearSearch]);
+
+  // On mobile, dismissing the sidebar closes a search bar with nothing typed,
+  // so the next open starts on the TOC rather than on an empty search bar.
+  useEffect(() => {
+    if (!(appService?.isMobile || isMobile) || isSideBarVisible || !isSearchBarVisible) return;
+    if (!sideBarBookKey || getSearchNavState(sideBarBookKey).searchTerm) return;
+    handleHideSearchBar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSideBarVisible]);
 
   const handleHideSideBar = useCallback(() => {
     if (isSearchBarVisible) {
@@ -160,13 +177,14 @@ const SideBar = ({}) => {
 
   const handleSearchResultClick = (cfi: string) => {
     onNavigateEvent();
-    getView(sideBarBookKey)?.goTo(cfi);
+    getView(sideBarBookKey)?.goTo(cfi, { focus: true });
   };
 
+  const bookData = useBookData(sideBarBookKey);
+  const bookConfig = useBookConfig(sideBarBookKey);
   if (!sideBarBookKey) return null;
 
   const viewSettings = getViewSettings(sideBarBookKey);
-  const bookData = getBookData(sideBarBookKey);
   if (!bookData || !bookData.book || !bookData.bookDoc) {
     return null;
   }
@@ -174,7 +192,7 @@ const SideBar = ({}) => {
   const languageDir = getBookDirFromLanguage(bookDoc.metadata.language);
   // On the annotations tab the header search icon drives the annotation
   // search in the toolbar instead of the in-book text search.
-  const isAnnotationsTab = getConfig(sideBarBookKey)?.viewSettings?.sideBarTab === 'annotations';
+  const isAnnotationsTab = bookConfig?.viewSettings?.sideBarTab === 'annotations';
 
   return isSideBarVisible ? (
     <>
@@ -192,7 +210,8 @@ const SideBar = ({}) => {
           viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
           appService?.hasRoundedWindow && 'rounded-window-top-left rounded-window-bottom-left',
           isSideBarPinned ? 'z-20' : 'z-[45] shadow-2xl',
-          !isSideBarPinned && viewSettings?.isEink && 'border-base-content border-e',
+          // Physical edge: the sidebar sits on the left whatever the book's `dir`.
+          viewSettings?.isEink && 'border-base-content border-r',
         )}
         role='navigation'
         aria-label={_('Sidebar')}
@@ -276,7 +295,7 @@ const SideBar = ({}) => {
             <BookCard book={book} />
           </div>
         </div>
-        {isSearchBarVisible && !isAnnotationsTab && searchResults ? (
+        {isSearchBarVisible && !isAnnotationsTab && searchResults && searchTerm ? (
           <SearchResults
             bookKey={sideBarBookKey!}
             results={searchResults}

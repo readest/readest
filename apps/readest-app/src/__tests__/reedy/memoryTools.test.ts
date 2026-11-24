@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ToolRegistry } from '@/services/reedy/tools/ToolRegistry';
 import type { ToolContext } from '@/services/reedy/tools/types';

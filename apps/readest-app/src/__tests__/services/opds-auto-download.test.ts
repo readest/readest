@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Book } from '@/types/book';
 import type { OPDSCatalog } from '@/types/opds';
@@ -58,6 +60,8 @@ vi.mock('@/services/opds/subscriptionState', () => ({
 }));
 
 import { syncSubscribedCatalogs } from '@/services/opds/autoDownload';
+import { findBookByOPDSSources } from '@/services/opds/sourceMap';
+import { getConnectorSyncStatus } from '@/services/sync/dataFlow/log';
 import { checkFeedForNewItems } from '@/services/opds/feedChecker';
 import { saveSubscriptionState, loadSubscriptionState } from '@/services/opds/subscriptionState';
 import { upsertOPDSSourceMapping } from '@/services/opds/sourceMap';
@@ -131,9 +135,16 @@ describe('OPDS auto-download orchestrator', () => {
     ];
     vi.mocked(checkFeedForNewItems).mockResolvedValue(pendingItems);
 
+    localStorage.clear();
     const result = await syncSubscribedCatalogs(catalogs, appService, []);
     expect(result.totalNewBooks).toBe(1);
     expect(result.newBooks).toHaveLength(1);
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'opds',
+      direction: 'pull',
+      kind: 'books',
+      count: 1,
+    });
     expect(saveSubscriptionState).toHaveBeenCalled();
 
     const savedState = vi.mocked(saveSubscriptionState).mock.calls[0]![1] as OPDSSubscriptionState;
@@ -146,17 +157,11 @@ describe('OPDS auto-download orchestrator', () => {
     });
   });
 
-  it('downloads with skipSslVerification like the manual download path', async () => {
-    // The manual OPDS download (page.tsx handleDownload) passes
-    // skipSslVerification as a workaround for self-signed/private-CA OPDS
-    // servers (#2871): the native download_file validates TLS with rustls,
-    // which ignores the OS trust store, while the feed fetch and auth probe
-    // go through the http plugin with acceptInvalidCerts. Without the same
-    // flag here, auto-download dies in the TLS handshake on servers where
-    // manual download works (#4988).
-    const catalogs: OPDSCatalog[] = [
-      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
-    ];
+  it('skips TLS verification on the download only when the catalog allows self-signed certs', async () => {
+    // The native download_file validates TLS with rustls, which ignores the OS
+    // trust store, so a self-signed/private-CA OPDS server needs the catalog's
+    // opt-in for downloads too, not just for the feed fetch (#2871, #4988).
+    // Catalogs saved before the option existed keep the old behavior.
     vi.mocked(checkFeedForNewItems).mockResolvedValue([
       {
         entryId: 'urn:shelf:1',
@@ -166,12 +171,47 @@ describe('OPDS auto-download orchestrator', () => {
         baseURL: 'https://shelf.example.com/opds',
       },
     ]);
+    const catalog: OPDSCatalog = {
+      id: 'cat-1',
+      name: 'Shelf',
+      url: 'https://shelf.example.com/opds',
+      autoDownload: true,
+    };
 
-    await syncSubscribedCatalogs(catalogs, appService, []);
+    for (const [allowSelfSignedCert, expected] of [
+      [false, false],
+      [true, true],
+      [undefined, true],
+    ] as const) {
+      vi.mocked(downloadFile).mockClear();
+      await syncSubscribedCatalogs([{ ...catalog, allowSelfSignedCert }], appService, []);
+      expect(vi.mocked(downloadFile).mock.calls[0]![0]).toMatchObject({
+        skipSslVerification: expected,
+      });
+    }
+  });
 
-    expect(downloadFile).toHaveBeenCalledTimes(1);
+  it("verifies a download the feed points at on another origin, whatever the catalog's choice", async () => {
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: 'https://cdn.example.net/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    const catalog: OPDSCatalog = {
+      id: 'cat-1',
+      name: 'Shelf',
+      url: 'https://shelf.example.com/opds',
+      autoDownload: true,
+      allowSelfSignedCert: true,
+    };
+
+    await syncSubscribedCatalogs([catalog], appService, []);
     expect(vi.mocked(downloadFile).mock.calls[0]![0]).toMatchObject({
-      skipSslVerification: true,
+      skipSslVerification: false,
     });
   });
 
@@ -277,6 +317,141 @@ describe('OPDS auto-download orchestrator', () => {
     expect(savedState.knownEntryIds).not.toContain('urn:fail:1');
   });
 
+  it('does not count a book it already had as downloaded', async () => {
+    localStorage.clear();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    vi.mocked(findBookByOPDSSources).mockResolvedValueOnce({ hash: 'h1' } as never);
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+
+    const total = readFlowState().totals['opds:pull:books'];
+    expect(total?.count).toBe(0);
+    expect(total?.lastSuccessAt).toBeGreaterThan(0);
+  });
+
+  it('downloads anyway when the identity-gate lookup rejects', async () => {
+    // The gate's SQLite lives in OPFS on the web app, where connect can fail
+    // (corrupt/empty file, single-handle lock races). The lookup is an
+    // optimization — a rejection must not abort the download (#7489).
+    localStorage.clear();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    vi.mocked(findBookByOPDSSources).mockRejectedValueOnce(
+      new Error('failed to connect: I/O error: short read on page 1'),
+    );
+
+    const result = await syncSubscribedCatalogs(catalogs, appService, []);
+
+    expect(result.totalNewBooks).toBe(1);
+    expect(result.errors).toHaveLength(0);
+
+    const savedState = vi
+      .mocked(saveSubscriptionState)
+      .mock.calls.at(-1)![1] as OPDSSubscriptionState;
+    expect(savedState.knownEntryIds).toContain('urn:shelf:1');
+    // Only the test's own entry must be absent from failures — the shared
+    // state mock may carry leftover failures from earlier tests in the file.
+    expect(savedState.failedEntries.map((fe) => fe.entryId)).not.toContain('urn:shelf:1');
+
+    const total = readFlowState().totals['opds:pull:books'];
+    expect(total?.count).toBe(1);
+  });
+
+  it('records the error message, without an Error prefix', async () => {
+    localStorage.clear();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([
+      {
+        entryId: 'urn:shelf:1',
+        title: 'Issue 1',
+        acquisitionHref: '/dl/1.epub',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds',
+      },
+    ]);
+    (appService.importBook as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('corrupt file'),
+    );
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+
+    expect(readFlowState().entries[0]).toMatchObject({ error: 'corrupt file' });
+  });
+
+  it('clears an earlier failure when a later pass finds nothing new', async () => {
+    localStorage.clear();
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    const state = { catalogId: 'cat-1', lastCheckedAt: 0, knownEntryIds: [], failedEntries: [] };
+    vi.mocked(loadSubscriptionState).mockResolvedValueOnce(state);
+    vi.mocked(loadSubscriptionState).mockResolvedValueOnce(state);
+    vi.mocked(loadSubscriptionState).mockResolvedValueOnce(state);
+    vi.mocked(checkFeedForNewItems).mockRejectedValueOnce(new Error('feed unreachable'));
+    await syncSubscribedCatalogs(catalogs, appService, []);
+    expect(getConnectorSyncStatus(readFlowState(), 'opds').status).toBe('failed');
+
+    vi.mocked(checkFeedForNewItems).mockResolvedValue([]);
+    const realNow = Date.now();
+    const now = vi.spyOn(Date, 'now').mockReturnValue(realNow + 60000);
+    await syncSubscribedCatalogs(catalogs, appService, []);
+    now.mockRestore();
+
+    expect(getConnectorSyncStatus(readFlowState(), 'opds').status).toBe('ok');
+  });
+
+  it('keeps showing a catalog that failed when a later one succeeds', async () => {
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Down', url: 'https://down.example.com/opds', autoDownload: true },
+      { id: 'cat-2', name: 'Up', url: 'https://up.example.com/opds', autoDownload: true },
+    ];
+    vi.mocked(checkFeedForNewItems)
+      .mockRejectedValueOnce(new Error('feed unreachable'))
+      .mockResolvedValue([
+        {
+          entryId: 'urn:up:1',
+          title: 'Good Book',
+          acquisitionHref: '/dl/good.epub',
+          mimeType: 'application/epub+zip',
+          baseURL: 'https://up.example.com',
+        },
+      ]);
+    const realNow = Date.now();
+    const now = vi.spyOn(Date, 'now');
+    now.mockImplementation(() => realNow + now.mock.calls.length);
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+    now.mockRestore();
+
+    expect(getConnectorSyncStatus(readFlowState(), 'opds')).toMatchObject({
+      status: 'failed',
+      error: 'feed unreachable',
+    });
+  });
+
   it('returns empty result when no catalogs have autoDownload', async () => {
     const result = await syncSubscribedCatalogs([], appService, []);
     expect(result).toEqual({ newBooks: [], totalNewBooks: 0, errors: [] });
@@ -364,6 +539,50 @@ describe('OPDS auto-download orchestrator', () => {
     await syncSubscribedCatalogs(catalogs, appService, []);
 
     expect(downloadFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a relative link against the page it was found on, not the catalog root (#7489)', async () => {
+    // A link found on a sub-page and relative to it ("download/7/epub/") only
+    // resolves correctly against that page. Once the entry drops out of the
+    // feed, the retry is rebuilt from the saved failure alone.
+    const catalogs: OPDSCatalog[] = [
+      { id: 'cat-1', name: 'Shelf', url: 'https://shelf.example.com/opds', autoDownload: true },
+    ];
+    let saved: OPDSSubscriptionState = {
+      catalogId: 'cat-1',
+      lastCheckedAt: 0,
+      knownEntryIds: [],
+      failedEntries: [],
+    };
+    vi.mocked(loadSubscriptionState).mockImplementation(async () => structuredClone(saved));
+    vi.mocked(saveSubscriptionState).mockImplementation(async (_appService, state) => {
+      saved = structuredClone(state);
+    });
+    vi.mocked(checkFeedForNewItems).mockResolvedValueOnce([
+      {
+        entryId: 'urn:shelf:7',
+        title: 'Issue 7',
+        acquisitionHref: 'download/7/epub/',
+        mimeType: 'application/epub+zip',
+        baseURL: 'https://shelf.example.com/opds/new',
+      },
+    ]);
+    vi.mocked(downloadFile).mockRejectedValueOnce(new Error('network down'));
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+    expect(saved.failedEntries.map((fe) => fe.entryId)).toEqual(['urn:shelf:7']);
+
+    saved.failedEntries[0]!.lastAttemptAt = 0; // past the backoff
+    vi.mocked(checkFeedForNewItems).mockResolvedValueOnce([]);
+    vi.mocked(downloadFile).mockClear();
+
+    await syncSubscribedCatalogs(catalogs, appService, []);
+
+    expect(vi.mocked(downloadFile).mock.calls[0]![0]).toMatchObject({
+      url: 'https://shelf.example.com/opds/download/7/epub/',
+    });
+    expect(saved.knownEntryIds).toContain('urn:shelf:7');
+    expect(saved.failedEntries).toHaveLength(0);
   });
 
   // The module-level loadSubscriptionState mock resolves one SHARED state

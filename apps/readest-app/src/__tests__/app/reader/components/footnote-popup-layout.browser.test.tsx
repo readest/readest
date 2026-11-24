@@ -10,6 +10,9 @@ import {
   DEFAULT_VIEW_CONFIG,
 } from '@/services/constants';
 import FootnotePopup from '@/app/reader/components/FootnotePopup';
+import { mountBackgroundTexture, unmountBackgroundTexture } from '@/styles/textures';
+import { eventDispatcher } from '@/utils/event';
+import { getStyles } from '@/utils/style';
 import '@/styles/globals.css';
 
 const h = vi.hoisted(() => ({
@@ -92,9 +95,18 @@ afterEach(() => {
   });
   cleanup();
   cell.remove();
+  unmountBackgroundTexture(document);
+  document.documentElement.removeAttribute('data-eink');
+  document.documentElement.removeAttribute('data-theme');
+  document.documentElement.style.removeProperty('--bg-texture-opacity');
+  document.documentElement.style.removeProperty('--bg-texture-size');
 });
 
-const openFootnote = (direction: 'ltr' | 'rtl' = 'ltr') => {
+const openFootnote = (
+  direction: 'ltr' | 'rtl' = 'ltr',
+  bodyBackground?: string,
+  authoredStyles = '',
+) => {
   h.viewSettings.rtl = direction === 'rtl';
   render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
   act(() => {
@@ -108,13 +120,14 @@ const openFootnote = (direction: 'ltr' | 'rtl' = 'ltr') => {
   Object.defineProperty(view, 'renderer', {
     value: {
       viewSize: 220,
-      setAttribute: () => {},
+      setAttribute: (name: string, value: string) => view.setAttribute(name, value),
       getContents: () => [{ doc: iframe.contentDocument!, index: 0 }],
       setStyles: (css: string) => {
         // The popup has attached the view before styling its document.
         const doc = iframe.contentDocument!;
         doc.documentElement.dir = direction;
-        doc.head.innerHTML = '<style>.authored-justify { text-align: justify; }</style>';
+        doc.head.innerHTML = `<style>.authored-justify { text-align: justify; } ${authoredStyles}</style>`;
+        if (bodyBackground) doc.body.style.backgroundColor = bodyBackground;
         doc.body.innerHTML = `
           <p id="css-justify" class="authored-justify">A footnote justified by the book stylesheet.</p>
           <p id="inline-justify" style="text-align: justify">A footnote justified by an inline style.</p>
@@ -156,6 +169,134 @@ const expectAlignment = (doc: Document, justified: string, left: string) => {
   expect(alignment('center')).toBe('center');
   expect(alignment('right')).toBe('right');
 };
+
+describe('footnote popup background texture (#6841)', () => {
+  const mountTexture = () => {
+    document.documentElement.style.setProperty('--bg-texture-opacity', '0.4');
+    document.documentElement.style.setProperty('--bg-texture-size', '120px');
+    mountBackgroundTexture(document, {
+      id: 'paper',
+      name: 'Paper',
+      url: '/images/paper-texture.png',
+    });
+  };
+
+  const expectTextureBelowContent = () => {
+    const popup = document.querySelector<HTMLElement>('#popup-container')!;
+    const texture = getComputedStyle(popup, '::before');
+    expect(texture.backgroundImage).toContain('/images/paper-texture.png');
+    expect(texture.opacity).toBe('0.4');
+    expect(texture.backgroundSize).toBe('120px');
+    expect(texture.pointerEvents).toBe('none');
+    // A negative layer inside an isolated popup paints above its surface but
+    // below even unpositioned content and the book iframe's own backgrounds.
+    expect(texture.zIndex).toBe('-1');
+    expect(getComputedStyle(popup).isolation).toBe('isolate');
+  };
+
+  test.each([
+    { theme: 'light', eink: false, direction: 'ltr', useBookLayout: false, vertical: false },
+    { theme: 'dark', eink: false, direction: 'rtl', useBookLayout: true, vertical: false },
+    { theme: 'light', eink: true, direction: 'rtl', useBookLayout: false, vertical: true },
+    { theme: 'dark', eink: true, direction: 'ltr', useBookLayout: true, vertical: true },
+  ] as const)('keeps authored backgrounds above the texture: %j', (mode) => {
+    document.documentElement.dataset['theme'] = `default-${mode.theme}`;
+    document.documentElement.dataset['eink'] = `${mode.eink}`;
+    h.viewSettings.isEink = mode.eink;
+    h.viewSettings.backgroundTextureId = 'paper';
+    h.viewSettings.useBookLayout = mode.useBookLayout;
+    h.viewSettings.vertical = mode.vertical;
+    h.viewSettings.overrideColor = false;
+    mountTexture();
+    const doc = openFootnote(mode.direction);
+    expect(doc.defaultView!.getComputedStyle(doc.body).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    const paragraph = doc.getElementById('left')!;
+    paragraph.style.background = 'rgb(12, 34, 56)';
+    paragraph.style.backgroundImage = 'linear-gradient(red, blue)';
+    expectTextureBelowContent();
+    const authored = doc.defaultView!.getComputedStyle(paragraph);
+    expect(authored.backgroundColor).toBe('rgb(12, 34, 56)');
+    expect(authored.backgroundImage).toBe('linear-gradient(rgb(255, 0, 0), rgb(0, 0, 255))');
+  });
+
+  test('preserves an authored body background in a textured e-ink footnote', () => {
+    h.viewSettings.isEink = true;
+    h.viewSettings.backgroundTextureId = 'paper';
+    h.viewSettings.overrideColor = false;
+    mountTexture();
+    const doc = openFootnote('ltr', 'rgb(12, 34, 56)');
+    expect(doc.defaultView!.getComputedStyle(doc.body).backgroundColor).toBe('rgb(12, 34, 56)');
+  });
+
+  test.each([
+    false,
+    true,
+  ])('keeps authored body colors readable with Override Book Color %s', (overrideColor) => {
+    document.documentElement.dataset['theme'] = 'default-light';
+    h.viewSettings.isEink = true;
+    h.viewSettings.backgroundTextureId = 'paper';
+    h.viewSettings.overrideColor = overrideColor;
+    mountTexture();
+    const doc = openFootnote('ltr', undefined, 'body { background: black; color: white; }');
+    // Foliate extracts the body background into its own view surface. Leaving
+    // no-background enabled discards that fill while retaining authored text.
+    expect(doc.defaultView!.frameElement?.parentElement?.hasAttribute('no-background')).toBe(false);
+    const body = doc.defaultView!.getComputedStyle(doc.body);
+    expect(body.backgroundColor).toBe(overrideColor ? 'rgba(0, 0, 0, 0)' : 'rgb(0, 0, 0)');
+    expect(body.color).toBe(
+      overrideColor
+        ? doc.defaultView!.getComputedStyle(doc.documentElement).color
+        : 'rgb(255, 255, 255)',
+    );
+    expect(doc.defaultView!.getComputedStyle(doc.getElementById('left')!).color).toBe(body.color);
+  });
+
+  test('retains the e-ink fill without a texture and in the main reader', () => {
+    h.viewSettings.isEink = true;
+    h.viewSettings.backgroundTextureId = 'none';
+    const doc = openFootnote();
+    expect(doc.defaultView!.getComputedStyle(doc.body).backgroundColor).toBe(
+      getComputedStyle(document.querySelector('#popup-container')!).backgroundColor,
+    );
+    h.viewSettings.backgroundTextureId = 'paper';
+    const style = doc.createElement('style');
+    style.textContent = getStyles(h.viewSettings);
+    doc.head.replaceChildren(style);
+    expect(doc.defaultView!.getComputedStyle(doc.body).backgroundColor).toBe('rgb(255, 255, 255)');
+  });
+
+  test('scrolls long synthesized notes without scrolling the texture surface', () => {
+    mountTexture();
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+    act(() => {
+      eventDispatcher.dispatch('footnote-popup', {
+        element: anchor,
+        footnote: 'A long footnote with enough text to scroll. '.repeat(200),
+      });
+    });
+    const popup = document.querySelector<HTMLElement>('#popup-container')!;
+    const content = popup.querySelector<HTMLElement>('.footnote-content')!;
+    content.scrollTop = content.scrollHeight;
+    popup.scrollTop = popup.scrollHeight;
+    expect(content.scrollTop).toBeGreaterThan(content.clientHeight);
+    expect(popup.scrollTop).toBe(0);
+    expectTextureBelowContent();
+  });
+
+  test('textures synthesized data-attribute footnotes and clears it when disabled', () => {
+    mountTexture();
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
+    act(() => {
+      eventDispatcher.dispatch('footnote-popup', { element: anchor, footnote: 'Plain footnote' });
+    });
+    expectTextureBelowContent();
+    expect(document.querySelector('.footnote-content p')?.textContent).toBe('Plain footnote');
+    unmountBackgroundTexture(document);
+    expect(
+      getComputedStyle(document.querySelector('#popup-container')!, '::before').backgroundImage,
+    ).toBe('none');
+  });
+});
 
 describe('footnote popup layout overrides (#6636)', () => {
   test.each(['ltr', 'rtl'] as const)('disables authored justification in %s', (direction) => {

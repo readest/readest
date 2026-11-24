@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { selectBackend, type RetrievalBackend } from '@/services/ai/adapters/retrievalBackend';
 import { ReedySourceStore } from '@/services/ai/adapters/reedySourceStore';

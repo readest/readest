@@ -2,14 +2,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { formatSyncFailure } from './syncResult';
 
 import type { Book } from '@/types/book';
+import { recordFlow } from '@/services/sync/dataFlow/log';
+import type { FlowDirection, FlowKind } from '@/services/sync/dataFlow/types';
 import type { EnvConfigType } from '@/services/environment';
 import type { ProgressHandler } from '@/utils/transfer';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import type { SystemSettings } from '@/types/settings';
 import type { UserPlan } from '@/types/quota';
+import type { CustomFont } from '@/styles/fonts';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useFileSyncStore } from '@/store/fileSyncStore';
+import { useCustomFontStore } from '@/store/customFontStore';
 import { isWebAppPlatform } from '@/services/environment';
 import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
 import { isICloudSupportedPlatform } from '@/services/sync/providers/icloud/buildICloudProvider';
@@ -23,6 +27,7 @@ import {
 } from '@/services/sync/file/providerRegistry';
 import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
 import { FileSyncEngine, type SyncLibraryResult } from '@/services/sync/file/engine';
+import { downloadFont, syncFonts } from '@/services/sync/file/fonts';
 
 /**
  * Whether a backend's transport can work at all right now. Web Google Drive
@@ -61,14 +66,40 @@ export const getReadyFileSyncBackends = (
 const buildEngine = async (
   envConfig: EnvConfigType,
   kind: FileSyncBackendKind,
+  parentTransferId?: string,
 ): Promise<FileSyncEngine | null> => {
   if (!canBackendRun(kind)) return null;
   const settings = useSettingsStore.getState().settings;
   const appService = await envConfig.getAppService();
-  const fileProvider = await createFileSyncProvider(kind, settings);
+  const fileProvider = await createFileSyncProvider(kind, settings, parentTransferId);
   if (!fileProvider) return null;
   const store = createAppLocalStore({ appService, settings, envConfig });
   return new FileSyncEngine(fileProvider, store);
+};
+
+const bookFile = (connector: FileSyncBackendKind, direction: FlowDirection) =>
+  ({ connector, direction, kind: 'books' }) as const;
+
+export const recordLibraryPass = (connector: FileSyncBackendKind, result: SyncLibraryResult) => {
+  const add = (direction: FlowDirection, kind: FlowKind, count: number) =>
+    recordFlow({ connector, direction, kind, count });
+  add('push', 'progress', result.configsUploaded ?? 0);
+  add('pull', 'progress', result.configsDownloaded ?? 0);
+  add('push', 'books', result.filesUploaded ?? 0);
+  // booksAdded are shelf rows: their files download on demand.
+  add('pull', 'books', 0);
+  for (const { title, hash, reason, phase } of result.failedBooks) {
+    const direction = phase === 'download' ? 'pull' : 'push';
+    recordFlow({ ...bookFile(connector, direction), bookTitle: title || hash, error: reason });
+  }
+  if (result.indexPushFailed)
+    recordFlow({ ...bookFile(connector, 'push'), error: 'Failed to upload the library index' });
+};
+
+/** A pass that stopped partway doesn't say which side broke, so both are flagged. */
+export const recordLibraryPassFailure = (connector: FileSyncBackendKind, error: string) => {
+  recordFlow({ ...bookFile(connector, 'pull'), error });
+  recordFlow({ ...bookFile(connector, 'push'), error });
 };
 
 /** One backend's library sync. Throws; the caller isolates the failure. */
@@ -92,9 +123,9 @@ const syncOneBackend = async (
     await appService.saveSettings(next);
   }
 
-  const strategy = ps?.strategy ?? 'silent';
+  const strategy = ps?.strategy === 'prompt' ? 'silent' : (ps?.strategy ?? 'silent');
   const result = await engine.syncLibrary(useLibraryStore.getState().library, {
-    strategy: strategy === 'prompt' ? 'silent' : strategy,
+    strategy,
     syncBooks: ps?.syncBooks ?? false,
     fullSync: false,
     concurrency: 6,
@@ -110,6 +141,14 @@ const syncOneBackend = async (
     },
   });
 
+  recordLibraryPass(kind, result);
+  // Custom fonts ride the same pass (#7793); a font failure is not a library one.
+  try {
+    const provider = await createFileSyncProvider(kind, useSettingsStore.getState().settings);
+    if (provider) await syncFonts(envConfig, provider, strategy);
+  } catch (e) {
+    console.warn('[cloudSync] font sync failed', kind, e);
+  }
   if (!result.failures && !result.indexPushFailed) {
     const latest = useSettingsStore.getState().settings;
     const next = { ...latest, [key]: { ...latest[key], lastSyncedAt: Date.now() } };
@@ -178,6 +217,7 @@ export const runFileLibrarySyncPass = async (
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         useFileSyncStore.getState().setLastError(kind, message);
+        recordLibraryPassFailure(kind, message);
         console.warn('[cloudSync] library file sync failed', kind, e);
       }
     }
@@ -204,6 +244,7 @@ export const runFileBookUpload = async (envConfig: EnvConfigType, book: Book): P
       const engine = await buildEngine(envConfig, kind);
       if (!engine) continue;
       const result = await engine.pushBookFile(book);
+      if (result.uploaded) recordFlow({ ...bookFile(kind, 'push'), bookTitle: book.title });
       if (!result.uploaded && result.reason !== 'remote-matches') continue;
       anyUploaded = true;
       try {
@@ -213,6 +254,11 @@ export const runFileBookUpload = async (envConfig: EnvConfigType, book: Book): P
       }
     } catch (e) {
       console.warn('[cloudSync] book upload failed', kind, book.hash, e);
+      recordFlow({
+        ...bookFile(kind, 'push'),
+        bookTitle: book.title,
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
   }
   return anyUploaded;
@@ -229,18 +275,49 @@ export const runFileBookDownload = async (
   envConfig: EnvConfigType,
   book: Book,
   onProgress?: ProgressHandler,
+  parentTransferId?: string,
 ): Promise<boolean> => {
   const backends = getActiveFileSyncBackends(useSettingsStore.getState().settings);
   for (const kind of backends) {
     try {
-      const engine = await buildEngine(envConfig, kind);
+      const engine = await buildEngine(envConfig, kind, parentTransferId);
       if (!engine) continue;
       if (!(await engine.downloadBookFile(book, onProgress))) continue;
+      recordFlow({ ...bookFile(kind, 'pull'), bookTitle: book.title });
       book.downloadedAt = Date.now();
       if (!book.coverDownloadedAt) book.coverDownloadedAt = Date.now();
       return true;
     } catch (e) {
       console.warn('[cloudSync] book download failed', kind, book.hash, e);
+      recordFlow({
+        ...bookFile(kind, 'pull'),
+        bookTitle: book.title,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+  return false;
+};
+
+/**
+ * Download a synced custom font when the user picks it (#7793), from the first
+ * enabled backend that holds it, then mount it as the Readest Cloud download
+ * handler does.
+ */
+export const runFileFontDownload = async (
+  envConfig: EnvConfigType,
+  font: CustomFont,
+): Promise<boolean> => {
+  const settings = useSettingsStore.getState().settings;
+  const appService = await envConfig.getAppService();
+  for (const kind of getReadyFileSyncBackends(settings)) {
+    try {
+      const provider = await createFileSyncProvider(kind, settings);
+      if (!provider || !(await downloadFont(provider, appService, font))) continue;
+      await useCustomFontStore.getState().activateFontByContentId(envConfig, font.contentId!);
+      return true;
+    } catch (e) {
+      console.warn('[cloudSync] font download failed', kind, font.name, e);
     }
   }
   return false;

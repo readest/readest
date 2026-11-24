@@ -3,6 +3,7 @@ import type { CustomTranslator } from '@/types/translation';
 import type { TranslationProvider } from '../types';
 import { createDeepLTranslator } from './deepl';
 import { createOpenAICompatibleTranslator } from './openaiCompatible';
+import { isOnDeviceLLMSupported } from './onDevice';
 
 export * from './constants';
 export * from './prompts';
@@ -17,7 +18,10 @@ export const buildCustomTranslator = (config: CustomTranslator): TranslationProv
       : createOpenAICompatibleTranslator(config);
   provider.premiumRequired = true;
   // The DeepL API sends no CORS headers, so it only works through tauriFetch.
-  provider.disabled = !!config.disabled || (!!provider.requiresApp && !isTauriAppPlatform());
+  provider.disabled =
+    !!config.disabled ||
+    (!!provider.requiresApp && !isTauriAppPlatform()) ||
+    (config.type === 'apple-intelligence' && !isOnDeviceLLMSupported());
   return provider;
 };
 

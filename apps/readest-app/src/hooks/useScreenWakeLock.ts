@@ -31,6 +31,7 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
     let shouldHoldWakeLock = lock;
     let requestPending = false;
     let unlistenOnFocusChanged: Promise<() => void> | null = null;
+    let blurTimer: ReturnType<typeof setTimeout> | undefined;
 
     const requestWakeLock = async () => {
       shouldHoldWakeLock = true;
@@ -76,6 +77,11 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
       }
     };
 
+    const handlePageFocus = () => {
+      clearTimeout(blurTimer);
+      requestWakeLock();
+    };
+
     if (lock) {
       requestWakeLock();
     } else if (wakeLockRef.current) {
@@ -86,18 +92,27 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
     if (useDocumentVisibility && lock) {
       document.addEventListener('visibilitychange', handleVisibilityChange);
     } else if (isTauriAppPlatform() && hasWindow && lock) {
+      // On Linux CEF, refocusing the window reports focus and then blur as the
+      // browser view takes keyboard focus from the toplevel, and the page gets
+      // focus a few ms later (#7085). Trust a blur only if the page is still
+      // unfocused shortly after it.
       unlistenOnFocusChanged = getCurrentWindow()
         .onFocusChanged(({ payload: focused }) => {
+          clearTimeout(blurTimer);
           if (focused) {
             requestWakeLock();
           } else {
-            releaseWakeLock();
+            blurTimer = setTimeout(() => {
+              if (!document.hasFocus()) releaseWakeLock();
+            }, 100);
           }
         })
         .catch((error) => {
           console.info('Failed to register window focus listener:', error);
           return () => {};
         });
+      // The page may get focus only after that check released the lock.
+      window.addEventListener('focus', handlePageFocus);
     }
 
     return () => {
@@ -106,6 +121,8 @@ export const useScreenWakeLock = (lock: boolean, hasWindow?: boolean, isIOSApp =
       if (useDocumentVisibility && lock) {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
+      clearTimeout(blurTimer);
+      window.removeEventListener('focus', handlePageFocus);
       void unlistenOnFocusChanged?.then((unlisten) => unlisten());
     };
   }, [lock, hasWindow, isIOSApp]);

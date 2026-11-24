@@ -1,6 +1,9 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import SectionInfo from '@/app/reader/components/SectionInfo';
+import { clearBookProgress, setBookProgress } from '@/store/readerProgressStore';
+import type { BookProgress } from '@/types/book';
 
 let currentBookData:
   | {
@@ -44,11 +47,11 @@ vi.mock('@/hooks/useTranslation', () => ({
 afterEach(() => {
   currentBookData = undefined;
   currentMarginTopPx = 44;
+  clearBookProgress('book-1');
 });
 
 const baseProps = {
   bookKey: 'book-1',
-  section: 'Chapter 1',
   showDoubleBorder: false,
   isScrolled: true,
   isVertical: false,
@@ -57,6 +60,24 @@ const baseProps = {
   contentInsets: { top: 89, right: 0, bottom: 0, left: 0 },
   gridInsets: { top: 45, right: 0, bottom: 0, left: 0 },
 };
+
+const turnInto = (sectionLabel: string) =>
+  act(() => setBookProgress('book-1', { location: 'cfi', sectionLabel } as BookProgress));
+
+describe('SectionInfo title', () => {
+  // The cell no longer hands the title down: a turn into the next section
+  // re-renders the title alone, not the cell and the chrome it holds.
+  it("shows the section of the book's progress and follows a turn into the next one", () => {
+    turnInto('Chapter 1');
+    const { container } = render(<SectionInfo {...baseProps} />);
+    const title = () => container.querySelector('[aria-label^="Section Title"]')?.textContent;
+    expect(title()).toBe('Chapter 1');
+
+    turnInto('Chapter 2');
+
+    expect(title()).toBe('Chapter 2');
+  });
+});
 
 describe('SectionInfo notch mask', () => {
   it('spans the grid cell and clips to the top inset so its texture aligns with the viewer (#4486)', () => {
@@ -234,5 +255,39 @@ describe('SectionInfo book metadata data attributes (#5776)', () => {
     expect(info.getAttribute('data-book-title')).toBe('Dune');
     expect(info.hasAttribute('data-book-series')).toBe(false);
     expect(info.hasAttribute('data-book-series-index')).toBe(false);
+  });
+});
+
+describe('SectionInfo vertical safe-area and 0px margin floor (#7389)', () => {
+  it('anchors the vertical section title within gridInsets.top and gridInsets.bottom plus 1.5x margins', () => {
+    const { container } = render(
+      <SectionInfo
+        {...baseProps}
+        isVertical
+        gridInsets={{ top: 59, right: 0, bottom: 34, left: 0 }}
+        contentInsets={{ top: 75, right: 0, bottom: 50, left: 0 }}
+      />,
+    );
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+    expect(info.style.top).toBe('83px');
+    expect(info.style.bottom).toBe('58px');
+    expect(info.style.right).toBe('calc(0px)');
+    expect(info.style.width).toBe('16px');
+  });
+
+  it('keeps the 1.5x vertical margins and 16px width floor when gridInsets and right margin are zero', () => {
+    const { container } = render(
+      <SectionInfo
+        {...baseProps}
+        isVertical
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        contentInsets={{ top: 16, right: 0, bottom: 16, left: 0 }}
+      />,
+    );
+    const info = container.querySelector('.sectioninfo') as HTMLElement;
+    expect(info.style.top).toBe('24px');
+    expect(info.style.bottom).toBe('24px');
+    expect(info.style.right).toBe('calc(0px)');
+    expect(info.style.width).toBe('16px');
   });
 });

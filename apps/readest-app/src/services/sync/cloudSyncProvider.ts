@@ -11,9 +11,10 @@ import type { FileSyncBackendKind } from '@/services/sync/file/providerRegistry'
  * Providers are INDEPENDENT (#5062): any subset may sync the library at once,
  * including none. Readest Cloud's flag has a derived default so an absent value
  * reproduces the old exclusive behaviour; every third-party backend is a plain
- * per-device `enabled` flag. Account-level data (settings replicas, reading
- * stats, dictionaries/fonts, translations) always syncs via Readest Cloud while
- * signed in, regardless of this selection.
+ * per-device `enabled` flag. Custom fonts follow the same selection (#7793).
+ * Other account-level data (settings replicas, reading stats, dictionaries,
+ * translations) always syncs via Readest Cloud while signed in, regardless of
+ * this selection.
  */
 export type CloudSyncProviderKind = 'readest' | FileSyncBackendKind;
 
@@ -22,6 +23,35 @@ export const settingsKeyForBackend = (
   kind: FileSyncBackendKind,
 ): 'webdav' | 'googleDrive' | 's3' | 'onedrive' | 'icloud' =>
   kind === 'gdrive' ? 'googleDrive' : kind;
+
+/** Providers whose saved connection the Integrations page can Forget (#7799). */
+export type ForgettableConnection = 'webdav' | 's3';
+
+/**
+ * Reset a provider's server address and login to the defaults. Per-device
+ * state (`enabled`, `deviceId`, sync toggles, cursors) is kept: Forget only
+ * removes what the user typed into the connect form.
+ */
+export const withConnectionForgotten = (
+  settings: SystemSettings,
+  kind: ForgettableConnection,
+): SystemSettings =>
+  kind === 'webdav'
+    ? {
+        ...settings,
+        webdav: { ...settings.webdav, serverUrl: '', username: '', password: '', rootPath: '/' },
+      }
+    : {
+        ...settings,
+        s3: {
+          ...settings.s3,
+          endpoint: '',
+          region: 'auto',
+          bucket: '',
+          accessKeyId: '',
+          secretAccessKey: '',
+        },
+      };
 
 /** Human-readable provider name (product names — deliberately untranslated). */
 export const cloudProviderDisplayName = (kind: CloudSyncProviderKind): string =>

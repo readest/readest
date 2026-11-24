@@ -1,8 +1,10 @@
+// @vitest-environment happy-dom
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ProgressBar from '@/app/reader/components/ProgressBar';
 import { DEFAULT_VIEW_CONFIG } from '@/services/constants';
+import { clearChapterScreens, recordChapterScreens } from '@/utils/chapterScreens';
 import type { BookProgress, ViewSettings } from '@/types/book';
 import type { TOCItem } from '@/libs/document';
 
@@ -19,16 +21,27 @@ let currentBookData: {
   bookDoc?: {
     metadata?: Record<string, unknown>;
     toc?: TOCItem[];
-    sections?: { location?: { current: number; next: number; total: number } }[];
+    sections?: {
+      location?: { current: number; next: number; total: number };
+      size?: number;
+      linear?: string;
+    }[];
   };
 } | null;
-let currentRenderer: { page: number; pages: number };
+let currentRenderer: { page: number; pages: number; atEnd?: boolean };
 let currentSectionFractions: number[] = [];
 let currentTocHrefIndex: Record<string, number> = {};
 
+// Per-test translations; like i18next, `replace` (when given) supplies the
+// interpolated values while `count` only picks the plural form.
+let currentTranslations: Record<string, string> = {};
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (s: string, values?: Record<string, unknown>) =>
-    s.replace(/{{(\w+)}}/g, (match, name) => String(values?.[name] ?? match)),
+  useTranslation: () => (s: string, values?: Record<string, unknown>) => {
+    const data = (values?.['replace'] as Record<string, unknown> | undefined) ?? values;
+    return (currentTranslations[s] ?? s).replace(/{{(\w+)}}/g, (match, name) =>
+      String(data?.[name] ?? match),
+    );
+  },
 }));
 
 let currentAppService = { isMobile: false, hasSafeAreaInset: false };
@@ -103,6 +116,7 @@ const renderProgressBar = () =>
 
 afterEach(() => {
   cleanup();
+  clearChapterScreens('book-1');
 });
 
 beforeEach(() => {
@@ -114,6 +128,7 @@ beforeEach(() => {
   currentRenderer = { page: 0, pages: 0 };
   currentSectionFractions = [];
   currentTocHrefIndex = {};
+  currentTranslations = {};
 });
 
 const makeProgress = (current: number, total: number): BookProgress =>
@@ -158,6 +173,149 @@ describe('ProgressBar — fixed-layout remaining pages', () => {
   });
 });
 
+describe('ProgressBar — percent readout', () => {
+  // A location pair of 2/5 reads 60%; the continuous fraction says 45%.
+  const setupPercent = (isFixedLayout: boolean) => {
+    currentViewSettings = {
+      ...baseSettings,
+      progressStyle: 'percentage',
+      showProgressInfo: true,
+    } as ViewSettings;
+    currentProgress = { ...makeProgress(2, 5), fraction: 0.45 } as BookProgress;
+    currentBookData = { isFixedLayout };
+  };
+
+  it('reads the continuous fraction for reflowable books', () => {
+    setupPercent(false);
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('45%');
+  });
+
+  it('keeps the page-count percent for fixed-layout books (fraction is byte-weighted)', () => {
+    setupPercent(true);
+    const { container } = renderProgressBar();
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('60%');
+  });
+});
+
+describe('ProgressBar — calibrated page pair', () => {
+  const setupFraction = (opts?: {
+    fraction?: number;
+    sections?: { size?: number; linear?: string }[];
+    scrolled?: boolean;
+    stablePageNumbers?: boolean;
+  }) => {
+    currentViewSettings = {
+      ...baseSettings,
+      progressStyle: 'fraction',
+      showProgressInfo: true,
+      scrolled: opts?.scrolled ?? false,
+      stablePageNumbers: opts?.stablePageNumbers ?? false,
+    } as ViewSettings;
+    currentProgress = { ...makeProgress(2, 5), fraction: opts?.fraction } as BookProgress;
+    currentBookData = {
+      isFixedLayout: false,
+      bookDoc: opts?.sections ? { sections: opts.sections } : { metadata: {} },
+    };
+  };
+
+  it('keeps the stable byte-grid pair by default', () => {
+    setupFraction({
+      sections: [{ size: 1500 }, { size: 1500 }, { size: 15000 }],
+      stablePageNumbers: DEFAULT_VIEW_CONFIG.stablePageNumbers,
+    });
+    recordChapterScreens('book-1', 2, 10);
+    currentRenderer = { page: 3, pages: 10 };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('3 / 5');
+  });
+
+  it('advances exactly one page per turn once chapters are measured', () => {
+    // Chapter 2 measures 10 spreads over 15000 bytes -> 1500 bytes/screen, so
+    // the two 1500-byte chapters before it count one page each: 2 + page 3.
+    setupFraction({ sections: [{ size: 1500 }, { size: 1500 }, { size: 15000 }] });
+    recordChapterScreens('book-1', 2, 10);
+    currentRenderer = { page: 3, pages: 10 };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('6 / 12');
+  });
+
+  it('estimates whole screens from bytes before any chapter is measured', () => {
+    // At 1500 bytes/screen the chapters fill 1, 2 and 3 screens (their last
+    // one partly); base 3 + page 1.
+    setupFraction({ sections: [{ size: 1000 }, { size: 2000 }, { size: 4000 }] });
+    currentRenderer = { page: 1, pages: 3 };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('5 / 6');
+  });
+
+  it('keeps chunked chapters smooth via the byte-domain fraction', () => {
+    setupFraction({
+      fraction: 0.6,
+      sections: [{ size: 1000 }, { size: 2000 }, { size: 1500000 }],
+    });
+    currentSectionFractions = [0, 0.25, 0.5, 0.7, 0.9, 1];
+    // Chunk-local renderer coordinates (page 9 of chunk pages 12) are ignored.
+    currentRenderer = { page: 9, pages: 12 };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('504 / 1004');
+  });
+
+  it('reads total / total on the last screen when the book ends with a non-linear item (#7453)', () => {
+    setupFraction({ sections: [{ size: 3000 }, { size: 3000 }, { size: 1500, linear: 'no' }] });
+    currentProgress = { ...makeProgress(1, 3), fraction: 0.99 } as BookProgress;
+    recordChapterScreens('book-1', 0, 2);
+    recordChapterScreens('book-1', 1, 2);
+    currentRenderer = { page: 1, pages: 2 };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('4 / 4');
+  });
+
+  it('reads total / total on the last screen when a short last chapter shares it', () => {
+    // Two columns: "About the Author" ends on the left page and the one-column
+    // last chapter fills the right one. The spread's primary chapter is the
+    // first, so the last chapter's screen is never counted as reached.
+    setupFraction({ sections: [{ size: 3000 }, { size: 3000 }, { size: 1000 }] });
+    currentProgress = { ...makeProgress(1, 3), fraction: 0.9 } as BookProgress;
+    recordChapterScreens('book-1', 0, 2);
+    recordChapterScreens('book-1', 1, 2);
+    recordChapterScreens('book-1', 2, 1);
+    currentRenderer = { page: 1, pages: 2, atEnd: true };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('5 / 5');
+  });
+
+  it('falls back to the book-level pair in scrolled mode', () => {
+    setupFraction({ scrolled: true });
+    currentRenderer = { page: 1, pages: 4 };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('3 / 5');
+  });
+
+  it('keeps real page pairs for fixed-layout books', () => {
+    setupFraction();
+    currentBookData = { isFixedLayout: true, bookDoc: { metadata: {} } };
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-info-label')?.textContent).toBe('3 / 5');
+  });
+});
+
 describe('ProgressBar — remaining time and pages together', () => {
   it.each([
     ['in book', true],
@@ -177,6 +335,96 @@ describe('ProgressBar — remaining time and pages together', () => {
     const text = container.querySelector('.remaining-info')?.textContent ?? '';
     expect(text).toMatch(new RegExp(`and 3 pages left ${scope}$`));
     expect(text.match(/left/g)).toHaveLength(1);
+  });
+});
+
+describe('ProgressBar — Custom Reader UI CSS hooks on the remaining readouts (#7483)', () => {
+  // [class, text] of each part of the readout, in order.
+  const parts = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll('.remaining-info > span > span')).map((el) => [
+      el.className,
+      el.textContent,
+    ]);
+
+  beforeEach(() => {
+    currentProgress = makeProgress(2, 5);
+    currentRenderer = { page: 1, pages: 4 };
+  });
+
+  it('wraps the time, the page count and the words when both are shown', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      showRemainingPages: true,
+      showRemainingTime: true,
+    } as ViewSettings;
+
+    const { container } = renderProgressBar();
+
+    expect(parts(container)).toEqual([
+      ['time-left-number', '1m'],
+      ['pages-left-label', ' and '],
+      ['pages-left-number', '3'],
+      ['pages-left-label', ' pages left in chapter'],
+    ]);
+  });
+
+  it('follows the word order of the translation', () => {
+    currentTranslations = {
+      '{{time}} and {{count}} pages left in chapter': 'متبقي {{time}} و{{count}} صفحة في الفصل',
+    };
+    currentViewSettings = {
+      ...baseSettings,
+      showRemainingPages: true,
+      showRemainingTime: true,
+    } as ViewSettings;
+
+    const { container } = renderProgressBar();
+
+    expect(parts(container)).toEqual([
+      ['pages-left-label', 'متبقي '],
+      ['time-left-number', '1m'],
+      ['pages-left-label', ' و'],
+      ['pages-left-number', '3'],
+      ['pages-left-label', ' صفحة في الفصل'],
+    ]);
+    expect(container.querySelector('.progressinfo')?.getAttribute('aria-label')).toContain(
+      'متبقي 1m و3 صفحة في الفصل',
+    );
+  });
+
+  it('wraps Chinese numerals in vertical Chinese layouts', () => {
+    localStorage.setItem('i18nextLng', 'zh-CN');
+    currentViewSettings = {
+      ...baseSettings,
+      vertical: true,
+      showRemainingPages: true,
+      showRemainingTime: true,
+    } as ViewSettings;
+
+    const { container } = renderProgressBar();
+    localStorage.removeItem('i18nextLng');
+
+    expect(parts(container)).toEqual([
+      ['time-left-number', '一m'],
+      ['pages-left-label', ' and '],
+      ['pages-left-number', '三'],
+      ['pages-left-label', ' pages left in chapter'],
+    ]);
+  });
+
+  it('wraps the time and the words when only the time is shown', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      showRemainingPages: false,
+      showRemainingTime: true,
+    } as ViewSettings;
+
+    const { container } = renderProgressBar();
+
+    expect(parts(container)).toEqual([
+      ['time-left-number', '1m'],
+      ['time-left-text', ' left in chapter'],
+    ]);
   });
 });
 
@@ -288,12 +536,17 @@ describe('ProgressBar — sticky progress bar', () => {
     expect(container.querySelector('.sticky-progress-bar')).toBeNull();
   });
 
-  it('does not render the sticky bar in vertical writing mode', () => {
+  it('renders a vertical sticky bar in vertical writing mode', () => {
     enableStickyBar({ vertical: true });
 
     const { container } = renderProgressBar();
 
-    expect(container.querySelector('.sticky-progress-bar')).toBeNull();
+    const bar = container.querySelector('.sticky-progress-bar') as HTMLElement;
+    expect(bar).not.toBeNull();
+    expect(bar.classList.contains('w-3')).toBe(true);
+    const fill = bar.querySelector('.sticky-progress-fill') as HTMLElement;
+    expect(fill.style.height).toBe('50%');
+    expect(fill.style.top).toBe('0px');
   });
 });
 
@@ -339,6 +592,15 @@ describe('ProgressBar — footer overlay pointer contract', () => {
     }
   });
 
+  it('drops the pill backdrops in scrolled mode with Solid Footer on (#6793)', () => {
+    // The band is reserved, so the info sits on it instead of over the text.
+    readerSettings({ scrolled: true, showRemainingPages: true, solidScrolledFooter: true });
+
+    const { container } = renderProgressBar();
+
+    expect(container.querySelector('.progress-pill')).toBeNull();
+  });
+
   it('does not add pill backdrops in paginated mode (band holds the info)', () => {
     readerSettings({ scrolled: false, showRemainingPages: true });
 
@@ -378,11 +640,13 @@ describe('ProgressBar — tap to toggle visibility (#5293)', () => {
 
     fireEvent.click(strip);
     expect(strip.classList.contains('opacity-0')).toBe(true);
+    expect(strip.classList.contains('transition-opacity')).toBe(false);
     // The strip stays tappable while hidden so the same tap brings it back.
     expect(strip.classList.contains('pointer-events-auto')).toBe(true);
 
     fireEvent.click(strip);
     expect(strip.classList.contains('opacity-0')).toBe(false);
+    expect(strip.classList.contains('transition-opacity')).toBe(true);
   });
 
   it('never writes settings from the tap (visibility is ephemeral)', () => {
@@ -431,6 +695,15 @@ describe('ProgressBar — tap to toggle visibility (#5293)', () => {
 
   it('makes the whole strip tappable in scrolled mode when the sticky bar reserves the band', () => {
     readerSettings({ scrolled: true, showStickyProgressBar: true });
+
+    const { container } = renderProgressBar();
+
+    const strip = container.querySelector('.progress-strip') as HTMLElement;
+    expect(strip.classList.contains('pointer-events-auto')).toBe(true);
+  });
+
+  it('makes the whole strip tappable in scrolled mode with Solid Footer on (#6793)', () => {
+    readerSettings({ scrolled: true, showRemainingPages: true, solidScrolledFooter: true });
 
     const { container } = renderProgressBar();
 
@@ -826,5 +1099,49 @@ describe('ProgressBar — battery percentage follows a custom footer color (#679
     settings({ isEink: true, headerFooterTextColor: '#806000' });
     renderProgressBar();
     expect(statusInfoProps?.['inheritTextColor']).toBe(false);
+  });
+});
+
+describe('ProgressBar vertical safe-area and 0px margin floor (#7389)', () => {
+  it('anchors the vertical progress bar within gridInsets.top and gridInsets.bottom plus 1.5x margins', () => {
+    currentViewSettings = { ...baseSettings, vertical: true } as ViewSettings;
+    const { container } = render(
+      <ProgressBar
+        bookKey='book-1'
+        horizontalGap={0}
+        contentInsets={{ top: 75, right: 0, bottom: 50, left: 0 }}
+        gridInsets={{ top: 59, right: 0, bottom: 34, left: 0 }}
+      />,
+    );
+    const bar = container.querySelector('.progressinfo') as HTMLElement;
+    expect(bar.style.top).toBe('83px');
+    expect(bar.style.bottom).toBe('58px');
+    expect(bar.style.width).toBe('16px');
+  });
+
+  it('keeps the 1.5x vertical margins and 16px width floor when gridInsets and left margin are zero', () => {
+    currentViewSettings = {
+      ...baseSettings,
+      vertical: true,
+      showRemainingPages: true,
+    } as ViewSettings;
+    currentProgress = makeProgress(1, 4);
+    currentRenderer = { page: 1, pages: 4 };
+    const { container } = render(
+      <ProgressBar
+        bookKey='book-1'
+        horizontalGap={0}
+        contentInsets={{ top: 16, right: 0, bottom: 16, left: 0 }}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: 0 }}
+      />,
+    );
+    const bar = container.querySelector('.progressinfo') as HTMLElement;
+    expect(bar.style.top).toBe('24px');
+    expect(bar.style.bottom).toBe('24px');
+    expect(bar.style.left).toBe('calc(0px)');
+    expect(bar.style.width).toBe('16px');
+    const readout = container.querySelector('.progress-readout') as HTMLElement;
+    expect(readout.classList.contains('min-h-0')).toBe(true);
+    expect(readout.classList.contains('min-w-0')).toBe(false);
   });
 });

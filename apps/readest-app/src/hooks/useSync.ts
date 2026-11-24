@@ -3,6 +3,8 @@ import { useRouter } from 'next/navigation';
 import { useEnv } from '@/context/EnvContext';
 import { useSyncContext } from '@/context/SyncContext';
 import { SyncData, SyncOp, SyncResult, SyncType } from '@/libs/sync';
+import { recordFlow } from '@/services/sync/dataFlow/log';
+import type { FlowDirection } from '@/services/sync/dataFlow/types';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
@@ -54,6 +56,21 @@ export const countSyncedRecords = (
 ): number => {
   if (!records?.length) return 0;
   return records.filter((rec) => !rec.deleted_at && (type !== 'books' || !!rec.uploaded_at)).length;
+};
+
+const FLOW_KINDS = { books: 'books', configs: 'progress', notes: 'notes' } as const;
+
+// Book rows are metadata: their files are counted by the transfer manager.
+const recordCloudFlow = (
+  direction: FlowDirection,
+  type: SyncType,
+  count: number,
+  error?: string,
+) => {
+  if (type === 'stats') return;
+  const kind = FLOW_KINDS[type];
+  const entries = type === 'books' ? 0 : count;
+  recordFlow({ connector: 'readest-cloud', direction, kind, count: entries, error });
 };
 
 export const BOOKS_PULL_PAGE_SIZE = 1000;
@@ -111,9 +128,9 @@ export function useSync(bookKey?: string) {
   const router = useRouter();
   const { envConfig } = useEnv();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { getConfig, setConfig } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const { setIsSyncing } = useReaderStore();
-  const config = bookKey ? getConfig(bookKey) : null;
 
   const [syncingBooks, setSyncingBooks] = useState(false);
   const [syncingConfigs, setSyncingConfigs] = useState(false);
@@ -123,6 +140,12 @@ export function useSync(bookKey?: string) {
   const [lastSyncedAtConfigs, setLastSyncedAtConfigs] = useState<number>(0);
   const [lastSyncedAtNotes, setLastSyncedAtNotes] = useState<number>(0);
   const [lastSyncedAtInited, setLastSyncedAtInited] = useState(false);
+  // The book's config only matters until the first sync is set up below: every
+  // page turn and progress save replaces it, which would re-render the viewer
+  // and annotator this hook runs in.
+  const config = useBookDataStore((s) =>
+    bookKey && !lastSyncedAtInited ? s.getConfig(bookKey) : null,
+  );
 
   const [syncing, setSyncing] = useState(false);
   // null means unsynced, empty array means synced no changes
@@ -165,6 +188,20 @@ export function useSync(bookKey?: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookKey, settings, config]);
 
+  /** Newest change this device already had before a sync, from the live store. */
+  const lastSeenAt = (type: SyncType, bookId?: string) => {
+    const latest = useSettingsStore.getState().settings;
+    // The live config: a push moments ago moved lastPushedAt, and a pull brings
+    // this device's own push back, since the server doesn't tell devices apart.
+    const book = bookId && bookKey ? getConfig(bookKey) : null;
+    if (type === 'configs') {
+      if (!bookId) return latest.lastSyncedAtConfigs ?? 0;
+      return Math.max(book?.lastSyncedAtConfig ?? 0, book?.lastPushedAtConfig ?? 0);
+    }
+    if (!bookId) return latest.lastSyncedAtNotes ?? 0;
+    return Math.max(book?.lastSyncedAtNotes ?? 0, book?.lastPushedAtNotes ?? 0);
+  };
+
   // bookId is for configs and notes only, if bookId is provided, only pull changes for that book
   // and update the lastSyncedAt for that book in the book config
   const pullChanges = async (
@@ -201,6 +238,10 @@ export function useSync(bookKey?: string) {
         records = (result as unknown as Record<string, BookDataRecord[] | null | undefined>)[type];
       }
       setSyncResult({ ...syncResult, [type]: records });
+      // A pull looks back further than the cursor, so it brings records again.
+      const seenUpTo = lastSeenAt(type, bookId);
+      const newRecords = records?.filter((rec) => computeMaxTimestamp([rec]) > seenUpTo);
+      recordCloudFlow('pull', type, countSyncedRecords(type, newRecords));
       if (since > 1000 && !records?.length) return 0;
       // For since <= 1000, we set lastSyncedAt to now if no records returned
       const maxTime = records?.length ? computeMaxTimestamp(records) : Date.now();
@@ -234,6 +275,12 @@ export function useSync(bookKey?: string) {
       return countSyncedRecords(type, records);
     } catch (err: unknown) {
       console.error(err);
+      recordCloudFlow(
+        'pull',
+        type,
+        0,
+        err instanceof Error ? err.message : `Error pulling ${type}`,
+      );
       if (err instanceof Error) {
         // Read live store settings, not the stale hook closure (see below).
         const latest = useSettingsStore.getState().settings;
@@ -262,13 +309,22 @@ export function useSync(bookKey?: string) {
   const pushChanges = async (payload: SyncData): Promise<boolean> => {
     setSyncing(true);
     setSyncError(null);
+    const pushedTypes = (['books', 'configs', 'notes'] as const).filter((type) => payload[type]);
 
     try {
       const result = await syncClient.pushChanges(payload);
       setSyncResult(result);
+      for (const type of pushedTypes) {
+        const seenUpTo = lastSeenAt(type, bookKey);
+        const rows = (payload[type] ?? []) as { updatedAt?: number }[];
+        const changed = rows.filter((row) => (row.updatedAt ?? seenUpTo + 1) > seenUpTo);
+        recordCloudFlow('push', type, changed.length);
+      }
       return true;
     } catch (err: unknown) {
       console.error(err);
+      const message = err instanceof Error ? err.message : 'Error pushing changes';
+      for (const type of pushedTypes) recordCloudFlow('push', type, 0, message);
       if (err instanceof Error) {
         setSyncError(err.message || 'Error pushing changes');
       } else {
@@ -330,8 +386,9 @@ export function useSync(bookKey?: string) {
     async (bookNotes?: BookNote[], bookId?: string, metaHash?: string, op: SyncOp = 'both') => {
       if (!lastSyncedAtInited) return;
       if (!isSyncCategoryEnabled('note')) return;
+      let pushed: boolean | undefined;
       if ((op === 'push' || op === 'both') && bookNotes?.length) {
-        const pushed = await pushChanges({ notes: bookNotes });
+        pushed = await pushChanges({ notes: bookNotes });
         if (pushed && bookId && bookKey) {
           setConfig(bookKey, { lastPushedAtNotes: Date.now() });
         }
@@ -346,6 +403,7 @@ export function useSync(bookKey?: string) {
           metaHash,
         );
       }
+      return pushed;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [lastSyncedAtInited, lastSyncedAtNotes],

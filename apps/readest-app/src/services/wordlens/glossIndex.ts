@@ -31,4 +31,10 @@ export class GlossIndex implements GlossSource {
     if (lemma) return this.#entries.get(lemma) ?? null;
     return null;
   }
+
+  lemma(word: string): string | null {
+    const w = word.trim().toLowerCase();
+    if (!w) return null;
+    return this.#inflections.get(w) ?? (this.#entries.has(w) ? w : null);
+  }
 }

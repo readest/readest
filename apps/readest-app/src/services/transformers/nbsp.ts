@@ -78,14 +78,19 @@ const NBSP_LANGUAGES: Record<string, NbspLanguageConfig> = {
   },
 };
 
-// (boundary)(short word)(regular space)(?=script letter or digit) -> glue.
+// Opening quotes can sit between a short word and the next word. Match both
+// literal characters and common HTML entities because this runs on raw markup.
+const OPENING_QUOTE =
+  '(?:[«„“‘"\']|&(?:laquo|ldquo|bdquo|lsquo|quot|apos);|&#(?:171|8220|8222|8216|34|39|x0*(?:ab|201c|201e|2018|22|27));)';
+
+// (boundary)(short word)(regular space)(?=opening quotes, then script letter or digit) -> glue.
 // `\b` is ASCII-only, so instead of a look-behind (disallowed in this repo) we
 // capture and re-emit a non-letter boundary. Requiring a regular space then a
 // letter/digit of the language's script ensures we never split a longer word.
 const buildGlueRegex = ({ script, shortWords }: NbspLanguageConfig) =>
   new RegExp(
     `(^|[^\\p{L}])(${shortWords.join('|')}|\\p{Script=${script}}{1,2})` +
-      `\\u0020(?=[\\p{Script=${script}}\\p{N}])`,
+      `\\u0020(?=${OPENING_QUOTE}*[\\p{Script=${script}}\\p{N}])`,
     'giu',
   );
 

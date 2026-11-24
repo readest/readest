@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { computeTextureContentId, textureAdapter } from '@/services/sync/adapters/texture';
 import { hlcPack } from '@/libs/crdt';

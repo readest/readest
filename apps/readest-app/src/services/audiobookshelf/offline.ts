@@ -19,6 +19,7 @@ import type { ProgressHandler } from '@/utils/transfer';
 import type { ABSChapter, ABSServer, ABSTrack } from '@/types/audiobookshelf';
 import type { AppService } from '@/types/system';
 import type { Book } from '@/types/book';
+import { allowsSelfSignedCert } from '@/utils/tls';
 
 export interface AbsOfflineManifest {
   itemId: string;
@@ -104,9 +105,9 @@ export const downloadAbsForOffline = async (
           cfp: '',
           url: `${liveServer().url}${file.contentPath}`,
           headers: { Authorization: `Bearer ${liveServer().accessToken ?? ''}` },
-          // Self-hosted servers often use self-signed certificates; absFetch
-          // accepts them too.
-          skipSslVerification: true,
+          // Self-hosted servers often use self-signed certificates; follow the
+          // server's opt-in like absFetch does.
+          skipSslVerification: allowsSelfSignedCert(liveServer()),
           onProgress: (p) =>
             onProgress?.({
               progress: doneBytes + p.progress,

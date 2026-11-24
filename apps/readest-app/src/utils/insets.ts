@@ -166,32 +166,48 @@ export const isStatusBarHiddenBySystem = (
   windowHeight: number,
 ) => !!orientationType?.includes('landscape') && windowHeight < COMPACT_HEIGHT_MAX_PX;
 
-/** Side safe-area insets recorded while the status bar was hidden, at one window size. */
-export interface StatusBarHiddenInsets {
+/** Top and side safe-area insets recorded at one window size, with the status bar hidden or shown. */
+export interface RecordedScreenInsets {
   width: number;
   height: number;
+  top: number;
   left: number;
   right: number;
 }
 
+/** Recorded insets for each window size the app has had, keyed `${width}x${height}`. */
+export type RecordedScreenInsetsBySize = Record<string, RecordedScreenInsets>;
+
+/** The record for this window size, if one was taken. */
+export const getRecordedScreenInsets = (
+  records: RecordedScreenInsetsBySize | null,
+  width: number,
+  height: number,
+): RecordedScreenInsets | null => records?.[`${width}x${height}`] ?? null;
+
 /**
  * Screen insets the reading page lays out against on iPhone Duo. The reader
- * hides the status bar while reading; on the Duo that also removes the side
- * strip's safe-area inset (84pt on the inner display), and opening the toolbar
- * brings it back. The page keeps the sides recorded with the status bar hidden,
+ * hides the status bar while reading; on the Duo that also removes the status
+ * strip's safe-area inset (84pt at the side of the inner display in
+ * landscape, 82pt at its top in portrait), and opening the toolbar brings it
+ * back. The page keeps the top and sides recorded with the status bar hidden,
  * for this window size, so opening the toolbar does not re-paginate: the strip
- * overlaps the page margin while the toolbar is up. Top and bottom stay live.
- * Without a record (`hidden` null) the live insets are used.
+ * overlaps the page margin while the toolbar is up. The bottom stays live.
+ * Without a record (`hidden` null) the live insets are used. The toolbars use
+ * it with the insets recorded while the status bar shows, so they are laid
+ * out for the strip from their first frame to the end of their hide animation.
  */
 export const getReadingScreenInsets = (
   live: Insets,
-  hidden: StatusBarHiddenInsets | null,
+  hidden: RecordedScreenInsets | null,
   width: number,
   height: number,
 ): Insets => {
   if (!hidden || hidden.width !== width || hidden.height !== height) return live;
-  if (hidden.left === live.left && hidden.right === live.right) return live;
-  return { ...live, left: hidden.left, right: hidden.right };
+  if (hidden.top === live.top && hidden.left === live.left && hidden.right === live.right) {
+    return live;
+  }
+  return { ...live, top: hidden.top, left: hidden.left, right: hidden.right };
 };
 
 export interface PopupBounds {
@@ -203,18 +219,13 @@ export interface PopupBounds {
  * The rect a popup is clamped to, and the origin its points must be shifted by.
  *
  * `getPosition`/`getPopupPosition` return points relative to the rect's
- * top-left, but popups render relative to the book cell. Off the Duo the rect
- * is the raw cell (main's behaviour, no shift). On iPhone Duo it is the cell's
- * safe region, so a popup never sits under the status strip, and `origin` is
- * the safe region's offset inside the cell: shift the results by it with
+ * top-left, but popups render relative to the book cell. The rect is the
+ * cell's safe region, so a popup never sits under the Dynamic Island, a
+ * cutout or iPhone Duo's status strip (#6307, #7389), and `origin` is the safe
+ * region's offset inside the cell: shift the results by it with
  * {@link offsetPosition} to get back to cell coordinates.
  */
-export const getPopupBounds = (
-  cellRect: Rect,
-  insets: Insets,
-  isIPhoneDuo: boolean,
-): PopupBounds => {
-  if (!isIPhoneDuo) return { rect: cellRect, origin: { x: 0, y: 0 } };
+export const getPopupBounds = (cellRect: Rect, insets: Insets): PopupBounds => {
   const left = cellRect.left + insets.left;
   const top = cellRect.top + insets.top;
   return {

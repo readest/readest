@@ -79,6 +79,23 @@ describe("background book download", function()
         assert.are.equal("book contents", f:read("*a")); f:close()
     end)
 
+    it("connects over IPv4 in a macOS worker, where forked AF_UNSPEC lookups crash (#6933)", function()
+        local socket, family = package.loaded["socket"]
+        socket.tcp = function() return { family = "unspec" } end
+        socket.tcp4 = function() return { family = "inet", settimeout = function() end } end
+        package.loaded["socket.http"].request = function(req)
+            family = socket.tcp().family
+            req.sink(nil)
+            return 1, 200
+        end
+        local saved_os = jit.os
+        jit.os = "OSX"
+        syncbooks.downloadBook(book, opts, function() end)
+        child(123, 42)
+        jit.os = saved_os
+        assert.are.equal("inet", family)
+    end)
+
     it("reports bytes while running without blocking the next UI tick", function()
         local bytes
         opts.on_progress = function(value) bytes = value end
@@ -115,6 +132,28 @@ describe("background book download", function()
         assert.is_nil(require("lfs").attributes(tmp .. "/Book.epub.part"))
     end)
 
+    it("keeps a cover under a temporary name until it is complete (#6685)", function()
+        local lfs, at_dst, at_part, calls = require("lfs"), "unset", nil, 0
+        package.loaded["socket.http"].request = function(req)
+            req.sink("png")
+            at_dst = lfs.attributes(tmp .. "/h1.png", "mode")
+            -- Named by worker pid: a manual and an automatic download can overlap.
+            at_part = lfs.attributes(tmp .. "/h1.png.123.part", "mode")
+            req.sink(nil)
+            return 1, 200
+        end
+        opts.covers_dir = tmp
+        syncbooks.downloadCover(book, opts, function(ok) assert.is_true(ok); calls = calls + 1 end)
+        child(123, 42)
+        assert.is_nil(at_dst)
+        assert.are.equal("file", at_part)
+        assert.is_nil(lfs.attributes(tmp .. "/h1.png.123.part"))
+        done = true
+        stubs.UIManager:drain()
+        assert.are.equal(1, calls)
+        local f = assert(io.open(tmp .. "/h1.png", "rb"))
+        assert.are.equal("png", f:read("*a")); f:close()
+    end)
     it("reports fork failure without a synchronous fallback", function()
         fork_ok = false
         local success

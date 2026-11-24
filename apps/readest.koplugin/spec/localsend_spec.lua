@@ -182,6 +182,37 @@ describe("readest_localsend dispatch", function()
     end)
 end)
 
+describe("readest_localsend stopService", function()
+    local Firewall = require("library.localsend_firewall")
+    local LocalSend = require("readest_localsend")
+    local original_close
+    local closes
+
+    before_each(function()
+        original_close = Firewall.close
+        closes = 0
+        Firewall.close = function() closes = closes + 1 end
+    end)
+
+    after_each(function()
+        Firewall.close = original_close
+    end)
+
+    it("skips firewall cleanup if the service never started", function()
+        local service = setmetatable({ running = false }, { __index = LocalSend })
+        service:stopService()
+        assert.equals(0, closes)
+    end)
+
+    it("cleans up a started service only once", function()
+        local service = setmetatable({ running = true }, { __index = LocalSend })
+        service:stopService()
+        service:stopService()
+        assert.is_false(service.running)
+        assert.equals(1, closes)
+    end)
+end)
+
 describe("readest_localsend startService without a free port", function()
     local stubs = require("spec.koreader_stubs")
     local Helper = require("library.localsend_helper")

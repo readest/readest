@@ -8,6 +8,29 @@ vi.mock('@/utils/md5', () => ({
   md5Fingerprint: vi.fn((name: string) => `md5_${name}`),
 }));
 
+// The app service's cache dir as an in-memory map, and the platform switch.
+const env = vi.hoisted(() => {
+  const files = new Map<string, string>();
+  return {
+    files,
+    isTauri: true,
+    appService: {
+      writeFile: vi.fn(async (path: string, base: string, content: string) => {
+        files.set(`${base}/${path}`, content);
+      }),
+      readFile: vi.fn(async (path: string, base: string) => {
+        const content = files.get(`${base}/${path}`);
+        if (content === undefined) throw new Error(`${base}/${path} not found`);
+        return content;
+      }),
+    },
+  };
+});
+vi.mock('@/services/environment', () => ({
+  isTauriAppPlatform: () => env.isTauri,
+  default: { getAppService: async () => env.appService },
+}));
+
 import { isCJKEnv } from '@/utils/misc';
 import {
   getFontName,
@@ -401,6 +424,96 @@ describe('mountAdditionalFonts', () => {
 
     const styles = document.head.querySelectorAll('style');
     expect(styles.length).toBeGreaterThanOrEqual(1);
+  });
+
+  // Offline, a Google Fonts stylesheet stops loading once the WebView's cached
+  // copy is past its stale window, while the font files it lists are still
+  // cached; a new section then fell back to the system font (#7580).
+  describe('offline Google Fonts stylesheet (#7580)', () => {
+    let mount: typeof mountAdditionalFonts;
+    const googleLink = (doc: Document) =>
+      doc.head.querySelector<HTMLLinkElement>('link[href*="fonts.googleapis.com"]')!;
+    const bitterFace =
+      '@font-face { font-family: Bitter; src: url("https://fonts.gstatic.com/s/bitter/v42/a.woff2") format("woff2"); }';
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    const loadOnline = async () => {
+      const online = document.implementation.createHTMLDocument('online');
+      await mount(online);
+      const link = googleLink(online);
+      Object.defineProperty(link, 'sheet', { value: { cssRules: [{ cssText: bitterFace }] } });
+      link.dispatchEvent(new Event('load'));
+    };
+    const failOffline = async () => {
+      const offline = document.implementation.createHTMLDocument('offline');
+      await mount(offline);
+      googleLink(offline).dispatchEvent(new Event('error'));
+      return offline;
+    };
+
+    // Each test starts a fresh app session with an empty cache dir.
+    beforeEach(async () => {
+      vi.resetModules();
+      ({ mountAdditionalFonts: mount } = await import('@/styles/fonts'));
+      env.files.clear();
+      env.isTauri = true;
+      env.appService.writeFile.mockClear();
+      env.appService.readFile.mockClear();
+      localStorage.clear();
+    });
+
+    it('keeps the loaded stylesheet in the app cache dir, not in localStorage', async () => {
+      await loadOnline();
+
+      await vi.waitFor(() =>
+        expect([...env.files.keys()]).toEqual([expect.stringMatching(/^Cache\//)]),
+      );
+      expect([...env.files.values()][0]).toContain('font-family: Bitter');
+      expect(localStorage.length).toBe(0);
+    });
+
+    it('writes the copy on a later load when an earlier write failed', async () => {
+      env.appService.writeFile.mockRejectedValueOnce(new Error('No space left on device'));
+      await loadOnline();
+      await vi.waitFor(() => expect(env.appService.writeFile).toHaveBeenCalledTimes(1));
+      await flush();
+
+      await loadOnline();
+
+      await vi.waitFor(() => expect(env.files.size, 'kept copies after the retry').toBe(1));
+    });
+
+    it('mounts the kept copy when the stylesheet fails to load', async () => {
+      await loadOnline();
+      await vi.waitFor(() => expect(env.files.size).toBe(1));
+
+      const offline = await failOffline();
+
+      await vi.waitFor(() =>
+        expect(offline.head.querySelector('style')?.textContent ?? '').toContain(
+          'font-family: Bitter',
+        ),
+      );
+    });
+
+    it('adds nothing when no copy was kept', async () => {
+      const offline = await failOffline();
+      await vi.waitFor(() => expect(env.appService.readFile).toHaveBeenCalled());
+      await flush();
+
+      expect(offline.head.querySelector('style')).toBeNull();
+    });
+
+    it('keeps nothing on the web, where the service worker caches the stylesheet', async () => {
+      env.isTauri = false;
+      await loadOnline();
+      const offline = await failOffline();
+      await flush();
+
+      expect(env.appService.writeFile).not.toHaveBeenCalled();
+      expect(localStorage.length).toBe(0);
+      expect(offline.head.querySelector('style')).toBeNull();
+    });
   });
 });
 

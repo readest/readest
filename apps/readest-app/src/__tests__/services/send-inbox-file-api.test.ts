@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import type { NextApiRequest, NextApiResponse } from 'next';

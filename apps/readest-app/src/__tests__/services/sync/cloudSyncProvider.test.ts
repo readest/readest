@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import type { SystemSettings } from '@/types/settings';
 

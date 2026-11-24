@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HardcoverOAuthError } from '@/services/hardcover/hardcoverOAuth';
 import { TokenEndpointError } from '@/services/sync/providers/oauth/tokenEndpoint';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { withReadingStatus, pickFresherReadingStatus } from '@/app/library/utils/libraryUtils';
 import type { Book } from '@/types/book';

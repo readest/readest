@@ -1,6 +1,7 @@
 import withSerwistInit from '@serwist/next';
 import withBundleAnalyzer from '@next/bundle-analyzer';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -43,11 +44,14 @@ const nextConfig = {
   },
   devIndicators: false,
   experimental: {
-    // Dev caching is on by default since Next 16.1. We deliberately do NOT
-    // enable Turbopack's build cache (turbopackFileSystemCacheForBuild, beta):
-    // a build interrupted mid-compile leaves a partial cache that the next
-    // build mishandles, fanning out workers until it exhausts RAM.
+    // Dev caching is on by default since Next 16.1. We deliberately turn OFF
+    // Turbopack's build cache, which Next 16.4 enables by default: a build
+    // interrupted mid-compile leaves a partial cache that the next build
+    // mishandles, fanning out workers until it exhausts RAM, and a warm cache
+    // can abort with a turbo-tasks panic (`get_disjoint_mut` was called with
+    // equal keys) when the import graph changes.
     turbopackFileSystemCacheForDev: true,
+    turbopackFileSystemCacheForBuild: false,
     // `middleware.ts` matches /api/*, so Next buffers a clone of every request
     // body to let both the middleware and the route handler read it. Past this
     // limit the clone is truncated and the handler sees a short body ending
@@ -184,6 +188,16 @@ const withPWA = pwaDisabled
   : withSerwistInit({
       swSrc: 'src/sw.ts',
       swDest: 'public/sw.js',
+      // The offline fallback in sw.ts is served from the precache only, and
+      // nothing else puts the page there. Append it to the manifest:
+      // additionalPrecacheEntries would replace the public/ files Serwist
+      // precaches by default. A new revision makes every build fetch it again.
+      manifestTransforms: [
+        async (manifest) => ({
+          manifest: [...manifest, { url: '/offline', revision: randomUUID(), size: 0 }],
+          warnings: [],
+        }),
+      ],
       cacheOnNavigation: true,
       reloadOnOnline: true,
       disable: false,

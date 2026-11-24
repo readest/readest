@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 
 const getViewSettingsMock = vi.fn<(bookKey: string) => { isGlobal?: boolean } | undefined>(

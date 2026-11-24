@@ -44,7 +44,7 @@ export async function makeHtmlBook(file: File): Promise<BookDoc> {
   const doc = new DOMParser().parseFromString(sanitizeForParsing(html), 'text/html');
   if (mhtml) inlineMhtmlImages(doc, mhtml);
   const documentTitle = doc.title.trim();
-  const language = doc.documentElement.lang.trim() || 'en';
+  const language = doc.documentElement.lang.trim();
   const dirAttr = (doc.documentElement.getAttribute('dir') || doc.body.getAttribute('dir') || '')
     .trim()
     .toLowerCase();

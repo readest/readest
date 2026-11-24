@@ -318,9 +318,7 @@ export class TtsStatsRecorder {
     const db = await this.#getDb();
     if (!db) return;
     try {
-      const idBook = await db.upsertBook(book);
-      for (const e of events) await db.insertPageEvent(idBook, e);
-      await db.recomputeBookTotals(idBook);
+      await db.recordEvents(book, events);
       this.#schedulePush();
     } catch (err) {
       // The statistics DB can be closed mid-write on app teardown; log and

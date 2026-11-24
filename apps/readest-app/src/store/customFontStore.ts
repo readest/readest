@@ -47,8 +47,11 @@ interface FontStoreState {
    * handler clears the flag on completion.
    */
   applyRemoteFont: (font: CustomFont) => void;
-  /** Soft-delete by contentId, skipping the publish call. */
-  softDeleteByContentId: (contentId: string) => void;
+  /**
+   * Soft-delete by contentId, skipping the publish call. `deletedAt` keeps a
+   * peer's delete time, so a later re-import still wins over it.
+   */
+  softDeleteByContentId: (contentId: string, deletedAt?: number) => void;
   /** Clear the placeholder unavailable flag once binaries land on disk. */
   markAvailableByContentId: (contentId: string) => void;
   /**
@@ -192,12 +195,12 @@ export const useCustomFontStore = create<FontStoreState>((set, get) => ({
     if (env) void get().saveCustomFonts(env);
   },
 
-  softDeleteByContentId: (contentId) => {
+  softDeleteByContentId: (contentId, deletedAt = Date.now()) => {
     const target = get().fonts.find((f) => f.contentId === contentId && !f.deletedAt);
     if (!target) return;
     set((state) => ({
       fonts: state.fonts.map((f) =>
-        f.id === target.id ? { ...f, deletedAt: Date.now(), blobUrl: undefined, loaded: false } : f,
+        f.id === target.id ? { ...f, deletedAt, blobUrl: undefined, loaded: false } : f,
       ),
     }));
     if (target.blobUrl) URL.revokeObjectURL(target.blobUrl);

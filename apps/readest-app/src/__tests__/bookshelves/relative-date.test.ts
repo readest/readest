@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Book } from '@/types/book';
 import { bookshelfSchema, createBookshelf } from '@/services/bookshelves/definitions';

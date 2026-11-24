@@ -309,10 +309,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
   const searchWorker = createLibrarySearchWorker();
 
   const dispose = ({ pending }: { pending: Promise<CachedSearchBook> }) => {
-    void pending.then(
-      ({ bookDoc, file }) => closeBook(bookDoc, file),
-      () => {},
-    );
+    void pending.then(({ bookDoc, file }) => closeBook(bookDoc, file)).catch(() => {});
   };
 
   const open = (book: Book) => {
@@ -384,6 +381,20 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
     return pending;
   };
 
+  // Drops the book's open document when its file no longer has `fileSize`: a
+  // book imported in place can be edited without a book.updatedAt change. A
+  // document another search has already reopened stays, and one cached for
+  // another updatedAt is left to open(), which replaces it anyway.
+  const refresh = async (book: Book, fileSize: number) => {
+    const existing = documents.get(book.hash);
+    if (existing?.updatedAt !== book.updatedAt) return;
+    const cached = await existing.pending.catch(() => null);
+    if (cached && cached.file.size !== fileSize && documents.get(book.hash) === existing) {
+      documents.delete(book.hash);
+      dispose(existing);
+    }
+  };
+
   const dropIndexDb = (book: Book) => {
     const pending = indexDbs.get(book.hash);
     if (!pending) return;
@@ -393,6 +404,7 @@ export const createLibrarySearchSession = (appService: LibrarySearchAppService) 
 
   return {
     open,
+    refresh,
     getIndexDb,
     dropIndexDb,
     getNavHash,
@@ -646,8 +658,11 @@ export async function* searchLibraryBooks(
       let bookMatches = 0;
       let bookTruncated = false;
 
-      if (indexDb && isSearchIndexFresh(meta, book) && nodesFresh) {
+      if (indexDb && isSearchIndexFresh(meta, localSize) && nodesFresh) {
         // Indexed path: search cached text; the book file is never opened.
+        // Results resolve against the session's document, which another
+        // session's rebuild may have left behind the file.
+        if (options.session && localSize != null) await options.session.refresh(book, localSize);
         const usePrefilter = config.mode === 'contains' || config.mode === 'whole-words';
         let sections: SearchIndexSection[] = usePrefilter
           ? await loadSearchIndexCandidates(indexDb, query)
@@ -713,6 +728,7 @@ export async function* searchLibraryBooks(
         // Live path: extract text section by section, persist it to the
         // per-book index, and match the same extracted text.
         if (options.session) {
+          await options.session.refresh(book, localSize);
           const cached = await options.session.open(book);
           file = cached.file;
           bookDoc = cached.bookDoc;
@@ -742,7 +758,9 @@ export async function* searchLibraryBooks(
         const tocProgress = await createTOCProgress(bookDoc);
         const totalSections = bookDoc.sections.length;
         if (indexDb) {
-          await beginSearchIndex(indexDb, book, totalSections, usedNavHash).catch(() => {
+          // The opened file's own size, which matches the text indexed even if
+          // the file changed again after it was measured above.
+          await beginSearchIndex(indexDb, file.size, totalSections, usedNavHash).catch(() => {
             indexDb = null;
           });
         }

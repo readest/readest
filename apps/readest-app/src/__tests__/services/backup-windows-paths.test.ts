@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import type { ZipWriter } from '@zip.js/zip.js';
 import { addBackupEntriesToZip } from '@/services/backupService';
@@ -20,7 +21,7 @@ const BOOK_HASH = '6afdd0136531fbe028e0503a14ba234c';
  */
 function makeAppService(files: FileItem[]): AppService {
   return {
-    loadLibraryBooks: async () => [{ hash: BOOK_HASH }],
+    loadLibraryBooks: async () => [{ hash: BOOK_HASH, title: 'book', format: 'EPUB' }],
     loadSettings: async () => ({}) as never,
     resolveFilePath: async () => 'C:/Users/me/AppData/Books',
     readDirectory: async () => files,
@@ -73,5 +74,38 @@ describe('addBackupEntriesToZip - cross-platform entry names (#4703)', () => {
 
     const bookEntries = names.filter((n) => n.startsWith(`${BOOK_HASH}/`));
     expect(bookEntries).toEqual([`${BOOK_HASH}/book.epub`, `${BOOK_HASH}/cover.png`]);
+  });
+
+  it.each(['/', '\\'])('omits generated search databases from %s paths', async (separator) => {
+    const files = [
+      'book.epub',
+      'search.db',
+      'search.db-wal',
+      'search.db-shm',
+      'search.db-journal',
+      'search.db.epub',
+    ].map((name) => ({ path: `${BOOK_HASH}${separator}${name}`, size: 100 }));
+    const { writer, names } = makeCapturingWriter();
+    await addBackupEntriesToZip(writer, makeAppService(files), {});
+    expect(names.filter((name) => name.startsWith(`${BOOK_HASH}/`))).toEqual([
+      `${BOOK_HASH}/book.epub`,
+      `${BOOK_HASH}/search.db.epub`,
+    ]);
+  });
+
+  it('keeps the search database of a book whose file is not in the backup', async () => {
+    // A cloud-only or external book: library search reads its index without
+    // the file, and a restore has no file to rebuild the index from.
+    const files = ['cover.png', 'search.db', 'search.db-wal'].map((name) => ({
+      path: `${BOOK_HASH}/${name}`,
+      size: 100,
+    }));
+    const { writer, names } = makeCapturingWriter();
+    await addBackupEntriesToZip(writer, makeAppService(files), {});
+    expect(names.filter((name) => name.startsWith(`${BOOK_HASH}/`))).toEqual([
+      `${BOOK_HASH}/cover.png`,
+      `${BOOK_HASH}/search.db`,
+      `${BOOK_HASH}/search.db-wal`,
+    ]);
   });
 });

@@ -76,7 +76,7 @@ test `webp_covers_decode_to_jpeg_thumbnails` embeds a 38-byte lossless WebP
 made with `cwebp` (no PIL on this Mac) and reproduced the exact issue log line
 before the feature flag. Xiaomi 368b0948 NOT attached; Boox Leaf5 (ec8fafd,
 Android 13, ONYX) was attached with Readest installed and reaching the dev ABS
-server (192.168.2.3:13378, readest/readest123; Alice audiobook item
+server (the dev ABS login; Alice audiobook item
 2fe8f68c-5596-43e7-be9b-5db5e74c8f23 = 10 chapters/3518s, EPUB fixture
 `src/__tests__/fixtures/data/sample-alice.epub` = 12 chapters, hash
 32bb20d7452627491831bb64a8d0dd94 once imported).

@@ -154,6 +154,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onGetVoices={tts.handleGetVoices}
           onSetVoice={tts.handleSetVoice}
           onGetVoiceId={tts.handleGetVoiceId}
+          voiceId={tts.voiceId}
           onSelectTimeout={tts.handleSelectTimeout}
           onSeek={tts.handleSeekTo}
           onSeekPreview={tts.handleSeekPreview}

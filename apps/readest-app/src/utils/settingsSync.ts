@@ -2,6 +2,10 @@ import { mergeBookshelfStates } from '@/services/bookshelves/state';
 import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { isTauriAppPlatform } from '@/services/environment';
+import {
+  withConnectionForgotten,
+  type ForgettableConnection,
+} from '@/services/sync/cloudSyncProvider';
 import type { SystemSettings } from '@/types/settings';
 
 /**
@@ -64,6 +68,12 @@ export interface SettingsSyncPayload {
    * revert someone else's switch.
    */
   cloudSyncProviders?: CloudSyncProviderFlags;
+  /**
+   * Set when this window forgot a provider's connection (#7799). Receivers
+   * reset it too: a window still holding the old address and login would
+   * otherwise see it as unpublished and upload it again.
+   */
+  forgottenConnection?: ForgettableConnection;
 }
 
 /**
@@ -74,10 +84,14 @@ export const mergeSyncedGlobalSettings = (
   local: SystemSettings,
   payload: Pick<
     SettingsSyncPayload,
-    'globalViewSettings' | 'globalReadSettings' | 'cloudSyncProviders' | 'bookshelves'
+    | 'globalViewSettings'
+    | 'globalReadSettings'
+    | 'cloudSyncProviders'
+    | 'bookshelves'
+    | 'forgottenConnection'
   >,
 ): SystemSettings => {
-  const merged: SystemSettings = {
+  let merged: SystemSettings = {
     ...local,
     globalViewSettings: payload.globalViewSettings,
     globalReadSettings: payload.globalReadSettings,
@@ -103,6 +117,9 @@ export const mergeSyncedGlobalSettings = (
       };
     }
   }
+  if (payload.forgottenConnection) {
+    merged = withConnectionForgotten(merged, payload.forgottenConnection);
+  }
   return merged;
 };
 
@@ -112,7 +129,7 @@ export const mergeSyncedGlobalSettings = (
  */
 export const broadcastGlobalSettings = async (
   settings: SystemSettings,
-  opts: { includeCloudSyncProviders?: boolean } = {},
+  opts: { includeCloudSyncProviders?: boolean; forgottenConnection?: ForgettableConnection } = {},
 ): Promise<void> => {
   if (!isTauriAppPlatform()) return;
   if (!settings.globalViewSettings || !settings.globalReadSettings) return;
@@ -122,6 +139,7 @@ export const broadcastGlobalSettings = async (
       bookshelves: settings.bookshelves,
       globalViewSettings: settings.globalViewSettings,
       globalReadSettings: settings.globalReadSettings,
+      forgottenConnection: opts.forgottenConnection,
     };
     if (opts.includeCloudSyncProviders) {
       payload.cloudSyncProviders = {

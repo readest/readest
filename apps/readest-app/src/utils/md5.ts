@@ -8,17 +8,23 @@ export function md5Fingerprint(value: string): string {
   return md5(value).slice(0, 7);
 }
 
-export async function partialMD5(file: File): Promise<string> {
+/** The [start, end) byte ranges KOReader's partial MD5 reads from a file of this size. */
+export function partialMD5Ranges(fileSize: number): Array<[number, number]> {
   const step = 1024;
   const size = 1024;
 
   const ranges: Array<[number, number]> = [];
   for (let i = -1; i <= 10; i++) {
-    const start = Math.min(file.size, step << (2 * i));
-    const end = Math.min(start + size, file.size);
-    if (start >= file.size) break;
+    const start = Math.min(fileSize, step << (2 * i));
+    const end = Math.min(start + size, fileSize);
+    if (start >= fileSize) break;
     ranges.push([start, end]);
   }
+  return ranges;
+}
+
+export async function partialMD5(file: File): Promise<string> {
+  const ranges = partialMD5Ranges(file.size);
   const chunks = await Promise.all(
     ranges.map(([start, end]) => file.slice(start, end).arrayBuffer()),
   );

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { footerInfoVisible, footerReservesBand } from '@/app/reader/utils/footerBand';
@@ -78,6 +79,29 @@ describe('footerReservesBand', () => {
 
   it('never reserves the band in scrolled mode, even with info visible', () => {
     expect(footerReservesBand(settings({ showFooter: true, scrolled: true }))).toBe(false);
+  });
+
+  it('reserves the band in scrolled mode with Solid Footer on (#6793)', () => {
+    expect(
+      footerReservesBand(settings({ showFooter: true, scrolled: true, solidScrolledFooter: true })),
+    ).toBe(true);
+  });
+
+  it('reserves nothing with Solid Footer on when the footer has nothing to show (#6793)', () => {
+    expect(
+      footerReservesBand(
+        settings({
+          showFooter: true,
+          scrolled: true,
+          solidScrolledFooter: true,
+          showRemainingTime: false,
+          showRemainingPages: false,
+          showProgressInfo: false,
+          showCurrentTime: false,
+          showCurrentBatteryStatus: false,
+        }),
+      ),
+    ).toBe(false);
   });
 
   it('keeps the band for the sticky progress bar, scrolled or not', () => {

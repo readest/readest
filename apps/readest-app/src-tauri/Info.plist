@@ -24,8 +24,6 @@
     <false/>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <true/>
-    <key>UIHomeIndicatorAutoHidden</key>
-    <true/>
     <key>UIRequiresFullScreen</key>
     <false/>
     <key>CFBundleDocumentTypes</key>
@@ -204,6 +202,26 @@
           </array>
           <key>public.mime-type</key>
           <string>application/x-cbz</string>
+        </dict>
+      </dict>
+
+      <dict>
+        <key>UTTypeIdentifier</key>
+        <string>com.readest.books</string>
+        <key>UTTypeDescription</key>
+        <string>Readest Book Package</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+          <string>public.zip-archive</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+          <key>public.filename-extension</key>
+          <array>
+            <string>rbooks</string>
+          </array>
+          <key>public.mime-type</key>
+          <string>application/x-readest-books</string>
         </dict>
       </dict>
 

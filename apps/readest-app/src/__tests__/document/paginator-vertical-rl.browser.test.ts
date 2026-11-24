@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
-import type { Renderer } from '@/types/view';
+import type { FoliateView, Renderer } from '@/types/view';
+import { applyScrollModeClass, getStyles } from '@/utils/style';
+import { handleA11yNavigation } from '@/utils/a11y';
+import type { ViewSettings } from '@/types/book';
+import { DEFAULT_BOOK_FONT, DEFAULT_BOOK_LAYOUT, DEFAULT_BOOK_STYLE } from '@/services/constants';
 
 // Regression tests for readest#624: books with writing-mode: vertical-rl
 // (Japanese/Chinese vertical text) must turn pages horizontally like printed
@@ -104,6 +108,134 @@ describe('Vertical-rl pagination (browser)', () => {
     const contents = paginator.getContents();
     const doc = contents[0]!.doc;
     expect(getDirection(doc)).toEqual({ vertical: true, rtl: true });
+  });
+
+  // readest#7372: EBPAJ matter pages (title, credits, notices) put a vertical
+  // `.main.height-100per` box inside a horizontal root. That box is orthogonal
+  // to the root, so `height: 100%` resolves against the whole viewport, not the
+  // root's padded content box, and end-aligned credits fall past the bottom
+  // margin. Under Readest's Writing Mode override the box is no longer
+  // orthogonal and must keep filling exactly the content box.
+  it.each([
+    ['title page', 'p-titlepage', 'auto'],
+    ['credits page', 'p-text', 'auto'],
+    ['title page under the vertical-rl Writing Mode override', 'p-titlepage', 'vertical-rl'],
+  ] as const)('sizes an EBPAJ %s to the page content box', async (_, bodyClass, writingMode) => {
+    const source = URL.createObjectURL(
+      new Blob(
+        [
+          '<!doctype html><html class="hltr" lang="ja"><head><style>' +
+            '.vrtl { writing-mode: vertical-rl; } .height-100per { height: 100%; }' +
+            '.align-end { text-align: end; margin: 0; }</style></head>' +
+            `<body class="${bodyClass}"><div class="main vrtl height-100per">` +
+            '<p class="align-end"><span id="credit">著者</span></p></div></body></html>',
+        ],
+        { type: 'text/html' },
+      ),
+    );
+    try {
+      paginator = createPaginator();
+      paginator.setAttribute('margin-top', '24px');
+      paginator.setAttribute('margin-bottom', '24px');
+      paginator.setStyles?.(
+        getStyles({
+          ...DEFAULT_BOOK_FONT,
+          ...DEFAULT_BOOK_LAYOUT,
+          ...DEFAULT_BOOK_STYLE,
+          vertical: true,
+          writingMode,
+        } as ViewSettings),
+      );
+      paginator.addEventListener('load', (event) => {
+        applyScrollModeClass((event as CustomEvent<{ doc: Document }>).detail.doc, false);
+      });
+      // The paginator only needs a loadable section for this layout fixture.
+      paginator.open({
+        dir: 'rtl',
+        sections: [{ id: 'title', load: async () => source }],
+      } as unknown as BookDoc);
+      const stabilized = waitForStabilized(paginator);
+      await paginator.goTo({ index: 0 });
+      await stabilized;
+
+      const { doc } = paginator.getContents()[0]!;
+      const root = doc.documentElement;
+      const bottomMargin = parseFloat(doc.defaultView!.getComputedStyle(root).paddingBottom);
+      const contentBottom = root.getBoundingClientRect().bottom - bottomMargin;
+      expect(bottomMargin).toBeGreaterThan(0);
+      expect(doc.querySelector('.main')!.getBoundingClientRect().bottom).toBeCloseTo(
+        contentBottom,
+        0,
+      );
+      expect(doc.getElementById('credit')!.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        contentBottom + 1,
+      );
+    } finally {
+      URL.revokeObjectURL(source);
+    }
+  });
+
+  it('vertically centers an EBPAJ cover page (p-cover > .main > p > img.fit) even when header is off', async () => {
+    const coverSvg =
+      'data:image/svg+xml;utf8,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#1b2838"/></svg>',
+      );
+    const source = URL.createObjectURL(
+      new Blob(
+        [
+          '<!doctype html><html class="hltr" lang="ja"><head><style>' +
+            'img.fit { display: inline-block; max-width: 100%; max-height: 100%; }' +
+            '</style></head>' +
+            '<body class="p-cover"><div class="main">' +
+            `<p><img id="cover-img" class="fit" src="${coverSvg}" alt=""/></p>` +
+            '</div></body></html>',
+        ],
+        { type: 'text/html' },
+      ),
+    );
+    try {
+      paginator = createPaginator();
+      Object.assign(paginator.style, { width: '393px', height: '852px' });
+      paginator.setAttribute('margin-top', '16px');
+      paginator.setAttribute('margin-bottom', '16px');
+      paginator.setAttribute('max-column-count', '1');
+      paginator.setStyles?.(
+        getStyles({
+          ...DEFAULT_BOOK_FONT,
+          ...DEFAULT_BOOK_LAYOUT,
+          ...DEFAULT_BOOK_STYLE,
+          vertical: false,
+          writingMode: 'auto',
+        } as ViewSettings),
+      );
+      // As in the reader, whose load handler nests the next-section skip link
+      // inside the cover's <p>.
+      paginator.addEventListener('load', (event) => {
+        const { doc } = (event as CustomEvent<{ doc: Document }>).detail;
+        applyScrollModeClass(doc, false);
+        handleA11yNavigation(paginator as unknown as FoliateView, doc);
+      });
+      paginator.open({
+        dir: 'rtl',
+        sections: [{ id: 'cover', load: async () => source }],
+      } as unknown as BookDoc);
+      const stabilized = waitForStabilized(paginator);
+      await paginator.goTo({ index: 0 });
+      await stabilized;
+
+      const { doc } = paginator.getContents()[0]!;
+      expect(doc.getElementById('readest-skip-link-next-section')?.parentElement?.localName).toBe(
+        'p',
+      );
+      const imgRect = doc.getElementById('cover-img')!.getBoundingClientRect();
+      // 393px wide page with 400x300 cover -> image height is < 300px inside an 820px available height;
+      // centered vertically, its top sits well below the 59px Dynamic Island instead of sticking to y=16px.
+      expect(imgRect.top).toBeGreaterThan(200);
+      expect(Math.abs(imgRect.top + imgRect.bottom - 852)).toBeLessThan(8);
+    } finally {
+      URL.revokeObjectURL(source);
+    }
   });
 
   const makeTouch = (x: number, y: number) =>
@@ -301,5 +433,114 @@ describe('Vertical-rl pagination (browser)', () => {
     paginator.snap(1.2, 0, 150, 0, 120);
     await waitForPage(paginator, page + 1);
     expect(paginator.page).toBe(page + 1);
+  });
+});
+
+// readest#7374: EBPAJ books pair vertical chapters with horizontal front matter
+// and colophons. A preload in the other writing mode must not stay beside the
+// primary, and must not fire 'load' when its mode is known before it: the
+// reader takes that event's direction for the book's and lays a vertical
+// chapter out in two columns on a phone.
+describe('Mixed-direction preloads (browser)', () => {
+  const section = (style: string, text: string) =>
+    `<!doctype html><html><head><style>body { margin: 0; } ${style}</style></head><body><p>${text}</p></body></html>`;
+  const horizontal = (text: string) => section('', text);
+  const vertical = (text: string) => section('body { writing-mode: vertical-rl; }', text);
+
+  // Opens the book at `index` and resolves once the preload of `neighbor` has
+  // settled: the paginator either dropped it (unloading its section) or kept
+  // it (creating its overlayer).
+  const openAt = async (
+    sections: string[],
+    index: number,
+    neighbor: number,
+    onLoad?: (doc: Document) => void,
+  ) => {
+    await import('foliate-js/paginator.js');
+    const el = document.createElement('foliate-paginator') as Renderer;
+    Object.assign(el.style, {
+      width: '393px',
+      height: '852px',
+      position: 'absolute',
+      left: '0',
+      top: '0',
+    });
+    el.setAttribute('max-column-count', '1');
+    el.setAttribute('max-inline-size', '852px');
+    document.body.appendChild(el);
+    const loads: number[] = [];
+    el.addEventListener('load', (e) => {
+      const { doc, index } = (e as CustomEvent<{ doc: Document; index: number }>).detail;
+      loads.push(index);
+      onLoad?.(doc);
+    });
+    let settle = () => {};
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const settled = new Promise<void>((resolve, reject) => {
+      timer = setTimeout(() => reject(new Error(`preload of ${neighbor} never settled`)), 10000);
+      settle = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
+    el.addEventListener('create-overlayer', (e) => {
+      if ((e as CustomEvent<{ index: number }>).detail.index === neighbor) settle();
+    });
+    el.open({
+      dir: 'rtl',
+      sections: sections.map((html, i) => {
+        let url = '';
+        return {
+          load: async () => (url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))),
+          unload: () => {
+            if (url) URL.revokeObjectURL(url);
+            url = '';
+            if (i === neighbor) settle();
+          },
+        };
+      }),
+    } as unknown as BookDoc);
+    try {
+      // Await both at once so a timeout during goTo is never left unhandled.
+      await Promise.all([el.goTo({ index }), settled]);
+    } catch (e) {
+      clearTimeout(timer);
+      el.destroy();
+      el.remove();
+      throw e;
+    }
+    return { el, loads };
+  };
+
+  it('drops a horizontal section beside a vertical primary before it fires load', async () => {
+    const { el, loads } = await openAt(
+      [horizontal('前付'), vertical('短い本文一段落。'), horizontal('奥付')],
+      1,
+      2,
+    );
+    try {
+      expect(loads).toEqual([1]);
+      expect(el.getContents().map((c) => c.index)).toEqual([1]);
+    } finally {
+      el.destroy();
+      el.remove();
+    }
+  });
+
+  it('drops a preload that a load listener turns vertical beside a horizontal primary', async () => {
+    // Readest's load handler repairs namespaced attributes, which a book's
+    // [epub|type] selectors may match; here a class stands in for that.
+    const { el } = await openAt(
+      [horizontal('前付'), section('html.prepared body { writing-mode: vertical-rl; }', '本文')],
+      0,
+      1,
+      (doc) => doc.documentElement.classList.add('prepared'),
+    );
+    try {
+      expect(el.getContents().map((c) => c.index)).toEqual([0]);
+    } finally {
+      el.destroy();
+      el.remove();
+    }
   });
 });

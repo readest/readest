@@ -1,3 +1,4 @@
+import { PAGES_CACHE_NAME } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
 import { NetworkFirst, CacheFirst, ExpirationPlugin, Serwist } from 'serwist';
 
@@ -8,6 +9,18 @@ declare global {
 }
 
 declare const self: ServiceWorkerGlobalScope;
+
+// The pages the app renders on the client: the library at `/` and `/library`,
+// and the reader.
+const isClientRoute = ({ pathname }: URL) =>
+  pathname === '/' || ['/library', '/reader'].some((route) => pathname.startsWith(route));
+const isAppPage = (url: URL) => url.origin === self.location.origin && isClientRoute(url);
+
+// The page route reads `pages` by the first path segment, so one saved reader
+// serves every book.
+const pageCacheKey = ({ origin, pathname }: URL) => `${origin}/${pathname.split('/')[1]}`;
+
+const PAGE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -27,13 +40,12 @@ const serwist = new Serwist({
   },
   runtimeCaching: [
     {
-      matcher: ({ url, request }) => {
-        const clientRoutes = ['/library', '/reader'];
-        const isClientRoute = clientRoutes.some((route) => url.pathname.startsWith(route));
-        return isClientRoute && request.mode === 'navigate';
-      },
+      matcher: ({ url, request }) => isClientRoute(url) && request.mode === 'navigate',
       handler: new NetworkFirst({
-        cacheName: 'client-pages',
+        // `cacheOnNavigation` (next.config.mjs) saves the pages opened through the
+        // router to this cache. Reading from it lets them load offline even when
+        // the service worker has never handled a full page load of them.
+        cacheName: PAGES_CACHE_NAME.html,
         networkTimeoutSeconds: 3,
         matchOptions: {
           ignoreSearch: true,
@@ -41,14 +53,25 @@ const serwist = new Serwist({
         plugins: [
           new ExpirationPlugin({
             maxEntries: 128,
-            maxAgeSeconds: 365 * 24 * 60 * 60,
+            maxAgeSeconds: PAGE_MAX_AGE_SECONDS,
           }),
           {
-            cacheKeyWillBeUsed: async ({ request }) => {
-              const url = new URL(request.url);
-              const basePath = url.pathname.split('/')[1];
-              const cacheKey = `${url.origin}/${basePath}`;
-              return cacheKey;
+            cacheKeyWillBeUsed: async ({ request }) => pageCacheKey(new URL(request.url)),
+          },
+          {
+            // In a browser tab the reader is at /reader/<ids>, and
+            // cacheOnNavigation saves it under that full path, which the key
+            // above doesn't match. ExpirationPlugin has already run by now, so
+            // apply the same age limit to the page found here.
+            cachedResponseWillBeUsed: async ({ cacheName, cachedResponse, event }) => {
+              if (cachedResponse || !(event instanceof FetchEvent)) return cachedResponse;
+              const match = await caches.match(event.request.url, {
+                cacheName,
+                ignoreSearch: true,
+              });
+              const savedAt = Date.parse(match?.headers.get('date') ?? '');
+              if (savedAt < Date.now() - PAGE_MAX_AGE_SECONDS * 1000) return null;
+              return match ?? null;
             },
           },
         ],
@@ -103,6 +126,60 @@ const serwist = new Serwist({
       }),
     },
   ],
+});
+
+// A saved page loads the chunks of the build that served it, and a new service
+// worker comes with a new build whose precache no longer has those chunks. Clear
+// the saved pages once the new worker activates: if its install fails, the old
+// worker keeps running and still needs them. A first install keeps the pages
+// saved before it took control. The marker is a cache, not a variable, because
+// the browser may stop the worker between install and activate.
+const REPLACING_MARKER = 'replacing-service-worker';
+self.addEventListener('install', (event) => {
+  if (self.registration.active) event.waitUntil(caches.open(REPLACING_MARKER));
+});
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      if (!(await caches.has(REPLACING_MARKER))) return;
+      const savedKinds = (await (await caches.open(PAGES_CACHE_NAME.html)).keys())
+        .map(({ url }) => new URL(url))
+        .filter(isAppPage)
+        .map(pageCacheKey);
+      await Promise.all([caches.delete(PAGES_CACHE_NAME.html), caches.delete('client-pages')]);
+      // cacheOnNavigation refetches a page through the service worker, so an old
+      // copy in the general cache could come back into `pages` on a slow network.
+      const general = await caches.open('offline-cache');
+      for (const request of await general.keys()) {
+        if (isAppPage(new URL(request.url))) await general.delete(request);
+      }
+      // The visit that brought this worker saved its page just before the worker
+      // took over. Save again from this build the pages the open windows loaded,
+      // so the app still opens offline before it navigates again. A window
+      // reports the URL it loaded, not one it moved to inside the app, so a book
+      // opened from the library would be left out: also save each kind of page
+      // saved before, under the key its route reads. A network that doesn't
+      // answer in time leaves them to be saved on the next visit.
+      const pages = await caches.open(PAGES_CACHE_NAME.html);
+      const open = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const urls = new Set([
+        ...open
+          .map(({ url }) => new URL(url))
+          .filter(isAppPage)
+          .map(({ href }) => href),
+        ...savedKinds,
+      ]);
+      await Promise.all(
+        [...urls].map(async (url) => {
+          try {
+            const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
+            if (response.ok) await pages.put(url, response);
+          } catch {}
+        }),
+      );
+      await caches.delete(REPLACING_MARKER);
+    })(),
+  );
 });
 
 serwist.addEventListeners();

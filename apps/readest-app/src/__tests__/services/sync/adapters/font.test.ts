@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { computeFontContentId, fontAdapter } from '@/services/sync/adapters/font';
 import { hlcPack } from '@/libs/crdt';

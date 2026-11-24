@@ -7,10 +7,19 @@ import { Book, BookConfig, BookNote } from '@/types/book';
 import { SystemSettings } from '@/types/settings';
 import type { PageStatEvent, StatBook } from '@/types/statistics';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
-import { getBookDirOfPath, getLibraryFilename } from '@/utils/book';
+import { getBookDirOfPath, getLibraryFilename, getLocalBookFilename } from '@/utils/book';
 import { getAbsOfflineDir } from '@/utils/audiobook';
 import { stampBookConfigSchema } from '@/utils/serializer';
 import { configureZip } from '@/utils/zip';
+import { mergeEntries } from '@/services/vocabulary/entry';
+import {
+  VOCABULARY_FILENAME,
+  parseVocabularyFile,
+  readVocabularyFile,
+  serializeVocabulary,
+  writeVocabularyFile,
+} from '@/services/vocabulary/persistence';
+import { useVocabularyStore } from '@/store/vocabularyStore';
 
 /** Book file extensions for identifying book files in backup directories. */
 const BOOK_EXTS = new Set(Object.values(EXTS));
@@ -36,6 +45,10 @@ export interface BackupOptions {
    * defaults to false.
    */
   includeCredentials?: boolean;
+  /** Include the library: book files, library.json, statistics, vocabulary. Defaults to true. */
+  includeLibrary?: boolean;
+  /** Include the global settings snapshot (settings.json). Defaults to true. */
+  includeSettings?: boolean;
 }
 
 /**
@@ -52,10 +65,12 @@ export const BACKUP_SETTINGS_BLACKLIST = [
   'autoImportFolders',
   'autoImportFlattenFolders',
   'savedBookCoverForLockScreenPath',
+  'obsidian',
   // Per-device identity — restoring causes sync identity / HLC collisions.
   'replicaDeviceId',
   'kosync.deviceId',
   'bookorbit.deviceId',
+  'deviceAnchor',
   // Sync cursors — stale values make sync skip pulls or re-push everything.
   'lastSyncedAtBooks',
   'lastSyncedAtConfigs',
@@ -105,6 +120,11 @@ export const BACKUP_SETTINGS_CREDENTIAL_FIELDS = [
   'bookorbit.username',
   'bookorbit.userkey',
   'bookorbit.password',
+  'bookorbit.apiKey',
+  'grimmory.username',
+  'grimmory.password',
+  // Custom headers can carry access secrets (e.g. CF-Access-Client-Secret).
+  'grimmory.customHeaders',
   'readwise.accessToken',
   'hardcover.accessToken',
   'hardcover.oauth',
@@ -330,21 +350,32 @@ async function collectBackupEntries(
   appService: AppService,
   options: BackupOptions,
 ): Promise<BackupPlan> {
+  // A backup holds the library, the settings, or both (#7752).
+  const includeLibrary = options.includeLibrary !== false;
+  const texts: { name: string; content: string }[] = [];
+
   // Generate canonical library.json from the current storage backend
-  const books = await appService.loadLibraryBooks();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
-  const texts = [{ name: getLibraryFilename(), content: JSON.stringify(libraryBooks, null, 2) }];
+  const books = includeLibrary ? await appService.loadLibraryBooks() : [];
+  if (includeLibrary) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const libraryBooks = books.map(({ coverImageUrl, ...rest }) => rest);
+    texts.push({ name: getLibraryFilename(), content: JSON.stringify(libraryBooks, null, 2) });
+  }
 
   // Add the global settings snapshot, sanitized of device-specific and
   // (unless opted in) credential fields.
-  try {
-    const settings = await appService.loadSettings();
-    const sanitized = sanitizeSettingsForBackup(settings, options);
-    texts.push({ name: SETTINGS_BACKUP_FILENAME, content: JSON.stringify(sanitized, null, 2) });
-  } catch (error) {
-    console.warn('Skipping settings backup:', error);
+  if (options.includeSettings !== false) {
+    try {
+      const settings = await appService.loadSettings();
+      const sanitized = sanitizeSettingsForBackup(settings, options);
+      texts.push({ name: SETTINGS_BACKUP_FILENAME, content: JSON.stringify(sanitized, null, 2) });
+    } catch (error) {
+      // Settings are the whole backup without the library: never save an empty zip.
+      if (!includeLibrary) throw error;
+      console.warn('Skipping settings backup:', error);
+    }
   }
+  if (!includeLibrary) return { texts, files: [] };
 
   // Reading statistics live in statistics.db under the Data dir, outside the
   // Books tree walked below: export every book and page event.
@@ -357,6 +388,18 @@ async function collectBackupEntries(
     });
   } catch (error) {
     console.warn('Skipping statistics backup:', error);
+  }
+
+  // The vocabulary builder's words live in the Data dir too. Save any change
+  // still waiting for the delayed save first.
+  try {
+    await useVocabularyStore.getState().flush();
+    const entries = await readVocabularyFile(appService);
+    if (entries.length) {
+      texts.push({ name: VOCABULARY_FILENAME, content: serializeVocabulary(entries) });
+    }
+  } catch (error) {
+    console.warn('Skipping vocabulary backup:', error);
   }
 
   // Add the files of every live library book. Only a book's own `<hash>/`
@@ -386,7 +429,17 @@ async function collectBackupEntries(
     .filter(({ entryName }) => !isAbsOfflineEntry(entryName))
     // A restore killed mid-file leaves its `.part` temp file behind.
     .filter(({ entryName }) => !entryName.endsWith('.part'));
-  return { texts, files: bookFiles };
+  // A book's search index is rebuilt from its file on demand, so leave it out
+  // when that file is in this backup (#7390). A cloud-only or external book
+  // keeps its index: library search reads it without the file.
+  const entryNames = new Set(bookFiles.map(({ entryName }) => entryName));
+  const bookByHash = new Map(books.map((book) => [book.hash, book]));
+  const isRebuildableIndex = (entryName: string) => {
+    if (!/^[^/]+\/search\.db(?:-(?:wal|shm|journal))?$/.test(entryName)) return false;
+    const book = bookByHash.get(getBookDirOfPath(entryName)!);
+    return !!book && entryNames.has(getLocalBookFilename(book));
+  };
+  return { texts, files: bookFiles.filter(({ entryName }) => !isRebuildableIndex(entryName)) };
 }
 
 /**
@@ -529,51 +582,27 @@ export async function createBackupZipToFile(
 }
 
 /**
- * Validate that zip entries contain a valid backup structure.
- * Must contain library.json at the root level.
+ * Validate that zip entries contain a valid backup structure: library.json
+ * or settings.json at the root level (a backup may hold either or both).
  */
 export function validateBackupStructure(entryNames: string[]): boolean {
-  return entryNames.some((name) => name === getLibraryFilename());
+  return entryNames.some(
+    (name) => name === getLibraryFilename() || name === SETTINGS_BACKUP_FILENAME,
+  );
 }
 
 /**
- * Restore library from a zip backup, merging with existing data.
- * - Override book files and cover images for existing books
- * - Merge book config files (keep higher progress, merge notes)
- * - Add new books not present in current library
- * - Import orphan hash directories not listed in library.json
- * - Restore global settings (settings.json), deep-merged onto current
- * - Merge reading statistics (statistics.json) into statistics.db
+ * Merge the library part of a backup into the current library: book files,
+ * book configs and library.json.
  */
-export async function restoreFromBackupZip(
+async function restoreLibraryEntries(
   appService: AppService,
-  zipBlob: Blob,
+  fileEntries: FileEntry[],
+  libraryEntry: FileEntry,
+  source: string | undefined,
   onProgress?: ProgressCallback,
-  /** Where the zip lives (path or picker URI); lets Tauri extract it natively. */
-  source?: string,
-): Promise<{ booksAdded: number; booksUpdated: number; settingsRestored: boolean }> {
-  await configureZip();
-  const { BlobReader, ZipReader, Uint8ArrayWriter } = await import('@zip.js/zip.js');
-
-  const reader = new ZipReader(new BlobReader(zipBlob));
-  const entries = await reader.getEntries();
-
-  // Validate structure
-  const entryNames = entries.map((e) => e.filename);
-  if (!validateBackupStructure(entryNames)) {
-    await reader.close();
-    throw new Error('Invalid backup file: missing library.json');
-  }
-
-  // Filter to file entries only (directories don't have getData)
-  const fileEntries = entries.filter((e) => !e.directory);
-
-  // Read backup library.json
-  const libraryEntry = fileEntries.find((e) => e.filename === getLibraryFilename());
-  if (!libraryEntry) {
-    await reader.close();
-    throw new Error('Cannot read library.json from backup');
-  }
+): Promise<{ booksAdded: number; booksUpdated: number }> {
+  const { Uint8ArrayWriter } = await import('@zip.js/zip.js');
   const libraryData = await libraryEntry.getData!(new Uint8ArrayWriter());
   const backupBooks: Book[] = JSON.parse(new TextDecoder().decode(libraryData));
 
@@ -708,6 +737,60 @@ export async function restoreFromBackupZip(
   // Save merged library
   await appService.saveLibraryBooks(currentBooks);
 
+  return { booksAdded, booksUpdated };
+}
+
+/**
+ * Restore library from a zip backup, merging with existing data.
+ * - Override book files and cover images for existing books
+ * - Merge book config files (keep higher progress, merge notes)
+ * - Add new books not present in current library
+ * - Import orphan hash directories not listed in library.json
+ * - Restore global settings (settings.json), deep-merged onto current
+ * - Merge reading statistics (statistics.json) into statistics.db
+ */
+export async function restoreFromBackupZip(
+  appService: AppService,
+  zipBlob: Blob,
+  onProgress?: ProgressCallback,
+  /** Where the zip lives (path or picker URI); lets Tauri extract it natively. */
+  source?: string,
+): Promise<{
+  booksAdded: number;
+  booksUpdated: number;
+  libraryRestored: boolean;
+  settingsRestored: boolean;
+}> {
+  await configureZip();
+  const { BlobReader, ZipReader, Uint8ArrayWriter } = await import('@zip.js/zip.js');
+
+  const reader = new ZipReader(new BlobReader(zipBlob));
+  const entries = await reader.getEntries();
+
+  // Validate structure
+  const entryNames = entries.map((e) => e.filename);
+  if (!validateBackupStructure(entryNames)) {
+    await reader.close();
+    throw new Error('Invalid backup file: missing library.json and settings.json');
+  }
+
+  // Filter to file entries only (directories don't have getData)
+  const fileEntries = entries.filter((e) => !e.directory);
+
+  // A backup may hold the library, the settings, or both (#7752).
+  let booksAdded = 0;
+  let booksUpdated = 0;
+  const libraryEntry = fileEntries.find((e) => e.filename === getLibraryFilename());
+  if (libraryEntry) {
+    ({ booksAdded, booksUpdated } = await restoreLibraryEntries(
+      appService,
+      fileEntries,
+      libraryEntry,
+      source,
+      onProgress,
+    ));
+  }
+
   // Restore global settings if the backup carries them. Blacklisted
   // fields are absent from the snapshot, so the current device keeps
   // its own values for those after the deep merge.
@@ -721,6 +804,11 @@ export async function restoreFromBackupZip(
       await appService.saveSettings(mergeRestoredSettings(currentSettings, backupSettings));
       settingsRestored = true;
     } catch (error) {
+      // Settings are the whole restore without a library: report the failure.
+      if (!libraryEntry) {
+        await reader.close();
+        throw error;
+      }
       console.warn('Failed to restore settings from backup:', error);
     }
   }
@@ -741,9 +829,33 @@ export async function restoreFromBackupZip(
     }
   }
 
+  // Merge vocabulary like a sync pull, and mark the backed-up words dirty so
+  // the next sync pushes them (the server merge makes a repeat push harmless).
+  const vocabularyEntry = fileEntries.find((e) => e.filename === VOCABULARY_FILENAME);
+  if (vocabularyEntry) {
+    try {
+      const data = await vocabularyEntry.getData!(new Uint8ArrayWriter());
+      const backup = parseVocabularyFile(new TextDecoder().decode(data));
+      // Let pending saves finish first, so none lands over the restored list.
+      await useVocabularyStore.getState().flush();
+      const merged = new Map((await readVocabularyFile(appService)).map((e) => [e.id, e]));
+      for (const b of backup) {
+        const local = merged.get(b.id);
+        merged.set(b.id, { ...(local ? mergeEntries(local, b) : b), dirty: true });
+      }
+      await writeVocabularyFile(appService, [...merged.values()]);
+      if (useVocabularyStore.getState().loaded) {
+        useVocabularyStore.setState({ loaded: false });
+        await useVocabularyStore.getState().load(appService);
+      }
+    } catch (error) {
+      console.warn('Failed to restore vocabulary from backup:', error);
+    }
+  }
+
   await reader.close();
 
-  return { booksAdded, booksUpdated, settingsRestored };
+  return { booksAdded, booksUpdated, libraryRestored: !!libraryEntry, settingsRestored };
 }
 
 /**

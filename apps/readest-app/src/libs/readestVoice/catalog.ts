@@ -11,6 +11,7 @@ export interface CatalogVoice {
   engine: string;
   name: string;
   langs: string[];
+  gender?: 'female' | 'male';
 }
 
 export interface PlanVoice {
@@ -19,6 +20,7 @@ export interface PlanVoice {
   lang: string;
   // The plan that unlocks the voice, shown as its badge.
   tier: 'plus' | 'pro';
+  gender?: 'female' | 'male';
 }
 
 const CATALOG_TTL_MS = 10 * 60 * 1000;
@@ -68,17 +70,27 @@ export const isVoiceInPlan = (voice: CatalogVoice, plan: UserPlan): boolean => {
   return !!minPlan && isVoiceTierInPlan(minPlan, plan);
 };
 
+// The catalog's gender, else the one a Kokoro voice id spells (`kokoro:bm_george`:
+// British, male); anything else states none.
+const voiceGender = ({ id, gender }: CatalogVoice): PlanVoice['gender'] => {
+  if (gender === 'female' || gender === 'male') return gender;
+  const kokoro = id.match(/^kokoro:[a-z]([fm])_/)?.[1];
+  return kokoro ? (kokoro === 'f' ? 'female' : 'male') : undefined;
+};
+
 // One row per (voice, language): multilingual voices appear under each
 // language they are listed for, as the per-language voice picker expects.
 const toPlanVoices = (voices: CatalogVoice[]): PlanVoice[] =>
-  voices.flatMap((voice) =>
-    voice.langs.map((lang) => ({
+  voices.flatMap((voice) => {
+    const gender = voiceGender(voice);
+    return voice.langs.map((lang) => ({
       id: voice.id,
       name: voice.name,
       lang,
       tier: ENGINE_MIN_PLAN[voice.engine]!,
-    })),
-  );
+      ...(gender && { gender }),
+    }));
+  });
 
 export const voicesForPlan = (catalog: CatalogVoice[], plan: UserPlan): PlanVoice[] =>
   toPlanVoices(catalog.filter((voice) => isVoiceInPlan(voice, plan)));

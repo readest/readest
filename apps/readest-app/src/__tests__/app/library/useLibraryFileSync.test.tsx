@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
 
@@ -8,8 +9,9 @@ import type { Book } from '@/types/book';
  * it no longer builds an engine or talks to a backend itself, it only decides
  * WHEN to call `runFileLibrarySyncPass` (Task 7's shared pass, which owns
  * device ids, strategy, progress, lastSyncedAt, per-backend failure isolation
- * and the mutex). These tests cover the three things left in the hook's remit:
+ * and the mutex). These tests cover what is left in the hook's remit:
  *   - it debounces bursts of library changes into a single pass call
+ *   - leaving the screen runs a waiting pass rather than dropping it (#7464)
  *   - it never fires when no third-party backend is active
  *   - it never fires before the library has loaded from disk
  */
@@ -44,6 +46,7 @@ vi.mock('@/services/sync/file/runLibrarySync', () => ({
 
 const { useLibraryFileSync } = await import('@/app/library/hooks/useLibraryFileSync');
 const { useLibraryStore } = await import('@/store/libraryStore');
+const { useSettingsStore } = await import('@/store/settingsStore');
 
 const book = (hash: string): Book =>
   ({
@@ -95,6 +98,55 @@ describe('useLibraryFileSync trigger (issue #5062 Task 8)', () => {
     });
 
     expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs a waiting pass when the screen unmounts instead of dropping it (#7464)', async () => {
+    routing.backends = ['webdav'];
+
+    const { rerender, unmount } = renderHook(() => useLibraryFileSync());
+
+    // A book is imported, then the user leaves the screen (opens the book,
+    // goes back from the OPDS catalog) before the quiet window ends.
+    act(() => {
+      useLibraryStore.setState({ library: [book('a')], libraryLoaded: true });
+    });
+    rerender();
+    await act(async () => {
+      vi.advanceTimersByTime(1_000);
+    });
+    expect(runFileLibrarySyncPass).not.toHaveBeenCalled();
+
+    unmount();
+    expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      vi.advanceTimersByTime(10_000);
+    });
+    expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs a pass when a custom font is imported or deleted (#7793)', async () => {
+    routing.backends = ['webdav'];
+    useSettingsStore.setState({ settings: { customFonts: [] } as never });
+
+    const { rerender } = renderHook(() => useLibraryFileSync());
+    await act(async () => {
+      vi.advanceTimersByTime(5_000);
+    });
+    expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(1);
+
+    // saveCustomFonts writes a new list into the same settings object.
+    act(() => {
+      const settings = useSettingsStore.getState().settings;
+      settings.customFonts = [{ id: 'f1', name: 'Inter', path: 'b1/Inter.ttf' }];
+      useSettingsStore.setState({ settings });
+    });
+    rerender();
+    await act(async () => {
+      vi.advanceTimersByTime(5_000);
+    });
+
+    expect(runFileLibrarySyncPass).toHaveBeenCalledTimes(2);
   });
 
   it('does not fire when no backend is active', async () => {

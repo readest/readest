@@ -11,6 +11,7 @@ import { useFileSyncStore } from '@/store/fileSyncStore';
 import { eventDispatcher } from '@/utils/event';
 import { formatSyncFailure } from '@/services/sync/file/syncResult';
 import { FileSyncEngine } from '@/services/sync/file/engine';
+import { syncFonts } from '@/services/sync/file/fonts';
 import { FileSyncError } from '@/services/sync/file/provider';
 import { createAppLocalStore } from '@/services/sync/file/appLocalStore';
 import {
@@ -19,6 +20,7 @@ import {
 } from '@/services/sync/file/providerRegistry';
 import type { KOSyncStrategy } from '@/types/settings';
 import { BoxedList, SettingsRow, SettingsSelect, SettingsSwitchRow } from '../primitives';
+import { recordLibraryPass, recordLibraryPassFailure } from '@/services/sync/file/runLibrarySync';
 
 /** The settings fields the shared sync controls read/write (WebDAV + Drive share these). */
 export interface FileSyncFormSettings {
@@ -148,8 +150,9 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
       }
       const store = createAppLocalStore({ appService, settings, envConfig });
       const engine = new FileSyncEngine(provider, store);
+      const strategy = stored.strategy === 'prompt' ? 'silent' : (stored.strategy ?? 'silent');
       const result = await engine.syncLibrary(currentLibrary, {
-        strategy: stored.strategy === 'prompt' ? 'silent' : stored.strategy,
+        strategy,
         syncBooks: stored.syncBooks ?? false,
         fullSync: stored.fullSync ?? false,
         deviceId: deviceId as string,
@@ -163,6 +166,11 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
         },
       });
 
+      recordLibraryPass(kind, result);
+      // Custom fonts ride the same pass (#7793); a font failure is not a library one.
+      await syncFonts(envConfig, provider, strategy).catch((e) =>
+        console.warn('[cloudSync] font sync failed', kind, e),
+      );
       const failure = formatSyncFailure(result, _);
       setLastError(kind, failure);
       if (!failure) {
@@ -173,7 +181,9 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
         });
       }
     } catch (e) {
-      setLastError(kind, e instanceof Error ? e.message : String(e));
+      const message = e instanceof Error ? e.message : String(e);
+      setLastError(kind, message);
+      recordLibraryPassFailure(kind, message);
       eventDispatcher.dispatch('toast', { type: 'error', message: formatSyncError(_, e) });
     } finally {
       endSync(kind);

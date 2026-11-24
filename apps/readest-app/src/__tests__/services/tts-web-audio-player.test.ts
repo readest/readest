@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, expect, test } from 'vitest';
 
 import { WebAudioPlayer, type WebAudioPlayerEvent } from '@/services/tts/WebAudioPlayer';

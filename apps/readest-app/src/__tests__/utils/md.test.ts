@@ -278,6 +278,26 @@ describe('makeMarkdownBook', () => {
     expect(await book.getCover()).toBeNull();
   });
 
+  it('detects the language of the text when the frontmatter names none', async () => {
+    const book = await make(
+      '# Rozdział pierwszy\n\n' +
+        'Był piękny letni dzień, kiedy po raz pierwszy zobaczyłem morze. ' +
+        'Szliśmy razem przez las, a potem długo siedzieliśmy na plaży i rozmawialiśmy ' +
+        'o wszystkim, co wydarzyło się w ciągu ostatnich lat w naszym małym mieście.\n',
+      'Opowiadanie.md',
+    );
+    expect(book.metadata.language).toBe('pl');
+  });
+
+  it('keeps the frontmatter language over the detected one', async () => {
+    const book = await make(
+      '---\nlanguage: fr\n---\n\n' +
+        'Był piękny letni dzień, kiedy po raz pierwszy zobaczyłem morze. ' +
+        'Szliśmy razem przez las, a potem długo siedzieliśmy na plaży.\n',
+    );
+    expect(book.metadata.language).toBe('fr');
+  });
+
   it('creates object URLs lazily and revokes every one on destroy', async () => {
     const url = URL as unknown as {
       createObjectURL: (b: Blob) => string;

@@ -1,3 +1,4 @@
+import * as CFI from 'foliate-js/epubcfi.js';
 import { BookDoc } from '@/libs/document';
 import { FoliateView } from '@/types/view';
 import { getCFIFromXPointer } from '@/utils/xcfi';
@@ -12,9 +13,37 @@ import { KoSyncProgress } from '@/services/sync/KOSyncClient';
  * every one of them the same way: through the XPointer's own `DocFragment[N]`.
  * A server's `percentage` never picks the section (see `getCFIFromXPointer`),
  * so no server sniffing is needed here.
+ *
+ * crengine reads FB2 natively, so an FB2 book's XPointer starts at its
+ * FictionBook root instead: `/FictionBook/body[1]/section[3]/p[9]/text().322`,
+ * and a MOBI book's at its HTML root: `/html/body/body/div[8]/p[152]/text().596`.
+ * Newer crengine writes `[1]` on every first step, so the roots can also read
+ * `/body[1]`, `/FictionBook[1]` and `/html[1]`.
  */
 export const isXPointerProgress = (progress?: string): boolean =>
-  !!progress && progress.startsWith('/body');
+  !!progress &&
+  ['/body', '/FictionBook', '/html/', '/html[1]/'].some((root) => progress.startsWith(root));
+
+/** True when a remote position is an EPUB CFI, as Grimmory's own reader writes. */
+export const isCfiProgress = (progress?: string): boolean =>
+  !!progress && progress.startsWith('epubcfi(');
+
+/**
+ * True when a remote CFI starts on the page this device shows (`pageCfi` is
+ * the visible range). Its fraction would sit a page before the page-end
+ * percentage, so it is compared by position instead.
+ */
+export const isCfiOnPage = (cfi: string, pageCfi: string): boolean => {
+  try {
+    const start = CFI.collapse(cfi);
+    return (
+      CFI.compare(start, CFI.collapse(pageCfi)) >= 0 &&
+      CFI.compare(start, CFI.collapse(pageCfi, true)) <= 0
+    );
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Remote reading completion as a 0–1 fraction suitable for
@@ -30,6 +59,49 @@ export const getRemoteFraction = (remote: KoSyncProgress): number | undefined =>
 };
 
 /**
+ * The 1-based page a remote fixed-layout position names. KOReader sends the
+ * page number as `progress`; Grimmory sends only a percentage for progress
+ * made in its own PDF reader (page / total), so the page comes from that.
+ */
+export const getRemotePage = (remote: KoSyncProgress, totalPages: number): number | undefined => {
+  const page = parseInt(remote.progress ?? '', 10);
+  if (!isNaN(page)) return page;
+  const fraction = getRemoteFraction(remote);
+  if (fraction === undefined || totalPages <= 0) return undefined;
+  return Math.max(1, Math.round(fraction * totalPages));
+};
+
+/**
+ * The total page count a remote fixed-layout position implies.
+ *
+ * KOReader reports `percentage = page / total` (1-based), but Kavita's
+ * KOReader-compatible endpoint reports `percentage = (page - 1) / total`
+ * (0-based, #7503): reading a Kavita report with the KOReader formula
+ * doubles the total (2 / 0.09090909 = 22 for an 11-page PDF). A report from a
+ * server that may be zero-based (`mayBeZeroBased`, Kavita) is read the
+ * zero-based way only when that matches the local copy's total within a page
+ * and better than the other reading; KOReader's page 2 of 22 has the same
+ * numbers as Kavita's page 2 of 11, so the server decides first. Otherwise
+ * `page / percentage` stands. Returns `undefined` when the percentage is
+ * unusable.
+ */
+export const getRemoteTotalPages = (
+  remotePage: number,
+  remotePercentage: number,
+  localTotalPages: number,
+  mayBeZeroBased: boolean,
+): number | undefined => {
+  if (!Number.isFinite(remotePercentage) || remotePercentage <= 0) return undefined;
+  const fromOneBased = Math.round(remotePage / remotePercentage);
+  if (!mayBeZeroBased || localTotalPages <= 0) return fromOneBased;
+  const fromZeroBased = Math.round((remotePage - 1) / remotePercentage);
+  const zeroBasedDiff = Math.abs(fromZeroBased - localTotalPages);
+  return zeroBasedDiff <= 1 && zeroBasedDiff < Math.abs(fromOneBased - localTotalPages)
+    ? fromZeroBased
+    : fromOneBased;
+};
+
+/**
  * Outcome of resolving a remote KOReader position against the LOCAL book.
  *
  * The distinction between `unresolved` and `not-xpointer` is critical for
@@ -37,7 +109,7 @@ export const getRemoteFraction = (remote: KoSyncProgress): number | undefined =>
  *
  * - `resolved`     — the XPointer maps to a local position; `fraction` is an
  *                    apples-to-apples value comparable to Readest's progress.
- * - `unresolved`   — the progress IS a KOReader XPointer but couldn't be
+ * - `unresolved`   — the progress IS a KOReader XPointer (or a CFI) but couldn't be
  *                    converted to a local position (conversion threw, or the
  *                    CFI resolves to no local progress). This is common on iOS
  *                    (WKWebView) and is often a symptom of the DocFragment↔spine
@@ -69,12 +141,15 @@ export const resolveRemoteLocalFraction = async (
   view: FoliateView,
   bookDoc: BookDoc,
 ): Promise<RemoteFractionResolution> => {
-  if (!isXPointerProgress(remote.progress)) return { status: 'not-xpointer' };
+  const isCfi = isCfiProgress(remote.progress);
+  if (!isCfi && !isXPointerProgress(remote.progress)) return { status: 'not-xpointer' };
   try {
     // Resolve against the XPointer's own spine section; the converter loads the
     // correct off-screen document when it differs from the primary view.
     const content = view.renderer.getContents().find((x) => x.index === view.renderer.primaryIndex);
-    const cfi = await getCFIFromXPointer(remote.progress!, content?.doc, content?.index, bookDoc);
+    const cfi = isCfi
+      ? remote.progress!
+      : await getCFIFromXPointer(remote.progress!, content?.doc, content?.index, bookDoc);
     const progress = await view.getCFIProgress(cfi);
     const fraction = progress?.fraction;
     if (typeof fraction !== 'number' || !Number.isFinite(fraction)) {

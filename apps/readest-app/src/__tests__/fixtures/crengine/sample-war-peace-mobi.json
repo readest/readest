@@ -1,0 +1,810 @@
+{
+  "epub": "sample-war-peace.mobi",
+  "mobi": true,
+  "dom_version": 20240114,
+  "every": 3600,
+  "word_count": 575776,
+  "fragments": [],
+  "words": [
+    {
+      "xp": "/html/body/body/p[3]/font[1]/text().0",
+      "xp_end": "/html/body/body/p[3]/font[1]/text().4",
+      "text": "This"
+    },
+    {
+      "xp": "/html/body/body/p[66]/text().696",
+      "xp_end": "/html/body/body/p[66]/text().701",
+      "text": "sight"
+    },
+    {
+      "xp": "/html/body/body/p[148]/text()[3].13",
+      "xp_end": "/html/body/body/p[148]/text()[3].16",
+      "text": "was"
+    },
+    {
+      "xp": "/html/body/body/p[255]/text().387",
+      "xp_end": "/html/body/body/p[255]/text().393",
+      "text": "looked"
+    },
+    {
+      "xp": "/html/body/body/p[349]/text().879",
+      "xp_end": "/html/body/body/p[349]/text().882",
+      "text": "and"
+    },
+    {
+      "xp": "/html/body/body/p[422]/text().33",
+      "xp_end": "/html/body/body/p[422]/text().36",
+      "text": "old"
+    },
+    {
+      "xp": "/html/body/body/p[532]/text().163",
+      "xp_end": "/html/body/body/p[532]/text().169",
+      "text": "handle"
+    },
+    {
+      "xp": "/html/body/body/p[645]/text().17",
+      "xp_end": "/html/body/body/p[645]/text().20",
+      "text": "was"
+    },
+    {
+      "xp": "/html/body/body/p[725]/text().133",
+      "xp_end": "/html/body/body/p[725]/text().137",
+      "text": "some"
+    },
+    {
+      "xp": "/html/body/body/p[814]/text().94",
+      "xp_end": "/html/body/body/p[814]/text().100",
+      "text": "Pierre"
+    },
+    {
+      "xp": "/html/body/body/p[877]/text().326",
+      "xp_end": "/html/body/body/p[877]/text().328",
+      "text": "to"
+    },
+    {
+      "xp": "/html/body/body/p[939]/text().671",
+      "xp_end": "/html/body/body/p[939]/text().674",
+      "text": "his"
+    },
+    {
+      "xp": "/html/body/body/p[980]/text().854",
+      "xp_end": "/html/body/body/p[980]/text().859",
+      "text": "again"
+    },
+    {
+      "xp": "/html/body/body/p[1061]/text().82",
+      "xp_end": "/html/body/body/p[1061]/text().92",
+      "text": "thoroughly"
+    },
+    {
+      "xp": "/html/body/body/p[1164]/text().401",
+      "xp_end": "/html/body/body/p[1164]/text().405",
+      "text": "meet"
+    },
+    {
+      "xp": "/html/body/body/p[1277]/text().26",
+      "xp_end": "/html/body/body/p[1277]/text().30",
+      "text": "with"
+    },
+    {
+      "xp": "/html/body/body/p[1370]/text().123",
+      "xp_end": "/html/body/body/p[1370]/text().125",
+      "text": "to"
+    },
+    {
+      "xp": "/html/body/body/p[1510]/text().298",
+      "xp_end": "/html/body/body/p[1510]/text().304",
+      "text": "castle"
+    },
+    {
+      "xp": "/html/body/body/p[1597]/text().1016",
+      "xp_end": "/html/body/body/p[1597]/text().1018",
+      "text": "he"
+    },
+    {
+      "xp": "/html/body/body/p[1672]/text().275",
+      "xp_end": "/html/body/body/p[1672]/text().282",
+      "text": "thought"
+    },
+    {
+      "xp": "/html/body/body/p[1761]/text().17",
+      "xp_end": "/html/body/body/p[1761]/text().26",
+      "text": "abandoned"
+    },
+    {
+      "xp": "/html/body/body/p[1866]/text().126",
+      "xp_end": "/html/body/body/p[1866]/text().128",
+      "text": "on"
+    },
+    {
+      "xp": "/html/body/body/p[1935]/text().254",
+      "xp_end": "/html/body/body/p[1935]/text().260",
+      "text": "cannon"
+    },
+    {
+      "xp": "/html/body/body/p[1977]/text().1299",
+      "xp_end": "/html/body/body/p[1977]/text().1302",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/p[2022]/text().33",
+      "xp_end": "/html/body/body/p[2022]/text().39",
+      "text": "untied"
+    },
+    {
+      "xp": "/html/body/body/p[2106]/text().280",
+      "xp_end": "/html/body/body/p[2106]/text().288",
+      "text": "stumbled"
+    },
+    {
+      "xp": "/html/body/body/p[2158]/text().132",
+      "xp_end": "/html/body/body/p[2158]/text().134",
+      "text": "he"
+    },
+    {
+      "xp": "/html/body/body/p[2202]/text().52",
+      "xp_end": "/html/body/body/p[2202]/text().56",
+      "text": "lady"
+    },
+    {
+      "xp": "/html/body/body/p[2291]/text().1003",
+      "xp_end": "/html/body/body/p[2291]/text().1006",
+      "text": "but"
+    },
+    {
+      "xp": "/html/body/body/p[2354]/text().111",
+      "xp_end": "/html/body/body/p[2354]/text().123",
+      "text": "Mademoiselle"
+    },
+    {
+      "xp": "/html/body/body/p[2456]/text().1139",
+      "xp_end": "/html/body/body/p[2456]/text().1141",
+      "text": "up"
+    },
+    {
+      "xp": "/html/body/body/p[2526]/text().817",
+      "xp_end": "/html/body/body/p[2526]/text().823",
+      "text": "Andréy"
+    },
+    {
+      "xp": "/html/body/body/p[2585]/text().81",
+      "xp_end": "/html/body/body/p[2585]/text().83",
+      "text": "is"
+    },
+    {
+      "xp": "/html/body/body/p[2657]/text().7",
+      "xp_end": "/html/body/body/p[2657]/text().8",
+      "text": "a"
+    },
+    {
+      "xp": "/html/body/body/p[2710]/text()[4].761",
+      "xp_end": "/html/body/body/p[2710]/text()[4].767",
+      "text": "Gúryev"
+    },
+    {
+      "xp": "/html/body/body/p[2778]/text().235",
+      "xp_end": "/html/body/body/p[2778]/text().238",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/p[2848]/text().915",
+      "xp_end": "/html/body/body/p[2848]/text().919",
+      "text": "that"
+    },
+    {
+      "xp": "/html/body/body/p[2920]/text().54",
+      "xp_end": "/html/body/body/p[2920]/text().57",
+      "text": "own"
+    },
+    {
+      "xp": "/html/body/body/p[3017]/text().471",
+      "xp_end": "/html/body/body/p[3017]/text().474",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/p[3118]/text().30",
+      "xp_end": "/html/body/body/p[3118]/text().34",
+      "text": "soon"
+    },
+    {
+      "xp": "/html/body/body/p[3158]/text().17",
+      "xp_end": "/html/body/body/p[3158]/text().19",
+      "text": "it"
+    },
+    {
+      "xp": "/html/body/body/p[3238]/text().95",
+      "xp_end": "/html/body/body/p[3238]/text().101",
+      "text": "formed"
+    },
+    {
+      "xp": "/html/body/body/p[3322]/text().221",
+      "xp_end": "/html/body/body/p[3322]/text().225",
+      "text": "have"
+    },
+    {
+      "xp": "/html/body/body/p[3403]/text().1484",
+      "xp_end": "/html/body/body/p[3403]/text().1486",
+      "text": "up"
+    },
+    {
+      "xp": "/html/body/body/p[3499]/text()[3].175",
+      "xp_end": "/html/body/body/p[3499]/text()[3].179",
+      "text": "real"
+    },
+    {
+      "xp": "/html/body/body/p[3601]/text().60",
+      "xp_end": "/html/body/body/p[3601]/text().65",
+      "text": "again"
+    },
+    {
+      "xp": "/html/body/body/p[3665]/text().211",
+      "xp_end": "/html/body/body/p[3665]/text().215",
+      "text": "than"
+    },
+    {
+      "xp": "/html/body/body/p[3723]/text().326",
+      "xp_end": "/html/body/body/p[3723]/text().335",
+      "text": "messenger"
+    },
+    {
+      "xp": "/html/body/body/p[3801]/text().211",
+      "xp_end": "/html/body/body/p[3801]/text().213",
+      "text": "to"
+    },
+    {
+      "xp": "/html/body/body/p[3847]/text().46",
+      "xp_end": "/html/body/body/p[3847]/text().52",
+      "text": "friend"
+    },
+    {
+      "xp": "/html/body/body/p[3922]/text()[2].534",
+      "xp_end": "/html/body/body/p[3922]/text()[2].541",
+      "text": "clearly"
+    },
+    {
+      "xp": "/html/body/body/p[4000]/text().189",
+      "xp_end": "/html/body/body/p[4000]/text().191",
+      "text": "to"
+    },
+    {
+      "xp": "/html/body/body/p[4074]/text().126",
+      "xp_end": "/html/body/body/p[4074]/text().127",
+      "text": "a"
+    },
+    {
+      "xp": "/html/body/body/p[4149]/text()[1].27",
+      "xp_end": "/html/body/body/p[4149]/text()[1].30",
+      "text": "and"
+    },
+    {
+      "xp": "/html/body/body/p[4243]/text().72",
+      "xp_end": "/html/body/body/p[4243]/text().76",
+      "text": "They"
+    },
+    {
+      "xp": "/html/body/body/p[4311]/text().207",
+      "xp_end": "/html/body/body/p[4311]/text().209",
+      "text": "of"
+    },
+    {
+      "xp": "/html/body/body/p[4377]/text().250",
+      "xp_end": "/html/body/body/p[4377]/text().253",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/blockquote[46]/blockquote/text().161",
+      "xp_end": "/html/body/body/blockquote[46]/blockquote/text().168",
+      "text": "feeling"
+    },
+    {
+      "xp": "/html/body/body/p[4438]/text().790",
+      "xp_end": "/html/body/body/p[4438]/text().794",
+      "text": "than"
+    },
+    {
+      "xp": "/html/body/body/p[4541]/text().1054",
+      "xp_end": "/html/body/body/p[4541]/text().1057",
+      "text": "her"
+    },
+    {
+      "xp": "/html/body/body/p[4595]/text()[1].238",
+      "xp_end": "/html/body/body/p[4595]/text()[1].241",
+      "text": "who"
+    },
+    {
+      "xp": "/html/body/body/p[4652]/text().59",
+      "xp_end": "/html/body/body/p[4652]/text().66",
+      "text": "carried"
+    },
+    {
+      "xp": "/html/body/body/p[4741]/text().24",
+      "xp_end": "/html/body/body/p[4741]/text().27",
+      "text": "was"
+    },
+    {
+      "xp": "/html/body/body/p[4790]/text()[2].381",
+      "xp_end": "/html/body/body/p[4790]/text()[2].383",
+      "text": "he"
+    },
+    {
+      "xp": "/html/body/body/p[4849]/text().0",
+      "xp_end": "/html/body/body/p[4849]/text().3",
+      "text": "The"
+    },
+    {
+      "xp": "/html/body/body/p[4919]/text().1372",
+      "xp_end": "/html/body/body/p[4919]/text().1376",
+      "text": "side"
+    },
+    {
+      "xp": "/html/body/body/p[4985]/text().67",
+      "xp_end": "/html/body/body/p[4985]/text().70",
+      "text": "not"
+    },
+    {
+      "xp": "/html/body/body/p[5053]/text().170",
+      "xp_end": "/html/body/body/p[5053]/text().173",
+      "text": "was"
+    },
+    {
+      "xp": "/html/body/body/p[5146]/text().4",
+      "xp_end": "/html/body/body/p[5146]/text().8",
+      "text": "only"
+    },
+    {
+      "xp": "/html/body/body/p[5248]/text().369",
+      "xp_end": "/html/body/body/p[5248]/text().373",
+      "text": "ever"
+    },
+    {
+      "xp": "/html/body/body/p[5334]/text().556",
+      "xp_end": "/html/body/body/p[5334]/text().559",
+      "text": "and"
+    },
+    {
+      "xp": "/html/body/body/p[5368]/text()[2].306",
+      "xp_end": "/html/body/body/p[5368]/text()[2].310",
+      "text": "come"
+    },
+    {
+      "xp": "/html/body/body/p[5459]/text().546",
+      "xp_end": "/html/body/body/p[5459]/text().559",
+      "text": "intentionally"
+    },
+    {
+      "xp": "/html/body/body/p[5515]/text().719",
+      "xp_end": "/html/body/body/p[5515]/text().720",
+      "text": "a"
+    },
+    {
+      "xp": "/html/body/body/p[5573]/text().135",
+      "xp_end": "/html/body/body/p[5573]/text().143",
+      "text": "straight"
+    },
+    {
+      "xp": "/html/body/body/p[5632]/i[3]/text().0",
+      "xp_end": "/html/body/body/p[5632]/i[3]/text().3",
+      "text": "his"
+    },
+    {
+      "xp": "/html/body/body/p[5748]/text().99",
+      "xp_end": "/html/body/body/p[5748]/text().102",
+      "text": "and"
+    },
+    {
+      "xp": "/html/body/body/p[5859]/text().144",
+      "xp_end": "/html/body/body/p[5859]/text().146",
+      "text": "Go"
+    },
+    {
+      "xp": "/html/body/body/p[5952]/text().524",
+      "xp_end": "/html/body/body/p[5952]/text().527",
+      "text": "her"
+    },
+    {
+      "xp": "/html/body/body/p[6048]/text().95",
+      "xp_end": "/html/body/body/p[6048]/text().104",
+      "text": "thousands"
+    },
+    {
+      "xp": "/html/body/body/p[6091]/text().57",
+      "xp_end": "/html/body/body/p[6091]/text().59",
+      "text": "of"
+    },
+    {
+      "xp": "/html/body/body/p[6166]/text().109",
+      "xp_end": "/html/body/body/p[6166]/text().113",
+      "text": "your"
+    },
+    {
+      "xp": "/html/body/body/p[6219]/text().79",
+      "xp_end": "/html/body/body/p[6219]/text().81",
+      "text": "at"
+    },
+    {
+      "xp": "/html/body/body/p[6257]/text().1151",
+      "xp_end": "/html/body/body/p[6257]/text().1154",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/p[6292]/text().1724",
+      "xp_end": "/html/body/body/p[6292]/text().1727",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/p[6352]/text().295",
+      "xp_end": "/html/body/body/p[6352]/text().299",
+      "text": "when"
+    },
+    {
+      "xp": "/html/body/body/p[6388]/text().381",
+      "xp_end": "/html/body/body/p[6388]/text().388",
+      "text": "herself"
+    },
+    {
+      "xp": "/html/body/body/p[6425]/text().627",
+      "xp_end": "/html/body/body/p[6425]/text().631",
+      "text": "that"
+    },
+    {
+      "xp": "/html/body/body/p[6571]/text().113",
+      "xp_end": "/html/body/body/p[6571]/text().116",
+      "text": "how"
+    },
+    {
+      "xp": "/html/body/body/p[6622]/text().142",
+      "xp_end": "/html/body/body/p[6622]/text().144",
+      "text": "be"
+    },
+    {
+      "xp": "/html/body/body/p[6682]/text().219",
+      "xp_end": "/html/body/body/p[6682]/text().222",
+      "text": "God"
+    },
+    {
+      "xp": "/html/body/body/p[6775]/text().108",
+      "xp_end": "/html/body/body/p[6775]/text().116",
+      "text": "Alpátych"
+    },
+    {
+      "xp": "/html/body/body/p[6853]/text().704",
+      "xp_end": "/html/body/body/p[6853]/text().706",
+      "text": "he"
+    },
+    {
+      "xp": "/html/body/body/p[6903]/text().147",
+      "xp_end": "/html/body/body/p[6903]/text().150",
+      "text": "was"
+    },
+    {
+      "xp": "/html/body/body/p[6973]/text().71",
+      "xp_end": "/html/body/body/p[6973]/text().74",
+      "text": "had"
+    },
+    {
+      "xp": "/html/body/body/p[7040]/text()[1].500",
+      "xp_end": "/html/body/body/p[7040]/text()[1].503",
+      "text": "all"
+    },
+    {
+      "xp": "/html/body/body/p[7131]/text().36",
+      "xp_end": "/html/body/body/p[7131]/text().38",
+      "text": "he"
+    },
+    {
+      "xp": "/html/body/body/p[7236]/text().178",
+      "xp_end": "/html/body/body/p[7236]/text().180",
+      "text": "my"
+    },
+    {
+      "xp": "/html/body/body/p[7296]/text().482",
+      "xp_end": "/html/body/body/p[7296]/text().485",
+      "text": "and"
+    },
+    {
+      "xp": "/html/body/body/p[7386]/text().624",
+      "xp_end": "/html/body/body/p[7386]/text().625",
+      "text": "I"
+    },
+    {
+      "xp": "/html/body/body/p[7446]/text().28",
+      "xp_end": "/html/body/body/p[7446]/text().30",
+      "text": "of"
+    },
+    {
+      "xp": "/html/body/body/p[7537]/text().255",
+      "xp_end": "/html/body/body/p[7537]/text().257",
+      "text": "he"
+    },
+    {
+      "xp": "/html/body/body/p[7602]/text()[1].193",
+      "xp_end": "/html/body/body/p[7602]/text()[1].197",
+      "text": "face"
+    },
+    {
+      "xp": "/html/body/body/p[7662]/text().69",
+      "xp_end": "/html/body/body/p[7662]/text().73",
+      "text": "That"
+    },
+    {
+      "xp": "/html/body/body/p[7750]/text().43",
+      "xp_end": "/html/body/body/p[7750]/text().48",
+      "text": "jerky"
+    },
+    {
+      "xp": "/html/body/body/p[7838]/text().38",
+      "xp_end": "/html/body/body/p[7838]/text().42",
+      "text": "sent"
+    },
+    {
+      "xp": "/html/body/body/p[7910]/text().220",
+      "xp_end": "/html/body/body/p[7910]/text().229",
+      "text": "intention"
+    },
+    {
+      "xp": "/html/body/body/p[7978]/text().187",
+      "xp_end": "/html/body/body/p[7978]/text().189",
+      "text": "or"
+    },
+    {
+      "xp": "/html/body/body/p[8020]/text().319",
+      "xp_end": "/html/body/body/p[8020]/text().322",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/p[8050]/text().20",
+      "xp_end": "/html/body/body/p[8050]/text().26",
+      "text": "pauses"
+    },
+    {
+      "xp": "/html/body/body/p[8102]/text().118",
+      "xp_end": "/html/body/body/p[8102]/text().122",
+      "text": "want"
+    },
+    {
+      "xp": "/html/body/body/p[8196]/text().202",
+      "xp_end": "/html/body/body/p[8196]/text().206",
+      "text": "made"
+    },
+    {
+      "xp": "/html/body/body/p[8243]/text().185",
+      "xp_end": "/html/body/body/p[8243]/text().189",
+      "text": "some"
+    },
+    {
+      "xp": "/html/body/body/p[8335]/text().301",
+      "xp_end": "/html/body/body/p[8335]/text().303",
+      "text": "so"
+    },
+    {
+      "xp": "/html/body/body/p[8446]/text().715",
+      "xp_end": "/html/body/body/p[8446]/text().717",
+      "text": "he"
+    },
+    {
+      "xp": "/html/body/body/p[8510]/text().315",
+      "xp_end": "/html/body/body/p[8510]/text().325",
+      "text": "Borovítski"
+    },
+    {
+      "xp": "/html/body/body/p[8610]/text().901",
+      "xp_end": "/html/body/body/p[8610]/text().911",
+      "text": "Rostopchín"
+    },
+    {
+      "xp": "/html/body/body/p[8683]/text().10",
+      "xp_end": "/html/body/body/p[8683]/text().17",
+      "text": "reached"
+    },
+    {
+      "xp": "/html/body/body/p[8731]/text()[1].517",
+      "xp_end": "/html/body/body/p[8731]/text()[1].521",
+      "text": "Osip"
+    },
+    {
+      "xp": "/html/body/body/p[8808]/text().172",
+      "xp_end": "/html/body/body/p[8808]/text().174",
+      "text": "he"
+    },
+    {
+      "xp": "/html/body/body/p[8893]/text().184",
+      "xp_end": "/html/body/body/p[8893]/text().188",
+      "text": "when"
+    },
+    {
+      "xp": "/html/body/body/p[8956]/text().50",
+      "xp_end": "/html/body/body/p[8956]/text().58",
+      "text": "glancing"
+    },
+    {
+      "xp": "/html/body/body/p[9024]/text().34",
+      "xp_end": "/html/body/body/p[9024]/text().36",
+      "text": "It"
+    },
+    {
+      "xp": "/html/body/body/p[9100]/text().18",
+      "xp_end": "/html/body/body/p[9100]/text().20",
+      "text": "me"
+    },
+    {
+      "xp": "/html/body/body/p[9176]/text().143",
+      "xp_end": "/html/body/body/p[9176]/text().146",
+      "text": "and"
+    },
+    {
+      "xp": "/html/body/body/p[9229]/text().480",
+      "xp_end": "/html/body/body/p[9229]/text().484",
+      "text": "very"
+    },
+    {
+      "xp": "/html/body/body/p[9284]/text().576",
+      "xp_end": "/html/body/body/p[9284]/text().582",
+      "text": "pushed"
+    },
+    {
+      "xp": "/html/body/body/p[9363]/text().132",
+      "xp_end": "/html/body/body/p[9363]/text().136",
+      "text": "they"
+    },
+    {
+      "xp": "/html/body/body/p[9428]/text().355",
+      "xp_end": "/html/body/body/p[9428]/text().362",
+      "text": "herself"
+    },
+    {
+      "xp": "/html/body/body/p[9525]/text().162",
+      "xp_end": "/html/body/body/p[9525]/text().175",
+      "text": "understanding"
+    },
+    {
+      "xp": "/html/body/body/p[9566]/text().478",
+      "xp_end": "/html/body/body/p[9566]/text().481",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/p[9639]/text().795",
+      "xp_end": "/html/body/body/p[9639]/text().797",
+      "text": "be"
+    },
+    {
+      "xp": "/html/body/body/p[9683]/text().485",
+      "xp_end": "/html/body/body/p[9683]/text().492",
+      "text": "stories"
+    },
+    {
+      "xp": "/html/body/body/p[9747]/text().1002",
+      "xp_end": "/html/body/body/p[9747]/text().1005",
+      "text": "and"
+    },
+    {
+      "xp": "/html/body/body/p[9811]/text().64",
+      "xp_end": "/html/body/body/p[9811]/text().69",
+      "text": "hurry"
+    },
+    {
+      "xp": "/html/body/body/p[9875]/text().595",
+      "xp_end": "/html/body/body/p[9875]/text().605",
+      "text": "fatherland"
+    },
+    {
+      "xp": "/html/body/body/p[9932]/text()[2].246",
+      "xp_end": "/html/body/body/p[9932]/text()[2].247",
+      "text": "I"
+    },
+    {
+      "xp": "/html/body/body/p[10022]/text()[2].134",
+      "xp_end": "/html/body/body/p[10022]/text()[2].136",
+      "text": "it"
+    },
+    {
+      "xp": "/html/body/body/p[10141]/text().904",
+      "xp_end": "/html/body/body/p[10141]/text().908",
+      "text": "high"
+    },
+    {
+      "xp": "/html/body/body/p[10205]/text().119",
+      "xp_end": "/html/body/body/p[10205]/text().120",
+      "text": "a"
+    },
+    {
+      "xp": "/html/body/body/p[10262]/text().115",
+      "xp_end": "/html/body/body/p[10262]/text().118",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/p[10327]/text().167",
+      "xp_end": "/html/body/body/p[10327]/text().170",
+      "text": "but"
+    },
+    {
+      "xp": "/html/body/body/p[10398]/text()[1].67",
+      "xp_end": "/html/body/body/p[10398]/text()[1].71",
+      "text": "most"
+    },
+    {
+      "xp": "/html/body/body/p[10466]/text().88",
+      "xp_end": "/html/body/body/p[10466]/text().90",
+      "text": "of"
+    },
+    {
+      "xp": "/html/body/body/p[10556]/text().146",
+      "xp_end": "/html/body/body/p[10556]/text().148",
+      "text": "on"
+    },
+    {
+      "xp": "/html/body/body/p[10615]/text().247",
+      "xp_end": "/html/body/body/p[10615]/text().248",
+      "text": "a"
+    },
+    {
+      "xp": "/html/body/body/p[10680]/text().148",
+      "xp_end": "/html/body/body/p[10680]/text().155",
+      "text": "brother"
+    },
+    {
+      "xp": "/html/body/body/p[10788]/text().100",
+      "xp_end": "/html/body/body/p[10788]/text().102",
+      "text": "to"
+    },
+    {
+      "xp": "/html/body/body/p[10874]/text()[1].167",
+      "xp_end": "/html/body/body/p[10874]/text()[1].169",
+      "text": "in"
+    },
+    {
+      "xp": "/html/body/body/p[10923]/text().209",
+      "xp_end": "/html/body/body/p[10923]/text().212",
+      "text": "law"
+    },
+    {
+      "xp": "/html/body/body/p[10993]/text().43",
+      "xp_end": "/html/body/body/p[10993]/text().48",
+      "text": "elder"
+    },
+    {
+      "xp": "/html/body/body/p[11073]/text().444",
+      "xp_end": "/html/body/body/p[11073]/text().452",
+      "text": "formerly"
+    },
+    {
+      "xp": "/html/body/body/p[11136]/text().1171",
+      "xp_end": "/html/body/body/p[11136]/text().1175",
+      "text": "from"
+    },
+    {
+      "xp": "/html/body/body/p[11211]/text().259",
+      "xp_end": "/html/body/body/p[11211]/text().261",
+      "text": "go"
+    },
+    {
+      "xp": "/html/body/body/p[11285]/text().115",
+      "xp_end": "/html/body/body/p[11285]/text().117",
+      "text": "up"
+    },
+    {
+      "xp": "/html/body/body/p[11348]/text().1000",
+      "xp_end": "/html/body/body/p[11348]/text().1010",
+      "text": "suppressed"
+    },
+    {
+      "xp": "/html/body/body/p[11390]/text().127",
+      "xp_end": "/html/body/body/p[11390]/text().130",
+      "text": "the"
+    },
+    {
+      "xp": "/html/body/body/p[11447]/text().310",
+      "xp_end": "/html/body/body/p[11447]/text().313",
+      "text": "its"
+    },
+    {
+      "xp": "/html/body/body/p[11515]/text().73",
+      "xp_end": "/html/body/body/p[11515]/text().76",
+      "text": "him"
+    },
+    {
+      "xp": "/html/body/body/p[11568]/text().91",
+      "xp_end": "/html/body/body/p[11568]/text().95",
+      "text": "must"
+    }
+  ]
+}

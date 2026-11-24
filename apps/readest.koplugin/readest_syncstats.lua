@@ -130,19 +130,49 @@ function SyncStats:applyRemote(books, pages, live_book_id)
     local id_cache = {}
     local touched = {}
     for _, p in ipairs(pages or {}) do
-        local id = id_cache[p.book_hash]
-        if not id then
-            local r = find_id:reset():bind(p.book_hash):step()
-            if r ~= nil then id = tonumber(r[1]); id_cache[p.book_hash] = id end
-        end
-        if id then
-            insert_page:reset():bind(id, p.page, p.start_time, p.duration, p.total_pages):step()
-            touched[id] = true
+        -- An event of a book whose statistics were deleted in Readest (#7494)
+        -- comes flagged with deleted_at_ms: never store it. (deleted_at alone
+        -- can't tell: LuaJSON decodes a JSON null as a function, which is truthy.)
+        if not tonumber(p.deleted_at_ms) then
+            local id = id_cache[p.book_hash]
+            if not id then
+                local r = find_id:reset():bind(p.book_hash):step()
+                if r ~= nil then id = tonumber(r[1]); id_cache[p.book_hash] = id end
+            end
+            if id then
+                insert_page:reset():bind(id, p.page, p.start_time, p.duration, p.total_pages):step()
+                touched[id] = true
+            end
         end
     end
     find_id:close()
     insert_page:close()
     mergeDuplicateBooks(conn, touched, live_book_id)
+    -- A book whose statistics were deleted (#7494): drop its events read before
+    -- the deletion, then (below) its row once none are left, except the row the
+    -- open book's statistics session writes to.
+    local deleted = {}
+    local book_ids = conn:prepare("SELECT id FROM book WHERE md5 = ?;")
+    local del_before = conn:prepare("DELETE FROM page_stat_data WHERE id_book = ? AND start_time < ?;")
+    for _, b in ipairs(books or {}) do
+        local at = tonumber(b.deleted_at_ms)
+        if at then
+            -- events are whole seconds: one that started before the deletion's
+            -- millisecond started before its next whole second
+            local before = math.ceil(at / 1000)
+            book_ids:reset():bind(b.book_hash)
+            local r = book_ids:step()
+            while r ~= nil do
+                local id = tonumber(r[1])
+                del_before:reset():bind(id, before):step()
+                touched[id] = true
+                deleted[id] = true
+                r = book_ids:step()
+            end
+        end
+    end
+    book_ids:close()
+    del_before:close()
     -- Mirror the Readest app's recomputeBookTotals so a KOReader device shows
     -- fresh totals right after a pull (id is a trusted integer from the DB).
     -- last_open never regresses: on native rows it is a real open timestamp
@@ -155,6 +185,14 @@ function SyncStats:applyRemote(books, pages, live_book_id)
                 last_open        = MAX(COALESCE(last_open, 0),
                                        COALESCE((SELECT MAX(start_time + duration) FROM page_stat_data WHERE id_book = %d), 0))
             WHERE id = %d;]], id, id, id, id))
+    end
+    local live = tonumber(live_book_id)
+    for id in pairs(deleted) do
+        if id ~= live then
+            conn:exec(string.format([[
+                DELETE FROM book WHERE id = %d
+                    AND NOT EXISTS (SELECT 1 FROM page_stat_data WHERE id_book = %d);]], id, id))
+        end
     end
     conn:exec("COMMIT;")
     conn:close()
@@ -288,8 +326,38 @@ function SyncStats:pull(settings, client, interactive, ui)
                     .. " since=" .. tostring(since))
                 -- Resolved inside the callback so it reflects the session state
                 -- at apply time, after the async network round-trip.
-                local live_book_id = ui and ui.statistics and ui.statistics.id_curr_book or nil
+                local st = ui and ui.statistics
+                local live_book_id = st and st.id_curr_book or nil
+                -- The open book's session keeps page events in memory until its
+                -- next insertDB. When this pull deletes that book's statistics
+                -- (#7494), write them first so the deletion covers those read
+                -- before it; then drop the ones insertDB kept (all of them while
+                -- the book's statistics are frozen), counting the page being
+                -- read from the deletion on.
+                local live_before
+                if live_book_id and st.doc_md5 then
+                    for _, b in ipairs(response.statBooks or {}) do
+                        local at = tonumber(b.deleted_at_ms)
+                        if at and b.book_hash == st.doc_md5 then live_before = math.ceil(at / 1000) end
+                    end
+                end
+                if live_before then st:insertDB() end
                 self:applyRemote(response.statBooks, response.statPages, live_book_id)
+                if live_before then
+                    for page, list in pairs(st.page_stat or {}) do
+                        for i = #list, 1, -1 do
+                            if list[i][1] < live_before then
+                                if page == st.curr_page and i == #list then
+                                    -- never past a pause's start: resuming adds
+                                    -- the pause's length to it (onReadingResumed)
+                                    list[i][1] = math.min(live_before, st._reading_paused_ts or live_before)
+                                else
+                                    table.remove(list, i)
+                                end
+                            end
+                        end
+                    end
+                end
                 total_pages = total_pages + npages
                 local newest = since
                 for _, p in ipairs(response.statPages or {}) do

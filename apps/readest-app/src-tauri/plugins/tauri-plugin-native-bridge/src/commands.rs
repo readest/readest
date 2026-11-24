@@ -249,6 +249,85 @@ pub(crate) async fn show_lookup_popover<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn get_lookup_apps<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<GetLookupAppsResponse> {
+    app.native_bridge().get_lookup_apps()
+}
+
+#[command]
+pub(crate) async fn set_lookup_app<R: Runtime>(
+    app: AppHandle<R>,
+    payload: SetLookupAppRequest,
+) -> Result<()> {
+    app.native_bridge().set_lookup_app(payload)
+}
+
+#[command]
+pub(crate) async fn anki_status<R: Runtime>(app: AppHandle<R>) -> Result<AnkiStatusResponse> {
+    app.native_bridge().anki_status()
+}
+
+#[command]
+pub(crate) async fn anki_request_permission<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<AnkiPermissionResponse> {
+    app.native_bridge().anki_request_permission()
+}
+
+#[command]
+pub(crate) async fn anki_list_decks<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<AnkiListDecksResponse> {
+    app.native_bridge().anki_list_decks()
+}
+
+#[command]
+pub(crate) async fn anki_read_deck<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiReadDeckRequest,
+) -> Result<AnkiReadDeckResponse> {
+    app.native_bridge().anki_read_deck(payload)
+}
+
+#[command]
+pub(crate) async fn anki_add_notes<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiAddNotesRequest,
+) -> Result<AnkiAddNotesResponse> {
+    app.native_bridge().anki_add_notes(payload)
+}
+
+#[command]
+pub(crate) async fn anki_update_tags<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiUpdateTagsRequest,
+) -> Result<AnkiUpdateTagsResponse> {
+    app.native_bridge().anki_update_tags(payload)
+}
+
+#[command]
+pub(crate) async fn anki_note_type<R: Runtime>(app: AppHandle<R>) -> Result<AnkiNoteTypeResponse> {
+    app.native_bridge().anki_note_type()
+}
+
+#[command]
+pub(crate) async fn anki_upgrade_note_type<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiUpgradeNoteTypeRequest,
+) -> Result<AnkiUpdateTagsResponse> {
+    app.native_bridge().anki_upgrade_note_type(payload)
+}
+
+#[command]
+pub(crate) async fn anki_set_entries<R: Runtime>(
+    app: AppHandle<R>,
+    payload: AnkiSetEntriesRequest,
+) -> Result<AnkiUpdateTagsResponse> {
+    app.native_bridge().anki_set_entries(payload)
+}
+
+#[command]
 pub(crate) async fn select_directory<R: Runtime>(
     app: AppHandle<R>,
     callback_state: State<'_, DirectoryCallbackState<R>>,
@@ -443,24 +522,42 @@ pub(crate) async fn capture_webview_region<R: Runtime>(
     Ok(tauri::ipc::Response::new(png))
 }
 
+#[command]
+pub(crate) async fn paper_curl<R: Runtime>(
+    app: AppHandle<R>,
+    payload: serde_json::Value,
+) -> Result<serde_json::Value> {
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    {
+        app.native_bridge().paper_curl(payload)
+    }
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    {
+        let _ = (app, payload);
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+}
+
 /// Freeze the on-screen pixels of a webview region behind a native layer
 /// that `capture_webview_region` does not see, for the two-column page curl
-/// (#6106). iOS only so far; other platforms reject and the JS side keeps
-/// a paper back on the leaf.
+/// (#6106) and a backward turn's previous page. Android, iOS and macOS;
+/// other platforms reject.
 #[command]
 pub(crate) async fn cover_webview_region<R: Runtime>(
     app: AppHandle<R>,
+    window: tauri::WebviewWindow<R>,
     payload: CaptureWebviewRegionRequest,
 ) -> Result<CoverWebviewRegionResponse> {
-    app.native_bridge().cover_webview_region(payload)
+    app.native_bridge().cover_webview_region(&window, payload)
 }
 
 #[command]
 pub(crate) async fn uncover_webview_region<R: Runtime>(
     app: AppHandle<R>,
+    window: tauri::WebviewWindow<R>,
     payload: UncoverWebviewRegionRequest,
 ) -> Result<()> {
-    app.native_bridge().uncover_webview_region(payload)
+    app.native_bridge().uncover_webview_region(&window, payload)
 }
 
 #[command]
@@ -476,4 +573,34 @@ pub(crate) async fn icloud_ensure_downloaded<R: Runtime>(
     payload: ICloudEnsureDownloadedRequest,
 ) -> Result<ICloudEnsureDownloadedResponse> {
     app.native_bridge().icloud_ensure_downloaded(payload)
+}
+
+#[command]
+pub(crate) async fn on_device_llm_status<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<OnDeviceLlmStatusResponse> {
+    app.native_bridge().on_device_llm_status()
+}
+
+/// The bridge call waits for the whole answer (seconds), so it runs on a
+/// blocking thread: on an async worker, a few overlapping requests could stall
+/// every other command, `on_device_llm_cancel` included.
+#[command]
+pub(crate) async fn on_device_llm_generate<R: Runtime>(
+    app: AppHandle<R>,
+    payload: OnDeviceLlmGenerateRequest,
+) -> Result<OnDeviceLlmGenerateResponse> {
+    tauri::async_runtime::spawn_blocking(move || {
+        app.native_bridge().on_device_llm_generate(payload)
+    })
+    .await
+    .map_err(|err| crate::Error::NativeBridgeError(err.to_string()))?
+}
+
+#[command]
+pub(crate) async fn on_device_llm_cancel<R: Runtime>(
+    app: AppHandle<R>,
+    payload: OnDeviceLlmCancelRequest,
+) -> Result<()> {
+    app.native_bridge().on_device_llm_cancel(payload)
 }

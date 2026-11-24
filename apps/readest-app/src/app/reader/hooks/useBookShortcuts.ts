@@ -20,10 +20,14 @@ import {
 } from '@/services/constants';
 import { getParagraphActionForKey } from '@/utils/paragraphPresentation';
 import { getScrollGapAttr } from '@/utils/webtoon';
-import { extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
+import { applyVimMotion, extendSelectionFromContents, KeyModifiers } from '@/utils/sel';
+import { getLiveVimFind, useVimFindStore } from '@/store/vimFindStore';
 import { getReadingAreaRect, keyboardTurnDirection } from './useAutoPageTurn';
 import { viewPagination } from './usePagination';
+import { applyPageTurnAttributes } from './useCapturedTurn';
 import useShortcuts from '@/hooks/useShortcuts';
+import { loadShortcuts } from '@/helpers/shortcuts';
+import { matchesShortcut } from '@/utils/shortcutKeys';
 import useBooksManager from './useBooksManager';
 import { getReadingRulerMoveDirection, isReadingRulerMoveKey } from '../utils/readingRuler';
 
@@ -39,7 +43,9 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     useSidebarStore();
   const { settings, setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
   const { envConfig } = useEnv();
-  const { getBookData, getConfig, setConfig } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
   const { toggleNotebook } = useNotebookStore();
   const { getNextBookKey } = useBooksManager();
   const lastParagraphToggleRef = useRef(0);
@@ -74,7 +80,12 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       }
       setViewSettings(sideBarBookKey, viewSettings!);
       const flowMode = viewSettings.scrolled ? 'scrolled' : 'paginated';
-      getView(sideBarBookKey)?.renderer.setAttribute('flow', flowMode);
+      const view = getView(sideBarBookKey);
+      view?.renderer.setAttribute('flow', flowMode);
+      // Recompute no-swipe as ViewMenu does: a captured paginated turn's
+      // no-swipe would otherwise block single-section boundary swipes.
+      if (view)
+        applyPageTurnAttributes(view, viewSettings, !!getBookData(sideBarBookKey)?.isFixedLayout);
     }
     return true;
   };
@@ -136,6 +147,51 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       else if (dir === 'prev') view?.prev();
     }
     return extended;
+  };
+
+  // Vim-style find (#7281). Each returns false unless this book's search is
+  // live, so the same keys turn pages and open the Notebook otherwise.
+  const openVimFind = () => {
+    if (!sideBarBookKey) return false;
+    useVimFindStore.getState().openFind(sideBarBookKey);
+    return true;
+  };
+
+  const stepVimMatch = (step: 1 | -1) => {
+    const find = getLiveVimFind(sideBarBookKey);
+    if (!find) return false;
+    const { matches, searching } = find;
+    const next = Math.max(find.index, 0) + step;
+    // Wrap around only once every match is in: mid-search, the end of the
+    // list so far isn't the end of the book.
+    if (matches.length === 0 || (searching && (next < 0 || next >= matches.length))) return true;
+    const index = (next + matches.length) % matches.length;
+    useVimFindStore.setState({ index });
+    getView(sideBarBookKey)?.select(matches[index]!);
+    return true;
+  };
+
+  const extendVimSelection = (event?: KeyboardEvent | MessageEvent) => {
+    if (!getLiveVimFind(sideBarBookKey)) return false;
+    const key = event instanceof KeyboardEvent ? event.key : event?.data?.key;
+    const view = getView(sideBarBookKey);
+    const contents = view?.renderer?.getContents?.() ?? [];
+    const sel = contents.map(({ doc }) => doc.getSelection()).find((s) => s && !s.isCollapsed);
+    if (!sel || !key || !applyVimMotion(sel, key)) return false;
+    // Turn the page when the moving end leaves it, as Shift+←/→ does (#4741).
+    if (!getViewSettings(sideBarBookKey ?? '')?.scrolled) {
+      const dir = keyboardTurnDirection(contents, getReadingAreaRect(sideBarBookKey ?? ''));
+      if (dir === 'next') view?.next();
+      else if (dir === 'prev') view?.prev();
+    }
+    return true;
+  };
+
+  const exitVimFind = () => {
+    if (!getLiveVimFind(sideBarBookKey)) return false;
+    useVimFindStore.getState().closeFind();
+    getView(sideBarBookKey)?.deselect();
+    return true;
   };
 
   const goLeft = () => {
@@ -442,9 +498,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
 
   const toggleAutoScroll = () => {
     if (!sideBarBookKey) return;
-    // Auto Scroll only exists in scrolled mode (#4998); the View menu item is
-    // disabled outside it, so the shortcut silently no-ops there too.
-    if (!getViewSettings(sideBarBookKey)?.scrolled) return;
+    // useAutoScroll no-ops where the View menu item is disabled: paginated
+    // vertical and fixed-layout books (#7575).
     eventDispatcher.dispatch('autoscroll-toggle', { bookKey: sideBarBookKey });
   };
 
@@ -469,11 +524,42 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sideBarBookKey]);
 
+  // A mouse Back/Forward release on the page is handled in the iframe
+  // (handleMouseup in iframeEventHandlers). One outside it, on a bar, a
+  // sidebar or the gap between pages, reaches this document, where the
+  // webview would go back out of the reader (#6960). Go back in the book
+  // instead, unless the button is bound to an action useShortcuts runs.
+  useEffect(() => {
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button !== 3 && event.button !== 4) return;
+      if (!sideBarBookKey) return;
+      event.preventDefault();
+      const { ctrlKey, altKey, metaKey, shiftKey } = event;
+      const key = event.button === 3 ? 'MouseX1' : 'MouseX2';
+      const eventLike = { key, ctrlKey, altKey, metaKey, shiftKey };
+      const bound = Object.values(loadShortcuts()).some(({ keys }) =>
+        matchesShortcut(eventLike, keys),
+      );
+      if (bound) return;
+      if (event.button === 3) goBack();
+      else goForward();
+    };
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => window.removeEventListener('mouseup', handleMouseUp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sideBarBookKey]);
+
   useShortcuts(
     {
       // Listed first so an active selection intercepts Shift+←/→ before the
       // page-navigation actions below can turn the page (#4728).
       onAdjustTextSelection: adjustTextSelection,
+      // Ahead of page navigation and the Notebook for the same reason (#7281).
+      onVimFind: openVimFind,
+      onVimNextMatch: () => stepVimMatch(1),
+      onVimPrevMatch: () => stepVimMatch(-1),
+      onVimExtendSelection: extendVimSelection,
+      onEscape: exitVimFind,
       onSwitchSideBar: switchSideBar,
       onToggleSideBar: toggleSideBar,
       onOpenTableOfContents: openTableOfContents,

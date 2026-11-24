@@ -36,8 +36,8 @@ export interface ChromeChipContext {
   /**
    * The element sits on reserved margin rather than over the book text, so
    * `auto` needs no backdrop. Always true for the header of a reflowable book
-   * (FoliateViewer's scrollTop), and for the footer whenever the sticky
-   * progress bar keeps the bottom band (footerReservesBand).
+   * (FoliateViewer's scrollTop), and for the footer whenever it keeps the
+   * bottom band (footerReservesBand).
    */
   bandReserved: boolean;
 }
@@ -72,8 +72,9 @@ export const getChromeTextColor = (
  * Backdrop for the header title / footer info.
  *
  * `auto` reproduces what each element does today: the footer gets its
- * scrolled-mode pill (scrolled mode reserves no band, so the info floats over
- * the text — see footerBand.ts), the header gets nothing (its band _is_
+ * scrolled-mode pill (scrolled mode reserves no band unless the sticky bar or
+ * Solid Footer is on, so the info floats over the text — see footerBand.ts),
+ * the header gets nothing (its band _is_
  * reserved for reflowable books, and fixed-layout relies on the blend). A
  * chosen color paints both, in either flow mode — otherwise picking one would
  * silently do nothing for paginated readers.

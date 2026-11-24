@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { normalizeYomitanGlossary } from '@/plugins/yomitan/content';
 import { deinflectJapanese } from '@/plugins/yomitan/deinflect';

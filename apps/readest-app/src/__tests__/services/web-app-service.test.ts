@@ -97,6 +97,18 @@ describe('WebAppService', () => {
     vi.restoreAllMocks();
   });
 
+  test.each([
+    ['folder/安全 Manual.v2.pdf', undefined, '安全 Manual.v2.pdf'],
+    ['folder/first\\chapter.pdf', undefined, 'first\\chapter.pdf'],
+    ['folder/manual?rev1.pdf', undefined, 'manual?rev1.pdf'],
+    ['folder/Report%20Final.pdf', undefined, 'Report%20Final.pdf'],
+    ['folder/book.pdf', 'Original%20Name.pdf', 'Original%20Name.pdf'],
+  ])('openFile returns the resolved basename for %s', async (path, name, expected) => {
+    vi.spyOn(service.fs, 'readFile').mockResolvedValue(new ArrayBuffer(0));
+    const file = await service.fs.openFile(path!, 'None', name);
+    expect(file.name).toBe(expected);
+  });
+
   describe('class properties', () => {
     test('appPlatform is web', () => {
       expect(service.appPlatform).toBe('web');

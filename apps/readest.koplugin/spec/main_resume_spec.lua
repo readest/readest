@@ -80,6 +80,161 @@ describe("ReadestSync:onResume", function()
         assert.are.equal(1, #UIManagerStub._scheduled)
     end)
 
+    -- #7159: a Kindle's firmware brings Wi-Fi back a few seconds after wake
+    -- and KOReader sends no NetworkConnected, so a pull that runs before
+    -- there is a route fails and is never retried. isOnline (a DNS lookup)
+    -- can already say yes then, so the wait checks for a route.
+    it("waits for a network route before pulling", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        UIManagerStub:drain()
+        UIManagerStub:drain()
+        assert.are.equal(0, #plugin.pull_calls)
+        assert.are.equal(1, #UIManagerStub._scheduled)
+
+        stubs.NetworkMgr._route = true
+        UIManagerStub:drain()
+        UIManagerStub:drain()
+        assert.are.equal(3, #plugin.pull_calls)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+    end)
+
+    it("waits for an address even when a default route exists", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._online = false
+
+        plugin:onResume()
+        UIManagerStub:drain()
+        assert.are.equal(0, #plugin.pull_calls)
+        assert.are.equal(1, #UIManagerStub._scheduled)
+
+        stubs.NetworkMgr._online = true
+        UIManagerStub:drain()
+        UIManagerStub:drain()
+        assert.are.equal(3, #plugin.pull_calls)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("pulls anyway once the wait for the network gives up", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        local waited = 0
+        for _ = 1, 32 do
+            if #UIManagerStub._scheduled == 0 then break end
+            waited = waited + UIManagerStub._scheduled[1].delay
+            UIManagerStub:drain()
+        end
+        assert.are.equal(3, #plugin.pull_calls)
+        assert.are.equal(61, waited)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("unschedules the wait for the network when the widget closes", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        UIManagerStub:drain()
+        plugin:onCloseWidget()
+        assert.are.equal(0, #UIManagerStub._scheduled)
+    end)
+
+    it("coalesces a reconnect with the pending wake wait", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onReaderReady()
+        plugin:onResume()
+        UIManagerStub:drain()
+        assert.are.equal(0, #plugin.pull_calls)
+        assert.are.equal(1, #UIManagerStub._scheduled)
+
+        stubs.NetworkMgr._route = true
+        plugin.pull_pending_offline = true
+        plugin:onNetworkConnected()
+        assert.are.equal(1, #UIManagerStub._scheduled)
+        UIManagerStub:drain()
+        UIManagerStub:drain()
+        assert.are.equal(3, #plugin.pull_calls)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("stops waiting when auto sync is disabled", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        UIManagerStub:drain()
+        plugin:onReadestSyncToggleAutoSync(false)
+        UIManagerStub:drain()
+
+        assert.are.equal(0, #plugin.pull_calls)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("does not pull when auto sync is disabled before the route returns", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        plugin:onReadestSyncToggleAutoSync(false)
+        stubs.NetworkMgr._route = true
+        UIManagerStub:drain()
+        UIManagerStub:drain()
+
+        assert.are.equal(0, #plugin.pull_calls)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("keeps waiting when reconnect fires before the route returns", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        UIManagerStub:drain()
+        plugin.pull_pending_offline = true
+        plugin:onNetworkConnected()
+        UIManagerStub:drain()
+        assert.are.equal(0, #plugin.pull_calls)
+        assert.are.equal(1, #UIManagerStub._scheduled)
+
+        stubs.NetworkMgr._route = true
+        UIManagerStub:drain()
+        UIManagerStub:drain()
+        assert.are.equal(3, #plugin.pull_calls)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
+    it("does not restart the bounded wake wait on reconnect", function()
+        local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
+        stubs.NetworkMgr._route = false
+
+        plugin:onResume()
+        local waited = 0
+        for check = 1, 32 do
+            if #UIManagerStub._scheduled == 0 then break end
+            if check == 29 then
+                plugin.pull_pending_offline = true
+                plugin:onNetworkConnected()
+            end
+            waited = waited + UIManagerStub._scheduled[1].delay
+            UIManagerStub:drain()
+        end
+        assert.are.equal(3, #plugin.pull_calls)
+        assert.are.equal(61, waited)
+        assert.are.equal(0, #UIManagerStub._scheduled)
+        assert.is_nil(plugin.background_pull_task)
+    end)
+
     it("unschedules the pending pull when the widget closes", function()
         local plugin = makePlugin({ auto_sync = true, access_token = "tok", document = {} })
 

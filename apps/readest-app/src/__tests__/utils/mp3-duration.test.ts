@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { parseMp3Duration } from '@/utils/mp3Duration';
 

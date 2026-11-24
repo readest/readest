@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { BUILTIN_WEB_SEARCH_IDS } from '@/services/dictionaries/types';

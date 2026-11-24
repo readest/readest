@@ -49,9 +49,11 @@ const attrKey = (tag: string, name: string, value: string) =>
 const cleanClone = (el: HTMLElement): HTMLElement => {
   const clone = el.cloneNode(true) as HTMLElement;
   clone.querySelectorAll(INJECTED_SELECTOR).forEach((node) => node.remove());
-  // A gloss wraps real book text: keep the base text, drop the injected reading.
+  // Ruby readings (furigana) are a pronunciation aid, not text to translate:
+  // send only the base text, for the book's own ruby and WordLens glosses alike.
+  clone.querySelectorAll('rt, rp').forEach((node) => node.remove());
+  // A gloss wraps real book text: keep the base text.
   clone.querySelectorAll(GLOSS_SELECTOR).forEach((gloss) => {
-    gloss.querySelectorAll('rt, rp').forEach((node) => node.remove());
     gloss.replaceWith(...Array.from(gloss.childNodes));
   });
   return clone;

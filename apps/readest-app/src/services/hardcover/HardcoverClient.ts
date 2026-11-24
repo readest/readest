@@ -17,10 +17,11 @@ import {
   QUERY_GET_BOOKS,
   MUTATION_INSERT_USER_BOOK,
   MUTATION_UPDATE_USER_BOOK,
-  MUTATION_INSERT_READ,
-  MUTATION_UPDATE_READ,
+  mutationInsertRead,
+  mutationUpdateRead,
   MUTATION_INSERT_JOURNAL,
   MUTATION_UPDATE_JOURNAL,
+  QUERY_GET_JOURNAL_ENTRIES,
 } from './hardcover-graphql';
 
 /** Where OAuth tokens live between clients, so a refresh by one is seen by the others. */
@@ -41,6 +42,10 @@ type BookContext = {
   // book id here — Hardcover rejects a book id used as an edition_id (#4792).
   editionId: number | null;
   pages: number | null;
+  // The audiobook edition the user has this book on in Hardcover, with its
+  // length: progress then goes there as time listened (#7685). Notes keep the
+  // readable edition above.
+  audio: { editionId: number; seconds: number } | null;
   bookId: number;
   bookPages: number | null;
   title: string;
@@ -53,7 +58,12 @@ type BookContext = {
 
 type ActiveRead = { id: number; started_at: string | null };
 
-type EditionRow = { id: number; pages: number | null; reading_format_id?: number | null };
+type EditionRow = {
+  id: number;
+  pages: number | null;
+  reading_format_id?: number | null;
+  audio_seconds?: number | null;
+};
 
 type UserBookRow = {
   id: number;
@@ -119,6 +129,16 @@ type JournalOp = {
   payloadHash: string;
   noteIds: string[];
 };
+
+type JournalRow = {
+  id: number;
+  event: string;
+  entry: string | null;
+  metadata?: { position?: { value?: number } } | null;
+};
+
+// Hardcover's row limit for reading_journals.
+const JOURNAL_PAGE_SIZE = 100;
 
 /** This book cannot sync to Hardcover (no match, or no page count), not a sync failure. */
 export class HardcoverUnmatchedError extends Error {}
@@ -226,23 +246,32 @@ export class HardcoverClient {
     return !!edition && edition.reading_format_id !== 2;
   }
 
-  private getHardcoverProgressPages(
+  // An audiobook edition the user picked on Hardcover for their read (or shelf
+  // entry), when it has a length to scale onto. Auto-matching never picks one.
+  private userAudiobook(userBook?: UserBookRow | null): BookContext['audio'] {
+    const edition = userBook?.user_book_reads?.[0]?.edition ?? userBook?.edition;
+    const seconds = edition?.reading_format_id === 2 ? (edition.audio_seconds ?? 0) : 0;
+    return edition && seconds > 0 ? { editionId: edition.id, seconds } : null;
+  }
+
+  // Scales local progress onto the edition's pages, or its seconds for an audiobook.
+  private getHardcoverProgress(
     current: number,
     total: number,
     context: BookContext,
   ): number | null {
     const boundedCurrent = Math.min(Math.max(current, 0), total);
-    const hardcoverTotal = context.pages ?? context.bookPages ?? 0;
+    const hardcoverTotal = context.audio?.seconds ?? context.pages ?? context.bookPages ?? 0;
     if (total <= 0 || hardcoverTotal <= 0) {
       return null;
     }
 
-    const scaledPages = Math.round((boundedCurrent / total) * hardcoverTotal);
+    const scaled = Math.round((boundedCurrent / total) * hardcoverTotal);
     if (boundedCurrent <= 0) {
       return 0;
     }
 
-    return Math.min(Math.max(scaledPages, 1), hardcoverTotal);
+    return Math.min(Math.max(scaled, 1), hardcoverTotal);
   }
 
   private normalizeNoteDedupCfi(cfi: string | null | undefined): string {
@@ -346,6 +375,11 @@ export class HardcoverClient {
     this.privacySettingId = me.account_privacy_setting_id ?? this.privacySettingId;
   }
 
+  /** Throws when the token no longer identifies a Hardcover user. */
+  async checkConnection(): Promise<void> {
+    await this.authenticate();
+  }
+
   private normalizeIdentifier(identifier: string): string {
     if (identifier.includes('urn:')) {
       return identifier.match(/[^:]+$/)?.[0] || '';
@@ -447,6 +481,7 @@ export class HardcoverClient {
       // never the book id (#4792).
       editionId: selectedEdition?.id ?? null,
       pages: selectedEdition?.pages ?? bookPages,
+      audio: this.userAudiobook(userBook),
       bookId: Number(row.id),
       bookPages,
       title: row.title ?? '',
@@ -539,6 +574,7 @@ export class HardcoverClient {
         return {
           editionId: selectedEdition?.id ?? edition.id,
           pages: selectedEdition?.pages ?? edition.pages,
+          audio: this.userAudiobook(userBook),
           bookId: edition.book.id,
           bookPages: edition.book.pages,
           title: edition.book.title || book.title || '',
@@ -661,27 +697,29 @@ export class HardcoverClient {
 
     const localPagesRead = Math.min(Math.max(current, 0), total);
     const percent = total > 0 ? (localPagesRead / total) * 100 : 0;
-    const progressPages = this.getHardcoverProgressPages(current, total, context);
-    if (progressPages === null) {
+    const progress = this.getHardcoverProgress(current, total, context);
+    if (progress === null) {
       // Nothing can be scaled onto Hardcover's pages, so nothing is sent; the
       // caller must not report (or remember) a sync that never happened.
       throw new HardcoverUnmatchedError('Hardcover has no page count for this book');
     }
+    const field = context.audio ? 'progress_seconds' : 'progress_pages';
+    const editionId = context.audio?.editionId ?? context.editionId;
     const activeRead = userBook.user_book_reads?.[0];
     const startedAt = this.formatDay(new Date(book.createdAt || Date.now()));
 
     if (activeRead?.id) {
-      await this.request(MUTATION_UPDATE_READ, {
+      await this.request(mutationUpdateRead(field), {
         id: activeRead.id,
-        progress_pages: progressPages,
-        edition_id: context.editionId,
+        [field]: progress,
+        edition_id: editionId,
         started_at: activeRead.started_at || startedAt,
       });
     } else {
-      await this.request(MUTATION_INSERT_READ, {
+      await this.request(mutationInsertRead(field), {
         user_book_id: userBook.id,
-        edition_id: context.editionId,
-        progress_pages: progressPages,
+        edition_id: editionId,
+        [field]: progress,
         started_at: startedAt,
       });
     }
@@ -744,6 +782,46 @@ export class HardcoverClient {
       message.includes('does not exist') ||
       message.includes('null value')
     );
+  }
+
+  // A note with no highlighted text has the entry of a quote of that text.
+  private journalKey(event: unknown, entry: string) {
+    return `${event}\n${entry}`;
+  }
+
+  /** The book's notes and quotes on Hardcover, event and entry text -> entries, oldest first. */
+  private async fetchJournalEntries(
+    bookId: number,
+  ): Promise<Map<string, Array<{ id: number; page?: number }>>> {
+    const entries = new Map<string, Array<{ id: number; page?: number }>>();
+    for (let offset = 0; ; offset += JOURNAL_PAGE_SIZE) {
+      let rows: JournalRow[];
+      try {
+        const data = await this.request<
+          { user_id: number | null; book_id: number; limit: number; offset: number },
+          { reading_journals?: JournalRow[] | null }
+        >(QUERY_GET_JOURNAL_ENTRIES, {
+          user_id: this.userId,
+          book_id: bookId,
+          limit: JOURNAL_PAGE_SIZE,
+          offset,
+        });
+        rows = data.reading_journals ?? [];
+      } catch (error) {
+        // Signed in before Readest asked for read:journal: only this device's mappings
+        // can tell what was pushed, until the user reconnects.
+        if (error instanceof Error && error.message.includes('insufficient_scope')) return entries;
+        throw error;
+      }
+      for (const row of rows) {
+        const entry = row.entry?.trim();
+        if (!entry) continue;
+        const key = this.journalKey(row.event, entry);
+        const found = { id: Number(row.id), page: row.metadata?.position?.value };
+        entries.set(key, [...(entries.get(key) ?? []), found]);
+      }
+      if (rows.length < JOURNAL_PAGE_SIZE) return entries;
+    }
   }
 
   /** Sends ops in batches sized to the quota, saving each result as it is known; a batch's first failure is thrown after its results are saved. */
@@ -834,6 +912,7 @@ export class HardcoverClient {
     // Classify first, then send the journal writes in batches.
     const pending: JournalOp[] = [];
     const pendingInserts = new Map<string, JournalOp>();
+    const mappedIds = new Set(this.mapStore.journalIds());
 
     try {
       for (const note of notes) {
@@ -887,10 +966,36 @@ export class HardcoverClient {
         });
       }
 
-      const save = async (op: JournalOp, id: number) => {
+      const map = async (op: JournalOp, id: number) => {
         for (const noteId of op.noteIds) {
           await this.mapStore.upsertMapping(book.hash, noteId, id, op.payloadHash);
         }
+      };
+
+      // The mappings live on this device only, so a note pushed from another device (or by a
+      // push cut short before they were saved) looks new here; take its entry over (#6907).
+      if (pendingInserts.size) {
+        const existing = await this.fetchJournalEntries(context.bookId);
+        // Each entry stands for one note: the same text highlighted twice has two, told
+        // apart by page first and by age after.
+        for (const byPage of [true, false]) {
+          for (const op of pendingInserts.values()) {
+            if (!pending.includes(op)) continue;
+            const key = this.journalKey(op.payload['event'], op.payload['entry'] as string);
+            const id = existing
+              .get(key)
+              ?.find((e) => !mappedIds.has(e.id) && (!byPage || e.page === op.payload['page']))?.id;
+            if (id === undefined) continue;
+            mappedIds.add(id);
+            await map(op, id);
+            pending.splice(pending.indexOf(op), 1);
+            skipped += 1;
+          }
+        }
+      }
+
+      const save = async (op: JournalOp, id: number) => {
+        await map(op, id);
         if (op.journalId === null) inserted += 1;
         else updated += 1;
       };

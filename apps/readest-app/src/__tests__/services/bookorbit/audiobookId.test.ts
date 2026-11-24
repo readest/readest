@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
   BOOKORBIT_AUDIO_SCHEME,
@@ -60,6 +61,17 @@ describe('matchBookOrbitAudiobook', () => {
         password: '',
       }),
     ).toBeNull();
+  });
+
+  // An API key (BookOrbit 3.8+) signs the audiobook API in by itself (#7508).
+  it('accepts an API key in place of the password', () => {
+    expect(
+      matchBookOrbitAudiobook(['http://localhost:13380/api/v1/opds/9/download?fileId=23'], {
+        ...SETTINGS,
+        password: '',
+        apiKey: 'bok_key',
+      }),
+    ).toEqual({ bookId: 9 });
   });
 
   it('ignores hrefs that are not BookOrbit acquisition links', () => {

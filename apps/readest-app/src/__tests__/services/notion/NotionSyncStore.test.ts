@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { NotionSyncStore } from '@/services/notion/NotionSyncStore';
 import type { AppService } from '@/types/system';

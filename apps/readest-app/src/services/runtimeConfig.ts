@@ -15,8 +15,27 @@ declare global {
   }
 }
 
+// Where /runtime-config.js saves the config it sets, for the next page load.
+export const RUNTIME_CONFIG_STORAGE_KEY = 'readest-runtime-config';
+
+// On a cached page load a web build's chunks can run before /runtime-config.js,
+// and modules such as utils/supabase.ts read the config as they load. Until the
+// script has run, use the config the last load saved, not the build's defaults
+// (Readest Cloud).
+const getSavedRuntimeConfig = (): ReadestRuntimeConfig | undefined => {
+  if (process.env['NEXT_PUBLIC_APP_PLATFORM'] !== 'web') return undefined;
+  try {
+    const saved = localStorage.getItem(RUNTIME_CONFIG_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 export const getRuntimeConfig = () =>
-  typeof window === 'undefined' ? undefined : window.__READEST_RUNTIME_CONFIG;
+  typeof window === 'undefined'
+    ? undefined
+    : (window.__READEST_RUNTIME_CONFIG ?? getSavedRuntimeConfig());
 
 export const getServerRuntimeConfig = (): ReadestRuntimeConfig => ({
   // Browser runtime config should prefer a public Supabase URL when provided.

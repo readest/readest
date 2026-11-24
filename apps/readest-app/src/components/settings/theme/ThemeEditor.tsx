@@ -7,6 +7,7 @@ import { CUSTOM_THEME_TEMPLATES } from '@/services/constants';
 import { useSettingsStore } from '@/store/settingsStore';
 import clsx from 'clsx';
 import ColorInput from './ColorInput';
+import { useSettingsSubPageBack } from '../settingsSubPageBack';
 
 type ThemeEditorProps = {
   customTheme: CustomTheme | null;
@@ -72,6 +73,9 @@ const ThemeColorInput: React.FC<{
 const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete, onCancel }) => {
   const _ = useTranslation();
   const { settings } = useSettingsStore();
+  // Escape and Android Back leave the editor the way its Cancel button does,
+  // instead of closing Settings from under the theme being edited.
+  useSettingsSubPageBack(onCancel);
   const [template] = useState(
     () => CUSTOM_THEME_TEMPLATES[Math.floor(Math.random() * CUSTOM_THEME_TEMPLATES.length)]!,
   );

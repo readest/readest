@@ -18,7 +18,11 @@ import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import { isReadestCloudStorageActive } from '@/services/sync/cloudSyncProvider';
+import {
+  getActiveFileSyncBackends,
+  isReadestCloudStorageActive,
+  cloudProviderDisplayName,
+} from '@/services/sync/cloudSyncProvider';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { isFeedBook } from '@/services/rss/feedBookUrl';
 import {
@@ -103,11 +107,25 @@ const TransferItemRow: React.FC<{
       <StatusIcon status={transfer.status} type={transfer.type} size={iconSize} />
 
       <div className='min-w-0 flex-1'>
-        <div className='truncate font-medium'>{transfer.bookTitle}</div>
+        <div className='truncate font-medium' title={transfer.filePath}>
+          {transfer.bookTitle}
+        </div>
         <div className='text-base-content/60 text-xs'>
+          {(transfer.provider || transfer.kind === 'replica' || transfer.type !== 'download') && (
+            <>
+              {cloudProviderDisplayName(transfer.provider ?? 'readest')}
+              {' · '}
+            </>
+          )}
           {transfer.status === 'in_progress' && (
             <>
-              {Math.round(transfer.progress)}% - {formatSpeed(transfer.transferSpeed)}
+              {transfer.progress >= 0
+                ? `${Math.round(transfer.progress)}% - ${formatSpeed(transfer.transferSpeed)}`
+                : transfer.type === 'upload'
+                  ? _('Uploading')
+                  : transfer.type === 'delete'
+                    ? _('Delete')
+                    : _('Downloading')}
             </>
           )}
           {transfer.status === 'pending' && transfer.error && (
@@ -126,7 +144,7 @@ const TransferItemRow: React.FC<{
           {formatDateTime(transfer.completedAt || transfer.startedAt || transfer.createdAt)}
         </div>
 
-        {transfer.status === 'in_progress' && (
+        {transfer.status === 'in_progress' && transfer.progress >= 0 && (
           <div className='bg-base-300 mt-1 h-1.5 w-full overflow-hidden rounded-full'>
             <div
               className='bg-primary h-full transition-all'
@@ -137,7 +155,7 @@ const TransferItemRow: React.FC<{
       </div>
 
       <div className='flex items-center gap-1'>
-        {isFailedLikeTransfer(transfer) && (
+        {transfer.kind !== 'file' && isFailedLikeTransfer(transfer) && (
           <button
             onClick={() => onRetry(transfer.id)}
             className='btn btn-ghost btn-sm btn-circle'
@@ -146,7 +164,7 @@ const TransferItemRow: React.FC<{
             <MdRefresh size={iconSize} />
           </button>
         )}
-        {['pending', 'in_progress'].includes(transfer.status) && (
+        {transfer.kind !== 'file' && ['pending', 'in_progress'].includes(transfer.status) && (
           <button
             onClick={() => onCancel(transfer.id)}
             className='btn btn-ghost btn-sm btn-circle'
@@ -188,11 +206,8 @@ const TransferQueuePanel: React.FC = () => {
   const onClose = () => setIsOpen(false);
   const divRef = useKeyDownActions({ onCancel: onClose, onConfirm: onClose });
 
-  // Both bulk actions target Readest Cloud storage; while a third-party provider
-  // is selected the queue refuses book uploads and a queued download would ask
-  // Readest storage for a file that only exists on the provider, so hide both
-  // affordances (per-book Upload / Download in the shelf are provider-routed, and
-  // replica transfers keep flowing regardless).
+  // Queued downloads try every active file provider before Readest Cloud;
+  // queued uploads still target Readest Cloud storage.
   const settings = useSettingsStore((s) => s.settings);
   const readestStorageActive = isReadestCloudStorageActive(settings);
   // Uploads made with Books sync off never get a `books` row, so no other
@@ -204,8 +219,11 @@ const TransferQueuePanel: React.FC = () => {
   const booksToUpload = getVisibleLibrary().filter(
     (book) => book.downloadedAt && !book.uploadedAt && !isFeedBook(book),
   );
-  const booksToDownload = readestStorageActive
-    ? getVisibleLibrary().filter((book) => book.uploadedAt && !book.downloadedAt)
+  const downloadAllowed = readestStorageActive || getActiveFileSyncBackends(settings).length > 0;
+  const booksToDownload = downloadAllowed
+    ? getVisibleLibrary().filter(
+        (book) => book.uploadedAt && !book.downloadedAt && !isFeedBook(book),
+      )
     : [];
 
   const handleUploadAll = () => {
@@ -254,7 +272,11 @@ const TransferQueuePanel: React.FC = () => {
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center'>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-      <div className='absolute inset-0 bg-black/50' onClick={onClose} />
+      <div
+        data-capture-blocking-overlay='true'
+        className='absolute inset-0 bg-black/50'
+        onClick={onClose}
+      />
       <div
         ref={divRef}
         className={clsx(
@@ -264,7 +286,7 @@ const TransferQueuePanel: React.FC = () => {
       >
         {/* Header */}
         <div className='border-base-300 flex items-center justify-between border-b p-4'>
-          <h2 className='text-lg font-semibold'>{_('Transfer Queue')}</h2>
+          <h2 className='text-lg font-semibold'>{_('Cloud File Transfers')}</h2>
           <div className='flex items-center gap-2'>
             {uploadAllowed && booksToUpload.length > 0 && (
               <button
@@ -358,7 +380,9 @@ const TransferQueuePanel: React.FC = () => {
 
         {/* Footer actions */}
         <div className='border-base-300 flex flex-wrap items-center justify-evenly gap-2 border-t p-4'>
-          {stats.failed > 0 && (
+          {transfers.some(
+            (transfer) => transfer.kind !== 'file' && isFailedLikeTransfer(transfer),
+          ) && (
             <button onClick={retryAllFailed} className='btn btn-ghost btn-sm gap-1'>
               <MdRefresh size={iconSize - 2} />
               {_('Retry All')}

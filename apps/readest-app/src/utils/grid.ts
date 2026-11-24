@@ -1,10 +1,11 @@
-export const getGridTemplate = (count: number, aspectRatio: number) => {
+// `split`: the first of two books' share of the screen, in percent, once the
+// reader has dragged the divider between them (#4991).
+export const getGridTemplate = (count: number, aspectRatio: number, split?: number | null) => {
   if (count <= 1) {
     return { columns: '1fr', rows: '1fr' };
   } else if (count === 2) {
-    return aspectRatio < 1
-      ? { columns: '1fr', rows: '1fr 1fr' }
-      : { columns: '1fr 1fr', rows: '1fr' };
+    const tracks = split ? `minmax(0, ${split}fr) minmax(0, ${100 - split}fr)` : '1fr 1fr';
+    return aspectRatio < 1 ? { columns: '1fr', rows: tracks } : { columns: tracks, rows: '1fr' };
   } else if (count === 3 || count === 4) {
     return { columns: '1fr 1fr', rows: '1fr 1fr' };
   } else {

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * When a lookup surface (dictionary / translator / proofread) may open, and when
  * it must stay shut.
@@ -13,7 +14,7 @@
  * surface on the frame it opened.
  */
 
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { eventDispatcher } from '@/utils/event';
 import type { TextSelection } from '@/utils/sel';
@@ -34,9 +35,33 @@ const h = vi.hoisted(() => ({
     keepSelectionAfterLookup: false,
   },
   saveConfig: vi.fn(),
+  setConfig: vi.fn(),
+  saveSysSettings: vi.fn(),
+  sidebar: {
+    isSideBarPinned: false,
+    setSideBarBookKey: vi.fn(),
+    setSideBarPin: vi.fn(),
+    setSideBarVisible: vi.fn(),
+  },
+  notebook: {
+    setNotebookVisible: vi.fn(),
+    setNotebookActiveTab: vi.fn(),
+    setNotebookPin: vi.fn(),
+  },
   updateBooknotes: vi.fn(),
   deselect: vi.fn(),
   restoreSelectionRange: vi.fn(() => true),
+  lookupSettings: {
+    providerEnabled: {} as Record<string, boolean>,
+    saveLookupsToVocabulary: true,
+  },
+  invokeSystemDictionary: vi.fn(),
+  recordLookup: vi.fn(),
+  // Whether the looked-up word is marked Learning or Mastered.
+  wordMarked: false,
+  contextTranslator: { id: 'llm' } as { id: string } | undefined,
+  // An unsigned JWT on the pro plan; null is a signed-out, free reader.
+  token: 'eyJhbGciOiJub25lIn0.eyJwbGFuIjoicHJvIn0.sig' as string | null,
   isTextSelected: { current: true },
   appService: {} as { isIOSApp?: boolean },
   onNativeTouch: null as null | ((ev: { type: string; x: number; y: number }) => void),
@@ -51,6 +76,8 @@ const h = vi.hoisted(() => ({
   setSelection: null as
     | null
     | ((update: (prev: TextSelection | null) => TextSelection | null) => void),
+  // On for a test that lays the book cell and the selection out itself.
+  realPopupGeometry: false,
 }));
 
 const settings = {
@@ -97,7 +124,7 @@ vi.mock('@/store/themeStore', () => ({
 vi.mock('@/store/bookDataStore', () => {
   const state = {
     getConfig: () => h.config,
-    setConfig: vi.fn(),
+    setConfig: h.setConfig,
     saveConfig: h.saveConfig,
     getBookData: () => ({
       book: { format: h.book.format, primaryLanguage: 'en' },
@@ -130,28 +157,57 @@ vi.mock('@/store/readerProgressStore', () => ({
 }));
 
 vi.mock('@/store/notebookStore', () => ({
-  useNotebookStore: () => ({
-    setNotebookVisible: vi.fn(),
-    setNotebookActiveTab: vi.fn(),
-    setNotebookNewAnnotation: vi.fn(),
-    setNotebookNewHighlightIds: vi.fn(),
-  }),
+  useNotebookStore: Object.assign(
+    () => ({
+      setNotebookVisible: vi.fn(),
+      setNotebookActiveTab: vi.fn(),
+      setNotebookNewAnnotation: vi.fn(),
+      setNotebookNewHighlightIds: vi.fn(),
+    }),
+    { getState: () => h.notebook },
+  ),
 }));
 
 vi.mock('@/store/sidebarStore', () => ({
-  useSidebarStore: () => ({
-    clearBooknotesNav: vi.fn(),
-    isSideBarVisible: false,
-    setSideBarVisible: vi.fn(),
-    setSearchBarVisible: vi.fn(),
-  }),
+  useSidebarStore: Object.assign(
+    () => ({
+      clearBooknotesNav: vi.fn(),
+      isSideBarVisible: false,
+      setSideBarVisible: vi.fn(),
+      setSearchBarVisible: vi.fn(),
+    }),
+    { getState: () => h.sidebar },
+  ),
 }));
+
+vi.mock('@/helpers/settings', () => ({ saveSysSettings: h.saveSysSettings }));
 
 vi.mock('@/store/customDictionaryStore', () => ({
   useCustomDictionaryStore: Object.assign(
     () => ({ loadCustomDictionaries: vi.fn().mockResolvedValue(undefined) }),
-    { getState: () => ({ settings: { providerEnabled: {} } }) },
+    { getState: () => ({ settings: h.lookupSettings }) },
   ),
+}));
+
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ token: h.token, user: null }),
+}));
+
+vi.mock('@/services/dictionaries/providers/contextProvider', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/dictionaries/providers/contextProvider')>()),
+  getContextTranslator: () => h.contextTranslator,
+}));
+
+vi.mock('@/services/dictionaries/systemDictionary', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/dictionaries/systemDictionary')>()),
+  isSystemDictionarySupported: () => true,
+  invokeSystemDictionary: h.invokeSystemDictionary,
+}));
+
+vi.mock('@/store/vocabularyStore', () => ({
+  useVocabularyStore: {
+    getState: () => ({ recordLookup: h.recordLookup, isMarked: () => h.wordMarked }),
+  },
 }));
 
 vi.mock('@/store/deviceStore', () => ({
@@ -164,6 +220,7 @@ vi.mock('@/hooks/useFileSelector', () => ({
 
 vi.mock('@/app/reader/hooks/useNotesSync', () => ({ useNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSync: () => {} }));
+vi.mock('@/app/reader/hooks/useGrimmoryNotesSync', () => ({ useGrimmoryNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
 vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
@@ -220,13 +277,20 @@ vi.mock('@/app/reader/hooks/useTextSelector', () => ({
 }));
 
 // jsdom lays nothing out, so the real popup positioning bails on a zero rect
-// and no popup ever renders. Feed it fixed anchor points instead.
+// and no popup ever renders. Feed it fixed anchor points instead, unless the
+// test lays things out itself.
 vi.mock('@/utils/sel', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/sel')>();
   return {
     ...actual,
-    getPosition: () => ({ point: { x: 120, y: 200 }, dir: 'up' as const }),
-    getPopupPosition: () => ({ point: { x: 120, y: 140 }, dir: 'up' as const }),
+    getPosition: (...args: Parameters<typeof actual.getPosition>) =>
+      h.realPopupGeometry
+        ? actual.getPosition(...args)
+        : { point: { x: 120, y: 200 }, dir: 'up' as const },
+    getPopupPosition: (...args: Parameters<typeof actual.getPopupPosition>) =>
+      h.realPopupGeometry
+        ? actual.getPopupPosition(...args)
+        : { point: { x: 120, y: 140 }, dir: 'up' as const },
   };
 });
 
@@ -241,23 +305,87 @@ vi.mock('@/app/reader/components/annotator/ImportAnnotationsDialog', () => ({
   default: () => null,
 }));
 vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
-  default: () => <div data-testid='annotation-toolbar' />,
+  default: ({
+    buttons,
+  }: {
+    buttons: { tooltipText: string; onClick: () => void; disabled?: boolean }[];
+  }) => (
+    <div data-testid='annotation-toolbar'>
+      {buttons.map((b) => (
+        <button key={b.tooltipText} type='button' disabled={b.disabled} onClick={b.onClick}>
+          {b.tooltipText}
+        </button>
+      ))}
+    </div>
+  ),
 }));
 // The dismiss button stands in for the popup's close / backdrop tap, so a test
 // can drive the route back out of the lookup. Each surface reads its text the
 // way the real one does on every render, so rendering one without a word fails
 // the same way (#6419).
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
-  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface' data-word={word.trim()}>
+  default: ({
+    word,
+    onDismiss,
+    position,
+    trianglePosition,
+    popupHeight,
+    contextOnly,
+    onPin,
+  }: {
+    word: string;
+    onDismiss: () => void;
+    position: { point: { y: number } };
+    trianglePosition: { point: { y: number } };
+    popupHeight: number;
+    contextOnly?: boolean;
+    onPin?: (lookup: { word: string; lang?: string }) => void;
+  }) => (
+    <div
+      data-testid='dictionary-surface'
+      data-kind='popup'
+      data-context-only={String(!!contextOnly)}
+      data-word={word.trim()}
+      data-top={position.point.y}
+      data-height={popupHeight}
+      data-triangle-y={trianglePosition.point.y}
+    >
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
+      {/* Pin to Notebook after following a link from the selected word to "luck". */}
+      <button
+        type='button'
+        data-testid='dictionary-pin'
+        onClick={() => onPin?.({ word: 'luck', lang: 'en' })}
+      />
     </div>
   ),
 }));
 vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
-  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
-    <div data-testid='dictionary-surface' data-word={word.trim()}>
+  default: ({
+    word,
+    onDismiss,
+    contextOnly,
+    onPin,
+  }: {
+    word: string;
+    onDismiss: () => void;
+    contextOnly?: boolean;
+    onPin?: (lookup: { word: string; lang?: string }) => void;
+  }) => (
+    <div
+      data-testid='dictionary-surface'
+      data-kind='sheet'
+      data-context-only={String(!!contextOnly)}
+      data-word={word.trim()}
+    >
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
+      {onPin && (
+        <button
+          type='button'
+          data-testid='dictionary-pin'
+          onClick={() => onPin({ word: word.trim(), lang: 'en' })}
+        />
+      )}
     </div>
   ),
 }));
@@ -271,8 +399,9 @@ vi.mock('@/app/reader/components/annotator/ProofreadPopup', () => ({
 }));
 
 import Annotator from '@/app/reader/components/annotator/Annotator';
+import { useDictionaryDockStore } from '@/store/dictionaryDockStore';
 
-const selectText = async () => {
+const selectText = async (text = 'selected text') => {
   // The selection effect needs the book's grid cell to measure against.
   if (!document.querySelector('#gridcell-book-1')) {
     const gridCell = document.createElement('div');
@@ -280,7 +409,7 @@ const selectText = async () => {
     document.body.append(gridCell);
   }
   const paragraph = document.createElement('p');
-  paragraph.textContent = 'selected text';
+  paragraph.textContent = text;
   document.body.append(paragraph);
   const range = document.createRange();
   range.selectNodeContents(paragraph);
@@ -309,15 +438,189 @@ beforeEach(() => {
   h.foliateHandlers = null;
   h.config.booknotes = [];
   h.isTextSelected.current = true;
+  h.lookupSettings.providerEnabled = {};
+  h.lookupSettings.saveLookupsToVocabulary = true;
+  h.wordMarked = false;
+  h.viewSettings.annotationToolbarItems = ['copy'];
+  h.contextTranslator = { id: 'llm' };
+  h.token = 'eyJhbGciOiJub25lIn0.eyJwbGFuIjoicHJvIn0.sig';
   h.setSelection = null;
   h.viewSettings.enableAnnotationQuickActions = false;
   h.viewSettings.annotationQuickAction = '';
   h.restoreSelectionRange.mockReturnValue(true);
   h.updateBooknotes.mockImplementation(() => h.config);
+  h.sidebar.isSideBarPinned = false;
+  h.viewSettings.keepSelectionAfterLookup = false;
+  useDictionaryDockStore.setState({ lookup: null, isDocked: false });
   vi.clearAllMocks();
 });
 
 afterEach(cleanup);
+
+// A marked word keeps its sentences with saving off (#7691).
+test.each([
+  [true, true, false, true],
+  [true, false, false, false],
+  [false, true, false, false],
+  [false, true, true, true],
+])('system dictionary saves lookups when enabled (%s), launched (%s) and marked (%s)', async (saveLookups, launched, marked, saved) => {
+  h.lookupSettings.providerEnabled = { 'builtin:system': true };
+  h.lookupSettings.saveLookupsToVocabulary = saveLookups;
+  h.wordMarked = marked;
+  h.invokeSystemDictionary.mockResolvedValue(launched);
+  render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  await selectText('serendipity');
+
+  await act(async () => {
+    h.actions?.['onDictionarySelection']?.();
+  });
+
+  expect(h.invokeSystemDictionary.mock.calls[0]?.[0]).toBe('serendipity');
+  expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+  if (saved) {
+    expect(h.recordLookup).toHaveBeenCalledWith({
+      word: 'serendipity',
+      lang: 'en',
+      occurrence: expect.objectContaining({
+        cfi: 'epubcfi(/6/2!/4/2)',
+        sentence: 'serendipity',
+      }),
+    });
+  } else {
+    expect(h.recordLookup).not.toHaveBeenCalled();
+  }
+});
+
+// With saving off, a word unmarked or removed (e.g. by a sync) while the OS
+// lookup launches must not be saved back.
+test('system dictionary rechecks the mark once the lookup launches', async () => {
+  h.lookupSettings.providerEnabled = { 'builtin:system': true };
+  h.lookupSettings.saveLookupsToVocabulary = false;
+  h.wordMarked = true;
+  let launch: (launched: boolean) => void = () => {};
+  h.invokeSystemDictionary.mockReturnValue(new Promise<boolean>((r) => (launch = r)));
+  render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  await selectText('serendipity');
+
+  await act(async () => {
+    h.actions?.['onDictionarySelection']?.();
+  });
+  h.wordMarked = false;
+  await act(async () => launch(true));
+
+  expect(h.recordLookup).not.toHaveBeenCalled();
+});
+
+// #7691: the footnote popup reports a Word Lens hint tap as a popup selection
+// over the hinted word; it opens the dictionary like a hint tap in the book.
+test('a Word Lens hint tapped in the footnote popup opens the dictionary', async () => {
+  h.isTextSelected.current = false;
+  render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  const gridCell = document.createElement('div');
+  gridCell.id = 'gridcell-book-1';
+  document.body.append(gridCell);
+  const paragraph = document.createElement('p');
+  paragraph.textContent = 'spice';
+  document.body.append(paragraph);
+  const range = document.createRange();
+  range.selectNodeContents(paragraph);
+
+  await act(async () => {
+    await eventDispatcher.dispatch('footnote-selection', {
+      key: 'book-1',
+      range,
+      index: 3,
+      wordLens: true,
+    });
+  });
+
+  expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('spice');
+  expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+});
+
+describe('the Context Dictionary tool (#7497)', () => {
+  test('opens the lookup with the context dictionary alone; Dictionary opens every one', async () => {
+    h.viewSettings.annotationToolbarItems = ['dictionary', 'contextdictionary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('Welten');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Context Dictionary' }));
+    });
+    expect(screen.getByTestId('dictionary-surface').dataset['contextOnly']).toBe('true');
+
+    act(() => {
+      fireEvent.click(screen.getByTestId('dictionary-dismiss'));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
+    });
+    expect(screen.getByTestId('dictionary-surface').dataset['contextOnly']).toBe('false');
+  });
+
+  test.each([
+    ['an OpenAI-compatible translator', () => (h.contextTranslator = undefined)],
+    ['premium', () => (h.token = null)],
+  ])('is unavailable without %s', async (_name, withhold) => {
+    withhold();
+    h.viewSettings.annotationToolbarItems = ['contextdictionary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('Welten');
+
+    const button = screen.getByRole('button', { name: 'Context Dictionary' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+  });
+});
+
+describe('the System Dictionary tool (#6728)', () => {
+  test('hands the word to the OS while the Dictionary tool keeps the in-app dictionaries', async () => {
+    h.invokeSystemDictionary.mockResolvedValue(true);
+    h.viewSettings.annotationToolbarItems = ['dictionary', 'systemdictionary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('serendipity');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'System Dictionary' }));
+    });
+    expect(h.invokeSystemDictionary.mock.calls[0]?.[0]).toBe('serendipity');
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(h.recordLookup).toHaveBeenCalledWith(
+      expect.objectContaining({ word: 'serendipity', lang: 'en' }),
+    );
+
+    await selectText('serendipity');
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
+    });
+    expect(h.invokeSystemDictionary).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('dictionary-surface').dataset['word']).toBe('serendipity');
+  });
+});
+
+describe('the Add to Vocabulary tool', () => {
+  test('saves the word with its sentence, opens no lookup and dismisses the toolbar', async () => {
+    // An explicit add saves even with lookup saving off.
+    h.lookupSettings.saveLookupsToVocabulary = false;
+    h.viewSettings.annotationToolbarItems = ['dictionary', 'vocabulary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('serendipity');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add to Vocabulary' }));
+    });
+
+    expect(h.recordLookup).toHaveBeenCalledWith({
+      word: 'serendipity',
+      lang: 'en',
+      occurrence: expect.objectContaining({
+        cfi: 'epubcfi(/6/2!/4/2)',
+        sentence: 'serendipity',
+      }),
+    });
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+  });
+});
 
 describe('a lookup surface survives the selection it is anchored to being republished', () => {
   test.each([
@@ -475,6 +778,78 @@ describe('the instant dictionary hands the selection back when it closes', () =>
     expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
     expect(h.deselect).toHaveBeenCalled();
     expect(h.isTextSelected.current).toBe(false);
+  });
+
+  test('stays a popup when the keyboard for its hint field shortens the window (#7570)', async () => {
+    const setViewport = (width: number, height: number) => {
+      Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+      Object.defineProperty(window, 'innerHeight', { value: height, configurable: true });
+    };
+    const { innerWidth, innerHeight } = window;
+    try {
+      // An iPad in landscape; typing a Learning word's hint raises the keyboard.
+      setViewport(1180, 820);
+      const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+      const { rerender } = render(<Annotator bookKey='book-1' contentInsets={insets} />);
+      await selectWord();
+      expect(screen.getByTestId('dictionary-surface').dataset['kind']).toBe('popup');
+
+      setViewport(1180, 420);
+      rerender(<Annotator bookKey='book-1' contentInsets={{ ...insets }} />);
+
+      expect(screen.getByTestId('dictionary-surface').dataset['kind']).toBe('popup');
+    } finally {
+      setViewport(innerWidth, innerHeight);
+    }
+  });
+
+  test('places the popup again inside the window the keyboard shortened (#7570)', async () => {
+    const setViewport = (width: number, height: number) => {
+      Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+      Object.defineProperty(window, 'innerHeight', { value: height, configurable: true });
+    };
+    const { innerWidth, innerHeight } = window;
+    // The book cell fills the window, and the word sits on the page's last line
+    // wherever the page now ends: the keyboard shortens the page with the window.
+    let gridCell = document.querySelector<HTMLElement>('#gridcell-book-1');
+    if (!gridCell) {
+      gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    gridCell.getBoundingClientRect = () => new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+    Object.defineProperty(Range.prototype, 'getClientRects', {
+      configurable: true,
+      value: () => [new DOMRect(500, window.innerHeight - 60, 100, 20)],
+    });
+    h.realPopupGeometry = true;
+    try {
+      setViewport(1180, 820);
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await selectWord();
+      const popup = screen.getByTestId('dictionary-surface');
+      expect(popup.dataset['kind']).toBe('popup');
+
+      setViewport(1180, 420);
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+
+      // The same popup, not a remount, so its hint field keeps the focus.
+      expect(screen.getByTestId('dictionary-surface')).toBe(popup);
+      const top = Number(popup.dataset['top']);
+      const bottom = top + Number(popup.dataset['height']);
+      expect(top, 'popup top edge').toBeGreaterThanOrEqual(0);
+      expect(bottom, 'popup bottom edge').toBeLessThanOrEqual(420);
+      expect(Number(popup.dataset['triangleY']), 'popup anchor').toBeLessThanOrEqual(420);
+    } finally {
+      h.realPopupGeometry = false;
+      delete (Range.prototype as { getClientRects?: unknown }).getClientRects;
+      gridCell.remove();
+      setViewport(innerWidth, innerHeight);
+    }
   });
 
   test('restores the selection and returns the toolbar on dismiss', async () => {
@@ -730,6 +1105,21 @@ describe('quick actions run on a selection made in the footnote popup', () => {
     expect(screen.queryByTestId('dictionary-surface')).toBeNull();
   });
 
+  // A tap outside the footnote popup closes it; the lookup opened on its text
+  // goes with it, as it does when opened from the toolbar (#7727).
+  test('closing the popup closes the instant dictionary opened in it', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectInPopup({ quickAction: true });
+    expect(screen.getByTestId('dictionary-surface')).toBeTruthy();
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', { key: 'book-1', closed: true });
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    });
+
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+  });
+
   test('a report taken mid-drag still opens the toolbar', async () => {
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectInPopup();
@@ -772,5 +1162,234 @@ describe('quick actions run on a selection made in the footnote popup', () => {
     await selectInPopup({ quickAction: true });
 
     expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+  });
+});
+
+// #7730: with the sidebar's Dictionary tab on screen, lookups go there and
+// leave the word on the page free to highlight, annotate or search.
+describe('the dictionary docked in the Notebook', () => {
+  const selectWord = async (text = 'fortune') => {
+    if (!document.querySelector('#gridcell-book-1')) {
+      const gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    const paragraph = document.createElement('p');
+    paragraph.textContent = text;
+    document.body.append(paragraph);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+    await act(async () => {
+      h.setSelection?.(() => ({
+        key: 'book-1',
+        text,
+        cfi: 'epubcfi(/6/2!/4/2)',
+        range,
+        index: 0,
+        page: 1,
+      }));
+    });
+  };
+  const docked = () => useDictionaryDockStore.getState().lookup;
+
+  test('a toolbar lookup shows in the tab and the toolbar stays for the word', async () => {
+    useDictionaryDockStore.setState({ isDocked: true });
+    h.viewSettings.annotationToolbarItems = ['dictionary', 'contextdictionary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('serendipity');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
+    });
+
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+    expect(docked()).toMatchObject({
+      word: 'serendipity',
+      lang: 'en',
+      contextOnly: false,
+      // The passage the AI context dictionary is asked about.
+      selection: { before: expect.any(String), after: expect.any(String) },
+      capture: { lang: 'en', occurrence: expect.objectContaining({ sentence: 'serendipity' }) },
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Context Dictionary' }));
+    });
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(docked()).toMatchObject({ word: 'serendipity', contextOnly: true });
+  });
+
+  test('a popup lookup is kept for the tab too', async () => {
+    h.viewSettings.annotationToolbarItems = ['dictionary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('serendipity');
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
+    });
+
+    expect(screen.getByTestId('dictionary-surface').dataset['kind']).toBe('popup');
+    expect(docked()).toMatchObject({ word: 'serendipity', contextOnly: false });
+  });
+
+  test('Pin to Notebook opens its Dictionary tab, pinned, and returns the toolbar', async () => {
+    h.viewSettings.annotationToolbarItems = ['dictionary'];
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectText('serendipity');
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('dictionary-pin'));
+    });
+
+    expect(docked()).toMatchObject({ word: 'luck', lang: 'en' });
+    // The Notebook shows the book the sidebar is on.
+    expect(h.sidebar.setSideBarBookKey).toHaveBeenCalledWith('book-1');
+    expect(h.notebook.setNotebookActiveTab).toHaveBeenCalledWith('dictionary');
+    expect(h.notebook.setNotebookPin).toHaveBeenCalledWith(true);
+    expect(h.notebook.setNotebookVisible).toHaveBeenCalledWith(true);
+    expect(h.saveSysSettings).toHaveBeenCalledWith(
+      {},
+      'globalReadSettings',
+      expect.objectContaining({ isNotebookPinned: true, notebookActiveTab: 'dictionary' }),
+    );
+    // The left sidebar keeps its own tab and stays as it was.
+    expect(h.setConfig).not.toHaveBeenCalled();
+    expect(h.sidebar.setSideBarVisible).not.toHaveBeenCalled();
+    expect(h.sidebar.setSideBarPin).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+  });
+
+  // The Notebook pins beside the page from 640 px wide; a phone in landscape
+  // is that wide but too short for the popup, so it gets the sheet (#7789).
+  test.each([
+    ['a phone in landscape', 890, 411, true],
+    ['a phone in portrait', 390, 844, false],
+  ])('the dictionary sheet on %s (%i×%i) offers Pin to Notebook: %s', async (_name, width, height, pins) => {
+    const setViewport = (w: number, hgt: number) => {
+      Object.defineProperty(window, 'innerWidth', { value: w, configurable: true });
+      Object.defineProperty(window, 'innerHeight', { value: hgt, configurable: true });
+    };
+    const { innerWidth, innerHeight } = window;
+    try {
+      setViewport(width, height);
+      h.viewSettings.annotationToolbarItems = ['dictionary'];
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await selectText('serendipity');
+      act(() => {
+        fireEvent.click(screen.getByRole('button', { name: 'Dictionary' }));
+      });
+
+      expect(screen.getByTestId('dictionary-surface').dataset['kind']).toBe('sheet');
+      expect(!!screen.queryByTestId('dictionary-pin')).toBe(pins);
+      if (!pins) return;
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('dictionary-pin'));
+      });
+      expect(docked()).toMatchObject({ word: 'serendipity', lang: 'en' });
+      expect(h.notebook.setNotebookPin).toHaveBeenCalledWith(true);
+      expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    } finally {
+      setViewport(innerWidth, innerHeight);
+    }
+  });
+
+  // Pin hands the word back as closing the popup does. From the instant
+  // dictionary that means reading again unless told to keep the selection
+  // (#6454), as its later lookups into the tab do.
+  test.each([
+    [false, 'goes back to reading'],
+    [true, 'returns the toolbar when told to keep the selection'],
+  ])('Pin from the instant dictionary (keep selection: %s) %s', async (keep) => {
+    h.viewSettings.enableAnnotationQuickActions = true;
+    h.viewSettings.annotationQuickAction = 'dictionary';
+    h.viewSettings.keepSelectionAfterLookup = keep;
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectWord();
+    expect(screen.getByTestId('dictionary-surface')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('dictionary-pin'));
+    });
+
+    expect(h.notebook.setNotebookActiveTab).toHaveBeenCalledWith('dictionary');
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(!!screen.queryByTestId('annotation-toolbar')).toBe(keep);
+  });
+
+  describe('with the instant dictionary', () => {
+    beforeEach(() => {
+      useDictionaryDockStore.setState({ isDocked: true });
+      h.viewSettings.enableAnnotationQuickActions = true;
+      h.viewSettings.annotationQuickAction = 'dictionary';
+    });
+
+    test('looks the word up in the tab and goes back to reading', async () => {
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await selectWord();
+
+      expect(docked()).toMatchObject({ word: 'fortune', contextOnly: false });
+      expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+      expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
+      expect(h.deselect).toHaveBeenCalled();
+    });
+
+    test('keeps the word selected with its toolbar when told to keep the selection', async () => {
+      h.viewSettings.keepSelectionAfterLookup = true;
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await selectWord();
+
+      expect(docked()).toMatchObject({ word: 'fortune' });
+      expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+      expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+      expect(h.deselect).not.toHaveBeenCalled();
+
+      // Highlighting it republishes the selection: that must not look it up again.
+      const lookup = docked();
+      await act(async () => {
+        h.setSelection?.((prev) => (prev ? { ...prev, annotated: true } : prev));
+      });
+      expect(docked()).toBe(lookup);
+      expect(screen.getByTestId('annotation-toolbar')).toBeTruthy();
+    });
+  });
+
+  test('a Word Lens hint tap looks the word up in the tab', async () => {
+    useDictionaryDockStore.setState({ isDocked: true });
+    h.isTextSelected.current = false;
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    if (!document.querySelector('#gridcell-book-1')) {
+      const gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'spice';
+    document.body.append(paragraph);
+    const range = document.createRange();
+    range.selectNodeContents(paragraph);
+
+    await act(async () => {
+      await eventDispatcher.dispatch('footnote-selection', {
+        key: 'book-1',
+        range,
+        index: 3,
+        wordLens: true,
+      });
+    });
+
+    expect(docked()).toMatchObject({ word: 'spice' });
+    expect(screen.queryByTestId('dictionary-surface')).toBeNull();
+    expect(screen.queryByTestId('annotation-toolbar')).toBeNull();
   });
 });

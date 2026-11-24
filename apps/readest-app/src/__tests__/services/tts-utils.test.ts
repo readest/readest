@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach } from 'vitest';
 import { TTSUtils } from '@/services/tts/TTSUtils';
 
@@ -25,6 +26,40 @@ describe('TTSUtils', () => {
     test('does nothing for empty engine', () => {
       TTSUtils.setPreferredClient('');
       expect(TTSUtils.getPreferredClient()).toBeNull();
+    });
+
+    test('a client chosen for a language is that language’s, and the global one', () => {
+      TTSUtils.setPreferredClient('edge-tts');
+      TTSUtils.setPreferredClient('readest-tts', 'en-US');
+      expect(TTSUtils.getPreferredClient('en-GB')).toBe('readest-tts');
+      expect(TTSUtils.getPreferredClient()).toBe('readest-tts');
+      expect(TTSUtils.getPreferredClientForLang('de')).toBeNull();
+      expect(TTSUtils.getPreferredClient('de')).toBe('readest-tts');
+    });
+  });
+
+  describe('setDefaultVoice / getDefaultVoice', () => {
+    test('a language’s default leaves other languages and the global client alone', () => {
+      TTSUtils.setPreferredClient('edge-tts');
+      TTSUtils.setDefaultVoice('readest-tts', 'fr', 'kokoro:ff_siwis');
+      expect(TTSUtils.getDefaultVoice('fr-FR')).toEqual({
+        engine: 'readest-tts',
+        voiceId: 'kokoro:ff_siwis',
+      });
+      expect(TTSUtils.getPreferredClient()).toBe('edge-tts');
+      expect(TTSUtils.getPreferredClientForLang('en')).toBeNull();
+    });
+
+    test('falls back to the global client and a multilingual voice', () => {
+      TTSUtils.setPreferredClient('custom-tts');
+      TTSUtils.setPreferredVoice('custom-tts', 'mul', 's1:nova');
+      expect(TTSUtils.getDefaultVoice('de')).toEqual({ engine: 'custom-tts', voiceId: 's1:nova' });
+    });
+
+    test('is null until a voice was chosen for the language', () => {
+      expect(TTSUtils.getDefaultVoice('en')).toBeNull();
+      TTSUtils.setPreferredClient('edge-tts');
+      expect(TTSUtils.getDefaultVoice('en')).toBeNull();
     });
   });
 

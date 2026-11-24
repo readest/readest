@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -61,11 +62,11 @@ vi.mock('@/store/readerStore', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
+  ...bookDataStoreHooks(() => ({
     getConfig: () => ({ booknotes: mocks.state.booknotes }),
     saveConfig: mocks.saveConfig,
     updateBooknotes: mocks.updateBooknotes,
-  }),
+  })),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({

@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React from 'react';
 import { MdChevronRight } from 'react-icons/md';
+import { useSettingsSubPageBack } from './settingsSubPageBack';
 
 interface SubPageHeaderProps {
   /** Label of the parent panel (the "back" target). */
@@ -31,6 +32,10 @@ interface SubPageHeaderProps {
  *
  * The description renders below the breadcrumb row, inheriting the
  * `.settings-content` body size (14px desktop / 16px mobile).
+ *
+ * Escape and Android Back take the same way out as the breadcrumb: the header
+ * registers this page on the Settings back stack, so the dialog steps out of
+ * the page instead of closing under the reader.
  */
 const SubPageHeader: React.FC<SubPageHeaderProps> = ({
   parentLabel,
@@ -39,6 +44,8 @@ const SubPageHeader: React.FC<SubPageHeaderProps> = ({
   onBack,
   rightSlot,
 }) => {
+  useSettingsSubPageBack(onBack, currentLabel);
+
   return (
     <div className={clsx(description ? 'mb-6' : 'mb-4', 'px-4')}>
       <div className='mb-1.5 flex w-full items-center justify-between gap-2'>

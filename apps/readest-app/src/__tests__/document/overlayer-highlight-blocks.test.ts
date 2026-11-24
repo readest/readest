@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Regression test for: highlights spanning a bullet list are not drawn over
 // the list items.
 //

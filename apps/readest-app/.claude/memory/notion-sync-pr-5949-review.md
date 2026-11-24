@@ -136,7 +136,7 @@ secret to `x-notion-token`. Tradeoff: that makes Notion sync sign-in-required on
 CodeRabbit FALSE POSITIVE on v1: claimed zh-CN line 1014 read `已断开与与 Notion 的连接`;
 it actually read `已断开与 Notion 的连接`.
 
-Related: [[custom-headers-kosync-bookorbit-5570]] (kosync proxy open-relay fix unmerged).
+Related: [[custom-headers-kosync-bookorbit-5570]] (note in [[private-notion-sync-pr-5949-review]], local only).
 
 ## What I fixed before the merge (so future-me does not re-chase these)
 Landed in the squash as part of `295d6e79`:

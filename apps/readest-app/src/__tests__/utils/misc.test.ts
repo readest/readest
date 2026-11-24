@@ -1,3 +1,4 @@
+// @vitest-environment node
 import fc from 'fast-check';
 import { describe, it, expect } from 'vitest';
 import { makeSafeFilename } from '../../utils/misc';

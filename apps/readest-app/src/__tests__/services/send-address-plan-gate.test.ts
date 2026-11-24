@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi, beforeEach } from 'vitest';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { isEmailInPlan } from '@/utils/access';

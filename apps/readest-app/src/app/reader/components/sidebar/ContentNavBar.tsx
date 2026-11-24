@@ -8,6 +8,8 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useReaderStore } from '@/store/readerStore';
+import { footerAtBottom } from '../../utils/footerBand';
+import { getTTSMiniPlayerClearance } from '../../utils/ttsMiniPlayerPosition';
 
 interface ContentNavBarProps {
   bookKey: string;
@@ -50,12 +52,21 @@ const ContentNavBar: React.FC<ContentNavBarProps> = ({
 }) => {
   const { appService } = useEnv();
   const _ = useTranslation();
-  const { getViewSettings } = useReaderStore();
+  const { getViewSettings, getViewState } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
+  const ttsEnabled = getViewState(bookKey)?.ttsEnabled;
   const iconSize16 = useResponsiveSize(16);
   const iconSize20 = useResponsiveSize(20);
 
   const showSection = appService?.isMobile || !viewSettings?.showHeader;
+  // Clear what sits on the bottom edge (#7841): the footer line, or the
+  // minimal Read Aloud card, which already rides above it.
+  const bottomClearance = viewSettings
+    ? Math.max(
+        footerAtBottom(viewSettings) ? viewSettings.marginBottomPx : 0,
+        ttsEnabled ? getTTSMiniPlayerClearance(viewSettings, 0) : 0,
+      )
+    : 0;
 
   return (
     <div
@@ -63,7 +74,7 @@ const ContentNavBar: React.FC<ContentNavBarProps> = ({
       style={{
         top: gridInsets.top,
         right: gridInsets.right,
-        bottom: gridInsets.bottom / 4,
+        bottom: gridInsets.bottom / 4 + bottomClearance,
         left: gridInsets.left,
       }}
     >

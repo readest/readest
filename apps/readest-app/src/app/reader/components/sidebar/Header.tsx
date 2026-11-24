@@ -80,6 +80,7 @@ const SidebarHeader: React.FC<{
             className={clsx(
               'sidebar-pin-btn btn btn-ghost btn-circle hidden h-6 min-h-6 w-6 sm:flex',
               isPinned ? 'bg-base-300' : 'bg-base-300/65',
+              'eink:bg-transparent',
             )}
           >
             {isPinned ? <MdPushPin size={iconSize15} /> : <MdOutlinePushPin size={iconSize15} />}

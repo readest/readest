@@ -38,6 +38,12 @@ pub struct SpeakResponse {
     pub utterance_id: String,
 }
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StopArgs {
+    pub utterance_id: Option<String>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SetRateArgs {
@@ -116,6 +122,15 @@ pub struct UpdateCarPlayStateRequest {
     pub author: Option<String>,
 }
 
+// iOS: the book CarPlay started reading natively while the WebView was
+// suspended, handed to the reader once the app is back on screen (#7566).
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TakeColdPlaybackResponse {
+    pub book_hash: Option<String>,
+    pub playing: bool,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayoutEnqueueRequest {
@@ -140,12 +155,26 @@ pub struct PlayoutControlRequest {
     pub path: Option<String>,
     // Seek target for actions "load" and "seek", in milliseconds.
     pub position_ms: Option<f64>,
+    // Byte window [start, end) of `path` to play as the whole track: a stored
+    // audio entry inside the book's zip. iOS also needs its MIME type, since
+    // the file's own extension names the book.
+    pub start: Option<u64>,
+    pub end: Option<u64>,
+    pub content_type: Option<String>,
+    // Linux reads compressed narration directly from this ZIP entry.
+    pub entry: Option<String>,
+    // Android "set-loop": the A-B span to repeat, in ms of `path`.
+    pub loop_start_ms: Option<f64>,
+    pub loop_end_ms: Option<f64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayoutControlResponse {
     pub session: Option<i32>,
+    // Android "set-loop": whether the span was set on the file now playing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub armed: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -155,4 +184,32 @@ pub struct PlayoutPositionResponse {
     pub index: i32,
     pub position_ms: f64,
     pub playing: bool,
+    // Android: the item the playlist ended on, once nothing is current.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ended_index: Option<i32>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // The plugin's Kotlin and Swift sides read the payload re-serialized from
+    // these structs, so a field missing here never reaches them.
+    #[test]
+    fn playout_control_keeps_the_a_b_loop_fields() {
+        let request: PlayoutControlRequest = serde_json::from_value(serde_json::json!({
+            "action": "set-loop",
+            "path": "/cache/ch1.mp3",
+            "loopStartMs": 65000.0,
+            "loopEndMs": 80000.0,
+        }))
+        .unwrap();
+        let forwarded = serde_json::to_value(&request).unwrap();
+        assert_eq!(forwarded["loopStartMs"], 65000.0);
+        assert_eq!(forwarded["loopEndMs"], 80000.0);
+
+        let response: PlayoutControlResponse =
+            serde_json::from_value(serde_json::json!({ "session": 3, "armed": true })).unwrap();
+        assert_eq!(serde_json::to_value(&response).unwrap()["armed"], true);
+    }
 }

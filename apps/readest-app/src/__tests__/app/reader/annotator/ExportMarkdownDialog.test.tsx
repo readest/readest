@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BooknoteGroup } from '@/types/book';
@@ -20,7 +21,7 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData: () => h.bookData }),
+  ...bookDataStoreHooks(() => ({ getBookData: () => h.bookData })),
 }));
 
 vi.mock('@/store/readerStore', () => ({
@@ -130,6 +131,32 @@ describe('ExportMarkdownDialog export actions', () => {
     expect(onExport).toHaveBeenCalledTimes(1);
     expect(onExport.mock.calls[0]?.[2]).toMatchObject({ share: true });
   });
+
+  // The Android share sheet offers no way to save the file to storage, so
+  // Export writes it through the system save dialog and Share keeps the sheet.
+  it('offers Export (to storage) and Share (share sheet) on Android', () => {
+    h.appService = { isAndroidApp: true };
+    const onExport = renderDialog();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+    expect(onExport).toHaveBeenCalledTimes(1);
+    expect(onExport.mock.calls[0]?.[2]).toMatchObject({ share: false });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share' }));
+    expect(onExport).toHaveBeenCalledTimes(2);
+    expect(onExport.mock.calls[1]?.[2]).toMatchObject({ share: true });
+  });
+
+  it('styles the main action with btn-contrast', () => {
+    h.appService = { isAndroidApp: true };
+    renderDialog();
+    expect(screen.getByRole('button', { name: 'Share' }).className).toContain('btn-contrast');
+    cleanup();
+
+    h.appService = { isIOSApp: true };
+    renderDialog();
+    expect(screen.getByRole('button', { name: 'Export' }).className).toContain('btn-contrast');
+  });
 });
 
 describe('ExportMarkdownDialog highlight context', () => {
@@ -174,5 +201,49 @@ describe('ExportMarkdownDialog highlight context', () => {
     expect(onExport.mock.lastCall?.[0]).toContain(
       '> hello\n\n**Context**: Say hello to the world.',
     );
+  });
+});
+
+describe('ExportMarkdownDialog preview', () => {
+  beforeEach(() => {
+    h.appService = {};
+    h.bookData = { bookDoc: {} };
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  // Titles, highlighted text and notes come from book files and annotation
+  // imports, so markup inside them must not reach the rendered preview live.
+  it('renders markup from book data and notes inert', () => {
+    const hostile: Record<string, BooknoteGroup> = {
+      'chapter.xhtml': {
+        ...booknoteGroups['chapter.xhtml']!,
+        booknotes: [
+          {
+            ...booknoteGroups['chapter.xhtml']!.booknotes[0]!,
+            text: '<img src=x onerror="window.__pwned=1">',
+            note: '<svg onload="window.__pwned=2"></svg><script>window.__pwned=3</script>',
+          },
+        ],
+      },
+    };
+    const { container } = render(
+      <ExportMarkdownDialog
+        bookKey='book-1'
+        isOpen
+        bookHash='hash'
+        bookTitle='<iframe srcdoc="<script>parent.__pwned=4</script>"></iframe>'
+        bookAuthor='Author'
+        bookFormat='EPUB'
+        booknoteGroups={hostile}
+        onCancel={vi.fn()}
+        onExport={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector('img')).not.toBeNull();
+    expect(container.querySelector('[onerror], [onload], script, iframe')).toBeNull();
   });
 });

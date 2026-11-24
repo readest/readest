@@ -15,7 +15,7 @@ import type {
   SearchExcerpt,
 } from '@/types/book';
 import type { AppService } from '@/types/system';
-import { addLibrarySearchHistory } from '../utils/searchHistory';
+import { addLibrarySearchHistory, getLibrarySearchHistoryRevision } from '../utils/searchHistory';
 
 interface LibrarySearchResultsProps {
   appService: AppService;
@@ -228,6 +228,7 @@ const LibrarySearchResults = ({
     setActiveBook('');
     setExpandedBooks(new Set());
 
+    const historyRevision = getLibrarySearchHistoryRevision(query);
     const delay = lastQueryRef.current === query ? 0 : 250;
     const timeout = setTimeout(async () => {
       for await (const event of searchLibraryBooks(appService, booksRef.current, query, {
@@ -304,7 +305,9 @@ const LibrarySearchResults = ({
             truncated: Boolean(event.truncated),
             expandedBooks: [],
           };
-          if (event.matchCount > 0) addLibrarySearchHistory(query);
+          if (event.matchCount > 0 && historyRevision === getLibrarySearchHistoryRevision(query)) {
+            addLibrarySearchHistory(query);
+          }
         }
       }
     }, delay);

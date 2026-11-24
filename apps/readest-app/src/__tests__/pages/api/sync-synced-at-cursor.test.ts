@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { buildStatusPropagationRow } from '@/pages/api/sync';
 import type { DBBook } from '@/types/records';

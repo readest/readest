@@ -37,6 +37,10 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
       title: _('Annotations'),
       description: _('Highlights and notes'),
     },
+    book_data: {
+      title: _('Book Data'),
+      description: _('Downloaded read-aloud audio and translations'),
+    },
     dictionary: {
       title: _('Dictionaries'),
       description: _('Imported dictionary bundles and settings'),
@@ -64,6 +68,10 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
     custom_tts: {
       title: _('TTS Services'),
       description: _('Custom text-to-speech services and (encrypted) API keys'),
+    },
+    vocabulary: {
+      title: _('Vocabulary'),
+      description: _('Looked-up words, their sentences, and Learning / Mastered marks'),
     },
     settings: {
       // Dictionary preferences ride this row too, but they're gated by the
@@ -136,15 +144,18 @@ export function SyncCategoriesSection() {
           const on = enabled(category);
           const locked = isSyncCategoryLocked(category);
           // While Readest Cloud is switched off and a file backend is on, the
-          // book / progress / note channels are routed to the file backend at
-          // runtime and these toggles have no immediate effect. The
+          // book / progress / note / font channels are routed to the file
+          // backend at runtime and these toggles have no immediate effect. The
           // description says so in place (same pattern as `locked`), but the
           // toggle stays interactive and persists: it governs the native
           // channel the user returns to when Readest Cloud is re-enabled.
           const managedByProvider =
             !readestEnabled &&
             backends.length > 0 &&
-            (category === 'book' || category === 'progress' || category === 'note');
+            (category === 'book' ||
+              category === 'progress' ||
+              category === 'note' ||
+              category === 'font');
           return (
             <li key={category} className='flex items-center justify-between gap-4 px-4 py-3'>
               <div className='flex flex-col gap-0.5'>

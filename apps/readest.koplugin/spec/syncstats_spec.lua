@@ -281,6 +281,92 @@ describe("readest_syncstats", function()
         assert.are.equal(1, tonumber(live))
     end)
 
+    -- The open book's statistics session keeps page events in memory until
+    -- its next insertDB. When a pull deletes that book's statistics (#7494),
+    -- those read before the deletion must never be written afterwards, and
+    -- the page being read counts only from the deletion on.
+    -- A stand-in for KOReader's ReaderStatistics: insertDB writes tuples that
+    -- have a duration and keeps the current page's start, like the real one,
+    -- and does nothing while the book's statistics are frozen.
+    local function openSession(frozen)
+        local st = { id_curr_book = 1, doc_md5 = "md5-open", curr_page = 7, frozen = frozen }
+        st.page_stat = { -- times need not be in reading order here
+            [5] = { { 1000, 30 } }, -- read before the deletion
+            [6] = { { 2100, 30 } }, -- read after it
+            [7] = { { 1990, 0 } },  -- being read since before it
+        }
+        function st:insertDB()
+            if self.frozen then return end
+            local c = SQ3.open(statsDbPath())
+            for page, list in pairs(self.page_stat) do
+                for _, t in ipairs(list) do
+                    if t[2] > 0 then
+                        c:exec(string.format("INSERT INTO page_stat_data VALUES (1, %d, %d, %d, 10);",
+                            page, t[1], t[2]))
+                    end
+                end
+            end
+            c:close()
+            local cur = self.page_stat[self.curr_page]
+            self.page_stat = { [self.curr_page] = { { cur[#cur][1], 0 } } }
+        end
+        local conn = SQ3.open(statsDbPath())
+        conn:exec("INSERT INTO book (title, authors, md5) VALUES ('Open', 'A', 'md5-open');")
+        conn:close()
+        return st
+    end
+    local function pullDeletionOf(md5, statistics)
+        local response = {
+            statBooks = { { book_hash = md5, title = "T", authors = "A", deleted_at_ms = 2000500 } },
+            statPages = {},
+        }
+        local client = { pullChanges = function(_, _params, cb) cb(true, response, 200) end }
+        SyncStats:pull({ stats_pull_cursor = 0 }, client, false, { statistics = statistics })
+    end
+    local function storedStarts()
+        local c = SQ3.open(statsDbPath())
+        local starts = c:rowexec("SELECT GROUP_CONCAT(start_time) FROM page_stat_data;")
+        c:close()
+        return tostring(starts)
+    end
+
+    it("covers the open book's unwritten events when its statistics are deleted", function()
+        local statistics = openSession(false)
+        pullDeletionOf("md5-open", statistics)
+        assert.are.equal("2100", storedStarts())
+        assert.are.equal(2001, statistics.page_stat[7][1][1])
+    end)
+
+    it("covers them while the open book's statistics are frozen, once unfrozen", function()
+        local statistics = openSession(true)
+        pullDeletionOf("md5-open", statistics)
+        statistics.frozen = false
+        statistics:insertDB()
+        assert.are.equal("2100", storedStarts())
+        assert.are.equal(2001, statistics.page_stat[7][1][1])
+    end)
+
+    -- KOReader pauses statistics on suspend and, on resume, adds the pause's
+    -- length to the page's start (onReadingResumed). A deletion made during
+    -- the pause must not push that start past the resume time.
+    it("keeps the page being read in step with a pause that began before the deletion", function()
+        local statistics = openSession(false)
+        statistics._reading_paused_ts = 2000 -- suspended at 2000 s, deleted at 2000.5 s
+        pullDeletionOf("md5-open", statistics)
+        -- resumed at 2100 s, as onReadingResumed does
+        local t = statistics.page_stat[7][1]
+        t[1] = t[1] + (2100 - statistics._reading_paused_ts)
+        assert.are.equal(2100, t[1])
+    end)
+
+    it("leaves the open book's session alone when another book is deleted", function()
+        local statistics = openSession(false)
+        pullDeletionOf("md5-other", statistics)
+        assert.are.equal("nil", storedStarts())
+        assert.are.equal(1000, statistics.page_stat[5][1][1])
+        assert.are.equal(1990, statistics.page_stat[7][1][1])
+    end)
+
     it("merges duplicate sync-created rows when KOReader never opened the book", function()
         local conn = SQ3.open(statsDbPath())
         conn:exec("INSERT INTO book (title, authors, md5) VALUES ('Title v1', 'A', 'md5-s');")
@@ -315,6 +401,75 @@ describe("readest_syncstats", function()
         assert.are.equal(20, tonumber(total_time)) -- 8 + 12
         assert.are.equal(2, tonumber(total_pages)) -- distinct pages 1,2
         assert.are.equal(212, tonumber(last_open)) -- max(start_time + duration) = 200 + 12
+    end)
+
+    -- #7494: a book's statistics deleted in Readest. The pull flags its events
+    -- read before the deletion (deleted_at_ms) and marks its stat_books row.
+    it("never stores page events flagged as deleted (#7494)", function()
+        SyncStats:applyRemote(
+            { { book_hash = "md5-f", title = "F", authors = "A" } },
+            {
+                { book_hash = "md5-f", page = 1, start_time = 100, duration = 8, total_pages = 50,
+                  deleted_at = "2026-01-01T00:00:00Z", deleted_at_ms = 1767225600000 },
+                -- LuaJSON decodes a JSON null as a function: not a deletion
+                { book_hash = "md5-f", page = 2, start_time = 200, duration = 12, total_pages = 50,
+                  deleted_at = function() end },
+            })
+
+        local conn = SQ3.open(statsDbPath())
+        local starts = conn:rowexec("SELECT GROUP_CONCAT(start_time) FROM page_stat_data;")
+        local total = conn:rowexec("SELECT total_read_time FROM book WHERE md5 = 'md5-f';")
+        conn:close()
+        assert.are.equal("200", tostring(starts))
+        assert.are.equal(12, tonumber(total))
+    end)
+
+    it("deletes a deleted book's events read before the deletion (#7494)", function()
+        local conn = SQ3.open(statsDbPath())
+        conn:exec([[INSERT INTO book (title, authors, md5, pages, last_open, total_read_time, total_read_pages)
+            VALUES ('D', 'A', 'md5-del', 10, 2600, 70, 3);]])
+        conn:exec("INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages) VALUES (1, 1, 100, 30, 10);")
+        conn:exec("INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages) VALUES (1, 2, 2000, 30, 10);")
+        conn:exec("INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages) VALUES (1, 3, 2500, 10, 10);")
+        conn:close()
+
+        -- deleted at 2000.5 s: the event that started at 2000 s goes too
+        SyncStats:applyRemote(
+            { { book_hash = "md5-del", title = "D", authors = "A", deleted_at_ms = 2000500 } }, {})
+
+        local conn2 = SQ3.open(statsDbPath())
+        local starts = conn2:rowexec("SELECT GROUP_CONCAT(start_time) FROM page_stat_data;")
+        local total = conn2:rowexec("SELECT total_read_time FROM book WHERE md5 = 'md5-del';")
+        local pages = conn2:rowexec("SELECT total_read_pages FROM book WHERE md5 = 'md5-del';")
+        conn2:close()
+        assert.are.equal("2500", tostring(starts))
+        assert.are.equal(10, tonumber(total))
+        assert.are.equal(1, tonumber(pages))
+    end)
+
+    it("drops a deleted book's empty row, except the live session's (#7494)", function()
+        local conn = SQ3.open(statsDbPath())
+        conn:exec("INSERT INTO book (title, authors, md5, pages) VALUES ('Gone', 'A', 'md5-gone', 10);")
+        conn:exec("INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages) VALUES (1, 1, 100, 30, 10);")
+        conn:exec("INSERT INTO book (title, authors, md5, pages) VALUES ('Open', 'A', 'md5-open', 10);")
+        conn:exec("INSERT INTO page_stat_data (id_book, page, start_time, duration, total_pages) VALUES (2, 1, 100, 30, 10);")
+        conn:close()
+
+        SyncStats:applyRemote({
+            { book_hash = "md5-gone", title = "Gone", authors = "A", deleted_at_ms = 5000000 },
+            { book_hash = "md5-open", title = "Open", authors = "A", deleted_at_ms = 5000000 },
+            -- never seen here: no row is left behind for it
+            { book_hash = "md5-new", title = "New", authors = "A", deleted_at_ms = 5000000 },
+        }, {}, 2)
+
+        local conn2 = SQ3.open(statsDbPath())
+        local titles = conn2:rowexec("SELECT GROUP_CONCAT(title) FROM book;")
+        local events = conn2:rowexec("SELECT COUNT(*) FROM page_stat_data;")
+        local open_total = conn2:rowexec("SELECT total_read_time FROM book WHERE id = 2;")
+        conn2:close()
+        assert.are.equal("Open", titles)
+        assert.are.equal(0, tonumber(events))
+        assert.are.equal(0, tonumber(open_total))
     end)
 
     -- settings here is the plain readest_sync data table (as returned by

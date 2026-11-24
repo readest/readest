@@ -1,5 +1,6 @@
 import type { BookDoc, BookMetadata, SectionItem } from '@/libs/document';
 import { CFI } from '@/libs/document';
+import { detectLanguage } from './lang';
 import { buildChapterFootnotes, extractFootnoteDefs } from './mdFootnotes';
 
 // Turn sanitized HTML into an in-memory foliate-js book at runtime (no EPUB
@@ -58,7 +59,8 @@ type HtmlSection = SectionItem & {
 /**
  * @param safeHtml body markup that already went through `sanitizeHtml`
  * @param metadata the book's metadata as the caller resolved it (title,
- *   identifier and defaults included)
+ *   identifier and defaults included); an empty language is detected from
+ *   the text
  * @param coverBlob an explicit cover, or null for the generated one
  * @param dir the document's reading direction; drives page progression and
  *   is stamped on every section so the text lays out that way too
@@ -70,6 +72,9 @@ export function buildHtmlBook(
   dir: 'ltr' | 'rtl' = 'ltr',
 ): BookDoc {
   const docBody = new DOMParser().parseFromString(safeHtml, 'text/html').body;
+  // A file that declares no language is read in the language of its text, so
+  // Read Aloud offers that language's voices instead of English ones (#6936).
+  const language = metadata.language || detectLanguage(docBody.textContent ?? '');
 
   // Lift the collected footnote definitions out before anything else looks at
   // the document: they are re-emitted per chapter below, and taking them out
@@ -231,7 +236,7 @@ export function buildHtmlBook(
   }));
 
   const book = {
-    metadata,
+    metadata: { ...metadata, language },
     rendition: { layout: 'reflowable' as const },
     dir,
     toc,

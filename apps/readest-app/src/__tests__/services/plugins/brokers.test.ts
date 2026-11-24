@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi } from 'vitest';
 import { SourceBroker, SqlBroker } from '@/services/plugins/brokers';
 import { MAX_PLUGIN_RESOURCE_BYTES } from '@/services/plugins/contract';

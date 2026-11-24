@@ -1,18 +1,16 @@
-import { getOSPlatform, getUserLocale } from '@/utils/misc';
-import { isTauriAppPlatform } from '@/services/environment';
-import { isSameLang } from '@/utils/lang';
 import { NativeAudioPlayer } from './NativeAudioPlayer';
 import { TTSClient, TTSCapabilities, TTSMessageEvent } from './TTSClient';
 import { TTSWordBoundary } from '@/libs/edgeTTS';
-import { MULTILINGUAL_LANG, TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
+import { MULTILINGUAL_LANG, TTSGranularity, TTSMark, TTSVoice } from './types';
 import { AppService } from '@/types/system';
 import { parseSSMLMarks } from '@/utils/ssml';
-import { DEFAULT_PARAGRAPH_GAP_SEC, TTSController } from './TTSController';
+import type { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
+import { groupProviderVoices } from './voiceGroups';
 import { alignBoundariesToSpeech, findBoundaryIndexAtTime } from './wordHighlight';
 import { applyEdgeFade, findSpeechBounds } from './pcm';
 import { timeStretch } from './timeStretch';
-import { gapAfterSentence } from './gap';
+import { DEFAULT_PARAGRAPH_GAP_SEC, DEFAULT_SENTENCE_GAP_SEC, gapAfterSentence } from './gap';
 import {
   calibrateVoiceRate,
   estimateSentenceSeconds,
@@ -42,14 +40,7 @@ import { TTSAudioBuffer, WebAudioPlayer, WebAudioPlayerEvent } from './WebAudioP
 // the screen off), not when it is fetched — schedule-ahead would otherwise
 // run foliate's mark cursor ahead of the voice and break prev/next/resume.
 
-// Natural pause between sentences at 1.0x, replacing the silence Edge bakes
-// into every utterance: measured at ~0.18s leading and ~0.8s trailing, so ~1s
-// of dead air per sentence if it is played as-is (see #5414). The rate scaling
-// happens once, before the value reaches this client (see scaleGapForRate);
-// what arrives here is wall-clock seconds of silence. Note the native path only
-// cuts the trailing silence, so its audible gap also carries the next
-// utterance's ~0.18s of leading silence.
-export const DEFAULT_SENTENCE_GAP_SEC = 0.15;
+export { DEFAULT_SENTENCE_GAP_SEC };
 const TICKS_PER_SECOND = 10_000_000;
 
 // How many consecutive unreachable sentences (offline with nothing cached, or
@@ -66,6 +57,13 @@ const MAX_CONSECUTIVE_SKIPS = 3;
 const PREFETCH_AHEAD_MARKS = 32;
 const PREFETCH_AHEAD_SEC = 180;
 const PRELOAD_AHEAD_SEC = 60;
+const MAX_PREPARED_CHUNKS = 8;
+
+interface PreparedChunk {
+  buffer: TTSAudioBuffer;
+  trimStartSec: number;
+  trimmedDurationSec: number;
+}
 
 interface ChunkMeta {
   mark: TTSMark;
@@ -120,10 +118,7 @@ export class BufferedTTSClient implements TTSClient {
   // mute switch behave like a music app — the WebAudio path renders in
   // WebKit's GPU process under a session the app cannot own. Everywhere else
   // the gapless WSOLA WebAudio pipeline stays.
-  #player: WebAudioPlayer | NativeAudioPlayer =
-    getOSPlatform() === 'ios' && isTauriAppPlatform()
-      ? new NativeAudioPlayer()
-      : new WebAudioPlayer();
+  #player: WebAudioPlayer | NativeAudioPlayer;
   #activeGeneration: number | null = null;
   #activeQueue: AsyncQueue<SpeakQueueEvent> | null = null;
   #chunkMeta: ChunkMeta[] = [];
@@ -135,6 +130,11 @@ export class BufferedTTSClient implements TTSClient {
   // skipping to the end. A user-initiated restart builds a fresh client, so it
   // starts at 0 there too.
   #consecutiveSkips = 0;
+  // Upcoming paragraphs' first sentences, decoded and time-stretched while the
+  // current one plays, in reading order (see #prepareAhead).
+  #preparedChunks = new Map<string, Promise<PreparedChunk>>();
+  // The prepared key of the playing paragraph's first sentence: no longer ahead.
+  #playingParagraphKey: string | null = null;
 
   constructor(
     provider: SpeechProvider,
@@ -145,6 +145,7 @@ export class BufferedTTSClient implements TTSClient {
     this.name = provider.id;
     this.controller = controller;
     this.appService = appService;
+    this.#player = appService?.isIOSApp ? new NativeAudioPlayer() : new WebAudioPlayer();
   }
 
   async init(): Promise<boolean> {
@@ -374,9 +375,13 @@ export class BufferedTTSClient implements TTSClient {
     if (this.provider.prefetch) {
       const reqs = await this.#requestsFor(await this.#marksAhead(marks, 0, PRELOAD_AHEAD_SEC));
       if (reqs.length && !signal.aborted) {
+        const first = reqs[0];
         this.provider.prefetch(reqs, 'listen', signal, {
           background: true,
-          onDelivered: this.#onPrefetchDelivered,
+          onDelivered: (req, result) => {
+            this.#onPrefetchDelivered(req, result);
+            if (req === first && !signal.aborted) this.#prepareAhead(req, result.audio);
+          },
         });
       }
       yield { code: 'end', message: 'Preload finished' } as TTSMessageEvent;
@@ -394,6 +399,10 @@ export class BufferedTTSClient implements TTSClient {
       try {
         const audio = await this.#synthesizeWithRetry(mark.language, mark.text, voiceId, signal);
         if (audio) this.#recordDurations(voiceId, mark.text, audio.boundaries);
+        if (audio && i === 0 && !signal.aborted) {
+          const req = { lang: mark.language, text: mark.text, voice: voiceId, pitch: this.#pitch };
+          this.#prepareAhead(req, audio.data);
+        }
       } catch (err) {
         console.warn('Error preloading mark', i, err);
       }
@@ -452,6 +461,7 @@ export class BufferedTTSClient implements TTSClient {
           voice: voiceId,
           pitch: this.#pitch,
         };
+        if (index === 0) this.#playingParagraphKey = this.#preparedKey(req, rate);
         let audio: { data: ArrayBuffer; boundaries: TTSWordBoundary[] } | undefined;
         try {
           audio = await this.#synthesizeWithRetry(mark.language, mark.text, voiceId, signal);
@@ -524,13 +534,10 @@ export class BufferedTTSClient implements TTSClient {
         }
 
         const webPlayer = this.#player;
-        let prepared: {
-          buffer: TTSAudioBuffer;
-          trimStartSec: number;
-          trimmedDurationSec: number;
-        };
+        let prepared: PreparedChunk;
         try {
-          prepared = await this.#prepareChunkBuffer(webPlayer, audio.data, rate);
+          const ahead = index === 0 ? this.#takePrepared(req, rate) : null;
+          prepared = await (ahead ?? this.#prepareChunkBuffer(webPlayer, audio.data, rate));
         } catch (error) {
           // Malformed MP3 must not dead-end the session: same UX as no-audio.
           console.warn('Failed to decode TTS audio for:', mark.text, error);
@@ -565,11 +572,47 @@ export class BufferedTTSClient implements TTSClient {
     }
   }
 
+  #preparedKey(req: SpeechSynthesisRequest, rate: number): string {
+    return JSON.stringify([req.lang, req.voice, req.pitch, req.text, rate]);
+  }
+
+  // Prepare a preloaded paragraph's first sentence now, so the paragraph
+  // doesn't open on decode and time-stretch. Preloads come in reading order:
+  // once full, the nearest paragraphs are the ones kept.
+  #prepareAhead(req: SpeechSynthesisRequest, data: ArrayBuffer): void {
+    const player = this.#player;
+    if (!(player instanceof WebAudioPlayer)) return;
+    if (this.#preparedChunks.size >= MAX_PREPARED_CHUNKS) return;
+    const key = this.#preparedKey(req, this.#rate);
+    // A windowed preload can deliver a first sentence only as its paragraph
+    // starts: added then, it would sit after the paragraphs that follow it.
+    if (key === this.#playingParagraphKey || this.#preparedChunks.has(key)) return;
+    // decodeAudioData detaches its input, which may be a cache's own copy.
+    const prepared = this.#prepareChunkBuffer(player, data.slice(0), this.#rate);
+    this.#preparedChunks.set(key, prepared);
+    prepared.catch(() => {
+      if (this.#preparedChunks.get(key) === prepared) this.#preparedChunks.delete(key);
+    });
+  }
+
+  // A paragraph's prepared first sentence, used once. Whatever was prepared
+  // before it belongs to paragraphs already passed.
+  #takePrepared(req: SpeechSynthesisRequest, rate: number): Promise<PreparedChunk> | null {
+    const key = this.#preparedKey(req, rate);
+    const prepared = this.#preparedChunks.get(key);
+    if (!prepared) return null;
+    for (const passed of this.#preparedChunks.keys()) {
+      this.#preparedChunks.delete(passed);
+      if (passed === key) break;
+    }
+    return prepared;
+  }
+
   async #prepareChunkBuffer(
     player: WebAudioPlayer,
     data: ArrayBuffer,
     rate: number,
-  ): Promise<{ buffer: TTSAudioBuffer; trimStartSec: number; trimmedDurationSec: number }> {
+  ): Promise<PreparedChunk> {
     // decodeAudioData resamples to the context rate (44.1/48kHz on real
     // devices, not the stream's 24kHz) — all math below must use the decoded
     // buffer's sampleRate.
@@ -642,7 +685,12 @@ export class BufferedTTSClient implements TTSClient {
     return true;
   }
 
-  async stop() {
+  async stop(handover = false) {
+    // A handover (the next paragraph starting) keeps what was prepared for it.
+    if (!handover) {
+      this.#preparedChunks.clear();
+      this.#playingParagraphKey = null;
+    }
     await this.stopInternal();
   }
 
@@ -851,32 +899,13 @@ export class BufferedTTSClient implements TTSClient {
   }
 
   async getVoices(lang: string) {
-    const locale = lang === 'en' ? getUserLocale(lang) || lang : lang;
-    const voices = await this.getAllVoices();
-    if (this.provider.groupVoices) {
-      // Each group offers the book language's voices and the multilingual ones.
-      const spoken = voices.filter((v) => v.lang === MULTILINGUAL_LANG || isSameLang(v.lang, lang));
-      return this.provider
-        .groupVoices(spoken)
-        .map((group) => ({ ...group, disabled: !this.initialized }));
-    }
-    // Match by primary language so the voice set stays the same across a book
-    // whose sections mix region variants (e.g. en-US front matter and en-GB
-    // body text); the requested locale's voices sort first. See #4033.
-    const filteredVoices = voices.filter((v) => isSameLang(v.lang, lang));
-
-    const voicesGroup: TTSVoicesGroup = {
-      id: this.name,
-      name: this.provider.label,
-      voices: filteredVoices.sort(
-        this.provider.compareVoices
-          ? (a, b) => this.provider.compareVoices!(a, b)
-          : TTSUtils.sortVoicesPreferLocaleFunc(locale),
-      ),
-      disabled: !this.initialized || filteredVoices.length === 0,
-    };
-
-    return [voicesGroup];
+    return groupProviderVoices(
+      this.provider,
+      this.name,
+      await this.getAllVoices(),
+      lang,
+      !this.initialized,
+    );
   }
 
   setPrimaryLang(lang: string) {
@@ -914,6 +943,7 @@ export class BufferedTTSClient implements TTSClient {
 
   async shutdown(): Promise<void> {
     await this.stopInternal();
+    this.#preparedChunks.clear();
     await this.#player.shutdown();
     await this.provider.shutdown?.();
     this.initialized = false;

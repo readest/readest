@@ -25,6 +25,125 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('OPDS proxy trusted private hosts (#7105)', () => {
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', '');
+  });
+
+  it.each([
+    GET,
+    HEAD,
+  ])('allows an explicitly trusted LAN hostname at runtime (%s)', async (handle) => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', ' books.home.arpa, CALIBRE.LAN. ');
+    fetchSpy.mockResolvedValueOnce(new Response(null));
+
+    const res = await handle(proxyReq('http://calibre.lan:8083/opds'));
+
+    expect(res.status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' });
+  });
+
+  it.each([
+    ['[fd00:0:0:0:0:0:0:1]', '[fd00::1]'],
+    ['[FD00:0:0:0:0:0:0:1]', '[fd00:0:0:0:0:0:0:1]'],
+    ['[fd00::1]', '[fd00:0:0:0:0:0:0:1]'],
+  ])('matches equivalent IPv6 literals: %s and %s', async (entry, target) => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', entry);
+    fetchSpy.mockResolvedValueOnce(new Response('<feed/>'));
+
+    expect((await GET(proxyReq(`http://${target}:8083/opds`))).status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    '[fd00::2]',
+    '[fd00:::1]',
+    '[fd00::1]:8083',
+    '[fd00::2]@[fd00::1]',
+    '[fd00::1]/[fd00::2]',
+    '[fd00::1]?[fd00::2]',
+    '[fd00::1]#[fd00::2]',
+  ])('rejects an inexact or malformed IPv6 entry: %s', async (entry) => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', entry);
+
+    expect((await GET(proxyReq('http://[fd00::1]:8083/opds'))).status).toBe(400);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('reads the allowlist again for each request', async () => {
+    expect((await GET(proxyReq('http://calibre.lan/opds'))).status).toBe(400);
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', 'calibre.lan');
+    fetchSpy.mockResolvedValueOnce(new Response('<feed/>'));
+    expect((await GET(proxyReq('http://calibre.lan/opds'))).status).toBe(200);
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', '');
+    expect((await GET(proxyReq('http://calibre.lan/opds'))).status).toBe(400);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    '',
+    ' ',
+    '*',
+    '*.lan',
+    'lan',
+    'calibre',
+    'https://calibre.lan',
+    'calibre.lan:8083',
+    'other.lan',
+  ])('does not allow a hostname through an inexact entry: %s', async (entry) => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', entry);
+    expect((await GET(proxyReq('http://calibre.lan:8083/opds'))).status).toBe(400);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('allows a trusted hostname with a trailing DNS dot', async () => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', 'calibre.lan');
+    fetchSpy.mockResolvedValueOnce(new Response('<feed/>'));
+    expect((await GET(proxyReq('http://calibre.lan./opds'))).status).toBe(200);
+  });
+
+  it('does not carry private-host permission across redirects', async () => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', 'calibre.lan');
+    fetchSpy.mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: { location: 'http://169.254.169.254/latest/meta-data/' },
+      }),
+    );
+    expect((await GET(proxyReq('http://calibre.lan/opds'))).status).toBe(400);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows a redirect only when its private destination is also trusted', async () => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', 'calibre.lan,books.internal');
+    fetchSpy
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 302,
+          headers: { location: 'http://books.internal/opds' },
+        }),
+      )
+      .mockResolvedValueOnce(new Response('<feed/>'));
+    const request = new NextRequest(proxyReq('http://calibre.lan/opds').url, {
+      headers: { Authorization: 'Basic secret' },
+    });
+    expect((await GET(request)).status).toBe(200);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(new Headers(fetchSpy.mock.calls[0]?.[1]?.headers).get('Authorization')).toBe(
+      'Basic secret',
+    );
+    expect(new Headers(fetchSpy.mock.calls[1]?.[1]?.headers).has('Authorization')).toBe(false);
+  });
+
+  it('still rejects non-HTTP schemes for a trusted host', async () => {
+    vi.stubEnv('READEST_TRUSTED_PRIVATE_HOSTS', 'calibre.lan');
+    expect((await GET(proxyReq('ftp://calibre.lan/opds'))).status).toBe(400);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
 describe('OPDS proxy SSRF guard', () => {
   it('blocks the AWS metadata endpoint without fetching', async () => {
     const res = await GET(proxyReq('http://169.254.169.254/latest/meta-data/iam/'));
@@ -160,6 +279,27 @@ describe('OPDS proxy response isolation', () => {
     expect(res.headers.get('Content-Type')).toBe('application/octet-stream');
   });
 
+  it.each([
+    401, 404,
+  ])('drops the compressed length and encoding from a decoded error body (%s)', async (status) => {
+    // fetch has already decoded the body; the upstream headers describe the
+    // compressed bytes.
+    fetchSpy.mockResolvedValueOnce(
+      new Response('Not found', {
+        status,
+        headers: {
+          'Content-Type': 'text/plain',
+          'Content-Encoding': 'gzip',
+          'Content-Length': '999',
+        },
+      }),
+    );
+    const res = await GET(proxyReq('https://feeds.example.com/missing'));
+    expect(res.headers.get('Content-Encoding')).toBeNull();
+    expect(res.headers.get('Content-Length')).not.toBe('999');
+    expect(await res.text()).toBe('Not found');
+  });
+
   it('does not expose an upstream JavaScript MIME type', async () => {
     fetchSpy.mockResolvedValueOnce(
       new Response('evil()', {
@@ -197,6 +337,21 @@ describe('OPDS proxy response isolation', () => {
     expect(sent[1]?.get('X-Api-Key')).toBeNull();
     expect(sent[2]?.get('Authorization')).toBeNull();
   });
+  it('takes the catalog credential from the Authorization request header', async () => {
+    const sent: Headers[] = [];
+    fetchSpy.mockImplementation(async (_url: string, init: RequestInit) => {
+      sent.push(new Headers(init.headers));
+      return new Response('<feed/>', { headers: { 'Content-Type': 'application/atom+xml' } });
+    });
+    const res = await GET(
+      new NextRequest(proxyReq('https://feeds.example.com/feed').url, {
+        headers: { Authorization: 'Basic secret' },
+      }),
+    );
+    expect(sent[0]?.get('Authorization')).toBe('Basic secret');
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
+  });
+
   it.each(['HEAD', 'stream'])('isolates %s responses as well', async (mode) => {
     fetchSpy.mockResolvedValueOnce(
       new Response('evil()', {
@@ -225,5 +380,19 @@ describe('OPDS proxy response isolation', () => {
     );
     const res = await GET(new NextRequest(proxyReq('https://feeds.example.com/feed').url + suffix));
     expect(res.headers.get('Cache-Control')).toBe(expected);
+  });
+
+  it('keys a cached anonymous feed on the Authorization header', async () => {
+    // The credential travels in a header, so a guest feed and a signed-in feed
+    // share one proxy URL; without Vary the browser would serve the cached
+    // guest feed after the user adds credentials.
+    fetchSpy.mockResolvedValueOnce(
+      new Response('<feed/>', {
+        headers: { 'Content-Type': 'application/atom+xml' },
+      }),
+    );
+    const res = await GET(proxyReq('https://feeds.example.com/feed'));
+    expect(res.headers.get('Cache-Control')).toBe('public, max-age=300');
+    expect(res.headers.get('Vary')).toBe('Authorization');
   });
 });

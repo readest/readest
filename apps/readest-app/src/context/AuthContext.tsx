@@ -8,8 +8,9 @@ import {
   useMemo,
   ReactNode,
   useEffect,
+  useRef,
 } from 'react';
-import { User } from '@supabase/supabase-js';
+import { isAuthRetryableFetchError, User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
 import posthog from 'posthog-js';
 
@@ -18,7 +19,7 @@ interface AuthContextType {
   user: User | null;
   login: (token: string, user: User) => void;
   logout: () => void;
-  refresh: () => void;
+  refresh: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,11 +38,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     return null;
   });
+  // logout() refreshes before signing out, which reports the session again.
+  const signingOut = useRef(false);
 
   useEffect(() => {
     const syncSession = (
       session: { access_token: string; refresh_token: string; user: User } | null,
     ) => {
+      if (session && signingOut.current) return;
       if (session) {
         console.log('Syncing session');
         const { access_token, refresh_token, user } = session;
@@ -63,12 +67,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         await supabase.auth.refreshSession();
       } catch {
-        syncSession(null);
+        // A thrown refresh is not the server rejecting the token: keep the
+        // stored session. A rejection signs out through SIGNED_OUT.
+      }
+    };
+    const restoreSession = async (refreshToken: string) => {
+      try {
+        const { error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+        // Offline or a gateway error: keep the session rather than sign out.
+        if (error && !isAuthRetryableFetchError(error)) syncSession(null);
+      } catch {
+        // Not a rejection of the token either; keep the session.
       }
     };
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_, session) => {
-      syncSession(session);
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session || event !== 'INITIAL_SESSION') {
+        syncSession(session);
+        return;
+      }
+      // A null INITIAL_SESSION doesn't mean signed out. When the startup
+      // refresh fails on the network (offline at launch), the SDK keeps its
+      // stored session but still reports null. When the SDK's own startup
+      // refresh fails with an error it doesn't retry, it drops its session
+      // before this listener exists, so that SIGNED_OUT never reaches the app.
+      // Ask the server about the app's refresh token before signing out.
+      // Not awaited: the SDK callback must not wait on another SDK call.
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        void restoreSession(refreshToken);
+      } else {
+        syncSession(null);
+      }
     });
 
     refreshSession();
@@ -92,22 +122,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(async () => {
     console.log('Logging out');
+    // Signed out in the app at once: the requests below can take a while (the
+    // refresh retries for up to 30 s offline), and pages opened meanwhile still
+    // saw the user signed in, so the library kept them signed in (#7726).
+    signingOut.current = true;
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
     try {
       await supabase.auth.refreshSession();
     } catch {
     } finally {
       await supabase.auth.signOut({ scope: 'local' });
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
+      signingOut.current = false;
     }
   }, []);
 
   const refresh = useCallback(async () => {
     try {
-      await supabase.auth.refreshSession();
-    } catch {}
+      const { data, error } = await supabase.auth.refreshSession();
+      return !error && !!data.session;
+    } catch {
+      return false;
+    }
   }, []);
 
   const value = useMemo(

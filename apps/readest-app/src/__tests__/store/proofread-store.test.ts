@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import type { ViewSettings, ProofreadRule } from '@/types/book';
 import type { SystemSettings } from '@/types/settings';

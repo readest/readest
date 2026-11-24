@@ -41,10 +41,18 @@ vi.mock('@/services/tts/WebAudioPlayer', async (importActual) => ({
   startAudioKeepAlive: () => startKeepAlive(),
   stopAudioKeepAlive: () => stopKeepAlive(),
 }));
+const releaseUnblock = vi.fn();
+const unblock = vi.fn();
+vi.mock('@/services/tts/ttsMediaBridge', async (importActual) => ({
+  ...(await importActual<typeof import('@/services/tts/ttsMediaBridge')>()),
+  releaseUnblockAudio: () => releaseUnblock(),
+  unblockAudio: () => unblock(),
+}));
 
 vi.mock('@/services/tts/TTSUtils', () => ({
   TTSUtils: {
     getPreferredClient: vi.fn().mockReturnValue(null),
+    getPreferredClientForLang: vi.fn().mockReturnValue(null),
     setPreferredClient: vi.fn(),
     setPreferredVoice: vi.fn(),
     getPreferredVoice: vi.fn().mockReturnValue(null),
@@ -77,10 +85,12 @@ vi.mock('@/utils/lang', () => ({
 
 vi.mock('foliate-js/tts.js', () => ({
   TTS: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+    // A section of 20 paragraphs: stepping back into one reads to its end.
+    let paragraphs = 20;
     Object.assign(this, {
       start: vi.fn().mockReturnValue('<speak>hello</speak>'),
       resume: vi.fn().mockReturnValue('<speak>hello</speak>'),
-      next: vi.fn().mockReturnValue('<speak>next</speak>'),
+      next: vi.fn(() => (paragraphs-- > 0 ? '<speak>next</speak>' : undefined)),
       prev: vi.fn().mockReturnValue('<speak>prev</speak>'),
       nextMark: vi.fn().mockReturnValue('<speak>nextMark</speak>'),
       prevMark: vi.fn().mockReturnValue('<speak>prevMark</speak>'),
@@ -226,6 +236,127 @@ describe('TTSController', () => {
     vi.restoreAllMocks();
   });
 
+  describe('iOS Web TTS silent audio ownership', () => {
+    beforeEach(() => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)',
+      );
+      releaseUnblock.mockClear();
+      unblock.mockClear();
+      speakingControllers.push(controller);
+    });
+
+    test('releases the silent audio once reading starts with Web TTS', async () => {
+      vi.mocked(TTSUtils.getPreferredClient).mockReturnValueOnce('web');
+      await controller.init();
+      await controller.initViewTTS(0);
+      expect(
+        releaseUnblock,
+        'the silent audio is left alone until reading starts',
+      ).not.toHaveBeenCalled();
+
+      await controller.speak('<speak>hello</speak>');
+
+      expect(controller.ttsClient).toBe(controller.ttsWebClient);
+      expect(releaseUnblock, 'the silent audio is released for Web TTS').toHaveBeenCalled();
+      expect(unblock, 'the silent audio stays released').not.toHaveBeenCalled();
+    });
+
+    test("releases it when the book's language picks Web TTS", async () => {
+      await controller.init();
+      await controller.initViewTTS(0);
+      expect(controller.ttsClient).toBe(controller.ttsEdgeClient);
+      expect(unblock, 'the silent audio is left alone until reading starts').not.toHaveBeenCalled();
+
+      vi.mocked(TTSUtils.getPreferredClientForLang).mockReturnValueOnce('web');
+      await controller.setLang('ja');
+      await controller.speak('<speak>hello</speak>');
+
+      expect(controller.ttsClient).toBe(controller.ttsWebClient);
+      expect(releaseUnblock, 'the silent audio is released for Web TTS').toHaveBeenCalled();
+      expect(unblock, 'the silent audio stays released').not.toHaveBeenCalled();
+    });
+
+    test('restores it when switching from Web TTS to Edge', async () => {
+      controller.ttsEdgeVoices = [{ id: 'edge-voice-1', name: 'Edge', lang: 'ja-JP' }];
+      await controller.initViewTTS(0);
+
+      await controller.setVoice('unknown-voice', 'ja');
+      await controller.start();
+      expect(controller.ttsClient).toBe(controller.ttsWebClient);
+      expect(releaseUnblock, 'the silent audio is released for Web TTS').toHaveBeenCalledTimes(1);
+
+      await controller.stop();
+      await controller.setVoice('edge-voice-1', 'ja');
+      await controller.start();
+      expect(controller.ttsClient).toBe(controller.ttsEdgeClient);
+      expect(unblock, 'the silent audio is restored for Edge').toHaveBeenCalledTimes(1);
+    });
+
+    test('plays the silent audio for a voice change only in the browser on iOS', () => {
+      controller.unblockSilentAudio();
+      expect(unblock, 'played in the browser on iOS').toHaveBeenCalledTimes(1);
+
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      );
+      controller.unblockSilentAudio();
+      expect(unblock, 'left alone on Windows').toHaveBeenCalledTimes(1);
+
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)',
+      );
+      const iosApp = new TTSController(createMockAppService(false, true), mockView, false);
+      iosApp.unblockSilentAudio();
+      expect(unblock, 'left alone in the iOS app').toHaveBeenCalledTimes(1);
+    });
+
+    test('leaves the silent audio alone for Web TTS on Windows', async () => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+      );
+      await controller.initViewTTS(0);
+
+      await controller.setVoice('unknown-voice', 'ja');
+      await controller.start();
+
+      expect(releaseUnblock).not.toHaveBeenCalled();
+      expect(unblock).not.toHaveBeenCalled();
+    });
+
+    // iPadOS Safari sends a desktop ("Macintosh") user agent.
+    test('releases it for Web TTS in the browser on iPad', async () => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15',
+      );
+      Object.defineProperty(navigator, 'maxTouchPoints', { value: 5, configurable: true });
+      try {
+        await controller.initViewTTS(0);
+
+        await controller.setVoice('unknown-voice', 'ja');
+        await controller.start();
+
+        expect(controller.ttsClient).toBe(controller.ttsWebClient);
+        expect(releaseUnblock, 'the silent audio is released on iPad').toHaveBeenCalled();
+      } finally {
+        Reflect.deleteProperty(navigator, 'maxTouchPoints');
+      }
+    });
+
+    test('leaves it alone for Web TTS in the browser on a Mac', async () => {
+      vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/26.0 Safari/605.1.15',
+      );
+      await controller.initViewTTS(0);
+
+      await controller.setVoice('unknown-voice', 'ja');
+      await controller.start();
+
+      expect(releaseUnblock).not.toHaveBeenCalled();
+      expect(unblock).not.toHaveBeenCalled();
+    });
+  });
+
   describe('constructor', () => {
     test('sets initial state to stopped', () => {
       expect(controller.state).toBe('stopped');
@@ -273,7 +404,32 @@ describe('TTSController', () => {
       expect(c.ttsNativeClient).not.toBeNull();
     });
 
-    test('does not create native client when neither Android nor iOS', () => {
+    test('creates and selects Linux system voices offline', async () => {
+      const linuxService = { ...createMockAppService(), isLinuxApp: true };
+      const c = new TTSController(linuxService, mockView);
+      expect(c.ttsNativeClient).not.toBeNull();
+      const voices = [{ id: 'speechd:espeak-ng:English', name: 'English', lang: 'en' }];
+      vi.mocked(c.ttsNativeClient!.getAllVoices).mockResolvedValue(voices);
+      vi.mocked(c.ttsEdgeClient.init).mockResolvedValue(false);
+      vi.mocked(c.ttsWebClient.init).mockResolvedValue(false);
+      await c.init();
+      expect(c.ttsNativeVoices).toEqual(voices);
+      expect(c.ttsClient).toBe(c.ttsNativeClient);
+      await c.setVoice(voices[0]!.id, 'en');
+      expect(c.ttsNativeClient!.setVoice).toHaveBeenCalledWith(voices[0]!.id);
+    });
+
+    test('keeps the other engines available when speech-dispatcher is unavailable', async () => {
+      const linuxService = { ...createMockAppService(), isLinuxApp: true };
+      const c = new TTSController(linuxService, mockView);
+      expect(c.ttsNativeClient).not.toBeNull();
+      vi.mocked(c.ttsNativeClient!.init).mockResolvedValue(false);
+      await c.init();
+      expect(c.ttsNativeVoices).toEqual([]);
+      expect(c.ttsClient).toBe(c.ttsEdgeClient);
+    });
+
+    test('does not create native client on other desktop platforms or web', () => {
       expect(controller.ttsNativeClient).toBeNull();
     });
 
@@ -387,7 +543,7 @@ describe('TTSController', () => {
 
       expect(controller.ttsClient.name).toBe('edge');
       expect(controller.state).toBe('setvoice-paused');
-      expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('edge');
+      expect(TTSUtils.setPreferredClient).toHaveBeenCalledWith('edge', '');
       expect(TTSUtils.setPreferredVoice).toHaveBeenCalledWith('edge', 'en', 'edge-voice-1');
     });
 
@@ -1463,6 +1619,115 @@ describe('TTSController', () => {
     });
   });
 
+  // Stepping back from the opening of a section (a PDF page, an EPUB chapter)
+  // lands on the end of the previous one, not on its first paragraph (#7065).
+  describe('stepping back into the previous section', () => {
+    const page = (text: string) => {
+      const doc = document.implementation.createHTMLDocument();
+      doc.body.innerHTML = text;
+      return doc;
+    };
+
+    let restoreMocks: () => void;
+    let pages: Document[];
+
+    beforeEach(async () => {
+      const { TTS: RealTTS } =
+        await vi.importActual<typeof import('foliate-js/tts.js')>('foliate-js/tts.js');
+      const { textWalker } = await vi.importActual<typeof import('foliate-js/text-walker.js')>(
+        'foliate-js/text-walker.js',
+      );
+      const { parseSSMLMarks } = await import('@/utils/ssml');
+      const { TTS } = await import('foliate-js/tts.js');
+      const mockedParse = vi.mocked(parseSSMLMarks).getMockImplementation()!;
+      const mockedTTS = vi.mocked(TTS).getMockImplementation()!;
+      restoreMocks = () => {
+        vi.mocked(parseSSMLMarks).mockImplementation(mockedParse);
+        vi.mocked(TTS).mockImplementation(mockedTTS);
+      };
+      // Like the real parser, a mark over punctuation alone is no mark.
+      vi.mocked(parseSSMLMarks).mockImplementation((ssml: string) => ({
+        plainText: '',
+        marks: [...ssml.matchAll(/<mark name="([^"]+)"\s*\/>([^<]*)/g)]
+          .filter(([, , text]) => !/^[\p{P}\p{S}\s]*$/u.test(text!))
+          .map(([, name, text]) => ({
+            offset: 0,
+            name: name!,
+            text: text!.trim(),
+            language: 'en',
+          })),
+      }));
+      vi.mocked(TTS).mockImplementation(function (doc: Document) {
+        return new RealTTS(doc, textWalker, () => NodeFilter.FILTER_ACCEPT, vi.fn(), 'sentence');
+      } as unknown as typeof TTS);
+      controller.ttsClient.getGranularities = vi.fn().mockReturnValue(['sentence']);
+
+      pages = [
+        page('<p>Page one opens.</p><p>Page one goes on. Page one ends.</p>'),
+        page('<p>Page two opens.</p>'),
+      ];
+      (mockView.renderer as unknown as Record<string, unknown>)['getContents'] = () => {
+        const index = controller.getSectionIndex() ?? 0;
+        return [{ doc: pages[index], index, overlayer: { remove: vi.fn(), add: vi.fn() } }];
+      };
+      await controller.initViewTTS(1);
+      mockView.tts!.start();
+    });
+
+    afterEach(() => restoreMocks());
+
+    test('the previous sentence is the last sentence of the previous section', async () => {
+      await controller.backward(true);
+
+      expect(controller.getSectionIndex()).toBe(0);
+      expect(mockView.tts!.getLastRange()?.toString()).toBe('Page one ends.');
+    });
+
+    test('the previous paragraph is the last paragraph of the previous section', async () => {
+      await controller.backward();
+
+      expect(controller.getSectionIndex()).toBe(0);
+      expect(mockView.tts!.resume()).toContain('Page one goes on.');
+    });
+
+    // A closing divider has no sentence to speak; landing on it would hand
+    // playback straight back to the page the user left.
+    const withDivider = () =>
+      page('<p>Page one opens.</p><p>Page one goes on. Page one ends.</p><p>***</p>');
+
+    test('the previous sentence passes over a closing block with nothing to speak', async () => {
+      pages[0] = withDivider();
+      await controller.backward(true);
+      expect(mockView.tts!.getLastRange()?.toString()).toBe('Page one ends.');
+    });
+
+    test('the previous paragraph passes over a closing block with nothing to speak', async () => {
+      pages[0] = withDivider();
+      await controller.backward();
+      expect(mockView.tts!.resume()).toContain('Page one goes on.');
+    });
+
+    const spokenMarks = () => {
+      const spoken: string[] = [];
+      controller.addEventListener('tts-speak-mark', (e) =>
+        spoken.push((e as CustomEvent<{ text: string }>).detail.text),
+      );
+      return spoken;
+    };
+
+    test('a paused step back by sentence shows the sentence it lands on', async () => {
+      const spoken = spokenMarks();
+      await controller.backward(true);
+      expect(spoken).toEqual(['Page one ends.']);
+    });
+
+    test('a paused step back by paragraph shows the paragraph it lands on', async () => {
+      const spoken = spokenMarks();
+      await controller.backward();
+      expect(spoken).toEqual(['Page one goes on.']);
+    });
+  });
+
   // A section too big to lay out whole is rendered in chunks (foliate-js
   // section-chunks.js); Read Aloud reads the rendered chunk.
   describe('chunked sections', () => {
@@ -2110,6 +2375,112 @@ describe('TTSController', () => {
       expect(startKeepAlive).toHaveBeenCalled();
     });
 
+    // The tone and the looping silent element each keep an audio output open,
+    // so a session left paused held one open for good and kept a sleeping BOOX
+    // from suspending (#7546). Transport still reaches the page for as long as
+    // Media3 keeps a paused player in the foreground.
+    test.each([
+      ['native', false],
+      ['Edge', true],
+    ] as const)('drops the keep-alive once a paused %s session has idled for ten minutes', async (_engine, buffered) => {
+      const c = await makeAndroidNativeController();
+      if (buffered) c.ttsClient = c.ttsEdgeClient;
+      vi.spyOn(c, 'forward').mockResolvedValue();
+      c.speak('<speak>hello</speak>');
+      await vi.waitFor(() => expect(c.state).toBe('playing'), { timeout: 5000 });
+      vi.useFakeTimers();
+      try {
+        await c.pause();
+        expect(startKeepAlive).toHaveBeenCalled();
+        stopKeepAlive.mockClear();
+        releaseUnblock.mockClear();
+
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000 - 1);
+        expect(stopKeepAlive).not.toHaveBeenCalled();
+        expect(releaseUnblock).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1);
+        expect(stopKeepAlive).toHaveBeenCalled();
+        expect(releaseUnblock).toHaveBeenCalled();
+        expect(c.state).toContain('paused');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    test('a session played again before the limit keeps its keep-alive', async () => {
+      const c = await makeAndroidNativeController();
+      vi.spyOn(c, 'forward').mockResolvedValue();
+      c.speak('<speak>hello</speak>');
+      await vi.waitFor(() => expect(c.state).toBe('playing'), { timeout: 5000 });
+      vi.useFakeTimers();
+      try {
+        await c.pause();
+        await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+        c.speak('<speak>hello again</speak>');
+        await vi.advanceTimersByTimeAsync(0);
+        expect(c.state).toBe('playing');
+        stopKeepAlive.mockClear();
+        releaseUnblock.mockClear();
+
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+        expect(stopKeepAlive).not.toHaveBeenCalled();
+        expect(releaseUnblock).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    test('a session parked by sentence-by-sentence mode drops the keep-alive after ten minutes', async () => {
+      const c = await makeAndroidNativeController();
+      let count = 0;
+      c.ttsClient.speak = vi.fn().mockImplementation(async function* (
+        _ssml: string,
+        _signal: AbortSignal,
+        preload?: boolean,
+      ): AsyncGenerator<TTSMessageEvent> {
+        if (preload || count++ > 0) return;
+        yield { code: 'end' };
+      });
+      c.pauseAfterSentence = true;
+      vi.useFakeTimers();
+      try {
+        await c.speak('<speak>hello</speak>');
+        await vi.advanceTimersByTimeAsync(0);
+        expect(c.state).toBe('forward-paused');
+        stopKeepAlive.mockClear();
+        releaseUnblock.mockClear();
+
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+        expect(stopKeepAlive).toHaveBeenCalled();
+        expect(releaseUnblock).toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    // A direct-speak engine that pauses in place (Web Speech) resumes through
+    // resume(), not a new speak(), so the tone dropped at the limit must come
+    // back there or the hidden page stalls between sentences again (#4408).
+    test('resuming in place after the limit restores the keep-alive', async () => {
+      const c = await makeAndroidNativeController();
+      vi.spyOn(c, 'forward').mockResolvedValue();
+      c.speak('<speak>hello</speak>');
+      await vi.waitFor(() => expect(c.state).toBe('playing'), { timeout: 5000 });
+      vi.useFakeTimers();
+      try {
+        await c.pause();
+        expect(c.state).toBe('paused');
+        await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
+        expect(stopKeepAlive).toHaveBeenCalled();
+        startKeepAlive.mockClear();
+
+        await c.resume();
+        expect(startKeepAlive).toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     test('does not keep the page awake while paused off Android', async () => {
       await controller.initViewTTS(0);
       vi.spyOn(controller, 'forward').mockResolvedValue();
@@ -2132,6 +2503,65 @@ describe('TTSController', () => {
 
       expect(stopKeepAlive).toHaveBeenCalled();
     });
+  });
+
+  test.each([
+    'preload',
+    'preprocess',
+  ] as const)('a skipped utterance awaiting %s cannot abort the speech that replaced it (#7065)', async (pendingStage) => {
+    await controller.initViewTTS(0);
+    controller.ttsClient = controller.ttsEdgeClient;
+    vi.spyOn(controller, 'preloadNextSSML').mockResolvedValue();
+    let finishOldPreload!: () => void;
+    const oldPreload = new Promise<void>((resolve) => {
+      finishOldPreload = resolve;
+    });
+    const preprocess = vi.fn(async (ssml: string) => {
+      if (pendingStage === 'preprocess' && ssml.includes('old')) await oldPreload;
+      return ssml;
+    });
+    controller.preprocessCallback = preprocess;
+    const playbackSignals: AbortSignal[] = [];
+    vi.mocked(controller.ttsClient.speak).mockImplementation(
+      async function* (ssml, signal, preload) {
+        if (preload) {
+          if (pendingStage === 'preload' && ssml.includes('old')) await oldPreload;
+          return;
+        }
+        playbackSignals.push(signal);
+        yield { code: 'boundary', mark: '0' };
+        if (!signal.aborted) {
+          await new Promise<void>((resolve) =>
+            signal.addEventListener('abort', () => resolve(), { once: true }),
+          );
+        }
+      },
+    );
+
+    await controller.speak('<speak>old uncached sentence</speak>');
+    await vi.waitFor(() => {
+      if (pendingStage === 'preload') {
+        expect(controller.ttsClient.speak).toHaveBeenCalledWith(
+          '<speak>old uncached sentence</speak>',
+          expect.anything(),
+          true,
+        );
+      } else {
+        expect(preprocess).toHaveBeenCalledWith('<speak>old uncached sentence</speak>');
+      }
+    });
+    await controller.forward(true);
+    await vi.waitFor(() => expect(playbackSignals).toHaveLength(1));
+    expect(playbackSignals[0]!.aborted).toBe(false);
+
+    finishOldPreload();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(
+      playbackSignals[0]!.aborted,
+      'finishing a skipped preload must leave the new utterance playing',
+    ).toBe(false);
+    expect(controller.state).toBe('playing');
+    expect(playbackSignals).toHaveLength(1);
   });
 
   describe('preloadSSML', () => {

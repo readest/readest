@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Library search must match Calibre custom column values (readest#4811):
 // the reporter categorizes children's books with a #recommends column
 // ("TOD" = toddler) and wants to find them by typing the value.

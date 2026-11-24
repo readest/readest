@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData } from '@/store/bookDataStore';
 import { useEnv } from '@/context/EnvContext';
 import { FoliateView } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
@@ -45,11 +45,10 @@ export interface ParagraphState {
 export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) => {
   const { envConfig } = useEnv();
   const { getViewSettings, setViewSettings, getProgress } = useReaderStore();
-  const { getBookData } = useBookDataStore();
 
   // Fixed-layout gate (D7): paragraph mode must never engage TTS sync for a
   // fixed-layout book. Mirrors how other reader code reads the flag.
-  const isFixedLayout = getBookData(bookKey)?.isFixedLayout ?? false;
+  const isFixedLayout = useBookData(bookKey)?.isFixedLayout ?? false;
 
   const iteratorRef = useRef<ParagraphIterator | null>(null);
   const currentDocIndexRef = useRef<number | undefined>(undefined);
@@ -515,7 +514,9 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
     try {
       await view.renderer.nextSection?.();
-      const newSectionReady = await waitForNewSection(oldDoc);
+      const newSectionReady =
+        (getPrimaryContent()?.doc !== oldDoc || !view.renderer.atEnd) &&
+        (await waitForNewSection(oldDoc));
 
       if (!newSectionReady) {
         pendingNavigationRef.current = null;
@@ -575,7 +576,9 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
 
     try {
       await view.renderer.prevSection?.();
-      const newSectionReady = await waitForNewSection(oldDoc);
+      const newSectionReady =
+        (getPrimaryContent()?.doc !== oldDoc || !view.renderer.atStart) &&
+        (await waitForNewSection(oldDoc));
 
       if (!newSectionReady) {
         pendingNavigationRef.current = null;
@@ -772,23 +775,25 @@ export const useParagraphMode = ({ bookKey, viewRef }: UseParagraphModeProps) =>
       }
     };
 
-    const handleNext = (event: CustomEvent) => {
-      if (event.detail?.bookKey === bookKeyRef.current && paragraphConfig.enabled) {
-        goToNextParagraph();
-      }
+    let active = true;
+    let navigation = Promise.resolve();
+    const enqueueNavigation = (event: CustomEvent, move: () => Promise<boolean>) => {
+      if (event.detail?.bookKey !== bookKeyRef.current || !paragraphConfig.enabled) return;
+      const result = navigation.then(async () => {
+        if (active) await move();
+      });
+      navigation = result.catch(() => {});
+      return result;
     };
-
-    const handlePrev = (event: CustomEvent) => {
-      if (event.detail?.bookKey === bookKeyRef.current && paragraphConfig.enabled) {
-        goToPrevParagraph();
-      }
-    };
+    const handleNext = (event: CustomEvent) => enqueueNavigation(event, goToNextParagraph);
+    const handlePrev = (event: CustomEvent) => enqueueNavigation(event, goToPrevParagraph);
 
     eventDispatcher.on('toggle-paragraph-mode', handleToggle);
     eventDispatcher.on('paragraph-next', handleNext);
     eventDispatcher.on('paragraph-prev', handlePrev);
 
     return () => {
+      active = false;
       eventDispatcher.off('toggle-paragraph-mode', handleToggle);
       eventDispatcher.off('paragraph-next', handleNext);
       eventDispatcher.off('paragraph-prev', handlePrev);

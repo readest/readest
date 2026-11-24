@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock isomorphic-ws so that if the legacy (non-fetch) path is hit on
@@ -21,7 +22,30 @@ vi.mock('@/utils/supabase', () => ({
   createSupabaseAdminClient: () => ({}),
 }));
 
+// The Workers path opens its socket through cloudflare:sockets; its frame
+// handling has its own tests in workersWebSocket.test.ts.
+vi.mock('@/libs/workersWebSocket', () => ({ connectWorkersWebSocket: vi.fn() }));
+
+// Records where a promise stands: 'pending', 'resolved', or its rejection message.
+const track = (promise: Promise<unknown>) => {
+  const outcome = { state: 'pending' };
+  promise.then(
+    () => {
+      outcome.state = 'resolved';
+    },
+    (err: Error) => {
+      outcome.state = err.message;
+    },
+  );
+  return outcome;
+};
+
 type GlobalWithWsPair = typeof globalThis & { WebSocketPair?: unknown };
+
+const mockWorkersSocket = async (socket: unknown) => {
+  const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
+  return vi.mocked(connectWorkersWebSocket).mockResolvedValue(socket as never);
+};
 
 describe('EdgeSpeechTTS on Cloudflare Workers', () => {
   let originalWebSocketPair: unknown;
@@ -47,7 +71,7 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
     vi.restoreAllMocks();
   });
 
-  test('uses fetch-based WebSocket upgrade and returns audio Response', async () => {
+  test('opens a raw socket instead of a fetch() upgrade and returns audio Response', async () => {
     // Build a mock WebSocket that records listeners and emits a frame
     // containing valid audio after both speech.config and ssml are sent.
     const listeners: Record<string, Array<(event: unknown) => void>> = {};
@@ -87,11 +111,11 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
       }
     });
 
-    const fetchSpy = vi.fn().mockResolvedValue({
-      status: 101,
-      webSocket: mockSocket,
-    });
+    // Cloudflare's fetch() upgrade gets a plain HTTP 200 from
+    // api.msedgeservices.com; the same handshake over a raw socket upgrades.
+    const fetchSpy = vi.fn().mockResolvedValue({ status: 200 });
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
+    const connectSpy = await mockWorkersSocket(mockSocket);
 
     // Import AFTER the mocks and globals are set up.
     const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
@@ -108,24 +132,18 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
     const buffer = await response.arrayBuffer();
     expect(new Uint8Array(buffer)).toEqual(new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd]));
 
-    // fetch should be called once with an https URL and an Upgrade header.
-    expect(fetchSpy).toHaveBeenCalledOnce();
-    const call = fetchSpy.mock.calls[0]!;
-    const calledUrl = call[0] as string | URL;
-    const calledInit = call[1] as RequestInit;
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(connectSpy).toHaveBeenCalledOnce();
+    const [calledUrl, headers] = connectSpy.mock.calls[0]!;
     // speech.platform.bing.com now rejects the handshake with 403 in many
     // regions; Edge Read Aloud moved to api.msedgeservices.com, which takes
     // the client token as Ocp-Apim-Subscription-Key.
-    expect(String(calledUrl)).toContain(
-      'https://api.msedgeservices.com/tts/cognitiveservices/websocket/v1?',
-    );
-    expect(String(calledUrl)).toContain('Ocp-Apim-Subscription-Key=');
-    expect(String(calledUrl)).not.toContain('TrustedClientToken=');
-    expect(String(calledUrl)).not.toContain('wss://');
-    const headers = calledInit.headers as Record<string, string>;
-    expect(headers['Upgrade']).toBe('websocket');
+    expect(calledUrl).toContain('wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1?');
+    expect(calledUrl).toContain('Ocp-Apim-Subscription-Key=');
+    expect(calledUrl).not.toContain('TrustedClientToken=');
+    expect(headers['User-Agent']).toContain('Edg/');
 
-    // The WebSocket returned by fetch must be accepted before use, and both
+    // The socket must be accepted before use, and both
     // the speech.config and ssml messages must be sent.
     expect(mockSocket.accept).toHaveBeenCalledOnce();
     expect(mockSocket.send).toHaveBeenCalledTimes(2);
@@ -178,11 +196,7 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
       }
     });
 
-    const fetchSpy = vi.fn().mockResolvedValue({
-      status: 101,
-      webSocket: mockSocket,
-    });
-    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+    await mockWorkersSocket(mockSocket);
 
     const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
     const tts = new EdgeSpeechTTS('wss');
@@ -201,12 +215,11 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
     expect(mockSocket.close).toHaveBeenCalled();
   });
 
-  test('rejects when fetch upgrade returns non-101 status', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({
-      status: 403,
-      webSocket: undefined,
-    });
-    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+  test('rejects when the socket upgrade fails', async () => {
+    const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
+    vi.mocked(connectWorkersWebSocket).mockRejectedValue(
+      new Error('WebSocket upgrade failed with status 403'),
+    );
 
     const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
     const tts = new EdgeSpeechTTS('wss');
@@ -218,7 +231,53 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
         rate: 1.0,
         pitch: 1.0,
       }),
-    ).rejects.toThrow();
+    ).rejects.toThrow('WebSocket upgrade failed with status 403');
+  });
+
+  describe('a stalled Edge connection', () => {
+    const payload = { lang: 'en-US', text: 'hello', voice: 'en-US-AriaNeural', rate: 1, pitch: 1 };
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    test('fails after 30s when the connect never completes', async () => {
+      const { connectWorkersWebSocket } = await import('@/libs/workersWebSocket');
+      const connect = vi
+        .mocked(connectWorkersWebSocket)
+        .mockClear()
+        .mockReturnValue(new Promise(() => {}));
+      const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+      vi.useFakeTimers();
+      const created = new EdgeSpeechTTS('wss').create(payload);
+      const outcome = track(created);
+      await vi.waitFor(() => expect(connect).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(outcome.state).toBe('WebSocket timed out waiting for audio.');
+      // And the half-open connection is released, not left for the retry.
+      const signal = connect.mock.calls[0]![2] as AbortSignal | undefined;
+      expect(signal?.aborted).toBe(true);
+    });
+
+    test('fails after 30s of silence once the request is sent, and closes the socket', async () => {
+      const socket = {
+        accept: vi.fn(),
+        send: vi.fn(),
+        close: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      };
+      await mockWorkersSocket(socket);
+      const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+      vi.useFakeTimers();
+      const created = new EdgeSpeechTTS('wss').create(payload);
+      const outcome = track(created);
+      await vi.waitFor(() => expect(socket.send).toHaveBeenCalled());
+      await vi.advanceTimersByTimeAsync(29_000);
+      expect(outcome.state).toBe('pending');
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(outcome.state).toBe('WebSocket timed out waiting for audio.');
+      expect(socket.close).toHaveBeenCalled();
+    });
   });
 
   test('captures word boundaries from audio.metadata frames', async () => {
@@ -267,9 +326,7 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
       }
     });
 
-    globalThis.fetch = vi
-      .fn()
-      .mockResolvedValue({ status: 101, webSocket: mockSocket }) as unknown as typeof fetch;
+    await mockWorkersSocket(mockSocket);
 
     const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
     const tts = new EdgeSpeechTTS('wss');
@@ -287,6 +344,23 @@ describe('EdgeSpeechTTS on Cloudflare Workers', () => {
   });
 });
 
+describe('EdgeSpeechTTS outside Cloudflare Workers', () => {
+  test('does not load the Workers socket module', async () => {
+    // node.readest.com (Vercel) and the clients never take the Workers path,
+    // so loading edgeTTS must not evaluate the cloudflare:sockets client.
+    vi.resetModules();
+    vi.doMock('@/libs/workersWebSocket', () => {
+      throw new Error('workersWebSocket loaded outside Workers');
+    });
+    try {
+      await expect(import('@/libs/edgeTTS')).resolves.toHaveProperty('EdgeSpeechTTS');
+    } finally {
+      vi.doUnmock('@/libs/workersWebSocket');
+      vi.resetModules();
+    }
+  });
+});
+
 describe('EdgeSpeechTTS.voices', () => {
   test('a multilingual or expressive voice is named without the suffix, which becomes its variant', async () => {
     const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
@@ -296,6 +370,7 @@ describe('EdgeSpeechTTS.voices', () => {
       name: 'Andrew',
       lang: 'en-US',
       variant: 'multilingual',
+      gender: 'male',
     });
     expect(byId('en-IN-NeerjaExpressiveNeural')).toMatchObject({
       name: 'Neerja',
@@ -305,7 +380,16 @@ describe('EdgeSpeechTTS.voices', () => {
       id: 'en-US-AndrewNeural',
       name: 'Andrew',
       lang: 'en-US',
+      gender: 'male',
     });
+  });
+
+  test('every voice carries its gender', async () => {
+    const { EdgeSpeechTTS } = await import('@/libs/edgeTTS');
+    const byId = (id: string) => EdgeSpeechTTS.voices.find((v) => v.id === id)!;
+    expect(byId('en-US-AriaNeural').gender).toBe('female');
+    expect(byId('zh-CN-YunxiNeural').gender).toBe('male');
+    expect(EdgeSpeechTTS.voices.filter((v) => !v.gender).map((v) => v.id)).toEqual([]);
   });
 });
 

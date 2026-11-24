@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { PLUGIN_PROTOCOL_VERSION } from '@/services/plugins/contract';
 import { bundledPluginCatalog, findDictionaryFormatPlugin } from '@/services/plugins/catalog';

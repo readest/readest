@@ -44,6 +44,17 @@ UNCOMMITTED simulator edits on `readest-e2e-fixes`: `ESP_ERR_NVS_NOT_FOUND`, `nv
 "release server" (`python3 -m http.server 8788` over `releases/latest.json` + `releases/v<v>/<zip>`) stands
 in for download.readest.com when testing the plugin's self-update.
 
+**2.0.0 rebuild (2026-11-04):** firmware branch `sim/v2.0.0` = tag 2.0.0, NO local commits (macOS 27 has float
+`from_chars`, so cad2246 isn't needed; upstream sim ships the wolfssl shims, so `-Isim-shims` is OFF). Simulator branch
+`readest-e2e-v2` = upstream main 4c78f3f + 337a705 (HTTPClient::begin clears headers, `<sys/time.h>`); old uncommitted
+edits saved on `readest-e2e-fixes-1003`. `platformio.local.ini` regenerated from the new sample (old one:
+`platformio.local.develop-1003.ini`, old SD + binary in `~/dev/crosspoint/backup-develop-1003/`). Build `pio run -e simulator`
+(~90 s). sim.sh defaults `SDL_VIDEODRIVER=dummy`. SD: `fs_/books/sample-alice.epub` (== repo fixture), `koreader.json`
+serverUrl `http://127.0.0.1:8787/api/crosspoint`, password `sim-password`, `syncClippings:true`. Reader menu: Select Chapter,
+Toggle Bookmark, Create Clipping, View Clippings (once one exists), ...; Sync Progress = RIGHT x11 with a clipping (x12 hits
+Delete Book Cache). Create clipping: `3000:BACK;6000:ENTER;7000:RIGHT;7600:RIGHT;8500:ENTER;10000:RIGHT;10600:ENTER;12000:RIGHT;12600:RIGHT;13200:RIGHT;14500:ENTER`.
+Delete in View Clippings = hold ENTER 1200 ms, then RIGHT + ENTER on "Delete". `e2e/fake-readest.mjs` now has the clippings routes.
+
 **Real routes in the sim (no Docker, never the prod Supabase in .env):** a TEMPORARY
 `src/__tests__/zz-*.test.ts` with `// @vitest-environment node` that `vi.mock`s `@/utils/supabase` with an
 in-memory query builder (eq/is/not/lt/gt/or(eq,ilike)/upsert onConflict/...), mocks `@/utils/access`

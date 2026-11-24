@@ -114,7 +114,9 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
           <div
             className={clsx(
               'selection-buttons flex h-full w-full items-center justify-between p-2',
-              isVertical ? 'flex-col overflow-y-auto' : 'flex-row overflow-x-auto',
+              isVertical
+                ? 'flex-col overflow-y-auto'
+                : 'flex-row overflow-x-auto overflow-y-hidden',
               (notes.length > 0 || noteEditor) && 'hidden',
             )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -147,18 +149,21 @@ const AnnotationPopup: React.FC<AnnotationPopupProps> = ({
               )}
               // Anchored to the popup's triangle edge and grown away from it,
               // exactly like AnnotationNotes, so the editor covers the toolbar
-              // instead of drifting off the selection.
+              // instead of drifting off the selection. -1px steps over the
+              // popup box's border so the two edges coincide.
               style={
                 isVertical
                   ? {
-                      right: trianglePosition.dir === 'left' ? 0 : undefined,
-                      left: trianglePosition.dir === 'right' ? 0 : undefined,
+                      right: trianglePosition.dir === 'left' ? '-1px' : undefined,
+                      left: trianglePosition.dir === 'right' ? '-1px' : undefined,
+                      top: '-1px',
                       height: `${boxHeight}px`,
                       width: `${noteEditorSize}px`,
                     }
                   : {
-                      top: trianglePosition.dir === 'down' ? 0 : undefined,
-                      bottom: trianglePosition.dir === 'up' ? 0 : undefined,
+                      top: trianglePosition.dir === 'down' ? '-1px' : undefined,
+                      bottom: trianglePosition.dir === 'up' ? '-1px' : undefined,
+                      left: '-1px',
                       width: `${boxWidth}px`,
                       height: `${noteEditorSize}px`,
                     }

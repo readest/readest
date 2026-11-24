@@ -6,18 +6,31 @@ import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookProgress } from '@/store/readerProgressStore';
+import { useReaderProgressStore } from '@/store/readerProgressStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useDrag } from '@/hooks/useDrag';
 import { getGridTemplate, getInsetEdges } from '@/utils/grid';
-import { expectsColumnSpread } from '@/utils/config';
-import { getPageAreaInsets, getReadingScreenInsets, getSpreadColumnGap } from '@/utils/insets';
+import { getRendererLayout, isRendererSpread } from '@/utils/duo';
+import { useDuoPose } from '@/hooks/useDuoPose';
+import {
+  getPageAreaInsets,
+  getReadingScreenInsets,
+  getRecordedScreenInsets,
+  getSpreadColumnGap,
+} from '@/utils/insets';
 import { tauriSetWindowTitle } from '@/utils/window';
 import { useContentInsets } from '../hooks/useContentInsets';
 import { usePageOverflow } from '../hooks/usePageOverflow';
-import { type BottomCornerRadii, getCellCornerRadii, NO_CORNERS } from '../utils/footerBand';
+import {
+  type BottomCornerRadii,
+  footerReservesBand,
+  getCellCornerRadii,
+  NO_CORNERS,
+} from '../utils/footerBand';
 import SearchResultsNav from './sidebar/SearchResultsNav';
+import VimCommandLine from './VimCommandLine';
 import BooknotesNav from './sidebar/BooknotesNav';
 import FoliateViewer from './FoliateViewer';
 import HandwritingOverlay from './handwriting/HandwritingOverlay';
@@ -58,9 +71,10 @@ interface BooksGridProps {
  *     ("Animation Frame Fired" 2.6 s / 27 %).
  *
  * What this fixes:
- *   - Each BookCell subscribes only to its own book's progress via
- *     `useBookProgress(bookKey)`. A page turn re-renders one BookCell,
- *     not the entire grid.
+ *   - Each BookCell subscribes only to what it renders from its own
+ *     book's progress (the section label, and the column count after a
+ *     re-layout). A turn within a section re-renders no BookCell; a turn
+ *     into a new section re-renders one, not the entire grid.
  *   - `gridInsets` and `contentInsets` are memoized off their numeric
  *     inputs so children get stable prop references across renders.
  *   - The dropdown handler is built via useCallback so HeaderBar's
@@ -73,8 +87,9 @@ interface BookCellProps {
   bookKey: string;
   index: number;
   gridInsets: Insets;
-  // The cell's live insets, for the toolbar chrome that shows with the status
-  // bar; gridInsets are the reading page's (see getReadingScreenInsets). The
+  // The cell's insets for the toolbar chrome that shows with the status bar:
+  // on iPhone Duo those recorded with the status bar shown, elsewhere the live
+  // ones. gridInsets are the reading page's (see getReadingScreenInsets). The
   // same as gridInsets except on iPhone Duo.
   chromeInsets: Insets;
   // Both of the cell's side edges are screen edges (a full-width cell).
@@ -112,22 +127,21 @@ const BookCellInner: React.FC<BookCellProps> = ({
   const getConfig = useBookDataStore((s) => s.getConfig);
   const getBookData = useBookDataStore((s) => s.getBookData);
 
-  // Per-cell reactive subscriptions. This cell re-renders when THIS book's
-  // progress changes (page turns) OR its view state changes. Both are
-  // needed: viewState carries `viewSettings` and `ribbonVisible`, which
-  // gate the chrome this cell mounts (Show Header / Show Footer, Double
-  // Border, bookmark Ribbon). Those settings save with applyStyles=false
-  // and the ribbon toggle writes no progress, so without a viewState
-  // subscription the toggles wouldn't take effect until the next page turn.
-  //
-  // Subscribing to the per-book slice is safe now that progress lives in
-  // its own store: `viewStates[key]` only bumps on low-frequency events
-  // (settings toggles, ribbon, init, sync), never on the per-swipe
-  // relocate path — so this does NOT reintroduce the commit storm the
-  // progress-store split removed.
-  const progress = useBookProgress(bookKey);
+  // Per-cell reactive subscriptions. viewState carries `viewSettings` and
+  // `ribbonVisible`, which gate the chrome this cell mounts (Show Header / Show
+  // Footer, Double Border, bookmark Ribbon). Those settings save with
+  // applyStyles=false and the ribbon toggle writes no progress, so the cell
+  // subscribes to them itself. `viewStates[key]` only bumps on low-frequency
+  // events (settings toggles, ribbon, init, sync), never on a page turn.
   const viewState = useReaderStore((s) => s.viewStates[bookKey]);
   const getView = useReaderStore((s) => s.getView);
+  // Of the reading position, the cell renders only the column count and window
+  // width that the relocate after a re-layout brings. A turn changes neither, so
+  // it re-renders neither the cell nor the chrome it holds: SectionInfo,
+  // FooterBar, ProgressBar, ReadingRuler and the rest subscribe to the progress
+  // they show.
+  const columnCount = useReaderProgressStore(() => getView(bookKey)?.renderer?.columnCount ?? 1);
+  const windowWidth = useReaderProgressStore(() => window.innerWidth);
   const viewSettings = viewState?.viewSettings ?? null;
 
   // On iPhone Duo a two-column spread is centred on the display (spine on the
@@ -136,20 +150,28 @@ const BookCellInner: React.FC<BookCellProps> = ({
   // inset on their outer edge only, so a symmetric pad would leave a dead band
   // against their neighbour. Off the Duo the cell's insets are used as they are.
   const isIPhoneDuo = useThemeStore((s) => s.isIPhoneDuo);
+  const duoFold = useThemeStore((s) => s.duoFold);
+  const duoPose = useDuoPose();
+  const isFixedLayout = !!getBookData(bookKey)?.isFixedLayout;
+  const pageWidth = windowWidth - cellInsets.left - cellInsets.right;
+  const rendererLayout = viewSettings
+    ? getRendererLayout(viewSettings, duoPose, pageWidth, duoFold)
+    : null;
   const isSpread =
     isIPhoneDuo &&
     spansWidth &&
     !!viewSettings &&
-    expectsColumnSpread(viewSettings, window.innerWidth - cellInsets.left - cellInsets.right);
+    !!rendererLayout &&
+    isRendererSpread(viewSettings, rendererLayout, duoPose, isFixedLayout, pageWidth);
   const gridInsets = useMemo(() => getPageAreaInsets(cellInsets, isSpread), [cellInsets, isSpread]);
   const chromeGridInsets = useMemo(
     () => getPageAreaInsets(chromeCellInsets, isSpread),
     [chromeCellInsets, isSpread],
   );
 
-  // config / bookData are read imperatively: their relevant fields are
-  // written alongside progress (setProgress / saveConfig), so the
-  // subscriptions above already drive the re-render that picks them up.
+  // config / bookData are read imperatively. FoliateViewer reads the config
+  // only when it opens the book (a recreated viewer re-renders the cell through
+  // viewerKey, and reads the latest location then).
   const bookData = getBookData(bookKey);
   const config = getConfig(bookKey);
   const { book, bookDoc } = bookData || {};
@@ -179,11 +201,13 @@ const BookCellInner: React.FC<BookCellProps> = ({
 
   if (!book || !config || !bookDoc || !viewSettings || !viewState) return null;
 
-  const { section, pageinfo, sectionLabel } = progress || {};
   const viewerKey = viewState.viewerKey;
   const horizontalGapPercent = viewSettings.gapPercent;
-  // Read on each relocate, which also follows a 1 <-> 2 column re-layout.
-  const columnGap = getSpreadColumnGap(viewSettings, getView(bookKey)?.renderer?.columnCount ?? 1);
+  // The gap the renderer was given, widened over the fold on iPhone Duo.
+  const columnGap = getSpreadColumnGap(
+    { ...viewSettings, columnGapPx: rendererLayout?.columnGapPx ?? viewSettings.columnGapPx },
+    columnCount,
+  );
   const showHeader = viewSettings.showHeader;
   const showFooter = viewSettings.showFooter;
 
@@ -233,7 +257,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
               <div
                 className='bg-base-100 absolute left-0 top-0 h-full'
                 style={{
-                  width: `calc(${contentInsets.left + (viewSettings.doubleBorder ? 32 : 0)}px)`,
+                  width: `calc(${Math.max(footerReservesBand(viewSettings) ? 16 : 0, contentInsets.left) + (viewSettings.doubleBorder ? 32 : 0)}px)`,
                   height: `calc(100%)`,
                 }}
               />
@@ -242,7 +266,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
               <div
                 className='bg-base-100 absolute right-0 top-0 h-full'
                 style={{
-                  width: `calc(${contentInsets.right + (viewSettings.doubleBorder ? 32 : 0)}px)`,
+                  width: `calc(${Math.max(showHeader ? 16 : 0, contentInsets.right) + (viewSettings.doubleBorder ? 32 : 0)}px)`,
                   height: `calc(100%)`,
                 }}
               />
@@ -255,13 +279,16 @@ const BookCellInner: React.FC<BookCellProps> = ({
             showFooter={showFooter}
             borderColor={viewSettings.borderColor}
             horizontalGap={horizontalGapPercent}
-            insets={viewInsets}
+            insets={{
+              ...viewInsets,
+              top: gridInsets.top + viewInsets.top,
+              bottom: gridInsets.bottom + viewInsets.bottom,
+            }}
           />
         )}
         {showHeader && (
           <SectionInfo
             bookKey={bookKey}
-            section={sectionLabel}
             showDoubleBorder={viewSettings.vertical && viewSettings.doubleBorder}
             isScrolled={viewSettings.scrolled}
             isVertical={viewSettings.vertical}
@@ -315,6 +342,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
       <BookmarkPullDown bookKey={bookKey} ribbonHidden={!!hoveredBookKey} slideRef={slideRef} />
       <PageNavigationButtons bookKey={bookKey} isDropdownOpen={isDropdownOpen} />
       <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />
+      <VimCommandLine bookKey={bookKey} gridInsets={gridInsets} />
       <BooknotesNav bookKey={bookKey} gridInsets={gridInsets} toc={bookDoc.toc || []} />
       <FootnotePopup bookKey={bookKey} bookDoc={bookDoc} gridInsets={gridInsets} />
       {/* After FootnotePopup so the lookup popups stack above the footnote
@@ -325,8 +353,6 @@ const BookCellInner: React.FC<BookCellProps> = ({
       <FooterBar
         bookKey={bookKey}
         bookFormat={book.format}
-        section={section}
-        pageinfo={pageinfo}
         isHoveredAnim={false}
         gridInsets={chromeGridInsets}
       />
@@ -355,6 +381,11 @@ const cellSpansWidth = (index: number, count: number, aspectRatio: number) => {
   return left && right;
 };
 
+// Each of two books keeps at least this share of the screen, in percent.
+const MIN_SPLIT = 20;
+const clampSplit = (percent: number) =>
+  Math.round(Math.min(100 - MIN_SPLIT, Math.max(MIN_SPLIT, percent)));
+
 const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibrary }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -370,12 +401,46 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
   const {
     safeAreaInsets: screenInsets,
     statusBarHiddenInsets,
+    statusBarShownInsets,
     isIPhoneDuo,
     screenCornerRadius,
   } = useThemeStore();
   const alwaysShowStatusBar = useSettingsStore((s) => s.settings.alwaysShowStatusBar);
   const aspectRatio = window.innerWidth / window.innerHeight;
-  const gridTemplate = getGridTemplate(bookKeys.length, aspectRatio);
+  // Two books share the screen at the split the reader drags the divider to
+  // (#4991); side by side, or stacked on a portrait screen.
+  const [split, setSplit] = useState<number | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const isStacked = aspectRatio < 1;
+  const gridTemplate = getGridTemplate(bookKeys.length, aspectRatio, split);
+  const isRtl = () => !!gridRef.current && getComputedStyle(gridRef.current).direction === 'rtl';
+  // Where the divider was grabbed: it moves with the pointer from there, so a
+  // press off the seam doesn't make it jump.
+  const splitDragStartRef = useRef({ x: 0, y: 0, split: 50 });
+  const { handleDragStart, handleDragKeyDown: handleSplitKeyDown } = useDrag(
+    ({ clientX, clientY }) => {
+      const rect = gridRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const start = splitDragStartRef.current;
+      const moved = isStacked
+        ? (clientY - start.y) / rect.height
+        : (isRtl() ? start.x - clientX : clientX - start.x) / rect.width;
+      setSplit(clampSplit(start.split + moved * 100));
+    },
+    ({ key, step }) => {
+      const forward = isStacked ? 'ArrowDown' : isRtl() ? 'ArrowLeft' : 'ArrowRight';
+      const back = isStacked ? 'ArrowUp' : isRtl() ? 'ArrowRight' : 'ArrowLeft';
+      const delta = key === forward ? step : key === back ? -step : 0;
+      setSplit((prev) => clampSplit((prev ?? 50) + delta * 100));
+    },
+    undefined,
+    isStacked ? 'row-resize' : 'col-resize',
+  );
+  const handleSplitDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const point = 'touches' in e ? e.touches[0]! : e;
+    splitDragStartRef.current = { x: point.clientX, y: point.clientY, split: split ?? 50 };
+    handleDragStart(e);
+  };
 
   useEffect(() => {
     if (!sideBarBookKey) return;
@@ -395,15 +460,31 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
   // to BookCell.gridInsets, and BookCell is React.memo'd. As long as
   // bookKeys / screenInsets / aspectRatio don't change, the cells'
   // gridInsets props stay reference-equal across renders.
+  // On iPhone Duo the toolbars keep the insets seen with the status bar shown:
+  // the strip shows and hides with them, and its live inset lands a moment
+  // after each, which would move them on every toggle.
+  const chromeScreenInsets = useMemo(
+    () =>
+      isIPhoneDuo && !alwaysShowStatusBar && screenInsets
+        ? getReadingScreenInsets(
+            screenInsets,
+            getRecordedScreenInsets(statusBarShownInsets, window.innerWidth, window.innerHeight),
+            window.innerWidth,
+            window.innerHeight,
+          )
+        : screenInsets,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [screenInsets, statusBarShownInsets, isIPhoneDuo, alwaysShowStatusBar, aspectRatio],
+  );
   const perBookChromeInsets = useMemo<Insets[]>(
-    () => getPerBookInsets(bookKeys, screenInsets, aspectRatio),
+    () => getPerBookInsets(bookKeys, chromeScreenInsets, aspectRatio),
     // aspectRatio is recomputed every render but its value is window-derived
     // and won't change between resizes; including it explicitly so an
     // orientation change still busts the cache.
-    [bookKeys, screenInsets, aspectRatio],
+    [bookKeys, chromeScreenInsets, aspectRatio],
   );
-  // On iPhone Duo the reading page keeps the side insets seen with the status
-  // bar hidden, so showing the toolbar (and with it the status strip) does not
+  // On iPhone Duo the reading page keeps the top and side insets seen with the
+  // status bar hidden, so showing the toolbar (and with it the status strip) does not
   // re-paginate. Elsewhere there is no record to apply: the page and the chrome
   // share the live insets.
   const perBookGridInsets = useMemo<Insets[]>(() => {
@@ -411,7 +492,9 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
       screenInsets &&
       getReadingScreenInsets(
         screenInsets,
-        isIPhoneDuo && !alwaysShowStatusBar ? statusBarHiddenInsets : null,
+        isIPhoneDuo && !alwaysShowStatusBar
+          ? getRecordedScreenInsets(statusBarHiddenInsets, window.innerWidth, window.innerHeight)
+          : null,
         window.innerWidth,
         window.innerHeight,
       );
@@ -456,10 +539,14 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
     gridTemplateRows: gridTemplate.rows,
   };
   const isHoveredAnim = bookKeys.length > 2;
+  // Stacked, a shown header starts its buttons 6px below the seam: while a
+  // book's bars are shown, the divider keeps to the 12px between them.
+  const barsAtSeam = isStacked && (!!hoveredBookKey || !!dropdownOpenBook);
   const appServiceHasRoundedWindow = !!appService?.hasRoundedWindow;
 
   return (
     <div
+      ref={gridRef}
       className={clsx('books-grid bg-base-100 relative grid h-full grow')}
       style={gridStyle}
       role='main'
@@ -473,7 +560,7 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
           gridInsets={perBookGridInsets[index]!}
           chromeInsets={perBookChromeInsets[index]!}
           spansWidth={cellSpansWidth(index, bookKeys.length, aspectRatio)}
-          screenInsets={screenInsets}
+          screenInsets={chromeScreenInsets ?? screenInsets}
           cornerRadii={perBookCornerRadii[index] ?? NO_CORNERS}
           appServiceHasRoundedWindow={appServiceHasRoundedWindow}
           isHoveredAnim={isHoveredAnim}
@@ -484,6 +571,31 @@ const BooksGrid: React.FC<BooksGridProps> = ({ bookKeys, onCloseBook, onGoToLibr
           onGoToLibrary={onGoToLibrary}
         />
       ))}
+      {bookKeys.length === 2 && (
+        <div
+          role='slider'
+          tabIndex={0}
+          aria-label={_('Resize Books')}
+          aria-orientation={isStacked ? 'vertical' : 'horizontal'}
+          aria-valuenow={split ?? 50}
+          aria-valuemin={MIN_SPLIT}
+          aria-valuemax={100 - MIN_SPLIT}
+          className={clsx(
+            'drag-handle absolute z-10 flex items-center justify-center',
+            isStacked
+              ? ['inset-x-0 cursor-row-resize', barsAtSeam ? '-mt-1.5 h-3' : '-mt-4 h-8']
+              : 'inset-y-0 -ms-4 w-8 cursor-col-resize',
+          )}
+          style={isStacked ? { top: `${split ?? 50}%` } : { insetInlineStart: `${split ?? 50}%` }}
+          onMouseDown={handleSplitDragStart}
+          onTouchStart={handleSplitDragStart}
+          onKeyDown={handleSplitKeyDown}
+        >
+          <div
+            className={clsx('bg-base-content/50 rounded-full', isStacked ? 'h-1 w-10' : 'h-10 w-1')}
+          />
+        </div>
+      )}
     </div>
   );
 };

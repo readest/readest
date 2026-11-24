@@ -249,6 +249,30 @@ pub struct GetSafeAreaInsetsResponse {
     /// iOS: whether the root view controller currently hides the status bar.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_bar_hidden: Option<bool>,
+    /// iPhone Duo: hinge status and folding region; absent elsewhere.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fold: Option<FoldState>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FoldState {
+    /// `closed`, `partial`, `open` or `unknown`.
+    pub status: String,
+    /// Whether the folding region currently divides the display.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub region_active: Option<bool>,
+    /// The folding region in window points (CSS px).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub region: Option<FoldRegion>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct FoldRegion {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -332,6 +356,35 @@ pub struct OpenExternalUrlResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ShowLookupPopoverRequest {
     pub word: String,
+    /// iOS only. Omitted by older clients to keep the compact presentation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub full_screen: Option<bool>,
+}
+
+/// Android: an app that handles `ACTION_PROCESS_TEXT`, for the lookup app picker.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LookupApp {
+    pub package_name: String,
+    pub class_name: String,
+    pub label: String,
+    pub selected: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetLookupAppsResponse {
+    pub apps: Vec<LookupApp>,
+}
+
+/// Android: the app lookups go to; both fields omitted clears the choice.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SetLookupAppRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub package_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub class_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -448,6 +501,10 @@ pub struct WebBrowserRequest {
     pub download_dir: String,
     pub capture_script: String,
     #[serde(default)]
+    pub select_image: Option<bool>,
+    #[serde(default)]
+    pub image_selection_script: String,
+    #[serde(default)]
     pub background: Option<String>,
     #[serde(default)]
     pub foreground: Option<String>,
@@ -465,6 +522,26 @@ pub struct WebBrowserResponse {
     pub open_book_hash: Option<String>,
     #[serde(default)]
     pub page: Option<WebBrowserPage>,
+    #[serde(default)]
+    pub image: Option<WebBrowserImage>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct WebBrowserImage {
+    pub url: String,
+    pub page_url: String,
+}
+
+impl WebBrowserImage {
+    /// Selection never transfers page-local data/blob URLs or native schemes.
+    pub fn is_valid(&self) -> bool {
+        [&self.url, &self.page_url].iter().all(|value| {
+            tauri::Url::parse(value).is_ok_and(|url| {
+                matches!(url.scheme(), "http" | "https") && url.host_str().is_some()
+            })
+        })
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -519,6 +596,11 @@ pub struct SyncKeychainAvailableResponse {
 pub struct SetSecureItemRequest {
     pub key: String,
     pub value: String,
+    /// When true, the item is stored device-bound (iOS: ThisDeviceOnly
+    /// accessibility) so it does not migrate to another device (#7558).
+    /// Absent for existing callers, which keep the default storage.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub device_bound: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -854,4 +936,199 @@ pub struct WebBrowserCookiesRequest {
 #[derive(Debug, Deserialize)]
 pub struct WebBrowserCookiesResponse {
     pub cookies: String,
+}
+
+/// Android: whether AnkiDroid is installed and Readest may use its provider (#789).
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiStatusResponse {
+    pub installed: bool,
+    pub granted: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiPermissionResponse {
+    pub granted: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiDeck {
+    pub id: i64,
+    pub name: String,
+}
+
+/// `error` is "permission" or "not_ready" when AnkiDroid can't be read.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiListDecksResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decks: Option<Vec<AnkiDeck>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiReadDeckRequest {
+    /// A deck and its subdecks.
+    pub deck_ids: Vec<i64>,
+    pub with_cards: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiNoteRow {
+    pub id: i64,
+    /// The note's note type.
+    pub mid: i64,
+    pub fields: Vec<String>,
+    pub tags: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiCardRow {
+    pub note_id: i64,
+    pub card_type: i32,
+    pub interval: i64,
+}
+
+/// `cards` is omitted on AnkiDroid older than 2.24, which has no cards query.
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiReadDeckResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<Vec<AnkiNoteRow>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cards: Option<Vec<AnkiCardRow>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiOutgoingNote {
+    pub fields: Vec<String>,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiAddNotesRequest {
+    pub deck_name: String,
+    pub notes: Vec<AnkiOutgoingNote>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiAddNotesResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub added: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiTagUpdate {
+    pub id: i64,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiUpdateTagsRequest {
+    pub notes: Vec<AnkiTagUpdate>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiUpdateTagsResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+/// Whether the Readest note type still lacks its audio fields or template (#7729).
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiNoteTypeResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub outdated: Option<bool>,
+    /// The Readest note type's id and field names; omitted before Sync created it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiNoteFill {
+    pub id: i64,
+    pub word: String,
+    pub language: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiUpgradeNoteTypeRequest {
+    pub notes: Vec<AnkiNoteFill>,
+}
+
+/// A dictionary entry for a note's empty Entry field (#7728).
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiEntry {
+    pub id: i64,
+    pub entry: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiSetEntriesRequest {
+    pub notes: Vec<AnkiEntry>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnDeviceLlmStatusResponse {
+    pub available: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// Tokens per session, shared by instructions, prompt and reply.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_size: Option<u32>,
+    /// Base language codes the model supports, e.g. `en`, `zh`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub languages: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnDeviceLlmGenerateRequest {
+    pub request_id: String,
+    pub instructions: String,
+    pub prompt: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub temperature: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<u32>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnDeviceLlmGenerateResponse {
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnDeviceLlmCancelRequest {
+    pub request_id: String,
 }

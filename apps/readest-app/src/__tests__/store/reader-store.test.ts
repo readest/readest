@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import type { FoliateView } from '@/types/view';
 import type { Insets } from '@/types/misc';
@@ -252,6 +253,32 @@ describe('readerStore', () => {
       expect(retrieved).toEqual(settings);
     });
 
+    test('keeps the sidebar tab chosen in the book config when a primary view saves settings', () => {
+      const key = 'bookid-0';
+      const live = { sideBarTab: 'toc', ttsLocation: 'cfi-1' } as unknown as ViewSettings;
+      seedViewState(key, { viewSettings: live });
+      const bookData = (sideBarTab: string) => ({
+        bookid: {
+          id: 'bookid',
+          book: null,
+          file: null,
+          config: { updatedAt: Date.now(), viewSettings: { ...live, sideBarTab } },
+          bookDoc: null,
+          isFixedLayout: false,
+        } as BookData,
+      });
+      useBookDataStore.setState({ booksData: bookData('toc') });
+
+      // The sidebar writes its tab to the book config only (#6836)...
+      useBookDataStore.setState({ booksData: bookData('annotations') });
+      // ...then Read Aloud saves the next sentence through the live settings.
+      useReaderStore.getState().setViewSettings(key, { ...live, ttsLocation: 'cfi-2' });
+
+      const saved = useBookDataStore.getState().booksData['bookid']!.config!.viewSettings!;
+      expect(saved.sideBarTab).toBe('annotations');
+      expect(saved.ttsLocation).toBe('cfi-2');
+    });
+
     test('setViewSettings does nothing for empty key', () => {
       useReaderStore.getState().setViewSettings('', { fontSize: 16 } as unknown as ViewSettings);
       // Should not throw or create new state
@@ -327,6 +354,30 @@ describe('readerStore', () => {
         bottom: 0,
         left: 0,
       });
+    });
+  });
+
+  describe('setting a value a view state already holds', () => {
+    // BookmarkToggler sets the ribbon after every page turn; each notification re-rendered every
+    // component subscribed to the whole store, the reader page included
+    test('notifies no subscriber', () => {
+      seedViewState('book-1', { gridInsets: { top: 1, right: 2, bottom: 3, left: 4 } });
+      const store = useReaderStore.getState();
+      const notified = vi.fn();
+      const unsubscribe = useReaderStore.subscribe(notified);
+      store.setBookmarkRibbonVisibility('book-1', false);
+      store.setTTSEnabled('book-1', false);
+      store.setDrawingEnabled('book-1', false);
+      store.setAutoScrollEnabled('book-1', false);
+      store.setIsLoading('book-1', false);
+      store.setIsSyncing('book-1', false);
+      store.setViewInited('book-1', false);
+      store.setPreviewMode('book-1', false);
+      store.setGridInsets('book-1', { top: 1, right: 2, bottom: 3, left: 4 });
+      expect(notified).not.toHaveBeenCalled();
+      store.setBookmarkRibbonVisibility('book-1', true);
+      expect(notified).toHaveBeenCalledTimes(1);
+      unsubscribe();
     });
   });
 

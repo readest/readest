@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi } from 'vitest';
 import {
   parseAuthors,
@@ -17,6 +18,7 @@ import {
   expandBookshelfSelection,
   selectDownloadableBooks,
   selectAbsOfflineBooks,
+  canRemoveFromDeviceOnly,
   buildGroupNameUpdatedAt,
   resolveCurrentShelfBooks,
   withTimeRemainingLast,
@@ -752,7 +754,10 @@ describe('getGroupSortValue', () => {
       books: [createMockBook({ metadata: {} }), createMockBook({})],
     });
 
-    expect(getGroupSortValue(group, LibrarySortByType.Published)).toBe(0);
+    // As an undated book sorts against other books: year 1, before any real date.
+    expect(getGroupSortValue(group, LibrarySortByType.Published)).toBe(
+      new Date('0001-01-01').getTime(),
+    );
   });
 
   it('should return group name for series sort', () => {
@@ -1998,5 +2003,28 @@ describe('time remaining uses each book’s measured pace (#6318)', () => {
         paces,
       )(slow, fast),
     ).toBeGreaterThan(0);
+  });
+});
+
+describe('canRemoveFromDeviceOnly', () => {
+  // #7318: bulk "Remove from Device Only" frees space but must keep each book
+  // somewhere, so it applies only to local files that also live in the cloud
+  // (or on the Audiobookshelf server, for an offline ABS download).
+  it('accepts a downloaded book that has a cloud copy', () => {
+    expect(canRemoveFromDeviceOnly(createMockBook({ downloadedAt: 200, uploadedAt: 100 }))).toBe(
+      true,
+    );
+  });
+
+  it('accepts an Audiobookshelf offline download', () => {
+    expect(canRemoveFromDeviceOnly(createMockBook({ absDownloadedAt: 200 }))).toBe(true);
+  });
+
+  it('rejects a local-only book, whose file would be lost', () => {
+    expect(canRemoveFromDeviceOnly(createMockBook({ downloadedAt: 200 }))).toBe(false);
+  });
+
+  it('rejects a cloud-only book, which has nothing on this device', () => {
+    expect(canRemoveFromDeviceOnly(createMockBook({ uploadedAt: 100 }))).toBe(false);
   });
 });

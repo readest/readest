@@ -1,5 +1,9 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+
+const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
+vi.mock('@/services/ai/utils/httpFetch', () => ({ getAIFetch: () => fetchMock }));
 
 const store = vi.hoisted(() => ({
   updateService: vi.fn(),
@@ -35,5 +39,46 @@ describe('CustomTTSServiceEditor', () => {
     fireEvent.change(screen.getByLabelText('API Key'), { target: { value: '' } });
     fireEvent.click(screen.getByText('Save'));
     expect(store.updateService).toHaveBeenCalledWith('s1', expect.objectContaining({ apiKey: '' }));
+  });
+
+  it('saves MP3 and cleared voices explicitly, so other devices change too', () => {
+    render(
+      <CustomTTSServiceEditor
+        service={{ ...service, responseFormat: 'wav', voices: 'Kore' }}
+        onBack={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Format'), { target: { value: 'mp3' } });
+    fireEvent.change(screen.getByLabelText('Voices'), { target: { value: '' } });
+    fireEvent.click(screen.getByText('Save'));
+    expect(store.updateService).toHaveBeenCalledWith(
+      's1',
+      expect.objectContaining({ responseFormat: 'mp3', voices: '' }),
+    );
+  });
+
+  it('offers no format for MiMo, which always answers in MP3', () => {
+    const mimo = { ...service, baseUrl: 'https://api.xiaomimimo.com', model: 'mimo-v2.5-tts' };
+    render(<CustomTTSServiceEditor service={mimo} onBack={vi.fn()} />);
+    expect(screen.queryByLabelText('Format')).toBeNull();
+  });
+
+  it('names the URL it tried when the test fails', async () => {
+    fetchMock.mockImplementation(async () => new Response('Not found', { status: 404 }));
+    render(<CustomTTSServiceEditor service={service} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('Test'));
+    expect((await screen.findByText(/HTTP 404/)).textContent).toContain(
+      'https://api.openai.com/v1/audio/speech',
+    );
+  });
+
+  it('names the MiMo chat completions URL when its test fails', async () => {
+    fetchMock.mockImplementation(async () => new Response('Not found', { status: 404 }));
+    const mimo = { ...service, baseUrl: 'https://api.xiaomimimo.com', model: 'mimo-v2.5-tts' };
+    render(<CustomTTSServiceEditor service={mimo} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('Test'));
+    expect((await screen.findByText(/HTTP 404/)).textContent).toContain(
+      'https://api.xiaomimimo.com/v1/chat/completions',
+    );
   });
 });

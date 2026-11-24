@@ -27,13 +27,15 @@ import { CachingProvider } from './providers/cache';
 import { ReadestVoiceProvider } from './providers/readest';
 import { OpenAICompatibleSpeechProvider } from './providers/openaiCompatible';
 import type { CustomTTSService } from '@/types/customTTS';
-import { getAccessToken, isCustomTTSAllowed } from '@/utils/access';
+import { getSignedInToken, isCustomTTSAllowed } from '@/utils/access';
 import { SectionTimeline, TimelineSentence } from './SectionTimeline';
 import { estimateSentenceSeconds, hydrateProvisionalDurations } from './ttsDuration';
 import { DownloadableSentence, SectionEnumerator, TTSDownloader } from './TTSDownloader';
 import { TTSUtils } from './TTSUtils';
 import { TTSClient } from './TTSClient';
 import { startAudioKeepAlive, stopAudioKeepAlive } from './WebAudioPlayer';
+import { releaseUnblockAudio, unblockAudio } from './ttsMediaBridge';
+import { getOSPlatform } from '@/utils/misc';
 import { isSameLang, isValidLang } from '@/utils/lang';
 import { normalizeLyricText } from '@/utils/ttsLyrics';
 import {
@@ -43,6 +45,7 @@ import {
   TTSWordOffset,
 } from './wordHighlight';
 import {
+  audioType,
   findNarratedSection,
   hasMediaOverlays,
   loadMediaOverlaySection,
@@ -59,6 +62,7 @@ import {
   type NarratedAudioChapter,
 } from './pairedAudiobook';
 import { SKIP_BACKWARD_SEC, SKIP_FORWARD_SEC } from '@/services/playback/playbackSource';
+import { DEFAULT_PARAGRAPH_GAP_SEC } from './gap';
 import {
   stripInlineReadingAnnotations,
   stripInlineReadingAnnotationsFromSSML,
@@ -89,6 +93,9 @@ const PRELOAD_AHEAD_SEC = 180;
 const PRELOAD_MAX_PARAGRAPHS = 40;
 // Preload the next paragraphs this long after a paragraph starts at the latest.
 const PRELOAD_NEXT_AFTER_MS = 500;
+// How long a paused session keeps the audio keep-alive, as long as Media3
+// keeps a paused player in the foreground.
+const PAUSED_KEEP_ALIVE_MS = 10 * 60 * 1000;
 
 const isSameRange = (a: Range, b: Range) =>
   a.startContainer.ownerDocument === b.startContainer.ownerDocument &&
@@ -128,6 +135,8 @@ type TTSState =
 // A sentence position for A-B repeat. A CFI rather than a Range: the section's
 // document is replaced on re-attach and section changes.
 type TTSLoopPoint = { sectionIndex: number; cfi: string };
+// An A-B span as a stretch of one narration file, in seconds of that file.
+export type NarrationLoopSpan = { audioHref: string; clipBegin: number; clipEnd: number };
 export type TTSLoopState = 'off' | 'a' | 'ab';
 
 const HIGHLIGHT_KEY = 'tts-highlight';
@@ -152,13 +161,7 @@ export interface TTSViewBindings {
   onSectionChange?: (sectionIndex: number) => Promise<void>;
 }
 
-// Silence inserted between paragraphs when auto-advancing during continuous
-// playback. Unlike the Edge-only inter-sentence gap, this applies to every
-// TTS client: the paragraph-to-paragraph transition (stop -> next -> speak)
-// is engine-agnostic, handled entirely in #speak()/forward() below. There is
-// no natural pause here otherwise -- the transition is as fast as the async
-// stop/init overhead allows, which reads as no pause at all.
-export const DEFAULT_PARAGRAPH_GAP_SEC = 0.3;
+export { DEFAULT_PARAGRAPH_GAP_SEC };
 
 const drawTint = (opacity: string) => (rects: DOMRectList, options: Record<string, unknown>) => {
   const g = Overlayer.highlight(rects, options);
@@ -195,6 +198,13 @@ export class TTSController extends EventTarget {
   pauseAfterSentence: boolean = false;
   #loopA: TTSLoopPoint | null = null;
   #loopB: TTSLoopPoint | null = null;
+  // The A-B span as narration clips, for the section it was resolved in.
+  #narrationLoop: {
+    a: TTSLoopPoint;
+    b: TTSLoopPoint;
+    section: MediaOverlaySection;
+    span: NarrationLoopSpan | null;
+  } | null = null;
   #paragraphGapSec: number = DEFAULT_PARAGRAPH_GAP_SEC;
   #nossmlCnt: number = 0;
   // Consecutive native-TTS utterances that ended in a terminal 'error' without
@@ -221,7 +231,12 @@ export class TTSController extends EventTarget {
   // Opening paragraphs (raw SSML) of what is read after the current document
   // (the next chunk of a chunked section, else the next section), for preloads
   // across its end; built once per document read.
-  #nextOpening: { after: Document | null; ssmls: Promise<string[]> } | null = null;
+  #nextOpening: {
+    after: Document | null;
+    ssmls: Promise<string[]>;
+    // The next narrated section's recording, for the client to queue.
+    narration: Promise<MediaOverlaySection | null>;
+  } | null = null;
   // Signal for queued background preloads: a windowed provider keeps them
   // until it aborts, so a voice change or stop must withdraw them.
   #preloadAbort = new AbortController();
@@ -256,6 +271,7 @@ export class TTSController extends EventTarget {
 
   #state: TTSState = 'stopped';
   #terminated = false;
+  #pausedKeepAliveTimer: ReturnType<typeof setTimeout> | undefined;
   // View attachment: false while the session runs headless (book closed).
   // The epoch invalidates in-flight attachView calls when a detach (or a
   // newer attach) supersedes them.
@@ -294,6 +310,8 @@ export class TTSController extends EventTarget {
   ttsCustomVoices: TTSVoice[] = [];
   ttsNativeVoices: TTSVoice[] = [];
   ttsTargetLang: string = '';
+  // The clients whose init succeeded, in priority order.
+  #availableClients: TTSClient[] = [];
 
   options: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
 
@@ -322,19 +340,18 @@ export class TTSController extends EventTarget {
     );
     const customProvider = new OpenAICompatibleSpeechProvider(
       () => this.#customTTSServices(),
-      async () => isCustomTTSAllowed(await getAccessToken()),
+      async () => isCustomTTSAllowed(getSignedInToken()),
     );
     this.ttsCustomClient = new BufferedTTSClient(
       cacheStore ? new CachingProvider(customProvider, cacheStore) : customProvider,
       this,
       appService,
     );
-    // Native TTS is backed by Android TextToSpeech and iOS AVSpeechSynthesizer.
-    // TODO: implement native TTS client for desktop platforms.
-    if (appService?.isAndroidApp || appService?.isIOSApp) {
+    // Android TextToSpeech, iOS AVSpeechSynthesizer, or Linux speech-dispatcher.
+    if (appService?.isAndroidApp || appService?.isIOSApp || appService?.isLinuxApp) {
       this.ttsNativeClient = new NativeTTSClient(this);
     }
-    this.ttsMediaOverlayClient = new MediaOverlayClient(this);
+    this.ttsMediaOverlayClient = new MediaOverlayClient(this, appService);
     this.ttsClient = this.ttsWebClient;
     this.appService = appService;
     this.view = view;
@@ -382,6 +399,35 @@ export class TTSController extends EventTarget {
     });
   }
 
+  // In the browser on iOS, Web Speech is silent while the looping element from
+  // unblockAudio() plays, so the element goes while a direct-speak engine (the
+  // OS renders its audio; Web Speech there) reads and comes back for the other
+  // engines, which need it to play with the mute switch on.
+  // Synced when reading starts, not where the engine is chosen: setLang() can
+  // still switch engines after init(), and a start stopped before it speaks
+  // must not bring the element back.
+  #syncSilentAudio() {
+    if (this.#releasesSilentAudio()) {
+      if (this.ttsClient.getCapabilities().mediaClock === false) releaseUnblockAudio();
+      else unblockAudio();
+    }
+  }
+
+  // For the tap that changes the voice, before it awaits anything: start()
+  // runs after those awaits, where the browser may refuse to play an element
+  // it creates. Only needed where #syncSilentAudio() releases the element.
+  unblockSilentAudio() {
+    if (this.#releasesSilentAudio()) unblockAudio();
+  }
+
+  // iPadOS Safari sends a desktop ("Macintosh") user agent; touch points give
+  // it away.
+  #releasesSilentAudio() {
+    const os = getOSPlatform();
+    const iOS = os === 'ios' || (os === 'macos' && navigator.maxTouchPoints > 1);
+    return iOS && !this.appService?.isIOSApp;
+  }
+
   // Keep the hidden WebView schedulable, in the two cases where it would
   // otherwise fall silent and get frozen by Chromium. Android-only (iOS drives
   // playout through its own native audio session).
@@ -396,15 +442,27 @@ export class TTSController extends EventTarget {
   //     freeze and Play from a Bluetooth headset only flips the notification —
   //     the native foreground service answers, the reader never wakes to speak,
   //     and the in-app player drifts out of sync until the app is foregrounded.
-  //     See #5561.
+  //     See #5561. Only for PAUSED_KEEP_ALIVE_MS, though: the tone keeps the
+  //     audio output open, so a session left paused stopped the device from
+  //     sleeping (#7546). The looping silent element from unblockAudio() goes
+  //     too: it holds an output of its own, and Android needs it for neither
+  //     media keys (the native session has them) nor autoplay (wry turns the
+  //     gesture requirement off). Play from the app still resumes after that.
   #syncAudioKeepAlive() {
+    clearTimeout(this.#pausedKeepAliveTimer);
     const directSpeak = this.ttsClient.getCapabilities().mediaClock === false;
-    const needsKeepAlive =
-      !!this.appService?.isAndroidApp && (directSpeak || this.state.includes('paused'));
-    if (needsKeepAlive) {
-      startAudioKeepAlive();
-    } else {
+    const paused = this.state.includes('paused');
+    if (!this.appService?.isAndroidApp || !(directSpeak || paused)) {
       stopAudioKeepAlive();
+      return;
+    }
+    startAudioKeepAlive();
+    if (paused) {
+      this.#pausedKeepAliveTimer = setTimeout(() => {
+        if (!this.state.includes('paused')) return;
+        stopAudioKeepAlive();
+        releaseUnblockAudio();
+      }, PAUSED_KEEP_ALIVE_MS);
     }
   }
 
@@ -513,7 +571,8 @@ export class TTSController extends EventTarget {
   }
 
   async init() {
-    const availableClients = [];
+    const availableClients: TTSClient[] = [];
+    this.#availableClients = availableClients;
     // Started together: each can take seconds (Edge synthesizes a probe
     // sentence, system TTS waits for its voices), and play waits on them all.
     // Results are still taken in priority order.
@@ -667,7 +726,9 @@ export class TTSController extends EventTarget {
         resolveUrl: async (href) => {
           const appService = this.appService!;
           if (appService.appPlatform !== 'tauri' || appService.isMobileApp) return null;
-          return convertFileSrc(await appService.resolveFilePath(href, 'Books'));
+          const path = await appService.resolveFilePath(href, 'Books');
+          const { getLocalMediaUrl } = await import('@/services/audiobook/mediaProxy');
+          return (await getLocalMediaUrl(path, audioType(href))) ?? convertFileSrc(path);
         },
         resolvePath: async (href) => await this.appService!.resolveFilePath(href, 'Books'),
       });
@@ -1614,13 +1675,30 @@ export class TTSController extends EventTarget {
     }
   }
 
-  async #handleNavigationWithoutSSML(initSection: () => Promise<boolean>, isPlaying: boolean) {
+  // Stepping back into a section starts at its end: its last paragraph, or by
+  // mark its last sentence, rather than its opening (#7065). A closing block
+  // with nothing to speak (a "***" divider) is passed over, or playback would
+  // move straight on to the section it came from. Paused, the landing spot is
+  // shown the way a step back within a section shows it.
+  #fromEnd(byMark: boolean, paused: boolean): string | undefined {
+    const tts = this.#getTts();
+    let last: string | undefined;
+    for (let ssml = tts?.next(); ssml; ssml = tts?.next()) last = ssml;
+    while (last && !parseSSMLMarks(last).marks.length) last = tts?.prev();
+    const mark = byMark && last ? parseSSMLMarks(last).marks.at(-1) : undefined;
+    const ssml = mark && tts?.setMark(mark.name) ? tts.resume() : last;
+    if (paused && ssml) this.dispatchSpeakMark(parseSSMLMarks(ssml).marks[0]);
+    return ssml;
+  }
+
+  async #handleNavigationWithoutSSML(
+    initSection: () => Promise<boolean>,
+    isPlaying: boolean,
+    read = () => this.#getTts()?.start(),
+  ) {
     if (await initSection()) {
-      if (isPlaying) {
-        this.#speak(this.#getTts()?.start());
-      } else {
-        this.#getTts()?.start();
-      }
+      const ssml = read();
+      if (isPlaying) this.#speak(ssml);
     } else {
       // No adjacent section in this direction: the session has run out of
       // content (end of book on forward, start of book on backward).
@@ -1694,8 +1772,13 @@ export class TTSController extends EventTarget {
           ssmls: chunkAnchor
             ? this.#sectionOpening(this.#ttsSectionIndex, chunkAnchor)
             : this.#sectionOpening(this.#ttsSectionIndex + 1),
+          narration: chunkAnchor ? Promise.resolve(null) : this.#nextNarration(),
         };
       }
+      // Offered again on every preload: the client takes it only once this
+      // section's last audio file is playing (#7193).
+      const narration = await this.#nextOpening.narration;
+      if (narration) await this.#queueNarration(narration);
       for (const ssml of await this.#nextOpening.ssmls) {
         if (!budgetLeft()) break;
         rawSsmls.push(ssml);
@@ -1747,6 +1830,33 @@ export class TTSController extends EventTarget {
     }
   }
 
+  // The recording playback moves on to: the next narrated section, stepping
+  // over unnarrated ones the way the section change does.
+  async #nextNarration(): Promise<MediaOverlaySection | null> {
+    if (!this.narrationActive) return null;
+    const book = this.view.book;
+    const index = this.#findNarratedSection(book, this.#ttsSectionIndex + 1, 1);
+    const section = index >= 0 ? book.sections?.[index] : null;
+    if (!section?.createDocument) return null;
+    try {
+      const doc = await this.#createSectionDoc(section);
+      return await this.#loadNarrationSection(this.view, index, doc);
+    } catch (err) {
+      console.warn('[TTS] loading the next narrated section failed', index, err);
+      return null;
+    }
+  }
+
+  // Hand the next section's recording to the narration client ahead of time,
+  // so a native player can play on into it while JS is suspended (#7193).
+  async #queueNarration(narration: MediaOverlaySection): Promise<void> {
+    try {
+      await this.ttsMediaOverlayClient.preloadSection(narration);
+    } catch (err) {
+      console.warn('[TTS] queueing the next narrated section failed', err);
+    }
+  }
+
   async #preprocessSSML(ssml?: string) {
     if (!ssml) return;
     ssml = ssml
@@ -1779,8 +1889,9 @@ export class TTSController extends EventTarget {
     // utterance is the same recording playing on.
     await this.stop(true);
     this.#terminated = false;
-    this.#currentSpeakAbortController = new AbortController();
-    const { signal } = this.#currentSpeakAbortController;
+    const abortController = new AbortController();
+    this.#currentSpeakAbortController = abortController;
+    const { signal } = abortController;
 
     this.#currentSpeakPromise = new Promise(async (resolve, reject) => {
       try {
@@ -1794,6 +1905,7 @@ export class TTSController extends EventTarget {
         });
 
         ssml = await this.#preprocessSSML(await ssml);
+        if (signal.aborted) return;
         if (!ssml) {
           this.#nossmlCnt++;
           // FIXME: in case we are at the end of the book, need a better way to handle this
@@ -1835,6 +1947,7 @@ export class TTSController extends EventTarget {
           }
           await this.preloadSSML(ssml, signal);
         }
+        if (signal.aborted) return;
         // Only the native client surfaces an offline engine failure as a
         // terminal 'error' code (Edge/Web throw, which the catch below handles).
         const canSkipOnError = this.ttsClient === this.ttsNativeClient;
@@ -1949,8 +2062,10 @@ export class TTSController extends EventTarget {
           reject(e);
         }
       } finally {
-        if (this.#currentSpeakAbortController) {
-          this.#currentSpeakAbortController.abort();
+        // A skipped uncached preload can finish after its replacement starts.
+        // Its cleanup belongs to this utterance, never the current one.
+        abortController.abort();
+        if (this.#currentSpeakAbortController === abortController) {
           this.#currentSpeakAbortController = null;
         }
       }
@@ -1978,6 +2093,7 @@ export class TTSController extends EventTarget {
     if (pause) {
       await this.stop();
       this.state = 'forward-paused';
+      this.#syncAudioKeepAlive();
     } else {
       await this.#delayParagraphGap(signal);
       if (signal.aborted) return;
@@ -2002,6 +2118,7 @@ export class TTSController extends EventTarget {
     if (this.#loopB) {
       this.#loopA = this.#loopB = null;
       this.drawLoopRange();
+      void this.ttsMediaOverlayClient.refreshLoop();
       return 'off';
     }
     const range = this.#getTts()?.getLastRange();
@@ -2017,7 +2134,50 @@ export class TTSController extends EventTarget {
       this.#loopB = point;
     }
     this.drawLoopRange();
+    void this.ttsMediaOverlayClient.refreshLoop();
     return this.loopState;
+  }
+
+  // The A-B span as one stretch of a narration recording: from the start of
+  // A's clip to the end of B's, when both are clips of the same file in the
+  // section now narrated. The native Android player repeats such a span by
+  // itself, so it keeps repeating while the WebView is throttled.
+  getNarrationLoop(): NarrationLoopSpan | null {
+    const a = this.#loopA;
+    const b = this.#loopB;
+    const section = this.#mediaOverlaySection;
+    if (!a || !b || !section) return null;
+    if (a.sectionIndex !== this.#ttsSectionIndex || b.sectionIndex !== this.#ttsSectionIndex) {
+      return null;
+    }
+    const cached = this.#narrationLoop;
+    if (cached && cached.a === a && cached.b === b && cached.section === section) {
+      return cached.span;
+    }
+    const pars = section.pars;
+    let from = -1;
+    let to = -1;
+    for (let i = 0; i < pars.length && (from < 0 || to < 0); i++) {
+      const cfi = this.#cfiOf(pars[i]!.range);
+      if (from < 0 && cfi === a.cfi) from = i;
+      if (to < 0 && cfi === b.cfi) to = i;
+    }
+    const first = pars[from];
+    const last = pars[to];
+    let span: NarrationLoopSpan | null = null;
+    // One stretch of one file: every clip from A to B in that file, so a
+    // clip of another file in between is never skipped.
+    if (
+      first &&
+      last &&
+      from <= to &&
+      first.clipBegin < last.clipEnd &&
+      pars.slice(from, to + 1).every((par) => par.audioHref === first.audioHref)
+    ) {
+      span = { audioHref: first.audioHref, clipBegin: first.clipBegin, clipEnd: last.clipEnd };
+    }
+    this.#narrationLoop = { a, b, section, span };
+    return span;
   }
 
   // Tint the A-B span (just A while B is unset) in every live view, so the
@@ -2089,6 +2249,7 @@ export class TTSController extends EventTarget {
   }
 
   async speak(ssml: string | Promise<string>, oneTime = false, oneTimeCallback?: () => void) {
+    this.#syncSilentAudio();
     await this.initViewTTS();
     this.#speak(ssml, oneTime)
       .then(() => {
@@ -2109,6 +2270,7 @@ export class TTSController extends EventTarget {
   }
 
   async start() {
+    this.#syncSilentAudio();
     await this.initViewTTS();
     // Always resume from the current list position instead of calling tts.start().
     // tts.start() resets the TTS list to position 0 (section beginning), which is
@@ -2131,8 +2293,21 @@ export class TTSController extends EventTarget {
     }
   }
 
+  // Pauses for a voice preview by stopping, as pause() does for an engine that
+  // cannot pause: a preview may speak through the same engine (the shared Web
+  // Speech queue, the system synthesizer), which would drop or replay a paused
+  // utterance. Playing again re-reads from the current sentence.
+  async suspend() {
+    if (this.state !== 'playing') return;
+    this.state = 'paused';
+    this.#syncAudioKeepAlive();
+    await this.stop();
+    this.state = 'stop-paused';
+  }
+
   async resume() {
     this.state = 'playing';
+    this.#syncAudioKeepAlive();
     await this.ttsClient.resume().catch((e) => this.error(e));
   }
 
@@ -2185,7 +2360,11 @@ export class TTSController extends EventTarget {
         : undefined
       : tts?.prev(!isPlaying);
     if (!ssml) {
-      await this.#handleNavigationWithoutSSML(() => this.#initTTSForPrevSection(), isPlaying);
+      await this.#handleNavigationWithoutSSML(
+        () => this.#initTTSForPrevSection(),
+        isPlaying,
+        () => this.#fromEnd(byMark, !isPlaying),
+      );
     } else {
       await this.#handleNavigationWithSSML(ssml, isPlaying);
     }
@@ -2233,6 +2412,11 @@ export class TTSController extends EventTarget {
 
   async setLang(lang: string) {
     this.ttsLang = lang;
+    // The engine chosen for this language (its default voice) wins over the
+    // global one; the book's own narration wins over both.
+    const preferred = TTSUtils.getPreferredClientForLang(lang);
+    const languageClient = this.#availableClients.find((client) => client.name === preferred);
+    if (languageClient && !this.narrationActive) this.ttsClient = languageClient;
     // Readest Voice is a remembered choice, never a default: for a book in a
     // language it has no voice for, the default engine reads instead, and the
     // choice stays remembered for books it can read.
@@ -2365,8 +2549,14 @@ export class TTSController extends EventTarget {
       this.ttsClient = this.ttsWebClient;
       await this.ttsClient.setRate(this.ttsRate);
     }
-    TTSUtils.setPreferredClient(this.ttsClient.name);
+    // Remembered for the book's language too, so it reads that language next time.
+    TTSUtils.setPreferredClient(this.ttsClient.name, this.ttsLang);
     TTSUtils.setPreferredVoice(this.ttsClient.name, lang, voiceId);
+    // A multilingual voice reads any language, but a voice picked earlier for
+    // the book's language comes first: replace that one too (#7430).
+    if (lang === MULTILINGUAL_LANG) {
+      TTSUtils.setPreferredVoice(this.ttsClient.name, this.ttsLang, voiceId);
+    }
     await this.ttsClient.setVoice(voiceId);
     // A different voice speaks at a different pace: re-estimate the timeline
     // under the new voice (measured durations are keyed per voice already).

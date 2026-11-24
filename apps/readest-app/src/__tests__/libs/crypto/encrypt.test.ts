@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { decryptCiphertext, encryptPlaintext } from '@/libs/crypto/encrypt';
 import { derivePbkdf2Key } from '@/libs/crypto/derive';

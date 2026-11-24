@@ -1,10 +1,11 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock react-icons before importing the module under test
 vi.mock('react-icons/ri', () => ({
   RiFontSize: () => null,
   RiDashboardLine: () => null,
-  RiTranslate: () => null,
+  RiTranslate2: () => null,
   RiPlugLine: () => null,
   RiShareLine: () => null,
 }));

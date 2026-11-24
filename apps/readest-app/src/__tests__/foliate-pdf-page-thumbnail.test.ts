@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // readest/readest issue #6177: the sidebar TOC shows page thumbnails for PDFs.
 //
 // foliate-js' `makePDF` exposes `book.getPageThumbnail(index, maxSize)`, which

@@ -124,7 +124,7 @@ const DEFAULT_SHORTCUTS = {
     section: 'Selection',
   },
   onCopySelection: {
-    keys: ['ctrl+c', 'cmd+c'],
+    keys: ['ctrl+c', 'cmd+c', 'y'],
     description: _('Copy Selection'),
     section: 'Selection',
   },
@@ -163,6 +163,45 @@ const DEFAULT_SHORTCUTS = {
       'opt+shift+ArrowRight',
     ],
     description: _('Adjust Text Selection'),
+    section: 'Selection',
+  },
+  // Vim-style find (#7281): `/` searches and selects the match. While that
+  // search is live, n/N step through matches and the motion keys extend the
+  // selection; otherwise these keys keep their page and notebook meanings.
+  // Escape (onEscape) ends it.
+  onVimFind: {
+    keys: ['/'],
+    description: _('Find on Page'),
+    section: 'Selection',
+  },
+  onVimNextMatch: {
+    keys: ['n'],
+    description: _('Next Match'),
+    section: 'Selection',
+  },
+  onVimPrevMatch: {
+    keys: ['shift+n'],
+    description: _('Previous Match'),
+    section: 'Selection',
+  },
+  onVimExtendSelection: {
+    keys: [
+      'h',
+      'l',
+      'w',
+      'b',
+      'e',
+      'j',
+      'k',
+      '0',
+      'shift+$',
+      'shift+(',
+      'shift+)',
+      'shift+{',
+      'shift+}',
+      'o',
+    ],
+    description: _('Extend Selection'),
     section: 'Selection',
   },
   onOpenFontLayoutSettings: {
@@ -314,7 +353,10 @@ const DEFAULT_SHORTCUTS = {
   },
   onEscape: {
     keys: ['Escape'],
-    description: _('Close'),
+    // Esc steps back one level inside nested pages (Settings sub-pages) and
+    // closes the current surface only when there is nothing left to back out
+    // of, so the label names both behaviors.
+    description: _('Back / Close'),
     section: 'General',
   },
 };

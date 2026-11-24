@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { formatDuration, formatDurationAndPagesLeft, formatDurationLeft } from '@/utils/duration';
 import type { TranslationFunc } from '@/hooks/useTranslation';

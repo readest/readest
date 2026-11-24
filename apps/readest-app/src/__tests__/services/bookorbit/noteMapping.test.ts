@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { md5 } from 'js-md5';
 import type { BookNote } from '@/types/book';

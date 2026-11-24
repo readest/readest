@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
@@ -23,6 +24,8 @@ const renderPanel = (
       customTextColor={false}
       textColor=''
       italic={false}
+      weight='normal'
+      onWeightChange={() => {}}
       onToggle={() => {}}
       onCustomBackgroundToggle={() => {}}
       onBackgroundColorChange={() => {}}
@@ -34,6 +37,28 @@ const renderPanel = (
   );
 
 describe('DialogueHighlightSettings', () => {
+  it('offers weight independently of background and text color', () => {
+    const onWeightChange = vi.fn();
+    renderPanel({
+      dialogueHighlight: false,
+      customTextColor: false,
+      weight: 'normal',
+      onWeightChange,
+    });
+    const select = screen.getByRole('combobox', { name: 'Weight' });
+    expect(Array.from((select as HTMLSelectElement).options, (option) => option.text)).toEqual([
+      'Normal',
+      'Slightly heavier',
+      'Bold',
+    ]);
+    fireEvent.change(select, { target: { value: 'slightly-heavier' } });
+    expect(onWeightChange).toHaveBeenLastCalledWith('slightly-heavier');
+    fireEvent.change(select, { target: { value: 'bold' } });
+    expect(onWeightChange).toHaveBeenLastCalledWith('bold');
+    fireEvent.change(select, { target: { value: 'normal' } });
+    expect(onWeightChange).toHaveBeenLastCalledWith('normal');
+  });
+
   it('names the text-color switch accessibly', () => {
     renderPanel();
     expect(screen.getByRole('checkbox', { name: /^Text Color/ })).not.toBeNull();

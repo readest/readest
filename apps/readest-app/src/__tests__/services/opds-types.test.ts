@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { RETRY_BACKOFF_MS, isRetryEligible } from '@/services/opds/types';
 import type {

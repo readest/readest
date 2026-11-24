@@ -3,9 +3,19 @@ import { PiSpinner } from 'react-icons/pi';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useCustomTTSStore } from '@/store/customTTSStore';
-import { OpenAICompatibleSpeechProvider } from '@/services/tts/providers/openaiCompatible';
+import {
+  isMiMoService,
+  OpenAICompatibleSpeechProvider,
+  speechEndpoint,
+} from '@/services/tts/providers/openaiCompatible';
 import type { CustomTTSService } from '@/types/customTTS';
-import { BoxedList, SettingLabel, SettingsSwitchRow } from './primitives';
+import {
+  BoxedList,
+  SettingLabel,
+  SettingsRow,
+  SettingsSelect,
+  SettingsSwitchRow,
+} from './primitives';
 import SubPageHeader from './SubPageHeader';
 
 const BASE_URL_PRESETS = [
@@ -60,6 +70,8 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
     baseUrl: draft.baseUrl.trim(),
     model: draft.model.trim(),
     instructions: draft.instructions?.trim() || undefined,
+    // A cleared list stays '' rather than undefined, so it syncs.
+    voices: draft.voices?.trim(),
   });
 
   // Lists the service's voices and speaks a short sample with the first one,
@@ -68,8 +80,8 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
     setTesting(true);
     setError('');
     setVoiceCount(null);
+    const test: CustomTTSService = { ...cleaned(), id: 'test', addedAt: 0, updatedAt: 0 };
     try {
-      const test: CustomTTSService = { ...cleaned(), id: 'test', addedAt: 0, updatedAt: 0 };
       const provider = new OpenAICompatibleSpeechProvider(
         () => [test],
         async () => true,
@@ -85,12 +97,17 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
         new AbortController().signal,
       );
       setVoiceCount(voices.length);
-      const url = URL.createObjectURL(new Blob([audio], { type: 'audio/mpeg' }));
+      const isWav = new TextDecoder().decode(audio.slice(0, 4)) === 'RIFF';
+      const url = URL.createObjectURL(
+        new Blob([audio], { type: isWav ? 'audio/wav' : 'audio/mpeg' }),
+      );
       const player = new Audio(url);
       player.onended = () => URL.revokeObjectURL(url);
       await player.play();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // The URL it tried, so a wrong base URL is easy to spot.
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`${message}\n${speechEndpoint(test)}`);
     } finally {
       setTesting(false);
     }
@@ -181,6 +198,16 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
             ))}
           </datalist>
         </Field>
+        <Field id='tts-voices' label={_('Voices')}>
+          <input
+            id='tts-voices'
+            type='text'
+            className={inputClass}
+            value={draft.voices ?? ''}
+            onChange={(e) => update({ voices: e.target.value })}
+            placeholder='Kore, Puck, Zephyr'
+          />
+        </Field>
         <Field id='tts-instructions' label={_('Instructions')}>
           <textarea
             id='tts-instructions'
@@ -191,6 +218,22 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
             placeholder={_('Optional, for models that accept a speaking style')}
           />
         </Field>
+        {!isMiMoService(draft) && (
+          <SettingsRow label={_('Format')}>
+            <SettingsSelect
+              value={draft.responseFormat ?? 'mp3'}
+              onChange={(e) =>
+                update({ responseFormat: e.target.value as CustomTTSService['responseFormat'] })
+              }
+              ariaLabel={_('Format')}
+              options={[
+                { value: 'mp3', label: 'MP3' },
+                { value: 'wav', label: 'WAV' },
+                { value: 'none', label: _('Default') },
+              ]}
+            />
+          </SettingsRow>
+        )}
         <SettingsSwitchRow
           label={_('Enabled')}
           checked={!draft.disabled}
@@ -199,7 +242,7 @@ const CustomTTSServiceEditor: React.FC<CustomTTSServiceEditorProps> = ({ service
       </BoxedList>
 
       <div className='flex flex-col gap-3 px-4'>
-        {error && <p className='text-error break-words text-sm'>{error}</p>}
+        {error && <p className='text-error whitespace-pre-line break-words text-sm'>{error}</p>}
         {voiceCount !== null && (
           <p className='text-base-content/70 text-sm'>
             {_('{{count}} voices available', { count: voiceCount })}

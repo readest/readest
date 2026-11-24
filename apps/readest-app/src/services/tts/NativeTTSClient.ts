@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { addPluginListener, PluginListener } from '@tauri-apps/api/core';
-import { getUserLocale } from '@/utils/misc';
+import { getOSPlatform, getUserLocale } from '@/utils/misc';
 import { isSameLang } from '@/utils/lang';
 import { parseSSMLMarks } from '@/utils/ssml';
 import { stubTranslation as _ } from '@/utils/misc';
@@ -12,6 +12,8 @@ import { TTSController } from './TTSController';
 type TTSEventPayload = {
   utteranceId: string;
 } & TTSMessageEvent;
+
+const ANDROID_INIT_TIMEOUT_MS = 8_000;
 
 const TTSEngines = {
   default: 'System TTS',
@@ -49,6 +51,8 @@ export class NativeTTSClient implements TTSClient {
   #pitch = 1.0;
 
   #eventListener: PluginListener | null = null;
+  // A local engine can finish a short sentence before invoke returns its ID.
+  #pendingSpeakEvents = new Set<TTSEventPayload[]>();
   #activeUtterances = new Map<
     string,
     {
@@ -72,7 +76,10 @@ export class NativeTTSClient implements TTSClient {
           const { utteranceId, code, message, mark } = event;
 
           const utteranceData = this.#activeUtterances.get(utteranceId);
-          if (!utteranceData) return;
+          if (!utteranceData) {
+            for (const pending of this.#pendingSpeakEvents) pending.push(event);
+            return;
+          }
 
           const ttsEvent: TTSMessageEvent = { code, message, mark };
           utteranceData.eventQueue.push(ttsEvent);
@@ -93,34 +100,55 @@ export class NativeTTSClient implements TTSClient {
   }
 
   async init(): Promise<boolean> {
-    const result = await invoke<{ success: boolean }>('plugin:native-tts|init');
+    const isAndroid = this.controller?.appService?.isAndroidApp ?? getOSPlatform() === 'android';
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const request = invoke<{ success: boolean }>('plugin:native-tts|init');
+    const result = await (isAndroid
+      ? Promise.race([
+          request,
+          new Promise<{ success: boolean }>((resolve) => {
+            timeout = setTimeout(() => resolve({ success: false }), ANDROID_INIT_TIMEOUT_MS);
+          }),
+        ]).finally(() => clearTimeout(timeout))
+      : request);
     this.initialized = result.success;
     if (this.initialized) {
-      this.setupEventListener();
+      await this.setupEventListener();
     }
     return this.initialized;
   }
 
-  async *speakMark(mark: TTSMark, preload: boolean, signal: AbortSignal) {
+  // `previewVoice`: speak with this voice for a preview, leaving the voice the
+  // session reads with as it is.
+  async *speakMark(mark: TTSMark, preload: boolean, signal: AbortSignal, previewVoice?: string) {
     if (preload) {
       yield { code: 'end', message: 'Dummy preload finished' } as TTSMessageEvent;
       return;
     }
     const { language: voiceLang } = mark;
-    const voiceId = await this.getVoiceIdFromLang(voiceLang);
-    this.#currentVoiceId = voiceId;
-    this.#speakingLang = voiceLang;
-    await this.setVoice(voiceId);
+    if (previewVoice) {
+      await invoke('plugin:native-tts|set_voice', { payload: { voice: previewVoice } });
+    } else {
+      const voiceId = await this.getVoiceIdFromLang(voiceLang);
+      this.#currentVoiceId = voiceId;
+      this.#speakingLang = voiceLang;
+      await this.setVoice(voiceId);
+    }
+    if (signal.aborted) return;
+    const pendingEvents: TTSEventPayload[] = [];
+    this.#pendingSpeakEvents.add(pendingEvents);
     try {
       const result = await invoke<{ utteranceId: string }>('plugin:native-tts|speak', {
         payload: { text: mark.text, preload },
       });
 
       const utteranceId = result.utteranceId;
+      const earlyEvents = pendingEvents.filter((ev) => ev.utteranceId === utteranceId);
+      this.#pendingSpeakEvents.delete(pendingEvents);
       this.#activeUtterances.set(utteranceId, {
-        eventQueue: [],
+        eventQueue: earlyEvents,
         resolver: null,
-        finished: false,
+        finished: earlyEvents.some((ev) => ev.code === 'end' || ev.code === 'error'),
       });
 
       const abortHandler = () => {
@@ -130,12 +158,23 @@ export class NativeTTSClient implements TTSClient {
           utteranceData.resolver({ value: error, done: true });
           utteranceData.resolver = null;
         }
-        this.stop();
+        // A delayed reply from canceled speech must not stop its replacement.
+        if (this.controller?.appService?.isLinuxApp) {
+          void invoke('plugin:native-tts|stop', { payload: { utteranceId } }).catch((error) =>
+            console.warn('Native TTS cancellation failed:', error),
+          );
+        } else {
+          void this.stop();
+        }
       };
 
       signal.addEventListener('abort', abortHandler);
 
       try {
+        if (signal.aborted) {
+          abortHandler();
+          return;
+        }
         while (true) {
           const utteranceData = this.#activeUtterances.get(utteranceId);
           if (!utteranceData) break;
@@ -175,6 +214,18 @@ export class NativeTTSClient implements TTSClient {
     } catch (error) {
       console.error('Failed to speak:', error);
       throw error;
+    } finally {
+      this.#pendingSpeakEvents.delete(pendingEvents);
+    }
+  }
+
+  // Speaks `text` with `voiceId` at `rate` until it ends or `signal` aborts.
+  async preview(voiceId: string, text: string, lang: string, rate: number, signal: AbortSignal) {
+    if (!this.initialized && !(await this.init())) throw new Error('System TTS unavailable');
+    await this.setRate(rate);
+    const mark: TTSMark = { offset: 0, name: 'preview', text, language: lang };
+    for await (const event of this.speakMark(mark, false, signal, voiceId)) {
+      if (event.code === 'error' && !signal.aborted) throw new Error(event.message);
     }
   }
 
@@ -229,8 +280,10 @@ export class NativeTTSClient implements TTSClient {
   }
 
   async setRate(rate: number) {
-    // Power the rate to match the EdgeTTS behavior
-    this.#rate = parseFloat(Math.pow(rate, 2.5).toFixed(2));
+    // Mobile APIs need the exponent; speech-dispatcher uses a relative rate.
+    // A preview's client may have no controller to ask.
+    const isLinux = this.controller?.appService?.isLinuxApp ?? getOSPlatform() === 'linux';
+    this.#rate = isLinux ? rate : parseFloat(Math.pow(rate, 2.5).toFixed(2));
     await invoke('plugin:native-tts|set_rate', { payload: { rate: this.#rate } });
   }
 
@@ -297,6 +350,7 @@ export class NativeTTSClient implements TTSClient {
           ({
             id: groupId,
             name: TTSEngines[groupId] || groupId,
+            engine: this.name,
             voices: voices.sort(TTSUtils.sortVoicesPreferLocaleFunc(locale)),
             disabled: !this.initialized || voices.length === 0,
           }) as TTSVoicesGroup,

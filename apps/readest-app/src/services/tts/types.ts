@@ -27,6 +27,11 @@ export type TTSVoice = {
   // A trait the engine spells into the voice id, shown as a badge instead of
   // in the name.
   variant?: 'multilingual' | 'expressive';
+  // A name the user's own service gave, shown as is: run through the
+  // translator, one that matches a UI string would come out translated.
+  literalName?: boolean;
+  // Shown as a badge and used to filter; absent when the engine does not say.
+  gender?: 'female' | 'male';
 };
 
 export type TTSVoicesGroup = {
@@ -34,6 +39,11 @@ export type TTSVoicesGroup = {
   name: string;
   voices: TTSVoice[];
   disabled?: boolean;
+  // Named by the user (their own service): shown as is, like a voice's literalName.
+  literalName?: boolean;
+  // The client that speaks these voices (its persisted name), so a picker can
+  // preview a voice and remember it as a language's default.
+  engine?: string;
 };
 
 export type TTSMark = {

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, test } from 'vitest';
 import { CryptoSession } from '@/libs/crypto/session';
 import { CURRENT_ALG, encryptToEnvelope } from '@/libs/crypto/envelope';

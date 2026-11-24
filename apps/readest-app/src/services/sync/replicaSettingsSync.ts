@@ -49,6 +49,10 @@ import { cryptoSession } from '@/libs/crypto/session';
 import { ensurePassphraseUnlocked } from '@/services/sync/passphraseGate';
 import { isCredentialsSyncEnabled, isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import {
+  withConnectionForgotten,
+  type ForgettableConnection,
+} from '@/services/sync/cloudSyncProvider';
 
 const ENCRYPTED_PATHS: ReadonlySet<string> = new Set(SETTINGS_ENCRYPTED_FIELDS);
 const DICTIONARY_PATHS: ReadonlySet<string> = new Set(SETTINGS_DICTIONARY_FIELDS);
@@ -112,6 +116,43 @@ const explicitPublishPending = new Set<string>();
  */
 export const markExplicitProviderOrderPublish = (): void => {
   explicitPublishPending.add('dictionarySettings.providerOrder');
+};
+
+/**
+ * Publish passes still running. A Forget waits for them so its cleared
+ * values are stamped after anything a pass read before the Forget (#7799).
+ */
+const inFlightPasses = new Set<Promise<void>>();
+
+/**
+ * The field whose being empty in a remote patch means "this connection was
+ * forgotten": a connect always sets it, and a cleared value is published only
+ * by Forget.
+ */
+const FORGOTTEN_CONNECTION_MARKERS: Record<ForgettableConnection, string> = {
+  webdav: 'serverUrl',
+  s3: 'endpoint',
+};
+
+/**
+ * A device still syncing through a connection another device forgot keeps
+ * its own copy, rather than having its sync cut off by a remote change it
+ * never saw. Devices not using it drop the copy as usual.
+ */
+const keepConnectionsInUse = (
+  patch: Partial<SystemSettings>,
+  current: SystemSettings,
+): Partial<SystemSettings> => {
+  let out = patch;
+  for (const [kind, marker] of Object.entries(FORGOTTEN_CONNECTION_MARKERS)) {
+    const key = kind as ForgettableConnection;
+    const incoming = patch[key] as Record<string, unknown> | undefined;
+    if (current[key]?.enabled && incoming?.[marker] === '') {
+      out = { ...out };
+      delete out[key];
+    }
+  }
+  return out;
 };
 
 /**
@@ -233,7 +274,42 @@ const setStoredLastSeenCipher = (val: Record<string, string>): void => {
   }
 };
 
-export const publishSettingsIfChanged = async (settings: SystemSettings): Promise<void> => {
+export const publishSettingsIfChanged = (settings: SystemSettings): Promise<void> => {
+  const pass = runPublishPass(settings);
+  inFlightPasses.add(pass);
+  const done = () => inFlightPasses.delete(pass);
+  pass.then(done, done);
+  return pass;
+};
+
+/**
+ * Publish a Forget (#7799): the connection's whitelisted fields at their
+ * reset values. The cleared login ships as empty values even with
+ * credentials sync off or the session locked, since an empty value carries
+ * no secret; every other credential stays behind those gates. Recording the
+ * push-hashes keeps the next ordinary pass from seeing a change.
+ */
+export const publishConnectionForget = async (kind: ForgettableConnection): Promise<void> => {
+  await Promise.allSettled([...inFlightPasses]);
+  // The reset itself, not the live store: a connection saved during the wait
+  // must not ride this upload with a blanked login. It publishes below.
+  const settings = withConnectionForgotten(useSettingsStore.getState().settings, kind);
+  const paths = SETTINGS_WHITELIST.filter((path) => path.startsWith(`${kind}.`));
+  const patch: Record<string, unknown> = {};
+  for (const path of paths) writePath(patch, path, readPath(settings, path));
+  const record: SettingsRemoteRecord = {
+    name: 'singleton',
+    patch: patch as Partial<SystemSettings>,
+  };
+  const clearedLogin = paths.filter((path) => ENCRYPTED_PATHS.has(path));
+  await publishReplicaUpsert(SETTINGS_KIND, record, SETTINGS_REPLICA_ID, undefined, clearedLogin);
+  for (const path of paths) {
+    setStoredEncryptedHash(path, await sha256Hex(readPath(settings, path)));
+  }
+  void publishSettingsIfChanged(useSettingsStore.getState().settings);
+};
+
+const runPublishPass = async (settings: SystemSettings): Promise<void> => {
   // Pass 1: figure out what's changed. Plaintext paths use the
   // in-memory snapshot; encrypted paths AND credential connection
   // metadata compare against the persisted SHA-256 hash so
@@ -267,7 +343,8 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
       // Skip empty / cleared credentials entirely — there's nothing
       // useful to encrypt and pushing a plaintext "" would make the
       // server-side schema mix cipher envelopes with bare empty
-      // strings for the same field. Local-clear stays local.
+      // strings for the same field. Local-clear stays local; only an
+      // explicit Forget publishes a cleared value (publishConnectionForget).
       if (!isMeaningful(current)) continue;
       const currentHash = await sha256Hex(current);
       if (currentHash === getStoredEncryptedHash(path)) continue;
@@ -350,7 +427,8 @@ export const publishSettingsIfChanged = async (settings: SystemSettings): Promis
     name: 'singleton',
     patch: patch as Partial<SystemSettings>,
   };
-  void publishReplicaUpsert(SETTINGS_KIND, record, SETTINGS_REPLICA_ID);
+  // Awaited so a pass ends only once its fields are stamped (see inFlightPasses).
+  await publishReplicaUpsert(SETTINGS_KIND, record, SETTINGS_REPLICA_ID);
 
   // Connection metadata is plaintext — its publish always ships, so record
   // its push-hash unconditionally.
@@ -394,11 +472,15 @@ export const applyRemoteSettings = (
   // paths from an incoming patch when the user turned Dictionaries off.
   // The local plaintext copy survives untouched, and the paths are also
   // left out of the snapshot loop below so nothing echoes back (#5465).
-  const patch = isSyncCategoryEnabled('dictionary')
+  const categoryPatch = isSyncCategoryEnabled('dictionary')
     ? record.patch
     : stripDictionaryPaths(record.patch);
 
-  if (!settings || Object.keys(patch).length === 0) return;
+  if (!settings) return;
+  // Applied before the snapshot loop below, so a kept connection's stored
+  // push-hash still matches its value and is not uploaded again.
+  const patch = keepConnectionsInUse(categoryPatch, settings);
+  if (Object.keys(patch).length === 0) return;
 
   // Mark the incoming values as "already published" so the
   // post-save publish hook sees no diff and stays quiet.
@@ -463,6 +545,9 @@ const mergeSettings = (current: SystemSettings, patch: Partial<SystemSettings>):
   }
   if (patch.bookorbit) {
     out.bookorbit = { ...current.bookorbit, ...patch.bookorbit };
+  }
+  if (patch.grimmory) {
+    out.grimmory = { ...current.grimmory, ...patch.grimmory };
   }
   if (patch.readwise) {
     out.readwise = { ...current.readwise, ...patch.readwise };
@@ -546,10 +631,16 @@ export const initSettingsSync = (initialSettings?: SystemSettings): void => {
   });
 };
 
-/** Test seam — drop the snapshot + subscription between specs. */
-export const __resetSettingsSyncForTests = (): void => {
+/**
+ * Test seam — drop the snapshot + subscription between specs. Passes still
+ * running finish first: one left running would read the hashes cleared here
+ * and publish into the next spec (#7845).
+ */
+export const __resetSettingsSyncForTests = async (): Promise<void> => {
+  await Promise.allSettled([...inFlightPasses]);
   lastPublishedFields.clear();
   explicitPublishPending.clear();
+  inFlightPasses.clear();
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;

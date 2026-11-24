@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { pullBooksPaged } from '@/hooks/useSync';
 import type { BookDataRecord } from '@/types/book';

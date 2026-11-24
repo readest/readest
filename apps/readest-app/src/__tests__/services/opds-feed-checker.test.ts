@@ -7,6 +7,7 @@ import {
   getEntryId,
   getNextPageUrl,
   findNewestFeedURL,
+  checkCatalogFeed,
 } from '@/services/opds/feedChecker';
 
 vi.mock('@/services/environment', () => ({
@@ -55,6 +56,23 @@ const makeAcquisitionFeed = (
   ${entryXml}
 </feed>`;
 };
+
+describe('checkCatalogFeed', () => {
+  const answering = async (body: string) => {
+    const { fetch } = await import('@tauri-apps/plugin-http');
+    vi.mocked(fetch).mockResolvedValue(new Response(body, { status: 200 }));
+    return checkCatalogFeed({ id: 'c', name: 'C', url: 'https://example.com/opds' });
+  };
+
+  it('passes on an OPDS feed', async () => {
+    expect(await answering(makeAcquisitionFeed([{ title: 'A', href: '/a.epub' }]))).toBe(true);
+    expect(await answering(JSON.stringify({ metadata: {}, publications: [] }))).toBe(true);
+  });
+
+  it('fails on JSON that is not a feed', async () => {
+    expect(await answering('{}')).toBe(false);
+  });
+});
 
 describe('OPDS feed checker', () => {
   describe('getAcquisitionLink', () => {

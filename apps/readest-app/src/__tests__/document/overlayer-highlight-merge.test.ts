@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // readest/readest#6578: an OCR text layer (scanned PDFs) puts every word in
 // its own span with its own jittered box, so a highlight drew one box per
 // word, with gaps between words and stepped tops and bottoms. Rects that sit

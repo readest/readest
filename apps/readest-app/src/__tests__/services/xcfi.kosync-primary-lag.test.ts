@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import { XCFI, getXPointerFromCFI } from '@/utils/xcfi';
 import type { BookDoc } from '@/libs/document';

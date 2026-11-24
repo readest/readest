@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { MdAdd } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import {
   ensureCustomTranslatorsLoaded,
   useCustomTranslatorStore,
@@ -192,9 +191,6 @@ const CustomTranslators: React.FC<CustomTranslatorsProps> = ({ targetLang, onBac
     ensureCustomTranslatorsLoaded(envConfig);
   }, [envConfig]);
 
-  // Esc / Android Back steps out of an editor before leaving this sub-page.
-  useKeyDownActions({ enabled: page.kind !== 'list', onCancel: backToList });
-
   if (page.kind === 'translator') {
     return (
       <CustomTranslatorEditor
@@ -237,7 +233,14 @@ const CustomTranslators: React.FC<CustomTranslatorsProps> = ({ targetLang, onBac
               <NavigationRow
                 key={t.id}
                 title={t.name}
-                status={[t.type === 'deepl' ? 'DeepL' : t.model, t.disabled ? _('Disabled') : '']
+                status={[
+                  t.type === 'deepl'
+                    ? 'DeepL'
+                    : t.type === 'apple-intelligence'
+                      ? _('On-Device')
+                      : t.model,
+                  t.disabled ? _('Disabled') : '',
+                ]
                   .filter(Boolean)
                   .join(' · ')}
                 onClick={() => setPage({ kind: 'translator', id: t.id })}

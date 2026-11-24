@@ -14,6 +14,7 @@ import {
   openOpdsAudiobookSession,
 } from '@/services/opds/openOpdsAudiobook';
 import { openBookOrbitAudiobookSession } from '@/services/bookorbit/openBookOrbitAudiobook';
+import { BookOrbitAuthError } from '@/services/bookorbit/client';
 import { ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { useEnv } from '@/context/EnvContext';
 import { useAppRouter } from '@/hooks/useAppRouter';
@@ -167,12 +168,26 @@ const PlayerRoute = () => {
           // BookOrbit's own audiobook API carries chapters, byte ranges and a
           // shared listening position; OPDS can express none of that (#6224).
           if (resolvedBook.format === 'BOOKORBIT') {
-            return {
-              result: await openBookOrbitAudiobookSession({
-                appService: activeAppService,
-                book: resolvedBook,
-              }),
-            };
+            try {
+              return {
+                result: await openBookOrbitAudiobookSession({
+                  appService: activeAppService,
+                  book: resolvedBook,
+                }),
+              };
+            } catch (error) {
+              // A refused API key or password would otherwise leave the
+              // spinner up with nothing said.
+              if (error instanceof BookOrbitAuthError) {
+                eventDispatcher.dispatch('toast', {
+                  type: 'error',
+                  message: _('Could not sign in to BookOrbit for audiobooks'),
+                  timeout: 5000,
+                });
+                return { result: null };
+              }
+              throw error;
+            }
           }
           if (resolvedBook.format === 'OPDSAUDIO') {
             try {

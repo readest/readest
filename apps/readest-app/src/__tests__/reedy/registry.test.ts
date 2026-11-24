@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { createReedyModels } from '@/services/reedy/models/registry';
 import { DEFAULT_AI_SETTINGS } from '@/services/ai/constants';

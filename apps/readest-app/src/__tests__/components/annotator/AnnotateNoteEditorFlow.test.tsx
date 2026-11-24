@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * #5987 / #5957 — "Annotate" used to highlight the selection and then hand the
  * note off to the annotations sidebar, which lists notes in reading order and
@@ -70,6 +71,9 @@ const h = vi.hoisted(() => ({
   views: [] as { addAnnotation: ReturnType<typeof vi.fn> }[],
   isSideBarVisible: false,
   isTextSelected: { current: true },
+  // On for a test that lays the book cell and the selection out itself.
+  realPopupGeometry: false,
+  popupPlacement: null as null | { top: number; triangleY: number },
 }));
 
 const settings = {
@@ -78,6 +82,8 @@ const settings = {
     highlightStyles: { highlight: 'yellow', underline: 'green', squiggly: 'blue' },
   },
 };
+
+vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ token: null, user: null }) }));
 
 vi.mock('@/hooks/useShortcuts', () => ({
   default: (actions: Record<string, () => boolean>) => {
@@ -187,6 +193,7 @@ vi.mock('@/hooks/useFileSelector', () => ({
 
 vi.mock('@/app/reader/hooks/useNotesSync', () => ({ useNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useBookOrbitNotesSync', () => ({ useBookOrbitNotesSync: () => {} }));
+vi.mock('@/app/reader/hooks/useGrimmoryNotesSync', () => ({ useGrimmoryNotesSync: () => {} }));
 vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {} }));
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
 vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
@@ -229,8 +236,14 @@ vi.mock('@/utils/sel', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/sel')>();
   return {
     ...actual,
-    getPosition: () => ({ point: { x: 120, y: 200 }, dir: 'up' as const }),
-    getPopupPosition: () => ({ point: { x: 120, y: 140 }, dir: 'up' as const }),
+    getPosition: (...args: Parameters<typeof actual.getPosition>) =>
+      h.realPopupGeometry
+        ? actual.getPosition(...args)
+        : { point: { x: 120, y: 200 }, dir: 'up' as const },
+    getPopupPosition: (...args: Parameters<typeof actual.getPopupPosition>) =>
+      h.realPopupGeometry
+        ? actual.getPopupPosition(...args)
+        : { point: { x: 120, y: 140 }, dir: 'up' as const },
   };
 });
 
@@ -266,7 +279,12 @@ vi.mock('@/app/reader/components/annotator/AnnotationPopup', () => ({
   default: (props: {
     noteEditor?: NoteEditorStub | null;
     onEditNote?: (note: { id: string }) => void;
-  }) => stub.render('popup', props.noteEditor, props.onEditNote),
+    position: { point: { y: number } };
+    trianglePosition: { point: { y: number } };
+  }) => {
+    h.popupPlacement = { top: props.position.point.y, triangleY: props.trianglePosition.point.y };
+    return stub.render('popup', props.noteEditor, props.onEditNote);
+  },
 }));
 vi.mock('@/app/reader/components/annotator/NoteEditorSheet', () => ({
   default: (props: NoteEditorStub) => stub.render('sheet', props),
@@ -349,6 +367,68 @@ describe('Annotate opens the note editor at the selection', () => {
 
     expect(screen.getByTestId('note-editor-sheet')).toBeTruthy();
     expect(screen.queryByTestId('note-editor-popup')).toBeNull();
+  });
+
+  test('keeps the editor in the popup when the on-screen keyboard shortens the window (#7570)', async () => {
+    // An iPad in landscape: the popup fits. Focusing its textarea raises the
+    // keyboard, which leaves the webview a window too short for the popup.
+    setViewport(1180, 820);
+    const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+    const { rerender } = render(<Annotator bookKey='book-1' contentInsets={insets} />);
+    await selectText();
+    act(() => {
+      h.actions?.['onAnnotateSelection']?.();
+    });
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+
+    setViewport(1180, 420);
+    rerender(<Annotator bookKey='book-1' contentInsets={{ ...insets }} />);
+
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+    expect(screen.queryByTestId('note-editor-sheet')).toBeNull();
+  });
+
+  test('places the popup editor again inside the window the keyboard shortened (#7570)', async () => {
+    // The book cell fills the window, and the text sits on the page's last line
+    // wherever the page now ends: the keyboard shortens the page with the window.
+    let gridCell = document.querySelector<HTMLElement>('#gridcell-book-1');
+    if (!gridCell) {
+      gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    gridCell.getBoundingClientRect = () => new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+    Object.defineProperty(Range.prototype, 'getClientRects', {
+      configurable: true,
+      value: () => [new DOMRect(500, window.innerHeight - 60, 100, 20)],
+    });
+    h.realPopupGeometry = true;
+    try {
+      setViewport(1180, 820);
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await selectText();
+      act(() => {
+        h.actions?.['onAnnotateSelection']?.();
+      });
+      const editor = screen.getByTestId('note-editor-popup');
+
+      setViewport(1180, 420);
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+
+      // The same editor, not a remount, so its textarea keeps the focus.
+      expect(screen.getByTestId('note-editor-popup')).toBe(editor);
+      // The popup opens above its anchor, so the anchor is its bottom edge.
+      expect(h.popupPlacement?.top, 'popup top edge').toBeGreaterThanOrEqual(0);
+      expect(h.popupPlacement?.triangleY, 'popup anchor').toBeLessThanOrEqual(420);
+    } finally {
+      h.realPopupGeometry = false;
+      delete (Range.prototype as { getClientRects?: unknown }).getClientRects;
+      gridCell.remove();
+    }
   });
 
   test('leaves the sidebar alone', async () => {
@@ -471,6 +551,68 @@ describe('Annotate opens the note editor at the selection', () => {
     expect(h.isTextSelected.current).toBe(false);
   });
 
+  // Annotate re-publishes the selection with the new highlight's CFI stamped,
+  // and the selection effect used to answer that by re-showing the toolbar —
+  // which focuses its container and steals the caret the note editor's
+  // textarea just took (#7511).
+  test('does not refocus the toolbar container while the note editor opens (#7511)', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    const toolbar = screen.getByRole('toolbar');
+    let toolbarFocusCount = 0;
+    toolbar.addEventListener('focusin', () => {
+      toolbarFocusCount += 1;
+    });
+
+    await selectText();
+    const focusedWhenToolbarOpened = toolbarFocusCount;
+    // The editor's textarea takes focus when it mounts; simulate that by
+    // moving focus off the toolbar first, so a re-focus below is observable.
+    toolbar.blur();
+    expect(document.activeElement).not.toBe(toolbar);
+
+    act(() => {
+      h.actions?.['onAnnotateSelection']?.();
+    });
+
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+    expect(toolbarFocusCount).toBe(focusedWhenToolbarOpened);
+    expect(document.activeElement).not.toBe(toolbar);
+  });
+
+  // The #7511 fix stops only the focus: the selection Annotate re-publishes
+  // still has to bring the popup up with the editor when the toolbar was
+  // hidden, here by an instant quick action a short touch press skipped.
+  test('Annotate with the toolbar hidden still shows the note editor', async () => {
+    Object.assign(h.viewSettings, {
+      enableAnnotationQuickActions: true,
+      annotationQuickAction: 'copy',
+    });
+    try {
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await act(async () => {
+        await eventDispatcher.dispatch('footnote-pointerdown', {
+          key: 'book-1',
+          pointerType: 'touch',
+        });
+      });
+      await selectText();
+      expect(screen.queryByRole('button', { name: 'stub-cancel' })).toBeNull();
+
+      act(() => {
+        h.actions?.['onAnnotateSelection']?.();
+      });
+
+      expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+    } finally {
+      Object.assign(h.viewSettings, {
+        enableAnnotationQuickActions: undefined,
+        annotationQuickAction: undefined,
+      });
+    }
+  });
+
   // The other side of the boundary: a toolbar lookup keeps its selection so
   // dismissing it lands back on the selection toolbar (#5213). Only the note
   // editor consumes the selection; a lookup's handles are hidden for its
@@ -571,6 +713,28 @@ describe('Annotate opens the note editor at the selection', () => {
 
     expect(screen.queryByTestId('note-editor-popup')).toBeNull();
     expect(liveAnnotations()).toHaveLength(0);
+  });
+
+  test('keeps the style and colour of the highlight it adds a note to', async () => {
+    h.config.booknotes = [
+      {
+        id: 'existing',
+        type: 'annotation',
+        cfi: 'epubcfi(/6/2!/4/2)',
+        style: 'underline',
+        color: 'violet',
+        text: 'selected text',
+        note: '',
+        createdAt: 1,
+        updatedAt: 1,
+      } as BookNote,
+    ];
+
+    await annotate();
+
+    expect(liveAnnotations()).toEqual([
+      expect.objectContaining({ id: 'existing', style: 'underline', color: 'violet' }),
+    ]);
   });
 
   test('cancelling keeps a highlight that already existed before Annotate', async () => {

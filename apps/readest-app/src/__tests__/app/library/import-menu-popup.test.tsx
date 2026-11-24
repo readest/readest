@@ -81,6 +81,16 @@ describe('ImportMenuPopup', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('offers pasted text import from the bookshelf add menu', () => {
+    const onImportPastedText = vi.fn();
+    const { onClose } = renderPopup({ onImportPastedText });
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'From Pasted Text' }));
+
+    expect(onImportPastedText).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('dismisses the popup when the backdrop is clicked', () => {
     const { container, onClose } = renderPopup();
 

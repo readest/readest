@@ -1,4 +1,4 @@
-<!-- reviewed-through: 3cc39ad7a (2026-10-14 06:33 +0800) -->
+<!-- reviewed-through: 61ef15e00 (2026-10-15 16:24 +0200) -->
 # Lessons from merged work
 
 Agents write, review and merge most of Readest's code. Each day the merged
@@ -14,6 +14,13 @@ run, and a change verified in one mode or on one device. Three lessons were
 seen on a third day and moved into the rules: one PR one goal, merge the
 reviewed head with a record of what ran, and check a UI change under every
 mode and form factor it ships to.
+
+From 2026-10-14 to 10-15 (19 commits), nothing was reverted, reopened or fixed
+again, and every merge had green CI. What went wrong was thinner. Checks that
+could have run here were listed as "not run". All five community PRs merged
+with no record of what ran. A selector test checked only the selector's text,
+which let a regression ship. Reply drafts spoke of "the maintainer" as someone else. Two
+earlier lessons came back: real-use checks, and keeping a fix to its trigger.
 
 ## Reading the report
 
@@ -39,7 +46,20 @@ mechanism and fix them together, or file them.**
   under Use Book Layout, so the page-bottom gap came back in that mode.
 - 122d1dda3 (#6708): footnote popups ignored Full Justification off under
   Override Book Layout, while the reader respected it (#6636).
+- Done right: 19d6c70c3 (#6828) fixed the footnote-icon indent and also dropped
+  the two older selectors from #1568 that ignored text the same way.
 - Seen 2× (2026-10-04, 2026-10-09).
+
+**In shared rendering code, change only what the reported trigger needs, and
+show the rest is unchanged.** This is the other half of fixing the class: the
+same mechanism everywhere, nothing beyond it.
+- #6712: the first fix also rewrote light backgrounds and dark-mode fills in
+  every mode. The maintainer cut it to Override Book Color on, and a09e06913
+  (#6765) proved everything else byte-identical to main.
+- #6797: the maintainer's note on the reply draft was "can we narrow it
+  further". ab2da5916 (#6801) then kept the two-axis clip for nowrapped rules
+  that size their own box.
+- Seen 2× (2026-10-13, 2026-10-14).
 
 **When you tighten a validator or trust boundary, grep every caller and the
 values it actually passes.**
@@ -68,6 +88,9 @@ not only the PR's CI.**
   #6699).
 - Done right: 6025a29c8 (#6699) named the build it ran and checked no
   `strtok3` reference was left in the server chunks.
+- Done right: 9fd7a4820 (#6813) refreshed `pnpmDeps.hash` and `cargoHash` in
+  the PR itself. It also showed the compiled `prose` CSS was byte-identical
+  after overriding `postcss-selector-parser`.
 - Seen 1× (2026-10-09).
 
 ## Verification
@@ -83,7 +106,20 @@ done.**
   d2875c5ac (#6736) fixed what users met next day: progress frozen at 0/0,
   failed downloads that never retried, unexplained quota refusals, and a
   ~50 s wait before the first job on a long chapter.
-- Seen 1× (2026-10-12).
+- "Not run" is for checks that can't run here. 9f0866f1a (#6791) listed
+  "listening in the app with a real voice" as not run, though Read Aloud
+  works on dev-web. e58e324ea (#6801) listed "a browser re-check after the
+  narrowing commit" as not run, though its repro EPUB had just run on dev-web.
+- Seen 2× (2026-10-12, 2026-10-14).
+
+**Test a selector or matcher against the inputs it must match and reject, not
+against its own text.**
+- #6281's test for the image-paragraph indent exemption only checked that
+  `getStyles` contained the selector strings. `:only-child` ignores text
+  nodes, so from v0.12.10 a paragraph holding a footnote icon lost its
+  indent. 19d6c70c3 (#6828) fixed it. Its test runs the rule over ten
+  paragraph shapes and fails on main for five of them.
+- Seen 1× (2026-10-15).
 
 **A full-suite failure that "passes when rerun alone" is a bug to file, not a
 pass.**
@@ -98,6 +134,17 @@ pass.**
   (`expected +0 to be 4000`) and explains why #6642's approach can't work for
   `VirtuosoGrid`.
 
+## Replies
+
+**Replies post under the maintainer's account: write as the maintainer, never
+about "the maintainer".**
+- On 10-14 the maintainer edited three drafts (#6728, #6743, #6784) from
+  "noted it for the maintainer to decide on" to "noted it as a feature
+  request". The note on #6784 said: "I'm the maintainer, so rephrase this". The
+  triage skill's verdict table asked for that wording; it is reworded with
+  this lesson.
+- Seen 1× (2026-10-14).
+
 ## Moved to the rules
 
 Seen on three or more days; the rules and their evidence are in
@@ -105,6 +152,6 @@ Seen on three or more days; the rules and their evidence are in
 
 - **One PR, one goal** (10-04, 10-13, 10-14).
 - **Merge only the reviewed head, after the last review pass is answered, with
-  a record of what ran** (10-04, 10-08, 10-09, 10-11, 10-13).
+  a record of what ran** (10-04, 10-08, 10-09, 10-11, 10-13, 10-15).
 - **Check a UI change under every mode and form factor it ships to** (10-05,
   10-09, 10-14).

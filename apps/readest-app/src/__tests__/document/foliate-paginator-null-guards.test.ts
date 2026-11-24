@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
 
 import { getDirection } from 'foliate-js/paginator.js';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useFeedStore } from '@/store/feedStore';
 import type { ParsedFeed } from '@/types/rss';

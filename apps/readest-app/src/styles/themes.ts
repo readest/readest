@@ -138,6 +138,13 @@ export const generateDarkPalette = ({ bg, fg, primary }: BaseColor) => {
   } as Palette;
 };
 
+export const customThemeToTheme = ({ name, label, colors }: CustomTheme): Theme => ({
+  name,
+  label,
+  colors: { light: generateLightPalette(colors.light), dark: generateDarkPalette(colors.dark) },
+  isCustomizable: true,
+});
+
 const _ = (stubKey: string) => stubKey;
 
 export const themes = [
@@ -230,6 +237,10 @@ export const themes = [
     },
   },
 ] as Theme[];
+
+// The reader theme until one is picked: Contrast on e-ink devices.
+export const getDefaultThemeColor = () =>
+  typeof window !== 'undefined' && window.__READEST_IS_EINK ? 'contrast' : 'default';
 
 const themeBlock = (name: string, palette: Palette, scheme: ColorScheme): string => {
   const declarations = Object.entries(themeVariables(palette, scheme))

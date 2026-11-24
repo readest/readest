@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
@@ -9,9 +10,14 @@ import {
   waitFor as waitForWithOptions,
 } from '@testing-library/react';
 
+// One key with a real translation, so a name that must stay literal can be told
+// from one that is translated.
+const TRANSLATIONS: Record<string, string> = { Cherry: 'Cerise' };
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, opts?: Record<string, unknown>) =>
-    opts ? Object.entries(opts).reduce((s, [k, v]) => s.replace(`{{${k}}}`, String(v)), key) : key,
+    opts
+      ? Object.entries(opts).reduce((s, [k, v]) => s.replace(`{{${k}}}`, String(v)), key)
+      : (TRANSLATIONS[key] ?? key),
 }));
 
 vi.mock('@/hooks/useResponsiveSize', () => ({
@@ -62,7 +68,7 @@ vi.mock('@/store/settingsStore', () => ({
 
 const getBookData = vi.fn();
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({ getBookData }),
+  ...bookDataStoreHooks(() => ({ getBookData })),
 }));
 
 const saveViewSettings = vi.fn();
@@ -72,6 +78,22 @@ vi.mock('@/helpers/settings', () => ({
 
 vi.mock('@/store/readerProgressStore', () => ({
   useBookProgress: () => ({ sectionLabel: 'Chapter 5' }),
+  getBookProgress: () => null,
+}));
+
+// Previews resolve when the test says the audio ended.
+const preview = vi.hoisted(() => ({
+  play: vi.fn(),
+  suspend: vi.fn(),
+  end: () => {},
+}));
+vi.mock('@/services/tts/voicePreview', () => ({
+  canPreviewEngine: (engine?: string) => !!engine && engine !== 'media-overlay',
+  primeVoicePreview: vi.fn(),
+  suspendReadingForPreview: preview.suspend,
+  playVoicePreview: preview.play,
+  READEST_TTS_ENGINE: 'readest-tts',
+  XUNFEI_TTS_ENGINE: 'xunfei-tts',
 }));
 
 // Premium gating for the offline-audio row. Defaults to a signed-in premium
@@ -96,6 +118,7 @@ vi.mock('@/app/reader/components/tts/TTSChaptersView', () => ({
 }));
 
 import TTSPlayerSheet from '@/app/reader/components/tts/TTSPlayerSheet';
+import { TTSUtils } from '@/services/tts/TTSUtils';
 
 const waitFor = <T,>(callback: () => T | Promise<T>) =>
   waitForWithOptions(callback, { interval: 1 });
@@ -104,9 +127,10 @@ const voiceGroups = [
   {
     id: 'edge',
     name: 'Edge TTS',
+    engine: 'edge-tts',
     voices: [
-      { id: 'ava', name: 'Ava', lang: 'en-US', disabled: false },
-      { id: 'guy', name: 'Guy', lang: 'en-US', disabled: false },
+      { id: 'ava', name: 'Ava', lang: 'en-US', disabled: false, gender: 'female' as const },
+      { id: 'guy', name: 'Guy', lang: 'en-US', disabled: false, gender: 'male' as const },
     ],
   },
 ];
@@ -133,6 +157,7 @@ const makeProps = (overrides: Record<string, unknown> = {}) => ({
   onGetVoices: vi.fn().mockResolvedValue(voiceGroups),
   onSetVoice: vi.fn(),
   onGetVoiceId: vi.fn().mockReturnValue('ava'),
+  voiceId: 'ava',
   onSelectTimeout: vi.fn(),
   onSeek: vi.fn().mockResolvedValue(undefined),
   onSeekPreview: vi.fn(),
@@ -183,11 +208,21 @@ describe('TTSPlayerSheet', () => {
     // Default: signed-in premium user (the row-less tests never hit the gate).
     mockAuth.user = { id: 'u' };
     mockQuota.userProfilePlan = 'pro';
+    preview.suspend.mockResolvedValue(false);
+    preview.play.mockImplementation(
+      (_req, signal: AbortSignal, { onStart }: { onStart: () => void }) =>
+        new Promise<void>((resolve) => {
+          onStart();
+          preview.end = resolve;
+          signal.addEventListener('abort', () => resolve());
+        }),
+    );
   });
 
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    localStorage.removeItem('ttsFavoriteVoices');
   });
 
   test('opened while the clients initialize, it loads the voices once they are ready', async () => {
@@ -201,10 +236,30 @@ describe('TTSPlayerSheet', () => {
     expect((screen.getByLabelText('Previous Paragraph') as HTMLButtonElement).disabled).toBe(true);
     props.onGetVoices.mockResolvedValue(voiceGroups);
     props.onGetVoiceId.mockReturnValue('ava');
-    rerender(<TTSPlayerSheet {...props} clientsReady />);
+    rerender(<TTSPlayerSheet {...props} clientsReady voiceId='ava' />);
     expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
     expect(props.onGetVoices).toHaveBeenCalledTimes(2);
     expect((screen.getByLabelText('Previous Paragraph') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  // #7787: the engine resolves its voice on the first utterance, after the
+  // clients report ready.
+  test('shows the voice the engine resolves while the sheet is open', async () => {
+    const props = makeProps({ onGetVoiceId: vi.fn().mockReturnValue(''), voiceId: '' });
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    await waitFor(() => expect(props.onGetVoices).toHaveBeenCalled());
+    expect(screen.queryByText('Ava')).toBeNull();
+    rerender(<TTSPlayerSheet {...props} voiceId='ava' />);
+    expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
+  });
+
+  test('keeps the voice it shows when the engine reports another', async () => {
+    const props = makeProps();
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    expect(await waitFor(() => screen.getByText('Ava'))).toBeTruthy();
+    rerender(<TTSPlayerSheet {...props} voiceId='guy' />);
+    expect(screen.getByText('Ava')).toBeTruthy();
+    expect(screen.queryByText('Guy')).toBeNull();
   });
 
   test('a voice list that arrives after a newer one is discarded', async () => {
@@ -598,8 +653,166 @@ describe('TTSPlayerSheet', () => {
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Voice'));
     fireEvent.click(await waitFor(() => screen.getByText('Guy')));
-    expect(props.onSetVoice).toHaveBeenCalledWith('guy', 'en-US');
+    expect(props.onSetVoice).toHaveBeenCalledWith('guy', 'en-US', false);
     expect(viewSettings['ttsVoice']).toBe('guy');
+  });
+
+  test('voice view shows the engine picker and the voice filter', async () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    expect(screen.getByLabelText('Voice Engine')).toBeTruthy();
+    // Groups load async; 'All' plus one engine once they arrive.
+    await waitFor(() => screen.getByText('Guy'));
+    const select = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    expect(select?.querySelectorAll('option').length).toBe(2);
+    expect(screen.getByLabelText('Filter voices')).toBeTruthy();
+  });
+
+  test('the voice filter narrows the list by name', async () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.change(await waitFor(() => screen.getByLabelText('Filter voices')), {
+      target: { value: 'Guy' },
+    });
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.queryByText('Ava')).toBeNull();
+  });
+
+  test('picking an engine narrows the voice list to that group', async () => {
+    const twoEngines = [
+      ...voiceGroups,
+      {
+        id: 'xunfei',
+        name: 'Xunfei Speech',
+        engine: 'xunfei-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    render(
+      <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
+    );
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Aseng'));
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.queryByText('Aseng')).toBeNull();
+  });
+
+  test('with one engine picked, its starred voices are listed under Favorites first', async () => {
+    TTSUtils.toggleFavoriteVoice('edge-tts', 'guy');
+    const twoEngines = [
+      ...voiceGroups,
+      {
+        id: 'xunfei',
+        name: 'Xunfei Speech',
+        engine: 'xunfei-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    render(
+      <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
+    );
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Aseng'));
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+
+    fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
+    expect(screen.getByText('Favorites')).toBeTruthy();
+    expect(screen.getAllByText('Guy')).toHaveLength(2);
+
+    fireEvent.change(engineSelect!, { target: { value: 'xunfei-tts/xunfei' } });
+    expect(screen.queryByText('Favorites')).toBeNull();
+  });
+
+  test('the voice view opens on every engine, like the voice library', async () => {
+    const twoEngines = [
+      ...voiceGroups,
+      {
+        id: 'xunfei',
+        name: 'Xunfei Speech',
+        engine: 'xunfei-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+    ];
+    render(
+      <TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(twoEngines) })} />,
+    );
+    const engineSelect = () =>
+      screen
+        .getByLabelText('Voice Engine')
+        .parentElement?.parentElement?.querySelector('select') as HTMLSelectElement;
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Aseng'));
+    fireEvent.change(engineSelect(), { target: { value: 'xunfei-tts/xunfei' } });
+    fireEvent.change(screen.getByLabelText('Filter voices'), { target: { value: 'Ase' } });
+    expect(screen.queryByText('Guy')).toBeNull();
+
+    fireEvent.click(screen.getByLabelText('Go Back'));
+    fireEvent.click(screen.getByLabelText('Voice'));
+    expect(engineSelect().value).toBe('');
+    expect((screen.getByLabelText('Filter voices') as HTMLInputElement).value).toBe('');
+    expect(screen.getByText('Guy')).toBeTruthy();
+    expect(screen.getByText('Aseng')).toBeTruthy();
+  });
+
+  test('escape in the filter field does not dismiss the player sheet', async () => {
+    const props = makeProps();
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Ava'));
+    fireEvent.keyDown(screen.getByLabelText('Filter voices'), { key: 'Escape' });
+    expect(props.onClose).not.toHaveBeenCalled();
+  });
+
+  test('the gender tab survives an engine switch and genderless groups stay visible', async () => {
+    const engines = [
+      voiceGroups[0],
+      {
+        id: 'custom',
+        name: 'My Service',
+        engine: 'custom-tts',
+        voices: [{ id: 'aseng', name: 'Aseng', lang: 'zh-CN', disabled: false }],
+      },
+      {
+        id: 'maleonly',
+        name: 'Male Only',
+        engine: 'male-tts',
+        voices: [
+          { id: 'male1', name: 'MaleOne', lang: 'en-US', disabled: false, gender: 'male' as const },
+        ],
+      },
+    ];
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(engines) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Guy'));
+    fireEvent.click(screen.getByRole('radio', { name: 'Female' }));
+    expect(screen.getByText('Ava')).toBeTruthy();
+    expect(screen.queryByText('Guy')).toBeNull();
+
+    const engineSelect = screen
+      .getByLabelText('Voice Engine')
+      .parentElement?.parentElement?.querySelector('select');
+    // The genderless engine has no gender metadata; its voices must still
+    // list although the retained tab is Female and the tabs are hidden.
+    fireEvent.change(engineSelect!, { target: { value: 'custom-tts/custom' } });
+    await waitFor(() => screen.getByText('Aseng'));
+    // An engine with only male voices must not hide behind the retained
+    // Female tab either: its voices stay listed, with "All" shown selected.
+    fireEvent.change(engineSelect!, { target: { value: 'male-tts/maleonly' } });
+    await waitFor(() => screen.getByText('MaleOne'));
+    expect(screen.getByRole('radio', { name: 'All' }).getAttribute('aria-checked')).toBe('true');
+    // Back to the gendered engine: the retained Female tab narrows it again.
+    fireEvent.change(engineSelect!, { target: { value: 'edge-tts/edge' } });
+    expect(screen.getByText('Ava')).toBeTruthy();
+    expect(screen.queryByText('Guy')).toBeNull();
   });
 
   test('timer button drills into the timer list and selects a timeout', async () => {
@@ -691,10 +904,9 @@ describe('TTSPlayerSheet', () => {
     const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(narrationGroups) });
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Voice'));
-    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /Narration/ })));
-    fireEvent.click(screen.getByText('Jane Reader'));
+    fireEvent.click(await waitFor(() => screen.getByText('Jane Reader')));
 
-    expect(props.onSetVoice).toHaveBeenCalledWith('media-overlay', 'en');
+    expect(props.onSetVoice).toHaveBeenCalledWith('media-overlay', 'en', false);
     expect(viewSettings['ttsVoice']).toBe('media-overlay');
     expect(viewSettings['ttsUseNarration']).toBe(true);
   });
@@ -719,33 +931,12 @@ describe('TTSPlayerSheet', () => {
     expect(viewSettings['ttsUseNarration']).toBeUndefined();
   });
 
-  test('premium voices show the plan that unlocks them', async () => {
+  test('a voice row names its gender and language, and premium voices the plan', async () => {
     const groups = [
       {
-        id: 'readest',
+        id: 'readest-tts',
         name: 'Readest Voice',
-        voices: [
-          { id: 'kokoro:zf_001', name: 'Zifang', lang: 'zh-CN', tier: 'plus' as const },
-          { id: 'omnivoice:xiaoyu', name: 'Xiaoyu', lang: 'zh-CN', tier: 'pro' as const },
-        ],
-      },
-      ...voiceGroups,
-    ];
-    render(<TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) })} />);
-    fireEvent.click(screen.getByLabelText('Voice'));
-    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /Readest Voice/ })));
-    const row = (name: string) => screen.getByText(name).closest('button')!;
-    expect((await waitFor(() => row('Xiaoyu'))).textContent).toBe('XiaoyuPro');
-    expect(row('Zifang').textContent).toBe('ZifangPlus');
-    fireEvent.click(screen.getByRole('button', { name: /Edge TTS/ }));
-    expect(row('Guy').textContent).toBe('Guy');
-  });
-
-  test('badges sit at the row end; a multilingual voice is badged, a locked one greyed', async () => {
-    const groups = [
-      {
-        id: 'readest',
-        name: 'Readest Voice',
+        engine: 'readest-tts',
         voices: [
           {
             id: 'omnivoice:xiaoyu',
@@ -759,12 +950,14 @@ describe('TTSPlayerSheet', () => {
       {
         id: 'edge-tts',
         name: 'Edge TTS',
+        engine: 'edge-tts',
         voices: [
           {
             id: 'en-US-AvaMultilingualNeural',
             name: 'Ava',
             lang: 'en-US',
             variant: 'multilingual' as const,
+            gender: 'female' as const,
           },
         ],
       },
@@ -772,47 +965,106 @@ describe('TTSPlayerSheet', () => {
     render(<TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) })} />);
     fireEvent.click(screen.getByLabelText('Voice'));
     const row = (name: string) => screen.getAllByText(name).at(-1)!.closest('button')!;
-    expect((await waitFor(() => row('Xiaoyu'))).innerHTML).toContain('text-base-content/40');
-    expect(screen.getByText('Pro').className).toContain('ms-auto');
-    fireEvent.click(screen.getByRole('button', { name: /Edge TTS/ }));
-    expect(row('Ava').textContent).toBe('AvaMultilingual');
-    expect(screen.getByText('Multilingual').className).toContain('ms-auto');
+    const xiaoyu = await waitFor(() => row('Xiaoyu'));
+    // A locked voice is greyed and badged with the plan that unlocks it.
+    expect(xiaoyu.innerHTML).toContain('text-base-content/60');
+    expect(xiaoyu.textContent).toContain('Pro');
+    const ava = row('Ava');
+    expect(ava.textContent).toContain('Female');
+    expect(ava.textContent).toMatch(/English \(United States\) · Multilingual/);
+    // Every engine is listed under its own heading, none folded away.
+    expect(screen.getByRole('heading', { name: 'Readest Voice' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Edge TTS' })).toBeTruthy();
   });
 
-  test('voice groups form an accordion opened on the current voice, foldable', async () => {
+  test("shows a service's voice name as given, translating only built-in names", async () => {
     const groups = [
-      { id: 'custom', name: 'Kokoro', voices: [{ id: 'k1', name: 'af_heart', lang: 'mul' }] },
-      ...voiceGroups,
+      {
+        id: 'custom',
+        name: 'Cherry',
+        literalName: true,
+        engine: 'custom-tts',
+        voices: [
+          { id: 's1:cherry', name: 'Cherry', lang: 'mul', literalName: true },
+          { id: 'cherry', name: 'Cherry', lang: 'mul' },
+        ],
+      },
     ];
     const props = makeProps({
       onGetVoices: vi.fn().mockResolvedValue(groups),
-      onGetVoiceId: vi.fn().mockReturnValue('guy'),
+      onGetVoiceId: vi.fn().mockReturnValue('s1:cherry'),
     });
     render(<TTSPlayerSheet {...props} />);
+    const voiceButton = screen.getByLabelText('Voice');
+    await waitFor(() => expect(voiceButton.textContent).toBe('Cherry'));
+    fireEvent.click(voiceButton);
+    // The group is the user's service, named by them.
+    expect((await waitFor(() => screen.getByRole('heading'))).textContent).toBe('Cherry');
+    expect(screen.getByText('Cerise')).toBeTruthy();
+    const current = screen.getAllByText('Cherry').at(-1)!.closest('button')!;
+    expect(current.getAttribute('aria-current')).toBe('true');
+  });
+
+  test('filters the voices by gender, keeping the list at one height', async () => {
+    render(<TTSPlayerSheet {...makeProps()} />);
     fireEvent.click(screen.getByLabelText('Voice'));
-    const kokoro = await waitFor(() => screen.getByRole('button', { name: /Kokoro/ }));
-    const edge = screen.getByRole('button', { name: /Edge TTS/ });
-    // The group of the voice in use opens, and only it.
-    expect([kokoro, edge].map((h) => h.getAttribute('aria-expanded'))).toEqual(['false', 'true']);
+    fireEvent.click(await waitFor(() => screen.getByRole('radio', { name: 'Male' })));
     expect(screen.getByText('Guy')).toBeTruthy();
-    expect(screen.queryByText('af_heart')).toBeNull();
-    fireEvent.click(kokoro);
-    expect([kokoro, edge].map((h) => h.getAttribute('aria-expanded'))).toEqual(['true', 'false']);
-    expect(screen.getByText('af_heart')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Guy' })).toBeNull();
-    // A fixed height while choosing a voice: folding never resizes the sheet.
-    const boxClass = () => screen.getByRole('dialog').getAttribute('data-box-class');
-    expect(boxClass()).toContain('sm:h-[var(--tts-player-h,85%)]!');
-    expect(boxClass()).not.toContain('sm:h-[var(--tts-player-h,auto)]!');
-    // Tapping the open group folds it: at most one group is open.
-    fireEvent.click(kokoro);
-    expect([kokoro, edge].map((h) => h.getAttribute('aria-expanded'))).toEqual(['false', 'false']);
-    expect(screen.queryByText('af_heart')).toBeNull();
-    // Folded, the group of the voice in use still shows it, and stands out.
-    expect(edge.textContent).toContain('Guy');
-    expect(edge.className).toContain('font-semibold');
-    expect(kokoro.textContent).not.toContain('af_heart');
-    expect(kokoro.className).not.toContain('font-semibold');
+    expect(screen.queryByText('Ava')).toBeNull();
+    fireEvent.click(screen.getByRole('radio', { name: 'All' }));
+    expect(screen.getByText('Ava')).toBeTruthy();
+    const boxClass = screen.getByRole('dialog').getAttribute('data-box-class');
+    expect(boxClass).toContain('sm:h-[var(--tts-player-h,85%)]!');
+  });
+
+  test('a preview plays a voice without picking it; tapping again stops it', async () => {
+    const props = makeProps();
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByLabelText('Preview Guy')));
+    await waitFor(() => expect(preview.play).toHaveBeenCalledTimes(1));
+    expect(preview.play.mock.calls[0]![0]).toMatchObject({
+      engine: 'edge-tts',
+      voiceId: 'guy',
+      lang: 'en-US',
+      text: expect.stringMatching(/^Hello!/),
+    });
+    const stop = await waitFor(() => screen.getByLabelText('Stop Preview'));
+    expect(props.onSetVoice).not.toHaveBeenCalled();
+    fireEvent.click(stop);
+    expect((preview.play.mock.calls[0]![1] as AbortSignal).aborted).toBe(true);
+    expect(screen.getByLabelText('Preview Guy')).toBeTruthy();
+  });
+
+  test('picking a voice after a preview stopped reading reads on with it', async () => {
+    preview.suspend.mockResolvedValue(true);
+    const props = makeProps({ isPlaying: false });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByLabelText('Preview Guy')));
+    await waitFor(() => expect(preview.play).toHaveBeenCalled());
+    await act(async () => preview.end());
+    fireEvent.click(screen.getByText('Guy'));
+    expect(props.onSetVoice).toHaveBeenCalledWith('guy', 'en-US', true);
+  });
+
+  test('leaving the voice list stops the preview', async () => {
+    const props = makeProps();
+    const { rerender } = render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    fireEvent.click(await waitFor(() => screen.getByLabelText('Preview Ava')));
+    await waitFor(() => expect(preview.play).toHaveBeenCalled());
+    rerender(<TTSPlayerSheet {...props} isOpen={false} />);
+    expect((preview.play.mock.calls[0]![1] as AbortSignal).aborted).toBe(true);
+  });
+
+  test('recorded narration has nothing to preview', async () => {
+    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(narrationGroups) });
+    render(<TTSPlayerSheet {...props} />);
+    fireEvent.click(screen.getByLabelText('Voice'));
+    await waitFor(() => screen.getByText('Jane Reader'));
+    expect(screen.queryByLabelText('Preview Jane Reader')).toBeNull();
+    expect(screen.getByLabelText('Preview Guy')).toBeTruthy();
   });
 
   test('a Readest voice the plan lacks sends the reader to upgrade', async () => {
@@ -834,7 +1086,7 @@ describe('TTSPlayerSheet', () => {
     const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) });
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Voice'));
-    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /^ClaraPro$/ })));
+    fireEvent.click(await waitFor(() => screen.getByText('Clara')));
     expect(props.onSetVoice).not.toHaveBeenCalled();
     expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/user\?redirect=/));
     expect(props.onClose).toHaveBeenCalled();
@@ -860,7 +1112,7 @@ describe('TTSPlayerSheet', () => {
     const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) });
     render(<TTSPlayerSheet {...props} />);
     fireEvent.click(screen.getByLabelText('Voice'));
-    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /^HeartPlus$/ })));
+    fireEvent.click(await waitFor(() => screen.getByText('Heart')));
     expect(props.onSetVoice).not.toHaveBeenCalled();
     expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/auth/));
   });

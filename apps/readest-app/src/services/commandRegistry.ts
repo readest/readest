@@ -1,6 +1,6 @@
 import { Fzf, FzfResultItem, byLengthAsc } from 'fzf';
 import { SettingsPanelType } from '@/components/settings/SettingsDialog';
-import { RiFontSize, RiDashboardLine, RiTranslate, RiShareLine } from 'react-icons/ri';
+import { RiFontSize, RiDashboardLine, RiTranslate2, RiShareLine } from 'react-icons/ri';
 import { VscSymbolColor } from 'react-icons/vsc';
 import { LiaHandPointerSolid } from 'react-icons/lia';
 import { IoAccessibilityOutline } from 'react-icons/io5';
@@ -152,7 +152,7 @@ const panelIcons: Record<SettingsPanelType, IconType> = {
   Theme: VscSymbolColor,
   Control: LiaHandPointerSolid,
   TTS: PiSpeakerHigh,
-  Language: RiTranslate,
+  Language: RiTranslate2,
   AI: PiRobot,
   Integrations: RiShareLine,
   Custom: IoAccessibilityOutline,
@@ -339,6 +339,12 @@ const layoutPanelItems = [
     section: 'Header & Footer',
   },
   {
+    id: 'settings.layout.solidScrolledFooter',
+    labelKey: _('Solid Footer in Scrolled Mode'),
+    keywords: ['footer', 'solid', 'scrolled', 'scroll', 'bottom', 'bar', 'band'],
+    section: 'Header & Footer',
+  },
+  {
     id: 'settings.layout.headerFooterFontSize',
     labelKey: _('Font Size'),
     keywords: ['font', 'size', 'header', 'footer', 'progress', 'page', 'number', 'text'],
@@ -377,6 +383,12 @@ const colorPanelItems = [
     section: 'Theme',
   },
   {
+    id: 'settings.color.transparentImageBackground',
+    labelKey: _('Transparent Image Background'),
+    keywords: ['image', 'white', 'background', 'transparent', 'diagram'],
+    section: 'Theme',
+  },
+  {
     id: 'settings.color.overrideBookColor',
     labelKey: _('Override Book Color'),
     keywords: ['override', 'book', 'color', 'custom'],
@@ -410,6 +422,12 @@ const colorPanelItems = [
     id: 'settings.tts.mediaMetadata',
     labelKey: _('TTS Media Info Update Frequency'),
     keywords: ['tts', 'media', 'metadata', 'bluetooth', 'notification', 'chapter', 'paragraph'],
+    section: 'TTS',
+  },
+  {
+    id: 'settings.tts.voices',
+    labelKey: _('Voice Library'),
+    keywords: ['tts', 'voice', 'preview', 'default', 'language', 'gender', 'read aloud'],
     section: 'TTS',
   },
   {
@@ -489,9 +507,30 @@ const controlPanelItems = [
     section: 'Pagination',
   },
   {
+    id: 'settings.control.imageViewerGesture',
+    labelKey: _('Open Images'),
+    keywords: ['image', 'viewer', 'gallery', 'tap', 'click', 'long', 'press', 'hold'],
+    section: 'Pagination',
+  },
+  {
     id: 'settings.control.showPaginationButtons',
     labelKey: _('Show Page Navigation Buttons'),
     keywords: ['show', 'pagination', 'buttons', 'navigation', 'arrows', 'chevron', 'page', 'turn'],
+    section: 'Pagination',
+  },
+  {
+    id: 'settings.control.stablePageNumbers',
+    labelKey: _('Stable Page Numbers'),
+    keywords: [
+      'stable',
+      'page',
+      'number',
+      'count',
+      'screen',
+      'calibrate',
+      'measured',
+      'pagination',
+    ],
     section: 'Pagination',
   },
   {
@@ -546,6 +585,12 @@ const controlPanelItems = [
     id: 'settings.control.hideBookshelfPageButtons',
     labelKey: _('Hide Bookshelf Buttons'),
     keywords: ['eink', 'e-ink', 'library', 'bookshelf', 'previous', 'next', 'page', 'buttons'],
+    section: 'Device',
+  },
+  {
+    id: 'settings.control.alwaysShowStatusBar',
+    labelKey: _('Always Show Status Bar'),
+    keywords: ['status', 'bar', 'system', 'clock', 'battery', 'fullscreen'],
     section: 'Device',
   },
   {

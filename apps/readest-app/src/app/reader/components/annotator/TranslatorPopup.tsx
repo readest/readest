@@ -203,7 +203,9 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
               ]}
             />
           </div>
-          <p className='text-base'>{text}</p>
+          <p dir='auto' className='text-base'>
+            {text}
+          </p>
         </div>
 
         <div className='mx-4 shrink-0 border-t border-base-content/20'></div>
@@ -234,7 +236,9 @@ const TranslatorPopup: React.FC<TranslatorPopupProps> = ({
                   )}
                 </div>
               ) : (
-                <p className='text-base'>{translation || _('No translation available.')}</p>
+                <p dir='auto' className='text-base'>
+                  {translation || _('No translation available.')}
+                </p>
               )}
             </div>
           )}

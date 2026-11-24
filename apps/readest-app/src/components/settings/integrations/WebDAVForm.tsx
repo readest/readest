@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation, type TranslationFunc } from '@/hooks/useTranslation';
@@ -14,7 +14,7 @@ import { buildWebDAVConnectSettings } from '@/services/sync/providers/webdav/con
 import { SectionTitle } from '../primitives';
 import FileSyncForm from './FileSyncForm';
 import WebDAVBrowsePane from './WebDAVBrowsePane';
-import { persistCloudProviderEnabled } from './cloudSync';
+import { forgetCloudProviderConnection, persistCloudProviderEnabled } from './cloudSync';
 
 /**
  * Translate a connection-probe failure into a user-facing string. Each branch is
@@ -44,22 +44,37 @@ const formatConnectError = (_: TranslationFunc, result: WebDAVConnectResult): st
  *   + the {@link WebDAVBrowsePane} + a Disconnect button.
  * - **Inactive**: the URL/credentials form (pre-filled from saved settings, so a
  *   previously-configured server reconnects in one click). Connecting turns
- *   WebDAV on; every other provider is left exactly as it was (#5062).
+ *   WebDAV on; every other provider is left exactly as it was (#5062). Forget
+ *   removes the saved server here and in Readest Cloud (#7799).
  */
 const WebDAVForm: React.FC = () => {
   const _ = useTranslation();
   const { settings, setSettings, saveSettings } = useSettingsStore();
-  const { envConfig } = useEnv();
+  const { envConfig, appService } = useEnv();
 
   const stored = settings.webdav;
   const isActive = !!stored?.enabled;
+  const hasSavedConnection = !!(stored?.serverUrl || stored?.username || stored?.password);
 
   const [url, setUrl] = useState(stored?.serverUrl || '');
   const [username, setUsername] = useState(stored?.username || '');
   const [password, setPassword] = useState(stored?.password || '');
   const [rootPath, setRootPath] = useState(stored?.rootPath || '/');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isForgetting, setIsForgetting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Drop the drafts once the saved connection is gone, whether this window,
+  // another window or another device forgot it: useState keeps its initial
+  // values, and Connect would otherwise save the forgotten server again.
+  useEffect(() => {
+    if (hasSavedConnection) return;
+    setUrl('');
+    setUsername('');
+    setPassword('');
+    setRootPath('/');
+    setShowPassword(false);
+  }, [hasSavedConnection]);
 
   const handleConnect = async () => {
     if (!url || !username) return;
@@ -97,6 +112,22 @@ const WebDAVForm: React.FC = () => {
     await persistCloudProviderEnabled(envConfig, 'webdav', false);
     setShowPassword(false);
     eventDispatcher.dispatch('toast', { type: 'info', message: _('Disconnected') });
+  };
+
+  const handleForget = async () => {
+    const confirmed = await appService?.ask(
+      _(
+        'Forget this WebDAV server? Its address and login are removed from this device, from Readest Cloud and from your other devices that are not connected to it. Files on the server are not touched.',
+      ),
+    );
+    if (!confirmed) return;
+    // Connect waits: a server saved before the Forget's upload went out would race it.
+    setIsForgetting(true);
+    try {
+      await forgetCloudProviderConnection(envConfig, 'webdav');
+    } finally {
+      setIsForgetting(false);
+    }
   };
 
   const persistWebdav = async (patch: Partial<typeof stored>) => {
@@ -223,10 +254,21 @@ const WebDAVForm: React.FC = () => {
         />
       </div>
 
-      <div className='flex justify-end pt-1'>
+      <div className='flex items-center justify-end gap-2 pt-1'>
+        {hasSavedConnection && (
+          <button
+            type='button'
+            onClick={handleForget}
+            // A pending Connect would save the server again after a Forget.
+            disabled={isConnecting}
+            className='text-error me-auto min-h-11 min-w-11 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+          >
+            {_('Forget')}
+          </button>
+        )}
         <button
           type='submit'
-          disabled={isConnecting || !url || !username}
+          disabled={isConnecting || isForgetting || !url || !username}
           className={clsx(
             'btn btn-contrast',
             'h-10 min-h-10 rounded-lg border-0 px-5 text-sm font-medium',

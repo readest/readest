@@ -462,6 +462,20 @@ function M.pullBooks(opts, cb)
                     local parsed = LibraryStore.parseSyncRow(raw)
                     if parsed then
                         parsed.user_id = opts.settings.user_id
+                        -- A live cloud row brings back a book this device
+                        -- holds as deleted (deleted in an app, then pushed
+                        -- again, #7576). parseSyncRow leaves deleted_at out,
+                        -- which upsertBook reads as "keep the stored one", so
+                        -- clear it explicitly. A local deletion newer than
+                        -- the cloud row hasn't been pushed yet (pull runs
+                        -- before push) and stays.
+                        if not parsed.deleted_at then
+                            local existing = opts.store:_getRowRaw(parsed.hash)
+                            local deleted_at = existing and tonumber(existing.deleted_at)
+                            if deleted_at and (parsed.updated_at or 0) >= deleted_at then
+                                parsed._clear_fields = { "deleted_at" }
+                            end
+                        end
                         opts.store:upsertBook(parsed)
                         upserted = upserted + 1
                         local rc = row_pull_cursor(parsed)
@@ -593,6 +607,7 @@ function M.downloadBook(book, opts, cb)
                     local http = require("socket.http")
                     local socketutil = require("socketutil")
                     local ltn12 = require("ltn12")
+                    require("readest_syncclient").useIPv4InWorker()
                     local f, ferr = io.open(partial, "wb")
                     if not f then result = "error:" .. tostring(ferr); return end
                     socketutil:set_timeout(socketutil.FILE_BLOCK_TIMEOUT, socketutil.FILE_TOTAL_TIMEOUT)
@@ -613,10 +628,12 @@ function M.downloadBook(book, opts, cb)
                 ffi.C._exit(0)
             end, true)
             if not pid then finish(false, "fork failed"); return end
+            require("readest_syncclient").trackWorker(pid)
 
             local poll
             poll = function()
                 if FFIUtil.isSubProcessDone(pid) then
+                    require("readest_syncclient").untrackWorker(pid)
                     local result = FFIUtil.readAllFromFD(parent_read_fd) or ""
                     if cancelled then
                         os.remove(partial)
@@ -697,7 +714,7 @@ function M.downloadCover(book, opts, cb)
             local url = body.downloadUrl
 
             local pid, parent_read_fd = FFIUtil.runInSubProcess(
-                function(_child_pid, child_write_fd)
+                function(child_pid, child_write_fd)
                     -- Runs in a forked child. Two hard rules, both to keep
                     -- KOReader alive on Boox / Adreno devices (issue #4165):
                     --
@@ -718,8 +735,13 @@ function M.downloadCover(book, opts, cb)
                         local http       = require("socket.http")
                         local socketutil = require("socketutil")
                         local ltn12      = require("ltn12")
+                        require("readest_syncclient").useIPv4InWorker()
 
-                        local f, ferr = io.open(dst, "wb")
+                        -- A worker killed at exit must not leave a partial
+                        -- cover at dst, which the cache would take as done.
+                        -- One file per worker: a manual and an automatic
+                        -- download of the same cover can overlap.
+                        local f, ferr = io.open(dst .. "." .. child_pid .. ".part", "wb")
                         if not f then
                             result = "error:open:" .. tostring(ferr)
                             return
@@ -731,7 +753,7 @@ function M.downloadCover(book, opts, cb)
                             sink    = ltn12.sink.file(f),
                         })
                         socketutil:reset_timeout()
-                        if code == 200 then
+                        if code == 200 and os.rename(dst .. "." .. child_pid .. ".part", dst) then
                             result = "ok"
                         elseif code == 404 then
                             result = "404"
@@ -755,19 +777,21 @@ function M.downloadCover(book, opts, cb)
                 if cb then cb(false, "fork failed") end
                 return
             end
+            require("readest_syncclient").trackWorker(pid)
 
             local poll_interval = 0.3
             local poll
             poll = function()
                 if FFIUtil.isSubProcessDone(pid) then
+                    require("readest_syncclient").untrackWorker(pid)
                     local result = FFIUtil.readAllFromFD(parent_read_fd) or ""
                     if result == "ok" then
                         if cb then cb(true, dst) end
                     elseif result == "404" then
-                        os.remove(dst)
+                        os.remove(dst .. "." .. pid .. ".part")
                         if cb then cb(false, "no-cover", 404) end
                     else
-                        os.remove(dst)
+                        os.remove(dst .. "." .. pid .. ".part")
                         if cb then cb(false, result, nil) end
                     end
                 else

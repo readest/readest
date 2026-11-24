@@ -229,6 +229,65 @@ impl<R: Runtime> NativeBridge<R> {
         Err(crate::Error::UnsupportedPlatformError)
     }
 
+    pub fn get_lookup_apps(&self) -> crate::Result<GetLookupAppsResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_status(&self) -> crate::Result<AnkiStatusResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_request_permission(&self) -> crate::Result<AnkiPermissionResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_list_decks(&self) -> crate::Result<AnkiListDecksResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_read_deck(
+        &self,
+        _payload: AnkiReadDeckRequest,
+    ) -> crate::Result<AnkiReadDeckResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_add_notes(
+        &self,
+        _payload: AnkiAddNotesRequest,
+    ) -> crate::Result<AnkiAddNotesResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_update_tags(
+        &self,
+        _payload: AnkiUpdateTagsRequest,
+    ) -> crate::Result<AnkiUpdateTagsResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_note_type(&self) -> crate::Result<AnkiNoteTypeResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_upgrade_note_type(
+        &self,
+        _payload: AnkiUpgradeNoteTypeRequest,
+    ) -> crate::Result<AnkiUpdateTagsResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn anki_set_entries(
+        &self,
+        _payload: AnkiSetEntriesRequest,
+    ) -> crate::Result<AnkiUpdateTagsResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn set_lookup_app(&self, _payload: SetLookupAppRequest) -> crate::Result<()> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
     pub fn select_directory(&self) -> crate::Result<SelectDirectoryResponse> {
         Err(crate::Error::UnsupportedPlatformError)
     }
@@ -526,16 +585,35 @@ impl<R: Runtime> NativeBridge<R> {
     /// desktop, where the leaf keeps a paper back.
     pub fn cover_webview_region(
         &self,
-        _payload: CaptureWebviewRegionRequest,
+        window: &tauri::WebviewWindow<R>,
+        payload: CaptureWebviewRegionRequest,
     ) -> crate::Result<CoverWebviewRegionResponse> {
-        Err(crate::Error::UnsupportedPlatformError)
+        #[cfg(target_os = "macos")]
+        {
+            crate::platform::macos::cover_webview_region(window, payload)
+                .map(|token| CoverWebviewRegionResponse { token })
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = (window, payload);
+            Err(crate::Error::UnsupportedPlatformError)
+        }
     }
 
     pub fn uncover_webview_region(
         &self,
-        _payload: UncoverWebviewRegionRequest,
+        window: &tauri::WebviewWindow<R>,
+        payload: UncoverWebviewRegionRequest,
     ) -> crate::Result<()> {
-        Err(crate::Error::UnsupportedPlatformError)
+        #[cfg(target_os = "macos")]
+        {
+            crate::platform::macos::uncover_webview_region(window, payload.token)
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let _ = (window, payload);
+            Err(crate::Error::UnsupportedPlatformError)
+        }
     }
 
     /// Probe the iCloud ubiquity container. Non-macOS desktops report
@@ -569,6 +647,27 @@ impl<R: Runtime> NativeBridge<R> {
             let _ = payload;
             Err(crate::Error::UnsupportedPlatformError)
         }
+    }
+
+    /// Apple's on-device model is bridged on iOS only; desktops report it
+    /// unavailable so the JS side never offers it.
+    pub fn on_device_llm_status(&self) -> crate::Result<OnDeviceLlmStatusResponse> {
+        Ok(OnDeviceLlmStatusResponse {
+            available: false,
+            reason: Some("unsupportedOS".into()),
+            ..Default::default()
+        })
+    }
+
+    pub fn on_device_llm_generate(
+        &self,
+        _payload: OnDeviceLlmGenerateRequest,
+    ) -> crate::Result<OnDeviceLlmGenerateResponse> {
+        Err(crate::Error::UnsupportedPlatformError)
+    }
+
+    pub fn on_device_llm_cancel(&self, _payload: OnDeviceLlmCancelRequest) -> crate::Result<()> {
+        Ok(())
     }
 }
 

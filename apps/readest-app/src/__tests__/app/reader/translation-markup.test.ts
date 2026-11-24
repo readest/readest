@@ -57,6 +57,18 @@ describe('extractSourcePayload', () => {
     expect(payload.text).toBe('The 辞書 is open.');
     expect(payload.text).not.toContain('じしょ');
   });
+
+  it("drops the book's own ruby readings and their fallback parentheses (#6934)", () => {
+    const source = el('<ruby>漢字<rp>(</rp><rt>かんじ</rt><rp>)</rp></ruby>を読む。');
+    expect(extractSourcePayload(source).text).toBe('漢字を読む。');
+  });
+
+  it('drops ruby readings from the markup sent with inline formatting', () => {
+    const payload = extractSourcePayload(el('<b>強い</b><ruby>漢字<rt>かんじ</rt></ruby>。'));
+    expect(payload.hasMarkup).toBe(true);
+    expect(payload.html).not.toContain('かんじ');
+    expect(payload.text).toBe('強い漢字。');
+  });
 });
 
 describe('sanitizeTranslatedMarkup', () => {

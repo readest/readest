@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { AppService } from '@/types/system';
 import type { ShareMetadata } from '@/libs/share';
@@ -29,6 +30,7 @@ vi.mock('@/libs/share', async (orig) => {
 });
 
 import { ensureSharedBookLocal } from '@/libs/shareImport';
+import { readFlowState } from '@/services/sync/dataFlow/log';
 
 const TOKEN = 'Qmup0X1A8ovl2FmKJKA8mB';
 
@@ -99,5 +101,31 @@ describe('ensureSharedBookLocal (new import)', () => {
     expect(fetchMock).not.toHaveBeenCalled();
 
     vi.unstubAllGlobals();
+  });
+
+  it('counts the shared file it downloaded, and shows a download that failed', async () => {
+    localStorage.clear();
+    const book = { hash: 'hash', title: 'Book' };
+    const appService = makeAppService(book);
+    globalThis.fetch = vi.fn(async () => new Response('bytes')) as typeof fetch;
+
+    await ensureSharedBookLocal(newImportArgs(appService));
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'readest-cloud',
+      direction: 'pull',
+      kind: 'books',
+      count: 1,
+      bookTitle: 'Book',
+    });
+
+    globalThis.fetch = vi.fn(
+      async () => new Response('gone', { status: 410, statusText: 'Gone' }),
+    ) as typeof fetch;
+    await expect(ensureSharedBookLocal(newImportArgs(appService))).rejects.toThrow();
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'readest-cloud',
+      direction: 'pull',
+      error: 'Gone',
+    });
   });
 });

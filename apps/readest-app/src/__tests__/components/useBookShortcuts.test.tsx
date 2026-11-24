@@ -1,7 +1,10 @@
-import { cleanup, render } from '@testing-library/react';
+// @vitest-environment happy-dom
+import { Profiler } from 'react';
+import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import useBookShortcuts from '@/app/reader/hooks/useBookShortcuts';
 import { eventDispatcher } from '@/utils/event';
+import { useBookDataStore } from '@/store/bookDataStore';
 
 const shortcutState = {
   actions: null as Record<
@@ -36,6 +39,7 @@ const currentBookData = {
 };
 
 const currentViewSettings = {
+  scrolled: false,
   defaultFontSize: 16,
   zoomLevel: 100,
   lineHeight: 1.5,
@@ -96,6 +100,10 @@ vi.mock('@/store/settingsStore', () => ({
 }));
 
 const mockSaveViewSettings = vi.fn();
+const mockApplyPageTurnAttributes = vi.fn();
+vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({
+  applyPageTurnAttributes: (...args: unknown[]) => mockApplyPageTurnAttributes(...args),
+}));
 vi.mock('@/helpers/settings', () => ({
   saveViewSettings: (...args: unknown[]) => mockSaveViewSettings(...args),
 }));
@@ -104,13 +112,17 @@ vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ envConfig: { appPlatform: 'web' } }),
 }));
 
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
-    getBookData: () => currentBookData,
-    getConfig: mockGetConfig,
-    setConfig: mockSetConfig,
-  }),
-}));
+vi.mock('@/store/bookDataStore', async () => {
+  const { create } = await import('zustand');
+  return {
+    useBookDataStore: create(() => ({
+      booksData: {},
+      getBookData: () => currentBookData,
+      getConfig: (...args: unknown[]) => (mockGetConfig as (...a: unknown[]) => unknown)(...args),
+      setConfig: (...args: unknown[]) => mockSetConfig(...args),
+    })),
+  };
+});
 
 vi.mock('@/store/notebookStore', () => ({
   useNotebookStore: () => ({
@@ -176,6 +188,7 @@ describe('useBookShortcuts', () => {
     vi.clearAllMocks();
     shortcutState.actions = null;
     currentViewSettings.readingRulerEnabled = true;
+    currentViewSettings.scrolled = false;
     currentViewSettings.writingMode = 'horizontal-tb';
     currentViewSettings.vertical = false;
     currentViewSettings.rtl = false;
@@ -194,6 +207,23 @@ describe('useBookShortcuts', () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it.each([
+    false,
+    true,
+  ])('keeps scroll-mode shortcut gestures in step for fixed layout=%s', (fixed) => {
+    currentBookData.isFixedLayout = fixed;
+    render(<Harness />);
+    shortcutState.actions?.['onToggleScrollMode']?.();
+    expect(currentViewSettings.scrolled).toBe(true);
+    expect(mockView.renderer.setAttribute).toHaveBeenCalledWith('flow', 'scrolled');
+    expect(mockApplyPageTurnAttributes).toHaveBeenCalledWith(mockView, currentViewSettings, fixed);
+    mockApplyPageTurnAttributes.mockClear();
+    shortcutState.actions?.['onToggleScrollMode']?.();
+    expect(currentViewSettings.scrolled).toBe(false);
+    expect(mockView.renderer.setAttribute).toHaveBeenCalledWith('flow', 'paginated');
+    expect(mockApplyPageTurnAttributes).toHaveBeenCalledWith(mockView, currentViewSettings, fixed);
   });
 
   it('routes page-turn shortcuts to reading ruler movement when enabled', () => {
@@ -414,5 +444,78 @@ describe('useBookShortcuts', () => {
       expect(mockView.renderer.setAttribute).toHaveBeenCalledWith('scale-factor', 110);
       expect(mockSaveViewSettings).not.toHaveBeenCalled();
     });
+  });
+
+  describe('mouse Back/Forward released outside the page (#6960)', () => {
+    const release = (button: number) => {
+      const event = new MouseEvent('mouseup', { button, bubbles: true, cancelable: true });
+      document.body.dispatchEvent(event);
+      return event;
+    };
+
+    afterEach(() => {
+      localStorage.removeItem('customShortcuts');
+    });
+
+    it('goes back in the book instead of letting the webview leave the reader', () => {
+      render(<Harness />);
+      const event = release(3);
+
+      expect(mockView.history.back).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it('goes forward in the book on the Forward button', () => {
+      render(<Harness />);
+      const event = release(4);
+
+      expect(mockView.history.forward).toHaveBeenCalledTimes(1);
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it('leaves a button bound to another action to that action', () => {
+      localStorage.setItem('customShortcuts', JSON.stringify({ onToggleSideBar: ['MouseX1'] }));
+      render(<Harness />);
+      release(3);
+
+      expect(mockView.history.back).not.toHaveBeenCalled();
+    });
+
+    it('lets the webview handle the button while no book is focused', () => {
+      const NoBook = () => {
+        useBookShortcuts({ sideBarBookKey: null, bookKeys: [] });
+        return null;
+      };
+      render(<NoBook />);
+      const event = release(3);
+
+      expect(mockView.history.back).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it('ignores the other mouse buttons', () => {
+      render(<Harness />);
+      const event = release(0);
+
+      expect(mockView.history.back).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+  });
+});
+
+describe('useBookShortcuts subscriptions', () => {
+  afterEach(cleanup);
+
+  // The reader calls this hook; every page turn writes the book's progress into the book data
+  it('a book-data change does not re-render the component using it', () => {
+    const onRender = vi.fn();
+    render(
+      <Profiler id='shortcuts' onRender={onRender}>
+        <Harness />
+      </Profiler>,
+    );
+    onRender.mockClear();
+    act(() => useBookDataStore.setState({ booksData: {} }));
+    expect(onRender).not.toHaveBeenCalled();
   });
 });

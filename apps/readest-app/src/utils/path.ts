@@ -11,6 +11,22 @@ export const getFilename = (fileOrUri: string) => {
   return lastPart.split('?')[0]!;
 };
 
+export const getPathFilename = (path: string) => {
+  // Backslashes are separators in drive-rooted and UNC Windows paths only.
+  const normalized = /^(?:[a-z]:[\\/]|\\\\)/i.test(path) ? path.replace(/\\/g, '/') : path;
+  return normalized.split('/').pop()!;
+};
+
+export const getURLFilename = (url: string) => {
+  const name = new URL(url).pathname.split('/').pop() || 'remote-file';
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    // Keep the encoded basename when the server uses non-UTF-8 path bytes.
+    return name;
+  }
+};
+
 /**
  * Duplicate marker a browser or download manager appends when a download would
  * overwrite an existing file. Several of them put it after the extension

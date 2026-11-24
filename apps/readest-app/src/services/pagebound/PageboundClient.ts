@@ -43,6 +43,9 @@ type BookResponse = {
 };
 
 // Pagebound dates are M/D/YYYY in local time, as its web app sends them.
+/** Pagebound can't take this one book. The connection itself is fine. */
+export class PageboundBookError extends Error {}
+
 const today = () => {
   const d = new Date();
   return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
@@ -148,6 +151,14 @@ export class PageboundClient {
     if (!res.ok) await this.renewSession();
   }
 
+  /** Throws when the session is gone and can't be renewed. */
+  async checkConnection(): Promise<void> {
+    if ((await this.fetchApi('/auth/get_authed_user')).ok) return;
+    await this.renewSession();
+    const { ok, status } = await this.fetchApi('/auth/get_authed_user');
+    if (!ok) throw new Error(`Pagebound API error (HTTP ${status})`);
+  }
+
   private async request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
     const res = await this.fetchApi(path, method, body);
     const data = await readJson(res);
@@ -189,14 +200,16 @@ export class PageboundClient {
   // title matches, preferring the same author. The author stays out of the
   // query: Pagebound spells names its own way ("J.R.R. Tolkien") and Typesense
   // needs every query word to match. Pagebound often drops a "Series:" prefix
-  // or a subtitle, so each part of a "Series: Title" is searched for too.
+  // or a subtitle, so each part of a "Series: Title" is searched for too, as is
+  // a title without the trailing "(Series Book 1)" that store editions add.
   private async resolveLink(book: Book, config: BookConfig): Promise<PageboundBookLink> {
     if (config.pagebound) return config.pagebound;
-    const parts = book.title.includes(':')
-      ? book.title.split(':').map(normalizeTitle).filter(Boolean)
-      : [];
-    const titles = new Set([normalizeTitle(book.title), ...parts]);
-    for (const query of [book.title, ...parts]) {
+    const base = book.title.replace(/(\s*[([][^()[\]]*[)\]])+\s*$/, '').trim() || book.title;
+    const parts = [book.title, base].flatMap((title) =>
+      title.includes(':') ? title.split(':').map(normalizeTitle).filter(Boolean) : [],
+    );
+    const titles = new Set([normalizeTitle(book.title), normalizeTitle(base), ...parts]);
+    for (const query of new Set([book.title, base, ...parts])) {
       const matches = (await this.searchBooks(query)).filter(
         (hit) => hit.uuid && Number.isFinite(hit.bookId) && titles.has(normalizeTitle(hit.title)),
       );
@@ -204,7 +217,9 @@ export class PageboundClient {
       const match = matches.find((hit) => compactName(hit.author) === author) ?? matches[0];
       if (match) return { bookId: match.bookId, uuid: match.uuid, title: match.title };
     }
-    throw new Error('Unable to find this book on Pagebound. Use Link Book to choose it.');
+    throw new PageboundBookError(
+      'Unable to find this book on Pagebound. Use Link Book to choose it.',
+    );
   }
 
   private getBook(uuid: string) {
@@ -236,7 +251,7 @@ export class PageboundClient {
     // Reopening a finished book here would start a new read on Pagebound and
     // rewrite the user's stats; a re-read is the user's call, made there.
     if (userBook?.status === 'finished') {
-      throw new Error('This book is already marked as finished on Pagebound');
+      throw new PageboundBookError('This book is already marked as finished on Pagebound');
     }
 
     if (!userBook || userBook.status !== 'current') {

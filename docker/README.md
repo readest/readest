@@ -75,6 +75,36 @@ published tags:
 - `main`: rolling image from the default branch
 - `sha-<commit>`: immutable commit tag
 
+### OPDS catalogs on a private network
+
+The web OPDS proxy blocks private, loopback and link-local addresses by default,
+including public hostnames that resolve to them. To reach trusted LAN catalogs,
+set an exact, comma-separated allowlist in `docker/.env`:
+
+```env
+READEST_TRUSTED_PRIVATE_HOSTS=books.home.arpa,calibre.lan,192.168.1.20
+```
+
+Recreate the client with `docker compose up -d client` after changing it. With
+`docker run`, pass `-e READEST_TRUSTED_PRIVATE_HOSTS=books.home.arpa` instead.
+This setting is read by the server at request time and works with prebuilt
+images; no rebuild or `NODE_ENV` change is needed.
+
+Entries are hostnames or IP addresses only, without schemes, ports, paths,
+wildcards or CIDR ranges. Matching ignores case and trailing DNS dots. An entry
+allows any port on that host, so only list hosts whose services you trust.
+For IPv6 literals, include brackets, for example `[fd00::20]`.
+
+Each redirect destination must pass the same checks. List any additional private
+hosts used for feeds, covers or downloads. Unlisted hosts keep the private-address
+and DNS checks, and credentials are still removed on cross-origin redirects.
+The allowlist applies only to OPDS, not KOSync or Send to Readest.
+
+Anyone who can reach your Readest instance can use its OPDS proxy to reach the
+listed hosts. Keep the instance behind your LAN/VPN or access controls when
+allowing private services. `SELF_HOSTED=true` lets the catalog form submit LAN
+URLs, but does not grant server access by itself.
+
 ### Build locally instead of pulling
 
 > **Prerequisites for local builds**: the `packages/foliate-js` and `packages/simplecc-wasm` git submodules must be initialized before building:

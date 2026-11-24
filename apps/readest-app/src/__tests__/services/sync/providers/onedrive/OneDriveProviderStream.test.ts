@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Streaming is Tauri-only (it shells the bytes through the native transfer

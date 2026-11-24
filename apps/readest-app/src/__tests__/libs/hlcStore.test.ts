@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { InMemoryHlcStore, LocalStorageHlcStore, HLC_LOCAL_STORAGE_KEY } from '@/libs/hlcStore';
 

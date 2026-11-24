@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { getVisibleCfiSet } from '@/app/reader/components/sidebar/SearchResults';
@@ -100,6 +101,34 @@ describe('getVisibleCfiSet', () => {
       () => ({ index: 1, anchor: () => rangeLike(900, 950) }),
     );
     expect(getVisibleCfiSet(view, ['epubcfi(/6/1!/4/2)'], viewport)).toEqual(new Set());
+  });
+
+  // Resolving an EPUB CFI walks the package document, and the set is rebuilt
+  // after every chapter of a running search: resolving every result made a
+  // 793-hit search in a 3110-chapter book take minutes (#7584).
+  it('resolves only results in on-screen sections when their section is known', () => {
+    const resolved: string[] = [];
+    const view = makeView(
+      [
+        { index: 0, doc: { defaultView: { frameElement: frameEl(0, 800) } } },
+        { index: 1, doc: { defaultView: { frameElement: frameEl(700, 900) } } },
+      ],
+      0,
+      (cfi) => {
+        resolved.push(cfi);
+        return { index: cfi.includes('/6/2!') ? 1 : 5, anchor: () => rangeLike(50, 100) };
+      },
+    );
+    const offScreen = Array.from({ length: 100 }, (_, i) => `epubcfi(/6/12!/4/${i})`);
+    const cfis = ['epubcfi(/6/2!/4/2)', ...offScreen];
+    const sections = new Map([
+      ['epubcfi(/6/2!/4/2)', 1],
+      ...offScreen.map((cfi) => [cfi, 5] as const),
+    ]);
+    expect(getVisibleCfiSet(view, cfis, viewport, sections)).toEqual(
+      new Set(['epubcfi(/6/2!/4/2)']),
+    );
+    expect(resolved).toEqual(['epubcfi(/6/2!/4/2)']);
   });
 
   it('handles anchors that resolve to a numeric offset (no DOM rect)', () => {

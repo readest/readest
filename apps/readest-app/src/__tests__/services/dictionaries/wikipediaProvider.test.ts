@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { wikipediaProvider } from '@/services/dictionaries/providers/wikipediaProvider';
 import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';

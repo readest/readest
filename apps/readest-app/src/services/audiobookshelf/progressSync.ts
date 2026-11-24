@@ -4,11 +4,14 @@
 // disk, throttled) so the reader shows fresh progress even before the next
 // server round-trip lands.
 
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import type { ABSClient } from '@/services/audiobookshelf/client';
 import type { AudiobookProgressHooks } from '@/services/audiobook/AudiobookController';
 import type { AppService } from '@/types/system';
 import type { Book } from '@/types/book';
 import { useLibraryStore } from '@/store/libraryStore';
+
+const PROGRESS_FLOW = { connector: 'audiobookshelf', kind: 'progress' } as const;
 
 // Mirrors TTSSessionManager's PERSIST_THROTTLE_MS pattern: the in-memory
 // library store is updated on every hook so the UI stays current, but the
@@ -152,6 +155,8 @@ export class AbsProgressSyncer {
       localLastPlayedAt,
     });
     this.#lastSyncedPosition = resume;
+    // Counts only when the server's position won over this device's own.
+    recordFlow({ ...PROGRESS_FLOW, direction: 'pull', count: resume === localCurrentTime ? 0 : 1 });
     return resume;
   }
 
@@ -192,17 +197,35 @@ export class AbsProgressSyncer {
     // otherwise regress the resume position on next open).
     this.#cacheLocally(pos, true);
     if (this.#sessionId) {
-      this.#client
-        .closeSession(this.#sessionId, { currentTime: pos, timeListened, duration: this.#duration })
-        .catch(console.warn);
+      this.#reportPush(
+        this.#client.closeSession(this.#sessionId, {
+          currentTime: pos,
+          timeListened,
+          duration: this.#duration,
+        }),
+      );
     }
   }
 
   #syncSession(pos: number, timeListened: number): void {
     if (!this.#sessionId) return;
-    this.#client
-      .syncSession(this.#sessionId, { currentTime: pos, timeListened, duration: this.#duration })
-      .catch(console.warn);
+    this.#reportPush(
+      this.#client.syncSession(this.#sessionId, {
+        currentTime: pos,
+        timeListened,
+        duration: this.#duration,
+      }),
+    );
+  }
+
+  #reportPush(sent: Promise<unknown>): void {
+    const push = { ...PROGRESS_FLOW, direction: 'push' } as const;
+    sent
+      .then(() => recordFlow(push))
+      .catch((error) => {
+        console.warn(error);
+        recordFlow({ ...push, error: error instanceof Error ? error.message : String(error) });
+      });
   }
 
   // Updates the library book's cached progress and, throttled, persists the

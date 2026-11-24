@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { events, type ReedyEvent } from '@/services/reedy/runtime/events';
 import {

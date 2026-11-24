@@ -38,8 +38,9 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getView, getViewSettings } = useReaderStore();
+  const { getView, getProgress, getViewSettings } = useReaderStore();
   const view = getView(bookKey);
+  const progress = getProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
   const [progressValue, setProgressValue] = React.useState(
@@ -53,9 +54,18 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }
   }, [progressValid, progressFraction]);
 
+  // The page label previews the slider while it is dragged, until the reader
+  // relocates and reports the real page.
+  const [previewFraction, setPreviewFraction] = React.useState<number | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPreviewFraction(null);
+  }, [progress]);
+
   const handleProgressChange = useCallback(
     (value: number) => {
       setProgressValue(value);
+      setPreviewFraction(value / 100);
       navigationHandlers.onProgressChange(value);
     },
     [navigationHandlers],
@@ -87,7 +97,12 @@ export const NavigationPanel: React.FC<NavigationPanelProps> = ({
       <div className='flex w-full flex-col items-center gap-y-4'>
         {progressValid && (
           <div className='eink-bordered bg-base-100 rounded-full px-2 py-1'>
-            <PageJumpInput bookKey={bookKey} showFraction className='text-base' />
+            <PageJumpInput
+              bookKey={bookKey}
+              showFraction
+              previewFraction={previewFraction}
+              className='text-base'
+            />
           </div>
         )}
         <div className='flex w-full items-center justify-between gap-x-6'>

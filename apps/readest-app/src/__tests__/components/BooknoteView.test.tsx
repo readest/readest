@@ -1,3 +1,4 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { render, act, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
@@ -26,17 +27,15 @@ let mockScroller: HTMLElement;
 vi.mock('@/store/bookDataStore', () => {
   const state = { getConfig: () => ({ booknotes: mockBooknotes }) };
   return {
-    useBookDataStore: <R,>(selector?: (s: typeof state) => R) =>
+    ...bookDataStoreHooks(<R,>(selector?: (s: typeof state) => R) =>
       selector ? selector(state) : state,
+    ),
   };
 });
 
-vi.mock('@/store/readerStore', () => {
-  const state = { getProgress: () => mockProgress };
-  return {
-    useReaderStore: <R,>(selector?: (s: typeof state) => R) => (selector ? selector(state) : state),
-  };
-});
+vi.mock('@/store/readerProgressStore', () => ({
+  useBookProgress: () => mockProgress,
+}));
 
 vi.mock('@/store/sidebarStore', () => ({
   useSidebarStore: () => ({

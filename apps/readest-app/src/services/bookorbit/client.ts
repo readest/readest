@@ -14,6 +14,7 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { withOriginSuppressed } from '@/app/opds/utils/opdsReq';
 import { isTauriAppPlatform } from '@/services/environment';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
+import { tlsFetch } from '@/utils/tls';
 import type { BookOrbitSettings } from '@/types/settings';
 import { isSupportedManifest } from './manifest';
 import type { BookOrbitManifest } from './manifest';
@@ -47,10 +48,12 @@ export interface BookOrbitPlaybackState {
  */
 export type BookOrbitTarget = Pick<
   BookOrbitSettings,
-  'serverUrl' | 'username' | 'password' | 'customHeaders'
+  'serverUrl' | 'username' | 'password' | 'apiKey' | 'customHeaders'
 > & {
   /** Short-lived bearer token, cached between requests by the caller. */
   accessToken?: string;
+  /** Resolved from the settings row by the caller (see `allowsSelfSignedCert`). */
+  allowSelfSignedCert: boolean;
 };
 
 /** Raised when the server speaks a manifest schema this build does not know. */
@@ -76,14 +79,22 @@ interface RequestOptions {
   body?: string;
 }
 
-const boFetch = (url: string, init: RequestOptions = {}): Promise<Response> => {
+const boFetch = (
+  url: string,
+  init: RequestOptions,
+  allowSelfSignedCert: boolean,
+): Promise<Response> => {
   const doFetch = isTauriAppPlatform() ? tauriFetch : window.fetch;
-  return doFetch(url, {
-    method: init.method ?? 'GET',
-    headers: withOriginSuppressed(init.headers ?? {}),
-    body: init.body,
-    danger: { acceptInvalidCerts: true, acceptInvalidHostnames: true },
-  });
+  return tlsFetch(
+    doFetch,
+    url,
+    {
+      method: init.method ?? 'GET',
+      headers: withOriginSuppressed(init.headers ?? {}),
+      body: init.body,
+    },
+    allowSelfSignedCert,
+  );
 };
 
 export class BookOrbitClient {
@@ -93,7 +104,8 @@ export class BookOrbitClient {
   #loginInFlight: Promise<void> | null = null;
 
   constructor(server: BookOrbitTarget, callbacks: { onTokensUpdated: (p: TokenPatch) => void }) {
-    this.#server = { ...server };
+    // An API key is the bearer itself (BookOrbit 3.8+), so it needs no login.
+    this.#server = { ...server, accessToken: server.apiKey || server.accessToken };
     this.#base = server.serverUrl.replace(/\/+$/, '');
     this.#onTokensUpdated = callbacks.onTokensUpdated;
   }
@@ -108,6 +120,11 @@ export class BookOrbitClient {
   }
 
   /** The cached bearer, empty until the first login. */
+  /** Whether this server accepts a self-signed certificate. */
+  get allowSelfSignedCert(): boolean {
+    return this.#server.allowSelfSignedCert;
+  }
+
   get accessToken(): string {
     return this.#server.accessToken ?? '';
   }
@@ -120,21 +137,27 @@ export class BookOrbitClient {
    * caller has to ask.
    */
   refreshAccessToken(): Promise<void> {
+    // An API key does not expire on a timer; it stays the bearer.
+    if (this.#server.apiKey) return Promise.resolve();
     return this.#login();
   }
 
   #fetch(path: string, init: RequestOptions = {}): Promise<Response> {
-    return boFetch(`${this.#base}${path}`, {
-      ...init,
-      headers: {
-        Accept: 'application/json',
-        ...normalizeCustomHeaders(this.#server.customHeaders),
-        ...(this.#server.accessToken
-          ? { Authorization: `Bearer ${this.#server.accessToken}` }
-          : {}),
-        ...init.headers,
+    return boFetch(
+      `${this.#base}${path}`,
+      {
+        ...init,
+        headers: {
+          Accept: 'application/json',
+          ...normalizeCustomHeaders(this.#server.customHeaders),
+          ...(this.#server.accessToken
+            ? { Authorization: `Bearer ${this.#server.accessToken}` }
+            : {}),
+          ...init.headers,
+        },
       },
-    });
+      this.#server.allowSelfSignedCert,
+    );
   }
 
   /**
@@ -166,14 +189,20 @@ export class BookOrbitClient {
   }
 
   async #doLogin(): Promise<void> {
-    const { username, password } = this.#server;
-    if (!username && !password) throw new BookOrbitAuthError();
+    const { username, password, apiKey } = this.#server;
+    // A refused API key is revoked, expired or sent to a server before 3.8:
+    // signing in again cannot fix that.
+    if (apiKey || (!username && !password)) throw new BookOrbitAuthError();
 
-    const res = await boFetch(`${this.#base}/api/v1/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+    const res = await boFetch(
+      `${this.#base}/api/v1/auth/login`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ username, password }),
+      },
+      this.#server.allowSelfSignedCert,
+    );
     if (!res.ok) throw new BookOrbitAuthError();
 
     const { accessToken } = (await res.json()) as { accessToken?: string };

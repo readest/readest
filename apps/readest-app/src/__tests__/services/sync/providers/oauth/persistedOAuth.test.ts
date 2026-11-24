@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi } from 'vitest';
 import { PersistedOAuth } from '@/services/sync/providers/oauth/persistedOAuth';
 import type { FetchFn, TokenSet } from '@/services/sync/providers/oauth/tokenEndpoint';

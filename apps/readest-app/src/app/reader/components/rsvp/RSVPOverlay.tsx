@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useCallback, useRef, useMemo } from 'react';
 import clsx from 'clsx';
 import { Insets } from '@/types/misc';
 import { RsvpState, RSVPController } from '@/services/rsvp';
-import { containsCJK, isRTLText } from '@/services/rsvp/utils';
+import { containsCJK, isRTLText, splitAtFocus } from '@/services/rsvp/utils';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { TOCItem } from '@/libs/document';
@@ -30,6 +30,8 @@ import { getPopupPosition, Position } from '@/utils/sel';
 import { Overlay } from '@/components/Overlay';
 import DictionarySheet from '@/app/reader/components/annotator/DictionarySheet';
 import DictionaryPopup from '@/app/reader/components/annotator/DictionaryPopup';
+import type { VocabularyCapture } from '@/app/reader/components/annotator/DictionaryResultsView';
+import { sentenceAt } from '@/services/vocabulary/sentence';
 import TTSFollowIndicator, { TtsSyncStatus } from '@/app/reader/components/tts/TTSFollowIndicator';
 import { Toggle } from '@/components/primitives/toggle';
 
@@ -162,15 +164,25 @@ const WpmEntry: React.FC<WpmEntryProps> = ({ controller, wpm, bgColor }) => {
   );
 };
 
+// The sentence a looked-up word sits in; the bare word if the range can't be read.
+const sentenceAround = (range: Range, word: string): string => {
+  try {
+    return sentenceAt(range) || word;
+  } catch {
+    return word;
+  }
+};
+
 interface RSVPOverlayProps {
   gridInsets: Insets;
   controller: RSVPController;
   chapters: TOCItem[];
   currentChapterHref: string | null;
   /**
-   * Resolved CSS font-family for the displayed word, mirroring the reader's
-   * font face/family settings. When undefined, the word keeps the monospace
-   * fallback. See getBaseFontFamily in utils/style.
+   * Resolved CSS font-family for the displayed word and the context text,
+   * mirroring the reader's font face/family settings. When undefined, the word
+   * keeps the monospace fallback and the context the app font. See
+   * getBaseFontFamily in utils/style.
    */
   fontFamily?: string;
   /** Book language, used to pick dictionary providers for context lookups. */
@@ -198,6 +210,8 @@ interface RSVPOverlayProps {
   onRequestNextPage: () => void;
   /** Opens the dictionary management settings from the lookup header gear. */
   onManageDictionary?: () => void;
+  /** The book lookups are saved under in the vocabulary builder (#789). */
+  vocabularyBook?: { lang: string; hash?: string; title?: string; author?: string };
 }
 
 const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
@@ -207,6 +221,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   currentChapterHref,
   fontFamily,
   lang,
+  vocabularyBook,
   ttsSyncStatus = 'idle',
   estimated = false,
   ttsActive = false,
@@ -294,6 +309,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
     word: string;
     position: Position;
     trianglePosition: Position;
+    capture?: VocabularyCapture;
   } | null>(null);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -409,6 +425,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           event.stopPropagation();
           controller.prevWord();
           break;
+        case '[':
+        case ']':
+          // Same rule as the Words per Flash picker, hidden or disabled here.
+          if (!controller.chunkingAvailable) break;
+          event.preventDefault();
+          event.stopPropagation();
+          controller.setChunkSize(controller.currentState.chunkSize + (event.key === ']' ? 1 : -1));
+          break;
       }
     };
 
@@ -420,16 +444,32 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
   const effectiveChapterHref = currentChapterHref;
 
   // Word display helpers
-  const wordBefore = currentWord ? currentWord.text.substring(0, currentWord.orpIndex) : '';
-  const orpChar = currentWord ? currentWord.text.charAt(currentWord.orpIndex) : '';
-  const wordAfter = currentWord ? currentWord.text.substring(currentWord.orpIndex + 1) : '';
+  const {
+    before: wordBefore,
+    focus: orpChar,
+    after: wordAfter,
+  } = currentWord
+    ? splitAtFocus(currentWord.text, currentWord.orpIndex)
+    : { before: '', focus: '', after: '' };
   const isCJKWord = currentWord ? containsCJK(currentWord.text) : false;
   // RTL words (Arabic, Hebrew, …) must never be split into before/orp/after
   // spans: slicing by character index breaks letter shaping and reverses the
   // visual order. Render them whole instead, like CJK Highlight Word (#4630).
   const isRTLWord = currentWord ? isRTLText(currentWord.text) : false;
+  const isWholeWord = isRTLWord || (isCJKWord && highlightWholeWord);
+  const chunkIndices = controller.currentChunkIndices;
+  const chunkWords = chunkIndices.length > 1 ? chunkIndices.map((i) => state.words[i]!) : null;
   const wordLetterSpacing = undefined;
-  const wordSideOffset = isCJKWord ? '0.45em' : '0.3em';
+  // The before/after text sits half a focus letter away from the center. A
+  // focus cluster of several code points (Bengali কি, ন্তু) is wider than one
+  // letter, so measure it instead of overlapping the text after it (#7024).
+  const orpRef = useRef<HTMLSpanElement>(null);
+  const [clusterSideOffset, setClusterSideOffset] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    const width = orpChar.length > 1 ? orpRef.current?.offsetWidth : undefined;
+    setClusterSideOffset(width ? `${width / 2}px` : null);
+  }, [orpChar, isWholeWord, fontSizeIndex, fontFamily]);
+  const wordSideOffset = clusterSideOffset ?? (isCJKWord ? '0.45em' : '0.3em');
 
   // Time remaining calculation
   const getTimeRemaining = useCallback((): string | null => {
@@ -659,9 +699,19 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
       DICT_POPUP_PADDING,
     );
 
-    setDict({ word: lookup.text, position, trianglePosition });
+    const capture: VocabularyCapture | undefined = vocabularyBook && {
+      lang: vocabularyBook.lang,
+      occurrence: {
+        sentence: sentenceAround(lookup.range, lookup.text),
+        bookHash: vocabularyBook.hash,
+        bookTitle: vocabularyBook.title,
+        bookAuthor: vocabularyBook.author,
+        at: Date.now(),
+      },
+    };
+    setDict({ word: lookup.text, position, trianglePosition, capture });
     setLookup(null);
-  }, [lookup, state.playing, controller]);
+  }, [lookup, state.playing, controller, vocabularyBook]);
 
   const closeLookup = useCallback(() => {
     setDict(null);
@@ -995,6 +1045,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               ref={contextPanelRef}
               data-testid='rsvp-context-panel'
               className='select-text text-left text-base leading-relaxed md:text-lg'
+              style={{ fontFamily }}
               onClick={handleContextClick}
               onKeyDown={handleContextKeyDown}
               onMouseUp={handleContextSelection}
@@ -1003,14 +1054,14 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               {hasMoreBefore && <span className='opacity-30'>… </span>}
               {state.words.slice(contextWindow.start, contextWindow.end).map((w, i) => {
                 const wordIndex = contextWindow.start + i;
-                const isCurrent = wordIndex === state.currentIndex;
+                const isCurrent = chunkIndices.includes(wordIndex);
                 return (
                   <ContextWord
                     key={wordIndex}
                     text={w.text}
                     wordIndex={wordIndex}
                     isCurrent={isCurrent}
-                    currentRef={isCurrent ? contextWordRef : undefined}
+                    currentRef={wordIndex === state.currentIndex ? contextWordRef : undefined}
                     orpColor={isCurrent ? effectiveOrpColor : undefined}
                   />
                 );
@@ -1056,8 +1107,39 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                   fontFamily,
                 }}
               >
-                {currentWord ? (
-                  isRTLWord || (isCJKWord && highlightWholeWord) ? (
+                {chunkWords ? (
+                  // Several words per flash: lay them out as text, each with
+                  // its own focus letter. RTL words stay whole (#4630).
+                  <div
+                    className='flex flex-wrap items-center justify-center gap-x-[0.5em] gap-y-2'
+                    dir={isRTLText(chunkWords[0]!.text) ? 'rtl' : undefined}
+                  >
+                    {chunkWords.map((word, i) => {
+                      if (isRTLText(word.text)) {
+                        return (
+                          <span
+                            key={i}
+                            className='rsvp-chunk-word font-bold'
+                            style={{ color: effectiveOrpColor }}
+                          >
+                            {word.text}
+                          </span>
+                        );
+                      }
+                      const parts = splitAtFocus(word.text, word.orpIndex);
+                      return (
+                        <span key={i} className='rsvp-chunk-word'>
+                          <span className='opacity-60'>{parts.before}</span>
+                          <span className='font-bold' style={{ color: effectiveOrpColor }}>
+                            {parts.focus}
+                          </span>
+                          <span className='opacity-60'>{parts.after}</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : currentWord ? (
+                  isWholeWord ? (
                     // Whole-word mode: center the full word and color it, instead
                     // of anchoring a single focus character. Used for CJK Highlight
                     // Word and always for RTL words, whose shaping/order would
@@ -1079,6 +1161,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
                         {wordBefore}
                       </span>
                       <span
+                        ref={orpRef}
                         className='rsvp-word-orp relative z-10 font-bold'
                         style={{ color: effectiveOrpColor }}
                       >
@@ -1285,9 +1368,9 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           <div className='mt-3 flex flex-wrap items-center justify-evenly gap-x-8 gap-y-4 text-xs md:justify-center'>
             {/* Punctuation pause */}
             <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Punctuation Delay')}</span>
+              <span className='me-0.5 font-medium opacity-50'>{_('Punctuation Delay')}</span>
               <select
-                className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                className='eink-bordered cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                 style={{ color: 'inherit' }}
                 value={state.punctuationPauseMs}
                 onChange={(e) => controller.setPunctuationPause(parseInt(e.target.value, 10))}
@@ -1302,10 +1385,10 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
             {/* Pre-start countdown delay */}
             <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Start Delay')}</span>
+              <span className='me-0.5 font-medium opacity-50'>{_('Start Delay')}</span>
               <select
                 data-testid='rsvp-start-delay-select'
-                className='cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                className='eink-bordered cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
                 style={{ color: 'inherit' }}
                 value={state.startDelaySeconds}
                 onChange={(e) => controller.setStartDelay(parseInt(e.target.value, 10))}
@@ -1318,9 +1401,30 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               </select>
             </label>
 
+            {/* Words per flash — CJK text is always shown one word at a time */}
+            {!state.hasCJK && (
+              <label className='flex cursor-pointer items-center gap-1.5 font-medium opacity-80'>
+                <span className='me-0.5 font-medium opacity-50'>{_('Words per Flash')}</span>
+                <select
+                  data-testid='rsvp-chunk-size-select'
+                  className='eink-bordered cursor-pointer rounded-sm border border-gray-500/30 bg-gray-500/20 px-1.5 py-1 text-xs font-medium transition-colors hover:border-gray-500/40 hover:bg-gray-500/30'
+                  style={{ color: 'inherit' }}
+                  value={state.chunkSize}
+                  disabled={ttsDriven}
+                  onChange={(e) => controller.setChunkSize(parseInt(e.target.value, 10))}
+                >
+                  {controller.getChunkSizeOptions().map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
             {/* Font size */}
             <div className='flex items-center gap-0.5'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Font')}</span>
+              <span className='me-0.5 font-medium opacity-50'>{_('Font')}</span>
               <button
                 aria-label={_('Decrease font size')}
                 className='flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-none bg-transparent transition-colors hover:bg-gray-500/20 active:scale-95'
@@ -1351,6 +1455,26 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
               />
             </div>
 
+            {/* Warm-up — start slower and reach the set speed over a few seconds */}
+            <div className='config-item gap-2'>
+              <span className='opacity-50'>{_('Warm-up')}</span>
+              <Toggle
+                data-testid='rsvp-warmup-toggle'
+                checked={state.warmup}
+                onChange={(e) => controller.setWarmup(e.target.checked)}
+              />
+            </div>
+
+            {/* Extra time on long words and numbers */}
+            <div className='config-item gap-2'>
+              <span className='opacity-50'>{_('Long Word Delay')}</span>
+              <Toggle
+                data-testid='rsvp-long-word-delay-toggle'
+                checked={state.longWordDelay}
+                onChange={(e) => controller.setLongWordDelay(e.target.checked)}
+              />
+            </div>
+
             {/* CJK character mode — split CJK text per-character */}
             {state.hasCJK && (
               <div className='config-item gap-2'>
@@ -1377,7 +1501,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
 
             {/* ORP color */}
             <div className='flex items-center gap-1.5'>
-              <span className='mr-0.5 font-medium opacity-50'>{_('Focus')}</span>
+              <span className='me-0.5 font-medium opacity-50'>{_('Focus')}</span>
               {ORP_COLOR_OPTIONS.map((color, idx) => (
                 <button
                   key={idx}
@@ -1422,6 +1546,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
           <DictionarySheet
             word={dict.word}
             lang={lang}
+            capture={dict.capture}
             onDismiss={closeLookup}
             onManage={onManageDictionary}
           />
@@ -1433,6 +1558,7 @@ const RSVPOverlay: React.FC<RSVPOverlayProps> = ({
             <DictionaryPopup
               word={dict.word}
               lang={lang}
+              capture={dict.capture}
               position={dict.position}
               trianglePosition={dict.trianglePosition}
               popupWidth={Math.min(

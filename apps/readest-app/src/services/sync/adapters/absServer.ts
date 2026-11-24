@@ -17,6 +17,7 @@ interface UnwrappedAbsFields {
   addedAt?: number;
   libraryIds?: string[];
   disabled?: boolean;
+  allowSelfSignedCert?: boolean;
   serverVersion?: string;
   username?: string;
   password?: string;
@@ -30,6 +31,7 @@ const unwrapAbsFields = (fields: FieldsObject): UnwrappedAbsFields => {
   const addedAt = unwrap(fields['addedAt']);
   const libraryIds = unwrap(fields['libraryIds']);
   const disabled = unwrap(fields['disabled']);
+  const allowSelfSignedCert = unwrap(fields['allowSelfSignedCert']);
   const serverVersion = unwrap(fields['serverVersion']);
   // Crypto middleware decrypted these in place before unpackRow ran
   // (see replicaCryptoMiddleware.decryptRowFields). A missing entry
@@ -49,6 +51,7 @@ const unwrapAbsFields = (fields: FieldsObject): UnwrappedAbsFields => {
         ? (libraryIds as string[])
         : undefined,
     disabled: disabled === true ? true : undefined,
+    allowSelfSignedCert: typeof allowSelfSignedCert === 'boolean' ? allowSelfSignedCert : undefined,
     serverVersion: typeof serverVersion === 'string' ? serverVersion : undefined,
     username: typeof username === 'string' ? username : undefined,
     password: typeof password === 'string' ? password : undefined,
@@ -69,6 +72,8 @@ export const absServerAdapter: ReplicaAdapter<ABSServer> = {
     };
     if (server.libraryIds !== undefined) fields['libraryIds'] = server.libraryIds;
     if (server.disabled !== undefined) fields['disabled'] = server.disabled;
+    if (server.allowSelfSignedCert !== undefined)
+      fields['allowSelfSignedCert'] = server.allowSelfSignedCert;
     if (server.serverVersion !== undefined) fields['serverVersion'] = server.serverVersion;
     // Pass credentials as plaintext here — the publish-side crypto
     // middleware (replicaCryptoMiddleware.encryptPackedFields) wraps
@@ -94,6 +99,10 @@ export const absServerAdapter: ReplicaAdapter<ABSServer> = {
           ? (libraryIds as string[])
           : undefined,
       disabled: fields['disabled'] === true ? true : undefined,
+      allowSelfSignedCert:
+        typeof fields['allowSelfSignedCert'] === 'boolean'
+          ? fields['allowSelfSignedCert']
+          : undefined,
       serverVersion:
         fields['serverVersion'] !== undefined ? String(fields['serverVersion']) : undefined,
       username: fields['username'] !== undefined ? String(fields['username']) : undefined,
@@ -121,6 +130,8 @@ export const absServerAdapter: ReplicaAdapter<ABSServer> = {
     if (fields.addedAt !== undefined) server.addedAt = fields.addedAt;
     if (fields.libraryIds !== undefined) server.libraryIds = fields.libraryIds;
     if (fields.disabled !== undefined) server.disabled = fields.disabled;
+    if (fields.allowSelfSignedCert !== undefined)
+      server.allowSelfSignedCert = fields.allowSelfSignedCert;
     if (fields.serverVersion !== undefined) server.serverVersion = fields.serverVersion;
     if (fields.username !== undefined) server.username = fields.username;
     if (fields.password !== undefined) server.password = fields.password;
