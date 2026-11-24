@@ -3086,5 +3086,9 @@
   "Merge {{count}} entries into:_other": "Объединить {{count}} записи с:",
   "Sign in with a QR code": "Войти по QR-коду",
   "Unable to connect to Readest. Please check your network connection.": "Не удаётся подключиться к Readest. Проверьте подключение к сети.",
-  "Approve on a phone or computer signed in to Readest.": "Подтвердите вход на телефоне или компьютере, где выполнен вход в Readest."
+  "Approve on a phone or computer signed in to Readest.": "Подтвердите вход на телефоне или компьютере, где выполнен вход в Readest.",
+  "Xiaomi Pen Squeeze": "Сжатие стилуса Xiaomi",
+  "Xiaomi Pen Double Tap": "Двойное касание стилуса Xiaomi",
+  "Xiaomi Pen Slide Up": "Скольжение стилуса Xiaomi вверх",
+  "Xiaomi Pen Slide Down": "Скольжение стилуса Xiaomi вниз"
 }

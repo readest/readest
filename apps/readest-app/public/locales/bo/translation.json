@@ -2852,5 +2852,9 @@
   "Merge {{count}} entries into:_other": "ཚན་པ་ {{count}} མཉམ་སྡེབ་ས།",
   "Sign in with a QR code": "QR ཨང་རྟགས་ཀྱིས་ནང་འཛུལ།",
   "Unable to connect to Readest. Please check your network connection.": "Readest ལ་འབྲེལ་མཐུད་བྱེད་མ་ཐུབ། ཁྱེད་ཀྱི་དྲ་རྒྱའི་འབྲེལ་མཐུད་ལ་ཞིབ་བཤེར་གནང་།",
-  "Approve on a phone or computer signed in to Readest.": "Readest ལ་ནང་འཛུལ་བྱས་པའི་ཁ་པར་རམ་གློག་ཀླད་ནས་ཆོག་མཆན་སྤྲོད།"
+  "Approve on a phone or computer signed in to Readest.": "Readest ལ་ནང་འཛུལ་བྱས་པའི་ཁ་པར་རམ་གློག་ཀླད་ནས་ཆོག་མཆན་སྤྲོད།",
+  "Xiaomi Pen Squeeze": "Xiaomi པེན་ བཙིར་བ།",
+  "Xiaomi Pen Double Tap": "Xiaomi པེན་ ཐེངས་གཉིས་རེག་པ།",
+  "Xiaomi Pen Slide Up": "Xiaomi པེན་ གོང་དུ་བཤུད་པ།",
+  "Xiaomi Pen Slide Down": "Xiaomi པེན་ འོག་ཏུ་བཤུད་པ།"
 }

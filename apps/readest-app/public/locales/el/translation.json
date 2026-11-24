@@ -2930,5 +2930,9 @@
   "Merge {{count}} entries into:_other": "Συγχώνευση {{count}} καταχωρίσεων σε:",
   "Sign in with a QR code": "Σύνδεση με κωδικό QR",
   "Unable to connect to Readest. Please check your network connection.": "Δεν είναι δυνατή η σύνδεση στο Readest. Ελέγξτε τη σύνδεση δικτύου σας.",
-  "Approve on a phone or computer signed in to Readest.": "Εγκρίνετε από ένα τηλέφωνο ή υπολογιστή συνδεδεμένο στο Readest."
+  "Approve on a phone or computer signed in to Readest.": "Εγκρίνετε από ένα τηλέφωνο ή υπολογιστή συνδεδεμένο στο Readest.",
+  "Xiaomi Pen Squeeze": "Πίεση στυλό Xiaomi",
+  "Xiaomi Pen Double Tap": "Διπλό άγγιγμα στυλό Xiaomi",
+  "Xiaomi Pen Slide Up": "Ολίσθηση στυλό Xiaomi προς τα πάνω",
+  "Xiaomi Pen Slide Down": "Ολίσθηση στυλό Xiaomi προς τα κάτω"
 }

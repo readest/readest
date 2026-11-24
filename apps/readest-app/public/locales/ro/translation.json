@@ -3008,5 +3008,9 @@
   "Merge {{count}} entries into:_other": "Combină {{count}} de intrări cu:",
   "Sign in with a QR code": "Conectează-te cu un cod QR",
   "Unable to connect to Readest. Please check your network connection.": "Nu se poate conecta la Readest. Verifică conexiunea la rețea.",
-  "Approve on a phone or computer signed in to Readest.": "Aprobă de pe un telefon sau computer conectat la Readest."
+  "Approve on a phone or computer signed in to Readest.": "Aprobă de pe un telefon sau computer conectat la Readest.",
+  "Xiaomi Pen Squeeze": "Strângerea creionului Xiaomi",
+  "Xiaomi Pen Double Tap": "Atingerea dublă a creionului Xiaomi",
+  "Xiaomi Pen Slide Up": "Glisare în sus cu creionul Xiaomi",
+  "Xiaomi Pen Slide Down": "Glisare în jos cu creionul Xiaomi"
 }

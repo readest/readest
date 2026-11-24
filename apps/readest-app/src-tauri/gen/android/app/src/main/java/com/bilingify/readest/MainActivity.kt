@@ -24,20 +24,26 @@ import app.tauri.plugin.JSObject
 import com.readest.native_bridge.KeyDownInterceptor
 import com.readest.native_bridge.NativeBridgePlugin
 import com.readest.native_bridge.SelectionMenuSuppressor
+import com.readest.native_bridge.XiaomiStylusKeys
+import com.readest.native_bridge.XiaomiStylusService
 
-internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when (keyCode) {
-    KeyEvent.KEYCODE_VOLUME_DOWN,
-    KeyEvent.KEYCODE_VOLUME_UP,
-    KeyEvent.KEYCODE_MEDIA_NEXT,
-    KeyEvent.KEYCODE_MEDIA_PREVIOUS,
-    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
-    KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
-    KeyEvent.KEYCODE_MEDIA_REWIND -> true
-    else -> false
+internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when {
+    XiaomiStylusKeys.isStylusKey(keyCode) -> true
+    else -> when (keyCode) {
+        KeyEvent.KEYCODE_VOLUME_DOWN,
+        KeyEvent.KEYCODE_VOLUME_UP,
+        KeyEvent.KEYCODE_MEDIA_NEXT,
+        KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+        KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+        KeyEvent.KEYCODE_MEDIA_REWIND -> true
+        else -> false
+    }
 }
 
 class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var wv: WebView? = null
+    private val xiaomiStylus by lazy { XiaomiStylusService(this) }
     private var interceptVolumeKeysEnabled = false
     private var interceptBackKeyEnabled = false
     private var interceptPageTurnerKeysEnabled = false
@@ -101,7 +107,10 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     )
 
     private fun keyNameFor(keyCode: Int): String =
-        keyEventMap[keyCode] ?: mediaKeyMap[keyCode] ?: "Keycode$keyCode"
+        keyEventMap[keyCode]
+            ?: mediaKeyMap[keyCode]
+            ?: XiaomiStylusKeys.nameFor(keyCode)
+            ?: "Keycode$keyCode"
 
     private fun forwardKeyToWebView(keyName: String, keyCode: Int) {
         wv?.evaluateJavascript(
@@ -207,6 +216,15 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
                 return true
             }
 
+            // Xiaomi Focus Pen Pro gestures (squeeze / double tap / slide) are
+            // delivered as private keycodes once the pencil-engine service is
+            // registered. Forward them so the JS page-turn binding can resolve
+            // them; an unbound gesture is a no-op on the JS side.
+            if (XiaomiStylusKeys.isStylusKey(keyCode)) {
+                forwardKeyToWebView(XiaomiStylusKeys.nameFor(keyCode)!!, keyCode)
+                return true
+            }
+
             // Hardware page turner: intercept media keys when enabled.
             if (interceptPageTurnerKeysEnabled && mediaKeyMap.containsKey(keyCode)) {
                 forwardKeyToWebView(mediaKeyMap[keyCode]!!, keyCode)
@@ -286,6 +304,10 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        // Xiaomi Focus Pen Pro gestures are only delivered to apps registered
+        // with the pencil engine. On other brands this bind simply no-ops.
+        xiaomiStylus.start()
+
         handleIncomingIntent(intent)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -347,6 +369,11 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intent?.let { handleIncomingIntent(it) }
+    }
+
+    override fun onDestroy() {
+        xiaomiStylus.stop()
+        super.onDestroy()
     }
 
     private fun handleIncomingIntent(intent: Intent) {

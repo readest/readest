@@ -2852,5 +2852,9 @@
   "Merge {{count}} entries into:_other": "{{count}} 件の項目の統合先:",
   "Sign in with a QR code": "QRコードでサインイン",
   "Unable to connect to Readest. Please check your network connection.": "Readestに接続できません。ネットワーク接続を確認してください。",
-  "Approve on a phone or computer signed in to Readest.": "Readestにサインイン済みのスマートフォンまたはパソコンで承認してください。"
+  "Approve on a phone or computer signed in to Readest.": "Readestにサインイン済みのスマートフォンまたはパソコンで承認してください。",
+  "Xiaomi Pen Squeeze": "Xiaomi Penのスクイーズ",
+  "Xiaomi Pen Double Tap": "Xiaomi Penのダブルタップ",
+  "Xiaomi Pen Slide Up": "Xiaomi Penの上スライド",
+  "Xiaomi Pen Slide Down": "Xiaomi Penの下スライド"
 }

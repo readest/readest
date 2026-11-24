@@ -2930,5 +2930,9 @@
   "Merge {{count}} entries into:_other": "{{count}} items samenvoegen in:",
   "Sign in with a QR code": "Inloggen met een QR-code",
   "Unable to connect to Readest. Please check your network connection.": "Kan geen verbinding maken met Readest. Controleer je netwerkverbinding.",
-  "Approve on a phone or computer signed in to Readest.": "Keur goed op een telefoon of computer die bij Readest is ingelogd."
+  "Approve on a phone or computer signed in to Readest.": "Keur goed op een telefoon of computer die bij Readest is ingelogd.",
+  "Xiaomi Pen Squeeze": "Xiaomi Pen knijpen",
+  "Xiaomi Pen Double Tap": "Xiaomi Pen dubbel tikken",
+  "Xiaomi Pen Slide Up": "Xiaomi Pen omhoog schuiven",
+  "Xiaomi Pen Slide Down": "Xiaomi Pen omlaag schuiven"
 }

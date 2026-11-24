@@ -27,12 +27,25 @@ const NATIVE_KEY_LABELS: Record<string, string> = {
   VolumeDown: _('Volume Down'),
   PencilDoubleTap: _('Pencil Double Tap'),
   PencilSqueeze: _('Pencil Squeeze'),
+  XiaomiSqueeze: _('Xiaomi Pen Squeeze'),
+  XiaomiDoubleTap: _('Xiaomi Pen Double Tap'),
+  XiaomiSlideUp: _('Xiaomi Pen Slide Up'),
+  XiaomiSlideDown: _('Xiaomi Pen Slide Down'),
 };
 
-// Apple Pencil gestures forwarded by the iOS native bridge (#5501). They ride
-// the native-key channel but must not trigger media-key interception, which
-// claims MPRemoteCommandCenter and affects Now Playing (see usePagination).
-const PENCIL_NATIVE_KEYS = new Set(['PencilDoubleTap', 'PencilSqueeze']);
+// Stylus gestures forwarded by the native bridge. Apple Pencil comes from the
+// iOS bridge (#5501); the Xiaomi Focus Pen Pro gestures come from the Android
+// bridge. They ride the native-key channel but must not trigger media-key
+// interception, which claims MPRemoteCommandCenter and affects Now Playing
+// (see usePagination).
+const PENCIL_NATIVE_KEYS = new Set([
+  'PencilDoubleTap',
+  'PencilSqueeze',
+  'XiaomiSqueeze',
+  'XiaomiDoubleTap',
+  'XiaomiSlideUp',
+  'XiaomiSlideDown',
+]);
 
 export const isPencilNativeKey = (id: string): boolean => PENCIL_NATIVE_KEYS.has(id);
 

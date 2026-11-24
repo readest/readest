@@ -2930,5 +2930,9 @@
   "Merge {{count}} entries into:_other": "{{count}} ta yozuv quyidagi bilan birlashtirilsin:",
   "Sign in with a QR code": "QR kod bilan kirish",
   "Unable to connect to Readest. Please check your network connection.": "Readest'ga ulanib bo'lmadi. Tarmoq ulanishingizni tekshiring.",
-  "Approve on a phone or computer signed in to Readest.": "Readest'ga kirilgan telefon yoki kompyuterda tasdiqlang."
+  "Approve on a phone or computer signed in to Readest.": "Readest'ga kirilgan telefon yoki kompyuterda tasdiqlang.",
+  "Xiaomi Pen Squeeze": "Xiaomi Pen qisish",
+  "Xiaomi Pen Double Tap": "Xiaomi Pen ikki marta bosish",
+  "Xiaomi Pen Slide Up": "Xiaomi Pen yuqoriga surish",
+  "Xiaomi Pen Slide Down": "Xiaomi Pen pastga surish"
 }

@@ -2930,5 +2930,9 @@
   "Merge {{count}} entries into:_other": "{{count}} பதிவுகளை இதனுடன் இணை:",
   "Sign in with a QR code": "QR குறியீட்டுடன் உள்நுழைக",
   "Unable to connect to Readest. Please check your network connection.": "Readest உடன் இணைக்க முடியவில்லை. உங்கள் பிணைய இணைப்பைச் சரிபார்க்கவும்.",
-  "Approve on a phone or computer signed in to Readest.": "Readest-இல் உள்நுழைந்த தொலைபேசி அல்லது கணினியில் ஒப்புதல் அளிக்கவும்."
+  "Approve on a phone or computer signed in to Readest.": "Readest-இல் உள்நுழைந்த தொலைபேசி அல்லது கணினியில் ஒப்புதல் அளிக்கவும்.",
+  "Xiaomi Pen Squeeze": "Xiaomi பேனா அழுத்துதல்",
+  "Xiaomi Pen Double Tap": "Xiaomi பேனா இரட்டைத் தட்டு",
+  "Xiaomi Pen Slide Up": "Xiaomi பேனா மேலே சறுக்கல்",
+  "Xiaomi Pen Slide Down": "Xiaomi பேனா கீழே சறுக்கல்"
 }

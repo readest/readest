@@ -2852,5 +2852,9 @@
   "Merge {{count}} entries into:_other": "將 {{count}} 個條目合併到：",
   "Sign in with a QR code": "使用 QR 碼登入",
   "Unable to connect to Readest. Please check your network connection.": "無法連線至 Readest。請檢查您的網路連線。",
-  "Approve on a phone or computer signed in to Readest.": "請在已登入 Readest 的手機或電腦上核准。"
+  "Approve on a phone or computer signed in to Readest.": "請在已登入 Readest 的手機或電腦上核准。",
+  "Xiaomi Pen Squeeze": "小米觸控筆 輕捏",
+  "Xiaomi Pen Double Tap": "小米觸控筆 雙擊",
+  "Xiaomi Pen Slide Up": "小米觸控筆 上滑",
+  "Xiaomi Pen Slide Down": "小米觸控筆 下滑"
 }

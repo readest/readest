@@ -295,3 +295,50 @@ describe('Apple Pencil native keys (#5501)', () => {
     );
   });
 });
+
+describe('Xiaomi Focus Pen Pro native keys', () => {
+  test('maps xiaomi gesture ids to friendly labels', () => {
+    expect(normalizeNativeKey('XiaomiSqueeze')).toEqual({
+      source: 'native',
+      id: 'XiaomiSqueeze',
+      label: 'Xiaomi Pen Squeeze',
+    });
+    expect(normalizeNativeKey('XiaomiDoubleTap')).toEqual({
+      source: 'native',
+      id: 'XiaomiDoubleTap',
+      label: 'Xiaomi Pen Double Tap',
+    });
+    expect(normalizeNativeKey('XiaomiSlideUp')).toEqual({
+      source: 'native',
+      id: 'XiaomiSlideUp',
+      label: 'Xiaomi Pen Slide Up',
+    });
+    expect(normalizeNativeKey('XiaomiSlideDown')).toEqual({
+      source: 'native',
+      id: 'XiaomiSlideDown',
+      label: 'Xiaomi Pen Slide Down',
+    });
+  });
+
+  test('isPencilNativeKey treats xiaomi gestures as pencil keys', () => {
+    expect(isPencilNativeKey('XiaomiSqueeze')).toBe(true);
+    expect(isPencilNativeKey('XiaomiDoubleTap')).toBe(true);
+    expect(isPencilNativeKey('XiaomiSlideUp')).toBe(true);
+    expect(isPencilNativeKey('XiaomiSlideDown')).toBe(true);
+  });
+
+  test('resolvePageTurn resolves bound xiaomi gestures', () => {
+    const settings: HardwarePageTurnerSettings = {
+      enabled: true,
+      bindings: {
+        pagePrev: { source: 'native', id: 'XiaomiSlideUp', label: 'Xiaomi Pen Slide Up' },
+        pageNext: { source: 'native', id: 'XiaomiSlideDown', label: 'Xiaomi Pen Slide Down' },
+        sectionPrev: null,
+        sectionNext: null,
+        refresh: null,
+      },
+    };
+    expect(resolvePageTurn(settings, { source: 'native', id: 'XiaomiSlideDown' })).toBe('pageNext');
+    expect(resolvePageTurn(settings, { source: 'native', id: 'XiaomiSlideUp' })).toBe('pagePrev');
+  });
+});

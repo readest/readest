@@ -2930,5 +2930,9 @@
   "Merge {{count}} entries into:_other": "{{count}} ჩანაწერის გაერთიანება:",
   "Sign in with a QR code": "შესვლა QR კოდით",
   "Unable to connect to Readest. Please check your network connection.": "Readest-თან დაკავშირება ვერ მოხერხდა. გთხოვთ, შეამოწმოთ ქსელთან კავშირი.",
-  "Approve on a phone or computer signed in to Readest.": "დაადასტურეთ Readest-ში შესულ ტელეფონზე ან კომპიუტერზე."
+  "Approve on a phone or computer signed in to Readest.": "დაადასტურეთ Readest-ში შესულ ტელეფონზე ან კომპიუტერზე.",
+  "Xiaomi Pen Squeeze": "Xiaomi Pen-ის მოჭერა",
+  "Xiaomi Pen Double Tap": "Xiaomi Pen-ის ორმაგი შეხება",
+  "Xiaomi Pen Slide Up": "Xiaomi Pen-ის ზემოთ სრიალი",
+  "Xiaomi Pen Slide Down": "Xiaomi Pen-ის ქვემოთ სრიალი"
 }

@@ -3086,5 +3086,9 @@
   "Merge {{count}} entries into:_other": "Scal {{count}} wpisu z:",
   "Sign in with a QR code": "Zaloguj się kodem QR",
   "Unable to connect to Readest. Please check your network connection.": "Nie można połączyć się z Readest. Sprawdź połączenie sieciowe.",
-  "Approve on a phone or computer signed in to Readest.": "Zatwierdź na telefonie lub komputerze zalogowanym do Readest."
+  "Approve on a phone or computer signed in to Readest.": "Zatwierdź na telefonie lub komputerze zalogowanym do Readest.",
+  "Xiaomi Pen Squeeze": "Ściśnięcie rysika Xiaomi",
+  "Xiaomi Pen Double Tap": "Dwukrotne stuknięcie rysika Xiaomi",
+  "Xiaomi Pen Slide Up": "Przesunięcie rysika Xiaomi w górę",
+  "Xiaomi Pen Slide Down": "Przesunięcie rysika Xiaomi w dół"
 }

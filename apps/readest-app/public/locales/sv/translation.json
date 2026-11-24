@@ -2930,5 +2930,9 @@
   "Merge {{count}} entries into:_other": "Slå ihop {{count}} poster med:",
   "Sign in with a QR code": "Logga in med en QR-kod",
   "Unable to connect to Readest. Please check your network connection.": "Det går inte att ansluta till Readest. Kontrollera din nätverksanslutning.",
-  "Approve on a phone or computer signed in to Readest.": "Godkänn på en telefon eller dator som är inloggad på Readest."
+  "Approve on a phone or computer signed in to Readest.": "Godkänn på en telefon eller dator som är inloggad på Readest.",
+  "Xiaomi Pen Squeeze": "Xiaomi-pennans klämning",
+  "Xiaomi Pen Double Tap": "Xiaomi-pennans dubbeltryck",
+  "Xiaomi Pen Slide Up": "Xiaomi-pennans glid uppåt",
+  "Xiaomi Pen Slide Down": "Xiaomi-pennans glid nedåt"
 }

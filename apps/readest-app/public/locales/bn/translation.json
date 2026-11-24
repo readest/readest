@@ -2930,5 +2930,9 @@
   "Merge {{count}} entries into:_other": "{{count}}টি এন্ট্রি যার সঙ্গে একত্র করবেন:",
   "Sign in with a QR code": "QR কোড দিয়ে সাইন ইন করুন",
   "Unable to connect to Readest. Please check your network connection.": "Readest-এর সাথে সংযোগ করা যায়নি। অনুগ্রহ করে আপনার নেটওয়ার্ক সংযোগ পরীক্ষা করুন।",
-  "Approve on a phone or computer signed in to Readest.": "Readest-এ সাইন ইন করা ফোন বা কম্পিউটার থেকে অনুমোদন দিন।"
+  "Approve on a phone or computer signed in to Readest.": "Readest-এ সাইন ইন করা ফোন বা কম্পিউটার থেকে অনুমোদন দিন।",
+  "Xiaomi Pen Squeeze": "Xiaomi পেন স্কুইজ",
+  "Xiaomi Pen Double Tap": "Xiaomi পেন ডাবল ট্যাপ",
+  "Xiaomi Pen Slide Up": "Xiaomi পেন উপরে স্লাইড",
+  "Xiaomi Pen Slide Down": "Xiaomi পেন নিচে স্লাইড"
 }

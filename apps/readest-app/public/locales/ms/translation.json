@@ -2852,5 +2852,9 @@
   "Merge {{count}} entries into:_other": "Gabungkan {{count}} entri ke dalam:",
   "Sign in with a QR code": "Log masuk dengan kod QR",
   "Unable to connect to Readest. Please check your network connection.": "Tidak dapat menyambung ke Readest. Sila semak sambungan rangkaian anda.",
-  "Approve on a phone or computer signed in to Readest.": "Luluskan pada telefon atau komputer yang telah log masuk ke Readest."
+  "Approve on a phone or computer signed in to Readest.": "Luluskan pada telefon atau komputer yang telah log masuk ke Readest.",
+  "Xiaomi Pen Squeeze": "Picit Xiaomi Pen",
+  "Xiaomi Pen Double Tap": "Ketik Dua Kali Xiaomi Pen",
+  "Xiaomi Pen Slide Up": "Luncur ke atas Xiaomi Pen",
+  "Xiaomi Pen Slide Down": "Luncur ke bawah Xiaomi Pen"
 }
