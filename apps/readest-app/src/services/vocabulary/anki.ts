@@ -323,11 +323,16 @@ export const ankiLayouts = (
   }
   for (const p of settings?.profiles ?? []) {
     const type = p.noteType ? noteTypes.find((t) => t.name === p.noteType) : undefined;
-    if (!type || layouts.has(type.id)) continue;
+    if (!type) continue;
     const at = (source: AnkiFieldSource) => type.fields.findIndex((f) => p.fields[f] === source);
-    // A profile whose Word field was renamed away reads nothing: the next one decides.
-    if (at('word') < 0) continue;
-    layouts.set(type.id, { word: at('word'), hint: at('hint'), entry: at('entry') });
+    // Profiles of a note type agree on these fields, but a mapping to a field
+    // renamed away reads nothing: each comes from the first profile that has it.
+    const l = layouts.get(type.id);
+    layouts.set(type.id, {
+      word: l && l.word >= 0 ? l.word : at('word'),
+      hint: l && l.hint >= 0 ? l.hint : at('hint'),
+      entry: l && l.entry >= 0 ? l.entry : at('entry'),
+    });
   }
   return layouts;
 };

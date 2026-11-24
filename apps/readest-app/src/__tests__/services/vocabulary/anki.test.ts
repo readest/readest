@@ -570,6 +570,28 @@ describe('card profiles (#7849)', () => {
     expect(ankiLayouts(settings, [renamed]).get(40)).toEqual({ word: 0, hint: 2, entry: -1 });
   });
 
+  it('takes each read field from the first profile that still has it', () => {
+    const settings = profiles();
+    // Meaning was renamed to Gloss; only the second profile was repaired.
+    settings.profiles.push({
+      ...settings.profiles[0]!,
+      id: 'p3',
+      fields: { Expression: 'word', Gloss: 'hint' },
+    });
+    const renamed = { ...MINING, fields: ['Expression', 'Sentence', 'Gloss', 'Notes'] };
+    expect(ankiLayouts(settings, [renamed]).get(40)).toEqual({ word: 0, hint: 2, entry: -1 });
+  });
+
+  it("keeps the reader's own notes of a profile's note type out even with its Word field gone", () => {
+    // Expression was renamed and no profile maps the new field yet.
+    const renamed = { ...MINING, fields: ['Term', 'Sentence', 'Meaning', 'Notes'] };
+    const layouts = ankiLayouts(profiles(), [renamed]);
+    const own = [{ id: 3, mid: 40, fields: ['Baum', '', 'tree', ''], tags: 'mine' }];
+    const { notes, known } = ankiSyncNotes(own, [], layouts);
+    expect(notes).toEqual([]);
+    expect(known.map((n) => n.id)).toEqual([3]);
+  });
+
   it("works with every note of Readest's decks but only Readest's notes in a profile's deck", () => {
     const layouts = ankiLayouts(profiles(), [MINING]);
     const own = [{ id: 1, mid: 9, fields: ['kettle'], tags: '' }];
