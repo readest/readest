@@ -1,7 +1,7 @@
 import type { DatabaseRow, DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
 import { isRead } from './bookText';
-import { mergeXRay } from './snapshot';
+import { XRay } from './snapshot';
 import type { XRayData } from './types';
 
 export interface XRayBatch {
@@ -11,10 +11,9 @@ export interface XRayBatch {
 }
 
 let opening: Promise<DatabaseService> | null = null;
-// The book being read. Page turns only compare CFIs, and merge again when one
-// admits another batch.
-let cached: { bookHash: string; batches: XRayBatch[]; count: number; merged: XRayData } | null =
-  null;
+// The book being read, with its first `count` batches merged. Page turns only
+// compare CFIs; one that admits another batch adds that one.
+let cached: { bookHash: string; batches: XRayBatch[]; count: number; merged: XRay } | null = null;
 
 const openDb = (appService: AppService): Promise<DatabaseService> => {
   if (!opening) {
@@ -44,7 +43,7 @@ const load = async (appService: AppService, bookHash: string) => {
     endCfi: end_cfi,
     data: JSON.parse(payload) as XRayData,
   }));
-  cached = { bookHash, batches, count: 0, merged: mergeXRay([]) };
+  cached = { bookHash, batches, count: 0, merged: new XRay() };
   return cached;
 };
 
@@ -53,7 +52,7 @@ export const getXRayEnd = async (appService: AppService, bookHash: string) => {
   const { batches } = await load(appService, bookHash);
   return {
     position: batches.at(-1)?.position ?? -1,
-    names: mergeXRay(batches.map(({ data }) => data)).entities.map(({ name }) => name),
+    names: batches.flatMap(({ data }) => data.entities.map(({ name }) => name)),
   };
 };
 
@@ -62,7 +61,7 @@ export const getXRay = async (
   appService: AppService,
   bookHash: string,
   location: string,
-): Promise<XRayData | null> => {
+): Promise<XRay | null> => {
   const book = await load(appService, bookHash);
   // Batches are in reading order, so the ones read are a prefix.
   let count = 0;
@@ -72,9 +71,15 @@ export const getXRay = async (
     if (isRead(book.batches[middle]!.endCfi, location)) count = middle + 1;
     else end = middle;
   }
-  if (count !== book.count) {
+  if (count < book.count) {
+    book.merged = new XRay();
+    book.count = 0;
+  }
+  if (count > book.count) {
+    const added = Object.assign(new XRay(), book.merged);
+    for (const { data } of book.batches.slice(book.count, count)) added.add(data);
+    book.merged = added;
     book.count = count;
-    book.merged = mergeXRay(book.batches.slice(0, count).map(({ data }) => data));
   }
   return count ? book.merged : null;
 };

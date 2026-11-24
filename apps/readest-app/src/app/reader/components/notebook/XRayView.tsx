@@ -3,13 +3,8 @@ import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { LuChevronDown, LuSearch, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import { findEntity, linksOf } from '@/services/xray/snapshot';
-import {
-  XRAY_ENTITY_TYPES,
-  type XRayData,
-  type XRayEntity,
-  type XRayEntityType,
-} from '@/services/xray/types';
+import type { XRay } from '@/services/xray/snapshot';
+import { XRAY_ENTITY_TYPES, type XRayEntity, type XRayEntityType } from '@/services/xray/types';
 import { clearBookXRay, useXRayStore } from '@/services/xray/xrayService';
 import { useBookXRay } from '../../hooks/useBookXRay';
 import XRayStatus, { XRayMentionList, XRayQuotes, XRayUpdateButton } from '../annotator/XRayStatus';
@@ -32,7 +27,7 @@ const useSectionLabels = (): Record<Section, string> => {
 
 const EntityCard: React.FC<{
   bookKey: string;
-  xray: XRayData;
+  xray: XRay;
   entity: XRayEntity;
   isOpen: boolean;
   onSelect: (entity: XRayEntity) => void;
@@ -68,7 +63,7 @@ const EntityCard: React.FC<{
                 {key}: {value}
               </li>
             ))}
-            {linksOf(xray, entity).map(({ relationship: { source, type, target }, other }) => (
+            {xray.linksOf(entity).map(({ relationship: { source, type, target }, other }) => (
               <li key={`${source}${type}${target}`}>
                 {other ? (
                   <button
@@ -112,7 +107,7 @@ const XRayView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
   // A lookup docked here shows its entry.
   useEffect(() => {
-    const entity = lookup && xray && findEntity(xray, lookup.word);
+    const entity = lookup && xray?.find(lookup.word);
     if (entity) select(entity);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lookup?.id, !xray]);

@@ -1,7 +1,17 @@
 import type { XRayData, XRayEntity, XRayFact, XRayQuote, XRayRelationship } from './types';
 
-export const xrayKey = (name: string) =>
-  name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+const keys = new Map<string, string>();
+
+/** A name without the differences that do not tell names apart. */
+export const xrayKey = (name: string): string => {
+  let key = keys.get(name);
+  if (key === undefined) {
+    key = name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+    if (keys.size > 20_000) keys.clear();
+    keys.set(name, key);
+  }
+  return key;
+};
 
 /** The first quote, and the latest two: where it came up, and where it stands. */
 const addQuotes = (quotes: XRayQuote[], more: readonly XRayQuote[]): XRayQuote[] => {
@@ -26,22 +36,31 @@ const addFacts = (list: XRayFact[], facts: readonly XRayFact[]) => {
   }
 };
 
-/** Batches in reading order, merged: one item per name, in the order first met. */
-export const mergeXRay = (batches: readonly XRayData[]): XRayData => {
-  const entities: XRayEntity[] = [];
-  const byName = new Map<string, XRayEntity>();
-  const relationships = new Map<string, XRayRelationship>();
-  const events: XRayData['events'] = [];
+export interface XRayLink {
+  relationship: XRayRelationship;
+  /** The entity on the other end, when the X-Ray has one. */
+  other?: XRayEntity;
+}
 
-  for (const batch of batches) {
+/** Batches in reading order, merged: one item per name, in the order first met. */
+export class XRay implements XRayData {
+  entities: XRayEntity[] = [];
+  relationships: XRayRelationship[] = [];
+  events: XRayData['events'] = [];
+  private readonly byTypedName = new Map<string, XRayEntity>();
+  private readonly byName = new Map<string, XRayEntity>();
+  private readonly byEnds = new Map<string, XRayRelationship>();
+  private readonly byEnd = new Map<string, XRayRelationship[]>();
+
+  add(batch: XRayData): void {
     for (const entity of batch.entities) {
       const names = [entity.name, ...entity.aliases];
-      const keys = names.map((name) => `${entity.type}\0${xrayKey(name)}`);
+      const typed = names.map((name) => `${entity.type}\0${xrayKey(name)}`);
       let merged: XRayEntity | undefined;
-      for (const key of keys) merged ??= byName.get(key);
+      for (const key of typed) merged ??= this.byTypedName.get(key);
       if (!merged) {
         merged = { ...entity, aliases: [], facts: [], quotes: [] };
-        entities.push(merged);
+        this.entities.push(merged);
       }
       addNames(merged.aliases, names, xrayKey(merged.name));
       addFacts(merged.facts, entity.facts);
@@ -49,46 +68,51 @@ export const mergeXRay = (batches: readonly XRayData[]): XRayData => {
       if (entity.description.length > merged.description.length) {
         merged.description = entity.description;
       }
-      for (const key of keys) if (!byName.has(key)) byName.set(key, merged);
+      for (const key of typed) if (!this.byTypedName.has(key)) this.byTypedName.set(key, merged);
+      for (const name of names) {
+        const key = xrayKey(name);
+        if (key && !this.byName.has(key)) this.byName.set(key, merged);
+      }
     }
     for (const relationship of batch.relationships) {
-      const { source, target, type, quotes } = relationship;
-      const key = [source, target, type].map(xrayKey).join('\0');
-      const merged = relationships.get(key);
-      if (merged) merged.quotes = addQuotes(merged.quotes, quotes);
-      else relationships.set(key, { ...relationship, quotes: addQuotes([], quotes) });
+      const ends = [xrayKey(relationship.source), xrayKey(relationship.target)];
+      const key = `${ends.join('\0')}\0${xrayKey(relationship.type)}`;
+      const known = this.byEnds.get(key);
+      if (known) {
+        known.quotes = addQuotes(known.quotes, relationship.quotes);
+        continue;
+      }
+      const merged = { ...relationship, quotes: addQuotes([], relationship.quotes) };
+      this.byEnds.set(key, merged);
+      this.relationships.push(merged);
+      for (const end of ends) {
+        const links = this.byEnd.get(end);
+        if (links) links.push(merged);
+        else this.byEnd.set(end, [merged]);
+      }
     }
     for (const event of batch.events) {
-      events.push({ ...event, quotes: addQuotes([], event.quotes) });
+      this.events.push({ ...event, quotes: addQuotes([], event.quotes) });
     }
   }
-  return { entities, relationships: [...relationships.values()], events };
-};
 
-export const findEntity = (data: XRayData, term: string): XRayEntity | undefined => {
-  const key = xrayKey(term);
-  return key
-    ? data.entities.find(
-        (entity) =>
-          xrayKey(entity.name) === key || entity.aliases.some((name) => xrayKey(name) === key),
-      )
-    : undefined;
-};
+  /** The entity known by `name`. */
+  find(name: string): XRayEntity | undefined {
+    return this.byName.get(xrayKey(name));
+  }
 
-export interface XRayLink {
-  relationship: XRayRelationship;
-  /** The entity on the other end, when the X-Ray has one. */
-  other?: XRayEntity;
+  /** The relationships an entity is part of. */
+  linksOf(entity: XRayEntity): XRayLink[] {
+    const own = new Set([entity.name, ...entity.aliases].map(xrayKey));
+    const links: XRayLink[] = [];
+    for (const name of own) {
+      for (const relationship of this.byEnd.get(name) ?? []) {
+        const { source, target } = relationship;
+        const from = own.has(xrayKey(source));
+        if (from === own.has(xrayKey(target))) continue;
+        links.push({ relationship, other: this.find(from ? target : source) });
+      }
+    }
+    return links;
+  }
 }
-
-/** The relationships an entity is part of. */
-export const linksOf = (data: XRayData, entity: XRayEntity): XRayLink[] => {
-  const own = new Set([entity.name, ...entity.aliases].map(xrayKey));
-  return data.relationships.flatMap((relationship) => {
-    const from = own.has(xrayKey(relationship.source));
-    if (from === own.has(xrayKey(relationship.target))) return [];
-    return [
-      { relationship, other: findEntity(data, from ? relationship.target : relationship.source) },
-    ];
-  });
-};

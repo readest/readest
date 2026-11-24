@@ -4,8 +4,8 @@
  * X-Ray, so a lookup asks no AI; it is gated like the Context Dictionary.
  */
 import i18n from '@/i18n/i18n';
-import { findEntity, linksOf } from '@/services/xray/snapshot';
-import type { XRayData, XRayEntity } from '@/services/xray/types';
+import type { XRay } from '@/services/xray/snapshot';
+import type { XRayEntity } from '@/services/xray/types';
 import { getBookXRay, isXRayAvailable, openQuote } from '@/services/xray/xrayService';
 import type { DictionaryProvider } from '../types';
 import { BUILTIN_PROVIDER_IDS } from '../types';
@@ -25,12 +25,7 @@ const append = <K extends keyof HTMLElementTagNameMap>(
   return el;
 };
 
-const renderEntity = (
-  container: HTMLElement,
-  bookKey: string,
-  xray: XRayData,
-  entity: XRayEntity,
-) => {
+const renderEntity = (container: HTMLElement, bookKey: string, xray: XRay, entity: XRayEntity) => {
   container.replaceChildren();
   append(container, 'h1', 'text-lg font-bold', entity.name);
   if (entity.aliases.length) {
@@ -42,7 +37,7 @@ const renderEntity = (
     );
   }
   if (entity.description) append(container, 'p', 'mt-2', entity.description);
-  const links = linksOf(xray, entity);
+  const links = xray.linksOf(entity);
   if (entity.facts.length || links.length) {
     const list = append(container, 'ul', 'mt-2 list-disc ps-6');
     for (const { key, value } of entity.facts) append(list, 'li', '', `${key}: ${value}`);
@@ -80,8 +75,8 @@ export const xrayProvider: DictionaryProvider = {
     if (!bookKey || !isXRayAvailable()) return { ok: false, reason: 'unsupported' };
     const xray = await getBookXRay(bookKey);
     if (signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
-    const entity = xray && findEntity(xray, word);
-    if (!entity) return { ok: false, reason: 'empty' };
+    const entity = xray?.find(word);
+    if (!xray || !entity) return { ok: false, reason: 'empty' };
     renderEntity(container, bookKey, xray, entity);
     return { ok: true, headword: entity.name, sourceLabel: _('X-Ray') };
   },

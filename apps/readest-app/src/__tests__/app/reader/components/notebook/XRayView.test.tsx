@@ -29,6 +29,7 @@ vi.mock('@/services/xray/xrayService', async () => {
 });
 
 import XRayView from '@/app/reader/components/notebook/XRayView';
+import { XRay } from '@/services/xray/snapshot';
 import type { XRayData, XRayEntity } from '@/services/xray/types';
 import { useXRayStore } from '@/services/xray/xrayService';
 
@@ -57,7 +58,9 @@ const renderView = async () => {
 };
 
 beforeEach(() => {
-  h.xray = data;
+  const xray = new XRay();
+  xray.add(data);
+  h.xray = xray;
   h.available = true;
   vi.clearAllMocks();
   h.getBookMentions.mockResolvedValue({ count: 0, mentions: [] });

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { getBookXRay, useXRayStore } from '@/services/xray/xrayService';
-import type { XRayData } from '@/services/xray/types';
+import type { XRay } from '@/services/xray/snapshot';
 import { useBookProgressValue } from '@/store/readerProgressStore';
 
 /** A book's X-Ray up to the current page: undefined while loading, null before it is read. */
-export const useBookXRay = (bookKey: string): XRayData | null | undefined => {
+export const useBookXRay = (bookKey: string): XRay | null | undefined => {
   const location = useBookProgressValue(bookKey, (progress) => progress.location);
   const revision = useXRayStore((s) => s.revision);
-  const [xray, setXRay] = useState<XRayData | null>();
+  const [xray, setXRay] = useState<XRay | null>();
 
   useEffect(() => {
     let stale = false;

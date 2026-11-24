@@ -37,7 +37,7 @@ import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import { xrayProvider } from '@/services/dictionaries/providers/xrayProvider';
 import { readPassages, type XRayPassage } from '@/services/xray/bookText';
 import { groundXRay } from '@/services/xray/extract';
-import { findEntity, linksOf, mergeXRay } from '@/services/xray/snapshot';
+import { XRay } from '@/services/xray/snapshot';
 import { cfiOfMention, findMentions } from '@/services/xray/mentions';
 import { __resetXRayStoreForTests } from '@/services/xray/store';
 import { clearBookXRay, getBookXRay, updateXRay, useXRayStore } from '@/services/xray/xrayService';
@@ -46,6 +46,11 @@ import type { BookDoc } from '@/libs/document';
 import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
 
 const BOOK = 'hash-1';
+const mergeXRay = (batches: XRayData[]) => {
+  const xray = new XRay();
+  for (const batch of batches) xray.add(batch);
+  return xray;
+};
 const CHAPTERS = [
   'Anna met Boris in Kazan. ',
   'Boris betrayed Anna at sea. ',
@@ -141,7 +146,7 @@ describe('groundXRay', () => {
   });
 });
 
-describe('mergeXRay', () => {
+describe('XRay', () => {
   it('joins one character met under several names', () => {
     const batch = (name: string, aliases: string[], cfi: string): XRayData => ({
       entities: [
@@ -164,11 +169,11 @@ describe('mergeXRay', () => {
     ]);
     expect(merged.entities).toHaveLength(1);
     expect(merged.entities[0]!.aliases).toEqual(['Anna Petrovna', 'Mrs. Petrovna']);
-    expect(findEntity(merged, ' mrs.  petrovna')?.name).toBe('Anna');
+    expect(merged.find(' mrs.  petrovna')?.name).toBe('Anna');
   });
 });
 
-describe('linksOf', () => {
+describe('XRay links', () => {
   it('connects the two ends of a relationship, by any of their names', () => {
     const person = (name: string, aliases: string[] = []) => ({
       ...entity(name, ''),
@@ -183,8 +188,9 @@ describe('linksOf', () => {
       relationships: [{ source: 'mrs. petrovna', target: 'Boris', type: 'mother of', quotes: [] }],
       events: [],
     };
-    expect(linksOf(data, anna)[0]!.other).toBe(boris);
-    expect(linksOf(data, boris)[0]!.other).toBe(anna);
+    const xray = mergeXRay([data]);
+    expect(xray.linksOf(xray.find('Anna')!)[0]!.other?.name).toBe('Boris');
+    expect(xray.linksOf(xray.find('boris')!)[0]!.other?.name).toBe('Anna');
   });
 });
 

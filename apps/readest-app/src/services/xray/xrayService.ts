@@ -11,7 +11,7 @@ import { readPassages, type XRayPassage } from './bookText';
 import { extractXRay } from './extract';
 import { cfiOfMention, findMentions, type XRayMention, type XRayMentions } from './mentions';
 import { checkpointXRay, clearXRay, getXRay, getXRayEnd, saveXRayBatch } from './store';
-import type { XRayData } from './types';
+import type { XRay } from './snapshot';
 
 /** Book text in one request: enough for names and events to repeat within it. */
 const BATCH_CHARS = 12_000;
@@ -48,7 +48,7 @@ const bookHashOf = (bookKey: string) => bookKey.split('-')[0]!;
 const bump = () => useXRayStore.setState(({ revision }) => ({ revision: revision + 1 }));
 
 /** The X-Ray of an open book, up to its current page. */
-export const getBookXRay = async (bookKey: string): Promise<XRayData | null> => {
+export const getBookXRay = async (bookKey: string): Promise<XRay | null> => {
   const location = getBookProgress(bookKey)?.location;
   if (!location) return null;
   return getXRay(await environmentConfig.getAppService(), bookHashOf(bookKey), location);
