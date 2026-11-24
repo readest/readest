@@ -204,6 +204,9 @@ struct OpState {
     ipc: Option<IpcHandler>,
     tx: Sender<Message>,
     url: Arc<Mutex<String>>,
+    /// Where the page's localStorage is kept (the webview's data directory); none keeps it in
+    /// memory.
+    data_dir: Option<std::path::PathBuf>,
 }
 
 /// What the page's `fetch` number `id` gets: a response, or why it failed (a network error).
@@ -317,6 +320,7 @@ pub(crate) struct WebviewInit {
     pub init_scripts: Vec<InitializationScript>,
     pub page_load: Option<PageLoadHandler>,
     pub tx: Sender<Message>,
+    pub data_dir: Option<std::path::PathBuf>,
 }
 
 fn env<T: std::str::FromStr>(k: &str, d: T) -> T {
@@ -387,6 +391,7 @@ impl BlitzWebview {
                 ipc: init.ipc,
                 tx: init.tx,
                 url: init.url,
+                data_dir: init.data_dir,
             }),
             init_scripts: init.init_scripts,
             page_load: init.page_load,
@@ -1088,6 +1093,36 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
     }
     t.set("origin", origin(page)).unwrap();
 
+    // localStorage (web.js): a JSON file per origin in the webview's data directory, written
+    // whole (to a temporary file, then renamed) so a crash leaves the old or the new one. A page
+    // with an opaque origin, or a webview without a data directory, keeps it in memory.
+    let storage = st.data_dir.as_ref().and_then(|dir| {
+        let origin = origin(page);
+        (origin != "null").then(|| {
+            let name: String = origin
+                .chars()
+                .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+                .collect();
+            dir.join("localStorage").join(format!("{name}.json"))
+        })
+    });
+    let file = storage.clone();
+    op!("storageLoad", move || file
+        .as_ref()
+        .and_then(|f| std::fs::read_to_string(f).ok()));
+    op!("storageSave", move |json: String| {
+        let Some(file) = &storage else { return };
+        let tmp = file.with_extension("json.tmp");
+        let saved = file
+            .parent()
+            .map_or(Ok(()), std::fs::create_dir_all)
+            .and_then(|()| std::fs::write(&tmp, json))
+            .and_then(|()| std::fs::rename(&tmp, file));
+        if let Err(e) = saved {
+            log::error!("localStorage: {}: {e}", file.display());
+        }
+    });
+
     op!("utf8Encode", |ctx: Ctx<'js>, s: String| ArrayBuffer::new(
         ctx,
         s.into_bytes()
@@ -1261,6 +1296,15 @@ mod tests {
 
     /// The page `script` runs on, whose runtime messages (fetch answers) go to `tx`.
     fn page_doc(script: &str, tx: Sender<Message>) -> QjsDocument {
+        page_doc_in(script, tx, None)
+    }
+
+    /// `page_doc` for a webview whose data directory is `data_dir`.
+    fn page_doc_in(
+        script: &str,
+        tx: Sender<Message>,
+        data_dir: Option<&std::path::Path>,
+    ) -> QjsDocument {
         let url = Url::parse("tauri://localhost/").unwrap();
         let st = Rc::new(OpState {
             id: 0,
@@ -1270,6 +1314,7 @@ mod tests {
             ipc: None,
             tx,
             url: Arc::new(Mutex::new(url.to_string())),
+            data_dir: data_dir.map(Into::into),
         });
         // At the app's URL, as a page is (fetch resolves against it).
         let config = DocumentConfig {
@@ -1304,6 +1349,35 @@ mod tests {
             _ => panic!("no fetch answer; the page logged {:?}", logs(&mut doc)),
         }
         logs(&mut doc)
+    }
+
+    /// Readest keeps its session (and more) in localStorage: what a page stores there is
+    /// back after a relaunch, from the webview's data directory, as in a browser.
+    /// sessionStorage starts empty again, and a webview without a data directory keeps
+    /// nothing.
+    #[test]
+    fn local_storage_survives_a_relaunch() {
+        let dir = std::env::temp_dir().join(format!("blitz-storage-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let launch = |script: &str, data_dir| {
+            logs(&mut page_doc_in(
+                script,
+                std::sync::mpsc::channel().0,
+                data_dir,
+            ))
+        };
+        launch(
+            r#"localStorage.setItem("sb-auth-token", "session");
+               localStorage.setItem("gone", "x");
+               localStorage.removeItem("gone");
+               sessionStorage.setItem("tab", "1");"#,
+            Some(&dir),
+        );
+        let read = r#"console.log(localStorage.getItem("sb-auth-token"), localStorage.getItem("gone"),
+                          sessionStorage.getItem("tab"), localStorage.length)"#;
+        assert_eq!(launch(read, Some(&dir)), ["session null null 1"]);
+        assert_eq!(launch(read, None), ["null null null 0"]);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// Readest's sign-in and sync talk to its servers: `fetch` to an http(s) URL goes out to
@@ -1454,6 +1528,7 @@ mod tests {
             init_scripts: Vec::new(),
             page_load: None,
             tx: std::sync::mpsc::channel().0,
+            data_dir: None,
         });
         wv.navigate(Url::from_file_path(&file).unwrap().as_str());
         let mut painted: Vec<String> = Vec::new();
@@ -1505,6 +1580,7 @@ mod tests {
             init_scripts: Vec::new(),
             page_load: None,
             tx: std::sync::mpsc::channel().0,
+            data_dir: None,
         });
         wv.navigate(Url::from_file_path(&file).unwrap().as_str());
         let mut painted: Vec<String> = Vec::new();
@@ -1559,6 +1635,7 @@ mod tests {
             init_scripts: Vec::new(),
             page_load: None,
             tx: std::sync::mpsc::channel().0,
+            data_dir: None,
         });
         wv.navigate(Url::from_file_path(&file).unwrap().as_str());
         let mut painted: Vec<String> = Vec::new();
@@ -1611,6 +1688,7 @@ mod tests {
             init_scripts: Vec::new(),
             page_load: None,
             tx: std::sync::mpsc::channel().0,
+            data_dir: None,
         });
         wv.navigate(Url::from_file_path(&file).unwrap().as_str());
         let step = |wv: &BlitzWebview| {

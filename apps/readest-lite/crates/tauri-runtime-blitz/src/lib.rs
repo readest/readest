@@ -219,6 +219,8 @@ impl RuntimeContext {
             init_scripts: pending.webview_attributes.initialization_scripts,
             page_load,
             tx: self.run_tx.clone(),
+            // Tauri sets it on Linux: the app's local data folder.
+            data_dir: pending.webview_attributes.data_directory,
         });
         if let Some(w) = self.windows.borrow_mut().get_mut(&window_id) {
             let mut wv = wv;

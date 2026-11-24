@@ -521,10 +521,25 @@
   }
   Object.assign(WebSocket, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 });
 
-  // In-memory Web Storage (nothing persists across launches yet).
+  // Web Storage. localStorage (`persist`) starts from what the runtime kept for this origin and
+  // is written back once at the end of each task that changes it; sessionStorage stays in memory.
   class Storage {
-    constructor() {
-      define(this, { _m: new Map() });
+    constructor(persist = false) {
+      let m = new Map();
+      if (persist) {
+        try {
+          m = new Map(Object.entries(JSON.parse(t.storageLoad() ?? '{}')));
+        } catch {}
+      }
+      define(this, { _m: m, _persist: persist, _saving: false });
+    }
+    _changed() {
+      if (!this._persist || this._saving) return;
+      this._saving = true;
+      Promise.resolve().then(() => {
+        this._saving = false;
+        t.storageSave(JSON.stringify(Object.fromEntries(this._m)));
+      });
     }
     get length() {
       return this._m.size;
@@ -538,12 +553,15 @@
     }
     setItem(k, v) {
       this._m.set(String(k), String(v));
+      this._changed();
     }
     removeItem(k) {
-      this._m.delete(String(k));
+      if (this._m.delete(String(k))) this._changed();
     }
     clear() {
+      if (!this._m.size) return;
       this._m.clear();
+      this._changed();
     }
   }
 
@@ -643,7 +661,7 @@
     CompressionStream,
     DecompressionStream,
     Storage,
-    localStorage: new Storage(),
+    localStorage: new Storage(true),
     sessionStorage: new Storage(),
     Blob,
     File,
