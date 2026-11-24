@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import type { Book } from '@/types/book';
@@ -76,6 +76,20 @@ describe('SyncInfoDialog KOSync file name (#7864)', () => {
   ])('has no file name row with %s', (_label, kosync) => {
     setUp(kosync);
     expect(screen.queryByRole('textbox', { name: 'File Name' })).toBeNull();
+  });
+
+  test('leaves a name synced in while the dialog is open alone on a blur without edits', () => {
+    setUp({}, makeBook('Old name.epub'));
+    const input = screen.getByRole('textbox', { name: 'File Name' }) as HTMLInputElement;
+    act(() => {
+      useBookDataStore.setState((state) => ({
+        booksData: { h1: { ...state.booksData['h1']!, book: makeBook('Synced name.epub') } },
+      }));
+    });
+
+    fireEvent.focus(input);
+    fireEvent.blur(input);
+    expect(saveKOSyncFilename).not.toHaveBeenCalled();
   });
 
   test("saves a typed name as the book's own and lets a format fill it", () => {

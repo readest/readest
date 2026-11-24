@@ -9,7 +9,9 @@ import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { allowsSelfSignedCert, tlsFetch } from '@/utils/tls';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 
-const getContributorName = (contributor: unknown): string => {
+// A name map picks `preferredLang` when given, else its first entry: the name
+// as written in the book (foliate lists alternate scripts after it).
+const getContributorName = (contributor: unknown, preferredLang?: string): string => {
   if (typeof contributor === 'string') return contributor.trim();
   if (!contributor || typeof contributor !== 'object') return '';
 
@@ -18,7 +20,7 @@ const getContributorName = (contributor: unknown): string => {
   if (!name || typeof name !== 'object') return '';
 
   const names = name as Record<string, unknown>;
-  const preferredName = names[getUserLang()];
+  const preferredName = preferredLang ? names[preferredLang] : undefined;
   if (typeof preferredName === 'string' && preferredName.trim()) return preferredName.trim();
 
   const fallbackName = Object.values(names).find(
@@ -31,7 +33,7 @@ const getMetadataAuthors = (book: Book): string => {
   const contributors = book.metadata?.author as unknown;
   if (!Array.isArray(contributors)) return book.author;
 
-  const authors = contributors.map(getContributorName).filter(Boolean);
+  const authors = contributors.map((c) => getContributorName(c, getUserLang())).filter(Boolean);
   return authors.length > 0 ? authors.join('\n') : book.author;
 };
 
@@ -46,8 +48,9 @@ export const formatKOSyncFilename = (book: Book, format: KOSyncFilenameFormat): 
     return book.originalFilename || `${book.title}.${book.format.toLowerCase()}`;
   }
   const contributors = book.metadata?.author as unknown;
+  // Not the UI language: every device must hash the same name for a book.
   const names = (Array.isArray(contributors) ? contributors : [contributors])
-    .map(getContributorName)
+    .map((c) => getContributorName(c))
     .filter(Boolean);
   const authors = (names.length > 0 ? names : [book.author].filter(Boolean)).join(', ');
   const name = !authors

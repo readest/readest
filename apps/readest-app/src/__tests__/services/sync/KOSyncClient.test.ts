@@ -146,6 +146,15 @@ describe('KOSyncClient – filename checksums', () => {
     expect(client.getDocumentDigest(book)).toBe(md5(filename));
   });
 
+  it('names a multilingual author as written in the book, whatever the UI language', () => {
+    // Foliate keys an author's name map by the element's own language first,
+    // then its alternate scripts; the UI language (en here) must not pick one.
+    const book = opdsBook([{ name: { ja: '村上春樹', en: 'Haruki Murakami' } }]);
+    expect(getKOSyncFilename(book, 'author-title')).toBe(
+      '村上春樹 - Good Omens_ The Nice and Accurate Prophecies.epub',
+    );
+  });
+
   it("hashes a book's own file name over the chosen format", () => {
     const book = opdsBook([{ name: 'Terry Pratchett' }]);
     book.metadata!.kosyncFilename = 'Pratchett, Terry - Good Omens.epub';

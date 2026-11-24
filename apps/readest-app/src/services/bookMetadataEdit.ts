@@ -105,8 +105,8 @@ export const saveKOSyncFilename = async (
   const { kosyncFilename: _previous, ...rest } = (current.metadata ?? book.metadata)!;
   const metadata: BookMetadata = { ...rest, ...(kosyncFilename && { kosyncFilename }) };
   const metadataUpdatedAt = Date.now();
-  await updateBook(envConfig, { ...current, metadata, metadataUpdatedAt });
-
+  // The open reader takes the name before the write is awaited, so of two
+  // overlapping saves it keeps the later one, whichever write ends last.
   useBookDataStore.setState((state) => {
     const bookData = state.booksData[book.hash];
     if (!bookData?.book) return state;
@@ -117,4 +117,5 @@ export const saveKOSyncFilename = async (
       },
     };
   });
+  await updateBook(envConfig, { ...current, metadata, metadataUpdatedAt });
 };

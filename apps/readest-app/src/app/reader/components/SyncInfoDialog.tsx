@@ -52,6 +52,9 @@ const KOSyncFilenameRow: React.FC<{ book: Book; format: KOSyncFilenameFormat }> 
   const { envConfig } = useEnv();
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(() => getKOSyncFilename(book, format));
+  // The name last shown or saved: a blur without an edit saves nothing, so it
+  // can't write back a name that sync replaced while the dialog was open.
+  const shown = useRef(value);
   const labels: Record<KOSyncFilenameFormat, string> = {
     original: _('Original'),
     'author-title': _('Author - Title'),
@@ -62,7 +65,8 @@ const KOSyncFilenameRow: React.FC<{ book: Book; format: KOSyncFilenameFormat }> 
     const trimmed = name.trim();
     const formatted = formatKOSyncFilename(book, format);
     const own = trimmed && trimmed !== formatted ? trimmed : undefined;
-    setValue(own ?? formatted);
+    shown.current = own ?? formatted;
+    setValue(shown.current);
     if (own !== book.metadata?.kosyncFilename) saveKOSyncFilename(envConfig, book, own);
   };
 
@@ -90,7 +94,7 @@ const KOSyncFilenameRow: React.FC<{ book: Book; format: KOSyncFilenameFormat }> 
         spellCheck={false}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onBlur={() => save(value)}
+        onBlur={() => value !== shown.current && save(value)}
         className='input eink-bordered focus:ring-primary/40 h-9 w-full rounded-md font-mono text-sm focus:outline-hidden focus:ring-2 sm:text-xs'
       />
       <div className='flex flex-wrap gap-1'>

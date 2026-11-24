@@ -121,6 +121,23 @@ describe('saveKOSyncFilename (#7864)', () => {
     expect(opened.metadataUpdatedAt).toBe(saved.metadataUpdatedAt);
   });
 
+  test('the open reader keeps the later of two overlapping saves', async () => {
+    let finishFirstWrite!: () => void;
+    appService.saveLibraryBooks = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise<void>((resolve) => (finishFirstWrite = resolve)))
+      .mockResolvedValue(undefined);
+
+    const first = saveKOSyncFilename(envConfig, readerBook, 'First.epub');
+    const second = saveKOSyncFilename(envConfig, readerBook, 'Second.epub');
+    await second;
+    finishFirstWrite();
+    await first;
+
+    const opened = useBookDataStore.getState().getBookData('h1')!.book!;
+    expect(opened.metadata?.kosyncFilename).toBe('Second.epub');
+  });
+
   test('clears the name so the book follows the File Name Format again', async () => {
     await saveKOSyncFilename(envConfig, readerBook, 'Author - New Title.epub');
     await saveKOSyncFilename(envConfig, readerBook, undefined);
