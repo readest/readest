@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS public.gift_cards (
   message text CHECK (char_length(message) <= 300),
   recipient_email text CHECK (recipient_email IS NULL OR recipient_email = lower(btrim(recipient_email))),
   code text NOT NULL UNIQUE,
-  provider text CHECK (provider IN ('stripe', 'apple', 'google')),
+  -- 'readest' is a card Readest issues itself, with no payment behind it.
+  provider text CHECK (provider IN ('stripe', 'apple', 'google', 'readest')),
   stripe_payment_intent_id text UNIQUE,
   apple_original_transaction_id text UNIQUE,
   google_purchase_token text UNIQUE,

@@ -20,7 +20,7 @@ export interface GiftCardRow {
   message: string | null;
   recipient_email: string | null;
   code: string;
-  provider: 'stripe' | 'apple' | 'google' | null;
+  provider: 'stripe' | 'apple' | 'google' | 'readest' | null;
   stripe_payment_intent_id: string | null;
   apple_original_transaction_id: string | null;
   google_purchase_token: string | null;
