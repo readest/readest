@@ -1,3 +1,2 @@
-// /link approves a reader's code here: in the apps it goes to web.readest.com, which may not
-// serve /api/auth/device yet.
+// Readest apps released before /api/auth/device approve reader codes here from /link.
 export { POST } from '@/app/api/auth/device/approve/route';
