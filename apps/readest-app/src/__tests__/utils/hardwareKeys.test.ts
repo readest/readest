@@ -296,44 +296,44 @@ describe('Apple Pencil native keys (#5501)', () => {
   });
 });
 
-describe('Xiaomi Focus Pen Pro native keys', () => {
-  test('maps xiaomi gesture ids to friendly labels', () => {
-    expect(normalizeNativeKey('XiaomiSqueeze')).toEqual({
+describe('pen gesture native keys (#7875)', () => {
+  test('maps pen gesture ids to brand-neutral labels', () => {
+    expect(normalizeNativeKey('PenSqueeze')).toEqual({
       source: 'native',
-      id: 'XiaomiSqueeze',
-      label: 'Xiaomi Pen Squeeze',
+      id: 'PenSqueeze',
+      label: 'Pen Squeeze',
     });
-    expect(normalizeNativeKey('XiaomiSlideUp')).toEqual({
+    expect(normalizeNativeKey('PenSlideUp')).toEqual({
       source: 'native',
-      id: 'XiaomiSlideUp',
-      label: 'Xiaomi Pen Slide Up',
+      id: 'PenSlideUp',
+      label: 'Pen Slide Up',
     });
-    expect(normalizeNativeKey('XiaomiSlideDown')).toEqual({
+    expect(normalizeNativeKey('PenSlideDown')).toEqual({
       source: 'native',
-      id: 'XiaomiSlideDown',
-      label: 'Xiaomi Pen Slide Down',
+      id: 'PenSlideDown',
+      label: 'Pen Slide Down',
     });
   });
 
-  test('isPencilNativeKey treats xiaomi gestures as pencil keys', () => {
-    expect(isPencilNativeKey('XiaomiSqueeze')).toBe(true);
-    expect(isPencilNativeKey('XiaomiDoubleTap')).toBe(false);
-    expect(isPencilNativeKey('XiaomiSlideUp')).toBe(true);
-    expect(isPencilNativeKey('XiaomiSlideDown')).toBe(true);
+  test('isPencilNativeKey treats pen gestures as stylus keys', () => {
+    expect(isPencilNativeKey('PenSqueeze')).toBe(true);
+    expect(isPencilNativeKey('PenSlideUp')).toBe(true);
+    expect(isPencilNativeKey('PenSlideDown')).toBe(true);
+    expect(isPencilNativeKey('PenDoubleTap')).toBe(false);
   });
 
-  test('resolvePageTurn resolves bound xiaomi gestures', () => {
+  test('resolvePageTurn resolves bound pen gestures', () => {
     const settings: HardwarePageTurnerSettings = {
       enabled: true,
       bindings: {
-        pagePrev: { source: 'native', id: 'XiaomiSlideUp', label: 'Xiaomi Pen Slide Up' },
-        pageNext: { source: 'native', id: 'XiaomiSlideDown', label: 'Xiaomi Pen Slide Down' },
+        pagePrev: { source: 'native', id: 'PenSlideUp', label: 'Pen Slide Up' },
+        pageNext: { source: 'native', id: 'PenSlideDown', label: 'Pen Slide Down' },
         sectionPrev: null,
         sectionNext: null,
         refresh: null,
       },
     };
-    expect(resolvePageTurn(settings, { source: 'native', id: 'XiaomiSlideDown' })).toBe('pageNext');
-    expect(resolvePageTurn(settings, { source: 'native', id: 'XiaomiSlideUp' })).toBe('pagePrev');
+    expect(resolvePageTurn(settings, { source: 'native', id: 'PenSlideDown' })).toBe('pageNext');
+    expect(resolvePageTurn(settings, { source: 'native', id: 'PenSlideUp' })).toBe('pagePrev');
   });
 });

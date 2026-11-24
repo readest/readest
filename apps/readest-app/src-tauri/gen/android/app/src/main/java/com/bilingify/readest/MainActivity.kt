@@ -3,7 +3,6 @@ package com.bilingify.readest
 import android.os.Build
 import android.os.Bundle
 import android.view.ActionMode
-import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.webkit.WebView
@@ -22,10 +21,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import app.tauri.plugin.JSArray
 import app.tauri.plugin.JSObject
+import com.readest.native_bridge.HyperOsPenEngine
 import com.readest.native_bridge.KeyDownInterceptor
 import com.readest.native_bridge.NativeBridgePlugin
+import com.readest.native_bridge.PenEngine
 import com.readest.native_bridge.SelectionMenuSuppressor
-import com.readest.native_bridge.XiaomiPenEngine
 
 internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when (keyCode) {
     KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -38,29 +38,14 @@ internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when (keyCode)
     else -> false
 }
 
-// Xiaomi Focus Pen Pro gestures (#7875) reuse gamepad keycodes, so they are
-// pen gestures only while HyperOS's pen engine has registered Readest, and
-// never from a gamepad or joystick. Double tap (BUTTON_8) is left out: the
-// pen recognizes it unreliably.
-private val xiaomiPenKeys = mapOf(
-    KeyEvent.KEYCODE_BUTTON_7 to "XiaomiSqueeze",
-    KeyEvent.KEYCODE_BUTTON_9 to "XiaomiSlideUp",
-    KeyEvent.KEYCODE_BUTTON_10 to "XiaomiSlideDown",
-)
-
-internal fun xiaomiPenKeyName(keyCode: Int, source: Int, penEngineRegistered: Boolean): String? {
-    val fromController = source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
-        source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
-    return if (penEngineRegistered && !fromController) xiaomiPenKeys[keyCode] else null
-}
-
 class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var wv: WebView? = null
     private var interceptVolumeKeysEnabled = false
     private var interceptBackKeyEnabled = false
     private var interceptPageTurnerKeysEnabled = false
     private var keyLearnModeEnabled = false
-    private val xiaomiPen by lazy { XiaomiPenEngine(this) }
+    // System pen engines (#7875); another vendor's engine is added to this list.
+    private val penEngines: List<PenEngine> by lazy { listOf(HyperOsPenEngine(this)) }
     // touchmove fires continuously; throttle its dispatch to ~10/s since each one
     // is an evaluateJavascript round-trip into the WebView.
     private val touchMoveThrottleMs = 100L
@@ -221,7 +206,7 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
             // Pen gestures are always forwarded, like Apple Pencil on iOS: JS
             // binds them and turns pages without any interception. A held
             // gesture auto-repeats, so forward only its first DOWN.
-            val penKeyName = xiaomiPenKeyName(keyCode, event.source, xiaomiPen.registered)
+            val penKeyName = penEngines.firstNotNullOfOrNull { it.gestureKeyName(keyCode, event.source) }
             if (penKeyName != null) {
                 if (event.repeatCount == 0) forwardKeyToWebView(penKeyName, keyCode)
                 return true
@@ -372,15 +357,15 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         NativeBridgePlugin.deliverActivityResult(requestCode, resultCode, data)
     }
 
-    // The pen engine sends its gestures to the registered app instead of the
+    // A pen engine sends its gestures to the registered app instead of the
     // system, so hold the registration only while Readest is in front.
     override fun onResume() {
         super.onResume()
-        xiaomiPen.register()
+        penEngines.forEach { it.register() }
     }
 
     override fun onPause() {
-        xiaomiPen.unregister()
+        penEngines.forEach { it.unregister() }
         super.onPause()
     }
 

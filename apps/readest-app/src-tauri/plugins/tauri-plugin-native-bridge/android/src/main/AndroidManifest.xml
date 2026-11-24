@@ -14,7 +14,7 @@
         </intent>
         <!-- AnkiDroid's content provider, for the vocabulary Anki link (#789). -->
         <package android:name="com.ichi2.anki" />
-        <!-- HyperOS's pen engine, for Xiaomi Focus Pen Pro gestures (#7875). -->
+        <!-- HyperOS's pen engine (HyperOsPenEngine, #7875). -->
         <package android:name="com.xiaomi.touchservice" />
     </queries>
 

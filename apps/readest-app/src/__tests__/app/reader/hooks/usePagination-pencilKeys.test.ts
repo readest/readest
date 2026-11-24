@@ -118,11 +118,11 @@ afterEach(() => {
   cleanup();
 });
 
-describe('usePagination Xiaomi pen bindings (#7876)', () => {
+describe('usePagination pen gesture bindings (#7875)', () => {
   test.each([
-    'XiaomiSqueeze',
-    'XiaomiSlideUp',
-    'XiaomiSlideDown',
+    'PenSqueeze',
+    'PenSlideUp',
+    'PenSlideDown',
   ])('%s forwards through the native handler exactly once without media interception', async (id) => {
     h.settingsState.settings.hardwarePageTurner = {
       enabled: true,

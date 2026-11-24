@@ -3276,7 +3276,7 @@
   "Title - Author": "العنوان - المؤلف",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "يبني «تنسيق اسم الملف» الاسم من العنوان والمؤلفين، كما يسمّي KOReader تنزيلات OPDS.",
   "Set a single book's file name in the reader's Sync Info.": "عيّن اسم الملف لكتاب واحد في «معلومات المزامنة» في واجهة القراءة.",
-  "Xiaomi Pen Squeeze": "ضغط قلم Xiaomi",
-  "Xiaomi Pen Slide Up": "انزلاق قلم Xiaomi لأعلى",
-  "Xiaomi Pen Slide Down": "انزلاق قلم Xiaomi لأسفل"
+  "Pen Squeeze": "ضغط القلم",
+  "Pen Slide Up": "انزلاق القلم لأعلى",
+  "Pen Slide Down": "انزلاق القلم لأسفل"
 }

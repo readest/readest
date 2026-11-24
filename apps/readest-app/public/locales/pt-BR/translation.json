@@ -3039,7 +3039,7 @@
   "Title - Author": "Título - Autor",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"Formato do nome do arquivo\" monta o nome a partir do título e dos autores, como o KOReader nomeia os downloads OPDS.",
   "Set a single book's file name in the reader's Sync Info.": "Defina o nome de arquivo de um único livro nas Informações de sincronização do leitor.",
-  "Xiaomi Pen Squeeze": "Aperto na caneta Xiaomi",
-  "Xiaomi Pen Slide Up": "Deslizar para cima na caneta Xiaomi",
-  "Xiaomi Pen Slide Down": "Deslizar para baixo na caneta Xiaomi"
+  "Pen Squeeze": "Aperto na caneta",
+  "Pen Slide Up": "Deslizar para cima na caneta",
+  "Pen Slide Down": "Deslizar para baixo na caneta"
 }

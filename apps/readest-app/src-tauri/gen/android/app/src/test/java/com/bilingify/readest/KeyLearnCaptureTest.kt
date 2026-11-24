@@ -1,10 +1,7 @@
 package com.bilingify.readest
 
-import android.view.InputDevice
 import android.view.KeyEvent
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -23,28 +20,10 @@ class KeyLearnCaptureTest {
         assertTrue(shouldCaptureNativeLearnKey(KeyEvent.KEYCODE_VOLUME_UP))
     }
 
-    // #7875: the Xiaomi pen engine reuses gamepad keycodes 194-197.
+    // #7875: a pen engine may send gamepad keycodes; learn mode leaves them to the WebView.
     @Test
     fun `gamepad buttons 7 to 10 continue to WebView during learn mode`() {
         assertFalse(shouldCaptureNativeLearnKey(KeyEvent.KEYCODE_BUTTON_7))
         assertFalse(shouldCaptureNativeLearnKey(KeyEvent.KEYCODE_BUTTON_10))
-    }
-
-    @Test
-    fun `gamepad buttons 7 9 10 are pen gestures only while the pen engine is registered`() {
-        val pen = InputDevice.SOURCE_KEYBOARD
-        assertNull(xiaomiPenKeyName(KeyEvent.KEYCODE_BUTTON_7, pen, penEngineRegistered = false))
-        assertEquals("XiaomiSqueeze", xiaomiPenKeyName(KeyEvent.KEYCODE_BUTTON_7, pen, true))
-        assertEquals("XiaomiSlideUp", xiaomiPenKeyName(KeyEvent.KEYCODE_BUTTON_9, pen, true))
-        assertEquals("XiaomiSlideDown", xiaomiPenKeyName(KeyEvent.KEYCODE_BUTTON_10, pen, true))
-        // Double tap is unsupported; other gamepad buttons are never pen gestures.
-        assertNull(xiaomiPenKeyName(KeyEvent.KEYCODE_BUTTON_8, pen, true))
-        assertNull(xiaomiPenKeyName(KeyEvent.KEYCODE_BUTTON_R1, pen, true))
-    }
-
-    @Test
-    fun `a gamepad or joystick never sends pen gestures`() {
-        assertNull(xiaomiPenKeyName(KeyEvent.KEYCODE_BUTTON_7, InputDevice.SOURCE_GAMEPAD, true))
-        assertNull(xiaomiPenKeyName(KeyEvent.KEYCODE_BUTTON_9, InputDevice.SOURCE_JOYSTICK, true))
     }
 }

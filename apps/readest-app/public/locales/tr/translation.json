@@ -2960,7 +2960,7 @@
   "Title - Author": "Başlık - Yazar",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Dosya Adı Biçimi”, KOReader'ın OPDS indirmelerini adlandırdığı gibi adı başlık ve yazarlardan oluşturur.",
   "Set a single book's file name in the reader's Sync Info.": "Tek bir kitabın dosya adını okuma görünümündeki Senkronizasyon bilgisi bölümünden ayarlayın.",
-  "Xiaomi Pen Squeeze": "Xiaomi Kalemi sıkma",
-  "Xiaomi Pen Slide Up": "Xiaomi Kalemi yukarı kaydırma",
-  "Xiaomi Pen Slide Down": "Xiaomi Kalemi aşağı kaydırma"
+  "Pen Squeeze": "Kalem sıkma",
+  "Pen Slide Up": "Kalemde yukarı kaydırma",
+  "Pen Slide Down": "Kalemde aşağı kaydırma"
 }

@@ -3118,7 +3118,7 @@
   "Title - Author": "Назва - Автор",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "«Формат імені файлу» складає ім'я з назви та авторів так само, як KOReader називає завантаження з OPDS.",
   "Set a single book's file name in the reader's Sync Info.": "Ім'я файлу окремої книги задається в «Інформації про синхронізацію» в режимі читання.",
-  "Xiaomi Pen Squeeze": "Стискання Xiaomi Pen",
-  "Xiaomi Pen Slide Up": "Свайп вгору Xiaomi Pen",
-  "Xiaomi Pen Slide Down": "Свайп вниз Xiaomi Pen"
+  "Pen Squeeze": "Стискання стилуса",
+  "Pen Slide Up": "Свайп вгору по стилусу",
+  "Pen Slide Down": "Свайп вниз по стилусу"
 }

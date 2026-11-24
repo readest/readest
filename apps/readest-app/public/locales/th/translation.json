@@ -2881,7 +2881,7 @@
   "Title - Author": "ชื่อเรื่อง - ผู้แต่ง",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“รูปแบบชื่อไฟล์” สร้างชื่อจากชื่อเรื่องและผู้แต่ง แบบเดียวกับที่ KOReader ตั้งชื่อไฟล์ที่ดาวน์โหลดจาก OPDS",
   "Set a single book's file name in the reader's Sync Info.": "ตั้งชื่อไฟล์ของหนังสือแต่ละเล่มได้ในข้อมูลการซิงค์ของมุมมองการอ่าน",
-  "Xiaomi Pen Squeeze": "บีบปากกา Xiaomi",
-  "Xiaomi Pen Slide Up": "เลื่อนขึ้นบนปากกา Xiaomi",
-  "Xiaomi Pen Slide Down": "เลื่อนลงบนปากกา Xiaomi"
+  "Pen Squeeze": "บีบปากกา",
+  "Pen Slide Up": "เลื่อนขึ้นบนปากกา",
+  "Pen Slide Down": "เลื่อนลงบนปากกา"
 }
