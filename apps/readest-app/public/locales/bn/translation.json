@@ -2947,11 +2947,11 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "কোনো ভাষা বা বইয়ের জন্য Anki-এর সাথে সিঙ্ক যে ডেক, নোটের ধরন ও ফিল্ড ব্যবহার করে তা বেছে নিন",
   "Languages": "ভাষাসমূহ",
   "Language's Profile": "ভাষার প্রোফাইল",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_one": "{{count}}টি শব্দ পাঠানো হয়নি: সেগুলোর নোটের ধরন AnkiDroid-এ নেই",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}}টি শব্দ পাঠানো হয়নি: সেগুলোর নোটের ধরন AnkiDroid-এ নেই",
   "Anki Card Profiles...": "Anki কার্ড প্রোফাইল...",
   "Profile": "প্রোফাইল",
   "All Profiles": "সব প্রোফাইল",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "কার্ড থেকে “বইয়ের লিংক” খুলতে AnkiDroid-এর সেটিংসের উন্নত অংশে “Allow cards to launch other apps” চালু করুন",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“শব্দ”, “ইঙ্গিত” ও “অভিধানের ভুক্তি”-কে “{{name}}”-এর মতো একই ফিল্ড ব্যবহার করতে হবে"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“শব্দ”, “ইঙ্গিত” ও “অভিধানের ভুক্তি”-কে “{{name}}”-এর মতো একই ফিল্ড ব্যবহার করতে হবে",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}}টি শব্দ পাঠানো হয়নি: সেগুলোর প্রোফাইলের নোটের ধরন AnkiDroid-এ নেই বা তাতে “শব্দ” ফিল্ড নেই",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}}টি শব্দ পাঠানো হয়নি: সেগুলোর প্রোফাইলের নোটের ধরন AnkiDroid-এ নেই বা তাতে “শব্দ” ফিল্ড নেই"
 }

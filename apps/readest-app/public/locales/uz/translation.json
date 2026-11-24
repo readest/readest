@@ -2947,11 +2947,11 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "Anki bilan sinxronlash til yoki kitob uchun ishlatadigan to‘plam, qayd turi va maydonlarni tanlang",
   "Languages": "Tillar",
   "Language's Profile": "Til profili",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_one": "{{count}} ta so‘z yuborilmadi: ularning qayd turi AnkiDroid’da yo‘q",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}} ta so‘z yuborilmadi: ularning qayd turi AnkiDroid’da yo‘q",
   "Anki Card Profiles...": "Anki kartochka profillari...",
   "Profile": "Profil",
   "All Profiles": "Barcha profillar",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "“Kitobga havola”ni kartadan ochish uchun AnkiDroid sozlamalarining Kengaytirilgan bo‘limida “Allow cards to launch other apps”ni yoqing",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“So‘z”, “Ishora” va “Lug‘at maqolasi” “{{name}}”dagi maydonlarning o‘zidan foydalanishi kerak"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“So‘z”, “Ishora” va “Lug‘at maqolasi” “{{name}}”dagi maydonlarning o‘zidan foydalanishi kerak",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} ta so‘z yuborilmadi: ularning profilidagi qayd turi AnkiDroid’da yo‘q yoki unda “So‘z” maydoni yo‘q",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} ta so‘z yuborilmadi: ularning profilidagi qayd turi AnkiDroid’da yo‘q yoki unda “So‘z” maydoni yo‘q"
 }

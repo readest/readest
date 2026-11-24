@@ -559,6 +559,50 @@ describe('VocabularyView Anki link', () => {
       }
     });
 
+    it("looks nothing up for a word whose profile's Word field is gone", async () => {
+      const saved = useSettingsStore.getState();
+      useSettingsStore.setState((state) => ({
+        settings: {
+          ...state.settings,
+          ankiProfiles: {
+            profiles: [
+              {
+                id: 'p1',
+                name: 'Mining',
+                deck: 'Mining',
+                noteType: 'Mining',
+                fields: { Expression: 'word', Meaning: 'entry' },
+                tags: [],
+              },
+            ],
+            languages: { en: 'p1' },
+            books: {},
+          },
+        },
+      }));
+      // Expression was renamed in Anki: the note couldn't carry its word.
+      anki.ankiListNoteTypes.mockResolvedValue([
+        { id: 40, name: 'Mining', fields: ['Term', 'Meaning'] },
+      ]);
+      choose('stardict:collins');
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      try {
+        renderWithMenu();
+        fireEvent.click(await syncButton());
+        await waitFor(() =>
+          expect(dispatch).toHaveBeenCalledWith(
+            'toast',
+            expect.objectContaining({ message: expect.stringContaining('words not sent') }),
+          ),
+        );
+        expect(lookups).toEqual([]);
+        expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+      } finally {
+        dispatch.mockRestore();
+        useSettingsStore.setState(saved);
+      }
+    });
+
     it('looks nothing up until a dictionary is chosen', async () => {
       anki.ankiReadDeck.mockResolvedValue({ notes: [readNote(1, 'kettle')], cards: [] });
       renderWithMenu();
@@ -812,7 +856,7 @@ describe('VocabularyView Anki link', () => {
           'toast',
           expect.objectContaining({
             message: expect.stringContaining(
-              "{{count}} words not sent: their note type isn't in AnkiDroid",
+              "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field",
             ),
           }),
         ),

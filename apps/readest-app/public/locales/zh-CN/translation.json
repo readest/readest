@@ -2869,10 +2869,10 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "为某种语言或某本书选择与 Anki 同步时使用的牌组、笔记类型和字段",
   "Languages": "语言",
   "Language's Profile": "语言的配置",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}} 个单词未发送：AnkiDroid 中没有其笔记类型",
   "Anki Card Profiles...": "Anki 卡片配置...",
   "Profile": "配置",
   "All Profiles": "全部配置",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "要从卡片打开“书籍链接”，请在 AnkiDroid 的高级设置中开启“允许卡片启动其他应用”",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“单词”“提示”和“词典释义”必须使用与“{{name}}”相同的字段"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“单词”“提示”和“词典释义”必须使用与“{{name}}”相同的字段",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} 个单词未发送：AnkiDroid 中没有其配置的笔记类型，或该类型没有“单词”字段"
 }

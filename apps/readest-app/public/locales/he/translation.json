@@ -3025,12 +3025,12 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "בחרו את החפיסה, סוג ההערה והשדות שהסנכרון עם Anki משתמש בהם לשפה או לספר",
   "Languages": "שפות",
   "Language's Profile": "הפרופיל של השפה",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_one": "{{count}} מילים לא נשלחו: סוג ההערה שלהן אינו ב-AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_two": "{{count}} מילים לא נשלחו: סוג ההערה שלהן אינו ב-AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}} מילים לא נשלחו: סוג ההערה שלהן אינו ב-AnkiDroid",
   "Anki Card Profiles...": "פרופילי כרטיסי Anki...",
   "Profile": "פרופיל",
   "All Profiles": "כל הפרופילים",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "כדי לפתוח את “קישור לספר” מכרטיס, יש להפעיל את “Allow cards to launch other apps” בקטע מתקדם בהגדרות AnkiDroid",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“מילה”, “רמז” ו“ערך מילון” חייבים להשתמש באותם שדות כמו ב“{{name}}”"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“מילה”, “רמז” ו“ערך מילון” חייבים להשתמש באותם שדות כמו ב“{{name}}”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} מילים לא נשלחו: סוג ההערה של הפרופיל שלהן אינו ב-AnkiDroid או שאין בו שדה “מילה”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_two": "{{count}} מילים לא נשלחו: סוג ההערה של הפרופיל שלהן אינו ב-AnkiDroid או שאין בו שדה “מילה”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} מילים לא נשלחו: סוג ההערה של הפרופיל שלהן אינו ב-AnkiDroid או שאין בו שדה “מילה”"
 }

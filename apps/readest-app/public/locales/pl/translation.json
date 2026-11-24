@@ -3103,13 +3103,13 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "Wybierz talię, typ notatki i pola, których synchronizacja z Anki używa dla języka lub książki",
   "Languages": "Języki",
   "Language's Profile": "Profil języka",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_one": "Nie wysłano słów: {{count}} — ich typu notatki nie ma w AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_few": "Nie wysłano słów: {{count}} — ich typu notatki nie ma w AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_many": "Nie wysłano słów: {{count}} — ich typu notatki nie ma w AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "Nie wysłano słów: {{count}} — ich typu notatki nie ma w AnkiDroid",
   "Anki Card Profiles...": "Profile kart Anki...",
   "Profile": "Profil",
   "All Profiles": "Wszystkie profile",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Aby otwierać „Link do książki” z karty, włącz „Zezwól kartom na otwieranie innych aplikacji” w sekcji Zaawansowane ustawień AnkiDroida",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "„Słowo”, „Podpowiedź” i „Hasło słownikowe” muszą używać tych samych pól co w „{{name}}”"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "„Słowo”, „Podpowiedź” i „Hasło słownikowe” muszą używać tych samych pól co w „{{name}}”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "Nie wysłano słów: {{count}} — typu notatki ich profilu nie ma w AnkiDroid albo nie ma on pola „Słowo”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_few": "Nie wysłano słów: {{count}} — typu notatki ich profilu nie ma w AnkiDroid albo nie ma on pola „Słowo”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_many": "Nie wysłano słów: {{count}} — typu notatki ich profilu nie ma w AnkiDroid albo nie ma on pola „Słowo”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "Nie wysłano słów: {{count}} — typu notatki ich profilu nie ma w AnkiDroid albo nie ma on pola „Słowo”"
 }

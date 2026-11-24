@@ -19,6 +19,7 @@ import {
   ankiNoteFills,
   ankiNoteView,
   ankiNotesToSend,
+  ankiProfileNoteType,
   ankiProfileOf,
   ankiSyncNotes,
   ankiTagUpdates,
@@ -349,11 +350,11 @@ export const useAnkiLink = () => {
       const provider = entryProvider();
       // A card has a place for the entry: Readest's Entry (no fields yet: Sync
       // creates the note type, with Entry), or the field its profile maps in a
-      // note type this collection has.
+      // note type it can send with.
       const takesEntry = (e: VocabularyEntry) => {
         const profile = ankiProfileOf(e, profiles);
         if (profile?.noteType) {
-          const type = noteTypes.find((t) => t.name === profile.noteType);
+          const type = ankiProfileNoteType(profile, noteTypes);
           return !!type?.fields.some((f) => profile.fields[f] === 'entry');
         }
         return !noteType.fields || noteType.fields.includes('Entry');
@@ -379,7 +380,7 @@ export const useAnkiLink = () => {
       // The lookups take a while: send and tag what the list holds now.
       const toSend = learningOf(useVocabularyStore.getState().entries);
       const outgoing = ankiNotesToSend(toSend, existing, looked, profiles, noteTypes);
-      // Their profile's note type isn't in this collection.
+      // Their profile's note type isn't in this collection, or has no Word field.
       const waiting = ankiWordsToSend(toSend, existing).length - outgoing.length;
       const sent = outgoing.length ? await ankiAddNotes(outgoing) : 0;
       const entered =
@@ -393,7 +394,12 @@ export const useAnkiLink = () => {
         ...(entered ? [_('Added dictionary entries to {{count}} cards', { count: entered })] : []),
         ...(sent ? [_('Added {{count}} words to Anki', { count: sent })] : []),
         ...(waiting
-          ? [_("{{count}} words not sent: their note type isn't in AnkiDroid", { count: waiting })]
+          ? [
+              _(
+                "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field",
+                { count: waiting },
+              ),
+            ]
           : []),
         ...pullSummary(
           plan === first.plan

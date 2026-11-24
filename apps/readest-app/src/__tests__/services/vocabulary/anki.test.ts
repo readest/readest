@@ -548,6 +548,12 @@ describe('card profiles (#7849)', () => {
     expect(ankiNotesToSend([haus], [], {}, profiles(), [])).toEqual([]);
   });
 
+  it("holds a word back while its profile's Word field is gone from the note type", () => {
+    // Expression was renamed: a note without its word would be sent again on every Sync.
+    const renamed = { ...MINING, fields: ['Term', 'Sentence', 'Meaning', 'Notes'] };
+    expect(ankiNotesToSend([haus], [], {}, profiles(), [renamed])).toEqual([]);
+  });
+
   it("reads a profile note's word and hint from the fields its profile maps", () => {
     const layouts = ankiLayouts(profiles(), [MINING]);
     const note = { id: 1, mid: 40, fields: ['Haus', 'Das Haus.', 'house', ''], tags: 'readest' };

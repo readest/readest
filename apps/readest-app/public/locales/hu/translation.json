@@ -2947,11 +2947,11 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "Válassza ki a paklit, a jegyzettípust és a mezőket, amelyeket a Szinkronizálás az Ankival egy nyelvhez vagy könyvhöz használ",
   "Languages": "Nyelvek",
   "Language's Profile": "A nyelv profilja",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_one": "{{count}} szó nem lett elküldve: a jegyzettípusuk nincs meg az AnkiDroidban",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}} szó nem lett elküldve: a jegyzettípusuk nincs meg az AnkiDroidban",
   "Anki Card Profiles...": "Anki-kártyaprofilok...",
   "Profile": "Profil",
   "All Profiles": "Összes profil",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Ahhoz, hogy a kártyáról megnyíljon a „Hivatkozás a könyvre”, kapcsolja be az AnkiDroid Haladó beállításai között az „Allow cards to launch other apps” lehetőséget",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "A „Szó”, a „Tipp” és a „Szótári szócikk” ugyanazokba a mezőkbe kerüljön, mint a(z) „{{name}}” profilban"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "A „Szó”, a „Tipp” és a „Szótári szócikk” ugyanazokba a mezőkbe kerüljön, mint a(z) „{{name}}” profilban",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} szó nem lett elküldve: a profiljuk jegyzettípusa nincs meg az AnkiDroidban, vagy nincs „Szó” mezője",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} szó nem lett elküldve: a profiljuk jegyzettípusa nincs meg az AnkiDroidban, vagy nincs „Szó” mezője"
 }

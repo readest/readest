@@ -300,6 +300,16 @@ export const ankiProfileOf = (
   return id ? settings.profiles.find((p) => p.id === id) : undefined;
 };
 
+/**
+ * The note type a profile sends with: one this collection has, with a field
+ * for the word. Without its word a note matches nothing, and would be sent
+ * again on every Sync.
+ */
+export const ankiProfileNoteType = (profile: AnkiProfile, noteTypes: AnkiNoteType[]) => {
+  const type = noteTypes.find((t) => t.name === profile.noteType);
+  return type?.fields.some((f) => profile.fields[f] === 'word') ? type : undefined;
+};
+
 /** Where Sync finds a note type's word, hint and dictionary entry fields; -1 for none. */
 export interface AnkiLayout {
   word: number;
@@ -443,7 +453,7 @@ export const ankiNotesToSend = (
     if (!profile?.noteType) {
       return [{ deck, fields: [front, back, word, ankiTtsLang(e.lang), entry], tags: noteTags }];
     }
-    const type = noteTypes.find((t) => t.name === profile.noteType);
+    const type = ankiProfileNoteType(profile, noteTypes);
     if (!type) return [];
     const fields = type.fields.map((f) => profileField(profile.fields[f], e, entry));
     return [{ deck, modelId: type.id, fields, tags: noteTags }];

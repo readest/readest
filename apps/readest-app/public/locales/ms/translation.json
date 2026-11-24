@@ -2869,10 +2869,10 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "Pilih dek, jenis nota dan medan yang digunakan oleh Segerakkan dengan Anki untuk sesuatu bahasa atau buku",
   "Languages": "Bahasa",
   "Language's Profile": "Profil bahasa",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}} perkataan tidak dihantar: jenis notanya tiada dalam AnkiDroid",
   "Anki Card Profiles...": "Profil kad Anki...",
   "Profile": "Profil",
   "All Profiles": "Semua profil",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Untuk membuka “Pautan ke buku” daripada kad, hidupkan “Allow cards to launch other apps” dalam bahagian Lanjutan tetapan AnkiDroid",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Perkataan”, “Petunjuk” dan “Entri kamus” mesti menggunakan medan yang sama seperti dalam “{{name}}”"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Perkataan”, “Petunjuk” dan “Entri kamus” mesti menggunakan medan yang sama seperti dalam “{{name}}”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} perkataan tidak dihantar: jenis nota profilnya tiada dalam AnkiDroid atau tiada medan “Perkataan”"
 }

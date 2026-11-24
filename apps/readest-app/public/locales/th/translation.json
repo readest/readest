@@ -2869,10 +2869,10 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "เลือกสำรับ ประเภทโน้ต และฟิลด์ที่การซิงค์กับ Anki ใช้สำหรับภาษาหรือหนังสือ",
   "Languages": "ภาษา",
   "Language's Profile": "โปรไฟล์ของภาษา",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "ไม่ได้ส่ง {{count}} คำ: ไม่มีประเภทโน้ตของคำเหล่านั้นใน AnkiDroid",
   "Anki Card Profiles...": "โปรไฟล์การ์ด Anki...",
   "Profile": "โปรไฟล์",
   "All Profiles": "โปรไฟล์ทั้งหมด",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "หากต้องการเปิด “ลิงก์ไปยังหนังสือ” จากการ์ด ให้เปิด “Allow cards to launch other apps” ในส่วน Advanced ของการตั้งค่า AnkiDroid",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“คำ” “คำใบ้” และ “รายการพจนานุกรม” ต้องใช้ฟิลด์เดียวกับใน “{{name}}”"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“คำ” “คำใบ้” และ “รายการพจนานุกรม” ต้องใช้ฟิลด์เดียวกับใน “{{name}}”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "ไม่ได้ส่ง {{count}} คำ: ไม่มีประเภทโน้ตของโปรไฟล์ใน AnkiDroid หรือไม่มีฟิลด์ “คำ”"
 }

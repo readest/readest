@@ -2869,10 +2869,10 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "언어나 책마다 Anki와 동기화에서 쓸 덱, 노트 유형, 필드를 고릅니다",
   "Languages": "언어",
   "Language's Profile": "언어의 프로필",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "단어 {{count}}개를 보내지 못함: 노트 유형이 AnkiDroid에 없습니다",
   "Anki Card Profiles...": "Anki 카드 프로필...",
   "Profile": "프로필",
   "All Profiles": "모든 프로필",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "카드에서 ‘책 링크’를 열려면 AnkiDroid의 고급 설정에서 ‘카드에서 다른 앱으로 이동 허용’을 켜세요",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "‘단어’, ‘힌트’, ‘사전 항목’은 ‘{{name}}’에서와 같은 필드를 써야 합니다"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "‘단어’, ‘힌트’, ‘사전 항목’은 ‘{{name}}’에서와 같은 필드를 써야 합니다",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "단어 {{count}}개를 보내지 못함: 프로필의 노트 유형이 AnkiDroid에 없거나 ‘단어’ 필드가 없습니다"
 }

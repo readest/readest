@@ -3025,12 +3025,12 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "Elige el mazo, el tipo de nota y los campos que usa Sincronizar con Anki para un idioma o un libro",
   "Languages": "Idiomas",
   "Language's Profile": "Perfil del idioma",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_one": "{{count}} palabras sin enviar: su tipo de nota no está en AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_many": "{{count}} palabras sin enviar: su tipo de nota no está en AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}} palabras sin enviar: su tipo de nota no está en AnkiDroid",
   "Anki Card Profiles...": "Perfiles de tarjetas de Anki...",
   "Profile": "Perfil",
   "All Profiles": "Todos los perfiles",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Para abrir «Enlace al libro» desde una tarjeta, activa «Allow cards to launch other apps» en la sección Avanzado de los ajustes de AnkiDroid",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "«Palabra», «Pista» y «Entrada del diccionario» deben usar los mismos campos que en «{{name}}»"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "«Palabra», «Pista» y «Entrada del diccionario» deben usar los mismos campos que en «{{name}}»",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} palabras sin enviar: el tipo de nota de su perfil no está en AnkiDroid o no tiene campo «Palabra»",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_many": "{{count}} palabras sin enviar: el tipo de nota de su perfil no está en AnkiDroid o no tiene campo «Palabra»",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} palabras sin enviar: el tipo de nota de su perfil no está en AnkiDroid o no tiene campo «Palabra»"
 }

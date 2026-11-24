@@ -2869,10 +2869,10 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "言語や本ごとに、Ankiとの同期で使うデッキ、ノートタイプ、フィールドを選びます",
   "Languages": "言語",
   "Language's Profile": "言語のプロファイル",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}}語を送信できませんでした：ノートタイプがAnkiDroidにありません",
   "Anki Card Profiles...": "Ankiカードプロファイル...",
   "Profile": "プロファイル",
   "All Profiles": "すべてのプロファイル",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "カードから「本へのリンク」を開くには、AnkiDroidの高度な設定で「カードに別のアプリの起動を許可」をオンにしてください",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "「単語」「ヒント」「辞書の項目」は「{{name}}」と同じフィールドを使う必要があります"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "「単語」「ヒント」「辞書の項目」は「{{name}}」と同じフィールドを使う必要があります",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}}語を送信できませんでした：プロファイルのノートタイプがAnkiDroidにないか、「単語」のフィールドがありません"
 }

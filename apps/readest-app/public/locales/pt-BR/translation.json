@@ -3025,12 +3025,12 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "Escolha o baralho, o tipo de nota e os campos que Sincronizar com o Anki usa para um idioma ou um livro",
   "Languages": "Idiomas",
   "Language's Profile": "Perfil do idioma",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_one": "{{count}} palavras não enviadas: o tipo de nota delas não está no AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_many": "{{count}} palavras não enviadas: o tipo de nota delas não está no AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}} palavras não enviadas: o tipo de nota delas não está no AnkiDroid",
   "Anki Card Profiles...": "Perfis de cartões do Anki...",
   "Profile": "Perfil",
   "All Profiles": "Todos os perfis",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Para abrir “Link para o livro” a partir de um cartão, ative “Allow cards to launch other apps” em Avançado nas configurações do AnkiDroid",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Palavra”, “Dica” e “Verbete do dicionário” devem usar os mesmos campos que em “{{name}}”"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Palavra”, “Dica” e “Verbete do dicionário” devem usar os mesmos campos que em “{{name}}”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} palavras não enviadas: o tipo de nota do perfil delas não está no AnkiDroid ou não tem campo “Palavra”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_many": "{{count}} palavras não enviadas: o tipo de nota do perfil delas não está no AnkiDroid ou não tem campo “Palavra”",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} palavras não enviadas: o tipo de nota do perfil delas não está no AnkiDroid ou não tem campo “Palavra”"
 }

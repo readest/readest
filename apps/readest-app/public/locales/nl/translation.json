@@ -2947,11 +2947,11 @@
   "Choose the deck, note type and fields Sync with Anki uses for a language or a book": "Kies de stapel, het notitietype en de velden die Synchroniseren met Anki gebruikt voor een taal of een boek",
   "Languages": "Talen",
   "Language's Profile": "Profiel van de taal",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_one": "{{count}} woorden niet verzonden: hun notitietype staat niet in AnkiDroid",
-  "{{count}} words not sent: their note type isn't in AnkiDroid_other": "{{count}} woorden niet verzonden: hun notitietype staat niet in AnkiDroid",
   "Anki Card Profiles...": "Anki-kaartprofielen...",
   "Profile": "Profiel",
   "All Profiles": "Alle profielen",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Om ‘Link naar boek’ vanaf een kaart te openen, zet je ‘Kaarten toestaan andere apps te starten’ aan bij Geavanceerd in de instellingen van AnkiDroid",
-  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "‘Woord’, ‘Hint’ en ‘Woordenboekitem’ moeten dezelfde velden gebruiken als in ‘{{name}}’"
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "‘Woord’, ‘Hint’ en ‘Woordenboekitem’ moeten dezelfde velden gebruiken als in ‘{{name}}’",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} woorden niet verzonden: het notitietype van hun profiel staat niet in AnkiDroid of heeft geen veld ‘Woord’",
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} woorden niet verzonden: het notitietype van hun profiel staat niet in AnkiDroid of heeft geen veld ‘Woord’"
 }
