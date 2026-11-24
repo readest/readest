@@ -14,7 +14,7 @@ vi.mock('@/plugins/ocr/paddleJapaneseRecognizer', () => ({
     terminate = mocks.terminate;
   },
 }));
-vi.mock('@/plugins/ocr/modelAssets', () => ({ fetchVerifiedModelAsset: mocks.load }));
+vi.mock('@/plugins/ocr/modelAssets', () => ({ loadModelAsset: mocks.load }));
 vi.mock('onnxruntime-web/wasm', () => {
   class Tensor {
     constructor(

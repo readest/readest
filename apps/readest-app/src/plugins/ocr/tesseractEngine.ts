@@ -9,7 +9,7 @@ import type {
 } from 'tesseract.js';
 
 import { ComicTextDetector, type ComicTextDetectionResult } from './comicTextDetector';
-import { fetchVerifiedModelAsset, type VerifiedModelAsset } from './modelAssets';
+import { loadModelAsset } from './modelAssets';
 import { makeMangaTextLineCrops, readCanvasRgba } from './mangaTextCrop';
 import { MangaOcrRecognizer, type JapaneseMangaRecognizer } from './mangaOcrRecognizer';
 import { getOcrLineSeparator, type OcrPage, type OcrTextBlock } from '@/services/plugins/ocr';
@@ -78,11 +78,11 @@ export interface MangaTextDetector {
 }
 
 export type MangaTextDetectorFactory = (
-  onDownloadProgress?: (progress: { loaded: number; total?: number }) => void,
+  onDownloadProgress?: (progress: number) => void,
 ) => MangaTextDetector;
 
 export type JapaneseMangaRecognizerFactory = (
-  onDownloadProgress?: (progress: { loaded: number; total?: number }) => void,
+  onDownloadProgress?: (progress: number) => void,
 ) => JapaneseMangaRecognizer;
 
 export type MangaImageLoader = (source: string) => Promise<LoadedMangaImage>;
@@ -105,7 +105,7 @@ export type TesseractWorkerFactory = (
   options: Partial<WorkerOptions>,
 ) => Promise<TesseractWorker>;
 
-export type TesseractLanguageAssetLoader = (asset: VerifiedModelAsset) => Promise<ArrayBuffer>;
+export type TesseractLanguageAssetLoader = typeof loadModelAsset;
 
 interface WorkerRequest {
   creation: Promise<TesseractWorker>;
@@ -143,8 +143,6 @@ const getMangaFontSize = (
 
 const createLocalWorker: TesseractWorkerFactory = (languages, oem, options) =>
   createWorker(languages, oem, options);
-
-const loadLocalLanguageAsset: TesseractLanguageAssetLoader = fetchVerifiedModelAsset;
 
 const createMangaDetector: MangaTextDetectorFactory = (onDownloadProgress) =>
   new ComicTextDetector({ onDownloadProgress });
@@ -281,7 +279,7 @@ export class TesseractOcrEngine {
     workerFactory: TesseractWorkerFactory = createLocalWorker,
     mangaDetectorFactory: MangaTextDetectorFactory = createMangaDetector,
     mangaImageLoader: MangaImageLoader = loadMangaImage,
-    languageAssetLoader: TesseractLanguageAssetLoader = loadLocalLanguageAsset,
+    languageAssetLoader: TesseractLanguageAssetLoader = loadModelAsset,
     japaneseMangaRecognizerFactory: JapaneseMangaRecognizerFactory = createJapaneseMangaRecognizer,
   ) {
     this.#languages = options.languages?.length ? [...options.languages] : [...DEFAULT_LANGUAGES];
@@ -541,23 +539,17 @@ export class TesseractOcrEngine {
 
   #getMangaDetector(): MangaTextDetector {
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    this.#mangaDetector ??= this.#createMangaDetector(({ loaded, total }) => {
-      this.#onProgress?.({
-        status: 'loading manga text detector',
-        progress: total && total > 0 ? Math.min(1, loaded / total) : 0,
-      });
-    });
+    this.#mangaDetector ??= this.#createMangaDetector((progress) =>
+      this.#onProgress?.({ status: 'loading manga text detector', progress }),
+    );
     return this.#mangaDetector;
   }
 
   #getJapaneseMangaRecognizer(): JapaneseMangaRecognizer {
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    this.#japaneseMangaRecognizer ??= this.#createJapaneseMangaRecognizer(({ loaded, total }) => {
-      this.#onProgress?.({
-        status: 'loading Japanese OCR model',
-        progress: total && total > 0 ? Math.min(1, loaded / total) : 0,
-      });
-    });
+    this.#japaneseMangaRecognizer ??= this.#createJapaneseMangaRecognizer((progress) =>
+      this.#onProgress?.({ status: 'loading Japanese OCR model', progress }),
+    );
     return this.#japaneseMangaRecognizer;
   }
 
@@ -614,21 +606,17 @@ export class TesseractOcrEngine {
 
   async #loadLanguageData(): Promise<TesseractLang[]> {
     const assets = this.#languages.map((code) => getTesseractLanguageAsset(code));
-    const progress = assets.map(() => ({ loaded: 0, total: undefined as number | undefined }));
+    const loaded = assets.map(() => 0);
+    const total = assets.reduce((sum, { bytes }) => sum + bytes, 0);
     const buffers = await Promise.all(
       assets.map((asset, index) =>
-        this.#loadLanguageAsset({
-          ...asset,
+        this.#loadLanguageAsset(asset, {
           signal: this.#abortController.signal,
-          onProgress: ({ loaded, total }) => {
-            progress[index] = { loaded, total };
-            const allTotalsKnown = progress.every((item) => item.total !== undefined);
-            const loadedBytes = progress.reduce((sum, item) => sum + item.loaded, 0);
-            const totalBytes = progress.reduce((sum, item) => sum + (item.total ?? 0), 0);
+          onProgress: (bytes) => {
+            loaded[index] = bytes;
             this.#onProgress?.({
               status: 'loading OCR language data',
-              progress:
-                allTotalsKnown && totalBytes > 0 ? Math.min(1, loadedBytes / totalBytes) : 0,
+              progress: loaded.reduce((sum, value) => sum + value, 0) / total,
             });
           },
         }),
@@ -636,7 +624,7 @@ export class TesseractOcrEngine {
     );
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     return buffers.map((buffer, index) => ({
-      code: assets[index]!.code,
+      code: this.#languages[index]!,
       data: new Uint8Array(buffer),
     }));
   }

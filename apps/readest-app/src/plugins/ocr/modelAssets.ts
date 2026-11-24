@@ -1,194 +1,94 @@
-import { gunzip } from 'fflate';
-
-export interface ModelDownloadProgress {
-  loaded: number;
-  total?: number;
-}
-
-export interface VerifiedModelAsset {
+export interface ModelAsset {
   url: string;
+  /** The SHA-256 of the file, once unpacked. */
   sha256: string;
-  compressedSha256?: string;
-  compression?: 'gzip';
-  maximumDownloadBytes: number;
-  maximumResultBytes: number;
+  /** The size of the file, once unpacked. */
+  bytes: number;
+  gzip?: boolean;
+}
+
+export interface ModelLoadOptions {
   signal?: AbortSignal;
-  onProgress?: (progress: ModelDownloadProgress) => void;
+  /** The bytes read so far, once unpacked. */
+  onProgress?: (loaded: number) => void;
 }
 
-interface ModelAssetDependencies {
-  fetchImpl: typeof fetch;
-  digestSha256: (data: Uint8Array) => Promise<string>;
-  decompressGzip: (data: Uint8Array, signal?: AbortSignal) => Promise<Uint8Array>;
-}
+const MODEL_CACHE = 'readest-ocr-models';
+// The web app's service worker keeps every file it fetches in this cache.
+const SERVICE_WORKER_CACHE = 'offline-cache';
 
-const abortError = (signal: AbortSignal): unknown =>
-  signal.reason ?? new DOMException('The operation was aborted', 'AbortError');
-
-const throwIfAborted = (signal?: AbortSignal): void => {
-  if (signal?.aborted) throw abortError(signal);
-};
-
-const toExactArrayBuffer = (data: Uint8Array): ArrayBuffer =>
-  data.buffer instanceof ArrayBuffer &&
-  data.byteOffset === 0 &&
-  data.byteLength === data.buffer.byteLength
-    ? data.buffer
-    : Uint8Array.from(data).buffer;
-
-const defaultDigestSha256 = async (data: Uint8Array): Promise<string> => {
-  const digest = new Uint8Array(
-    await globalThis.crypto.subtle.digest('SHA-256', toExactArrayBuffer(data)),
-  );
-  return [...digest].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-};
-
-const defaultDecompressGzip = (data: Uint8Array, signal?: AbortSignal): Promise<Uint8Array> =>
-  new Promise((resolve, reject) => {
-    try {
-      throwIfAborted(signal);
-    } catch (error) {
-      reject(error);
-      return;
-    }
-
-    let settled = false;
-    const task = gunzip(data, { consume: true }, (error, result) => {
-      if (settled) return;
-      settled = true;
-      signal?.removeEventListener('abort', onAbort);
-      if (error) reject(error);
-      else resolve(result);
-    });
-    const onAbort = () => {
-      if (settled) return;
-      settled = true;
-      task();
-      reject(abortError(signal!));
-    };
-    signal?.addEventListener('abort', onAbort, { once: true });
-  });
-
-const readDownload = async (
-  response: Response,
-  maximumBytes: number,
-  onProgress?: (progress: ModelDownloadProgress) => void,
-): Promise<Uint8Array> => {
-  const lengthHeader = response.headers.get('content-length');
-  const contentLength = lengthHeader === null ? undefined : Number(lengthHeader);
-  const total = Number.isFinite(contentLength) && contentLength! >= 0 ? contentLength : undefined;
-  if (total !== undefined && total > maximumBytes) {
-    throw new Error(`Model download is larger than ${maximumBytes} bytes`);
-  }
-
-  if (!response.body) {
-    const data = new Uint8Array(await response.arrayBuffer());
-    if (data.byteLength > maximumBytes) {
-      throw new Error(`Model download is larger than ${maximumBytes} bytes`);
-    }
-    onProgress?.({ loaded: data.byteLength, ...(total === undefined ? {} : { total }) });
-    return data;
-  }
-
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let loaded = 0;
+const findModel = async (url: string): Promise<Response | undefined> => {
   try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      loaded += value.byteLength;
-      if (loaded > maximumBytes) {
-        await reader.cancel();
-        throw new Error(`Model download is larger than ${maximumBytes} bytes`);
-      }
-      chunks.push(value);
-      onProgress?.({ loaded, ...(total === undefined ? {} : { total }) });
-    }
-  } finally {
-    reader.releaseLock();
-  }
-
-  const data = new Uint8Array(loaded);
-  let offset = 0;
-  for (const chunk of chunks) {
-    data.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return data;
-};
-
-const getGzipResultSize = (data: Uint8Array): number => {
-  if (data.byteLength < 8 || data[0] !== 0x1f || data[1] !== 0x8b) {
-    throw new Error('Model download contains malformed gzip data');
-  }
-  return new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(
-    data.byteLength - 4,
-    true,
-  );
-};
-
-const validateLimit = (name: string, value: number): void => {
-  if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new Error(`${name} must be a positive safe integer`);
+    return await globalThis.caches?.match(url);
+  } catch {
+    return undefined;
   }
 };
 
-const validateSha256 = (name: string, value: string | undefined): void => {
-  if (!value || !/^[a-f\d]{64}$/iu.test(value)) {
-    throw new Error(`${name} must contain 64 hexadecimal characters`);
-  }
+/**
+ * Keeps a model for the next time it's needed. The browser's own cache can't: it
+ * skips files this large, and the model host redirects to a URL signed per
+ * request.
+ */
+const keepModel = async (url: string, response: Response): Promise<void> => {
+  const cache = await caches.open(MODEL_CACHE);
+  await cache.put(url, response);
 };
 
-export const fetchVerifiedModelAsset = async (
-  options: VerifiedModelAsset,
-  dependencies: Partial<ModelAssetDependencies> = {},
+const fetchModel = async (url: string, signal?: AbortSignal): Promise<Response> => {
+  const cache = globalThis.caches ? 'no-store' : 'force-cache';
+  const response = await fetch(url, { cache, credentials: 'omit', signal });
+  if (!response.ok) throw new Error(`Model download failed with HTTP ${response.status}`);
+  if (globalThis.caches && !(await caches.has(SERVICE_WORKER_CACHE).catch(() => true))) {
+    keepModel(url, response.clone()).catch((error) => console.warn('Model was not kept', error));
+  }
+  return response;
+};
+
+/** Reads the model into one buffer of its known size, unpacking it as it arrives. */
+const readModel = async (
+  response: Response,
+  { sha256, bytes, gzip }: ModelAsset,
+  { signal, onProgress }: ModelLoadOptions,
 ): Promise<ArrayBuffer> => {
-  validateLimit('maximumDownloadBytes', options.maximumDownloadBytes);
-  validateLimit('maximumResultBytes', options.maximumResultBytes);
-  validateSha256('Model asset SHA-256', options.sha256);
-  if (options.compression === 'gzip') {
-    validateSha256('Model compressed SHA-256', options.compressedSha256);
-  }
-  throwIfAborted(options.signal);
-
-  const fetchImpl = dependencies.fetchImpl ?? globalThis.fetch;
-  const response = await fetchImpl(options.url, {
-    cache: 'force-cache',
-    credentials: 'omit',
-    signal: options.signal,
-  });
-  if (!response.ok) {
-    throw new Error(`Model download failed with HTTP ${response.status}`);
-  }
-
-  const downloaded = await readDownload(response, options.maximumDownloadBytes, options.onProgress);
-  throwIfAborted(options.signal);
-  const digest = dependencies.digestSha256 ?? defaultDigestSha256;
-
-  let result = downloaded;
-  if (options.compression === 'gzip') {
-    const compressedSha256 = await digest(downloaded);
-    if (compressedSha256.toLowerCase() !== options.compressedSha256!.toLowerCase()) {
-      throw new Error('Model compressed checksum does not match the pinned SHA-256');
+  let stream: ReadableStream<Uint8Array<ArrayBuffer>> = response.body!;
+  if (gzip) stream = stream.pipeThrough(new DecompressionStream('gzip'));
+  const data = new Uint8Array(bytes);
+  let loaded = 0;
+  for (const reader = stream.getReader(); ; ) {
+    const { done, value } = await reader.read();
+    signal?.throwIfAborted();
+    if (done) break;
+    if (loaded + value.byteLength > bytes) {
+      await reader.cancel();
+      throw new Error(`Model is larger than ${bytes} bytes`);
     }
-    throwIfAborted(options.signal);
-    const declaredSize = getGzipResultSize(downloaded);
-    if (declaredSize > options.maximumResultBytes) {
-      throw new Error(`Model gzip expands beyond ${options.maximumResultBytes} bytes`);
+    data.set(value, loaded);
+    loaded += value.byteLength;
+    onProgress?.(loaded);
+  }
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
+  signal?.throwIfAborted();
+  const actual = Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  if (loaded !== bytes || actual !== sha256) {
+    throw new Error('Model checksum does not match the pinned SHA-256');
+  }
+  return data.buffer;
+};
+
+export const loadModelAsset = async (
+  asset: ModelAsset,
+  options: ModelLoadOptions = {},
+): Promise<ArrayBuffer> => {
+  options.signal?.throwIfAborted();
+  const kept = await findModel(asset.url);
+  if (kept) {
+    try {
+      return await readModel(kept, asset, options);
+    } catch {
+      // Download it again, over the copy that can't be used.
+      options.signal?.throwIfAborted();
     }
-    const decompress = dependencies.decompressGzip ?? defaultDecompressGzip;
-    result = await decompress(downloaded, options.signal);
   }
-  if (result.byteLength > options.maximumResultBytes) {
-    throw new Error(`Model asset is larger than ${options.maximumResultBytes} bytes`);
-  }
-  throwIfAborted(options.signal);
-
-  const actualSha256 = await digest(result);
-  if (actualSha256.toLowerCase() !== options.sha256.toLowerCase()) {
-    throw new Error('Model asset checksum does not match the pinned SHA-256');
-  }
-
-  return toExactArrayBuffer(result);
+  return readModel(await fetchModel(asset.url, options.signal), asset, options);
 };

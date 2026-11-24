@@ -2,9 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   COMIC_TEXT_DETECTOR_INPUT_SIZE,
-  COMIC_TEXT_DETECTOR_MODEL_ASSET,
-  COMIC_TEXT_DETECTOR_MODEL_SHA256,
-  COMIC_TEXT_DETECTOR_MODEL_URL,
   COMIC_TEXT_DETECTOR_OUTPUT_SHAPES,
   extractComicLinePolygons,
   postprocessComicDetectorOutputs,
@@ -12,7 +9,7 @@ import {
 
 const mocks = vi.hoisted(() => ({
   loadRuntime: vi.fn<() => Promise<ReturnType<typeof createRuntime>>>(),
-  fetchModel: vi.fn<(asset: { signal?: AbortSignal }) => Promise<ArrayBuffer>>(),
+  fetchModel: vi.fn<(asset: unknown, options: { signal?: AbortSignal }) => Promise<ArrayBuffer>>(),
   createSession: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
 }));
 
@@ -89,7 +86,7 @@ beforeEach(() => {
       InferenceSession: { create: (...args: unknown[]) => mocks.createSession(...args) },
     };
   });
-  vi.doMock('@/plugins/ocr/modelAssets', () => ({ fetchVerifiedModelAsset: mocks.fetchModel }));
+  vi.doMock('@/plugins/ocr/modelAssets', () => ({ loadModelAsset: mocks.fetchModel }));
 });
 
 const fillRectangle = (
@@ -166,7 +163,7 @@ describe('Comic text detection', () => {
       const failed = detector.detect(source, { width: 1200, height: 1800 });
       requests.push(failed);
       await vi.waitFor(() => expect(mocks.fetchModel).toHaveBeenCalledOnce());
-      const failedSignal = mocks.fetchModel.mock.calls[0]?.[0].signal;
+      const failedSignal = mocks.fetchModel.mock.calls[0]?.[1].signal;
       failedAttempt.reject(new Error('model fetch failed'));
       await expect(failed).rejects.toThrow('model fetch failed');
       expect(failedSignal?.aborted).toBe(true);
@@ -195,7 +192,7 @@ describe('Comic text detection', () => {
       inFlight = detector.detect(source, { width: 1200, height: 1800 });
       expect(mocks.fetchModel).toHaveBeenCalledOnce();
       await vi.waitFor(() => expect(mocks.loadRuntime).toHaveBeenCalledOnce());
-      const signal = mocks.fetchModel.mock.calls[0]?.[0].signal;
+      const signal = mocks.fetchModel.mock.calls[0]?.[1].signal;
       const termination = detector.terminate();
       expect(signal?.aborted).toBe(true);
       runtime.resolve(createRuntime());
@@ -247,11 +244,6 @@ describe('Comic text detection', () => {
   });
 
   it('maps the pinned detector output to ordered Japanese text lines', () => {
-    expect(COMIC_TEXT_DETECTOR_MODEL_ASSET).toMatchObject({
-      url: COMIC_TEXT_DETECTOR_MODEL_URL,
-      sha256: COMIC_TEXT_DETECTOR_MODEL_SHA256,
-    });
-
     const blocks = new Float32Array(64_512 * 7);
     const segmentation = new Float32Array(1024 * 1024);
     const lines = new Float32Array(2 * 1024 * 1024);

@@ -6,30 +6,23 @@ import {
   type OrtModule,
 } from 'paddleocr';
 
-import {
-  fetchVerifiedModelAsset,
-  type ModelDownloadProgress,
-  type VerifiedModelAsset,
-} from './modelAssets';
+import { loadModelAsset, type ModelAsset } from './modelAssets';
 import type { OcrCanvas } from './canvas';
 
 const MODEL_REVISION = 'b8f84f0b80c529de40b4fbb3544b84fa7233a513';
 const DICTIONARY_REVISION = '2661c7c0ef5c613e8f93c6e93b2e052399f0f854';
 
-export const PADDLE_JAPANESE_MODEL_BYTES = 21_159_378;
-export const PADDLE_JAPANESE_MODEL_ASSET = {
+const PADDLE_JAPANESE_MODEL: ModelAsset = {
   url: `https://huggingface.co/PaddlePaddle/PP-OCRv6_small_rec_onnx/resolve/${MODEL_REVISION}/inference.onnx`,
   sha256: '5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634',
-  maximumDownloadBytes: 21_200_000,
-  maximumResultBytes: 21_200_000,
-} as const satisfies Omit<VerifiedModelAsset, 'onProgress' | 'signal'>;
+  bytes: 21_159_378,
+};
 
-export const PADDLE_JAPANESE_DICTIONARY_ASSET = {
+const PADDLE_JAPANESE_DICTIONARY: ModelAsset = {
   url: `https://cdn.jsdelivr.net/gh/PaddlePaddle/PaddleOCR@${DICTIONARY_REVISION}/ppocr/utils/dict/ppocrv6_dict.txt`,
   sha256: 'b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d',
-  maximumDownloadBytes: 75_000,
-  maximumResultBytes: 75_000,
-} as const satisfies Omit<VerifiedModelAsset, 'onProgress' | 'signal'>;
+  bytes: 74_947,
+};
 
 interface PaddleRuntime extends OrtModule {
   env: {
@@ -67,23 +60,20 @@ export interface JapaneseMangaRecognizer {
 
 interface JapaneseMangaRecognizerDependencies {
   loadRuntime: () => Promise<PaddleRuntime>;
-  loadAsset: (asset: VerifiedModelAsset) => Promise<ArrayBuffer>;
+  loadAsset: typeof loadModelAsset;
 }
 
 export interface JapaneseMangaRecognizerOptions {
-  onDownloadProgress?: (progress: ModelDownloadProgress) => void;
+  onDownloadProgress?: (progress: number) => void;
 }
 
 const loadRuntime = async (): Promise<PaddleRuntime> =>
   (await import('onnxruntime-web/wasm')) as unknown as PaddleRuntime;
 
-const loadAsset = (asset: VerifiedModelAsset): Promise<ArrayBuffer> =>
-  fetchVerifiedModelAsset(asset);
-
 export class PaddleJapaneseRecognizer implements JapaneseMangaRecognizer {
-  readonly #onDownloadProgress?: (progress: ModelDownloadProgress) => void;
+  readonly #onDownloadProgress?: (progress: number) => void;
   readonly #loadRuntime: () => Promise<PaddleRuntime>;
-  readonly #loadAsset: (asset: VerifiedModelAsset) => Promise<ArrayBuffer>;
+  readonly #loadAsset: typeof loadModelAsset;
   readonly #abortController = new AbortController();
   readonly #activeRuns = new Set<Promise<JapaneseMangaRecognition | null>>();
   #servicePromise: Promise<{
@@ -98,7 +88,7 @@ export class PaddleJapaneseRecognizer implements JapaneseMangaRecognizer {
   ) {
     this.#onDownloadProgress = options.onDownloadProgress;
     this.#loadRuntime = dependencies.loadRuntime ?? loadRuntime;
-    this.#loadAsset = dependencies.loadAsset ?? loadAsset;
+    this.#loadAsset = dependencies.loadAsset ?? loadModelAsset;
   }
 
   async recognize(source: OcrCanvas): Promise<JapaneseMangaRecognition | null> {
@@ -155,12 +145,11 @@ export class PaddleJapaneseRecognizer implements JapaneseMangaRecognizer {
     const signal = this.#abortController.signal;
     const servicePromise = Promise.all([
       this.#loadRuntime(),
-      this.#loadAsset({
-        ...PADDLE_JAPANESE_MODEL_ASSET,
+      this.#loadAsset(PADDLE_JAPANESE_MODEL, {
         signal,
-        onProgress: this.#onDownloadProgress,
+        onProgress: (loaded) => this.#onDownloadProgress?.(loaded / PADDLE_JAPANESE_MODEL.bytes),
       }),
-      this.#loadAsset({ ...PADDLE_JAPANESE_DICTIONARY_ASSET, signal }),
+      this.#loadAsset(PADDLE_JAPANESE_DICTIONARY, { signal }),
     ]).then(async ([runtime, model, dictionaryData]) => {
       runtime.env.wasm.proxy = typeof document !== 'undefined';
       runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';

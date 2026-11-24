@@ -11,7 +11,7 @@ import {
 import { getTesseractLanguages } from '@/plugins/ocr/tesseractLanguages';
 
 vi.mock('@/plugins/ocr/modelAssets', () => ({
-  fetchVerifiedModelAsset: vi.fn(async () => new ArrayBuffer(1)),
+  loadModelAsset: vi.fn(async () => new ArrayBuffer(1)),
 }));
 
 const page = { pageIndex: 2, width: 1200, height: 1800 };

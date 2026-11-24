@@ -1,27 +1,13 @@
 import type { OcrBoundingBox } from '@/services/plugins/ocr';
 import type { InferenceSession } from 'onnxruntime-web/wasm';
-import {
-  fetchVerifiedModelAsset,
-  type ModelDownloadProgress,
-  type VerifiedModelAsset,
-} from './modelAssets';
+import { loadModelAsset, type ModelAsset } from './modelAssets';
 import { createOcrCanvas, isHtmlCanvas } from './canvas';
 
 export const COMIC_TEXT_DETECTOR_INPUT_SIZE = 1024;
-export const COMIC_TEXT_DETECTOR_MODEL_BYTES = 94_669_756;
-export const COMIC_TEXT_DETECTOR_MAXIMUM_MODEL_BYTES = 95_000_000;
-export const COMIC_TEXT_DETECTOR_MODEL_URL =
-  'https://huggingface.co/mayocream/koharu/resolve/15439cba09df388c51de6e47c6020bc31edab41f/comictextdetector.onnx';
-export const COMIC_TEXT_DETECTOR_MODEL_SHA256 =
-  '1a86ace74961413cbd650002e7bb4dcec4980ffa21b2f19b86933372071d718f';
-
-type StaticModelAsset = Omit<VerifiedModelAsset, 'onProgress' | 'signal'>;
-
-export const COMIC_TEXT_DETECTOR_MODEL_ASSET: Readonly<StaticModelAsset> = {
-  url: COMIC_TEXT_DETECTOR_MODEL_URL,
-  sha256: COMIC_TEXT_DETECTOR_MODEL_SHA256,
-  maximumDownloadBytes: COMIC_TEXT_DETECTOR_MAXIMUM_MODEL_BYTES,
-  maximumResultBytes: COMIC_TEXT_DETECTOR_MAXIMUM_MODEL_BYTES,
+const COMIC_TEXT_DETECTOR_MODEL: ModelAsset = {
+  url: 'https://huggingface.co/mayocream/koharu/resolve/15439cba09df388c51de6e47c6020bc31edab41f/comictextdetector.onnx',
+  sha256: '1a86ace74961413cbd650002e7bb4dcec4980ffa21b2f19b86933372071d718f',
+  bytes: 94_669_756,
 };
 
 export const COMIC_TEXT_DETECTOR_OUTPUT_SHAPES = {
@@ -86,7 +72,7 @@ export interface ComicTextDetectorOptions {
   lineThreshold?: number;
   maximumBlocks?: number;
   maximumLines?: number;
-  onDownloadProgress?: (progress: ModelDownloadProgress) => void;
+  onDownloadProgress?: (progress: number) => void;
 }
 
 interface LetterboxTransform {
@@ -732,7 +718,7 @@ const getOutput = (
 
 export class ComicTextDetector {
   readonly #options: ComicTextDetectorOptions;
-  readonly #onDownloadProgress?: (progress: ModelDownloadProgress) => void;
+  readonly #onDownloadProgress?: (progress: number) => void;
   #abortController: AbortController | null = null;
   readonly #activeRuns = new Set<Promise<InferenceSession.ReturnType>>();
   #sessionPromise: Promise<{
@@ -831,10 +817,10 @@ export class ComicTextDetector {
 
     const sessionPromise = Promise.all([
       import('onnxruntime-web/wasm'),
-      fetchVerifiedModelAsset({
-        ...COMIC_TEXT_DETECTOR_MODEL_ASSET,
+      loadModelAsset(COMIC_TEXT_DETECTOR_MODEL, {
         signal: controller.signal,
-        onProgress: this.#onDownloadProgress,
+        onProgress: (loaded) =>
+          this.#onDownloadProgress?.(loaded / COMIC_TEXT_DETECTOR_MODEL.bytes),
       }),
     ])
       .then(async ([runtime, model]) => {

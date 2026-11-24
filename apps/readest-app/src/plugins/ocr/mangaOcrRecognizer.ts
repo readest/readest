@@ -1,9 +1,5 @@
 import type { InferenceSession } from 'onnxruntime-web';
-import {
-  fetchVerifiedModelAsset,
-  type ModelDownloadProgress,
-  type VerifiedModelAsset,
-} from './modelAssets';
+import { loadModelAsset, type ModelAsset } from './modelAssets';
 import { decodeMangaText } from './mangaOcrDecode';
 import { createOcrCanvas, isHtmlCanvas, type OcrCanvas } from './canvas';
 import {
@@ -19,26 +15,21 @@ const ASSETS = [
   {
     url: `${BASE_URL}/encoder_model_quantized.onnx.gz`,
     sha256: 'ddd1af56963093795705fa38da6ce7e6567d1658e7c7359db7e13fcd37dbf279',
-    compressedSha256: '3321daf0d7db01e2fafaff9b68957f57d1b820aa23f434741bc7a6473d8e8e45',
-    compression: 'gzip',
-    maximumDownloadBytes: 72_257_767,
-    maximumResultBytes: 86_967_767,
+    bytes: 86_967_767,
+    gzip: true,
   },
   {
     url: `${BASE_URL}/decoder_model_quantized.onnx.gz`,
     sha256: '2e7177d2b0a59f1c612b694ed70c13971bee765cc2b2bc7bc9376e4753652f27',
-    compressedSha256: 'c96d5273d2d0d408a813b40e667597994c92034a396227c002e183dc9598b13f',
-    compression: 'gzip',
-    maximumDownloadBytes: 23_207_900,
-    maximumResultBytes: 29_627_936,
+    bytes: 29_627_936,
+    gzip: true,
   },
   {
     url: `${BASE_URL}/vocab.txt`,
     sha256: '344fbb6b8bf18c57839e924e2c9365434697e0227fac00b88bb4899b78aa594d',
-    maximumDownloadBytes: 24_072,
-    maximumResultBytes: 24_072,
+    bytes: 24_072,
   },
-] satisfies VerifiedModelAsset[];
+] satisfies ModelAsset[];
 
 type Runtime = typeof import('onnxruntime-web/wasm');
 interface Model {
@@ -51,12 +42,12 @@ interface Model {
 export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
   readonly #abort = new AbortController();
   readonly #active = new Set<Promise<JapaneseMangaRecognition | null>>();
-  readonly #onDownloadProgress?: (progress: ModelDownloadProgress) => void;
+  readonly #onDownloadProgress?: (progress: number) => void;
   readonly #fast: PaddleJapaneseRecognizer;
   #mangaUnavailable = false;
   #model: Promise<Model> | null = null;
 
-  constructor(options: { onDownloadProgress?: (progress: ModelDownloadProgress) => void } = {}) {
+  constructor(options: { onDownloadProgress?: (progress: number) => void } = {}) {
     this.#onDownloadProgress = options.onDownloadProgress;
     this.#fast = new PaddleJapaneseRecognizer(options);
   }
@@ -201,21 +192,17 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
     if (this.#model) return this.#model;
     const signal = this.#abort.signal;
     const loaded = ASSETS.map(() => 0);
-    const total = ASSETS.reduce((sum, entry) => sum + entry.maximumDownloadBytes, 0);
+    const total = ASSETS.reduce((sum, entry) => sum + entry.bytes, 0);
     const sessions: InferenceSession[] = [];
     const model = Promise.all([
       import('onnxruntime-web/wasm'),
       Promise.all(
         ASSETS.map((entry, index) =>
-          fetchVerifiedModelAsset({
-            ...entry,
+          loadModelAsset(entry, {
             signal,
-            onProgress: (progress) => {
-              loaded[index] = progress.loaded;
-              this.#onDownloadProgress?.({
-                loaded: loaded.reduce((sum, bytes) => sum + bytes, 0),
-                total,
-              });
+            onProgress: (bytes) => {
+              loaded[index] = bytes;
+              this.#onDownloadProgress?.(loaded.reduce((sum, value) => sum + value, 0) / total);
             },
           }),
         ),
