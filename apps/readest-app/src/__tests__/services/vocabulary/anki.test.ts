@@ -578,14 +578,15 @@ describe('card profiles (#7849)', () => {
 
   it('takes each read field from the first profile that still has it', () => {
     const settings = profiles();
-    // Meaning was renamed to Gloss; only the second profile was repaired.
+    settings.profiles[0]!.fields = { Expression: 'word', Meaning: 'hint', Notes: 'entry' };
+    // Meaning and Notes were renamed; only the second profile was repaired.
     settings.profiles.push({
       ...settings.profiles[0]!,
       id: 'p3',
-      fields: { Expression: 'word', Gloss: 'hint' },
+      fields: { Expression: 'word', Gloss: 'hint', Extra: 'entry' },
     });
-    const renamed = { ...MINING, fields: ['Expression', 'Sentence', 'Gloss', 'Notes'] };
-    expect(ankiLayouts(settings, [renamed]).get(40)).toEqual({ word: 0, hint: 2, entry: -1 });
+    const renamed = { ...MINING, fields: ['Expression', 'Sentence', 'Gloss', 'Extra'] };
+    expect(ankiLayouts(settings, [renamed]).get(40)).toEqual({ word: 0, hint: 2, entry: 3 });
   });
 
   it("keeps the reader's own notes of a profile's note type out even with its Word field gone", () => {
