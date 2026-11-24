@@ -7,13 +7,12 @@ import type { Book } from '@/types/book';
 import type { SystemSettings } from '@/types/settings';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useLibraryStore } from '@/store/libraryStore';
 
-const saveKOSyncFilename = vi.fn(async () => {});
-const envConfig = { getAppService: vi.fn() };
+// The real save helper runs, so the field shows what the store then hashes.
+const saveLibraryBooks = vi.fn(async () => {});
+const envConfig = { getAppService: vi.fn(async () => ({ saveLibraryBooks })) };
 
-vi.mock('@/services/bookMetadataEdit', () => ({
-  saveKOSyncFilename: (...args: unknown[]) => saveKOSyncFilename(...(args as [])),
-}));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (key: string) => key }));
 vi.mock('@/hooks/useCloudSyncStatus', () => ({ useCloudSyncStatus: () => ({ providers: [] }) }));
@@ -47,6 +46,7 @@ const setUp = (kosync: Partial<SystemSettings['kosync']>, book = makeBook()) => 
       },
     },
   } as never);
+  useLibraryStore.getState().setLibrary([book]);
   useBookDataStore.setState({
     booksData: {
       h1: { id: 'h1', book, file: null, config: null, bookDoc: null, isFixedLayout: false },
@@ -56,8 +56,16 @@ const setUp = (kosync: Partial<SystemSettings['kosync']>, book = makeBook()) => 
 };
 
 beforeEach(() => {
-  saveKOSyncFilename.mockClear();
+  saveLibraryBooks.mockClear();
 });
+
+const ownName = () => useBookDataStore.getState().getBookData('h1')!.book!.metadata?.kosyncFilename;
+const syncIn = (name: string) =>
+  act(() => {
+    useBookDataStore.setState((state) => ({
+      booksData: { h1: { ...state.booksData['h1']!, book: makeBook(name) } },
+    }));
+  });
 
 afterEach(() => {
   cleanup();
@@ -78,38 +86,44 @@ describe('SyncInfoDialog KOSync file name (#7864)', () => {
     expect(screen.queryByRole('textbox', { name: 'File Name' })).toBeNull();
   });
 
-  test('leaves a name synced in while the dialog is open alone on a blur without edits', () => {
+  test('shows a name synced in while the dialog is open, and leaves it alone on a blur', () => {
     setUp({}, makeBook('Old name.epub'));
     const input = screen.getByRole('textbox', { name: 'File Name' }) as HTMLInputElement;
-    act(() => {
-      useBookDataStore.setState((state) => ({
-        booksData: { h1: { ...state.booksData['h1']!, book: makeBook('Synced name.epub') } },
-      }));
-    });
+    syncIn('Synced name.epub');
+    expect(input.value).toBe('Synced name.epub');
 
     fireEvent.focus(input);
     fireEvent.blur(input);
-    expect(saveKOSyncFilename).not.toHaveBeenCalled();
+    expect(ownName()).toBe('Synced name.epub');
+    expect(saveLibraryBooks).not.toHaveBeenCalled();
+  });
+
+  test('keeps a draft being typed when a synced name arrives', () => {
+    setUp({}, makeBook('Old name.epub'));
+    const input = screen.getByRole('textbox', { name: 'File Name' }) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Draft.epub' } });
+    syncIn('Synced name.epub');
+    expect(input.value).toBe('Draft.epub');
   });
 
   test("saves a typed name as the book's own and lets a format fill it", () => {
-    const book = makeBook('Doe, Jane - My Book.epub');
-    setUp({}, book);
+    setUp({}, makeBook('Doe, Jane - My Book.epub'));
     const input = screen.getByRole('textbox', { name: 'File Name' }) as HTMLInputElement;
     expect(input.value).toBe('Doe, Jane - My Book.epub');
 
     fireEvent.change(input, { target: { value: '  Typed name.epub ' } });
     fireEvent.blur(input);
-    expect(saveKOSyncFilename).toHaveBeenLastCalledWith(envConfig, book, 'Typed name.epub');
+    expect(ownName()).toBe('Typed name.epub');
+    expect(input.value).toBe('Typed name.epub');
 
     fireEvent.click(screen.getByRole('button', { name: 'Original' }));
+    expect(ownName()).toBe('server-name.epub');
     expect(input.value).toBe('server-name.epub');
-    expect(saveKOSyncFilename).toHaveBeenLastCalledWith(envConfig, book, 'server-name.epub');
 
     // The name the File Name Format gives is no override: the book follows the
     // format again.
     fireEvent.click(screen.getByRole('button', { name: 'Author - Title' }));
+    expect(ownName()).toBeUndefined();
     expect(input.value).toBe('Jane Doe - My Book.epub');
-    expect(saveKOSyncFilename).toHaveBeenLastCalledWith(envConfig, book, undefined);
   });
 });

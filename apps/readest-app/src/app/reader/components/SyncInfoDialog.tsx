@@ -51,10 +51,9 @@ const KOSyncFilenameRow: React.FC<{ book: Book; format: KOSyncFilenameFormat }> 
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [value, setValue] = useState(() => getKOSyncFilename(book, format));
-  // The name last shown or saved: a blur without an edit saves nothing, so it
-  // can't write back a name that sync replaced while the dialog was open.
-  const shown = useRef(value);
+  // A draft exists only while the name is being edited; otherwise the field
+  // shows the name hashed now, including one sync brings in while it's open.
+  const [draft, setDraft] = useState<string | null>(null);
   const labels: Record<KOSyncFilenameFormat, string> = {
     original: _('Original'),
     'author-title': _('Author - Title'),
@@ -62,11 +61,9 @@ const KOSyncFilenameRow: React.FC<{ book: Book; format: KOSyncFilenameFormat }> 
   };
 
   const save = (name: string) => {
+    setDraft(null);
     const trimmed = name.trim();
-    const formatted = formatKOSyncFilename(book, format);
-    const own = trimmed && trimmed !== formatted ? trimmed : undefined;
-    shown.current = own ?? formatted;
-    setValue(shown.current);
+    const own = trimmed && trimmed !== formatKOSyncFilename(book, format) ? trimmed : undefined;
     if (own !== book.metadata?.kosyncFilename) saveKOSyncFilename(envConfig, book, own);
   };
 
@@ -92,9 +89,9 @@ const KOSyncFilenameRow: React.FC<{ book: Book; format: KOSyncFilenameFormat }> 
         type='text'
         dir='auto'
         spellCheck={false}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={() => value !== shown.current && save(value)}
+        value={draft ?? getKOSyncFilename(book, format)}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => draft !== null && save(draft)}
         className='input eink-bordered focus:ring-primary/40 h-9 w-full rounded-md font-mono text-sm focus:outline-hidden focus:ring-2 sm:text-xs'
       />
       <div className='flex flex-wrap gap-1'>
