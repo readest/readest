@@ -3,7 +3,7 @@ import type { XRayData, XRayEntity, XRayFact, XRayQuote, XRayRelationship } from
 const keys = new Map<string, string>();
 
 /** A name without the differences that do not tell names apart. */
-export const xrayKey = (name: string): string => {
+const xrayKey = (name: string): string => {
   let key = keys.get(name);
   if (key === undefined) {
     key = name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
@@ -36,6 +36,8 @@ const addFacts = (list: XRayFact[], facts: readonly XRayFact[]) => {
   }
 };
 
+const typedKey = (type: XRayEntity['type'], name: string) => `${type}\0${xrayKey(name)}`;
+
 export interface XRayLink {
   relationship: XRayRelationship;
   /** The entity on the other end, when the X-Ray has one. */
@@ -47,32 +49,32 @@ export class XRay implements XRayData {
   entities: XRayEntity[] = [];
   relationships: XRayRelationship[] = [];
   events: XRayData['events'] = [];
+  /** The entities by type and the names batches gave them, and by type and alias. */
   private readonly byTypedName = new Map<string, XRayEntity>();
+  private readonly byTypedAlias = new Map<string, XRayEntity>();
   private readonly byName = new Map<string, XRayEntity>();
   private readonly byEnds = new Map<string, XRayRelationship>();
   private readonly byEnd = new Map<string, XRayRelationship[]>();
 
   add(batch: XRayData): void {
     for (const entity of batch.entities) {
-      const names = [entity.name, ...entity.aliases];
-      const typed = names.map((name) => `${entity.type}\0${xrayKey(name)}`);
-      let merged: XRayEntity | undefined;
-      for (const key of typed) merged ??= this.byTypedName.get(key);
+      const typed = [entity.name, ...entity.aliases].map((name) => typedKey(entity.type, name));
+      // An alias such as "the captain" is not enough for two entities to be one.
+      const known = new Set(typed.flatMap((key) => this.byTypedName.get(key) ?? []));
+      if (!known.size && this.byTypedAlias.has(typed[0]!)) {
+        known.add(this.byTypedAlias.get(typed[0]!)!);
+      }
+      let [merged, ...others] = this.inReadingOrder(known);
       if (!merged) {
         merged = { ...entity, aliases: [], facts: [], quotes: [] };
         this.entities.push(merged);
       }
-      addNames(merged.aliases, names, xrayKey(merged.name));
-      addFacts(merged.facts, entity.facts);
-      merged.quotes = addQuotes(merged.quotes, entity.quotes);
-      if (entity.description.length > merged.description.length) {
-        merged.description = entity.description;
+      // Named apart before this batch named them together.
+      for (const other of others) {
+        this.entities.splice(this.entities.indexOf(other), 1);
+        this.merge(merged, other);
       }
-      for (const key of typed) if (!this.byTypedName.has(key)) this.byTypedName.set(key, merged);
-      for (const name of names) {
-        const key = xrayKey(name);
-        if (key && !this.byName.has(key)) this.byName.set(key, merged);
-      }
+      this.merge(merged, entity);
     }
     for (const relationship of batch.relationships) {
       const ends = [xrayKey(relationship.source), xrayKey(relationship.target)];
@@ -93,6 +95,31 @@ export class XRay implements XRayData {
     }
     for (const event of batch.events) {
       this.events.push({ ...event, quotes: addQuotes([], event.quotes) });
+    }
+  }
+
+  private inReadingOrder(entities: Set<XRayEntity>): XRayEntity[] {
+    const list = [...entities];
+    if (list.length < 2) return list;
+    return list.sort((a, b) => this.entities.indexOf(a) - this.entities.indexOf(b));
+  }
+
+  private merge(entity: XRayEntity, more: XRayEntity): void {
+    const names = [more.name, ...more.aliases];
+    addNames(entity.aliases, names, xrayKey(entity.name));
+    addFacts(entity.facts, more.facts);
+    entity.quotes = addQuotes(entity.quotes, more.quotes);
+    if (more.description.length > entity.description.length) entity.description = more.description;
+    this.byTypedName.set(typedKey(entity.type, more.name), entity);
+    for (const name of names) {
+      const typed = typedKey(entity.type, name);
+      if (this.byTypedName.get(typed) === more) this.byTypedName.set(typed, entity);
+      for (const [map, key] of [
+        [this.byTypedAlias, typed],
+        [this.byName, xrayKey(name)],
+      ] as const) {
+        if ((map.get(key) ?? more) === more) map.set(key, entity);
+      }
     }
   }
 

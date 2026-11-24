@@ -153,21 +153,22 @@ describe('groundXRay', () => {
 });
 
 describe('XRay', () => {
+  const batch = (name: string, aliases: string[], cfi: string): XRayData => ({
+    entities: [
+      {
+        name,
+        type: 'character',
+        aliases,
+        description: name,
+        facts: [],
+        quotes: [{ text: name, cfi }],
+      },
+    ],
+    relationships: [],
+    events: [],
+  });
+
   it('joins one character met under several names', () => {
-    const batch = (name: string, aliases: string[], cfi: string): XRayData => ({
-      entities: [
-        {
-          name,
-          type: 'character',
-          aliases,
-          description: name,
-          facts: [],
-          quotes: [{ text: name, cfi }],
-        },
-      ],
-      relationships: [],
-      events: [],
-    });
     const merged = mergeXRay([
       batch('Anna', [], 'a'),
       batch('Anna Petrovna', ['anna'], 'b'),
@@ -176,6 +177,18 @@ describe('XRay', () => {
     expect(merged.entities).toHaveLength(1);
     expect(merged.entities[0]!.aliases).toEqual(['Anna Petrovna', 'Mrs. Petrovna']);
     expect(merged.find(' mrs.  petrovna')?.name).toBe('Anna');
+  });
+
+  it('joins two names once the book says they are one, and not for a shared alias', () => {
+    const merged = mergeXRay([
+      batch('Mr. Darcy', ['the gentleman'], 'a'),
+      batch('Fitzwilliam Darcy', [], 'b'),
+      batch('Mr. Wickham', ['the gentleman'], 'c'),
+      batch('Fitzwilliam Darcy', ['Mr. Darcy', 'Darcy'], 'd'),
+    ]);
+    expect(merged.entities.map(({ name }) => name)).toEqual(['Mr. Darcy', 'Mr. Wickham']);
+    expect(merged.find('darcy')).toBe(merged.find('Fitzwilliam Darcy'));
+    expect(merged.find('Darcy')?.quotes.map(({ cfi }) => cfi)).toEqual(['a', 'b', 'd']);
   });
 });
 
