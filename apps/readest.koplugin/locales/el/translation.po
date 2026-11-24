@@ -356,6 +356,9 @@ msgstr "Δακτυλικό αποτύπωμα βιβλίου"
 msgid "Identifiers"
 msgstr "Αναγνωριστικά"
 
+msgid "File Name"
+msgstr "Όνομα αρχείου"
+
 msgid "Last Synced"
 msgstr "Τελευταίος συγχρονισμός"
 

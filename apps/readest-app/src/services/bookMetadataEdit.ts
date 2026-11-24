@@ -87,3 +87,35 @@ export const saveBookMetadataEdit = async (
     };
   });
 };
+
+/**
+ * Saves the file name KOSync's File Name checksum hashes for a book, or clears
+ * it (undefined) so the book follows the File Name Format again (#7864). Like a
+ * metadata edit, it applies to the library's entry and to an open reader, and
+ * rides the synced metadata on its own clock.
+ */
+export const saveKOSyncFilename = async (
+  envConfig: EnvConfigType,
+  book: Book,
+  kosyncFilename: string | undefined,
+) => {
+  const { library, hashIndex, updateBook } = useLibraryStore.getState();
+  const idx = hashIndex.get(book.hash);
+  const current = idx !== undefined ? library[idx]! : book;
+  const { kosyncFilename: _previous, ...rest } = (current.metadata ?? book.metadata)!;
+  const metadata: BookMetadata = { ...rest, ...(kosyncFilename && { kosyncFilename }) };
+  const metadataUpdatedAt = Date.now();
+  // The open reader takes the name before the write is awaited, so of two
+  // overlapping saves it keeps the later one, whichever write ends last.
+  useBookDataStore.setState((state) => {
+    const bookData = state.booksData[book.hash];
+    if (!bookData?.book) return state;
+    return {
+      booksData: {
+        ...state.booksData,
+        [book.hash]: { ...bookData, book: { ...bookData.book, metadata, metadataUpdatedAt } },
+      },
+    };
+  });
+  await updateBook(envConfig, { ...current, metadata, metadataUpdatedAt });
+};

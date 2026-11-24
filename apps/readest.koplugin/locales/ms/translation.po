@@ -356,6 +356,9 @@ msgstr "Cap jari buku"
 msgid "Identifiers"
 msgstr "Pengenal"
 
+msgid "File Name"
+msgstr "Nama Fail"
+
 msgid "Last Synced"
 msgstr "Penyegerakan terakhir"
 

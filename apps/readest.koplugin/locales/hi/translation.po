@@ -356,6 +356,9 @@ msgstr "पुस्तक फिंगरप्रिंट"
 msgid "Identifiers"
 msgstr "पहचानकर्ता"
 
+msgid "File Name"
+msgstr "फाइल नाम"
+
 msgid "Last Synced"
 msgstr "अंतिम सिंक"
 

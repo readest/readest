@@ -3111,5 +3111,11 @@
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "Не надіслано слів: {{count}} — типу нотатки їхнього профілю немає в AnkiDroid або в ньому немає поля «Слово»",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_few": "Не надіслано слів: {{count}} — типу нотатки їхнього профілю немає в AnkiDroid або в ньому немає поля «Слово»",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_many": "Не надіслано слів: {{count}} — типу нотатки їхнього профілю немає в AnkiDroid або в ньому немає поля «Слово»",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "Не надіслано слів: {{count}} — типу нотатки їхнього профілю немає в AnkiDroid або в ньому немає поля «Слово»"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "Не надіслано слів: {{count}} — типу нотатки їхнього профілю немає в AnkiDroid або в ньому немає поля «Слово»",
+  "File Name Format": "Формат імені файлу",
+  "Original": "Оригінальне",
+  "Author - Title": "Автор - Назва",
+  "Title - Author": "Назва - Автор",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "«Формат імені файлу» складає ім'я з назви та авторів так само, як KOReader називає завантаження з OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "Ім'я файлу окремої книги задається в «Інформації про синхронізацію» в режимі читання."
 }

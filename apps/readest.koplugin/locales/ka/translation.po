@@ -356,6 +356,9 @@ msgstr "წიგნის ანაბეჭდი"
 msgid "Identifiers"
 msgstr "იდენტიფიკატორები"
 
+msgid "File Name"
+msgstr "ფაილის სახელი"
+
 msgid "Last Synced"
 msgstr "ბოლო სინქრონიზაცია"
 

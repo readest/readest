@@ -1676,6 +1676,24 @@ describe('importBook PDF filename-aware dedup', () => {
     expect(book.metaHash).toBe('salted-import-hash');
   });
 
+  it("refreshBookMetadata keeps the book's own KOSync file name (#7864)", async () => {
+    const book = makeBook({
+      hash: 'epub-hash',
+      metadata: { ...PDF_METADATA, kosyncFilename: 'Author - Title.epub' },
+    });
+    const fs = service.getFs();
+    fs.exists.mockResolvedValue(true);
+    fs.openFile.mockResolvedValue(new File(['epub'], 'Test Book.epub'));
+    mockOpen.mockResolvedValue({
+      book: { metadata: { ...PDF_METADATA }, getCover: vi.fn().mockResolvedValue(null) },
+      format: 'EPUB',
+    });
+
+    await refreshBookMetadata(fs as unknown as Parameters<typeof refreshBookMetadata>[0], book);
+
+    expect(book.metadata?.kosyncFilename).toBe('Author - Title.epub');
+  });
+
   it('refreshBookMetadata preserves the salted metaHash for PDFs', async () => {
     // The original filename is lost after import (files are stored under the
     // metadata title), so re-parsing the file cannot reproduce the salt and

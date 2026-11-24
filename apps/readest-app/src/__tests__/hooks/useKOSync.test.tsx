@@ -237,6 +237,7 @@ beforeEach(() => {
   h.book.title = 'Old title';
   h.book.originalFilename = '';
   h.book.format = 'EPUB';
+  Reflect.deleteProperty(h.book, 'metadata');
   h.cfiResolves = true;
   h.clientError = null;
   localStorage.clear();
@@ -448,6 +449,20 @@ describe('useKOSync — changing checksum method (#7118)', () => {
     expect(result.current.syncState).toBe('conflict');
     await advance(KOSYNC_PUSH_DEBOUNCE_MS + 500);
     expect(h.updateProgressMock).not.toHaveBeenCalled();
+  });
+
+  test("pulls again under a book's own file name once it is set", async () => {
+    h.settings.kosync.checksumMethod = 'filename';
+    h.book.originalFilename = 'Server name.epub';
+    const { result, rerender } = renderHook(() => useKOSync('h1-view1'));
+    await settle();
+    h.getProgressMock.mockClear();
+
+    Object.assign(h.book, { metadata: { kosyncFilename: 'Author - Title.epub' } });
+    rerender();
+    await settle();
+    expect(h.getProgressMock).toHaveBeenCalledTimes(1);
+    expect(result.current.syncState).toBe('conflict');
   });
 
   test('discards an old title response after the renamed book reaches conflict', async () => {

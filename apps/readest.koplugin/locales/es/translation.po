@@ -356,6 +356,9 @@ msgstr "Huella del libro"
 msgid "Identifiers"
 msgstr "Identificadores"
 
+msgid "File Name"
+msgstr "Nombre del archivo"
+
 msgid "Last Synced"
 msgstr "Última sincronización"
 

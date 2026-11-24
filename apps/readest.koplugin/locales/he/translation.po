@@ -356,6 +356,9 @@ msgstr "טביעת אצבע של הספר"
 msgid "Identifiers"
 msgstr "מזהים"
 
+msgid "File Name"
+msgstr "שם קובץ"
+
 msgid "Last Synced"
 msgstr "סנכרון אחרון"
 

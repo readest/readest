@@ -356,6 +356,9 @@ msgstr "اثر انگشت کتاب"
 msgid "Identifiers"
 msgstr "شناسه‌ها"
 
+msgid "File Name"
+msgstr "نام فایل"
+
 msgid "Last Synced"
 msgstr "آخرین همگام‌سازی"
 

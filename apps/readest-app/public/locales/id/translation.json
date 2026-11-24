@@ -2874,5 +2874,11 @@
   "All Profiles": "Semua profil",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Untuk membuka “Tautan ke buku” dari kartu, aktifkan “Allow cards to launch other apps” di bagian Tingkat lanjut pengaturan AnkiDroid",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Kata”, “Petunjuk”, dan “Entri kamus” harus memakai bidang yang sama seperti di “{{name}}”",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} kata tidak terkirim: tipe catatan profilnya tidak ada di AnkiDroid atau tidak punya bidang “Kata”"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} kata tidak terkirim: tipe catatan profilnya tidak ada di AnkiDroid atau tidak punya bidang “Kata”",
+  "File Name Format": "Format Nama File",
+  "Original": "Asli",
+  "Author - Title": "Penulis - Judul",
+  "Title - Author": "Judul - Penulis",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Format Nama File” menyusun nama dari judul dan penulis, seperti KOReader menamai unduhan OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "Atur nama file satu buku di Info sinkronisasi pada tampilan baca."
 }

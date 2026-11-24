@@ -2874,5 +2874,11 @@
   "All Profiles": "โปรไฟล์ทั้งหมด",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "หากต้องการเปิด “ลิงก์ไปยังหนังสือ” จากการ์ด ให้เปิด “Allow cards to launch other apps” ในส่วน Advanced ของการตั้งค่า AnkiDroid",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“คำ” “คำใบ้” และ “รายการพจนานุกรม” ต้องใช้ฟิลด์เดียวกับใน “{{name}}”",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "ไม่ได้ส่ง {{count}} คำ: ไม่มีประเภทโน้ตของโปรไฟล์ใน AnkiDroid หรือไม่มีฟิลด์ “คำ”"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "ไม่ได้ส่ง {{count}} คำ: ไม่มีประเภทโน้ตของโปรไฟล์ใน AnkiDroid หรือไม่มีฟิลด์ “คำ”",
+  "File Name Format": "รูปแบบชื่อไฟล์",
+  "Original": "ต้นฉบับ",
+  "Author - Title": "ผู้แต่ง - ชื่อเรื่อง",
+  "Title - Author": "ชื่อเรื่อง - ผู้แต่ง",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“รูปแบบชื่อไฟล์” สร้างชื่อจากชื่อเรื่องและผู้แต่ง แบบเดียวกับที่ KOReader ตั้งชื่อไฟล์ที่ดาวน์โหลดจาก OPDS",
+  "Set a single book's file name in the reader's Sync Info.": "ตั้งชื่อไฟล์ของหนังสือแต่ละเล่มได้ในข้อมูลการซิงค์ของมุมมองการอ่าน"
 }

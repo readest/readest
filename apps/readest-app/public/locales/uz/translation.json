@@ -2953,5 +2953,11 @@
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "“Kitobga havola”ni kartadan ochish uchun AnkiDroid sozlamalarining Kengaytirilgan bo‘limida “Allow cards to launch other apps”ni yoqing",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“So‘z”, “Ishora” va “Lug‘at maqolasi” “{{name}}”dagi maydonlarning o‘zidan foydalanishi kerak",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} ta so‘z yuborilmadi: ularning profilidagi qayd turi AnkiDroid’da yo‘q yoki unda “So‘z” maydoni yo‘q",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} ta so‘z yuborilmadi: ularning profilidagi qayd turi AnkiDroid’da yo‘q yoki unda “So‘z” maydoni yo‘q"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} ta so‘z yuborilmadi: ularning profilidagi qayd turi AnkiDroid’da yo‘q yoki unda “So‘z” maydoni yo‘q",
+  "File Name Format": "Fayl nomi formati",
+  "Original": "Asl",
+  "Author - Title": "Muallif - Sarlavha",
+  "Title - Author": "Sarlavha - Muallif",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Fayl nomi formati” nomni sarlavha va mualliflardan tuzadi, xuddi KOReader OPDS yuklab olishlarini nomlaganidek.",
+  "Set a single book's file name in the reader's Sync Info.": "Bitta kitobning fayl nomini oʻqish koʻrinishidagi Sinxronlash maʼlumotida belgilang."
 }

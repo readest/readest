@@ -2874,5 +2874,11 @@
   "All Profiles": "ཡིག་ཆ་ཡོངས།",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "ཤོག་བྱང་ནས་“དེབ་ཀྱི་སྦྲེལ་མཐུད།”ཁ་ཕྱེ་བར། AnkiDroid ཡི་སྒྲིག་འགོད་ Advanced ནང་“Allow cards to launch other apps”ཁ་ཕྱེ་རོགས།",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“ཚིག”དང་“མཚོན་བྱེད།”། “ཚིག་མཛོད་ཀྱི་འགྲེལ་བ།”བཅས་ཀྱིས་“{{name}}”ནང་གི་ཁོངས་དེ་ཉིད་བེད་སྤྱོད་བྱེད་དགོས།",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "ཚིག་ {{count}} བསྐུར་མ་ཐུབ། དེ་དག་གི་ཡིག་ཆའི་ཟིན་བྲིས་རིགས་ AnkiDroid ནང་མེད་པའམ་དེའི་ནང་“ཚིག”ཁོངས་མེད།"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "ཚིག་ {{count}} བསྐུར་མ་ཐུབ། དེ་དག་གི་ཡིག་ཆའི་ཟིན་བྲིས་རིགས་ AnkiDroid ནང་མེད་པའམ་དེའི་ནང་“ཚིག”ཁོངས་མེད།",
+  "File Name Format": "ཡིག་ཆའི་མིང་གི་རྣམ་པ།",
+  "Original": "མ་ཡིག",
+  "Author - Title": "རྩོམ་པ་པོ - དཔེ་དེབ་ཀྱི་མིང",
+  "Title - Author": "དཔེ་དེབ་ཀྱི་མིང - རྩོམ་པ་པོ",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"ཡིག་ཆའི་མིང་གི་རྣམ་པ།\" ཡིས་ KOReader གིས་ OPDS ཕབ་ལེན་ལ་མིང་འདོགས་སྟངས་ལྟར། དཔེ་དེབ་ཀྱི་མིང་དང་རྩོམ་པ་པོ་ནས་མིང་བཟོ་གི་ཡོད།",
+  "Set a single book's file name in the reader's Sync Info.": "ཀློག་ངོས་ཀྱི་མཉམ་སྒྲིག་གྱི་ཆ་འཕྲིན་ནང་དཔེ་དེབ་རེ་རེའི་ཡིག་ཆའི་མིང་སྒྲིག་འགོད་བྱོས།"
 }

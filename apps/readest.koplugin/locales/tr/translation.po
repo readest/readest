@@ -356,6 +356,9 @@ msgstr "Kitap parmak izi"
 msgid "Identifiers"
 msgstr "Tanımlayıcılar"
 
+msgid "File Name"
+msgstr "Dosya Adı"
+
 msgid "Last Synced"
 msgstr "Son senkronizasyon"
 

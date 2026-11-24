@@ -2874,5 +2874,11 @@
   "All Profiles": "全部配置",
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "要从卡片打开“书籍链接”，请在 AnkiDroid 的高级设置中开启“允许卡片启动其他应用”",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“单词”“提示”和“词典释义”必须使用与“{{name}}”相同的字段",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} 个单词未发送：AnkiDroid 中没有其配置的笔记类型，或该类型没有“单词”字段"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} 个单词未发送：AnkiDroid 中没有其配置的笔记类型，或该类型没有“单词”字段",
+  "File Name Format": "文件名格式",
+  "Original": "原始文件名",
+  "Author - Title": "作者 - 书名",
+  "Title - Author": "书名 - 作者",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“文件名格式”按 KOReader 命名 OPDS 下载文件的方式，用书名和作者生成文件名。",
+  "Set a single book's file name in the reader's Sync Info.": "可在阅读界面的“同步信息”中为单本书设置文件名。"
 }

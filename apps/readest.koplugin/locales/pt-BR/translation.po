@@ -356,6 +356,9 @@ msgstr "Impressão digital do livro"
 msgid "Identifiers"
 msgstr "Identificadores"
 
+msgid "File Name"
+msgstr "Nome do arquivo"
+
 msgid "Last Synced"
 msgstr "Última sincronização"
 

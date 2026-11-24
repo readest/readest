@@ -2953,5 +2953,11 @@
   "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Για να ανοίγει το πεδίο «Σύνδεσμος προς το βιβλίο» από μια κάρτα, ενεργοποιήστε το «Allow cards to launch other apps» στην ενότητα Σύνθετα των ρυθμίσεων του AnkiDroid",
   "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "Τα «Λέξη», «Υπόδειξη» και «Λήμμα λεξικού» πρέπει να χρησιμοποιούν τα ίδια πεδία με το «{{name}}»",
   "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_one": "{{count}} λέξεις δεν στάλθηκαν: ο τύπος σημείωσης του προφίλ τους δεν υπάρχει στο AnkiDroid ή δεν έχει πεδίο «Λέξη»",
-  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} λέξεις δεν στάλθηκαν: ο τύπος σημείωσης του προφίλ τους δεν υπάρχει στο AnkiDroid ή δεν έχει πεδίο «Λέξη»"
+  "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field_other": "{{count}} λέξεις δεν στάλθηκαν: ο τύπος σημείωσης του προφίλ τους δεν υπάρχει στο AnkiDroid ή δεν έχει πεδίο «Λέξη»",
+  "File Name Format": "Μορφή ονόματος αρχείου",
+  "Original": "Αρχικό",
+  "Author - Title": "Συγγραφέας - Τίτλος",
+  "Title - Author": "Τίτλος - Συγγραφέας",
+  "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "Η «Μορφή ονόματος αρχείου» σχηματίζει το όνομα από τον τίτλο και τους συγγραφείς, όπως ονομάζει το KOReader τις λήψεις OPDS.",
+  "Set a single book's file name in the reader's Sync Info.": "Ορίστε το όνομα αρχείου ενός μεμονωμένου βιβλίου στις Πληροφορίες συγχρονισμού της προβολής ανάγνωσης."
 }

@@ -356,6 +356,9 @@ msgstr "書籍指紋"
 msgid "Identifiers"
 msgstr "識別碼"
 
+msgid "File Name"
+msgstr "文件名"
+
 msgid "Last Synced"
 msgstr "上次同步"
 
