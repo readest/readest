@@ -87,11 +87,9 @@ const clearSelection = (result: { current: ReturnType<typeof useTextSelector> })
   result.current.handleSelectionchange(document, 0);
 };
 
-// A tap away from the selection at (500, 500), up to its single click. Returns
-// whether the reader consumed the click (true) or let it turn the page (false).
-const tap = async (
+// A tap away from the selection at (500, 500), up to its click.
+const tapUntilClick = async (
   result: { current: ReturnType<typeof useTextSelector> },
-  singleClick: () => boolean,
   pointerType = 'touch',
   clearedAt: 'mousedown' | 'release' = 'mousedown',
 ) => {
@@ -103,6 +101,17 @@ const tap = async (
   if (clearedAt === 'release') clearSelection(result);
   result.current.handleMouseDown(new MouseEvent('mousedown', { button: 0, detail: 1 }));
   clearSelection(result);
+};
+
+// The same tap through its single click. Returns whether the reader consumed
+// the click (true) or let it turn the page (false).
+const tap = async (
+  result: { current: ReturnType<typeof useTextSelector> },
+  singleClick: () => boolean,
+  pointerType = 'touch',
+  clearedAt: 'mousedown' | 'release' = 'mousedown',
+) => {
+  await tapUntilClick(result, pointerType, clearedAt);
   return singleClick();
 };
 
@@ -166,5 +175,18 @@ test.each([
   clearSelection(result);
 
   expect(result.current.isTextSelected.current).toBe(false);
+  expect(singleClick()).toBe(false);
+});
+
+// Another iframe-single-click listener (auto-scroll, handwriting) can consume
+// the dismissing tap before the reader sees it. A later click outside the page
+// iframes starts with a press in the reader window and must not find the mark.
+test('a tap another listener consumed leaves no mark for a click beside the page', async () => {
+  const { result, singleClick } = setup();
+  showSelection(result);
+  await tapUntilClick(result);
+
+  window.dispatchEvent(new Event('pointerdown'));
+
   expect(singleClick()).toBe(false);
 });
