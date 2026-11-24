@@ -317,6 +317,26 @@ describe('Tesseract manga OCR', () => {
     }
   });
 
+  it('finds no text on a page without any', async () => {
+    installCanvas();
+    const source = document.createElement('canvas');
+    source.width = page.width;
+    source.height = page.height;
+    const worker = makeWorker();
+    vi.mocked(worker.recognize).mockResolvedValue({ data: wholePageResult });
+    const engine = new TesseractOcrEngine(
+      { mangaMode: true },
+      vi.fn(async () => worker),
+      () => ({
+        detect: async () => ({ page, blocks: [] }),
+        terminate: async () => undefined,
+      }),
+    );
+
+    expect((await engine.recognize(source, page)).blocks).toEqual([]);
+    expect(worker.recognize).not.toHaveBeenCalled();
+  });
+
   it('falls back to whole-page Tesseract for the rest of the session after detector failure', async () => {
     const source = document.createElement('canvas');
     source.width = page.width;

@@ -317,7 +317,6 @@ export class TesseractOcrEngine {
     this.#onProgress?.({ status: 'detecting manga text', progress: 1 });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
     const totalLines = detection.blocks.reduce((total, block) => total + block.lines.length, 0);
-    if (!totalLines) return this.#recognizeWholePage(prepared, signal);
 
     const imageData = readCanvasRgba(prepared.image);
     const japanese = isJapaneseLanguage(this.#textLanguage);
