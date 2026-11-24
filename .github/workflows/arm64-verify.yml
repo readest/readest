@@ -73,6 +73,11 @@ jobs:
           test -n "$APK"
           echo "Built arm64 APK: $APK"
 
+      - name: test Xiaomi gesture mapping and source filtering
+        run: |
+          cd apps/readest-app/src-tauri/gen/android
+          ./gradlew :tauri-plugin-native-bridge:testFossGenericPenDebugUnitTest --tests 'com.readest.native_bridge.XiaomiStylusKeysTest'
+
       - name: upload APK artifact
         uses: actions/upload-artifact@v4
         with:

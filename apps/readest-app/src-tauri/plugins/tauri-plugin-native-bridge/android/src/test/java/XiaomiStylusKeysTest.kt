@@ -70,4 +70,5 @@ class XiaomiStylusKeysTest {
         assertFalse(XiaomiStylusKeys.shouldCapture(XiaomiStylusKeys.SQUEEZE, InputDevice.SOURCE_GAMEPAD, true))
         assertFalse(XiaomiStylusKeys.shouldCapture(XiaomiStylusKeys.SQUEEZE, InputDevice.SOURCE_JOYSTICK, true))
         assertFalse(XiaomiStylusKeys.shouldCapture(KeyEvent.KEYCODE_BUTTON_8, InputDevice.SOURCE_KEYBOARD, true))
-    }}
+    }
+}
