@@ -17,12 +17,15 @@ import { useThemeStore } from '@/store/themeStore';
 import { convertBlobUrlToDataUrl } from '@/libs/document';
 import ModalPortal from '@/components/ModalPortal';
 import ImageViewer from '@/app/reader/components/ImageViewer';
+import XRayStatus from './XRayStatus';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
 import {
   contextProvider,
   getContextTranslator,
 } from '@/services/dictionaries/providers/contextProvider';
+import { xrayProvider } from '@/services/dictionaries/providers/xrayProvider';
+import { useXRayStore } from '@/services/xray/xrayService';
 import { getLLMTranslators } from '@/store/customTranslatorStore';
 import Select from '@/components/Select';
 import { buildLookupCandidates } from '@/services/dictionaries/lookupCandidates';
@@ -83,18 +86,20 @@ export interface UseDictionaryResultsArgs {
   capture?: VocabularyCapture;
   /** Ask the AI context dictionary alone, on or off in the list (#7497). */
   contextOnly?: boolean;
+  /** Ask the X-Ray alone, on or off in the list. */
+  xrayOnly?: boolean;
 }
 
 // The lookup Pin to Notebook hands over. A word reached through a link wasn't
 // selected in the passage or sentence, so it goes without them, as the popup
 // itself asks and saves it.
 export const lookupToPin = (
-  { word, lang, selection, capture, contextOnly }: UseDictionaryResultsArgs,
+  { word, lang, selection, capture, contextOnly, xrayOnly }: UseDictionaryResultsArgs,
   { canGoBack, currentWord }: Pick<DictionaryResultsState, 'canGoBack' | 'currentWord'>,
 ): UseDictionaryResultsArgs =>
   canGoBack
-    ? { word: currentWord, lang, capture: capture && { lang: capture.lang }, contextOnly }
-    : { word, lang, selection, capture, contextOnly };
+    ? { word: currentWord, lang, capture: capture && { lang: capture.lang }, contextOnly, xrayOnly }
+    : { word, lang, selection, capture, contextOnly, xrayOnly };
 
 export interface VocabularyCapture {
   /** Vocabulary language of the book (see `vocabularyLang`). */
@@ -118,6 +123,8 @@ export interface DictionaryResultsState {
   resolveWebSearchUrl: (id: string) => string | undefined;
   onWebSearchClickTauri: (e: React.MouseEvent<HTMLAnchorElement>, id: string) => void;
   noProvidersAtAll: boolean;
+  /** The book the X-Ray alone was asked about. */
+  xrayBookKey?: string;
   /** Ask the context dictionary card again with another AI translator (#7669). */
   setContextTranslator: (id: string) => void;
   /** Dictionary popup font-size multiplier (#4443); `1` = default sizes. */
@@ -153,6 +160,7 @@ export function useDictionaryResults({
   selection,
   capture,
   contextOnly,
+  xrayOnly,
 }: UseDictionaryResultsArgs): DictionaryResultsState {
   const { appService, envConfig } = useEnv();
   const { dictionaries, settings, setContextTranslatorId, saveCustomDictionaries } =
@@ -165,11 +173,13 @@ export function useDictionaryResults({
 
   const computedProviders = contextOnly
     ? [contextProvider]
-    : getEnabledProviders({
-        settings,
-        dictionaries,
-        fs: appService ?? undefined,
-      });
+    : xrayOnly
+      ? [xrayProvider]
+      : getEnabledProviders({
+          settings,
+          dictionaries,
+          fs: appService ?? undefined,
+        });
   const providersSignature = computedProviders.map((p) => p.id).join('|');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const providers = useMemo<DictionaryProvider[]>(() => computedProviders, [providersSignature]);
@@ -268,7 +278,9 @@ export function useDictionaryResults({
   // Edge fetch and playback so the header button can show one active state.
   const [isSpeaking, setIsSpeaking] = useState(false);
   const langCode = typeof lang === 'string' ? lang : Array.isArray(lang) ? lang[0] : undefined;
-  const loadKey = `${currentWord}::${langCode || ''}`;
+  // The X-Ray alone looks again when the book's X-Ray grows.
+  const xrayRevision = useXRayStore((s) => (xrayOnly ? s.revision : 0));
+  const loadKey = `${currentWord}::${langCode || ''}::${xrayRevision}`;
   const speakWord = useCallback(() => {
     // Warm the audio context synchronously inside the click gesture; the
     // synth/play happens after a network await, outside the gesture window.
@@ -564,6 +576,7 @@ export function useDictionaryResults({
     resolveWebSearchUrl,
     onWebSearchClickTauri,
     noProvidersAtAll,
+    xrayBookKey: xrayOnly ? selection?.bookKey : undefined,
     setContextTranslator,
     fontScale: settings.fontScale ?? 1,
     zoomedImageSrc,
@@ -819,6 +832,8 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
   resolveWebSearchUrl,
   onWebSearchClickTauri,
   noProvidersAtAll,
+  xrayBookKey,
+  currentWord,
   setContextTranslator,
   fontScale,
   zoomedImageSrc,
@@ -960,6 +975,8 @@ export const DictionaryResultsBody: React.FC<DictionaryResultsBodyProps> = ({
               {_('Enable a dictionary in Settings → Language → Dictionaries.')}
             </p>
           </div>
+        ) : xrayBookKey && !definitionsSection ? (
+          <XRayStatus bookKey={xrayBookKey} word={currentWord} />
         ) : webSearchFirst ? (
           <>
             {webSearchSection}

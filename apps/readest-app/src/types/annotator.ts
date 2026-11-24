@@ -6,6 +6,7 @@ export type AnnotationToolType =
   | 'search'
   | 'dictionary'
   | 'contextdictionary'
+  | 'xray'
   | 'systemdictionary'
   | 'vocabulary'
   | 'translate'

@@ -125,6 +125,7 @@ const builtinLabel = (id: string, _: (key: string) => string): string => {
   if (id === BUILTIN_PROVIDER_IDS.wiktionary) return _('Wiktionary');
   if (id === BUILTIN_PROVIDER_IDS.wikipedia) return _('Wikipedia');
   if (id === BUILTIN_PROVIDER_IDS.context) return _('Context Dictionary');
+  if (id === BUILTIN_PROVIDER_IDS.xray) return _('X-Ray');
   if (id === BUILTIN_PROVIDER_IDS.systemDictionary) return _('System Dictionary');
   return id;
 };
@@ -475,7 +476,7 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
         });
         continue;
       }
-      if (id === BUILTIN_PROVIDER_IDS.context) {
+      if (id === BUILTIN_PROVIDER_IDS.context || id === BUILTIN_PROVIDER_IDS.xray) {
         rows.push({
           id,
           label: builtinLabel(id, _),
@@ -989,6 +990,25 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
               }}
             />
           </SettingsRow>
+        </BoxedList>
+      )}
+
+      {contextTranslator && (
+        <BoxedList
+          className='mt-4'
+          title={_('X-Ray')}
+          description={_(
+            'Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.',
+          )}
+        >
+          <SettingsSwitchRow
+            label={_('Update While Reading')}
+            checked={settings.xrayAutoUpdate ?? false}
+            onChange={() => {
+              setContextOptions({ xrayAutoUpdate: !settings.xrayAutoUpdate });
+              void saveCustomDictionaries(envConfig);
+            }}
+          />
         </BoxedList>
       )}
 

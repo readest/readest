@@ -19,6 +19,7 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'search',
   'dictionary',
   'contextdictionary',
+  'xray',
   'systemdictionary',
   'vocabulary',
   'translate',
@@ -33,7 +34,7 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
 // 'copylink' is opt-in the same way (#5452) — a niche action most readers
 // never need, reachable by adding it in Customize Toolbar. So is
 // 'contextdictionary', which asks the AI alone and spends the user's tokens
-// (#7497), and 'systemdictionary', which hands the word to the OS Look Up
+// (#7497), and 'xray', which asks the X-Ray alone, and 'systemdictionary', which hands the word to the OS Look Up
 // while Dictionary keeps the in-app dictionaries (#6728), and 'vocabulary', which
 // saves the word to the vocabulary list without opening the dictionary.
 export const DEFAULT_ANNOTATION_TOOLBAR_ITEMS: AnnotationToolType[] = [
