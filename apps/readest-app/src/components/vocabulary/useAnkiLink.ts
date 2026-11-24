@@ -348,10 +348,14 @@ export const useAnkiLink = () => {
       await loadDictionaries();
       const provider = entryProvider();
       // A card has a place for the entry: Readest's Entry (no fields yet: Sync
-      // creates the note type, with Entry), or the field its profile maps.
+      // creates the note type, with Entry), or the field its profile maps in a
+      // note type this collection has.
       const takesEntry = (e: VocabularyEntry) => {
         const profile = ankiProfileOf(e, profiles);
-        if (profile?.noteType) return Object.values(profile.fields).includes('entry');
+        if (profile?.noteType) {
+          const type = noteTypes.find((t) => t.name === profile.noteType);
+          return !!type?.fields.some((f) => profile.fields[f] === 'entry');
+        }
         return !noteType.fields || noteType.fields.includes('Entry');
       };
       const looked: Record<string, string> = {};
@@ -482,7 +486,11 @@ export const useAnkiLink = () => {
       setProfilesState(null);
     } catch (err) {
       console.warn('[anki] saving the card profiles failed', err);
-      setSettings(settings);
+      // Only the profiles: other settings may have changed during the save.
+      setSettings({
+        ...useSettingsStore.getState().settings,
+        ankiProfiles: settings.ankiProfiles,
+      });
       toast('error', _("Couldn't save"));
     }
   };

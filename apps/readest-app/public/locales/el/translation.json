@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Προφίλ καρτών Anki...",
   "Profile": "Προφίλ",
   "All Profiles": "Όλα τα προφίλ",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Για να ανοίγει το πεδίο «Σύνδεσμος προς το βιβλίο» από μια κάρτα, ενεργοποιήστε το «Allow cards to launch other apps» στην ενότητα Σύνθετα των ρυθμίσεων του AnkiDroid"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Για να ανοίγει το πεδίο «Σύνδεσμος προς το βιβλίο» από μια κάρτα, ενεργοποιήστε το «Allow cards to launch other apps» στην ενότητα Σύνθετα των ρυθμίσεων του AnkiDroid",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "Τα «Λέξη», «Υπόδειξη» και «Λήμμα λεξικού» πρέπει να χρησιμοποιούν τα ίδια πεδία με το «{{name}}»"
 }

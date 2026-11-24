@@ -2873,5 +2873,6 @@
   "Anki Card Profiles...": "Profil kartu Anki...",
   "Profile": "Profil",
   "All Profiles": "Semua profil",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Untuk membuka “Tautan ke buku” dari kartu, aktifkan “Allow cards to launch other apps” di bagian Tingkat lanjut pengaturan AnkiDroid"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Untuk membuka “Tautan ke buku” dari kartu, aktifkan “Allow cards to launch other apps” di bagian Tingkat lanjut pengaturan AnkiDroid",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Kata”, “Petunjuk”, dan “Entri kamus” harus memakai bidang yang sama seperti di “{{name}}”"
 }

@@ -2873,5 +2873,6 @@
   "Anki Card Profiles...": "โปรไฟล์การ์ด Anki...",
   "Profile": "โปรไฟล์",
   "All Profiles": "โปรไฟล์ทั้งหมด",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "หากต้องการเปิด “ลิงก์ไปยังหนังสือ” จากการ์ด ให้เปิด “Allow cards to launch other apps” ในส่วน Advanced ของการตั้งค่า AnkiDroid"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "หากต้องการเปิด “ลิงก์ไปยังหนังสือ” จากการ์ด ให้เปิด “Allow cards to launch other apps” ในส่วน Advanced ของการตั้งค่า AnkiDroid",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“คำ” “คำใบ้” และ “รายการพจนานุกรม” ต้องใช้ฟิลด์เดียวกับใน “{{name}}”"
 }

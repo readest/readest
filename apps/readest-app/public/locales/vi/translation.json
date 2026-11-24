@@ -2873,5 +2873,6 @@
   "Anki Card Profiles...": "Hồ sơ thẻ Anki...",
   "Profile": "Hồ sơ",
   "All Profiles": "Tất cả hồ sơ",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Để mở “Liên kết đến sách” từ thẻ, hãy bật “Allow cards to launch other apps” trong phần Tuỳ chọn nâng cao của cài đặt AnkiDroid"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Để mở “Liên kết đến sách” từ thẻ, hãy bật “Allow cards to launch other apps” trong phần Tuỳ chọn nâng cao của cài đặt AnkiDroid",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Từ”, “Gợi ý” và “Mục từ điển” phải dùng cùng các trường như trong “{{name}}”"
 }

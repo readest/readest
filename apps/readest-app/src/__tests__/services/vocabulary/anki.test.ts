@@ -516,6 +516,9 @@ describe('card profiles (#7849)', () => {
       '',
       'Der Prozess',
     ]);
+    // The language as the CSV export writes it: its code.
+    settings.profiles[0]!.fields = { Expression: 'word', Notes: 'language' };
+    expect(ankiNotesToSend([haus], [], {}, settings, [MINING])[0]!.fields[3]).toBe('de');
   });
 
   it("keeps Readest's own note type for a profile without one, in the profile's deck", () => {
@@ -566,6 +569,20 @@ describe('card profiles (#7849)', () => {
     const baum = entry('baum', { lang: 'de', word: 'Baum', state: 'learning' });
     const view = known.map((n) => ankiNoteView(n, layouts));
     expect(ankiNotesToSend([baum], view, {}, profiles(), [MINING])).toEqual([]);
+  });
+
+  it("takes only Readest's notes of a profile's note type in Readest's own decks too", () => {
+    const layouts = ankiLayouts(profiles(), [MINING]);
+    const own = [
+      // Another note type in Readest's decks: everything there is Readest's, as before.
+      { id: 1, mid: 9, fields: ['kettle'], tags: '' },
+      { id: 2, mid: 40, fields: ['Haus', '', 'house', ''], tags: 'readest readest::lang::de' },
+      // A profile that sends to a deck under Readest Vocabulary meets the reader's own cards.
+      { id: 3, mid: 40, fields: ['Baum', '', 'tree', ''], tags: 'mine' },
+    ];
+    const { notes, known } = ankiSyncNotes(own, [], layouts);
+    expect(notes.map((n) => n.id)).toEqual([1, 2]);
+    expect(known.map((n) => n.id)).toEqual([3]);
   });
 
   it("finds the empty Entry field a profile maps on Readest's notes", () => {

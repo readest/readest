@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Anki-ის ბარათების პროფილები...",
   "Profile": "პროფილი",
   "All Profiles": "ყველა პროფილი",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "ბარათიდან „ბმული წიგნზე“-ის გასახსნელად AnkiDroid-ის პარამეტრებში, დამატებითი განყოფილებაში ჩართეთ „Allow cards to launch other apps“"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "ბარათიდან „ბმული წიგნზე“-ის გასახსნელად AnkiDroid-ის პარამეტრებში, დამატებითი განყოფილებაში ჩართეთ „Allow cards to launch other apps“",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "„სიტყვა“, „მინიშნება“ და „ლექსიკონის სტატია“ იმავე ველებს უნდა იყენებდეს, რასაც „{{name}}“"
 }

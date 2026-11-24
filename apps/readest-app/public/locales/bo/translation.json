@@ -2873,5 +2873,6 @@
   "Anki Card Profiles...": "Anki ཤོག་བུའི་ཡིག་ཆ།...",
   "Profile": "ཡིག་ཆ།",
   "All Profiles": "ཡིག་ཆ་ཡོངས།",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "ཤོག་བྱང་ནས་“དེབ་ཀྱི་སྦྲེལ་མཐུད།”ཁ་ཕྱེ་བར། AnkiDroid ཡི་སྒྲིག་འགོད་ Advanced ནང་“Allow cards to launch other apps”ཁ་ཕྱེ་རོགས།"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "ཤོག་བྱང་ནས་“དེབ་ཀྱི་སྦྲེལ་མཐུད།”ཁ་ཕྱེ་བར། AnkiDroid ཡི་སྒྲིག་འགོད་ Advanced ནང་“Allow cards to launch other apps”ཁ་ཕྱེ་རོགས།",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“ཚིག”དང་“མཚོན་བྱེད།”། “ཚིག་མཛོད་ཀྱི་འགྲེལ་བ།”བཅས་ཀྱིས་“{{name}}”ནང་གི་ཁོངས་དེ་ཉིད་བེད་སྤྱོད་བྱེད་དགོས།"
 }

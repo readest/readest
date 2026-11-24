@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Anki-kártyaprofilok...",
   "Profile": "Profil",
   "All Profiles": "Összes profil",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Ahhoz, hogy a kártyáról megnyíljon a „Hivatkozás a könyvre”, kapcsolja be az AnkiDroid Haladó beállításai között az „Allow cards to launch other apps” lehetőséget"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Ahhoz, hogy a kártyáról megnyíljon a „Hivatkozás a könyvre”, kapcsolja be az AnkiDroid Haladó beállításai között az „Allow cards to launch other apps” lehetőséget",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "A „Szó”, a „Tipp” és a „Szótári szócikk” ugyanazokba a mezőkbe kerüljön, mint a(z) „{{name}}” profilban"
 }

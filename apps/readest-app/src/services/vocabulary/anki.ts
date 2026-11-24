@@ -341,10 +341,10 @@ export const ankiNoteView = <T extends { mid: number; fields: string[] }>(
 };
 
 /**
- * The notes Sync works with (#7849): every note of Readest's deck family
- * (`own`), and only Readest's notes in the decks profiles send to (`other`).
- * `known` are the reader's own notes there of a profile's note type: they only
- * keep Sync from adding the same word again.
+ * The notes Sync works with (#7849): Readest's notes, and every other note of
+ * Readest's deck family (`own`) that isn't of a profile's note type. `known`
+ * are the reader's own notes of a profile's note type, wherever they are: they
+ * only keep Sync from adding the same word again.
  */
 export const ankiSyncNotes = <T extends { id: number; mid: number; tags: string }>(
   own: T[],
@@ -352,10 +352,11 @@ export const ankiSyncNotes = <T extends { id: number; mid: number; tags: string 
   layouts: Map<number, AnkiLayout>,
 ): { notes: T[]; known: T[] } => {
   const seen = new Set(own.map((n) => n.id));
-  const rest = other.filter((n) => !seen.has(n.id));
+  const all = [...own, ...other.filter((n) => !seen.has(n.id))];
+  const readers = (n: T) => !isReadestNote(n.tags) && layouts.has(n.mid);
   return {
-    notes: [...own, ...rest.filter((n) => isReadestNote(n.tags))],
-    known: rest.filter((n) => !isReadestNote(n.tags) && layouts.has(n.mid)),
+    notes: all.filter((n) => isReadestNote(n.tags) || (seen.has(n.id) && !readers(n))),
+    known: all.filter(readers),
   };
 };
 
@@ -376,6 +377,8 @@ const profileField = (source: AnkiFieldSource | undefined, e: VocabularyEntry, e
       const lang = ankiTtsLang(e.lang);
       return lang ? `[anki:tts lang=${lang}]${parts.word}[/anki:tts]` : '';
     }
+    case 'language':
+      return e.lang;
     case 'link':
       return occ?.bookHash
         ? `<a href="${escapeHtml(buildBookAppLink(occ.bookHash, occ.cfi))}">${parts.book || 'Readest'}</a>`

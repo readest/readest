@@ -2873,5 +2873,6 @@
   "Anki Card Profiles...": "Profil kad Anki...",
   "Profile": "Profil",
   "All Profiles": "Semua profil",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Untuk membuka “Pautan ke buku” daripada kad, hidupkan “Allow cards to launch other apps” dalam bahagian Lanjutan tetapan AnkiDroid"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Untuk membuka “Pautan ke buku” daripada kad, hidupkan “Allow cards to launch other apps” dalam bahagian Lanjutan tetapan AnkiDroid",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Perkataan”, “Petunjuk” dan “Entri kamus” mesti menggunakan medan yang sama seperti dalam “{{name}}”"
 }

@@ -58,7 +58,8 @@ export type AnkiFieldSource =
   | 'author'
   | 'entry'
   | 'audio'
-  | 'link';
+  | 'link'
+  | 'language';
 
 /** The deck, note type, fields and tags Sync with Anki uses for some words (#7849). */
 export interface AnkiProfile {

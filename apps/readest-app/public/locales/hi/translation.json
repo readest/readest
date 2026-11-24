@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Anki कार्ड प्रोफ़ाइल...",
   "Profile": "प्रोफ़ाइल",
   "All Profiles": "सभी प्रोफ़ाइल",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "कार्ड से “पुस्तक का लिंक” खोलने के लिए AnkiDroid की सेटिंग में उन्नत के अंतर्गत “Allow cards to launch other apps” चालू करें"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "कार्ड से “पुस्तक का लिंक” खोलने के लिए AnkiDroid की सेटिंग में उन्नत के अंतर्गत “Allow cards to launch other apps” चालू करें",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“शब्द”, “संकेत” और “शब्दकोश प्रविष्टि” को “{{name}}” वाले फ़ील्ड ही इस्तेमाल करने होंगे"
 }

@@ -2873,5 +2873,6 @@
   "Anki Card Profiles...": "Anki 卡片設定檔...",
   "Profile": "設定檔",
   "All Profiles": "全部設定檔",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "若要從卡片開啟「書籍連結」，請在 AnkiDroid 的進階設定中開啟「Allow cards to launch other apps」"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "若要從卡片開啟「書籍連結」，請在 AnkiDroid 的進階設定中開啟「Allow cards to launch other apps」",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "「單字」「提示」和「詞典釋義」必須使用與「{{name}}」相同的欄位"
 }

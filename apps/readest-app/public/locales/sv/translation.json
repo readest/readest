@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Anki-kortprofiler...",
   "Profile": "Profil",
   "All Profiles": "Alla profiler",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "För att öppna ”Länk till boken” från ett kort slår du på ”Tillåt kort att starta andra appar” under Avancerat i AnkiDroids inställningar"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "För att öppna ”Länk till boken” från ett kort slår du på ”Tillåt kort att starta andra appar” under Avancerat i AnkiDroids inställningar",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "”Ord”, ”Ledtråd” och ”Ordboksuppslag” måste använda samma fält som i ”{{name}}”"
 }

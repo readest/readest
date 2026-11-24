@@ -3268,5 +3268,6 @@
   "Anki Card Profiles...": "ملفات تعريف بطاقات Anki...",
   "Profile": "ملف التعريف",
   "All Profiles": "كل ملفات التعريف",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "لفتح «رابط إلى الكتاب» من بطاقة، فعِّل «السماح للبطاقات بفتح تطبيقات أخرى» في قسم خيارات متقدمة بإعدادات AnkiDroid"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "لفتح «رابط إلى الكتاب» من بطاقة، فعِّل «السماح للبطاقات بفتح تطبيقات أخرى» في قسم خيارات متقدمة بإعدادات AnkiDroid",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "«كلمة» و«تلميح» و«مدخل القاموس» يجب أن تستخدم الحقول نفسها كما في «{{name}}»"
 }

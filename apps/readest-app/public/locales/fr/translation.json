@@ -3031,5 +3031,6 @@
   "Anki Card Profiles...": "Profils de cartes Anki...",
   "Profile": "Profil",
   "All Profiles": "Tous les profils",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Pour ouvrir « Lien vers le livre » depuis une carte, activez « Autoriser les cartes à lancer d’autres applications » dans la section Avancé des paramètres d’AnkiDroid"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Pour ouvrir « Lien vers le livre » depuis une carte, activez « Autoriser les cartes à lancer d’autres applications » dans la section Avancé des paramètres d’AnkiDroid",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "« Mot », « Indice » et « Entrée du dictionnaire » doivent utiliser les mêmes champs que dans « {{name}} »"
 }

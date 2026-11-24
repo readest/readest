@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Anki කාඩ්පත් පැතිකඩ...",
   "Profile": "පැතිකඩ",
   "All Profiles": "සියලු පැතිකඩ",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "කාඩ්පතකින් “පොතට සබැඳිය” විවෘත කිරීමට, AnkiDroid සැකසුම්වල Advanced යටතේ “Allow cards to launch other apps” සක්‍රිය කරන්න"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "කාඩ්පතකින් “පොතට සබැඳිය” විවෘත කිරීමට, AnkiDroid සැකසුම්වල Advanced යටතේ “Allow cards to launch other apps” සක්‍රිය කරන්න",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“වචනය”, “ඉඟිය” සහ “ශබ්දකෝෂ ඇතුළත් කිරීම” “{{name}}” හි ඇති ක්ෂේත්‍රම භාවිත කළ යුතුය"
 }

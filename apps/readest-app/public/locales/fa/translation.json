@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "نمایه‌های کارت Anki...",
   "Profile": "نمایه",
   "All Profiles": "همهٔ نمایه‌ها",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "برای باز کردن «پیوند به کتاب» از یک کارت، «مجوز بازکردن برنامه‌های دیگر توسط کارت‌ها» را در بخش پیشرفته تنظیمات AnkiDroid روشن کنید"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "برای باز کردن «پیوند به کتاب» از یک کارت، «مجوز بازکردن برنامه‌های دیگر توسط کارت‌ها» را در بخش پیشرفته تنظیمات AnkiDroid روشن کنید",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "«کلمه»، «راهنما» و «مدخل واژه‌نامه» باید همان فیلدهای «{{name}}» را به کار ببرند"
 }

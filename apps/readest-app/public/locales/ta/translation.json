@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Anki அட்டை சுயவிவரங்கள்...",
   "Profile": "சுயவிவரம்",
   "All Profiles": "அனைத்து சுயவிவரங்களும்",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "அட்டையிலிருந்து “புத்தகத்துக்கான இணைப்பு” திறக்க, AnkiDroid அமைப்புகளின் மேம்பட்டது பகுதியில் “Allow cards to launch other apps” என்பதை இயக்கவும்"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "அட்டையிலிருந்து “புத்தகத்துக்கான இணைப்பு” திறக்க, AnkiDroid அமைப்புகளின் மேம்பட்டது பகுதியில் “Allow cards to launch other apps” என்பதை இயக்கவும்",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“சொல்”, “குறிப்பு”, “அகராதிப் பதிவு” ஆகியவை “{{name}}” இல் உள்ள அதே புலங்களைப் பயன்படுத்த வேண்டும்"
 }

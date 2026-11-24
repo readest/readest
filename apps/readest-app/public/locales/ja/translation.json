@@ -2873,5 +2873,6 @@
   "Anki Card Profiles...": "Ankiカードプロファイル...",
   "Profile": "プロファイル",
   "All Profiles": "すべてのプロファイル",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "カードから「本へのリンク」を開くには、AnkiDroidの高度な設定で「カードに別のアプリの起動を許可」をオンにしてください"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "カードから「本へのリンク」を開くには、AnkiDroidの高度な設定で「カードに別のアプリの起動を許可」をオンにしてください",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "「単語」「ヒント」「辞書の項目」は「{{name}}」と同じフィールドを使う必要があります"
 }

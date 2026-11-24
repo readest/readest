@@ -50,6 +50,7 @@ const AnkiProfilesPanel: React.FC<AnkiProfilesPanelProps> = ({
     { value: 'hint', label: _('Hint') },
     { value: 'book', label: _('Book Title') },
     { value: 'author', label: _('Author') },
+    { value: 'language', label: _('Language') },
     { value: 'entry', label: _('Dictionary Entry') },
     { value: 'audio', label: _('Audio') },
     { value: 'link', label: _('Link to Book') },
@@ -69,8 +70,22 @@ const AnkiProfilesPanel: React.FC<AnkiProfilesPanelProps> = ({
     const type = noteTypes.find((t) => t.name === editing.noteType);
     // A profile synced from a device whose collection has a note type this one lacks.
     const fieldNames = editing.noteType ? (type?.fields ?? Object.keys(editing.fields)) : [];
-    const hasWord = Object.values(editing.fields).includes('word');
-    const ready = !!editing.name.trim() && (!editing.noteType || hasWord);
+    const hasWord = fieldNames.some((n) => editing.fields[n] === 'word');
+    // Sync reads a note type's word, hint and entry from the same fields
+    // whichever profile sent the note, so profiles of one note type agree on them.
+    const readFrom = (p: AnkiProfile, source: AnkiFieldSource) =>
+      fieldNames.find((n) => p.fields[n] === source);
+    const clash = editing.noteType
+      ? draft.profiles.find(
+          (p) =>
+            p.id !== editing.id &&
+            p.noteType === editing.noteType &&
+            (['word', 'hint', 'entry'] as const).some(
+              (s) => readFrom(p, s) !== readFrom(editing, s),
+            ),
+        )
+      : undefined;
+    const ready = !!editing.name.trim() && (!editing.noteType || hasWord) && !clash;
     const change = (patch: Partial<AnkiProfile>) => setEditing({ ...editing, ...patch });
     const done = () => {
       const profile = {
@@ -108,6 +123,7 @@ const AnkiProfilesPanel: React.FC<AnkiProfilesPanelProps> = ({
           <input
             type='text'
             aria-label={_('Name')}
+            aria-required='true'
             value={editing.name}
             onChange={(e) => change({ name: e.target.value })}
             className={inputClass}
@@ -134,7 +150,12 @@ const AnkiProfilesPanel: React.FC<AnkiProfilesPanelProps> = ({
           <select
             aria-label={_('Note Type')}
             value={editing.noteType}
-            onChange={(e) => change({ noteType: e.target.value, fields: {} })}
+            onChange={(e) => {
+              const noteType = e.target.value;
+              // Start from another profile's fields for this note type.
+              const like = noteType && draft.profiles.find((p) => p.noteType === noteType);
+              change({ noteType, fields: like ? { ...like.fields } : {} });
+            }}
             className={selectClass}
           >
             <option value=''>{_('Readest Vocabulary')}</option>
@@ -178,6 +199,13 @@ const AnkiProfilesPanel: React.FC<AnkiProfilesPanelProps> = ({
             {!hasWord && (
               <p className='not-eink:opacity-60 text-xs'>
                 {_('Choose a field for the word: Sync finds cards by it')}
+              </p>
+            )}
+            {clash && (
+              <p className='not-eink:opacity-60 text-xs'>
+                {_('Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”', {
+                  name: clash.name,
+                })}
               </p>
             )}
             {Object.values(editing.fields).includes('link') && (

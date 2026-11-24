@@ -3110,5 +3110,6 @@
   "Anki Card Profiles...": "Профили карточек Anki...",
   "Profile": "Профиль",
   "All Profiles": "Все профили",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Чтобы открывать «Ссылку на книгу» из карточки, включите «Allow cards to launch other apps» в разделе «Расширенные» настроек AnkiDroid"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Чтобы открывать «Ссылку на книгу» из карточки, включите «Allow cards to launch other apps» в разделе «Расширенные» настроек AnkiDroid",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "«Слово», «Подсказка» и «Словарная статья» должны использовать те же поля, что и в «{{name}}»"
 }

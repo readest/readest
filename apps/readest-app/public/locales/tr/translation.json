@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Anki kart profilleri...",
   "Profile": "Profil",
   "All Profiles": "Tüm profiller",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Bir karttan “Kitaba bağlantı” açmak için AnkiDroid ayarlarının İleri Düzey bölümünde “Kartların uygulama başlatmasına izin ver” seçeneğini açın"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Bir karttan “Kitaba bağlantı” açmak için AnkiDroid ayarlarının İleri Düzey bölümünde “Kartların uygulama başlatmasına izin ver” seçeneğini açın",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“Kelime”, “İpucu” ve “Sözlük girdisi”, “{{name}}” içindekiyle aynı alanları kullanmalıdır"
 }

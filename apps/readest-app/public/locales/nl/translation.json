@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Anki-kaartprofielen...",
   "Profile": "Profiel",
   "All Profiles": "Alle profielen",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Om ‘Link naar boek’ vanaf een kaart te openen, zet je ‘Kaarten toestaan andere apps te starten’ aan bij Geavanceerd in de instellingen van AnkiDroid"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "Om ‘Link naar boek’ vanaf een kaart te openen, zet je ‘Kaarten toestaan andere apps te starten’ aan bij Geavanceerd in de instellingen van AnkiDroid",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "‘Woord’, ‘Hint’ en ‘Woordenboekitem’ moeten dezelfde velden gebruiken als in ‘{{name}}’"
 }

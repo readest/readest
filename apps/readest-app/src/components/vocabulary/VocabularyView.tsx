@@ -140,10 +140,11 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
   // Deleting a language's last word drops it from the list, and the filter with
   // it; the language coming back later doesn't turn the filter on again.
   if (lang && !languages.some((l) => l.value === lang)) setLang('');
-  // A profile deleted here or on another device takes its filter with it.
-  if (profileId && profileId !== READEST_CARDS && !profiles.some((p) => p.id === profileId)) {
-    setProfileId('');
-  }
+  // A profile deleted here or on another device takes its filter with it, and
+  // all of them go when AnkiDroid does.
+  const profileShown =
+    profileId === READEST_CARDS ? profiles.length > 0 : profiles.some((p) => p.id === profileId);
+  if (profileId && !profileShown) setProfileId('');
   const byBook = useMemo(
     () =>
       filterEntries(all, { bookHash: bookHash || undefined, lang: lang || undefined, query }, sort),

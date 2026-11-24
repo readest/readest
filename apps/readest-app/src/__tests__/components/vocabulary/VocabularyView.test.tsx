@@ -518,6 +518,47 @@ describe('VocabularyView Anki link', () => {
       expect(lookups).toEqual(['spice']);
     });
 
+    it("looks nothing up for a word whose profile's note type isn't in AnkiDroid", async () => {
+      const saved = useSettingsStore.getState();
+      useSettingsStore.setState((state) => ({
+        settings: {
+          ...state.settings,
+          ankiProfiles: {
+            profiles: [
+              {
+                id: 'p1',
+                name: 'Mining',
+                deck: 'Mining',
+                noteType: 'Mining',
+                fields: { Expression: 'word', Meaning: 'entry' },
+                tags: [],
+              },
+            ],
+            languages: { en: 'p1' },
+            books: {},
+          },
+        },
+      }));
+      anki.ankiListNoteTypes.mockResolvedValue([]);
+      choose('stardict:collins');
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      try {
+        renderWithMenu();
+        fireEvent.click(await syncButton());
+        await waitFor(() =>
+          expect(dispatch).toHaveBeenCalledWith(
+            'toast',
+            expect.objectContaining({ message: expect.stringContaining('words not sent') }),
+          ),
+        );
+        expect(lookups).toEqual([]);
+        expect(anki.ankiAddNotes).not.toHaveBeenCalled();
+      } finally {
+        dispatch.mockRestore();
+        useSettingsStore.setState(saved);
+      }
+    });
+
     it('looks nothing up until a dictionary is chosen', async () => {
       anki.ankiReadDeck.mockResolvedValue({ notes: [readNote(1, 'kettle')], cards: [] });
       renderWithMenu();
@@ -814,9 +855,9 @@ describe('VocabularyView Anki link', () => {
       fireEvent.click(screen.getByRole('menuitem', { name: /Anki Card Profiles/ }));
       const panel = await screen.findByRole('region', { name: 'Anki Card Profiles' });
       fireEvent.click(within(panel).getByRole('button', { name: 'New Profile' }));
-      fireEvent.change(within(panel).getByRole('textbox', { name: 'Name' }), {
-        target: { value: 'Mining' },
-      });
+      const name = within(panel).getByRole('textbox', { name: 'Name' });
+      expect(name.getAttribute('aria-required')).toBe('true');
+      fireEvent.change(name, { target: { value: 'Mining' } });
       fireEvent.change(within(panel).getByRole('combobox', { name: 'Deck' }), {
         target: { value: 'German::Reading' },
       });
@@ -910,6 +951,93 @@ describe('VocabularyView Anki link', () => {
           hint: 'cat',
         }),
       );
+    });
+
+    const openProfiles = async () => {
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Anki Card Profiles/ }));
+      return screen.findByRole('region', { name: 'Anki Card Profiles' });
+    };
+
+    it("asks for a Word field again when the note type's mapped field is gone", async () => {
+      setProfiles({ profiles: [mining], languages: { de: 'p1' }, books: {} });
+      // Expression was renamed in Anki: the saved mapping no longer names a field.
+      anki.ankiListNoteTypes.mockResolvedValue([
+        { id: 40, name: 'Mining', fields: ['Term', 'Sentence', 'Meaning'] },
+      ]);
+      const panel = await openProfiles();
+      fireEvent.click(within(panel).getByRole('button', { name: /German mining/ }));
+      expect(within(panel).getByRole('button', { name: 'Done' }).hasAttribute('disabled')).toBe(
+        true,
+      );
+      expect(within(panel).getByText(/Choose a field for the word/)).toBeTruthy();
+    });
+
+    it("starts from another profile's fields for its note type, and keeps them alike", async () => {
+      setProfiles({ profiles: [mining], languages: { de: 'p1' }, books: {} });
+      const panel = await openProfiles();
+      fireEvent.click(within(panel).getByRole('button', { name: 'New Profile' }));
+      fireEvent.change(within(panel).getByRole('textbox', { name: 'Name' }), {
+        target: { value: 'French mining' },
+      });
+      fireEvent.change(within(panel).getByRole('combobox', { name: 'Note Type' }), {
+        target: { value: 'Mining' },
+      });
+      const field = (name: string) =>
+        within(panel).getByRole('combobox', { name }) as HTMLSelectElement;
+      expect(['Expression', 'Sentence', 'Meaning'].map((n) => field(n).value)).toEqual([
+        'word',
+        'sentence',
+        'hint',
+      ]);
+      const done = within(panel).getByRole('button', { name: 'Done' });
+      expect(done.hasAttribute('disabled')).toBe(false);
+      // Sync reads a note type one way: two profiles can't read its word from different fields.
+      fireEvent.change(field('Expression'), { target: { value: 'sentence' } });
+      fireEvent.change(field('Sentence'), { target: { value: 'word' } });
+      expect(done.hasAttribute('disabled')).toBe(true);
+      expect(within(panel).getByText(/must use the same fields as in/)).toBeTruthy();
+      // Other fields may differ.
+      fireEvent.change(field('Expression'), { target: { value: 'word' } });
+      fireEvent.change(field('Sentence'), { target: { value: 'link' } });
+      expect(done.hasAttribute('disabled')).toBe(false);
+    });
+
+    it('puts back only the profiles when saving them fails', async () => {
+      const before = { profiles: [mining, plain], languages: { en: 'p1' }, books: {} };
+      setProfiles(before);
+      const keepLogin = !useSettingsStore.getState().settings.keepLogin;
+      // Another setting changes while the save is on its way.
+      const saveSettings = vi.fn(async () => {
+        const { settings, setSettings } = useSettingsStore.getState();
+        setSettings({ ...settings, keepLogin });
+        throw new Error('disk full');
+      });
+      useSettingsStore.setState({ saveSettings } as unknown as Partial<SettingsState>);
+      const panel = await openProfiles();
+      fireEvent.click(within(panel).getByRole('button', { name: /German mining/ }));
+      fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
+      fireEvent.click(within(panel).getByRole('button', { name: 'Save' }));
+      await waitFor(() => expect(saveSettings).toHaveBeenCalled());
+      await waitFor(() =>
+        expect(useSettingsStore.getState().settings.ankiProfiles).toEqual(before),
+      );
+      expect(useSettingsStore.getState().settings.keepLogin).toBe(keepLogin);
+    });
+
+    it('clears the Readest Vocabulary filter when AnkiDroid goes away', async () => {
+      setProfiles({ profiles: [mining], languages: { de: 'p1' }, books: {} });
+      seed([entry('spice', {}), de('haus', 'Haus')]);
+      renderWithMenu();
+      const chip = await screen.findByRole('combobox', { name: 'Profile' });
+      fireEvent.change(chip, { target: { value: 'readest' } });
+      expect(listWords()).toEqual(['spice']);
+      anki.ankiStatus.mockResolvedValue({ installed: false, granted: false });
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(screen.queryByRole('combobox', { name: 'Profile' })).toBeNull());
+      expect([...listWords()].sort()).toEqual(['haus', 'spice']);
     });
 
     it('drops a deleted profile from the languages and books that used it', async () => {

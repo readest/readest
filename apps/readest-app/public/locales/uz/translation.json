@@ -2952,5 +2952,6 @@
   "Anki Card Profiles...": "Anki kartochka profillari...",
   "Profile": "Profil",
   "All Profiles": "Barcha profillar",
-  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "“Kitobga havola”ni kartadan ochish uchun AnkiDroid sozlamalarining Kengaytirilgan bo‘limida “Allow cards to launch other apps”ni yoqing"
+  "To open Link to Book from a card, turn on “Allow cards to launch other apps” in AnkiDroid’s Advanced settings": "“Kitobga havola”ni kartadan ochish uchun AnkiDroid sozlamalarining Kengaytirilgan bo‘limida “Allow cards to launch other apps”ni yoqing",
+  "Word, Hint and Dictionary Entry must use the same fields as in “{{name}}”": "“So‘z”, “Ishora” va “Lug‘at maqolasi” “{{name}}”dagi maydonlarning o‘zidan foydalanishi kerak"
 }
