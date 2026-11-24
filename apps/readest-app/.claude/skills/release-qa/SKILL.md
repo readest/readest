@@ -80,7 +80,9 @@ mkdir -p "$QA_DIR/shots" "$QA_DIR/logs"
   4. `pnpm -C apps/readest-app setup-vendors` (it copies from foliate-js).
   5. If `git ls-tree <to-sha> packages/simplecc-wasm` names another commit
      than the main checkout's `git -C packages/simplecc-wasm rev-parse HEAD`,
-     replace the copied `dist` with that commit's: `git -C <main
+     replace the copied `dist` with that commit's. Remove it first, since
+     extracting over it keeps files the commit doesn't have: `rm -rf
+     <worktree>/packages/simplecc-wasm/dist && git -C <main
      checkout>/packages/simplecc-wasm archive <commit> dist | tar -x -C
      <worktree>/packages/simplecc-wasm`.
 - Check `git -C <worktree> rev-parse --short HEAD` is the recorded sha before
