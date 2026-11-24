@@ -500,6 +500,27 @@ test('keeps dictionary language fallback specific to OCR selections', async () =
   expect(screen.getByTestId('dictionary-surface').dataset['language']).toBe('fr');
 });
 
+test('a lookup docked or saved from OCR text keeps the recognized language', async () => {
+  h.bookLanguage = () => undefined;
+  useDictionaryDockStore.setState({ isDocked: true });
+  h.viewSettings.annotationToolbarItems = ['vocabulary'];
+  render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+  await selectText('言葉', true, 'ja');
+
+  act(() => h.actions?.['onDictionarySelection']?.());
+  expect(useDictionaryDockStore.getState().lookup).toMatchObject({
+    lang: 'ja',
+    capture: { lang: 'ja' },
+  });
+
+  act(() => {
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Vocabulary' }));
+  });
+  expect(h.recordLookup).toHaveBeenCalledWith(
+    expect.objectContaining({ word: '言葉', lang: 'ja' }),
+  );
+});
+
 // A marked word keeps its sentences with saving off (#7691).
 test.each([
   [true, true, false, true],

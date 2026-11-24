@@ -623,7 +623,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const getDictionaryCapture = (): VocabularyCapture | undefined =>
     selection?.text
       ? {
-          lang: vocabularyLang(bookData.book?.primaryLanguage),
+          lang: vocabularyLang(
+            selectionIsOcr ? dictionaryLanguage : bookData.book?.primaryLanguage,
+          ),
           occurrence: {
             sentence: (selection.range && sentenceAt(selection.range)) || selection.text,
             bookHash: bookData.book?.hash,
@@ -2203,7 +2205,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     const { isDocked, setLookup } = useDictionaryDockStore.getState();
     setLookup({
       word: selection.text,
-      lang: bookData.bookDoc?.metadata.language as string,
+      lang: dictionaryLanguage,
       selection: getDictionarySelection(),
       capture: getDictionaryCapture(),
       contextOnly,

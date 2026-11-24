@@ -58,6 +58,14 @@ describe('sentenceAt', () => {
     expect(sentenceAt(range)).toBe('');
   });
 
+  it('stays inside the recognized text block on a scanned page', () => {
+    const doc = docOf(
+      '<div data-readest-ocr-layer><span data-readest-ocr-block-id="a"><span>Wait here</span></span>' +
+        '<span data-readest-ocr-block-id="b"><span>Captain </span><span>Nemo left</span></span></div>',
+    );
+    expect(sentenceAt(rangeOver(doc, 'Nemo'))).toBe('Captain Nemo left');
+  });
+
   it('works for text without spaces', () => {
     const doc = docOf('<p>他走了。我们必须斟酌这件事！然后呢</p>');
     expect(sentenceAt(rangeOver(doc, '斟酌'))).toBe('我们必须斟酌这件事！');
