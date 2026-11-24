@@ -13,6 +13,17 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
+// No layout here: every item is in view.
+vi.mock('react-virtuoso', () => ({
+  Virtuoso: ({
+    totalCount,
+    itemContent,
+  }: {
+    totalCount: number;
+    itemContent: (index: number) => React.ReactNode;
+  }) =>
+    Array.from({ length: totalCount }, (_, index) => <div key={index}>{itemContent(index)}</div>),
+}));
 vi.mock('@/services/xray/xrayService', async () => {
   const { create } = await import('zustand');
   return {

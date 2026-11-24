@@ -1,6 +1,7 @@
 import clsx from 'clsx';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { LuChevronDown, LuSearch, LuTrash2 } from 'react-icons/lu';
+import { Virtuoso } from 'react-virtuoso';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import type { XRay } from '@/services/xray/snapshot';
@@ -30,14 +31,14 @@ const EntityCard: React.FC<{
   xray: XRay;
   entity: XRayEntity;
   isOpen: boolean;
+  onToggle: (entity: XRayEntity, open: boolean) => void;
   onSelect: (entity: XRayEntity) => void;
-}> = ({ bookKey, xray, entity, isOpen, onSelect }) => {
+}> = ({ bookKey, xray, entity, isOpen, onToggle, onSelect }) => {
   const _ = useTranslation();
-  const [open, setOpen] = useState(isOpen);
   return (
     <details
-      open={open}
-      onToggle={(event) => setOpen(event.currentTarget.open)}
+      open={isOpen}
+      onToggle={(event) => onToggle(entity, event.currentTarget.open)}
       className='group eink-bordered border-base-content/10 rounded-lg border px-3 py-2'
     >
       <summary className='flex cursor-pointer list-none items-start justify-between gap-2 [&::-webkit-details-marker]:hidden'>
@@ -50,7 +51,7 @@ const EntityCard: React.FC<{
           className='mt-1 size-4 shrink-0 group-open:rotate-180 motion-safe:transition-transform'
         />
       </summary>
-      {open && (
+      {isOpen && (
         <div className='mt-2 space-y-2 text-xs [overflow-wrap:anywhere]'>
           {entity.aliases.length > 0 && (
             <p>
@@ -94,6 +95,7 @@ const XRayView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const lookup = useXRayStore((s) => s.lookup);
   const [section, setSection] = useState<Section>('character');
   const [query, setQuery] = useState('');
+  const [openEntities, setOpenEntities] = useState<ReadonlySet<XRayEntity>>(new Set());
   const filter = useDeferredValue(query.trim().toLocaleLowerCase());
 
   useEffect(() => {
@@ -101,6 +103,15 @@ const XRayView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
     return () => useXRayStore.setState({ isDocked: false });
   }, []);
 
+  // Kept here, as a card scrolled out of view is unmounted.
+  const toggle = (entity: XRayEntity, open: boolean) =>
+    setOpenEntities((entities) => {
+      if (entities.has(entity) === open) return entities;
+      const next = new Set(entities);
+      if (open) next.add(entity);
+      else next.delete(entity);
+      return next;
+    });
   const select = (entity: XRayEntity) => {
     setSection(entity.type);
     setQuery(entity.name);
@@ -170,29 +181,42 @@ const XRayView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
         )}
       </div>
 
-      <div className='min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3'>
-        {matches.map((entity) => (
-          <EntityCard
-            key={`${entity.type}${entity.name}${filter}`}
-            bookKey={bookKey}
-            xray={xray}
-            entity={entity}
-            isOpen={!!filter && matches.length === 1}
-            onSelect={select}
-          />
-        ))}
-        {filter && matches.length === 0 && (
+      {filter && matches.length === 0 ? (
+        <div className='min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3'>
           <XRayMentionList bookKey={bookKey} names={[query.trim()]} />
-        )}
-        {!filter &&
-          section === 'timeline' &&
-          xray.events.map((event, index) => (
-            <div key={index} className='border-base-content/20 border-s ps-3'>
-              <p className='text-sm'>{event.summary}</p>
-              <XRayQuotes bookKey={bookKey} quotes={event.quotes} />
-            </div>
-          ))}
-      </div>
+        </div>
+      ) : (
+        <Virtuoso
+          // A list of its own: each starts at its top.
+          key={filter || section}
+          className='min-h-0 flex-1 overscroll-contain'
+          totalCount={filter || section !== 'timeline' ? matches.length : xray.events.length}
+          increaseViewportBy={200}
+          itemContent={(index) => {
+            const entity = matches[index];
+            const event = xray.events[index];
+            return (
+              <div className='px-3 pb-2'>
+                {entity ? (
+                  <EntityCard
+                    bookKey={bookKey}
+                    xray={xray}
+                    entity={entity}
+                    isOpen={openEntities.has(entity) || (!!filter && matches.length === 1)}
+                    onToggle={toggle}
+                    onSelect={select}
+                  />
+                ) : event ? (
+                  <div className='border-base-content/20 border-s ps-3'>
+                    <p className='text-sm'>{event.summary}</p>
+                    <XRayQuotes bookKey={bookKey} quotes={event.quotes} />
+                  </div>
+                ) : null}
+              </div>
+            );
+          }}
+        />
+      )}
 
       <div className='relative flex shrink-0 justify-center px-3 pb-2'>
         <XRayUpdateButton bookKey={bookKey} />
