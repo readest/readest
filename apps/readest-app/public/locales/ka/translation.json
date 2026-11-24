@@ -2960,6 +2960,7 @@
   "Title - Author": "სათაური - ავტორი",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "„ფაილის სახელის ფორმატი“ სახელს სათაურისა და ავტორებისგან ადგენს, ისე, როგორც KOReader არქმევს OPDS-ით ჩამოტვირთულ ფაილებს.",
   "Set a single book's file name in the reader's Sync Info.": "ცალკეული წიგნის ფაილის სახელი მკითხველის სინქრონიზაციის ინფორმაციაში დააყენეთ.",
+  "The answer is incomplete: {{message}}": "პასუხი არასრულია: {{message}}",
   "Pen Squeeze": "კალმის მოჭერა",
   "Pen Slide Up": "კალმის ზემოთ სრიალი",
   "Pen Slide Down": "კალმის ქვემოთ სრიალი"

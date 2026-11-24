@@ -2960,6 +2960,7 @@
   "Title - Author": "Sarlavha - Muallif",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Fayl nomi formati” nomni sarlavha va mualliflardan tuzadi, xuddi KOReader OPDS yuklab olishlarini nomlaganidek.",
   "Set a single book's file name in the reader's Sync Info.": "Bitta kitobning fayl nomini oʻqish koʻrinishidagi Sinxronlash maʼlumotida belgilang.",
+  "The answer is incomplete: {{message}}": "Javob toʻliq emas: {{message}}",
   "Pen Squeeze": "Qalamni qisish",
   "Pen Slide Up": "Qalamda yuqoriga surish",
   "Pen Slide Down": "Qalamda pastga surish"

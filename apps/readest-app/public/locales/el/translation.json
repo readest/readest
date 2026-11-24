@@ -2960,6 +2960,7 @@
   "Title - Author": "Τίτλος - Συγγραφέας",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "Η «Μορφή ονόματος αρχείου» σχηματίζει το όνομα από τον τίτλο και τους συγγραφείς, όπως ονομάζει το KOReader τις λήψεις OPDS.",
   "Set a single book's file name in the reader's Sync Info.": "Ορίστε το όνομα αρχείου ενός μεμονωμένου βιβλίου στις Πληροφορίες συγχρονισμού της προβολής ανάγνωσης.",
+  "The answer is incomplete: {{message}}": "Η απάντηση είναι ελλιπής: {{message}}",
   "Pen Squeeze": "Πίεση στυλό",
   "Pen Slide Up": "Ολίσθηση στυλό προς τα πάνω",
   "Pen Slide Down": "Ολίσθηση στυλό προς τα κάτω"

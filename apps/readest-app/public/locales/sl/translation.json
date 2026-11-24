@@ -3118,6 +3118,7 @@
   "Title - Author": "Naslov - Avtor",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "„Oblika imena datoteke“ sestavi ime iz naslova in avtorjev, tako kot KOReader poimenuje prenose OPDS.",
   "Set a single book's file name in the reader's Sync Info.": "Ime datoteke posamezne knjige nastavite v Informacijah o sinhronizaciji v bralnem pogledu.",
+  "The answer is incomplete: {{message}}": "Odgovor je nepopoln: {{message}}",
   "Pen Squeeze": "Stisk pisala",
   "Pen Slide Up": "Drsenje navzgor s pisalom",
   "Pen Slide Down": "Drsenje navzdol s pisalom"

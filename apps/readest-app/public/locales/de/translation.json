@@ -2960,6 +2960,7 @@
   "Title - Author": "Titel - Autor",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "„Dateinamenformat“ bildet den Namen aus Titel und Autoren, so wie KOReader OPDS-Downloads benennt.",
   "Set a single book's file name in the reader's Sync Info.": "Der Dateiname eines einzelnen Buchs lässt sich in der Synchronisierungs-Info der Leseansicht festlegen.",
+  "The answer is incomplete: {{message}}": "Die Antwort ist unvollständig: {{message}}",
   "Pen Squeeze": "Stift zusammendrücken",
   "Pen Slide Up": "Am Stift nach oben wischen",
   "Pen Slide Down": "Am Stift nach unten wischen"

@@ -2960,6 +2960,7 @@
   "Title - Author": "Cím - Szerző",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "A „Fájlnév formátuma” a címből és a szerzőkből állítja össze a nevet, ahogy a KOReader elnevezi az OPDS-letöltéseket.",
   "Set a single book's file name in the reader's Sync Info.": "Egy könyv saját fájlnevét az olvasónézet Szinkronizálási információk ablakában lehet megadni.",
+  "The answer is incomplete: {{message}}": "A válasz hiányos: {{message}}",
   "Pen Squeeze": "Toll összenyomás",
   "Pen Slide Up": "Toll csúsztatás felfelé",
   "Pen Slide Down": "Toll csúsztatás lefelé"

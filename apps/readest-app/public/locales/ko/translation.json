@@ -2881,6 +2881,7 @@
   "Title - Author": "제목 - 저자",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "'파일 이름 형식'은 KOReader가 OPDS 다운로드 이름을 정하는 방식대로 제목과 저자로 이름을 만듭니다.",
   "Set a single book's file name in the reader's Sync Info.": "책 한 권의 파일 이름은 리더의 동기화 정보에서 설정하세요.",
+  "The answer is incomplete: {{message}}": "답변이 완료되지 않았습니다: {{message}}",
   "Pen Squeeze": "펜 스퀴즈",
   "Pen Slide Up": "펜 위 슬라이드",
   "Pen Slide Down": "펜 아래 슬라이드"

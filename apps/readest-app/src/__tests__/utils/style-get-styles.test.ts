@@ -970,7 +970,14 @@ describe('translated text style (via getStyles)', () => {
 // ---------------------------------------------------------------------------
 describe('getRubyStyles branches (via getStyles)', () => {
   const theme = makeThemeCode();
+  const rubyBlock = (css: string) => css.match(/ruby\.wl-gloss\s*\{([^}]*)\}/)?.[1] ?? '';
   const rtBlock = (css: string) => css.match(/ruby\.wl-gloss\s*>\s*rt\s*\{([^}]*)\}/)?.[1] ?? '';
+
+  it('keeps glossed words unbroken and centered under their hint (#7880)', () => {
+    const block = rubyBlock(getStyles(makeViewSettings(), theme));
+    expect(block).toMatch(/white-space:\s*nowrap/);
+    expect(block).toMatch(/ruby-align:\s*center/);
+  });
 
   it('defaults the gloss to 0.5em and muted (opacity 0.7, no color override)', () => {
     const block = rtBlock(getStyles(makeViewSettings(), theme));

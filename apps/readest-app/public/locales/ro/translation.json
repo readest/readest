@@ -3039,6 +3039,7 @@
   "Title - Author": "Titlu - Autor",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "„Formatul numelui fișierului” compune numele din titlu și autori, așa cum KOReader denumește descărcările OPDS.",
   "Set a single book's file name in the reader's Sync Info.": "Setează numele fișierului unei singure cărți în Informații sincronizare din vizualizarea de lectură.",
+  "The answer is incomplete: {{message}}": "Răspunsul este incomplet: {{message}}",
   "Pen Squeeze": "Strângerea creionului",
   "Pen Slide Up": "Glisare în sus cu creionul",
   "Pen Slide Down": "Glisare în jos cu creionul"
