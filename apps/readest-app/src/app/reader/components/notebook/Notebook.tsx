@@ -26,6 +26,7 @@ import {
 } from '../../hooks/useNotebookDocumentCoordinator';
 import AIAssistant from './AIAssistant';
 import DictionaryView from './DictionaryView';
+import XRayView from './XRayView';
 import NotebookHeader from './Header';
 import NotebookEditor from './NotebookEditor';
 import NotebookTabNavigation from './NotebookTabNavigation';
@@ -290,6 +291,8 @@ const Notebook: React.FC = () => {
           </div>
         ) : notebookActiveTab === 'dictionary' ? (
           <DictionaryView bookKey={sideBarBookKey} />
+        ) : notebookActiveTab === 'xray' ? (
+          <XRayView key={sideBarBookKey} bookKey={sideBarBookKey} />
         ) : (
           <NotebookEditor
             bookKey={sideBarBookKey}
