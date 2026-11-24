@@ -2,9 +2,13 @@ import * as CFI from 'foliate-js/epubcfi.js';
 import type { BookDoc } from '@/libs/document';
 import { XCFI } from '@/utils/xcfi';
 
-const SKIPPED = 'script, style, noscript, template, rt, rp, .cfi-inert';
-const BLOCKS =
-  'p, li, blockquote, dd, dt, td, th, h1, h2, h3, h4, h5, h6, pre, figcaption, div, section, body';
+const SKIPPED = new Set(['script', 'style', 'noscript', 'template', 'rt', 'rp', 'head']);
+// Text on either side of these is not one word.
+const INLINE = new Set(
+  'a abbr b bdi bdo big cite code data del dfn em font i ins kbd mark q rb rtc ruby s samp small span strike strong sub sup time tt u var wbr'.split(
+    ' ',
+  ),
+);
 
 interface TextNode {
   node: Text;
@@ -25,31 +29,37 @@ export class SectionText {
   ) {
     const parts: string[] = [];
     let length = 0;
+    // Whether the text so far ends in white space, so more of it adds none.
     let space = true;
-    let block: Element | null = null;
-    const add = (part: string) => {
-      parts.push(part);
-      length += part.length;
-      space = part.endsWith(' ');
+    const breakWord = () => {
+      if (space) return;
+      parts.push(' ');
+      length++;
+      space = true;
     };
-    const walker = doc.createTreeWalker(doc.body ?? doc.documentElement, 5, (node) =>
-      node.nodeType === 1
-        ? (node as Element).matches(SKIPPED)
-          ? NodeFilter.FILTER_REJECT
-          : NodeFilter.FILTER_SKIP
-        : NodeFilter.FILTER_ACCEPT,
-    );
-    for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text) {
-      const own = node.parentElement!.closest(BLOCKS);
-      if (own !== block && !space) add(' ');
-      block = own;
-      let text = node.data.replace(/\s+/g, ' ');
-      const trimmed = space && text.startsWith(' ');
-      if (trimmed) text = text.slice(1);
-      if (!text) continue;
-      this.nodes.push({ node, start: length, trimmed });
-      add(text);
-    }
+    const walk = (parent: Node) => {
+      for (let node = parent.firstChild; node; node = node.nextSibling) {
+        if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE) {
+          const { data } = node as Text;
+          let text = data.replace(/\s+/g, ' ');
+          const trimmed = space && text[0] === ' ';
+          if (trimmed) text = text.slice(1);
+          if (!text) continue;
+          this.nodes.push({ node: node as Text, start: length, trimmed });
+          parts.push(text);
+          length += text.length;
+          space = text[text.length - 1] === ' ';
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const { localName, classList } = node as Element;
+          if (SKIPPED.has(localName) || classList.contains('cfi-inert')) continue;
+          const inline = INLINE.has(localName);
+          if (!inline) breakWord();
+          walk(node);
+          if (!inline) breakWord();
+        }
+      }
+    };
+    walk(doc.body ?? doc.documentElement);
     this.text = parts.join('');
   }
 
