@@ -147,10 +147,12 @@ it('keeps a selected OCR block visible while its popup is open', async () => {
     selection.removeAllRanges();
     selection.addRange(range);
     doc.dispatchEvent(new Event('selectionchange'));
-    await new Promise<void>((resolve) => setTimeout(resolve, 120));
     expect(block).toHaveAttribute('data-readest-ocr-selected', '');
-    expect(doc.defaultView!.getComputedStyle(block).color).toBe('rgb(0, 0, 0)');
-    expect(doc.defaultView!.getComputedStyle(block).backgroundColor).toBe('rgb(255, 255, 255)');
+    const style = doc.defaultView!.getComputedStyle(block);
+    await vi.waitFor(() => {
+      expect(style.color).toBe('rgb(0, 0, 0)');
+      expect(style.backgroundColor).toBe('rgb(255, 255, 255)');
+    });
 
     selection.removeAllRanges();
     doc.dispatchEvent(new Event('selectionchange'));

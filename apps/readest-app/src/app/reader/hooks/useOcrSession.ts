@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { OcrSession } from '@/app/reader/services/ocr/ocrSession';
+import type { OcrSession } from '@/app/reader/services/ocr/ocrSession';
 import type { OcrPage } from '@/services/plugins/ocr';
-import { OcrPluginEngine, type OcrEngineProgress } from '@/app/reader/services/ocr/ocrPluginEngine';
+import type { OcrEngineProgress } from '@/app/reader/services/ocr/ocrPluginEngine';
 import { getOcrTextLanguage, getTesseractLanguages } from '@/plugins/ocr/tesseractLanguages';
 
 interface UseOcrSessionOptions {
@@ -28,6 +28,9 @@ export const useOcrSession = ({
 }: UseOcrSessionOptions): ((doc: Document, pageIndex: number) => Promise<OcrPage | null>) => {
   const sessionRef = useRef<OcrSession | null>(null);
   const enabledRef = useRef(enabled);
+  // Text recognition loads the first time it's turned on, and keeps its pages after.
+  const [needed, setNeeded] = useState(enabled);
+  if (enabled && !needed) setNeeded(true);
   const onProgressRef = useRef(onProgress);
   const onErrorRef = useRef(onError);
   const onPageRecognizedRef = useRef(onPageRecognized);
@@ -86,43 +89,52 @@ export const useOcrSession = ({
   );
 
   useEffect(() => {
-    let session!: OcrSession;
-    session = new OcrSession({
-      createEngine: () =>
-        new OcrPluginEngine({
-          languages,
-          mangaMode,
-          textLanguage,
-          onProgress: (progress) => {
-            if (sessionRef.current === session && enabledRef.current) {
-              onProgressRef.current?.(progress);
+    if (!needed) return;
+    let session: OcrSession | null = null;
+    let closed = false;
+    const isActive = () => !closed && enabledRef.current;
+    void Promise.all([
+      import('@/app/reader/services/ocr/ocrSession'),
+      import('@/app/reader/services/ocr/ocrPluginEngine'),
+    ])
+      .then(([{ OcrSession }, { OcrPluginEngine }]) => {
+        if (closed) return;
+        session = new OcrSession({
+          createEngine: () =>
+            new OcrPluginEngine({
+              languages,
+              mangaMode,
+              textLanguage,
+              onProgress: (progress) => {
+                if (isActive()) onProgressRef.current?.(progress);
+              },
+            }),
+          onError: (error, pageIndex) => {
+            if (isActive()) onErrorRef.current?.(error, pageIndex);
+          },
+          onPageRecognized: (page) => {
+            if (
+              isActive() &&
+              (!getDocumentsRef.current || getDocumentsRef.current()[0]?.index === page.pageIndex)
+            ) {
+              onPageRecognizedRef.current?.(page);
             }
           },
-        }),
-      onError: (error, pageIndex) => {
-        if (sessionRef.current === session && enabledRef.current) {
-          onErrorRef.current?.(error, pageIndex);
-        }
-      },
-      onPageRecognized: (page) => {
-        if (
-          sessionRef.current === session &&
-          enabledRef.current &&
-          (!getDocumentsRef.current || getDocumentsRef.current()[0]?.index === page.pageIndex)
-        ) {
-          onPageRecognizedRef.current?.(page);
-        }
-      },
-    });
-    sessionRef.current = session;
-    processKnownDocuments(session);
-    void session.setEnabled(enabledRef.current);
+        });
+        sessionRef.current = session;
+        processKnownDocuments(session);
+        void session.setEnabled(enabledRef.current);
+      })
+      .catch((error: unknown) => {
+        if (isActive()) onErrorRef.current?.(error, -1);
+      });
 
     return () => {
-      if (sessionRef.current === session) sessionRef.current = null;
-      void session.terminate();
+      closed = true;
+      sessionRef.current = null;
+      void session?.terminate();
     };
-  }, [languages, mangaMode, processKnownDocuments, textLanguage]);
+  }, [languages, mangaMode, needed, processKnownDocuments, textLanguage]);
 
   useEffect(() => {
     const session = sessionRef.current;
