@@ -150,10 +150,41 @@ export const getContributorNames = (
 // biome-ignore format: keep the language codes compact on a single line
 const LASTNAME_AUTHOR_SORT_LANGS = [ 'ar', 'bo', 'de', 'en', 'es', 'fr', 'hi', 'it', 'nl', 'pl', 'pt', 'ru', 'th', 'tr', 'uk' ];
 
-const formatAuthorName = (name: string, lastNameFirst: boolean) => {
+const isInitial = (word: string) => /^(\p{L}\.)+$/u.test(word);
+
+/**
+ * Whether a name is one person written last name first, the way many stores
+ * and calibre fill dc:creator: "Hale, Tessa", "Le Guin, Ursula K." (#7863).
+ * It has one comma, up to three words a side, and a one-word side or given
+ * names that end in an initial; "John Smith, Jane Doe" is two people.
+ *
+ * Only in a book whose language sorts authors by last name. Some languages
+ * join two authors with a bare comma (Malayalam "A, B"), and these never do;
+ * their three-author join with one comma carries the language's conjunction
+ * ("A, B und C"). CJK names never take this form, even with no language set.
+ */
+export const isLastNameFirst = (name: string, bookLang?: string | string[]) => {
+  const langCode = getBookLangCode(bookLang) || 'en';
+  if (!LASTNAME_AUTHOR_SORT_LANGS.includes(langCode)) return false;
+  if (/[\p{sc=Han}\p{sc=Hiragana}\p{sc=Katakana}\p{sc=Hangul}]|&/u.test(name)) return false;
+  const parts = name.split(',').map((part) => part.trim().split(/\s+/).filter(Boolean));
+  if (parts.length !== 2 || parts.some((words) => !words.length || words.length > 3)) {
+    return false;
+  }
+  // The conjunction can depend on the next word: Spanish "y" is "e" before "Isabel".
+  const list = listFormater(false, langCode);
+  const words = parts.flat();
+  const isConjunction = (word: string, next?: string) =>
+    !!next && list.format(['', next]).trim() === `${word} ${next}`;
+  if (words.some((word, i) => isConjunction(word, words[i + 1]))) return false;
+  const [last, given] = parts as [string[], string[]];
+  return last.length === 1 || given.length === 1 || isInitial(given[given.length - 1]!);
+};
+
+const formatAuthorName = (name: string, lastNameFirst: boolean, langCode: string) => {
   if (!name) return '';
   const parts = name.split(' ');
-  if (lastNameFirst && parts.length > 1) {
+  if (lastNameFirst && parts.length > 1 && !isLastNameFirst(name, langCode)) {
     return `${parts[parts.length - 1]}, ${parts.slice(0, -1).join(' ')}`;
   }
   return name;
@@ -170,13 +201,13 @@ export const formatAuthors = (
     ? listFormater(langCode === 'zh', langCode).format(
         contributors.map((contributor) =>
           typeof contributor === 'string'
-            ? formatAuthorName(contributor, lastNameFirst)
-            : formatAuthorName(formatLanguageMap(contributor?.name), lastNameFirst),
+            ? formatAuthorName(contributor, lastNameFirst, langCode)
+            : formatAuthorName(formatLanguageMap(contributor?.name), lastNameFirst, langCode),
         ),
       )
     : typeof contributors === 'string'
-      ? formatAuthorName(contributors, lastNameFirst)
-      : formatAuthorName(formatLanguageMap(contributors?.name), lastNameFirst);
+      ? formatAuthorName(contributors, lastNameFirst, langCode)
+      : formatAuthorName(formatLanguageMap(contributors?.name), lastNameFirst, langCode);
 };
 
 export const formatTitle = (title: string | LanguageMap) => {
