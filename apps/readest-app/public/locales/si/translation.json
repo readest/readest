@@ -2959,5 +2959,6 @@
   "Author - Title": "කතෘ - නම",
   "Title - Author": "නම - කතෘ",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"ගොනු නාම ආකෘතිය\" KOReader OPDS බාගැනීම් නම් කරන ආකාරයටම, මාතෘකාවෙන් සහ කතුවරුන්ගෙන් නම සාදයි.",
-  "Set a single book's file name in the reader's Sync Info.": "එක් පොතක ගොනු නාමය කියවීමේ දසුනේ සමමුහුර්ත තොරතුරු තුළ සකසන්න."
+  "Set a single book's file name in the reader's Sync Info.": "එක් පොතක ගොනු නාමය කියවීමේ දසුනේ සමමුහුර්ත තොරතුරු තුළ සකසන්න.",
+  "The answer is incomplete: {{message}}": "පිළිතුර අසම්පූර්ණයි: {{message}}"
 }

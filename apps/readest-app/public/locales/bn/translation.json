@@ -2959,5 +2959,6 @@
   "Author - Title": "লেখক - শিরোনাম",
   "Title - Author": "শিরোনাম - লেখক",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"ফাইলের নামের ফরম্যাট\" শিরোনাম ও লেখকদের নাম থেকে নাম তৈরি করে, যেভাবে KOReader OPDS ডাউনলোডের নাম দেয়।",
-  "Set a single book's file name in the reader's Sync Info.": "রিডারের সিঙ্ক তথ্যে একটি বইয়ের ফাইলের নাম সেট করুন।"
+  "Set a single book's file name in the reader's Sync Info.": "রিডারের সিঙ্ক তথ্যে একটি বইয়ের ফাইলের নাম সেট করুন।",
+  "The answer is incomplete: {{message}}": "উত্তরটি অসম্পূর্ণ: {{message}}"
 }

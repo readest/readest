@@ -2880,5 +2880,6 @@
   "Author - Title": "作者 - 书名",
   "Title - Author": "书名 - 作者",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“文件名格式”按 KOReader 命名 OPDS 下载文件的方式，用书名和作者生成文件名。",
-  "Set a single book's file name in the reader's Sync Info.": "可在阅读界面的“同步信息”中为单本书设置文件名。"
+  "Set a single book's file name in the reader's Sync Info.": "可在阅读界面的“同步信息”中为单本书设置文件名。",
+  "The answer is incomplete: {{message}}": "回答不完整：{{message}}"
 }

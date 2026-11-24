@@ -2959,5 +2959,6 @@
   "Author - Title": "Yazar - Başlık",
   "Title - Author": "Başlık - Yazar",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Dosya Adı Biçimi”, KOReader'ın OPDS indirmelerini adlandırdığı gibi adı başlık ve yazarlardan oluşturur.",
-  "Set a single book's file name in the reader's Sync Info.": "Tek bir kitabın dosya adını okuma görünümündeki Senkronizasyon bilgisi bölümünden ayarlayın."
+  "Set a single book's file name in the reader's Sync Info.": "Tek bir kitabın dosya adını okuma görünümündeki Senkronizasyon bilgisi bölümünden ayarlayın.",
+  "The answer is incomplete: {{message}}": "Yanıt eksik: {{message}}"
 }

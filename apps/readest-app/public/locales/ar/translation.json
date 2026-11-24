@@ -3275,5 +3275,6 @@
   "Author - Title": "المؤلف - العنوان",
   "Title - Author": "العنوان - المؤلف",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "يبني «تنسيق اسم الملف» الاسم من العنوان والمؤلفين، كما يسمّي KOReader تنزيلات OPDS.",
-  "Set a single book's file name in the reader's Sync Info.": "عيّن اسم الملف لكتاب واحد في «معلومات المزامنة» في واجهة القراءة."
+  "Set a single book's file name in the reader's Sync Info.": "عيّن اسم الملف لكتاب واحد في «معلومات المزامنة» في واجهة القراءة.",
+  "The answer is incomplete: {{message}}": "الإجابة غير مكتملة: {{message}}"
 }
