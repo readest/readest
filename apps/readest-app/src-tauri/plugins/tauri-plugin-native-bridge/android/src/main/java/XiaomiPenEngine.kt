@@ -5,8 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Binder
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.Parcel
+import android.os.RemoteException
 import android.provider.Settings
 import android.util.Log
 
@@ -22,8 +25,12 @@ import android.util.Log
  */
 class XiaomiPenEngine(context: Context) : ServiceConnection {
     private val context = context.applicationContext
+    private var active = false
     private var bound = false
     private var engine: IBinder? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private var retryAvailable = true
+    private val retry = Runnable { if (active) bind() }
 
     var registered = false
         private set
@@ -38,7 +45,20 @@ class XiaomiPenEngine(context: Context) : ServiceConnection {
     }.apply { attachInterface(null, "$ENGINE.IPencilEngineCallback") }
 
     fun register() {
-        if (bound) return
+        if (!active) retryAvailable = true
+        active = true
+        handler.removeCallbacks(retry)
+        bind()
+    }
+
+    fun unregister() {
+        active = false
+        handler.removeCallbacks(retry)
+        release()
+    }
+
+    private fun bind() {
+        if (!active || bound) return
         val intent = Intent().setClassName(PACKAGE, "$ENGINE.PencilEngineManagerService")
         bound = try {
             context.bindService(intent, this, Context.BIND_AUTO_CREATE)
@@ -49,23 +69,33 @@ class XiaomiPenEngine(context: Context) : ServiceConnection {
         if (!bound) runCatching { context.unbindService(this) }
     }
 
-    fun unregister() {
+    private fun release() {
         if (!bound) return
         engine?.let { service ->
+            // Keep teardown calls independent: a failed feature disable must not
+            // prevent sending UNREGISTER, or the pen engine keeps routing the
+            // gestures to Readest while it is in the background (#7876 review).
             runCatching {
                 call(service, SET_FEATURE) { writeInt(TOUCH_GESTURES); writeInt(0) }
+            }
+            runCatching {
                 call(service, UNREGISTER) {}
             }
         }
-        context.unbindService(this)
+        unbind()
+    }
+
+    private fun unbind() {
+        if (bound) runCatching { context.unbindService(this) }
         bound = false
         engine = null
         registered = false
     }
 
     override fun onServiceConnected(name: ComponentName, service: IBinder) {
+        if (!active || !bound) return
         engine = service
-        registered = try {
+        try {
             val version = Settings.System.getString(
                 context.contentResolver,
                 "stylus_pencil_engine_version",
@@ -78,10 +108,18 @@ class XiaomiPenEngine(context: Context) : ServiceConnection {
             } else {
                 call(service, REGISTER) { writeStrongBinder(callback) }
             }
-            call(service, SET_FEATURE) { writeInt(TOUCH_GESTURES); writeInt(1) } == 0
+            check(call(service, SET_FEATURE) { writeInt(TOUCH_GESTURES); writeInt(1) } == 0) {
+                "Pen engine refused touch gestures"
+            }
+            registered = true
         } catch (e: Exception) {
             Log.w(TAG, "Pen engine registration failed", e)
-            false
+            // REGISTER may have succeeded before enabling gestures failed.
+            release()
+            if (e is RemoteException && active && retryAvailable) {
+                retryAvailable = false
+                handler.postDelayed(retry, 1000L)
+            }
         }
     }
 
@@ -91,14 +129,31 @@ class XiaomiPenEngine(context: Context) : ServiceConnection {
         registered = false
     }
 
+    // A dead binding is not reconnected by Android, so release it explicitly and
+    // bind again only while Readest is still in front (#7876 review).
+    override fun onBindingDied(name: ComponentName) {
+        unbind()
+        if (active) bind()
+    }
+
+    override fun onNullBinding(name: ComponentName) {
+        // This binding will never connect; do not keep its tracking resources
+        // or immediately retry a service that deliberately returned no binder.
+        unbind()
+    }
+
     private fun call(service: IBinder, code: Int, args: Parcel.() -> Unit): Int {
         val data = Parcel.obtain()
         val reply = Parcel.obtain()
         try {
             data.writeInterfaceToken("$ENGINE.IPencilEngine")
             data.args()
-            service.transact(code, data, reply, 0)
+            check(service.transact(code, data, reply, 0)) { "Unsupported pen engine transaction $code" }
+            check(reply.dataAvail() >= 4) { "Missing pen engine exception header" }
             reply.readException()
+            // Only SET_FEATURE has a return value; register/unregister are void.
+            if (code != SET_FEATURE) return 0
+            check(reply.dataAvail() >= 4) { "Missing pen engine feature status" }
             return reply.readInt()
         } finally {
             data.recycle()
