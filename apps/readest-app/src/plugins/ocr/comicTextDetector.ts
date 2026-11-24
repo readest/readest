@@ -55,7 +55,7 @@ export interface ComicTextDetectionResult {
 }
 
 export interface ComicDetectorTensor {
-  data: ArrayLike<number>;
+  data: Float32Array;
   dims: readonly number[];
 }
 
@@ -86,11 +86,12 @@ interface BlockCandidate extends ComicTextBlock {
 
 interface LineComponent {
   count: number;
-  score: number;
+  sum: number;
   minX: number;
-  minY: number;
   maxX: number;
-  maxY: number;
+  minY: number;
+  /** The leftmost and rightmost pixel of each row, from `minY`. */
+  edges: number[];
 }
 
 const DEFAULT_BLOCK_CONFIDENCE = 0.4;
@@ -238,7 +239,7 @@ const blockLanguage = (classIndex: number): ComicTextLanguage => {
 
 /** Decode the YOLOv5 block tensor into page-coordinate text block candidates. */
 export const decodeComicBlockPredictions = (
-  data: ArrayLike<number>,
+  data: Float32Array,
   page: ComicPageSize,
   transform = getLetterboxTransform(page),
   options: Pick<
@@ -254,37 +255,27 @@ export const decodeComicBlockPredictions = (
   validateOption('block IoU threshold', blockIouThreshold, 0, 1);
   validatePositiveInteger('maximum blocks', maximumBlocks);
 
-  const rowCount = Math.min(Math.floor(data.length / 7), COMIC_TEXT_DETECTOR_OUTPUT_SHAPES.blk[1]);
   const candidates: Array<ComicTextBlock & { classIndex: number; index: number }> = [];
-  for (let index = 0; index < rowCount; index += 1) {
+  for (let index = 0; index < data.length / 7; index += 1) {
     const offset = index * 7;
-    const centerX = Number(data[offset]);
-    const centerY = Number(data[offset + 1]);
-    const width = Number(data[offset + 2]);
-    const height = Number(data[offset + 3]);
-    const objectness = Number(data[offset + 4]);
-    const englishScore = Number(data[offset + 5]);
-    const japaneseScore = Number(data[offset + 6]);
-    if (
-      ![centerX, centerY, width, height, objectness, englishScore, japaneseScore].every(
-        Number.isFinite,
-      )
-    ) {
-      continue;
-    }
-    const classIndex = japaneseScore > englishScore ? 1 : 0;
-    const classScore = Math.max(englishScore, japaneseScore);
-    const score = objectness * classScore;
-    if (score < blockConfidence || width <= 0 || height <= 0) continue;
+    const englishScore = data[offset + 5]!;
+    const japaneseScore = data[offset + 6]!;
+    const score = data[offset + 4]! * Math.max(englishScore, japaneseScore);
+    if (!(score >= blockConfidence)) continue;
+    const centerX = data[offset]!;
+    const centerY = data[offset + 1]!;
+    const halfWidth = data[offset + 2]! / 2;
+    const halfHeight = data[offset + 3]! / 2;
     const box = mapInputBox(
-      centerX - width / 2,
-      centerY - height / 2,
-      centerX + width / 2,
-      centerY + height / 2,
+      centerX - halfWidth,
+      centerY - halfHeight,
+      centerX + halfWidth,
+      centerY + halfHeight,
       page,
       transform,
     );
     if (!box) continue;
+    const classIndex = japaneseScore > englishScore ? 1 : 0;
     candidates.push({
       box,
       score,
@@ -318,26 +309,14 @@ const componentPolygon = (
   component: LineComponent,
   page: ComicPageSize,
   transform: LetterboxTransform,
-  pixels: ArrayLike<number>,
 ): { polygon: ComicPoint[]; vertical: boolean } => {
   // Row endpoints preserve the pixel hull without sorting every foreground pixel.
-  const rowCount = component.maxY - component.minY + 1;
-  const leftEdges = new Int32Array(rowCount).fill(COMIC_TEXT_DETECTOR_INPUT_SIZE);
-  const rightEdges = new Int32Array(rowCount).fill(-1);
-  for (let index = 0; index < component.count; index += 1) {
-    const pixel = Number(pixels[index]);
-    const x = pixel % COMIC_TEXT_DETECTOR_INPUT_SIZE;
-    const row = Math.floor(pixel / COMIC_TEXT_DETECTOR_INPUT_SIZE) - component.minY;
-    leftEdges[row] = Math.min(leftEdges[row]!, x);
-    rightEdges[row] = Math.max(rightEdges[row]!, x);
-  }
+  const { edges, minY } = component;
   const endpoints: ComicPoint[] = [];
-  for (let row = 0; row < rowCount; row += 1) {
-    if (rightEdges[row]! < 0) continue;
-    endpoints.push({ x: leftEdges[row]!, y: row + component.minY });
-    if (rightEdges[row] !== leftEdges[row]) {
-      endpoints.push({ x: rightEdges[row]!, y: row + component.minY });
-    }
+  for (let index = 0; index < edges.length; index += 2) {
+    const y = minY + index / 2;
+    endpoints.push({ x: edges[index]!, y });
+    if (edges[index + 1] !== edges[index]) endpoints.push({ x: edges[index + 1]!, y });
   }
   endpoints.sort((a, b) => a.x - b.x || a.y - b.y);
   const hull: ComicPoint[] = [];
@@ -428,68 +407,73 @@ const getLineBox = (polygon: readonly ComicPoint[]): OcrBoundingBox => ({
   yMax: Math.max(...polygon.map((point) => point.y)),
 });
 
-const collectLineComponent = (
-  seed: number,
-  map: ArrayLike<number>,
-  visited: Uint8Array,
-  queue: Int32Array,
-  threshold: number,
-): LineComponent => {
-  let head = 0;
-  let tail = 0;
-  queue[tail++] = seed;
-  visited[seed] = 1;
-  let count = 0;
-  let score = 0;
-  let minX = COMIC_TEXT_DETECTOR_INPUT_SIZE;
-  let minY = COMIC_TEXT_DETECTOR_INPUT_SIZE;
-  let maxX = 0;
-  let maxY = 0;
-  while (head < tail) {
-    const pixel = queue[head++]!;
-    const x = pixel % COMIC_TEXT_DETECTOR_INPUT_SIZE;
-    const y = Math.floor(pixel / COMIC_TEXT_DETECTOR_INPUT_SIZE);
-    const value = Number(map[pixel]);
-    count += 1;
-    score += Number.isFinite(value) ? value : threshold;
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x);
-    maxY = Math.max(maxY, y);
-    for (let dy = -1; dy <= 1; dy += 1) {
-      for (let dx = -1; dx <= 1; dx += 1) {
-        if (dx === 0 && dy === 0) continue;
-        const nextX = x + dx;
-        const nextY = y + dy;
-        if (
-          nextX < 0 ||
-          nextX >= COMIC_TEXT_DETECTOR_INPUT_SIZE ||
-          nextY < 0 ||
-          nextY >= COMIC_TEXT_DETECTOR_INPUT_SIZE
-        ) {
-          continue;
-        }
-        const next = nextY * COMIC_TEXT_DETECTOR_INPUT_SIZE + nextX;
-        if (!visited[next] && Number(map[next]) > threshold) {
-          visited[next] = 1;
-          queue[tail++] = next;
-        }
+/**
+ * The connected areas above the threshold, in the order their first pixel is
+ * met. Rows are read once into runs of pixels, which join the runs they touch in
+ * the row above.
+ */
+const findLineComponents = (map: Float32Array, threshold: number): LineComponent[] => {
+  const size = COMIC_TEXT_DETECTOR_INPUT_SIZE;
+  // Each run's first pixel, the pixel after its last, its sum, and an earlier run
+  // of the same area (itself for the first).
+  const starts: number[] = [];
+  const ends: number[] = [];
+  const sums: number[] = [];
+  const parents: number[] = [];
+  const findRoot = (run: number): number => {
+    while (parents[run] !== run) run = parents[run] = parents[parents[run]!]!;
+    return run;
+  };
+  let rowAbove = 0;
+  for (let y = 0; y < size; y += 1) {
+    const row = starts.length;
+    const rowEnd = (y + 1) * size;
+    let above = rowAbove;
+    for (let pixel = y * size; pixel < rowEnd; pixel += 1) {
+      if (!(map[pixel]! > threshold)) continue;
+      const start = pixel;
+      let sum = 0;
+      for (; pixel < rowEnd && map[pixel]! > threshold; pixel += 1) sum += map[pixel]!;
+      let root = starts.length;
+      starts.push(start);
+      ends.push(pixel);
+      sums.push(sum);
+      parents.push(root);
+      while (above < row && ends[above]! + size < start) above += 1;
+      for (let run = above; run < row && starts[run]! + size <= pixel; run += 1) {
+        const other = findRoot(run);
+        const first = Math.min(root, other);
+        parents[root] = parents[other] = root = first;
       }
     }
+    rowAbove = row;
   }
-  return {
-    count,
-    score: score / Math.max(1, count),
-    minX,
-    minY,
-    maxX,
-    maxY,
-  };
+
+  const components = new Map<number, LineComponent>();
+  for (let run = 0; run < starts.length; run += 1) {
+    const root = findRoot(run);
+    const y = Math.floor(starts[run]! / size);
+    const left = starts[run]! - y * size;
+    const right = ends[run]! - 1 - y * size;
+    let component = components.get(root);
+    if (!component) {
+      component = { count: 0, sum: 0, minX: left, maxX: right, minY: y, edges: [] };
+      components.set(root, component);
+    }
+    component.count += right - left + 1;
+    component.sum += sums[run]!;
+    component.minX = Math.min(component.minX, left);
+    component.maxX = Math.max(component.maxX, right);
+    const edge = (y - component.minY) * 2;
+    component.edges[edge] ??= left;
+    component.edges[edge + 1] = right;
+  }
+  return [...components.values()];
 };
 
 /** Extract oriented DB text-line polygons from the first `det` channel. */
 export const extractComicLinePolygons = (
-  data: ArrayLike<number>,
+  data: Float32Array,
   page: ComicPageSize,
   transform = getLetterboxTransform(page),
   options: Pick<ComicTextDetectorOptions, 'lineConfidence' | 'lineThreshold' | 'maximumLines'> = {},
@@ -505,16 +489,13 @@ export const extractComicLinePolygons = (
     throw new Error('Comic text detector line output has incomplete data');
   }
 
-  const visited = new Uint8Array(MASK_CHANNEL_SIZE);
-  const queue = new Int32Array(MASK_CHANNEL_SIZE);
   const lines: ComicTextLine[] = [];
-  for (let pixel = 0; pixel < MASK_CHANNEL_SIZE; pixel += 1) {
-    if (visited[pixel] || Number(data[pixel]) <= lineThreshold) continue;
-    const component = collectLineComponent(pixel, data, visited, queue, lineThreshold);
-    if (component.maxX - component.minX < 1 || component.maxY - component.minY < 1) continue;
-    if (component.score < lineConfidence) continue;
-    const { polygon, vertical } = componentPolygon(component, page, transform, queue);
-    lines.push({ polygon, box: getLineBox(polygon), score: component.score, vertical });
+  for (const component of findLineComponents(data, lineThreshold)) {
+    const score = component.sum / component.count;
+    if (component.maxX === component.minX || component.edges.length === 2) continue;
+    if (score < lineConfidence) continue;
+    const { polygon, vertical } = componentPolygon(component, page, transform);
+    lines.push({ polygon, box: getLineBox(polygon), score, vertical });
   }
   return lines
     .sort(
@@ -542,13 +523,13 @@ const sampleMaskCoverage = (mask: ComicMask, box: OcrBoundingBox, page: ComicPag
   return count > 0 ? sum / count / 255 : 0;
 };
 
-const readInputMask = (data: ArrayLike<number>, transform: LetterboxTransform): ComicMask => {
+const readInputMask = (data: Float32Array, transform: LetterboxTransform): ComicMask => {
   const result = new Uint8Array(transform.width * transform.height);
   for (let y = 0; y < transform.height; y += 1) {
     const sourceOffset = y * COMIC_TEXT_DETECTOR_INPUT_SIZE;
     const targetOffset = y * transform.width;
     for (let x = 0; x < transform.width; x += 1) {
-      result[targetOffset + x] = Math.round(clamp(Number(data[sourceOffset + x]), 0, 1) * 255);
+      result[targetOffset + x] = clamp(data[sourceOffset + x]!, 0, 1) * 255 + 0.5;
     }
   }
   return { width: transform.width, height: transform.height, data: result };
@@ -685,21 +666,16 @@ export const postprocessComicDetectorOutputs = (
   };
 };
 
-const makeImageTensor = (
-  pixels: Uint8ClampedArray,
-  width: number,
-  height: number,
-): Float32Array => {
-  if (pixels.length !== width * height * 4) {
-    throw new Error('Comic text detector received incomplete image pixels');
-  }
-  const pixelCount = width * height;
+const PIXEL_VALUES = Float32Array.from({ length: 256 }, (_, value) => value / 255);
+
+const makeImageTensor = (pixels: Uint8ClampedArray): Float32Array => {
+  const pixelCount = pixels.length / 4;
   const values = new Float32Array(pixelCount * 3);
   for (let pixel = 0; pixel < pixelCount; pixel += 1) {
     const rgba = pixel * 4;
-    values[pixel] = pixels[rgba]! / 255;
-    values[pixelCount + pixel] = pixels[rgba + 1]! / 255;
-    values[pixelCount * 2 + pixel] = pixels[rgba + 2]! / 255;
+    values[pixel] = PIXEL_VALUES[pixels[rgba]!]!;
+    values[pixelCount + pixel] = PIXEL_VALUES[pixels[rgba + 1]!]!;
+    values[pixelCount * 2 + pixel] = PIXEL_VALUES[pixels[rgba + 2]!]!;
   }
   return values;
 };
@@ -752,11 +728,12 @@ export class ComicTextDetector {
     ).data;
     const { runtime, session } = await this.#getSession();
     if (this.#terminated) throw new Error('Comic text detector has been terminated');
-    const input = new runtime.Tensor(
-      'float32',
-      makeImageTensor(pixels, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE),
-      [1, 3, COMIC_TEXT_DETECTOR_INPUT_SIZE, COMIC_TEXT_DETECTOR_INPUT_SIZE],
-    );
+    const input = new runtime.Tensor('float32', makeImageTensor(pixels), [
+      1,
+      3,
+      COMIC_TEXT_DETECTOR_INPUT_SIZE,
+      COMIC_TEXT_DETECTOR_INPUT_SIZE,
+    ]);
     let run: Promise<InferenceSession.ReturnType>;
     try {
       run = session.run({ images: input });
