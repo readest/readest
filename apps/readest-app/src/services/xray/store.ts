@@ -1,6 +1,6 @@
+import * as CFI from 'foliate-js/epubcfi.js';
 import type { DatabaseRow, DatabaseService } from '@/types/database';
 import type { AppService } from '@/types/system';
-import { isRead } from './bookText';
 import { XRay } from './snapshot';
 import type { XRayData } from './types';
 
@@ -68,7 +68,7 @@ export const getXRay = async (
   let end = book.batches.length;
   while (count < end) {
     const middle = (count + end) >> 1;
-    if (isRead(book.batches[middle]!.endCfi, location)) count = middle + 1;
+    if (CFI.compare(book.batches[middle]!.endCfi, location) <= 0) count = middle + 1;
     else end = middle;
   }
   if (count < book.count) {

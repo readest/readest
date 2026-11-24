@@ -126,9 +126,6 @@ export const loadSection = async (bookDoc: BookDoc, index: number): Promise<Sect
   return section;
 };
 
-/** Whether what ends at `endCfi` was read before the page at `location`. */
-export const isRead = (endCfi: string, location: string) => CFI.compare(endCfi, location) <= 0;
-
 /** The sections up to the page at `location`, and where in the last one it starts. */
 export async function* readSections(
   bookDoc: BookDoc,

@@ -9,6 +9,7 @@ import {
   MdVolumeUp,
 } from 'react-icons/md';
 import clsx from 'clsx';
+import dynamic from 'next/dynamic';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
 import { useTranslation } from '@/hooks/useTranslation';
@@ -17,7 +18,6 @@ import { useThemeStore } from '@/store/themeStore';
 import { convertBlobUrlToDataUrl } from '@/libs/document';
 import ModalPortal from '@/components/ModalPortal';
 import ImageViewer from '@/app/reader/components/ImageViewer';
-import XRayStatus from './XRayStatus';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
 import {
@@ -46,6 +46,8 @@ import type { Insets } from '@/types/misc';
 import type { VocabularyOccurrence, VocabularyState } from '@/services/vocabulary/types';
 import { entryId, normalizeWordKey } from '@/services/vocabulary/entry';
 import { useVocabularyStore } from '@/store/vocabularyStore';
+
+const XRayStatus = dynamic(() => import('./XRayStatus'), { ssr: false });
 
 const isTauri = isTauriAppPlatform();
 const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };

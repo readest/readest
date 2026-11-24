@@ -7,9 +7,8 @@ import { getBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { getSignedInToken, isCustomTranslatorAllowed } from '@/utils/access';
 import { getTargetLang } from '@/utils/misc';
-import { readPassages, type XRayPassage } from './bookText';
-import { extractXRay } from './extract';
-import { cfiOfMention, findMentions, type XRayMention, type XRayMentions } from './mentions';
+import type { XRayPassage } from './bookText';
+import type { XRayMention, XRayMentions } from './mentions';
 import { checkpointXRay, clearXRay, getXRay, getXRayEnd, saveXRayBatch } from './store';
 import type { XRay } from './snapshot';
 
@@ -63,6 +62,7 @@ export const getBookMentions = async (
   const location = getBookProgress(bookKey)?.location;
   const bookDoc = useBookDataStore.getState().getBookData(bookKey)?.bookDoc;
   if (!location || !bookDoc) return { count: 0, mentions: [] };
+  const { findMentions } = await import('./mentions');
   return findMentions(bookDoc, location, names, limit);
 };
 
@@ -71,7 +71,9 @@ export const openQuote = (bookKey: string, cfi: string) =>
 
 export const openMention = async (bookKey: string, mention: XRayMention) => {
   const bookDoc = useBookDataStore.getState().getBookData(bookKey)?.bookDoc;
-  if (bookDoc) openQuote(bookKey, await cfiOfMention(bookDoc, mention));
+  if (!bookDoc) return;
+  const { cfiOfMention } = await import('./mentions');
+  openQuote(bookKey, await cfiOfMention(bookDoc, mention));
 };
 
 const controllers = new Map<string, AbortController>();
@@ -123,7 +125,11 @@ export const updateXRay = async (
       sourceLang: book.primaryLanguage || 'AUTO',
       targetLang,
     };
-    const { position, names } = await getXRayEnd(appService, bookHash);
+    const [{ readPassages }, { extractXRay }, { position, names }] = await Promise.all([
+      import('./bookText'),
+      import('./extract'),
+      getXRayEnd(appService, bookHash),
+    ]);
     const known = new Set(names);
     let batch: XRayPassage[] = [];
     let chars = 0;
