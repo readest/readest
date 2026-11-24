@@ -144,3 +144,27 @@ describe('a tap away from the selection', () => {
     expect(await tap(result, singleClick)).toBe(false);
   });
 });
+
+// A cancelled press (the webview took it over to scroll) never clicks. Once the
+// toolbar is closed from its own buttons, a tap outside the page (the header, or
+// beside the page) must still do its job.
+test.each([
+  ['pointercancel, then the native release', 'pointer'],
+  ['touchcancel', 'touch'],
+] as const)('a press ended by %s leaves the next click alone', (_, cancel) => {
+  const { result, singleClick } = setup();
+  showSelection(result);
+
+  result.current.handlePointerDown(document, 0, pointer('touch', 500, 500));
+  result.current.handleTouchStart();
+  if (cancel === 'pointer') {
+    result.current.handlePointerCancel(document, 0, pointer('touch', 500, 500));
+    result.current.handleTouchEnd();
+  } else {
+    result.current.handleTouchCancel();
+  }
+  clearSelection(result);
+
+  expect(result.current.isTextSelected.current).toBe(false);
+  expect(singleClick()).toBe(false);
+});
