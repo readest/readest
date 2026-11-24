@@ -2,10 +2,18 @@
 // an import or a send changes. See
 // docs/superpowers/specs/2026-11-04-anki-link-design.md
 import { TRANSLATOR_LANGS } from '@/services/constants';
+import { buildBookAppLink } from '@/utils/deeplink';
 import { getLanguageName } from '@/utils/lang';
 import { entryId, normalizeWordKey, vocabularyLang } from './entry';
-import { UNSPACED, ankiCardOf, escapeHtml } from './export';
-import type { VocabularyEntry, VocabularyImport, VocabularyState } from './types';
+import { UNSPACED, ankiCardOf, ankiPartsOf, escapeHtml } from './export';
+import type {
+  AnkiFieldSource,
+  AnkiProfile,
+  AnkiProfileSettings,
+  VocabularyEntry,
+  VocabularyImport,
+  VocabularyState,
+} from './types';
 
 const MAX_WORD_LEN = 40;
 const MAX_WORD_COUNT = 5;
@@ -15,6 +23,8 @@ const MAX_HINT_LEN = 80;
 
 /** The deck Sync reads, with every subdeck under it. */
 export const ANKI_DECK = 'Readest Vocabulary';
+/** Readest's own note type, which Sync creates. */
+export const ANKI_NOTE_TYPE = 'Readest Vocabulary';
 
 const LANG_TAG_PREFIX = 'readest::lang::';
 // The mark tag Sync keeps on each note in step with the word (none for Looked Up).
@@ -260,15 +270,140 @@ export const ankiTtsLang = (lang: string): string => {
 };
 
 /**
- * A note the AnkiDroid link adds to `deck`. Its fields follow the note type:
- * Front and Back, which Sync matches and reads hints from, then Word and
- * Language for the card's audio, and Entry for the dictionary entry (#7728).
+ * A note the AnkiDroid link adds to `deck`. Without `modelId` it is Readest's
+ * own note type: Front and Back, which Sync matches and reads hints from, then
+ * Word and Language for the card's audio, and Entry for the dictionary entry
+ * (#7728). With it, the fields are that note type's, in its order (#7849).
  */
 export interface AnkiOutgoingNote {
   deck: string;
-  fields: [front: string, back: string, word: string, language: string, entry: string];
+  modelId?: number;
+  fields: string[];
   tags: string[];
 }
+
+/** A note type in the reader's collection. */
+export interface AnkiNoteType {
+  id: number;
+  name: string;
+  fields: string[];
+}
+
+/** The profile a word's cards follow (#7849): its latest book's, else its language's. */
+export const ankiProfileOf = (
+  e: VocabularyEntry,
+  settings: AnkiProfileSettings | undefined,
+): AnkiProfile | undefined => {
+  if (!settings) return undefined;
+  const book = e.occurrences[0]?.bookHash;
+  const id = (book && settings.books[book]) || settings.languages[e.lang];
+  return id ? settings.profiles.find((p) => p.id === id) : undefined;
+};
+
+/**
+ * The note type a profile sends with: one this collection has, with a field
+ * for the word. Without its word a note matches nothing, and would be sent
+ * again on every Sync.
+ */
+export const ankiProfileNoteType = (profile: AnkiProfile, noteTypes: AnkiNoteType[]) => {
+  const type = noteTypes.find((t) => t.name === profile.noteType);
+  return type?.fields.some((f) => profile.fields[f] === 'word') ? type : undefined;
+};
+
+/** Where Sync finds a note type's word, hint and dictionary entry fields; -1 for none. */
+export interface AnkiLayout {
+  word: number;
+  hint: number;
+  entry: number;
+}
+
+/**
+ * The layouts of the note types profiles use, by note type id, plus Readest's
+ * own when given. Other note types read their word and hint from their first
+ * two fields. A note type two profiles map differently reads as the first.
+ */
+export const ankiLayouts = (
+  settings: AnkiProfileSettings | undefined,
+  noteTypes: AnkiNoteType[],
+  readest?: { id?: number; fields?: string[] },
+): Map<number, AnkiLayout> => {
+  const layouts = new Map<number, AnkiLayout>();
+  if (readest?.id !== undefined) {
+    layouts.set(readest.id, { word: 0, hint: 1, entry: readest.fields?.indexOf('Entry') ?? -1 });
+  }
+  for (const p of settings?.profiles ?? []) {
+    const type = p.noteType ? noteTypes.find((t) => t.name === p.noteType) : undefined;
+    if (!type) continue;
+    const at = (source: AnkiFieldSource) => type.fields.findIndex((f) => p.fields[f] === source);
+    // Profiles of a note type agree on these fields, but a mapping to a field
+    // renamed away reads nothing: each comes from the first profile that has it.
+    const l = layouts.get(type.id);
+    layouts.set(type.id, {
+      word: l && l.word >= 0 ? l.word : at('word'),
+      hint: l && l.hint >= 0 ? l.hint : at('hint'),
+      entry: l && l.entry >= 0 ? l.entry : at('entry'),
+    });
+  }
+  return layouts;
+};
+
+/** A note with its word and hint fields first, as the import and the matching read them. */
+export const ankiNoteView = <T extends { mid: number; fields: string[] }>(
+  n: T,
+  layouts: Map<number, AnkiLayout>,
+): T => {
+  const l = layouts.get(n.mid);
+  if (!l || (l.word === 0 && l.hint === 1)) return n;
+  return { ...n, fields: [n.fields[l.word] ?? '', n.fields[l.hint] ?? ''] };
+};
+
+/**
+ * The notes Sync works with (#7849): Readest's notes, and every other note of
+ * Readest's deck family (`own`) that isn't of a profile's note type. `known`
+ * are the reader's own notes of a profile's note type, wherever they are: they
+ * only keep Sync from adding the same word again.
+ */
+export const ankiSyncNotes = <T extends { id: number; mid: number; tags: string }>(
+  own: T[],
+  other: T[],
+  layouts: Map<number, AnkiLayout>,
+): { notes: T[]; known: T[] } => {
+  const seen = new Set(own.map((n) => n.id));
+  const all = [...own, ...other.filter((n) => !seen.has(n.id))];
+  const readers = (n: T) => !isReadestNote(n.tags) && layouts.has(n.mid);
+  return {
+    notes: all.filter((n) => isReadestNote(n.tags) || (seen.has(n.id) && !readers(n))),
+    known: all.filter(readers),
+  };
+};
+
+/** What a profile's field gets for a word; `entry` is its looked-up dictionary entry. */
+const profileField = (source: AnkiFieldSource | undefined, e: VocabularyEntry, entry: string) => {
+  const parts = ankiPartsOf(e);
+  const occ = e.occurrences[0];
+  switch (source) {
+    case 'word':
+    case 'sentence':
+    case 'hint':
+    case 'book':
+    case 'author':
+      return parts[source];
+    case 'entry':
+      return entry;
+    case 'audio': {
+      const lang = ankiTtsLang(e.lang);
+      return lang ? `[anki:tts lang=${lang}]${parts.word}[/anki:tts]` : '';
+    }
+    case 'language':
+      return e.lang;
+    case 'link':
+      return occ?.bookHash
+        ? `<a href="${escapeHtml(buildBookAppLink(occ.bookHash, occ.cfi))}">${parts.book || 'Readest'}</a>`
+        : '';
+    default:
+      return '';
+  }
+};
 
 // Keyed by what the card's first field shows, without the import's length
 // limits, so anything Sync wrote is recognised next time.
@@ -296,50 +431,64 @@ export const ankiWordsToSend = (
 
 /**
  * The notes Sync adds (see `ankiWordsToSend`), with the dictionary entries
- * looked up for them (#7728) by word id.
+ * looked up for them (#7728) by word id, each built as its profile says
+ * (#7849). A word whose profile's note type isn't in `noteTypes` waits.
  */
 export const ankiNotesToSend = (
   entries: VocabularyEntry[],
   existing: { fields: string[]; tags: string }[],
   entryOf: Record<string, string> = {},
+  profiles?: AnkiProfileSettings,
+  noteTypes: AnkiNoteType[] = [],
 ): AnkiOutgoingNote[] =>
-  ankiWordsToSend(entries, existing).map((e) => {
+  ankiWordsToSend(entries, existing).flatMap((e) => {
     const { word, front, back, tags } = ankiCardOf(e);
     const mark = MARK_TAGS[e.state];
-    return {
-      deck: ankiDeckName(e.lang),
-      fields: [front, back, word, ankiTtsLang(e.lang), entryOf[e.id] ?? ''],
-      tags: [...tags, ankiLangTag(e.lang), ...(mark ? [mark] : [])],
-    };
+    const profile = ankiProfileOf(e, profiles);
+    const deck = profile?.deck || ankiDeckName(e.lang);
+    const noteTags = [
+      ...new Set([...tags, ankiLangTag(e.lang), ...(mark ? [mark] : []), ...(profile?.tags ?? [])]),
+    ];
+    const entry = entryOf[e.id] ?? '';
+    if (!profile?.noteType) {
+      return [{ deck, fields: [front, back, word, ankiTtsLang(e.lang), entry], tags: noteTags }];
+    }
+    const type = ankiProfileNoteType(profile, noteTypes);
+    if (!type) return [];
+    const fields = type.fields.map((f) => profileField(profile.fields[f], e, entry));
+    return [{ deck, modelId: type.id, fields, tags: noteTags }];
   });
 
-/** A note whose Entry Sync can fill (#7728): the word to look up, in its language. */
+/**
+ * A note whose dictionary entry Sync can fill (#7728): its entry field's
+ * index, and the word to look up, in its language.
+ */
 export interface AnkiEntryGap {
   id: number;
+  field: number;
   word: string;
   lang: string;
 }
 
 /**
- * Readest's notes (of the note type `noteType`) whose Entry field is empty,
- * oldest first, starting after note `after`: a Sync that looks up only some
- * goes on from the last one it tried, so words the dictionary lacks don't
- * hold back the rest. Notes read before this Sync added the field count as
- * empty; the native side checks again before writing.
+ * The notes whose entry field (see `ankiLayouts`) is empty, oldest first,
+ * starting after note `after`: a Sync that looks up only some goes on from the
+ * last one it tried, so words the dictionary lacks don't hold back the rest.
+ * Notes read before this Sync added the field count as empty; the native side
+ * checks again before writing.
  */
 export const ankiEntryGaps = (
   notes: { id: number; mid: number; fields: string[]; tags: string }[],
-  noteType: { id?: number; fields?: string[] },
+  layouts: Map<number, AnkiLayout>,
   lang: string,
   after = 0,
 ): AnkiEntryGap[] => {
-  const i = noteType.fields?.indexOf('Entry') ?? -1;
-  if (i < 0) return [];
   const gaps = notes
     .flatMap((n) => {
-      if (n.mid !== noteType.id || n.fields[i]?.trim()) return [];
-      const word = ankiHeadwordOf(n.fields);
-      return word ? [{ id: n.id, word, lang: ankiLangOf(n.tags) ?? lang }] : [];
+      const field = layouts.get(n.mid)?.entry ?? -1;
+      if (field < 0 || n.fields[field]?.trim()) return [];
+      const word = ankiHeadwordOf(ankiNoteView(n, layouts).fields);
+      return word ? [{ id: n.id, field, word, lang: ankiLangOf(n.tags) ?? lang }] : [];
     })
     .sort((a, b) => a.id - b.id);
   const start = gaps.findIndex((g) => g.id > after);

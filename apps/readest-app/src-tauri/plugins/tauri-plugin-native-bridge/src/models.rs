@@ -969,6 +969,24 @@ pub struct AnkiListDecksResponse {
     pub error: Option<String>,
 }
 
+/// A note type in the collection and its field names (#7849).
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiNoteTypeInfo {
+    pub id: i64,
+    pub name: String,
+    pub fields: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiListNoteTypesResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note_types: Option<Vec<AnkiNoteTypeInfo>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnkiReadDeckRequest {
@@ -1018,6 +1036,10 @@ pub struct AnkiOutgoingNote {
 #[serde(rename_all = "camelCase")]
 pub struct AnkiAddNotesRequest {
     pub deck_name: String,
+    /// A card profile's note type (#7849), whose fields the notes carry in its
+    /// order; Readest's own note type when absent.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<i64>,
     pub notes: Vec<AnkiOutgoingNote>,
 }
 
@@ -1081,11 +1103,13 @@ pub struct AnkiUpgradeNoteTypeRequest {
     pub notes: Vec<AnkiNoteFill>,
 }
 
-/// A dictionary entry for a note's empty Entry field (#7728).
+/// A dictionary entry for a note's empty entry field (#7728, #7849).
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnkiEntry {
     pub id: i64,
+    /// The index of the note's entry field.
+    pub field: i64,
     pub entry: String,
 }
 
