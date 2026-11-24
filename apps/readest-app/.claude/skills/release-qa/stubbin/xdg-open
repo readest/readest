@@ -1,0 +1,10 @@
+#!/bin/bash
+# Logs every open. Only the sign-in (OAuth) page goes on to the real desktop browser,
+# so the maintainer can sign in; links the app opens during checks stay inert.
+echo "$(date +%T) xdg-open $*" >> "$QA_DIR/portal.log"
+case "$1" in
+  https://*/auth/v1/authorize*)
+    exec env -u XDG_DATA_HOME -u XDG_CONFIG_HOME -u XDG_CACHE_HOME HOME="$QA_REAL_HOME" \
+      DBUS_SESSION_BUS_ADDRESS="$QA_REAL_DBUS" PATH=/usr/local/bin:/usr/bin:/bin \
+      /usr/bin/xdg-open "$1" ;;
+esac
