@@ -219,8 +219,6 @@ const FoliateViewer: React.FC<{
   const setConfig = useBookDataStore((s) => s.setConfig);
   const { applyBackgroundTexture } = useBackgroundTexture();
   const { applyEinkMode } = useEinkMode();
-  const { registerBrightnessListeners, overlayVisible, overlayLevel } =
-    useBrightnessGesture(bookKey);
   const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
@@ -246,6 +244,11 @@ const FoliateViewer: React.FC<{
   const autoScroll = useAutoScroll(bookKey, viewRef, wipeCommitRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
     useAutoScrollSpeedGesture(autoScroll);
+  // The page copy of an Auto Scroll wipe takes the page's touches while up.
+  const { registerBrightnessListeners, overlayVisible, overlayLevel } = useBrightnessGesture(
+    bookKey,
+    autoScroll.wipeCopyRef,
+  );
 
   // The book document outlives this view: bookDataStore keeps it for the next
   // open, so listeners left on its transformTarget would keep the closed view,
@@ -1710,14 +1713,9 @@ const FoliateViewer: React.FC<{
               className={clsx(
                 'absolute left-0 top-0',
                 'theme-dark:from-black/55 eink:border-base-content from-black/30 to-transparent',
-                !viewSettings?.vertical &&
-                  'not-eink:bg-linear-to-b theme-dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.4)] eink:border-t h-2',
-                viewSettings?.vertical &&
-                  viewSettings.rtl &&
-                  'not-eink:bg-linear-to-l theme-dark:shadow-[inset_-1px_0_0_rgb(255_255_255/0.4)] eink:border-r w-2 -translate-x-full',
-                viewSettings?.vertical &&
-                  !viewSettings.rtl &&
-                  'not-eink:bg-linear-to-r theme-dark:shadow-[inset_1px_0_0_rgb(255_255_255/0.4)] eink:border-l w-2',
+                'data-[axis=h]:not-eink:bg-linear-to-b data-[axis=h]:theme-dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.4)] data-[axis=h]:eink:border-t data-[axis=h]:h-2',
+                'data-[axis=rtl]:not-eink:bg-linear-to-l data-[axis=rtl]:theme-dark:shadow-[inset_-1px_0_0_rgb(255_255_255/0.4)] data-[axis=rtl]:eink:border-r data-[axis=rtl]:w-2 data-[axis=rtl]:-translate-x-full',
+                'data-[axis=ltr]:not-eink:bg-linear-to-r data-[axis=ltr]:theme-dark:shadow-[inset_1px_0_0_rgb(255_255_255/0.4)] data-[axis=ltr]:eink:border-l data-[axis=ltr]:w-2',
               )}
             />
           </div>

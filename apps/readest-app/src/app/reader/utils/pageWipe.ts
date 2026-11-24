@@ -1,4 +1,5 @@
 import type { Renderer } from '@/types/view';
+import { applyOrientationMedia } from '@/utils/style';
 
 // Auto Scroll on a paginated book (#7575), the "cover" auto-read of Moon+
 // Reader and WeRead: the page stays still while a divider crosses it at the
@@ -24,6 +25,7 @@ export interface WipeEdge {
   y: number;
   length: number;
   vertical: boolean;
+  rtl: boolean;
 }
 
 export interface WipeLayout {
@@ -61,7 +63,7 @@ export const getWipeFrame = (layout: WipeLayout, progress: number) => {
     const unread = height - (column + 1) * columnHeight;
     if (unread > 0) outgoing.push({ x: left, y: y + columnHeight, width, height: unread });
     const x = left + (rtl ? width - passed : passed);
-    return { outgoing, edge: { x, y, length: columnHeight, vertical } };
+    return { outgoing, edge: { x, y, length: columnHeight, vertical, rtl } };
   }
   const columnWidth = width / columns;
   const column = Math.min(columns - 1, Math.max(0, Math.floor(progress / height)));
@@ -70,7 +72,7 @@ export const getWipeFrame = (layout: WipeLayout, progress: number) => {
   outgoing.push({ x, y, width: columnWidth, height: top + height - y });
   const unread = width - (column + 1) * columnWidth;
   if (unread > 0) outgoing.push({ x: rtl ? left : x + columnWidth, y: top, width: unread, height });
-  return { outgoing, edge: { x, y, length: columnWidth, vertical } };
+  return { outgoing, edge: { x, y, length: columnWidth, vertical, rtl } };
 };
 
 export const toClipPath = (rects: WipeRect[]) =>
@@ -105,6 +107,9 @@ export class PageWiper {
   // copy, which goes before the turn back lands.
   #ahead = false;
   #reveal: PageWipeReveal | null = null;
+  // The writing axis of the page being read, while its copy is up: the turn
+  // under the copy can bring in a chapter written along the other one.
+  #axis: Pick<WipeLayout, 'rtl' | 'vertical'> | null = null;
   #stopped = false;
   // Bumped when the reader navigates: a reveal begun before is stale.
   #generation = 0;
@@ -152,7 +157,7 @@ export class PageWiper {
     // toward the next page's wipe.
     if (this.#pending) return;
     this.#progress += delta;
-    const layout = this.#host.getLayout();
+    const layout = this.#layout();
     if (!layout) return;
     const length = getWipeLength(layout);
     if (this.#progress >= length) {
@@ -169,7 +174,7 @@ export class PageWiper {
 
   /** Draw the line and the clip at the whole-pixel progress plus `residual`. */
   render(residual = 0) {
-    const layout = this.#host.getLayout();
+    const layout = this.#layout();
     if (!layout) return;
     const frame = getWipeFrame(layout, this.#progress + residual);
     this.#host.drawEdge(frame.edge);
@@ -212,20 +217,28 @@ export class PageWiper {
     return this.#queue;
   }
 
+  #layout() {
+    const layout = this.#host.getLayout();
+    return layout && this.#axis ? { ...layout, ...this.#axis } : layout;
+  }
+
   #dropReveal() {
     const reveal = this.#reveal;
     this.#reveal = null;
+    this.#axis = null;
     reveal?.end();
   }
 
   async #start() {
     if (this.#stopped) return;
     const generation = this.#generation;
+    const layout = this.#host.getLayout();
     let turned = false;
     const reveal = await this.#host.reveal(async () => {
       if (generation !== this.#generation) return;
       turned = true;
       this.#ahead = true;
+      this.#axis = layout && { rtl: layout.rtl, vertical: layout.vertical };
       await this.#host.turn(true);
     });
     // The reader went elsewhere meanwhile: leave them there.
@@ -236,6 +249,7 @@ export class PageWiper {
     // Nothing to copy yet (a section still loading): the next frame tries again.
     if (!reveal) {
       if (turned) await this.#turnBack();
+      this.#axis = null;
       return;
     }
     this.#reveal = reveal;
@@ -442,7 +456,11 @@ export const revealPageWipe = async (
     );
     if (!section) {
       section = copySection(page, doc, width, height);
-      loads.push(settle(section.frame.contentDocument!));
+      // The reader points the book's (orientation: ...) rules at the reading
+      // area, this layer's box, not at the frame, which is many pages long.
+      const copied = section.frame.contentDocument!;
+      const landscape = origin.width > origin.height;
+      loads.push(settle(copied).then(() => applyOrientationMedia(copied, landscape)));
     }
     place(section.frame, rect, width, height);
     section.frame.style.filter = getComputedStyle(frame).filter;
@@ -465,7 +483,15 @@ export const revealPageWipe = async (
   if (!sections.length) return null;
   await Promise.all(loads);
   if (copy.shown !== shown) return null;
-  page.style.clipPath = '';
+  // The page area only: the frames reach past it, into the margins.
+  page.style.clipPath = toClipPath([
+    {
+      x: bounds.left - origin.left,
+      y: bounds.top - origin.top,
+      width: bounds.width,
+      height: bounds.height,
+    },
+  ]);
   layer.style.visibility = '';
   const hide = () => {
     if (copy.shown === shown) layer.style.visibility = 'hidden';

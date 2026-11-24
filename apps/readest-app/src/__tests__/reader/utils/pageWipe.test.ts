@@ -4,6 +4,7 @@ import {
   getWipeLength,
   PageWiper,
   revealPageWipe,
+  toClipPath,
   type PageWipeReveal,
   type PageWiperHost,
   type WipeLayout,
@@ -32,7 +33,13 @@ describe('getWipeFrame', () => {
     expect(showsOutgoing(single, 300, 200, 299)).toBe(false);
     expect(showsOutgoing(single, 300, 200, 300)).toBe(true);
     expect(showsOutgoing(single, 300, 0, 799)).toBe(true);
-    expect(getWipeFrame(single, 300).edge).toEqual({ x: 0, y: 300, length: 400, vertical: false });
+    expect(getWipeFrame(single, 300).edge).toEqual({
+      x: 0,
+      y: 300,
+      length: 400,
+      vertical: false,
+      rtl: false,
+    });
   });
 
   // A line between two pixel rows is drawn as two grey rows: not crisp on e-ink.
@@ -47,7 +54,13 @@ describe('getWipeFrame', () => {
     const inset: WipeLayout = { ...single, x: 20, y: 50 };
     expect(showsOutgoing(inset, 300, 30, 349)).toBe(false);
     expect(showsOutgoing(inset, 300, 30, 350)).toBe(true);
-    expect(getWipeFrame(inset, 300).edge).toEqual({ x: 20, y: 350, length: 400, vertical: false });
+    expect(getWipeFrame(inset, 300).edge).toEqual({
+      x: 20,
+      y: 350,
+      length: 400,
+      vertical: false,
+      rtl: false,
+    });
   });
 
   // Wiping the full width would replace the top of a column not read yet.
@@ -59,7 +72,13 @@ describe('getWipeFrame', () => {
     expect(showsOutgoing(spread, 300, 100, 100)).toBe(false);
     expect(showsOutgoing(spread, 300, 100, 400)).toBe(true);
     expect(showsOutgoing(spread, 300, 500, 0)).toBe(true);
-    expect(getWipeFrame(spread, 300).edge).toEqual({ x: 0, y: 300, length: 400, vertical: false });
+    expect(getWipeFrame(spread, 300).edge).toEqual({
+      x: 0,
+      y: 300,
+      length: 400,
+      vertical: false,
+      rtl: false,
+    });
 
     // Halfway down the right column: the left column is all next page.
     expect(showsOutgoing(spread, 900, 100, 590)).toBe(false);
@@ -70,6 +89,7 @@ describe('getWipeFrame', () => {
       y: 300,
       length: 400,
       vertical: false,
+      rtl: false,
     });
   });
 
@@ -91,7 +111,13 @@ describe('getWipeFrame', () => {
     expect(showsOutgoing(vertical, 100, 300, 400)).toBe(false);
     expect(showsOutgoing(vertical, 100, 299, 400)).toBe(true);
     expect(showsOutgoing(vertical, 100, 0, 0)).toBe(true);
-    expect(getWipeFrame(vertical, 100).edge).toEqual({ x: 300, y: 0, length: 800, vertical: true });
+    expect(getWipeFrame(vertical, 100).edge).toEqual({
+      x: 300,
+      y: 0,
+      length: 800,
+      vertical: true,
+      rtl: true,
+    });
   });
 
   // vertical-lr (Mongolian) lines are read from left to right.
@@ -99,7 +125,13 @@ describe('getWipeFrame', () => {
     const vertical: WipeLayout = { ...single, vertical: true };
     expect(showsOutgoing(vertical, 100, 99, 400)).toBe(false);
     expect(showsOutgoing(vertical, 100, 100, 400)).toBe(true);
-    expect(getWipeFrame(vertical, 100).edge).toEqual({ x: 100, y: 0, length: 800, vertical: true });
+    expect(getWipeFrame(vertical, 100).edge).toEqual({
+      x: 100,
+      y: 0,
+      length: 800,
+      vertical: true,
+      rtl: false,
+    });
   });
 
   test('wipes the columns of a vertical spread from the top one down', () => {
@@ -108,7 +140,13 @@ describe('getWipeFrame', () => {
     expect(showsOutgoing(spread, 100, 350, 100)).toBe(false);
     expect(showsOutgoing(spread, 100, 250, 100)).toBe(true);
     expect(showsOutgoing(spread, 100, 350, 500)).toBe(true);
-    expect(getWipeFrame(spread, 500).edge).toEqual({ x: 300, y: 400, length: 400, vertical: true });
+    expect(getWipeFrame(spread, 500).edge).toEqual({
+      x: 300,
+      y: 400,
+      length: 400,
+      vertical: true,
+      rtl: true,
+    });
     expect(showsOutgoing(spread, 500, 100, 100)).toBe(false);
   });
 });
@@ -135,9 +173,10 @@ const createHarness = ({ reveal = true, atEnd = false } = {}) => {
     revealGate: null as Promise<void> | null,
     failTurnBack: false,
     aheadWhileTurning: [] as boolean[],
+    layout: LAYOUT,
   };
   const host: PageWiperHost = {
-    getLayout: () => LAYOUT,
+    getLayout: () => state.layout,
     turn: async (forward) => {
       turns.push(forward);
       state.aheadWhileTurning.push(wiper.ahead);
@@ -211,6 +250,27 @@ describe('PageWiper', () => {
     expect(reveals[0]!.clips).toHaveLength(clipped);
   });
 
+  // #7575 review: a book can change writing axis between chapters. The turn
+  // under the copy brings in the next chapter's axis while the copy still
+  // shows the last chapter's page, which is wiped along its own.
+  test('wipes a page along its own axis when the next page turns to the other', async () => {
+    const { wiper, host, reveals, state, advance } = createHarness();
+    await advance(1);
+    state.layout = { ...LAYOUT, vertical: true, rtl: true };
+
+    wiper.render();
+    expect(host.drawEdge).toHaveBeenLastCalledWith(getWipeFrame(LAYOUT, 1).edge);
+    expect(reveals[0]!.clips.at(-1)).toBe(toClipPath(getWipeFrame(LAYOUT, 1).outgoing));
+    await advance(98);
+    await advance(1);
+    expect(reveals[0]!.ended).toBe(true);
+
+    // The next page is wiped along the new axis.
+    await advance(1);
+    wiper.render();
+    expect(host.drawEdge).toHaveBeenLastCalledWith(getWipeFrame(state.layout, 1).edge);
+  });
+
   test('turns back under the copy before a turn of the reader, and wipes again after', async () => {
     const { wiper, turns, reveals, advance } = createHarness();
     await advance(40);
@@ -279,7 +339,13 @@ describe('PageWiper', () => {
     await advance(3);
     expect(turns).toEqual([true, true]);
     wiper.render();
-    expect(host.drawEdge).toHaveBeenLastCalledWith({ x: 0, y: 3, length: 400, vertical: false });
+    expect(host.drawEdge).toHaveBeenLastCalledWith({
+      x: 0,
+      y: 3,
+      length: 400,
+      vertical: false,
+      rtl: false,
+    });
   });
 
   test('leaves the reader where they went while the copy was being made', async () => {
@@ -350,7 +416,13 @@ describe('PageWiper', () => {
     wiper.reset();
     expect(reveals[0]!.ended).toBe(true);
     wiper.render();
-    expect(host.drawEdge).toHaveBeenLastCalledWith({ x: 0, y: 0, length: 400, vertical: false });
+    expect(host.drawEdge).toHaveBeenLastCalledWith({
+      x: 0,
+      y: 0,
+      length: 400,
+      vertical: false,
+      rtl: false,
+    });
   });
 });
 
@@ -413,6 +485,37 @@ describe('revealPageWipe', () => {
     expect(copiedRoot.style.getPropertyValue('width')).toBe('392.727294921875px');
     expect(copiedRoot.style.getPropertyPriority('width')).toBe('important');
     expect(copiedRoot.style.getPropertyValue('height')).toBe('872.727294921875px');
+  });
+
+  // #7575 review: the reader points a book's (orientation: ...) rules at the
+  // reading area (applyOrientationMedia), not at the section's frame, which
+  // is many pages long. The copy's rules follow the reading area too.
+  test("points the copy's orientation rules at the reading area", async () => {
+    const { renderer, doc } = createRenderer();
+    doc.head.innerHTML = '<style>@media (orientation: portrait) { p { color: blue } }</style>';
+    const host = attach(document.createElement('div'));
+    host.getBoundingClientRect = () => new DOMRect(0, 0, 800, 400);
+
+    await revealPageWipe(host, renderer, async () => {});
+
+    const copy = host.querySelector('iframe')!.contentDocument!;
+    const rule = copy.styleSheets[0]!.cssRules[0] as CSSMediaRule;
+    expect(rule.media.mediaText).toBe('(min-width: 999999px)');
+  });
+
+  // #7575 review: a section's frame reaches past the page area. Until the
+  // wipe clips it, the copy shows the page area only, not the margins.
+  test('shows only the page area of the copy until the wipe clips it', async () => {
+    const { renderer } = createRenderer();
+    const host = attach(document.createElement('div'));
+    host.getBoundingClientRect = () => new DOMRect(0, -40, 400, 900);
+    let clipAtTurn: string | undefined;
+
+    await revealPageWipe(host, renderer, async () => {
+      clipAtTurn = host.querySelector<HTMLElement>('.notch-masked')!.style.clipPath;
+    });
+
+    expect(clipAtTurn).toBe(toClipPath([{ x: 0, y: 40, width: 400, height: 800 }]));
   });
 
   // The page being read stays on screen as a copy while the view turns under it.

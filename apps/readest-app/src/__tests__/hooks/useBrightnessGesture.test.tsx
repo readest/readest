@@ -156,6 +156,28 @@ describe('useBrightnessGesture (listener-level)', () => {
     expect(paginator).not.toHaveBeenCalled(); // suppressed → never reaches bubble phase
   });
 
+  // #7575 review: the Auto Scroll page copy lies over the page and takes its
+  // touches while it is up.
+  it('adjusts brightness from a surface laid over the page', () => {
+    const surface = document.createElement('div');
+    document.body.append(surface);
+    const surfaceRef = { current: surface };
+    function Wrapper() {
+      useBrightnessGesture('book-1', surfaceRef);
+      return null;
+    }
+    render(<Wrapper />);
+    try {
+      fireTouch(surface, 'touchstart', 10, 500);
+      const { preventDefault } = fireTouch(surface, 'touchmove', 10, 400);
+      fireTouch(surface, 'touchend', 10, 400);
+      expect(preventDefault).toHaveBeenCalled();
+      expect(h.setScreenBrightness).toHaveBeenCalled();
+    } finally {
+      surface.remove();
+    }
+  });
+
   it('does not activate for a horizontal-dominant swipe; paginator still runs', () => {
     const { target, paginator } = setup();
     fireTouch(target, 'touchstart', 10, 500);

@@ -109,7 +109,7 @@ export const getCapturedTurnStyle = (
  * finger-tracked View Transition). Outside the captured mobile path, layered
  * `turn-style` values are withheld from engines without full View Transitions
  * support — iOS 18 WebKit crashes on them — leaving those on push. An Auto
- * Scroll session has none.
+ * Scroll session has no turn style, and a swipe turns no page in its wipe.
  */
 export const applyPageTurnAttributes = (
   view: FoliateView,
@@ -131,7 +131,9 @@ export const applyPageTurnAttributes = (
   } else {
     view.renderer.removeAttribute('turn-style');
   }
-  if (viewSettings.disableSwipe || captured) {
+  // A page wipe's swipes don't turn pages: its page copy takes most of them.
+  const wiping = !animated && !viewSettings.scrolled;
+  if (viewSettings.disableSwipe || captured || wiping) {
     view.renderer.setAttribute('no-swipe', '');
   } else {
     view.renderer.removeAttribute('no-swipe');

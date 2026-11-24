@@ -22,6 +22,9 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/store/readerStore', () => {
   const state = {
+    get hoveredBookKey() {
+      return h.hoveredBookKey;
+    },
     get viewStates() {
       return { [BOOK_KEY]: { inited: h.inited, previewMode: h.previewMode } };
     },
@@ -53,6 +56,7 @@ const viewRef = {
       containerPosition: 0,
       atEnd: false,
       subpixelOffset: 0,
+      toggleAttribute: vi.fn(),
     },
   },
 } as unknown as React.RefObject<FoliateView | null>;
@@ -153,6 +157,20 @@ describe('useAutoScroll session persistence', () => {
     const { result } = setup();
 
     expect(result.current.active).toBe(false);
+  });
+
+  // #7575 review: switching to paginated mode applies its turn styles
+  // before the scrolled session stops, while a session holds them off.
+  test('applies the page turn styles once a session is over', async () => {
+    const { result } = setup();
+    await toggle();
+    act(() => result.current.stop());
+
+    expect(h.applyPageTurnAttributes).toHaveBeenCalledOnce();
+    expect(h.setAutoScrollEnabled).toHaveBeenLastCalledWith(BOOK_KEY, false);
+    expect(h.setAutoScrollEnabled.mock.invocationCallOrder.at(-1)!).toBeLessThan(
+      h.applyPageTurnAttributes.mock.invocationCallOrder[0]!,
+    );
   });
 
   test('does not resume a book that was closed with no session running', () => {
@@ -309,9 +327,8 @@ describe('useAutoScroll in paginated mode', () => {
   });
 
   // Android: a tap on the controls' play button leaves them shown.
-  test('keeps wiping the next page in while the controls and toolbars are shown', async () => {
-    h.hoveredBookKey = BOOK_KEY;
-    render(
+  test('keeps wiping the next page in while the controls are shown', async () => {
+    const { container } = render(
       createElement(AutoScrollControl, {
         bookKey: BOOK_KEY,
         paused: false,
@@ -323,6 +340,13 @@ describe('useAutoScroll in paginated mode', () => {
       }),
       { container: cell.appendChild(document.createElement('div')) },
     );
+    expect(container.firstElementChild!.className).toContain('opacity-100');
+    renderWipe();
+    await reveal();
+  });
+
+  test('keeps wiping the next page in while the toolbars are shown', async () => {
+    h.hoveredBookKey = BOOK_KEY;
     renderWipe();
     await reveal();
   });
@@ -450,6 +474,55 @@ describe('useAutoScroll in paginated mode', () => {
       await vi.advanceTimersByTimeAsync(200);
     });
     expect(renderer.next).toHaveBeenCalledTimes(2);
+  });
+
+  // #7575 review: a stop's turn back put the page turn animation back once
+  // it landed, also over a session started meanwhile.
+  test('keeps page turns unanimated for a session started while a stop turns back', async () => {
+    h.viewSettings['animated'] = true;
+    h.viewSettings['isEink'] = false;
+    const attributes = new Set<string>();
+    const methods = Object.fromEntries(
+      (['hasAttribute', 'setAttribute', 'removeAttribute', 'toggleAttribute'] as const).map(
+        (name) => [name, renderer[name]],
+      ),
+    );
+    Object.assign(renderer, {
+      hasAttribute: (name: string) => attributes.has(name),
+      setAttribute: (name: string) => void attributes.add(name),
+      removeAttribute: (name: string) => void attributes.delete(name),
+      toggleAttribute: (name: string, on: boolean) => {
+        if (on) attributes.add(name);
+        else attributes.delete(name);
+        return on;
+      },
+    });
+    try {
+      const { result } = renderWipe();
+      await reveal();
+      let turnedBack = () => {};
+      renderer.prev.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            turnedBack = resolve;
+          }),
+      );
+      await act(async () => {
+        result.current.stop();
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(renderer.prev).toHaveBeenCalledOnce();
+
+      await toggle();
+      await act(async () => {
+        turnedBack();
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      expect(result.current.active).toBe(true);
+      expect(attributes.has('animated')).toBe(false);
+    } finally {
+      Object.assign(renderer, methods);
+    }
   });
 
   test('keeps the stopped wipe ahead of the reading position while a new one starts', async () => {

@@ -284,9 +284,12 @@ describe('applyPageTurnAttributes', () => {
         applyPageTurnAttributes(view, settings(style), false, true);
         expect(renderer.hasAttribute('captured-turn-style')).toBe(false);
         expect(renderer.hasAttribute('turn-style')).toBe(false);
-        // Left to the paginator, whose turns don't animate in a session.
-        expect(renderer.hasAttribute('no-swipe')).toBe(false);
+        // The page copy takes the swipes most of the time: none turns a page.
+        expect(renderer.hasAttribute('no-swipe')).toBe(true);
       }
+      // A scrolled session keeps the paginator's touch handling.
+      applyPageTurnAttributes(view, { ...settings('curl'), scrolled: true }, false, true);
+      expect(renderer.hasAttribute('no-swipe')).toBe(false);
     } finally {
       useReaderStore.setState({ viewStates: {} } as never);
     }

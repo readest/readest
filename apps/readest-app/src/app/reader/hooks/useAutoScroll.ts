@@ -155,6 +155,15 @@ export const useAutoScroll = (
         }
         sessionCleanupRef.current?.();
         sessionCleanupRef.current = null;
+        // The session is over (the store says so): page turns animate as set
+        // again. Also after a scrolled session, which held them off when the
+        // View menu switched to paginated mode before it stopped.
+        const view = viewRef.current;
+        const settings = getViewSettings(bookKey);
+        if (view && settings) {
+          view.renderer.toggleAttribute('animated', !!settings.animated && !settings.isEink);
+          applyPageTurnAttributes(view, settings, !!view.isFixedLayout);
+        }
       },
     });
   }
@@ -192,7 +201,9 @@ export const useAutoScroll = (
           await (forward ? renderer.next() : renderer.prev());
         } finally {
           ownTurnsRef.current--;
-          if (animated) renderer.setAttribute('animated', '');
+          // Unless a wipe started meanwhile, which turns pages unanimated.
+          const wiping = scrollerRef.current?.active && wipeRef.current;
+          if (animated && !wiping) renderer.setAttribute('animated', '');
         }
       },
       atEnd: () => !!viewRef.current?.renderer.atEnd,
@@ -206,6 +217,7 @@ export const useAutoScroll = (
         if (!line) return;
         line.style.display = edge ? '' : 'none';
         if (!edge) return;
+        line.dataset['axis'] = edge.vertical ? (edge.rtl ? 'rtl' : 'ltr') : 'h';
         line.style.width = edge.vertical ? '' : `${edge.length}px`;
         line.style.height = edge.vertical ? `${edge.length}px` : '';
         line.style.transform = `translate(${edge.x}px, ${edge.y}px)`;
@@ -315,12 +327,6 @@ export const useAutoScroll = (
     const settings = getViewSettings(bookKey);
     if (settings) applyPageTurnAttributes(view, settings, false);
     return () => {
-      // The session is over by now, so the turns animate as set again.
-      const settings = getViewSettings(bookKey);
-      if (settings) {
-        view.renderer.toggleAttribute('animated', !!settings.animated && !settings.isEink);
-        applyPageTurnAttributes(view, settings, false);
-      }
       // Page turns keep waiting behind the stop's turn back and any turn
       // queued after it, unless a new session has taken the view over.
       const restoreWhenIdle = () => {
