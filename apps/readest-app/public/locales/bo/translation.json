@@ -2880,5 +2880,6 @@
   "Author - Title": "རྩོམ་པ་པོ - དཔེ་དེབ་ཀྱི་མིང",
   "Title - Author": "དཔེ་དེབ་ཀྱི་མིང - རྩོམ་པ་པོ",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"ཡིག་ཆའི་མིང་གི་རྣམ་པ།\" ཡིས་ KOReader གིས་ OPDS ཕབ་ལེན་ལ་མིང་འདོགས་སྟངས་ལྟར། དཔེ་དེབ་ཀྱི་མིང་དང་རྩོམ་པ་པོ་ནས་མིང་བཟོ་གི་ཡོད།",
-  "Set a single book's file name in the reader's Sync Info.": "ཀློག་ངོས་ཀྱི་མཉམ་སྒྲིག་གྱི་ཆ་འཕྲིན་ནང་དཔེ་དེབ་རེ་རེའི་ཡིག་ཆའི་མིང་སྒྲིག་འགོད་བྱོས།"
+  "Set a single book's file name in the reader's Sync Info.": "ཀློག་ངོས་ཀྱི་མཉམ་སྒྲིག་གྱི་ཆ་འཕྲིན་ནང་དཔེ་དེབ་རེ་རེའི་ཡིག་ཆའི་མིང་སྒྲིག་འགོད་བྱོས།",
+  "The answer is incomplete: {{message}}": "ལན་ཆ་མ་ཚང་བ། {{message}}"
 }

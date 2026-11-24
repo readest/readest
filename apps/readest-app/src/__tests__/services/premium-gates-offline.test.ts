@@ -19,7 +19,8 @@ vi.mock('@/utils/supabase', () => ({
     },
   },
 }));
-vi.mock('@/services/dictionaries/contextDictionary', () => ({
+vi.mock('@/services/dictionaries/contextDictionary', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/dictionaries/contextDictionary')>()),
   lookupInContext: mocks.lookupInContext,
 }));
 vi.mock('@/services/ai/utils/httpFetch', () => ({

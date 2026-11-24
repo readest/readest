@@ -2880,5 +2880,6 @@
   "Author - Title": "Pengarang - Tajuk",
   "Title - Author": "Tajuk - Pengarang",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Format Nama Fail” membina nama daripada tajuk dan pengarang, seperti KOReader menamakan muat turun OPDS.",
-  "Set a single book's file name in the reader's Sync Info.": "Tetapkan nama fail sebuah buku dalam Maklumat penyegerakan pada paparan bacaan."
+  "Set a single book's file name in the reader's Sync Info.": "Tetapkan nama fail sebuah buku dalam Maklumat penyegerakan pada paparan bacaan.",
+  "The answer is incomplete: {{message}}": "Jawapan tidak lengkap: {{message}}"
 }

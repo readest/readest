@@ -2880,5 +2880,6 @@
   "Author - Title": "Penulis - Judul",
   "Title - Author": "Judul - Penulis",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“Format Nama File” menyusun nama dari judul dan penulis, seperti KOReader menamai unduhan OPDS.",
-  "Set a single book's file name in the reader's Sync Info.": "Atur nama file satu buku di Info sinkronisasi pada tampilan baca."
+  "Set a single book's file name in the reader's Sync Info.": "Atur nama file satu buku di Info sinkronisasi pada tampilan baca.",
+  "The answer is incomplete: {{message}}": "Jawaban tidak lengkap: {{message}}"
 }

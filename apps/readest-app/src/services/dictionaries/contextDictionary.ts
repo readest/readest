@@ -153,6 +153,9 @@ const readContextEntry = (parsed: unknown): ContextEntry => {
   };
 };
 
+/** The reply stopped after part of the entry was already shown (#7861). */
+export class IncompleteEntryError extends Error {}
+
 const cache = new Map<string, ContextEntry>();
 
 export const __clearContextCacheForTests = () => cache.clear();
@@ -213,6 +216,7 @@ export const lookupInContext = async (
     timer = setTimeout(abort, REQUEST_TIMEOUT_MS);
   };
   signal.addEventListener('abort', abort, { once: true });
+  let shown = false;
   try {
     const [{ parsePartialJson }] = await loadSDK();
     const text = await generateChatText(translator, {
@@ -235,6 +239,7 @@ export const lookupInContext = async (
             synonyms: [],
             markdown,
           });
+          shown = true;
           return;
         }
         const start = markdown.indexOf('{');
@@ -242,7 +247,11 @@ export const lookupInContext = async (
         const { value } = await parsePartialJson(markdown.slice(start).replace(/\s*```\s*$/, ''));
         if (!isRecord(value) || !readString(value, 'definition') || signal.aborted) return;
         options.onUpdate(readContextEntry(value));
+        shown = true;
       },
+    }).catch((err: unknown) => {
+      if (!shown || signal.aborted) throw err;
+      throw new IncompleteEntryError(err instanceof Error ? err.message : String(err));
     });
     signal.throwIfAborted();
     const markdown = stripReasoning(text);

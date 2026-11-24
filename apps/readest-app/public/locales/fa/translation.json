@@ -2959,5 +2959,6 @@
   "Author - Title": "نویسنده - عنوان",
   "Title - Author": "عنوان - نویسنده",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "«قالب نام فایل» نام را از عنوان و نویسندگان می‌سازد، همان‌طور که KOReader دانلودهای OPDS را نام‌گذاری می‌کند.",
-  "Set a single book's file name in the reader's Sync Info.": "نام فایل یک کتاب را در «اطلاعات همگام‌سازی» صفحه مطالعه تنظیم کنید."
+  "Set a single book's file name in the reader's Sync Info.": "نام فایل یک کتاب را در «اطلاعات همگام‌سازی» صفحه مطالعه تنظیم کنید.",
+  "The answer is incomplete: {{message}}": "پاسخ ناقص است: {{message}}"
 }

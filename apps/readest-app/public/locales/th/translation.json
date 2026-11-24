@@ -2880,5 +2880,6 @@
   "Author - Title": "ผู้แต่ง - ชื่อเรื่อง",
   "Title - Author": "ชื่อเรื่อง - ผู้แต่ง",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "“รูปแบบชื่อไฟล์” สร้างชื่อจากชื่อเรื่องและผู้แต่ง แบบเดียวกับที่ KOReader ตั้งชื่อไฟล์ที่ดาวน์โหลดจาก OPDS",
-  "Set a single book's file name in the reader's Sync Info.": "ตั้งชื่อไฟล์ของหนังสือแต่ละเล่มได้ในข้อมูลการซิงค์ของมุมมองการอ่าน"
+  "Set a single book's file name in the reader's Sync Info.": "ตั้งชื่อไฟล์ของหนังสือแต่ละเล่มได้ในข้อมูลการซิงค์ของมุมมองการอ่าน",
+  "The answer is incomplete: {{message}}": "คำตอบไม่สมบูรณ์: {{message}}"
 }
