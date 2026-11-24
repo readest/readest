@@ -296,6 +296,7 @@ test.describe('Annotation', () => {
 
     await clickHighlight();
     await reader.selectHighlightColor('green');
+    await expect(reader.annotationPopup).toBeHidden();
     await expect(noteBubbles).toHaveCount(1);
 
     // A click on the book within 250 ms of the last one is a double-click

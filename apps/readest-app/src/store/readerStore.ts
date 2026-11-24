@@ -56,6 +56,10 @@ interface ViewState {
   /* True while an Auto Scroll session (#4998) is engaged for this view;
      session-only, never persisted. Drives the View menu checkmark. */
   autoScrollEnabled: boolean;
+  /* True while OCR is active for this view; session-only, never persisted. */
+  ocrEnabled: boolean;
+  /* Empty uses book metadata; otherwise a session-only OCR language override. */
+  ocrLanguage: string;
   /* True while drawing mode is on for this view; session-only. */
   drawingEnabled: boolean;
   syncing: boolean;
@@ -88,6 +92,8 @@ interface ReaderStore {
   setTTSEnabled: (key: string, enabled: boolean) => void;
   setDrawingEnabled: (key: string, enabled: boolean) => void;
   setAutoScrollEnabled: (key: string, enabled: boolean) => void;
+  setOcrEnabled: (key: string, enabled: boolean) => void;
+  setOcrLanguage: (key: string, language: string) => void;
   setIsLoading: (key: string, loading: boolean) => void;
   setIsSyncing: (key: string, syncing: boolean) => void;
   setProgress: (
@@ -222,6 +228,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           ribbonVisible: false,
           ttsEnabled: false,
           autoScrollEnabled: false,
+          ocrEnabled: false,
+          ocrLanguage: '',
           drawingEnabled: false,
           syncing: false,
           gridInsets: null,
@@ -421,6 +429,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ribbonVisible: false,
             ttsEnabled: false,
             autoScrollEnabled: false,
+            ocrEnabled: false,
+            ocrLanguage: '',
             drawingEnabled: false,
             syncing: false,
             gridInsets: null,
@@ -446,6 +456,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             ribbonVisible: false,
             ttsEnabled: false,
             autoScrollEnabled: false,
+            ocrEnabled: false,
+            ocrLanguage: '',
             drawingEnabled: false,
             syncing: false,
             gridInsets: null,
@@ -588,6 +600,28 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
 
   setAutoScrollEnabled: (key: string, enabled: boolean) =>
     set((state) => withViewState(state, key, { autoScrollEnabled: enabled })),
+
+  setOcrEnabled: (key: string, enabled: boolean) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          ocrEnabled: enabled,
+        },
+      },
+    })),
+
+  setOcrLanguage: (key: string, language: string) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          ocrLanguage: language,
+        },
+      },
+    })),
 
   setIsLoading: (key: string, loading: boolean) =>
     set((state) => withViewState(state, key, { loading: loading })),
