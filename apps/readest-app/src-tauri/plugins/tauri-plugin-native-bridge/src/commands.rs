@@ -283,6 +283,13 @@ pub(crate) async fn anki_list_decks<R: Runtime>(
 }
 
 #[command]
+pub(crate) async fn anki_list_note_types<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<AnkiListNoteTypesResponse> {
+    app.native_bridge().anki_list_note_types()
+}
+
+#[command]
 pub(crate) async fn anki_read_deck<R: Runtime>(
     app: AppHandle<R>,
     payload: AnkiReadDeckRequest,

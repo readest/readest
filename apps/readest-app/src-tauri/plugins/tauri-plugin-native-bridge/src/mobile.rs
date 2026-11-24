@@ -341,6 +341,12 @@ impl<R: Runtime> NativeBridge<R> {
             .map_err(Into::into)
     }
 
+    pub fn anki_list_note_types(&self) -> crate::Result<AnkiListNoteTypesResponse> {
+        self.0
+            .run_mobile_plugin("anki_list_note_types", ())
+            .map_err(Into::into)
+    }
+
     pub fn anki_read_deck(
         &self,
         payload: AnkiReadDeckRequest,

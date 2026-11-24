@@ -32,6 +32,7 @@ const COMMANDS: &[&str] = &[
     "anki_status",
     "anki_request_permission",
     "anki_list_decks",
+    "anki_list_note_types",
     "anki_read_deck",
     "anki_add_notes",
     "anki_update_tags",

@@ -115,7 +115,9 @@ export const parseAnnotationDeepLink = (url: string): AnnotationDeepLink | null 
  * 4-segment annotation form `book/{hash}/annotation/{id}` is handled by
  * parseAnnotationDeepLink and must NOT match here.
  */
-export const parseBookDeepLink = (url: string): { bookHash: string; autoplay?: boolean } | null => {
+export const parseBookDeepLink = (
+  url: string,
+): { bookHash: string; autoplay?: boolean; cfi?: string } | null => {
   const parsed = parseReadestUrl(url);
   if (!parsed) return null;
   const { segments, searchParams } = parsed;
@@ -127,10 +129,16 @@ export const parseBookDeepLink = (url: string): { bookHash: string; autoplay?: b
     if (searchParams.get('autoplay') === 'tts') {
       return { bookHash: segments[1], autoplay: true };
     }
-    return { bookHash: segments[1] };
+    // `?cfi=` opens the book there (an Anki card's link to its sentence, #7849).
+    const cfi = searchParams.get('cfi');
+    return cfi ? { bookHash: segments[1], cfi } : { bookHash: segments[1] };
   }
   return null;
 };
+
+/** The app link that opens a book, at `cfi` when given (see `parseBookDeepLink`). */
+export const buildBookAppLink = (bookHash: string, cfi?: string): string =>
+  `readest://book/${encodeURIComponent(bookHash)}${cfi ? `?cfi=${encodeURIComponent(cfi)}` : ''}`;
 
 /**
  * Parse a CrossPoint reader sign-in link: `https://web.readest.com/link?code=…`

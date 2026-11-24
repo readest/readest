@@ -9,7 +9,11 @@ import { useLibraryStore } from '@/store/libraryStore';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { DictionaryProvider } from '@/services/dictionaries/types';
-import type { VocabularyEntry } from '@/services/vocabulary/types';
+import type {
+  AnkiProfile,
+  AnkiProfileSettings,
+  VocabularyEntry,
+} from '@/services/vocabulary/types';
 import type { Book } from '@/types/book';
 import { eventDispatcher } from '@/utils/event';
 
@@ -22,6 +26,7 @@ const anki = vi.hoisted(() => ({
   ankiStatus: vi.fn(),
   ankiRequestPermission: vi.fn(),
   ankiListDecks: vi.fn(),
+  ankiListNoteTypes: vi.fn(),
   ankiReadDeck: vi.fn(),
   ankiAddNotes: vi.fn(),
   ankiUpdateTags: vi.fn(),
@@ -111,6 +116,7 @@ beforeEach(() => {
   anki.ankiStatus.mockReset().mockResolvedValue({ installed: true, granted: true });
   anki.ankiRequestPermission.mockReset().mockResolvedValue(true);
   anki.ankiListDecks.mockReset().mockResolvedValue([{ id: 7, name: 'Readest Vocabulary' }]);
+  anki.ankiListNoteTypes.mockReset().mockResolvedValue([]);
   anki.ankiReadDeck.mockReset().mockResolvedValue({ notes: [], cards: [] });
   anki.ankiAddNotes.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
   anki.ankiUpdateTags.mockReset().mockImplementation(async (notes: unknown[]) => notes.length);
@@ -473,7 +479,9 @@ describe('VocabularyView Anki link', () => {
       await waitFor(() => expect(anki.ankiSetEntries).toHaveBeenCalled());
       const [sent] = anki.ankiAddNotes.mock.calls[0] as [{ fields: string[] }[]];
       expect(sent.map((n) => n.fields[4])).toEqual(['<p>spice def</p>']);
-      expect(anki.ankiSetEntries).toHaveBeenCalledWith([{ id: 1, entry: '<p>kettle def</p>' }]);
+      expect(anki.ankiSetEntries).toHaveBeenCalledWith([
+        { id: 1, field: 4, entry: '<p>kettle def</p>' },
+      ]);
       expect(lookups).not.toContain('ladle');
       await waitFor(() =>
         expect(dispatch).toHaveBeenCalledWith(
@@ -663,6 +671,265 @@ describe('VocabularyView Anki link', () => {
       expect(save).toHaveBeenCalled();
       expect(screen.queryByRole('region', { name: 'Dictionary for Anki Cards' })).toBeNull();
       save.mockRestore();
+    });
+  });
+
+  describe('card profiles (#7849)', () => {
+    type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+    const MINING = { id: 40, name: 'Mining', fields: ['Expression', 'Sentence', 'Meaning'] };
+    const mining: AnkiProfile = {
+      id: 'p1',
+      name: 'German mining',
+      deck: 'German::Reading',
+      noteType: 'Mining',
+      fields: { Expression: 'word', Sentence: 'sentence', Meaning: 'hint' },
+      tags: ['mined'],
+    };
+    const plain: AnkiProfile = {
+      id: 'p2',
+      name: 'Novels',
+      deck: 'Novels',
+      noteType: '',
+      fields: {},
+      tags: [],
+    };
+    let saved: SettingsState;
+    const setProfiles = (ankiProfiles?: AnkiProfileSettings) =>
+      useSettingsStore.setState((state) => ({ settings: { ...state.settings, ankiProfiles } }));
+    const de = (key: string, word: string, patch: Partial<VocabularyEntry> = {}) =>
+      entry(key, { id: `de:${key}`, lang: 'de', word, state: 'learning', ...patch });
+
+    beforeEach(() => {
+      saved = useSettingsStore.getState();
+      anki.ankiListDecks.mockResolvedValue([
+        { id: 7, name: 'Readest Vocabulary' },
+        { id: 9, name: 'German::Reading' },
+      ]);
+      anki.ankiListNoteTypes.mockResolvedValue([
+        MINING,
+        { id: 5, name: 'Readest Vocabulary', fields: FIELDS },
+      ]);
+    });
+    afterEach(() => useSettingsStore.setState(saved));
+
+    it("sends a word to its profile's deck and note type, and reads back only Readest's notes there", async () => {
+      setProfiles({ profiles: [mining], languages: { de: 'p1' }, books: {} });
+      seed([de('haus', 'Haus', { hint: 'house' }), de('katze', 'Katze')]);
+      anki.ankiReadDeck.mockImplementation(async (ids: number[]) =>
+        ids.includes(9)
+          ? {
+              notes: [
+                {
+                  id: 2,
+                  mid: 40,
+                  fields: ['Baum', 'Der Baum.', 'tree'],
+                  tags: 'readest readest::lang::de readest::learning',
+                },
+                // The reader's own cards: they only keep Katze from being added again.
+                { id: 3, mid: 40, fields: ['Katze', 'Die Katze.', 'cat'], tags: 'mine' },
+                { id: 4, mid: 40, fields: ['Hund', '', 'dog'], tags: 'mine' },
+              ],
+              cards: [
+                { noteId: 2, cardType: 2, interval: 30 },
+                { noteId: 4, cardType: 2, interval: 30 },
+              ],
+            }
+          : { notes: [], cards: [] },
+      );
+      renderWithMenu();
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(anki.ankiUpdateTags).toHaveBeenCalled());
+      expect(anki.ankiReadDeck).toHaveBeenCalledWith([9], true);
+      expect(anki.ankiAddNotes).toHaveBeenCalledWith([
+        {
+          deck: 'German::Reading',
+          modelId: 40,
+          fields: ['Haus', 'The <b>haus</b> was here.', 'house'],
+          tags: ['readest', 'Dune', 'readest::lang::de', 'readest::learning', 'mined'],
+        },
+      ]);
+      const { entries } = useVocabularyStore.getState();
+      expect(entries['de:baum']).toMatchObject({ state: 'mastered', hint: 'tree' });
+      expect(entries['de:hund']).toBeUndefined();
+      expect(anki.ankiUpdateTags).toHaveBeenCalledWith([
+        { id: 2, tags: ['readest', 'readest::lang::de', 'readest::mastered'] },
+      ]);
+    });
+
+    it("holds a word back, and says so, while its profile's note type isn't in AnkiDroid", async () => {
+      const dispatch = vi.spyOn(eventDispatcher, 'dispatch');
+      setProfiles({ profiles: [mining], languages: { de: 'p1' }, books: {} });
+      seed([de('haus', 'Haus'), entry('spice', { state: 'learning' })]);
+      anki.ankiListNoteTypes.mockResolvedValue([]);
+      renderWithMenu();
+      fireEvent.click(await syncButton());
+      await waitFor(() => expect(anki.ankiAddNotes).toHaveBeenCalled());
+      const [notes] = anki.ankiAddNotes.mock.calls[0] as [{ deck: string }[]];
+      expect(notes.map((n) => n.deck)).toEqual(['Readest Vocabulary::English']);
+      await waitFor(() =>
+        expect(dispatch).toHaveBeenCalledWith(
+          'toast',
+          expect.objectContaining({
+            message: expect.stringContaining(
+              "{{count}} words not sent: their note type isn't in AnkiDroid",
+            ),
+          }),
+        ),
+      );
+      dispatch.mockRestore();
+    });
+
+    it('filters the list by the profile each word follows', async () => {
+      setProfiles({ profiles: [mining, plain], languages: { de: 'p1' }, books: { emma: 'p2' } });
+      seed([entry('spice', {}), entry('ball', {}, 'emma'), de('haus', 'Haus')]);
+      renderWithMenu();
+      const chip = (await screen.findByRole('combobox', { name: 'Profile' })) as HTMLSelectElement;
+      expect(Array.from(chip.options).map((o) => o.text)).toEqual([
+        'All Profiles',
+        'Readest Vocabulary',
+        'German mining',
+        'Novels',
+      ]);
+      fireEvent.change(chip, { target: { value: 'p2' } });
+      expect(listWords()).toEqual(['ball']);
+      fireEvent.change(chip, { target: { value: 'p1' } });
+      expect(listWords()).toEqual(['haus']);
+      fireEvent.change(chip, { target: { value: 'readest' } });
+      expect(listWords()).toEqual(['spice']);
+    });
+
+    it('offers no profile filter before there are profiles', async () => {
+      renderWithMenu();
+      await syncButton();
+      expect(screen.queryByRole('combobox', { name: 'Profile' })).toBeNull();
+    });
+
+    it('creates a profile from the More menu, maps its fields and uses it for a language and a book', async () => {
+      const saveSettings = vi.fn().mockResolvedValue(undefined);
+      useSettingsStore.setState({ saveSettings } as unknown as Partial<SettingsState>);
+      seed([entry('spice', { state: 'learning' })]);
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Anki Card Profiles/ }));
+      const panel = await screen.findByRole('region', { name: 'Anki Card Profiles' });
+      fireEvent.click(within(panel).getByRole('button', { name: 'New Profile' }));
+      fireEvent.change(within(panel).getByRole('textbox', { name: 'Name' }), {
+        target: { value: 'Mining' },
+      });
+      fireEvent.change(within(panel).getByRole('combobox', { name: 'Deck' }), {
+        target: { value: 'German::Reading' },
+      });
+      const types = within(panel).getByRole('combobox', { name: 'Note Type' }) as HTMLSelectElement;
+      // Readest's own note type is the first choice, never a second one.
+      expect(Array.from(types.options).map((o) => o.text)).toEqual([
+        'Readest Vocabulary',
+        'Mining',
+      ]);
+      fireEvent.change(types, { target: { value: 'Mining' } });
+      const done = within(panel).getByRole('button', { name: 'Done' });
+      // Sync matches cards by their word, so a note type needs a Word field.
+      expect(done.hasAttribute('disabled')).toBe(true);
+      fireEvent.change(within(panel).getByRole('combobox', { name: 'Expression' }), {
+        target: { value: 'word' },
+      });
+      fireEvent.change(within(panel).getByRole('combobox', { name: 'Sentence' }), {
+        target: { value: 'sentence' },
+      });
+      // AnkiDroid opens a readest:// link only with its "launch other apps" setting on.
+      const linkHint = /Allow cards to launch other apps/;
+      expect(within(panel).queryByText(linkHint)).toBeNull();
+      const meaning = within(panel).getByRole('combobox', { name: 'Meaning' });
+      fireEvent.change(meaning, { target: { value: 'link' } });
+      expect(within(panel).getByText(linkHint)).toBeTruthy();
+      fireEvent.change(meaning, { target: { value: '' } });
+      const tags = within(panel).getByRole('textbox', { name: 'Tags' }) as HTMLInputElement;
+      // Typed a key at a time: the space before the next tag has to stay.
+      fireEvent.change(tags, { target: { value: 'mined ' } });
+      expect(tags.value).toBe('mined ');
+      fireEvent.change(tags, { target: { value: ' mined  readest-de ' } });
+      fireEvent.click(done);
+      const option = (name: string) => {
+        const select = within(panel).getByRole('combobox', { name }) as HTMLSelectElement;
+        return Array.from(select.options).find((o) => o.text === 'Mining')!.value;
+      };
+      const id = option('English');
+      fireEvent.change(within(panel).getByRole('combobox', { name: 'English' }), {
+        target: { value: id },
+      });
+      fireEvent.change(within(panel).getByRole('combobox', { name: 'Dune' }), {
+        target: { value: option('Dune') },
+      });
+      fireEvent.click(within(panel).getByRole('button', { name: 'Save' }));
+      await waitFor(() => expect(saveSettings).toHaveBeenCalled());
+      expect(useSettingsStore.getState().settings.ankiProfiles).toEqual({
+        profiles: [
+          {
+            id,
+            name: 'Mining',
+            deck: 'German::Reading',
+            noteType: 'Mining',
+            fields: { Expression: 'word', Sentence: 'sentence' },
+            tags: ['mined', 'readest-de'],
+          },
+        ],
+        languages: { en: id },
+        books: { d: id },
+      });
+      expect(screen.queryByRole('region', { name: 'Anki Card Profiles' })).toBeNull();
+    });
+
+    it("imports the reader's own cards of a profile's note type by the fields it maps", async () => {
+      setProfiles({
+        profiles: [
+          { ...mining, fields: { Sentence: 'sentence', Expression: 'word', Meaning: 'hint' } },
+        ],
+        languages: { de: 'p1' },
+        books: {},
+      });
+      anki.ankiStatus.mockResolvedValue({ installed: true, granted: false });
+      anki.ankiListNoteTypes.mockResolvedValue([
+        { id: 40, name: 'Mining', fields: ['Sentence', 'Expression', 'Meaning'] },
+      ]);
+      anki.ankiReadDeck.mockResolvedValue({
+        notes: [{ id: 3, mid: 40, fields: ['Die Katze schläft.', 'Katze', 'cat'], tags: 'mine' }],
+        cards: [],
+      });
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Import Anki Deck/ }));
+      fireEvent.change(await screen.findByRole('combobox', { name: 'Language' }), {
+        target: { value: 'de' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Import' }));
+      await waitFor(() =>
+        expect(useVocabularyStore.getState().entries['de:katze']).toMatchObject({
+          word: 'Katze',
+          state: 'learning',
+          hint: 'cat',
+        }),
+      );
+    });
+
+    it('drops a deleted profile from the languages and books that used it', async () => {
+      const saveSettings = vi.fn().mockResolvedValue(undefined);
+      useSettingsStore.setState({ saveSettings } as unknown as Partial<SettingsState>);
+      setProfiles({ profiles: [mining, plain], languages: { en: 'p1' }, books: { d: 'p1' } });
+      renderWithMenu();
+      await syncButton();
+      openMenu('More');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Anki Card Profiles/ }));
+      const panel = await screen.findByRole('region', { name: 'Anki Card Profiles' });
+      fireEvent.click(within(panel).getByRole('button', { name: /German mining/ }));
+      fireEvent.click(within(panel).getByRole('button', { name: 'Delete' }));
+      fireEvent.click(within(panel).getByRole('button', { name: 'Save' }));
+      await waitFor(() => expect(saveSettings).toHaveBeenCalled());
+      expect(useSettingsStore.getState().settings.ankiProfiles).toEqual({
+        profiles: [plain],
+        languages: {},
+        books: {},
+      });
     });
   });
 

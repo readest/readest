@@ -88,6 +88,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::anki_status,
             commands::anki_request_permission,
             commands::anki_list_decks,
+            commands::anki_list_note_types,
             commands::anki_read_deck,
             commands::anki_add_notes,
             commands::anki_update_tags,
