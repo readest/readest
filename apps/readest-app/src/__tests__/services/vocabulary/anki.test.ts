@@ -24,7 +24,11 @@ import {
   planAnkiImport,
 } from '@/services/vocabulary/anki';
 import { ankiCardOf } from '@/services/vocabulary/export';
-import type { AnkiProfileSettings, VocabularyEntry } from '@/services/vocabulary/types';
+import type {
+  AnkiProfile,
+  AnkiProfileSettings,
+  VocabularyEntry,
+} from '@/services/vocabulary/types';
 
 const entry = (key: string, patch: Partial<VocabularyEntry> = {}): VocabularyEntry => ({
   id: `${patch.lang ?? 'en'}:${key}`,
@@ -551,6 +555,19 @@ describe('card profiles (#7849)', () => {
     // Other note types read as before: word first, hint second.
     const other = { id: 2, mid: 9, fields: ['spice', 'a drug'], tags: '' };
     expect(ankiNoteView(other, layouts)).toBe(other);
+  });
+
+  it('reads a note type through a profile whose Word field it still has', () => {
+    const settings = profiles();
+    const repaired: AnkiProfile = {
+      ...settings.profiles[0]!,
+      id: 'p3',
+      fields: { Term: 'word', Meaning: 'hint' },
+    };
+    settings.profiles.push(repaired);
+    // Expression was renamed to Term: p1 still names the old field.
+    const renamed = { ...MINING, fields: ['Term', 'Sentence', 'Meaning', 'Notes'] };
+    expect(ankiLayouts(settings, [renamed]).get(40)).toEqual({ word: 0, hint: 2, entry: -1 });
   });
 
   it("works with every note of Readest's decks but only Readest's notes in a profile's deck", () => {

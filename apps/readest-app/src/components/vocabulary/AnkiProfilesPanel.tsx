@@ -75,13 +75,17 @@ const AnkiProfilesPanel: React.FC<AnkiProfilesPanelProps> = ({
     // whichever profile sent the note, so profiles of one note type agree on them.
     const readFrom = (p: AnkiProfile, source: AnkiFieldSource) =>
       fieldNames.find((n) => p.fields[n] === source);
+    // A mapping to a field the note type no longer has reads nothing: it
+    // mustn't keep another profile of the note type from being repaired.
+    const stale = (p: AnkiProfile, source: AnkiFieldSource) =>
+      !readFrom(p, source) && Object.values(p.fields).includes(source);
     const clash = editing.noteType
       ? draft.profiles.find(
           (p) =>
             p.id !== editing.id &&
             p.noteType === editing.noteType &&
             (['word', 'hint', 'entry'] as const).some(
-              (s) => readFrom(p, s) !== readFrom(editing, s),
+              (s) => !stale(p, s) && readFrom(p, s) !== readFrom(editing, s),
             ),
         )
       : undefined;

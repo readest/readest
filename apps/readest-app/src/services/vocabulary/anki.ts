@@ -325,6 +325,8 @@ export const ankiLayouts = (
     const type = p.noteType ? noteTypes.find((t) => t.name === p.noteType) : undefined;
     if (!type || layouts.has(type.id)) continue;
     const at = (source: AnkiFieldSource) => type.fields.findIndex((f) => p.fields[f] === source);
+    // A profile whose Word field was renamed away reads nothing: the next one decides.
+    if (at('word') < 0) continue;
     layouts.set(type.id, { word: at('word'), hint: at('hint'), entry: at('entry') });
   }
   return layouts;

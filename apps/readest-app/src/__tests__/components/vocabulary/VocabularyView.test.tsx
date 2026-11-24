@@ -1005,6 +1005,26 @@ describe('VocabularyView Anki link', () => {
       expect(done.hasAttribute('disabled')).toBe(false);
     });
 
+    it('lets a profile be repaired while another one still names a renamed field', async () => {
+      setProfiles({
+        profiles: [mining, { ...mining, id: 'p3', name: 'Swiss mining' }],
+        languages: {},
+        books: {},
+      });
+      // Expression was renamed in Anki: neither profile names a Word field it has.
+      anki.ankiListNoteTypes.mockResolvedValue([
+        { id: 40, name: 'Mining', fields: ['Term', 'Sentence', 'Meaning'] },
+      ]);
+      const panel = await openProfiles();
+      fireEvent.click(within(panel).getByRole('button', { name: /^German mining/ }));
+      fireEvent.change(within(panel).getByRole('combobox', { name: 'Term' }), {
+        target: { value: 'word' },
+      });
+      expect(within(panel).getByRole('button', { name: 'Done' }).hasAttribute('disabled')).toBe(
+        false,
+      );
+    });
+
     it('puts back only the profiles when saving them fails', async () => {
       const before = { profiles: [mining, plain], languages: { en: 'p1' }, books: {} };
       setProfiles(before);
