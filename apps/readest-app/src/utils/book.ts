@@ -171,7 +171,12 @@ export const isLastNameFirst = (name: string, bookLang?: string | string[]) => {
   if (parts.length !== 2 || parts.some((words) => !words.length || words.length > 3)) {
     return false;
   }
-  if (parts.flat().includes(listFormater(false, langCode).format(['', '']).trim())) return false;
+  // The conjunction can depend on the next word: Spanish "y" is "e" before "Isabel".
+  const list = listFormater(false, langCode);
+  const words = parts.flat();
+  const isConjunction = (word: string, next?: string) =>
+    !!next && list.format(['', next]).trim() === `${word} ${next}`;
+  if (words.some((word, i) => isConjunction(word, words[i + 1]))) return false;
   const [last, given] = parts as [string[], string[]];
   return last.length === 1 || given.length === 1 || isInitial(given[given.length - 1]!);
 };

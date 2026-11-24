@@ -82,6 +82,8 @@ describe('isLastNameFirst', () => {
     // Three authors: one comma and the language's conjunction.
     expect(isLastNameFirst('Platon, Homer und Vergil', 'de')).toBe(false);
     expect(isLastNameFirst('Platón, Homero y Virgilio', 'es')).toBe(false);
+    // Spanish "y" turns "e" before an i sound.
+    expect(isLastNameFirst('Platón, Homero e Isabel', 'es')).toBe(false);
     expect(isLastNameFirst('Hale, Tessa and Plato', 'en')).toBe(false);
     expect(isLastNameFirst('Hale, Tessa & Plato')).toBe(false);
   });

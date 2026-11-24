@@ -99,6 +99,10 @@ describe('parseAuthors', () => {
     expect(parseAuthors('García Márquez, Gabriel')).toEqual(['García Márquez, Gabriel']);
   });
 
+  it('should split three one-word names in the join Readest writes', () => {
+    expect(parseAuthors('Plato, Homer, and Virgil')).toEqual(['Plato', 'Homer', 'Virgil']);
+  });
+
   it('should split names written last name first at "and" and "&"', () => {
     expect(parseAuthors('Hale, Tessa and Doe, John')).toEqual(['Hale, Tessa', 'Doe, John']);
     expect(parseAuthors('Hale, Tessa & Jane Doe')).toEqual(['Hale, Tessa', 'Jane Doe']);
