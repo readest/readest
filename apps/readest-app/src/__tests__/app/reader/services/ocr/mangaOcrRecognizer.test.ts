@@ -48,36 +48,37 @@ vi.mock('onnxruntime-web/wasm', () => {
 it('loads refinement only for weak text, reuses models, and releases them on cancellation', async () => {
   const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
     drawImage: vi.fn(),
+    fillRect: vi.fn(),
+    createImageData: () => ({ data: new Uint8ClampedArray(4) }),
+    putImageData: vi.fn(),
     getImageData: () => ({ data: new Uint8ClampedArray(224 * 224 * 4).fill(255) }),
   } as unknown as CanvasRenderingContext2D);
-  mocks.fast.mockResolvedValue({ text: '犬', confidence: 99 });
+  mocks.fast.mockImplementation(async () => [{ text: '犬', confidence: 99 }]);
   mocks.load.mockImplementation(
     async () => new TextEncoder().encode(Array(6144).fill('猫').join('\n')).buffer,
   );
   const recognizer = new MangaOcrRecognizer();
-  const source = document.createElement('canvas');
-  const crop = vi.fn(() => source);
+  const crops = [{ data: new Uint8ClampedArray(4), width: 1, height: 1, vertical: true }];
   try {
-    expect(await recognizer.recognize(source, crop)).toEqual({ text: '犬', confidence: 99 });
-    expect(crop).not.toHaveBeenCalled();
+    expect(await recognizer.recognize(crops)).toEqual([{ text: '犬', confidence: 99 }]);
     expect(mocks.load).not.toHaveBeenCalled();
-    mocks.fast.mockResolvedValue({ text: '犬', confidence: 60 });
-    expect(await recognizer.recognize(source, crop)).toMatchObject({ text: '猫' });
-    expect(await recognizer.recognize(source, crop)).toMatchObject({ text: '猫' });
+    mocks.fast.mockImplementation(async () => [{ text: '犬', confidence: 60 }]);
+    expect(await recognizer.recognize(crops)).toMatchObject([{ text: '猫' }]);
+    expect(await recognizer.recognize(crops)).toMatchObject([{ text: '猫' }]);
     expect(mocks.load).toHaveBeenCalledTimes(3);
     const cancellation = new AbortController();
     mocks.onDecoderRun.mockClear();
     mocks.onDecoderRun.mockImplementationOnce(() => cancellation.abort());
-    await expect(recognizer.recognize(source, crop, cancellation.signal)).rejects.toMatchObject({
-      name: 'AbortError',
-    });
+    await expect(
+      recognizer.recognize(crops, { signal: cancellation.signal }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
     expect(mocks.onDecoderRun).toHaveBeenCalledOnce();
     expect(mocks.release).not.toHaveBeenCalled();
     mocks.onDecoderRun.mockReset();
-    expect(await recognizer.recognize(source, crop)).toMatchObject({ text: '猫' });
+    expect(await recognizer.recognize(crops)).toMatchObject([{ text: '猫' }]);
     expect(mocks.load).toHaveBeenCalledTimes(3);
     await recognizer.terminate();
-    await expect(recognizer.recognize(source, crop)).rejects.toThrow();
+    await expect(recognizer.recognize(crops)).rejects.toThrow();
     expect(mocks.release).toHaveBeenCalledTimes(2);
     expect(mocks.terminate).toHaveBeenCalledTimes(1);
   } finally {

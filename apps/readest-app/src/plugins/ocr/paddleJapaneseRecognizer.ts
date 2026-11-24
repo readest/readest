@@ -1,188 +1,256 @@
-import {
-  getTextRecognitionPresetOptions,
-  Image as PaddleImage,
-  RecognitionService,
-  type OrtInferenceSession,
-  type OrtModule,
-} from 'paddleocr';
-
+import type { InferenceSession } from 'onnxruntime-web/wasm';
 import { loadModelAsset, type ModelAsset } from './modelAssets';
-import type { OcrCanvas } from './canvas';
+import { MANGA_CROP_BORDER, type MangaTextCrop } from './mangaTextCrop';
+import { yieldToCancellation } from './yieldToCancellation';
 
 const MODEL_REVISION = 'b8f84f0b80c529de40b4fbb3544b84fa7233a513';
 const DICTIONARY_REVISION = '2661c7c0ef5c613e8f93c6e93b2e052399f0f854';
 
-const PADDLE_JAPANESE_MODEL: ModelAsset = {
+const MODEL: ModelAsset = {
   url: `https://huggingface.co/PaddlePaddle/PP-OCRv6_small_rec_onnx/resolve/${MODEL_REVISION}/inference.onnx`,
   sha256: '5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634',
   bytes: 21_159_378,
 };
 
-const PADDLE_JAPANESE_DICTIONARY: ModelAsset = {
+const DICTIONARY: ModelAsset = {
   url: `https://cdn.jsdelivr.net/gh/PaddlePaddle/PaddleOCR@${DICTIONARY_REVISION}/ppocr/utils/dict/ppocrv6_dict.txt`,
   sha256: 'b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d',
   bytes: 74_947,
 };
+const DICTIONARY_LENGTH = 18_708;
 
-interface PaddleRuntime extends OrtModule {
-  env: {
-    wasm: {
-      numThreads?: number;
-      proxy?: boolean;
-      wasmPaths?: string;
-    };
-  };
-  InferenceSession: OrtModule['InferenceSession'] & {
-    create: (
-      model: ArrayBuffer,
-      options: {
-        executionProviders: ['wasm'];
-        executionMode: 'sequential';
-        graphOptimizationLevel: 'all';
-      },
-    ) => Promise<OrtInferenceSession>;
-  };
-}
+const LINE_HEIGHT = 48;
+// The model reads the end of a line better with space after it. Lines of the same
+// width are read together.
+const LINE_PADDING = 64;
+const LINE_WIDTH_STEP = 32;
+const BATCH_SIZE = 8;
+// Pixels are read in -1 to 1.
+const PIXEL_VALUES = Float32Array.from(
+  { length: 256 },
+  (_, value) => value * (1 / 127.5) - 127.5 * (1 / 127.5),
+);
 
-export interface JapaneseMangaRecognition {
+export interface MangaRecognition {
   text: string;
   confidence: number;
 }
 
-export interface JapaneseMangaRecognizer {
+export interface MangaRecognizer {
+  /** Reads each crop, `null` where it finds no text. */
   recognize: (
-    source: OcrCanvas,
-    getMangaCrop: () => OcrCanvas,
-    signal?: AbortSignal,
-  ) => Promise<JapaneseMangaRecognition | null>;
+    crops: readonly MangaTextCrop[],
+    options?: MangaRecognitionOptions,
+  ) => Promise<Array<MangaRecognition | null>>;
   terminate: () => Promise<void>;
 }
 
-interface JapaneseMangaRecognizerDependencies {
-  loadRuntime: () => Promise<PaddleRuntime>;
-  loadAsset: typeof loadModelAsset;
+export interface MangaRecognitionOptions {
+  signal?: AbortSignal;
+  /** Called with the number of crops recognized so far. */
+  onProgress?: (recognized: number) => void;
 }
 
-export interface JapaneseMangaRecognizerOptions {
-  onDownloadProgress?: (progress: number) => void;
+type Runtime = typeof import('onnxruntime-web/wasm');
+interface Model {
+  runtime: Runtime;
+  session: InferenceSession;
+  characters: string[];
 }
 
-const loadRuntime = async (): Promise<PaddleRuntime> =>
-  (await import('onnxruntime-web/wasm')) as unknown as PaddleRuntime;
+/** The size of a crop with its border, along and across its text. */
+const getLineSize = ({ width, height, vertical }: MangaTextCrop) => {
+  const length = (vertical ? height : width) + MANGA_CROP_BORDER * 2;
+  const thickness = (vertical ? width : height) + MANGA_CROP_BORDER * 2;
+  return { length, thickness, width: Math.ceil(LINE_HEIGHT * (length / thickness)) };
+};
 
-export class PaddleJapaneseRecognizer implements JapaneseMangaRecognizer {
+const getBatchWidth = (width: number): number =>
+  Math.ceil((width + LINE_PADDING) / LINE_WIDTH_STEP) * LINE_WIDTH_STEP;
+
+/** Where each pixel of a resized side falls between two pixels of the crop. */
+const getSamples = (from: number, to: number, stride: number, last: number, step: number) => {
+  const first = new Int32Array(to);
+  const second = new Int32Array(to);
+  const weights = new Float64Array(to);
+  const getOffset = (position: number) => {
+    const pixel = position - MANGA_CROP_BORDER;
+    // The border is outside of the crop.
+    return pixel < 0 || pixel > last ? -1 : step < 0 ? (last - pixel) * stride : pixel * stride;
+  };
+  for (let index = 0; index < to; index += 1) {
+    const position = (index + 0.5) * (from / to) - 0.5;
+    const before = Math.max(0, Math.min(from - 1, Math.floor(position)));
+    first[index] = getOffset(before);
+    second[index] = getOffset(Math.min(from - 1, before + 1));
+    weights[index] = position < 0 || position >= from - 1 ? 0 : position - before;
+  }
+  return { first, second, weights };
+};
+
+/** Writes a crop as a line reading from left to right, in blue, green and red. */
+const writeLine = (
+  crop: MangaTextCrop,
+  target: Float32Array,
+  offset: number,
+  batchWidth: number,
+): void => {
+  const { data, width, height, vertical } = crop;
+  const { length, thickness, width: lineWidth } = getLineSize(crop);
+  const along = vertical
+    ? getSamples(length, lineWidth, width * 4, height - 1, 1)
+    : getSamples(length, lineWidth, 4, width - 1, 1);
+  // A vertical line turns left, so that its right side becomes its top.
+  const across = vertical
+    ? getSamples(thickness, LINE_HEIGHT, 4, width - 1, -1)
+    : getSamples(thickness, LINE_HEIGHT, width * 4, height - 1, 1);
+  const read = (x: number, y: number, channel: number) =>
+    x < 0 || y < 0 ? 255 : data[x + y + channel]!;
+  for (let y = 0; y < LINE_HEIGHT; y += 1) {
+    const top = across.first[y]!;
+    const bottom = across.second[y]!;
+    const yWeight = across.weights[y]!;
+    for (let x = 0; x < lineWidth; x += 1) {
+      const left = along.first[x]!;
+      const right = along.second[x]!;
+      const xWeight = along.weights[x]!;
+      for (let channel = 0; channel < 3; channel += 1) {
+        const above =
+          read(left, top, channel) * (1 - xWeight) + read(right, top, channel) * xWeight;
+        const below =
+          read(left, bottom, channel) * (1 - xWeight) + read(right, bottom, channel) * xWeight;
+        const value = Math.round(above * (1 - yWeight) + below * yWeight);
+        target[offset + ((2 - channel) * LINE_HEIGHT + y) * batchWidth + x] = PIXEL_VALUES[value]!;
+      }
+    }
+  }
+};
+
+/** Reads the likeliest character of each step, without blanks and repeats. */
+const decodeLine = (scores: Float32Array, characters: string[]): MangaRecognition | null => {
+  const classes = characters.length + 1;
+  let text = '';
+  let sum = 0;
+  let count = 0;
+  let last = -1;
+  for (let offset = 0; offset < scores.length; offset += classes) {
+    let best = 0;
+    let bestScore = -Infinity;
+    for (let index = 0; index < classes; index += 1) {
+      const score = scores[offset + index]!;
+      if (score > bestScore) {
+        best = index;
+        bestScore = score;
+      }
+    }
+    if (best === last) continue;
+    last = best;
+    if (best === 0) continue;
+    text += characters[best - 1]!;
+    sum += bestScore;
+    count += 1;
+  }
+  text = text.replaceAll(' ', '').trim();
+  return text ? { text, confidence: (sum / count) * 100 } : null;
+};
+
+export class PaddleJapaneseRecognizer implements MangaRecognizer {
   readonly #onDownloadProgress?: (progress: number) => void;
-  readonly #loadRuntime: () => Promise<PaddleRuntime>;
-  readonly #loadAsset: typeof loadModelAsset;
-  readonly #abortController = new AbortController();
-  readonly #activeRuns = new Set<Promise<JapaneseMangaRecognition | null>>();
-  #servicePromise: Promise<{
-    service: RecognitionService;
-    session: OrtInferenceSession;
-  }> | null = null;
-  #terminated = false;
+  readonly #abort = new AbortController();
+  #model: Promise<Model> | null = null;
+  #active: Promise<unknown> = Promise.resolve();
 
-  constructor(
-    options: JapaneseMangaRecognizerOptions = {},
-    dependencies: Partial<JapaneseMangaRecognizerDependencies> = {},
-  ) {
+  constructor(options: { onDownloadProgress?: (progress: number) => void } = {}) {
     this.#onDownloadProgress = options.onDownloadProgress;
-    this.#loadRuntime = dependencies.loadRuntime ?? loadRuntime;
-    this.#loadAsset = dependencies.loadAsset ?? loadModelAsset;
   }
 
-  async recognize(source: OcrCanvas): Promise<JapaneseMangaRecognition | null> {
-    if (this.#terminated) throw new Error('Japanese manga recognizer has been terminated');
-    const { service } = await this.#getService();
-    if (this.#terminated) throw new Error('Japanese manga recognizer has been terminated');
-    const context = source.getContext('2d', { willReadFrequently: true });
-    if (!context) throw new Error('Japanese manga recognizer could not read the text crop');
-    const rgba = context.getImageData(0, 0, source.width, source.height).data;
-    const image = new PaddleImage(
-      source.width,
-      source.height,
-      4,
-      new Uint8Array(rgba.buffer, rgba.byteOffset, rgba.byteLength),
-    );
-    const run = service
-      .run(image, [{ x: 0, y: 0, width: source.width, height: source.height }], {
-        ordering: { sortByReadingOrder: false },
-      })
-      .then((results) => {
-        const result = results[0];
-        const text = result?.text.replaceAll(' ', '').trim();
-        return result && text ? { text, confidence: result.confidence * 100 } : null;
-      });
-    this.#activeRuns.add(run);
-    try {
-      return await run;
-    } finally {
-      this.#activeRuns.delete(run);
-    }
+  async recognize(
+    crops: readonly MangaTextCrop[],
+    options: MangaRecognitionOptions = {},
+  ): Promise<Array<MangaRecognition | null>> {
+    const run = this.#recognize(crops, options);
+    this.#active = run.catch(() => undefined);
+    return run;
   }
 
   async terminate(): Promise<void> {
-    if (this.#terminated) return;
-    this.#terminated = true;
-    this.#abortController.abort();
-    const servicePromise = this.#servicePromise;
-    this.#servicePromise = null;
-    if (!servicePromise) return;
-    try {
-      const { session } = await servicePromise;
-      await Promise.allSettled(this.#activeRuns);
-      await session.release?.();
-    } catch {
-      return;
-    }
+    if (this.#abort.signal.aborted) return;
+    this.#abort.abort();
+    const model = await this.#model?.catch(() => null);
+    await this.#active;
+    await model?.session.release();
   }
 
-  #getService(): Promise<{ service: RecognitionService; session: OrtInferenceSession }> {
-    if (this.#terminated) {
-      return Promise.reject(new Error('Japanese manga recognizer has been terminated'));
+  async #recognize(
+    crops: readonly MangaTextCrop[],
+    { signal, onProgress }: MangaRecognitionOptions,
+  ): Promise<Array<MangaRecognition | null>> {
+    const { runtime, session, characters } = await this.#getModel();
+    const batches = new Map<number, number[]>();
+    for (const [index, crop] of crops.entries()) {
+      const width = getBatchWidth(getLineSize(crop).width);
+      const batch = batches.get(width);
+      if (batch) batch.push(index);
+      else batches.set(width, [index]);
     }
-    if (this.#servicePromise) return this.#servicePromise;
-    const signal = this.#abortController.signal;
-    const servicePromise = Promise.all([
-      this.#loadRuntime(),
-      this.#loadAsset(PADDLE_JAPANESE_MODEL, {
+    const results: Array<MangaRecognition | null> = crops.map(() => null);
+    let recognized = 0;
+    for (const [width, indexes] of batches) {
+      for (let start = 0; start < indexes.length; start += BATCH_SIZE) {
+        await yieldToCancellation(signal);
+        this.#abort.signal.throwIfAborted();
+        const batch = indexes.slice(start, start + BATCH_SIZE);
+        const size = 3 * LINE_HEIGHT * width;
+        const pixels = new Float32Array(batch.length * size);
+        for (const [position, index] of batch.entries()) {
+          writeLine(crops[index]!, pixels, position * size, width);
+        }
+        const shape = [batch.length, 3, LINE_HEIGHT, width];
+        const input = new runtime.Tensor('float32', pixels, shape);
+        const outputs = await session.run({ [session.inputNames[0]!]: input });
+        const scores = outputs[session.outputNames[0]!]!.data as Float32Array;
+        const length = scores.length / batch.length;
+        for (const [position, index] of batch.entries()) {
+          const line = scores.subarray(position * length, (position + 1) * length);
+          results[index] = decodeLine(line, characters);
+        }
+        recognized += batch.length;
+        onProgress?.(recognized);
+      }
+    }
+    return results;
+  }
+
+  #getModel(): Promise<Model> {
+    this.#model ??= this.#loadModel().catch((error: unknown) => {
+      this.#model = null;
+      throw error;
+    });
+    return this.#model;
+  }
+
+  async #loadModel(): Promise<Model> {
+    const { signal } = this.#abort;
+    const [runtime, model, dictionary] = await Promise.all([
+      import('onnxruntime-web/wasm'),
+      loadModelAsset(MODEL, {
         signal,
-        onProgress: (loaded) => this.#onDownloadProgress?.(loaded / PADDLE_JAPANESE_MODEL.bytes),
+        onProgress: (loaded) => this.#onDownloadProgress?.(loaded / MODEL.bytes),
       }),
-      this.#loadAsset(PADDLE_JAPANESE_DICTIONARY, { signal }),
-    ]).then(async ([runtime, model, dictionaryData]) => {
-      runtime.env.wasm.proxy = typeof document !== 'undefined';
-      runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
-      const session = await runtime.InferenceSession.create(model, {
-        executionProviders: ['wasm'],
-        executionMode: 'sequential',
-        graphOptimizationLevel: 'all',
-      });
-      if (this.#terminated) {
-        await session.release?.();
-        throw new Error('Japanese manga recognizer has been terminated');
-      }
-      const charactersDictionary = new TextDecoder()
-        .decode(dictionaryData)
-        .trimEnd()
-        .split(/\r?\n/u);
-      if (charactersDictionary.length !== 18_708) {
-        await session.release?.();
-        throw new Error('Japanese manga recognizer dictionary has an invalid length');
-      }
-      charactersDictionary.push(' ');
-      const service = new RecognitionService(runtime, session, {
-        ...getTextRecognitionPresetOptions('PP-OCRv6_small_rec'),
-        charactersDictionary,
-      });
-      return { service, session };
+      loadModelAsset(DICTIONARY, { signal }),
+    ]);
+    const characters = new TextDecoder().decode(dictionary).trimEnd().split(/\r?\n/u);
+    if (characters.length !== DICTIONARY_LENGTH) {
+      throw new Error('Japanese manga recognizer dictionary has an invalid length');
+    }
+    characters.push(' ');
+    runtime.env.wasm.proxy = typeof document !== 'undefined';
+    runtime.env.wasm.wasmPaths = '/vendor/onnxruntime/';
+    const session = await runtime.InferenceSession.create(model, {
+      executionProviders: ['wasm'],
+      executionMode: 'sequential',
+      graphOptimizationLevel: 'all',
     });
-    this.#servicePromise = servicePromise;
-    void servicePromise.catch(() => {
-      if (this.#servicePromise === servicePromise && !this.#terminated) {
-        this.#servicePromise = null;
-      }
-    });
-    return servicePromise;
+    return { runtime, session, characters };
   }
 }

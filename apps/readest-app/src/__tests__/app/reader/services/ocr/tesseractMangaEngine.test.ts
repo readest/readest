@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PSM } from 'tesseract.js';
 
-import { makeMangaTextLineCrops } from '@/plugins/ocr/mangaTextCrop';
+import { makeMangaTextCrops } from '@/plugins/ocr/mangaTextCrop';
 import {
   TesseractOcrEngine,
-  type JapaneseMangaRecognizerFactory,
+  type MangaRecognizerFactory,
   type MangaTextDetectorFactory,
   type TesseractWorker,
 } from '@/plugins/ocr/tesseractEngine';
@@ -116,10 +116,10 @@ describe('Tesseract manga OCR', () => {
     const worker = makeWorker();
     const createWorker = vi.fn(async () => worker);
     const recognizer = {
-      recognize: vi
-        .fn()
-        .mockResolvedValueOnce({ text: '一行目', confidence: 91 })
-        .mockResolvedValueOnce({ text: '二行目', confidence: 89 }),
+      recognize: vi.fn().mockResolvedValueOnce([
+        { text: '一行目', confidence: 91 },
+        { text: '二行目', confidence: 89 },
+      ]),
       terminate: vi.fn(async () => undefined),
     };
     const onProgress = vi.fn();
@@ -135,10 +135,11 @@ describe('Tesseract manga OCR', () => {
     const result = await engine.recognize(source, page);
 
     expect(createWorker).not.toHaveBeenCalled();
-    expect(recognizer.recognize).toHaveBeenCalledTimes(2);
-    const [fastCrop, getMangaCrop] = recognizer.recognize.mock.calls[0]!;
-    expect(fastCrop).toMatchObject({ width: 443, height: 80 });
-    expect(getMangaCrop()).toMatchObject({ width: 64, height: 427 });
+    expect(recognizer.recognize).toHaveBeenCalledOnce();
+    expect(recognizer.recognize.mock.calls[0]![0]).toMatchObject([
+      { width: 64, height: 427, vertical: true },
+      { width: 64, height: 427, vertical: true },
+    ]);
     expect(onProgress).toHaveBeenCalledWith({ status: 'recognizing text', progress: 0.5 });
     expect(result).toMatchObject({
       language: 'ja',
@@ -157,22 +158,18 @@ describe('Tesseract manga OCR', () => {
 
     const cancellation = new AbortController();
     recognizer.recognize.mockImplementationOnce(async () => {
-      setTimeout(() => cancellation.abort(), 0);
-      return { text: '一行目', confidence: 91 };
+      cancellation.abort();
+      return [null, null];
     });
-    const browserDocument = document;
-    vi.stubGlobal('document', undefined);
-    try {
-      await expect(engine.recognize(source, page, cancellation.signal)).rejects.toMatchObject({
-        name: 'AbortError',
-      });
-    } finally {
-      vi.stubGlobal('document', browserDocument);
-    }
-    expect(recognizer.recognize).toHaveBeenCalledTimes(3);
-    expect(recognizer.recognize.mock.calls[2]?.[2]).toBe(cancellation.signal);
-    recognizer.recognize.mockResolvedValue({ text: '再開', confidence: 91 });
-    expect((await engine.recognize(source, page)).blocks[0]?.text).toBe('再開再開');
+    await expect(engine.recognize(source, page, cancellation.signal)).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    expect(recognizer.recognize.mock.calls[1]?.[1]?.signal).toBe(cancellation.signal);
+    recognizer.recognize.mockResolvedValue([
+      { text: '再', confidence: 91 },
+      { text: '開', confidence: 91 },
+    ]);
+    expect((await engine.recognize(source, page)).blocks[0]?.text).toBe('再開');
     expect(recognizer.terminate).not.toHaveBeenCalled();
     expect(createWorker).not.toHaveBeenCalled();
     await engine.terminate();
@@ -216,13 +213,13 @@ describe('Tesseract manga OCR', () => {
         data: { text: '二', confidence: 90 },
       });
       const recognizer = {
-        recognize: vi
-          .fn()
-          .mockResolvedValueOnce({ text: '一', confidence: 90 })
-          .mockImplementationOnce(async () => {
-            if (failure === 'throws') throw new Error('recognizer failed');
-            return { text: '弱い', confidence: 10 };
-          }),
+        recognize: vi.fn(async () => {
+          if (failure === 'throws') throw new Error('recognizer failed');
+          return [
+            { text: '一', confidence: 90 },
+            { text: '弱い', confidence: 10 },
+          ];
+        }),
         terminate: vi.fn(async () => undefined),
       };
       const engine = new TesseractOcrEngine(
@@ -237,8 +234,9 @@ describe('Tesseract manga OCR', () => {
       const result = await engine.recognize(source, page);
       const fallbackCrop = vi.mocked(worker.recognize).mock.calls[0]?.[0] as HTMLCanvasElement;
 
-      expect(result).toMatchObject({ language: 'ja-JP', blocks: [{ text: '一二' }] });
-      expect(recognizer.recognize).toHaveBeenCalledTimes(2);
+      const text = failure === 'throws' ? '二二' : '一二';
+      expect(result).toMatchObject({ language: 'ja-JP', blocks: [{ text }] });
+      expect(recognizer.recognize).toHaveBeenCalledOnce();
       expect(fallbackCrop.width).toBeLessThan(fallbackCrop.height);
       expect(worker.setParameters).toHaveBeenCalledWith({
         tessedit_pageseg_mode: PSM.SINGLE_BLOCK_VERT_TEXT,
@@ -269,10 +267,10 @@ describe('Tesseract manga OCR', () => {
       terminate: vi.fn(async () => undefined),
     };
     const recognizer = {
-      recognize: vi.fn(async () => ({ text: '第1話DRAGON BALL', confidence: 89 })),
+      recognize: vi.fn(async () => [{ text: '第1話DRAGON BALL', confidence: 89 }]),
       terminate: vi.fn(async () => undefined),
     };
-    const createRecognizer = vi.fn<JapaneseMangaRecognizerFactory>(() => recognizer);
+    const createRecognizer = vi.fn<MangaRecognizerFactory>(() => recognizer);
     const engine = new TesseractOcrEngine(
       { mangaMode: true, textLanguage: 'ja' },
       vi.fn(async () => makeWorker()),
@@ -289,12 +287,7 @@ describe('Tesseract manga OCR', () => {
   });
 
   it('keeps vertical crops upright and splits long text before recognition', () => {
-    const contexts = installCanvas();
-    const source = document.createElement('canvas');
-    source.width = 64;
     for (const height of [256, 1280]) {
-      contexts.mockClear();
-      source.height = height;
       const longLine = {
         box: { xMin: 0, yMin: 0, xMax: 64, yMax: height },
         polygon: [
@@ -306,32 +299,15 @@ describe('Tesseract manga OCR', () => {
         score: 0.9,
         vertical: true,
       };
-
-      const data = new Uint8ClampedArray(source.width * source.height * 4);
+      const data = new Uint8ClampedArray(64 * height * 4);
       for (let i = 0; i < data.length; i++) data[i] = i % 251;
-      const image = { data, width: source.width, height: source.height };
-      const crops = makeMangaTextLineCrops(source, image, longLine, {
-        keepVertical: true,
-        vertical: true,
-      });
+      const image = { data, width: 64, height };
+      const crops = makeMangaTextCrops(image, longLine);
 
       expect(crops).toHaveLength(height === 256 ? 1 : 2);
-      expect(crops.every((crop) => crop.width === 80 && crop.height < 1_000)).toBe(true);
-      makeMangaTextLineCrops(source, image, longLine, { vertical: true });
-      const pixels = contexts.mock.results.map(({ value }) => value.putImageData.mock.calls[0][0]);
-      for (let chunk = 0; chunk < crops.length; chunk++) {
-        const upright = pixels[chunk];
-        const rotated = pixels[chunk + crops.length];
-        for (const y of [0, Math.floor(upright.height / 2), upright.height - 1]) {
-          for (const x of [0, upright.width - 1]) {
-            const from = (y * upright.width + x) * 4;
-            const to = ((rotated.height - 1 - x) * rotated.width + y) * 4;
-            expect(upright.data.subarray(from, from + 4)).toEqual(
-              rotated.data.subarray(to, to + 4),
-            );
-          }
-        }
-      }
+      expect(crops.every((crop) => crop.width === 64 && crop.height < 1_000)).toBe(true);
+      const [whole] = makeMangaTextCrops(image, longLine, { split: false });
+      expect(crops.flatMap((crop) => [...crop.data])).toEqual([...whole!.data]);
     }
   });
 

@@ -203,7 +203,6 @@
     "onnxruntime-web": "1.29.0",
     "overlayscrollbars": "^2.11.4",
     "overlayscrollbars-react": "^0.5.6",
-    "paddleocr": "1.2.0",
     "posthog-js": "^1.246.0",
     "react": "19.2.9",
     "react-colorful": "^5.8.0",

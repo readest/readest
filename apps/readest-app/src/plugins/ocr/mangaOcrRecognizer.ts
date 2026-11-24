@@ -1,13 +1,15 @@
 import type { InferenceSession } from 'onnxruntime-web';
 import { loadModelAsset, type ModelAsset } from './modelAssets';
 import { decodeMangaText } from './mangaOcrDecode';
-import { createOcrCanvas, isHtmlCanvas, type OcrCanvas } from './canvas';
+import { createOcrCanvas } from './canvas';
+import { drawMangaTextCrop, type MangaTextCrop } from './mangaTextCrop';
 import {
   PaddleJapaneseRecognizer,
-  type JapaneseMangaRecognition,
-  type JapaneseMangaRecognizer,
+  type MangaRecognition,
+  type MangaRecognitionOptions,
+  type MangaRecognizer,
 } from './paddleJapaneseRecognizer';
-export type { JapaneseMangaRecognizer } from './paddleJapaneseRecognizer';
+import { yieldToCancellation } from './yieldToCancellation';
 
 const REVISION = '3e8ddcd02cd50e897358223fce8b2784e44093ab';
 const BASE_URL = `https://huggingface.co/WhiteHades/manga-ocr-browser/resolve/${REVISION}`;
@@ -39,11 +41,11 @@ interface Model {
   vocabulary: string[];
 }
 
-export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
+export class MangaOcrRecognizer implements MangaRecognizer {
   readonly #abort = new AbortController();
-  readonly #active = new Set<Promise<JapaneseMangaRecognition | null>>();
   readonly #onDownloadProgress?: (progress: number) => void;
   readonly #fast: PaddleJapaneseRecognizer;
+  #active: Promise<unknown> = Promise.resolve();
   #mangaUnavailable = false;
   #model: Promise<Model> | null = null;
 
@@ -53,43 +55,51 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
   }
 
   async recognize(
-    source: OcrCanvas,
-    getMangaCrop: () => OcrCanvas,
-    signal?: AbortSignal,
-  ): Promise<JapaneseMangaRecognition | null> {
+    crops: readonly MangaTextCrop[],
+    options: MangaRecognitionOptions = {},
+  ): Promise<Array<MangaRecognition | null>> {
     this.#abort.signal.throwIfAborted();
-    signal?.throwIfAborted();
-    const run = this.#recognize(source, getMangaCrop, signal);
-    this.#active.add(run);
-    try {
-      return await run;
-    } finally {
-      this.#active.delete(run);
-    }
+    options.signal?.throwIfAborted();
+    const run = this.#recognize(crops, options);
+    this.#active = run.catch(() => undefined);
+    return run;
   }
 
   async terminate(): Promise<void> {
     if (this.#abort.signal.aborted) return;
     this.#abort.abort();
-    await Promise.allSettled([...this.#active, this.#fast.terminate()]);
+    await Promise.all([this.#active, this.#fast.terminate()]);
     const model = await this.#model?.catch(() => null);
     this.#model = null;
     if (model) await Promise.all([model.encoder.release(), model.decoder.release()]);
   }
 
   async #recognize(
-    source: OcrCanvas,
-    getMangaCrop: () => OcrCanvas,
+    crops: readonly MangaTextCrop[],
+    { signal, onProgress }: MangaRecognitionOptions,
+  ): Promise<Array<MangaRecognition | null>> {
+    const results = await this.#fast.recognize(crops, { signal });
+    let recognized = 0;
+    for (const [index, fast] of results.entries()) {
+      // ponytail: confidence routing can miss confident errors. Our sample favoured
+      // Paddle narration; revisit this threshold with broader labelled samples.
+      if (!this.#mangaUnavailable && !(fast && fast.confidence >= 80)) {
+        await yieldToCancellation(signal);
+        results[index] = await this.#refine(crops[index]!, fast, signal);
+      }
+      recognized += 1;
+      onProgress?.(recognized);
+    }
+    return results;
+  }
+
+  async #refine(
+    crop: MangaTextCrop,
+    fast: MangaRecognition | null,
     signal?: AbortSignal,
-  ): Promise<JapaneseMangaRecognition | null> {
-    const fast = await this.#fast.recognize(source);
-    this.#abort.signal.throwIfAborted();
-    signal?.throwIfAborted();
-    // ponytail: confidence routing can miss confident errors. Our sample favoured
-    // Paddle narration; revisit this threshold with broader labelled samples.
-    if (this.#mangaUnavailable || (fast && fast.confidence >= 80)) return fast;
+  ): Promise<MangaRecognition | null> {
     try {
-      const refined = await this.#recognizeManga(getMangaCrop(), signal);
+      const refined = await this.#recognizeManga(crop, signal);
       return refined && refined.confidence >= 80 ? refined : fast;
     } catch (error) {
       this.#abort.signal.throwIfAborted();
@@ -101,19 +111,20 @@ export class MangaOcrRecognizer implements JapaneseMangaRecognizer {
   }
 
   async #recognizeManga(
-    source: OcrCanvas,
+    crop: MangaTextCrop,
     signal?: AbortSignal,
-  ): Promise<JapaneseMangaRecognition | null> {
+  ): Promise<MangaRecognition | null> {
     const { runtime, encoder, decoder, vocabulary } = await this.#getModel();
     const terminationSignal = this.#abort.signal;
     terminationSignal.throwIfAborted();
     signal?.throwIfAborted();
     // MangaOCR reads upright grayscale crops, resized to 224x224 and normalized
-    // to [-1, 1]. The caller preserves vertical writing and omits OCR padding.
-    const canvas = createOcrCanvas(224, 224, isHtmlCanvas(source) ? source : undefined);
+    // to [-1, 1]. The
+    // crop keeps vertical writing, without padding.
+    const canvas = createOcrCanvas(224, 224);
     const context = canvas.getContext('2d', { willReadFrequently: true });
     if (!context) throw new Error('MangaOCR could not prepare the text crop');
-    context.drawImage(source, 0, 0, 224, 224);
+    context.drawImage(drawMangaTextCrop(crop, 0), 0, 0, 224, 224);
     const rgba = context.getImageData(0, 0, 224, 224).data;
     const pixels = new Float32Array(3 * 224 * 224);
     for (let i = 0; i < 224 * 224; i++) {

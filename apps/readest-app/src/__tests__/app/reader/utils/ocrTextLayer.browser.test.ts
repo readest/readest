@@ -94,7 +94,10 @@ it('preserves word boundaries from manga recognition through native text selecti
         }),
         undefined,
         async () => new ArrayBuffer(1),
-        () => ({ recognize, terminate: async () => undefined }),
+        () => ({
+          recognize: (crops) => Promise.all(crops.map(recognize)),
+          terminate: async () => undefined,
+        }),
       );
       try {
         const result = await engine.recognize(source, page);
