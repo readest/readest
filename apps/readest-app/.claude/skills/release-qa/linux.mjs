@@ -11,9 +11,12 @@ if (!app) { console.error('set QA_APP'); process.exit(1); }
 const { chromium } = createRequire(path.join(app, 'package.json'))('playwright');
 const browser = await chromium.connectOverCDP(`http://127.0.0.1:${process.env.CDP_PORT || '9231'}`);
 const pages = browser.contexts().flatMap((c) => c.pages());
-const want = process.env.PAGE_MATCH || '';
-const page = (want === 'lib' ? pages.find((p) => !p.url().includes('/reader')) : pages.find((p) => p.url().includes(want))) ?? pages[0];
+// An explicit PAGE_MATCH must match: falling back to another window would act on it.
+const want = process.env.PAGE_MATCH;
+const page = !want ? pages[0] : want === 'lib' ? pages.find((p) => !p.url().includes('/reader')) : pages.find((p) => p.url().includes(want));
+if (!page) { console.error(`no page matches PAGE_MATCH=${want ?? ''}:`, pages.map((p) => p.url()).join(' | ')); process.exit(1); }
 const [cmd, ...rest] = process.argv.slice(2);
+let code = 0;
 try {
   if (cmd === 'shot') {
     const out = path.join(process.env.QA_DIR || '.', 'shots', `${rest[0]}.png`);
@@ -26,8 +29,10 @@ try {
     await mod.default({ page, pages, browser, args: rest.slice(1) });
   } else {
     console.error('usage: linux.mjs shot NAME | eval JS | run FILE [args]');
+    code = 2;
   }
 } catch (e) {
   console.error('ERR', e.message.split('\n').slice(0, 6).join('\n'));
+  code = 1;
 }
-process.exit(0);
+process.exit(code);

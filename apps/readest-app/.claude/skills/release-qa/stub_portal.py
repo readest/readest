@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 # Minimal xdg-desktop-portal stub for a private D-Bus session: FileChooser answers
-# from $QA_DIR/answer.json ({"open": [paths], "saveDir": dir, "cancel": bool}), OpenURI/OpenFile
+# from $QA_DIR/answer.json ({"open": [absolute paths], "saveDir": dir, "cancel": bool}), OpenURI/OpenFile
 # log the request. Every call goes to $QA_DIR/portal.log.
 import json, os, sys, time
+from pathlib import Path
 from gi.repository import Gio, GLib
 D = os.environ.get('QA_DIR') or os.path.dirname(os.path.abspath(__file__))
 LOG = open(os.path.join(D, 'portal.log'), 'a', buffering=1)
@@ -46,15 +47,17 @@ def on_call(c, sender, objpath, iface, method, params, inv):
     a = answer()
     if iface == 'org.freedesktop.portal.FileChooser':
         log(method, 'title=%r' % p[1], 'opts=%s' % {k: v for k, v in opts.items() if k in ('current_name', 'multiple', 'directory', 'filters', 'current_folder')})
-        if method == 'OpenFile':
+        if a.get('cancel'):
+            path = respond(sender, opts, {}, 1)
+            log('  -> cancel')
+        elif method == 'OpenFile':
             uris = a.get('open', [])
-            if a.get('cancel'): path = respond(sender, opts, {}, 1)
-            else: path = respond(sender, opts, {'uris': GLib.Variant('as', ['file://' + u for u in uris])})
+            path = respond(sender, opts, {'uris': GLib.Variant('as', [Path(u).as_uri() for u in uris])})
             log('  -> open', uris)
         else:
             name = opts.get('current_name', 'out.bin')
             out = os.path.join(a.get('saveDir', D), name)
-            path = respond(sender, opts, {'uris': GLib.Variant('as', ['file://' + out])})
+            path = respond(sender, opts, {'uris': GLib.Variant('as', [Path(out).as_uri()])})
             log('  -> save', out)
         inv.return_value(GLib.Variant('(o)', (path,)))
     elif iface == 'org.freedesktop.portal.OpenURI':

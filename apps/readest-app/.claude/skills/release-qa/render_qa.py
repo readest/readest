@@ -386,6 +386,8 @@ TEMPLATE = r'''<title>__TITLE__</title>
   --s-pass: #5ccf93; --s-partial: #6cc6d1; --s-fail: #ff7d7d; --s-issue: #f2a64d; --s-note: #a3b3d6;
   --s-manual: #b89dff; --s-notrun: #a2a9b6; --s-other: #8f96a3; color-scheme: dark }
 * { box-sizing: border-box }
+/* The filters and the lightbox hide with the hidden attribute; rules that set display would show them. */
+[hidden] { display: none !important }
 body { background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); }
 .wrap { max-width: 1080px; margin: 0 auto; padding-block: 28px 64px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));

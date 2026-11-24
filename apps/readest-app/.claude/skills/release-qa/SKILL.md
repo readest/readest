@@ -24,6 +24,7 @@ Helpers live next to this file. From the repo root:
 ```bash
 Q=apps/readest-app/.claude/skills/release-qa
 export QA_DIR=<scratchpad>/qa      # this run's work dir: results.md, shots/, logs/
+mkdir -p "$QA_DIR/shots" "$QA_DIR/logs"
 ```
 
 | File | Use |
@@ -66,8 +67,14 @@ export QA_DIR=<scratchpad>/qa      # this run's work dir: results.md, shots/, lo
 ## 2. Build
 
 - `pnpm worktree:new qa/<from>-<to-sha>` (never build in the shared main
-  checkout). Then, sandbox off, in the background:
-  `$Q/build.sh <worktree>/apps/readest-app $QA_DIR/logs`.
+  checkout). It starts from `origin/main`'s tip, so build the recorded To:
+  when they differ, `git -C <worktree> reset --hard <to-sha>` and update each
+  submodule by path (`git -C <worktree> submodule update packages/foliate-js`;
+  never a bare `submodule update`). Check `git -C <worktree> rev-parse --short
+  HEAD` is the recorded sha before building; results are for that sha only.
+- Then, sandbox off, in the background:
+  `$Q/build.sh <worktree>/apps/readest-app $QA_DIR/logs`. It exits nonzero
+  when a build fails; never test a binary or APK left from an earlier build.
 - Linux binary: `<worktree>/target/debug/readest`. APK:
   `apps/readest-app/src-tauri/gen/android/app/build/outputs/apk/universal/debug/`.
 - Android needs JDK 17 (the default 21 JRE has no javac). A shared
@@ -100,8 +107,10 @@ export QA_DIR=<scratchpad>/qa      # this run's work dir: results.md, shots/, lo
 - `adb install -r <apk>`, then `$Q/android.sh check` and confirm the install
   time: a run on the wrong build looks like a pass.
 - `$Q/android.sh fwd` after every app start (the WebView pid changes), then
-  `android.sh js '...'`. Playwright can't attach to the Android WebView; the
-  helper speaks raw CDP. Taps and swipes take CSS px (`DPR` 2.625 on pixel_7).
+  `android.sh js '...'`. Host ports are shared by every emulator, and `fwd`
+  refuses one forwarded for another device: set a `CDP_PORT` of your own.
+  Playwright can't attach to the Android WebView; the helper speaks raw CDP.
+  Taps and swipes take CSS px (`DPR` 2.625 on pixel_7).
 - Pixel images ship WebView Chrome 124 and can't update it: keyboard and
   `visualViewport` behavior there is not a phone's. Put keyboard-layout
   results on the manual list for a real phone.
@@ -145,9 +154,10 @@ Evidence rules:
    e-ink flag is set. Empty libraries keep the earlier test books out of the
    account.
 2. Ask the maintainer to sign in on both apps with a premium **test** account.
-   Never sign in yourself. On Linux the sign-in page opens in their real browser
-   (the `xdg-open` stub passes only the OAuth page through) and returns to the
-   app; email and password also work.
+   Never sign in yourself. On Linux, sign in with email and password: the
+   `xdg-open` stub opens nothing, since an OAuth provider's `readest://`
+   callback would reach an installed Readest in the real desktop session, not
+   the isolated app.
 3. Confirm the plan from the session JWT without printing identifiers:
    `linux.mjs eval` that decodes the access token's payload and returns only
    `plan` and `customization_purchased`.

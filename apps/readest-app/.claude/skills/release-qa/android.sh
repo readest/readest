@@ -25,8 +25,13 @@ case $cmd in
     echo "pid: $($ADB shell pidof $PKG | tr -d '\r')" ;;
   fwd)
     pid=$($ADB shell pidof $PKG | tr -d '\r'); [ -n "$pid" ] || { echo "Readest is not running" >&2; exit 1; }
-    $ADB forward --remove tcp:$CDP_PORT 2>/dev/null || true
-    $ADB forward tcp:$CDP_PORT localabstract:webview_devtools_remote_$pid >/dev/null && echo "CDP $CDP_PORT -> pid $pid" ;;
+    # Host ports are shared by every emulator: never take one forwarded for another device.
+    owner=$(env -u ANDROID_SERIAL $ADB forward --list | awk -v p="tcp:$CDP_PORT" '$2 == p { print $1 }')
+    if [ -n "$owner" ] && [ "$owner" != "$ANDROID_SERIAL" ]; then
+      echo "port $CDP_PORT is forwarded for $owner (another session?); pick another CDP_PORT" >&2; exit 1
+    fi
+    [ -z "$owner" ] || $ADB forward --remove tcp:$CDP_PORT
+    $ADB forward --no-rebind tcp:$CDP_PORT localabstract:webview_devtools_remote_$pid >/dev/null && echo "CDP $CDP_PORT -> pid $pid" ;;
   shot)
     : "${QA_DIR:?set QA_DIR}"; O=$QA_DIR/shots; mkdir -p "$O"
     $ADB exec-out screencap -p > "$O/a-$1-full.png"
