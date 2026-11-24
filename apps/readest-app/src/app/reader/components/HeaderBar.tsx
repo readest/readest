@@ -178,6 +178,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const windowButtonVisible =
     appService?.hasWindowBar && !isTrafficLightVisible && !trafficLightInHeader;
 
+  const isWebPwa = appService?.appPlatform === 'web' && appService.hasSafeAreaInset;
+
   return (
     <div
       className={clsx(
@@ -187,7 +189,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         // that take input restore pointer-events themselves.
         'pointer-events-none left-0 top-0 w-full',
         isHeaderVisible && 'bg-base-100',
-        window.innerWidth < 640 ? 'fixed z-20' : 'absolute',
+        window.innerWidth < 640
+          ? isWebPwa && !isHeaderVisible
+            ? 'absolute z-20'
+            : 'fixed z-20'
+          : 'absolute',
       )}
       style={{
         paddingTop: appService?.hasSafeAreaInset ? `${insets.top}px` : '0px',

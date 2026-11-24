@@ -1983,6 +1983,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     handleLibraryNavigation(group);
   };
 
+  const isWebPwa = appService?.appPlatform === 'web' && appService.hasSafeAreaInset;
+  const libraryBgClass = viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200';
+
   if (
     !appService ||
     !insets ||
@@ -1990,7 +1993,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     checkLastOpenBooks ||
     checkPendingLaunchLink
   ) {
-    return <div className='full-height bg-base-200' />;
+    return <div className={clsx('full-height bg-base-200', isWebPwa && 'fixed inset-0')} />;
   }
 
   const showBookshelf = libraryLoaded || libraryBooks.length > 0;
@@ -2001,12 +2004,13 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       aria-label={_('Your Library')}
       className={clsx(
         'library-page text-base-content full-height flex select-none flex-col overflow-hidden',
-        viewSettings?.isEink ? 'bg-base-100' : 'bg-base-200',
+        libraryBgClass,
+        isWebPwa && 'fixed inset-0',
         appService?.hasRoundedWindow && isRoundedWindow && 'window-border rounded-window',
       )}
     >
       <div
-        className='relative top-0 z-40 w-full'
+        className={clsx('top-0 z-40 w-full', isWebPwa ? ['sticky', libraryBgClass] : 'relative')}
         role='banner'
         tabIndex={-1}
         aria-label={_('Library Header')}
@@ -2287,7 +2291,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
 
 const LibraryPage = () => {
   return (
-    <Suspense fallback={<div className='full-height' />}>
+    <Suspense fallback={<div className='full-height bg-base-200' />}>
       <LibraryPageWithSearchParams />
     </Suspense>
   );

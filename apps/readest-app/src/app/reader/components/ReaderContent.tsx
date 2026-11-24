@@ -1,5 +1,6 @@
 'use client';
 
+import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -463,6 +464,7 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     });
   };
 
+  const isWebPwa = appService?.appPlatform === 'web' && appService.hasSafeAreaInset;
   if (!bookKeys || bookKeys.length === 0) return null;
   const bookData = getBookData(bookKeys[0]!);
   const viewSettings = getViewSettings(bookKeys[0]!);
@@ -471,7 +473,9 @@ const ReaderContent: React.FC<{ ids?: string; settings: SystemSettings }> = ({ i
     return (
       loading &&
       !errorLoading && (
-        <div className='hero hero-content full-height'>
+        <div
+          className={clsx('hero hero-content full-height', isWebPwa && 'bg-base-100 fixed inset-0')}
+        >
           <Spinner loading={true} />
         </div>
       )
