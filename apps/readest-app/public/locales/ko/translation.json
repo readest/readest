@@ -2930,5 +2930,6 @@
   "Subscribe to {{plan}}": "{{plan}} 구독",
   "Gift, until {{date}}": "선물, {{date}}까지",
   "Ex dono": "증정",
-  "Turn over": "카드 뒤집기"
+  "Turn over": "카드 뒤집기",
+  "Turn the card over to read the message": "카드를 뒤집으면 메시지를 읽을 수 있어요"
 }

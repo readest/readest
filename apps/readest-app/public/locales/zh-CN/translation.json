@@ -2930,5 +2930,6 @@
   "Subscribe to {{plan}}": "订阅 {{plan}}",
   "Gift, until {{date}}": "礼品，有效期至 {{date}}",
   "Ex dono": "敬赠",
-  "Turn over": "翻转卡片"
+  "Turn over": "翻转卡片",
+  "Turn the card over to read the message": "翻转卡片，查看留言"
 }

@@ -24,7 +24,15 @@ const ReceivedGiftList: React.FC<ReceivedGiftListProps> = ({ cards, now }) => {
       {cards.map((card) => (
         <li key={card.id} className='flex flex-col gap-3'>
           <GiftCard face={card} year={new Date(card.startsAt).getFullYear()} />
-          <span className='px-1 font-medium'>{status(card)}</span>
+          <div className='flex flex-col gap-1 px-1'>
+            <span className='font-medium'>{status(card)}</span>
+            {/* The message is on the back, which a recipient may never turn to. */}
+            {card.message.trim() && (
+              <span className='text-base-content/70 eink:text-base-content text-[0.85em]'>
+                {_('Turn the card over to read the message')}
+              </span>
+            )}
+          </div>
         </li>
       ))}
     </ul>

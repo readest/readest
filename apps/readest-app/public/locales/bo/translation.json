@@ -2930,5 +2930,6 @@
   "Subscribe to {{plan}}": "{{plan}} མཁོ་མངགས་བྱེད།",
   "Gift, until {{date}}": "ལེགས་སྐྱེས། {{date}} བར།",
   "Ex dono": "ལེགས་སྐྱེས།",
-  "Turn over": "ཤོག་བྱང་སློག་པ།"
+  "Turn over": "ཤོག་བྱང་སློག་པ།",
+  "Turn the card over to read the message": "འཕྲིན་ཡིག་ཀློག་པར་ཤོག་བྱང་སློག་རོགས།"
 }
