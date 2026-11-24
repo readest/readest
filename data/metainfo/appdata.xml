@@ -70,6 +70,22 @@
   </supports>
 
   <releases>
+    <release version="0.12.20" date="2026-11-06">
+      <description>
+        <ul>
+          <li>Vocabulary: You can now build a vocabulary list, mark words as Learning or Mastered for Word Lens hints, and sync with Anki</li>
+          <li>Statistics: Added a reading statistics dashboard so you can see your reading habits at a glance</li>
+          <li>Reading: Added Page Flip and paper curl page turns, a page preview while dragging the progress slider, a straight-line reading ruler, and keyboard-only text selection</li>
+          <li>Styling: You can now ignore publisher fonts, make white image backgrounds transparent, and adjust dialogue highlighting</li>
+          <li>Text-to-Speech: You can now preview voices, pick a default voice per language, and sync downloaded read-aloud audio across devices</li>
+          <li>Library: You can now import pasted text and Word or RTF files, share collections as bundles, search for covers in the app</li>
+          <li>Sync: Added Grimmory, Obsidian, and CrossPoint 2.0 highlight sync, a new view of where your reading data goes, and a switch for servers with self-signed certificates</li>
+          <li>Dictionary: You can now resize the dictionary popup, customize AI context lookups, edit word hints, and choose your lookup app on Android</li>
+          <li>PDF: Text is now sharper, especially on iOS and Android, with smoother pinch zoom, panning, and gapless horizontal scrolling</li>
+          <li>More: The KOReader plugin can sign in with a QR code, iPhone Duo gets book mode on its inner display, and stylus annotation and sync are more reliable</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.12.16" date="2026-10-14">
       <description>
         <ul>
@@ -207,19 +223,6 @@
           <li>Text-to-Speech: Added offline voices on iOS, a setting to highlight by word or by sentence</li>
           <li>PDF: Smoother pinch-zoom and panning, faster scrolling on mobile, and a new contrast option in the view menu</li>
           <li>More: Customize the highlight toolbar across all books, filter exported annotations by color and style</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.11.12" date="2026-06-20">
-      <description>
-        <ul>
-          <li>Reading: Fixed full-page cover images and cover backgrounds that didn't display correctly under a page texture</li>
-          <li>Reading: Fixed a crash when opening large PDF files on mobile devices</li>
-          <li>Reading: You can now save or share an image straight from the image viewer</li>
-          <li>Speed Reading: Fixed the control bar overlapping the playback controls on mobile</li>
-          <li>Sync: Books without a reading status no longer jump back to the top after every sync</li>
-          <li>Sync: Your per-device reading view settings now stay local instead of syncing between devices</li>
-          <li>OPDS: Fixed the Add Catalog dialog appearing behind Settings on mobile</li>
         </ul>
       </description>
     </release>

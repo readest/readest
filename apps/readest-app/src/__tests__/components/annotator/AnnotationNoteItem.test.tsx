@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import dayjs from 'dayjs';
@@ -27,14 +28,15 @@ vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({ settings: {} }),
 }));
 
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
+vi.mock('@/store/bookDataStore', async () => {
+  const { bookDataStoreHooks } = await import('@/__tests__/helpers/book-data-store-mock');
+  return bookDataStoreHooks(() => ({
     getConfig: () => ({ viewSettings: {}, booknotes: h.booknotes }),
     setConfig: h.setConfig,
     saveConfig: h.saveConfig,
     updateBooknotes: h.updateBooknotes,
-  }),
-}));
+  }));
+});
 
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
@@ -107,6 +109,12 @@ describe('AnnotationNoteItem', () => {
     fireEvent.click(screen.getByText('Gryphon'));
 
     expect(h.setSideBarVisible).toHaveBeenCalledWith(true);
+    expect(h.setConfig).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        viewSettings: expect.objectContaining({ sideBarTab: 'annotations' }),
+      }),
+    );
   });
 
   it('hands the note to the shared editor instead of editing in place', () => {

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { FetchFn } from '@/services/sync/providers/oauth/tokenEndpoint';
 import {

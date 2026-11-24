@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Stripe keeps a refunded PaymentIntent at `succeeded`; the refund lives on

@@ -3,7 +3,6 @@
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trans } from 'react-i18next';
 import { IoArrowBack } from 'react-icons/io5';
 import { useEnv } from '@/context/EnvContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -21,14 +20,9 @@ import {
 import { stashHardcoverReturnTarget } from '@/services/hardcover/hardcoverConnection';
 import { eventDispatcher } from '@/utils/event';
 import { getHorizontalInsetStyle } from '@/utils/insets';
-import { stubTranslation as _ } from '@/utils/misc';
 import { navigateToLibrary } from '@/utils/nav';
-import { openExternalUrl } from '@/utils/open';
-import QRCode from '@/components/settings/integrations/QRCode';
+import DeviceCode from '@/components/DeviceCode';
 import WindowButtons from '@/components/WindowButtons';
-
-// Registers the key for extraction; it is rendered through <Trans> below.
-_('Visit {{url}} and enter');
 
 export default function HardcoverConnectPage() {
   const _ = useTranslation();
@@ -122,7 +116,7 @@ export default function HardcoverConnectPage() {
         <div
           ref={headerRef}
           className={clsx(
-            'fixed z-10 flex w-full items-center justify-between py-2 pe-6 ps-4',
+            'fixed z-30 flex w-full items-center justify-between py-2 pe-6 ps-4',
             appService?.hasTrafficLight && 'pt-11',
           )}
           style={{ top: `${safeAreaInsets?.top || 0}px` }}
@@ -152,36 +146,11 @@ export default function HardcoverConnectPage() {
           )}
         >
           {device ? (
-            <div className='flex w-full flex-col items-center gap-3 text-sm'>
-              <div className='mb-3'>
-                <QRCode value={device.verificationUriComplete} />
-              </div>
-              <p>{_('Scan this QR code')}</p>
-              <p className='text-base-content/50'>{_('— or —')}</p>
-              <p>
-                <Trans
-                  i18nKey='Visit {{url}} and enter'
-                  defaults='<0>Visit </0><1>{{url}}</1><2> and enter</2>'
-                  values={{ url: device.verificationUri }}
-                  components={[
-                    <span key='0' />,
-                    <a
-                      key='1'
-                      className='link link-primary'
-                      href={device.verificationUriComplete}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        openExternalUrl(device.verificationUriComplete);
-                      }}
-                    >
-                      {device.verificationUri}
-                    </a>,
-                    <span key='2' />,
-                  ]}
-                />
-              </p>
-              <div className='font-mono text-2xl tracking-widest'>{device.userCode}</div>
-            </div>
+            <DeviceCode
+              userCode={device.userCode}
+              verificationUri={device.verificationUri}
+              verificationUriComplete={device.verificationUriComplete}
+            />
           ) : (
             <span className='loading loading-spinner loading-md' />
           )}

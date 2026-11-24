@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
 import BookmarkPullDown from '@/app/reader/components/BookmarkPullDown';

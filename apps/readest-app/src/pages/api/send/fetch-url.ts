@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { corsAllMethods, runMiddleware } from '@/utils/cors';
 import { validateUserAndToken } from '@/utils/access';
 import { isBlockedHost } from '@/utils/network';
+import { publicFetch } from '@/utils/publicFetch';
 
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_HTML_BYTES = 5 * 1024 * 1024;
@@ -51,9 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (isBlockedHost(hopHost)) {
         return res.status(400).json({ error: 'This URL is not allowed' });
       }
-      const response = await fetch(currentUrl, {
+      const response = await publicFetch(currentUrl, {
         signal: controller.signal,
-        redirect: 'manual',
         headers: { 'User-Agent': 'ReadestBot/1.0 (+https://readest.com)' },
       });
       if (response.status >= 300 && response.status < 400) {
@@ -86,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(413).json({ error: 'Page is too large' });
     }
     const html = new TextDecoder('utf-8').decode(buffer);
-    return res.status(200).json({ html, finalUrl: upstream.url });
+    return res.status(200).json({ html, finalUrl: currentUrl });
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
       return res.status(504).json({ error: 'Fetching the URL timed out' });

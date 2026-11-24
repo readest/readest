@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { pickFresherMetadata } from '@/app/library/utils/libraryUtils';
 import { getBookWithUpdatedMetadata } from '@/utils/book';

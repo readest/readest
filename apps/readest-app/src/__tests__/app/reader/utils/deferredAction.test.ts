@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect, vi } from 'vitest';
 import {
   beginGesture,

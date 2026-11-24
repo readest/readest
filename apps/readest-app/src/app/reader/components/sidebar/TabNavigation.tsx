@@ -23,6 +23,8 @@ const TabNavigation: React.FC<{
 
   const forceMobileLayout = isForcedMobileLayout(appService?.isMobile, isIPhoneDuo);
   const isMobile = forceMobileLayout || window.innerWidth < 640 || window.innerHeight < 640;
+  // The footer bar's desktop layout (`sm:h-[52px]`) depends on width alone.
+  const besideDesktopFooter = !forceMobileLayout && window.innerWidth >= 640;
   const tabs = ['toc', 'annotations', 'bookmarks', ...(aiEnabled ? ['history'] : [])];
 
   const getTabLabel = (tab: string) => {
@@ -40,12 +42,17 @@ const TabNavigation: React.FC<{
     }
   };
 
+  // On e-ink the bar's top rule sits beside the footer bar's, so it takes the
+  // footer's 52px and centers the icons, which the active tab's outline would
+  // otherwise push down.
   return (
     <div
       className={clsx(
         'bottom-tab border-base-300/50 bg-base-200 flex w-full border-t',
+        'eink:border-base-content eink:bg-base-100',
         appService?.hasRoundedWindow && 'rounded-window-bottom-left',
         isMobile && 'h-[65px]',
+        besideDesktopFooter && 'eink:h-[52px]',
       )}
       dir='ltr'
     >
@@ -56,7 +63,8 @@ const TabNavigation: React.FC<{
           role='button'
           className={clsx(
             'flex-1 m-1.5 cursor-pointer rounded-lg transition-colors duration-200',
-            activeTab === tab && 'bg-base-300/85',
+            'eink:flex eink:items-center eink:justify-center eink:py-0',
+            activeTab === tab && 'bg-base-300/85 eink-bordered',
             isMobile ? 'p-3' : 'p-2',
           )}
           onClick={() => onTabChange(tab)}
@@ -68,6 +76,7 @@ const TabNavigation: React.FC<{
           }}
           title={getTabLabel(tab)}
           aria-label={getTabLabel(tab)}
+          aria-pressed={activeTab === tab}
         >
           <div className={clsx('flex h-6 items-center p-0', isMobile ? 'm-0.5' : 'm-0')}>
             {tab === 'toc' ? (

@@ -2,13 +2,15 @@ import clsx from 'clsx';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MdArrowBack, MdOutlineArrowOutward } from 'react-icons/md';
 
-import { BookDoc } from '@/libs/document';
+import { BookDoc, getDirection } from '@/libs/document';
 import { BookNote } from '@/types/book';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
+import { useVocabularyStore } from '@/store/vocabularyStore';
+import { vocabularyLang } from '@/services/vocabulary/entry';
 import { useFoliateEvents } from '../hooks/useFoliateEvents';
 import { useCustomFontStore } from '@/store/customFontStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -27,11 +29,14 @@ import { getPopupBounds, offsetPosition, PopupBounds } from '@/utils/insets';
 import { Insets } from '@/types/misc';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
+import { mountWhiteTransparencyFilter } from '@/utils/imageBackground';
 import { eventDispatcher } from '@/utils/event';
 import { getCfiSpinePrefix } from '@/utils/cfi';
 import { isLinkTargetVisible, shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
+import { refreshSectionGlosses } from '../utils/wordlensSection';
+import { glossWordRange } from '../utils/wordlensRuby';
 import {
   FootnoteExtractMapping,
   getFootnoteLocalCfi,
@@ -39,6 +44,7 @@ import {
 } from '../utils/footnoteCfi';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { isCJKLang } from '@/utils/lang';
+import { getLocale } from '@/utils/misc';
 import { Overlay } from '@/components/Overlay';
 import Popup from '@/components/Popup';
 
@@ -49,6 +55,14 @@ interface FootnotePopupProps {
 }
 
 const ZERO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+// The popup's paginator lays a note out by its own document's writing mode,
+// which need not match the book's setting (a horizontal endnotes file in a
+// vertical book). Measured along the other axis, `viewSize` went into the
+// wrong side of the box and the note reflowed between one line and one column
+// every frame (#7586).
+const noteDocVertical = (doc?: Document | null) =>
+  doc?.body && doc.defaultView ? getDirection(doc).vertical : null;
 
 const popupWidth = 360;
 const popupHeight = 88;
@@ -100,16 +114,24 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       ? { dir, point: { x: point.x, y: point.y + shift } }
       : { dir, point: { x: point.x + shift, y: point.y } };
   }, [trianglePosition, toolbarBlock]);
-  const [popupPosition, setPopupPosition] = useState<Position | null>();
   const [showPopup, setShowPopup] = useState(false);
+  // The note document's writing mode once the popup has read it; until then
+  // the book's setting decides. Mirrored in a ref for the handlers bound once.
+  const [popupVertical, setPopupVerticalState] = useState<boolean | null>(null);
+  const popupVerticalRef = useRef<boolean | null>(null);
+  const setPopupVertical = (vertical: boolean | null) => {
+    popupVerticalRef.current = vertical;
+    setPopupVerticalState(vertical);
+  };
 
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getBookData } = useBookDataStore();
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getView, getViewSettings } = useReaderStore();
   const { getLoadedFonts } = useCustomFontStore();
   const view = getView(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
+  const isVertical = popupVertical ?? !!viewSettings.vertical;
   const [footnoteHandler] = useState(() => new FootnoteHandler());
   const containerRef = useRef<HTMLDivElement>(null);
   const footnoteHrefRef = useRef<string | null>(null);
@@ -125,17 +147,29 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   // booknote id, so the sync effect below can restyle/remove them.
   const drawnNotesRef = useRef(new Map<string, { value: string; updatedAt: number }>());
   const [popupContentEpoch, setPopupContentEpoch] = useState(0);
+  // Redraw the open popup's Word Lens hints when this language's Learning /
+  // Mastered marks change, as the main view does: a word looked up from the
+  // popup can be marked while the popup stays open.
+  const bookLang = useBookDataStore(
+    (s) => s.booksData[bookKey.split('-')[0]!]?.book?.primaryLanguage,
+  );
+  const vocabularyMarksSignature = useVocabularyStore((s) => {
+    const { learning, mastered } = s.getLearningAndMastered(vocabularyLang(bookLang));
+    return JSON.stringify([[...learning], [...mastered]]);
+  });
   const booknotes = useBookDataStore((s) => s.booksData[bookKey.split('-')[0]!]?.config?.booknotes);
 
   // Point the popup at a new (or no) source document: drop the CFI mapping and
   // the drawn-overlay bookkeeping, and tell the Annotator that any selection
-  // made in the previous popup document is gone.
+  // made in the previous popup document is gone. `closed` says the popup
+  // itself went, which also closes a lookup opened on its text (#7727).
   const resetPopupAnnotationState = (
     map: { index: number; extract: FootnoteExtractMapping | null; doc?: Document } | null = null,
+    closed = false,
   ) => {
     popupMapRef.current = map;
     drawnNotesRef.current.clear();
-    eventDispatcher.dispatch('footnote-selection', { key: bookKey });
+    eventDispatcher.dispatch('footnote-selection', { key: bookKey, closed });
   };
   const historyRef = useRef<{ items: Record<string, unknown>[]; index: number }>({
     items: [],
@@ -172,41 +206,85 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const sizeAdjustCountRef = useRef(0);
   const maxSizeAdjustCount = 3;
   const contentSizeObserverRef = useRef<ResizeObserver | null>(null);
+  const linkRequestRef = useRef(0);
   const contentSizeFrameRef = useRef<number | null>(null);
   const size18 = useResponsiveSize(18);
   const popupPadding = useResponsiveSize(10);
 
+  // The cell less its safe-area insets, so the popup stays clear of the
+  // Dynamic Island, a camera cutout and the home indicator (#7389). In cell
+  // coordinates, like the triangle point: measured from the window, a pinned
+  // sidebar or the book beside this one counted as room, and the popup slid
+  // back over its noteref to fit the cell (#7637).
+  const getSafeArea = () => {
+    const { top, right, bottom, left } = gridInsetsRef.current;
+    const cell = document.querySelector(`#gridcell-${bookKey}`)?.getBoundingClientRect();
+    const cellWidth = cell?.width ?? window.innerWidth;
+    const cellHeight = cell?.height ?? window.innerHeight;
+    return {
+      top,
+      left,
+      right: cellWidth - right,
+      bottom: cellHeight - bottom,
+      width: cellWidth - left - right,
+      height: cellHeight - top - bottom,
+    };
+  };
+
+  // Derived, never stored: the box moves in the same commit that resizes it.
+  // Kept as state, the popup painted one frame at the size the content had
+  // measured and at the position the 88px seed had placed it at -- in a
+  // vertical book, where a long note measures 300-600px, that frame hung off
+  // the right edge of the screen before snapping back a frame later.
+  const popupPosition = useMemo(() => {
+    if (!anchor || !popupBounds) return null;
+    // The anchor is in cell coordinates; getPopupPosition works relative to the
+    // bounds' origin, so shift there and back (a no-op off the Duo).
+    const { rect, origin } = popupBounds;
+    const popupPos = getPopupPosition(
+      offsetPosition(anchor, { x: -origin.x, y: -origin.y }),
+      rect,
+      responsiveWidth,
+      responsiveHeight,
+      popupPadding,
+    );
+    return offsetPosition(popupPos, origin);
+  }, [anchor, popupBounds, responsiveWidth, responsiveHeight, popupPadding]);
+
   const getMaxHeight = useCallback(() => {
-    let availableHeight = window.innerHeight - 2 * popupPadding;
+    const safe = getSafeArea();
+    let availableHeight = safe.height - 2 * popupPadding;
     if (trianglePositionRef.current?.dir === 'up') {
-      availableHeight = trianglePositionRef.current.point.y - popupPadding;
+      availableHeight = trianglePositionRef.current.point.y - safe.top - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'down') {
-      availableHeight = window.innerHeight - trianglePositionRef.current.point.y - popupPadding;
+      availableHeight = safe.bottom - trianglePositionRef.current.point.y - popupPadding;
     }
     return availableHeight;
   }, [popupPadding]);
 
   const getMaxWidth = useCallback(() => {
-    let availableWidth = Math.min(window.innerWidth - 2 * popupPadding, 720);
+    const safe = getSafeArea();
+    let availableWidth = Math.min(safe.width - 2 * popupPadding, 720);
     if (trianglePositionRef.current?.dir === 'left') {
-      availableWidth = trianglePositionRef.current.point.x - popupPadding;
+      availableWidth = trianglePositionRef.current.point.x - safe.left - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'right') {
-      availableWidth = window.innerWidth - trianglePositionRef.current.point.x - popupPadding;
+      availableWidth = safe.right - trianglePositionRef.current.point.x - popupPadding;
     }
     return availableWidth;
   }, [popupPadding]);
 
   const getResponsivePopupSize = (size: number, isVertical: boolean) => {
-    const maxSize = isVertical ? window.innerWidth : window.innerHeight;
+    const safe = getSafeArea();
+    const maxSize = isVertical ? safe.width : safe.height;
     return Math.min(size, maxSize - popupPadding - 12);
   };
 
   const clipPopupWith = (size: number) => {
-    return Math.min(size, window.innerWidth - popupPadding - 12);
+    return Math.min(size, getSafeArea().width - popupPadding - 12);
   };
 
   const clipPopupHeight = (size: number) => {
-    return Math.min(size, window.innerHeight - popupPadding - 12);
+    return Math.min(size, getSafeArea().height - popupPadding - 12);
   };
 
   // Imperative, not an effect keyed on the trigger position: that effect ran
@@ -230,7 +308,12 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const fitPopupToContent = (view: FoliateView) => {
     const { renderer } = view;
     if (!renderer) return 0;
-    const vertical = getViewSettings(bookKey)!.vertical;
+    // A note running the other way from the seeded box needs that direction's
+    // cross axis too, not a one-line strip.
+    const seeded = popupVerticalRef.current ?? !!getViewSettings(bookKey)!.vertical;
+    const vertical = noteDocVertical(renderer.getContents?.()[0]?.doc) ?? seeded;
+    if (vertical !== seeded) seedPopupSize(vertical);
+    if (vertical !== popupVerticalRef.current) setPopupVertical(vertical);
     const box = popupSizeForContent(renderer.viewSize);
     const size = vertical
       ? clipPopupWith(Math.min(getResponsivePopupSize(box, true), getMaxWidth()))
@@ -266,6 +349,34 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     contentSizeObserverRef.current?.disconnect();
     contentSizeObserverRef.current = null;
   };
+
+  // Draw the Word Lens hints the main view would, from cached packs only:
+  // opening a footnote never starts a pack download.
+  const refreshPopupGlosses = (doc: Document) => {
+    const viewSettings = getViewSettings(bookKey);
+    if (!appService || !viewSettings?.wordLensEnabled) return;
+    if (bookDoc.rendition?.layout === 'pre-paginated') return;
+    const bookLang = getBookData(bookKey)?.book?.primaryLanguage;
+    void refreshSectionGlosses(doc, viewSettings, {
+      appService,
+      bookLang,
+      appLang: getLocale(),
+      allowDownload: false,
+      vocabulary: useVocabularyStore.getState().getLearningAndMastered(vocabularyLang(bookLang)),
+      // Hints drawn or removed move the text under the highlights mirrored
+      // here. Forget what was drawn so the next pass draws every one again.
+      onGlossesChanged: () => {
+        drawnNotesRef.current.clear();
+        setPopupContentEpoch((epoch) => epoch + 1);
+      },
+    });
+  };
+
+  useEffect(() => {
+    const doc = footnoteViewRef.current?.renderer.getContents?.()[0]?.doc;
+    if (doc) refreshPopupGlosses(doc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vocabularyMarksSignature]);
 
   useEffect(() => {
     const getHashFromHref = (href: string | null) => {
@@ -305,7 +416,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         setCanGoBack(true);
         footnoteHandler.handle(bookDoc, e)?.catch((err) => {
           console.warn(err);
-          getView(bookKey)?.goTo(popupLinkDetail.href);
+          getView(bookKey)?.goTo(popupLinkDetail.href, { focus: true });
           flashLinkTarget(popupLinkDetail.href);
           setShowPopup(false);
         });
@@ -320,6 +431,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         const { doc, index } = e.detail as { doc: Document; index: number };
         const bookData = getBookData(bookKey)!;
         keepTextAlignment(doc);
+        mountWhiteTransparencyFilter(doc);
         mountAdditionalFonts(doc, isCJKLang(bookData.book?.primaryLanguage));
         getLoadedFonts().forEach((font) => {
           mountCustomFont(doc, font);
@@ -382,6 +494,26 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           if (selectionTimer) clearTimeout(selectionTimer);
           report(true);
         });
+        // Word Lens: a tap on a hinted word looks it up, as it does in the
+        // book (#7691). A hint inside a link stays a link, and the reported
+        // range isn't selected here, so no later caret clears it.
+        doc.addEventListener('click', (ev: MouseEvent) => {
+          const ruby = (ev.target as Element | null)?.closest?.('ruby.wl-gloss');
+          if (!ruby || ruby.closest('a') || doc.getSelection()?.isCollapsed === false) return;
+          const range = glossWordRange(ruby);
+          if (!range) return;
+          selectionReported = false;
+          const getPopupCfi = getPopupCfiMapper(index);
+          eventDispatcher.dispatch('footnote-selection', {
+            key: bookKey,
+            range,
+            index,
+            cfi: getPopupCfi?.(range),
+            href: footnoteHrefRef.current?.split('#')[0],
+            getPopupCfi,
+            wordLens: true,
+          });
+        });
         if (appService?.isMobile) {
           // Same as the main view: the selection handles suffice on mobile.
           doc.addEventListener('contextmenu', (ev: Event) => ev.preventDefault());
@@ -395,6 +527,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           popupMapRef.current = { ...info, doc };
         }
         trackPopupContentSize(popupView, doc);
+        refreshPopupGlosses(doc);
         setPopupContentEpoch((epoch) => epoch + 1);
       });
       // Style callback for annotation overlays drawn in the popup document
@@ -451,7 +584,11 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       const viewSettings = getViewSettings(bookKey)!;
       renderer.setAttribute('flow', 'scrolled');
       renderer.setAttribute('no-preload', '');
-      renderer.setAttribute('no-background', '');
+      // Foliate moves authored body backgrounds onto its view surface. Let it
+      // paint those above the texture instead of discarding them with the fill.
+      if (!viewSettings.backgroundTextureId || viewSettings.backgroundTextureId === 'none') {
+        renderer.setAttribute('no-background', '');
+      }
       renderer.setAttribute('margin-top', '0px');
       renderer.setAttribute('margin-right', '0px');
       renderer.setAttribute('margin-bottom', '0px');
@@ -464,7 +601,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         const backgroundColor = getComputedStyle(popupContainer).backgroundColor;
         popupTheme.bg = backgroundColor;
       }
-      const mainStyles = getStyles(viewSettings, popupTheme, getLoadedFonts());
+      const mainStyles = getStyles(viewSettings, popupTheme, getLoadedFonts(), true);
       const footnoteStyles = getFootnoteStyles();
       renderer.setStyles?.(`${mainStyles}\n${footnoteStyles}`);
     };
@@ -488,7 +625,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           const viewSettings = getViewSettings(bookKey)!;
           const scrollRatio = renderer.viewSize / readingAxisSize;
           if (scrollRatio > 1.5) {
-            if (viewSettings.vertical) {
+            if (popupVerticalRef.current ?? viewSettings.vertical) {
               setResponsiveHeight(
                 clipPopupHeight(Math.min(popupWidth * scrollRatio, getMaxHeight())),
               );
@@ -561,47 +698,35 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchor]);
 
-  useEffect(() => {
-    if (anchor && popupBounds) {
-      // The anchor is in cell coordinates; getPopupPosition works relative
-      // to the bounds' origin, so shift there and back (a no-op off the Duo).
-      const { rect, origin } = popupBounds;
-      const popupPos = getPopupPosition(
-        offsetPosition(anchor, { x: -origin.x, y: -origin.y }),
-        rect,
-        responsiveWidth,
-        responsiveHeight,
-        popupPadding,
-      );
-      setPopupPosition(offsetPosition(popupPos, origin));
-    }
-  }, [anchor, popupBounds, responsiveWidth, responsiveHeight, popupPadding]);
-
   const docLinkHandler = async (event: Event) => {
     const detail = (event as CustomEvent).detail;
     // console.log('doc link click', detail);
     const gridFrame = document.querySelector(`#gridcell-${bookKey}`);
     if (!gridFrame) return;
-    // On iPhone Duo clamp to the safe region, not the physical cell: its
-    // status-bar strip can otherwise sit under a popup (#6307).
-    const bounds = getPopupBounds(
-      gridFrame.getBoundingClientRect(),
-      gridInsetsRef.current,
-      useThemeStore.getState().isIPhoneDuo,
-    );
+    // Clamp to the cell's safe region, not the physical cell: the Dynamic
+    // Island, a cutout or iPhone Duo's status strip can otherwise sit under
+    // the popup (#6307, #7389).
+    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current);
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = offsetPosition(
       getPosition(detail.a, bounds.rect, popupPadding, viewSettings.vertical),
       bounds.origin,
     );
     stopTrackingPopupContentSize();
+    setPopupVertical(null);
     seedPopupSize(viewSettings.vertical);
     setPopupBounds(bounds);
     setTrianglePosition(triangPos);
     trianglePositionRef.current = triangPos;
 
     const { a: anchor } = detail as { a: HTMLAnchorElement };
-    const footnoteClasses = ['duokan-footnote', 'footnote-link', 'footnote'];
+    const footnoteClasses = [
+      'duokan-footnote',
+      'footnote-link',
+      'footnote',
+      'footnote-ref',
+      'noteref',
+    ];
     if (footnoteClasses.some((cls) => anchor.classList.contains(cls))) {
       detail['follow'] = true;
     }
@@ -611,12 +736,19 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     historyRef.current = { items: [detail], index: 0 };
     setCanGoBack(false);
     setToolbarBlock(null);
+    const request = ++linkRequestRef.current;
     const popupPromise = footnoteHandler.handle(bookDoc, event);
     if (popupPromise) {
       popupPromise.catch((err: unknown) => {
         console.warn(err);
+        // The rejected view loaded the whole section and started sizing the
+        // popup to it; keep it hidden (#7537). A newer link owns the popup.
+        if (request === linkRequestRef.current) {
+          stopTrackingPopupContentSize();
+          setShowPopup(false);
+        }
         const detail = (event as CustomEvent).detail;
-        view?.goTo(detail.href);
+        view?.goTo(detail.href, { focus: true });
         flashLinkTarget(detail.href);
       });
     } else if (!event.defaultPrevented) {
@@ -647,7 +779,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     const href = sourceHref;
     handleDismissPopup();
     if (!href) return;
-    view?.goTo(href);
+    view?.goTo(href, { focus: true });
     flashLinkTarget(href);
   };
 
@@ -660,13 +792,12 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const handleDismissPopup = () => {
     closePopup();
     stopTrackingPopupContentSize();
-    resetPopupAnnotationState();
+    resetPopupAnnotationState(null, true);
     historyRef.current = { items: [], index: -1 };
     sizeAdjustCountRef.current = 0;
     trianglePositionRef.current = null;
     setCanGoBack(false);
     setPopupBounds(null);
-    setPopupPosition(null);
     setTrianglePosition(null);
     setToolbarBlock(null);
     setResponsiveWidth(popupWidth);
@@ -674,6 +805,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     setShowPopup(false);
     setSourceHref(null);
   };
+
+  useEffect(() => {
+    if (!showPopup) return;
+    // Paragraph navigation moves the anchor out from under this popup.
+    const onParagraphFocus = (event: CustomEvent) => {
+      if (event.detail?.bookKey === bookKey) handleDismissPopup();
+    };
+    eventDispatcher.on('paragraph-focus', onParagraphFocus);
+    return () => eventDispatcher.off('paragraph-focus', onParagraphFocus);
+  }, [bookKey, showPopup, handleDismissPopup]);
 
   // Handle custom footnote popup event from iframe event
   const handleFootnotePopupEvent = (event: CustomEvent) => {
@@ -683,15 +824,14 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     // This popup shows text synthesized from a data/alt attribute in the host
     // document: there is no book document behind it, so no CFI mapping.
     footnoteViewRef.current = null;
+    // This popup now owns the box: a pending link request must not close it.
+    linkRequestRef.current += 1;
     setSourceHref(null);
     stopTrackingPopupContentSize();
     resetPopupAnnotationState();
-    const bounds = getPopupBounds(
-      gridFrame.getBoundingClientRect(),
-      gridInsetsRef.current,
-      useThemeStore.getState().isIPhoneDuo,
-    );
+    const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current);
     const viewSettings = getViewSettings(bookKey)!;
+    setPopupVertical(null);
     const triangPos = offsetPosition(
       getPosition(element, bounds.rect, popupPadding, viewSettings.vertical),
       bounds.origin,
@@ -904,7 +1044,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
-      {showPopup && <Overlay onDismiss={handleDismissPopup} />}
+      {/* Above Paragraph mode's z-40 backdrop, below the popup's z-[42] band. */}
+      {showPopup && <Overlay className='z-[41]' onDismiss={handleDismissPopup} />}
       {/* The note's text is selectable, so the selection toolbar and the range
           handles open against a selection that lives inside this popup — they
           have to draw over it, exactly as they do over the book page. That used
@@ -920,25 +1061,24 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           relative, and the cell is its `relative` ancestor, so insetting the
           wrapper to the cell makes the stacking context without moving
           anything. `pointer-events-none` keeps the cell-covering wrapper from
-          swallowing the outside taps the Overlay above dismisses on. */}
-      <div className='pointer-events-none absolute inset-0 z-[42]'>
+          swallowing the outside taps the Overlay above dismisses on.
+
+          While closed the band is `invisible`: the note still loads and
+          measures off-screen, but a painted cell-wide band kept Chromium from
+          seeing the pointer over scrolled mode's overlay scrollbar, which
+          faded mid-drag and lost the drag (#7796). */}
+      <div
+        className={clsx('pointer-events-none absolute inset-0 z-[42]', !showPopup && 'invisible')}
+      >
         <Popup
           isOpen={showPopup}
           width={responsiveWidth}
           height={responsiveHeight}
           position={showPopup ? popupPosition! : undefined}
           trianglePosition={showPopup ? anchor! : undefined}
-          // Scroll along the note's block axis and clip the other one. A note
-          // that wraps can never need a horizontal scrollbar, but leaving that
-          // axis `visible` promotes it to `auto` (CSS resolves `visible` to
-          // `auto` next to a non-`visible` value), so any stray pixel of
-          // cross-axis overflow bought a second scrollbar (#5999).
-          className={clsx(
-            'select-text pointer-events-auto',
-            viewSettings.vertical
-              ? 'overflow-x-auto overflow-y-hidden'
-              : 'overflow-y-auto overflow-x-hidden',
-          )}
+          safeAreaInsets={gridInsets}
+          // Keep the texture surface stationary while the note scrolls inside it.
+          className='footnote-popup select-text pointer-events-auto overflow-clip'
           onDismiss={handleDismissPopup}
         >
           {canGoBack && (
@@ -947,7 +1087,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
             <div
               className={clsx(
                 'pointer-events-none absolute z-10 flex gap-1',
-                viewSettings.vertical
+                isVertical
                   ? 'bottom-2 end-2 top-2 w-8 flex-col items-end'
                   : 'end-2 start-2 top-2 h-8 flex-row items-start',
               )}
@@ -984,7 +1124,16 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           )}
           {/* Fill the popup's content box rather than restating its border-box
               size, which overflowed it by the border on both axes (#5999). */}
-          <div className='footnote-content h-full w-full' ref={footnoteRef}></div>
+          <div
+            className={clsx(
+              'footnote-content h-full w-full',
+              // Clip the cross axis so it cannot gain a second scrollbar (#5999).
+              isVertical
+                ? 'overflow-x-auto overflow-y-hidden'
+                : 'overflow-y-auto overflow-x-hidden',
+            )}
+            ref={footnoteRef}
+          ></div>
         </Popup>
       </div>
     </div>

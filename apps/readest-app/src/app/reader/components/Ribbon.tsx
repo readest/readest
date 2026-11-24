@@ -6,7 +6,10 @@ import { useThemeStore } from '@/store/themeStore';
 // different on a foldable's cover and inner displays.
 export const RIBBON_WIDTH = 24;
 
-const Ribbon: React.FC = () => {
+// A mono e-ink panel shows the red as grey; draw it in ink there (#7817),
+// outlined in paper: a dark theme's ink is light, and a page that isn't themed
+// (a PDF by default) stays white.
+const Ribbon: React.FC<{ isBwEink?: boolean }> = ({ isBwEink }) => {
   const { safeAreaInsets, isIPhoneDuo } = useThemeStore();
 
   // z-20 keeps the ribbon above the scrolled-mode `notch-area` mask (z-10 in
@@ -31,7 +34,13 @@ const Ribbon: React.FC = () => {
         shapeRendering='geometricPrecision'
         imageRendering='optimizeQuality'
       >
-        <polygon fill='#F44336' points='100 100, 50 78, 0 100, 0 0, 100 0' />
+        <polygon
+          fill='#F44336'
+          className={clsx(isBwEink && 'fill-base-content stroke-base-100')}
+          strokeWidth={isBwEink ? 2 : 0}
+          vectorEffect='non-scaling-stroke'
+          points='100 100, 50 78, 0 100, 0 0, 100 0'
+        />
       </svg>
     </div>
   );

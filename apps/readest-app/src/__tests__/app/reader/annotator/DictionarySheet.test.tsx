@@ -31,6 +31,8 @@ import type { BaseDir } from '@/types/system';
 import { createStarDictProvider } from '@/services/dictionaries/providers/starDictProvider';
 import { createDictProvider } from '@/services/dictionaries/providers/dictProvider';
 import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
+import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
+import type { CustomTranslator } from '@/types/translation';
 
 const waitFor = <T,>(callback: () => T | Promise<T>) =>
   waitForWithOptions(callback, { interval: 1 });
@@ -127,6 +129,26 @@ vi.mock('@/services/environment', async () => {
   };
 });
 
+// The AI context dictionary, faked so the context-only sheet has something to ask.
+const contextLookup = vi.hoisted(() => vi.fn());
+vi.mock('@/services/dictionaries/providers/contextProvider', async () => {
+  const { getLLMTranslators } = await import('@/store/customTranslatorStore');
+  const { useCustomDictionaryStore } = await import('@/store/customDictionaryStore');
+  return {
+    contextProvider: {
+      id: 'builtin:context',
+      kind: 'builtin',
+      label: 'Context Dictionary',
+      lookup: contextLookup,
+    },
+    getContextTranslator: () => {
+      const translators = getLLMTranslators();
+      const id = useCustomDictionaryStore.getState().settings.contextTranslatorId;
+      return translators.find((t) => t.id === id) ?? translators[0];
+    },
+  };
+});
+
 // Mock the registry: every test pushes its own providers onto this list.
 const providersForNextRender: DictionaryProvider[] = [];
 vi.mock('@/services/dictionaries/registry', () => ({
@@ -137,9 +159,10 @@ vi.mock('@/services/dictionaries/registry', () => ({
 
 // EnvProvider needs an appService; provide one with the file API the
 // (unmocked) StarDict provider uses for fixture reads.
+const saveSettings = vi.hoisted(() => vi.fn());
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({
-    envConfig: { getAppService: vi.fn().mockResolvedValue(null) },
+    envConfig: { getAppService: vi.fn().mockResolvedValue({ saveSettings }) },
     appService: { openFile: vi.fn() },
   }),
 }));
@@ -317,6 +340,7 @@ const renderSheet = (
     selection: DictionarySelectionContext;
     onDismiss: () => void;
     onManage: () => void;
+    contextOnly: boolean;
   }> = {},
 ) =>
   render(
@@ -326,6 +350,7 @@ const renderSheet = (
       selection={props.selection}
       onDismiss={props.onDismiss ?? (() => {})}
       onManage={props.onManage}
+      contextOnly={props.contextOnly}
     />,
   );
 
@@ -541,6 +566,28 @@ describe('DictionarySheet — expand / collapse', () => {
     expect(card()?.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('stays open when the click ends a text selection in the card (#7731)', async () => {
+    providersForNextRender.push(buildRealStarDictProvider());
+    renderSheet({ word: 'hello' });
+
+    await waitFor(() => screen.getByText('CMU American English spelling'));
+    const expanded = () => screen.getByTestId('dict-card').getAttribute('aria-expanded');
+    await waitFor(() => expect(expanded()).toBe('true'));
+
+    // Releasing a drag that selected part of the definition fires a click.
+    const content = screen.getByTestId('dict-card').querySelector('[data-dict-content]')!;
+    document.getSelection()!.selectAllChildren(content);
+    fireEvent.click(content, { detail: 1 });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(expanded()).toBe('true');
+    expect(document.getSelection()!.toString()).not.toBe('');
+
+    // A plain tap still collapses it.
+    document.getSelection()!.removeAllRanges();
+    fireEvent.click(content, { detail: 1 });
+    await waitFor(() => expect(expanded()).toBe('false'));
+  });
+
   it('defaults to collapsed when more than 3 providers have results', async () => {
     // Four providers, all with content → > 3 → default-collapsed.
     const providers: DictionaryProvider[] = [];
@@ -599,6 +646,183 @@ describe('DictionarySheet — in-content navigation', () => {
     fireEvent.click(screen.getByLabelText('Back'));
     await waitFor(() => expect(screen.getByTestId('dict-title').textContent).toBe('hello'));
     expect(screen.queryByLabelText('Back')).toBeNull();
+  });
+});
+
+describe('DictionarySheet — context dictionary alone (#7497)', () => {
+  it('asks only the context dictionary, whether or not it is on in the list', async () => {
+    providersForNextRender.push(buildRealStarDictProvider());
+    contextLookup.mockImplementation(
+      async (word: string, ctx: DictionaryLookupContext): Promise<DictionaryLookupOutcome> => {
+        ctx.container.append(document.createTextNode(`AI explains ${word}`));
+        return { ok: true, headword: word, sourceLabel: 'LLM' };
+      },
+    );
+    renderSheet({ word: 'hello', contextOnly: true });
+
+    await waitFor(() => expect(screen.getByText('AI explains hello')).toBeTruthy());
+    expect(screen.getAllByTestId('dict-card')).toHaveLength(1);
+    expect(screen.queryByText('CMU American English spelling')).toBeNull();
+  });
+});
+
+describe('DictionarySheet — context dictionary AI translator (#7669)', () => {
+  const llm = (id: string, name: string): CustomTranslator => ({
+    id,
+    type: 'openai-compatible',
+    name,
+    addedAt: 1,
+    updatedAt: 1,
+  });
+
+  beforeEach(() => {
+    contextLookup.mockImplementation(
+      async (word: string, ctx: DictionaryLookupContext): Promise<DictionaryLookupOutcome> => {
+        const id = useCustomDictionaryStore.getState().settings.contextTranslatorId ?? 'gpt';
+        ctx.container.append(document.createTextNode(`${id} explains ${word}`));
+        return { ok: true, headword: word, sourceLabel: id };
+      },
+    );
+  });
+
+  afterEach(() => {
+    useCustomTranslatorStore.setState({ translators: [], loaded: false });
+  });
+
+  it('asks another of the AI translators from the card, without re-asking the other cards', async () => {
+    useCustomTranslatorStore.setState({
+      loaded: true,
+      translators: [llm('gpt', 'GPT'), llm('claude', 'Claude')],
+    });
+    let starDictLookups = 0;
+    const starDict = buildRealStarDictProvider();
+    providersForNextRender.push(
+      {
+        ...starDict,
+        lookup: (word, ctx) => {
+          starDictLookups++;
+          return starDict.lookup(word, ctx);
+        },
+      },
+      {
+        id: 'builtin:context',
+        kind: 'builtin',
+        label: 'Context Dictionary',
+        lookup: contextLookup,
+      },
+    );
+    renderSheet({ word: 'hello' });
+
+    await waitFor(() => expect(screen.getByText('gpt explains hello')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('CMU American English spelling')).toBeTruthy());
+    const lookupsBefore = starDictLookups;
+    const picker = screen.getByLabelText('AI Translator') as HTMLSelectElement;
+    expect(picker.value).toBe('gpt');
+    const contextCard = picker.closest('[data-testid="dict-card"]')!;
+    const expanded = contextCard.getAttribute('aria-expanded');
+
+    fireEvent.click(picker);
+    expect(contextCard.getAttribute('aria-expanded')).toBe(expanded);
+
+    await act(async () => {
+      fireEvent.change(picker, { target: { value: 'claude' } });
+    });
+
+    await waitFor(() => expect(screen.getByText('claude explains hello')).toBeTruthy());
+    expect(screen.queryByText('gpt explains hello')).toBeNull();
+    expect(useCustomDictionaryStore.getState().settings.contextTranslatorId).toBe('claude');
+    await waitFor(() =>
+      expect(saveSettings).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dictionarySettings: expect.objectContaining({ contextTranslatorId: 'claude' }),
+        }),
+      ),
+    );
+    expect(starDictLookups).toBe(lookupsBefore);
+  });
+
+  it('keeps the other cards and the picker in place while the new translator answers', async () => {
+    useCustomTranslatorStore.setState({
+      loaded: true,
+      translators: [llm('gpt', 'GPT'), llm('claude', 'Claude')],
+    });
+    let release!: () => void;
+    contextLookup.mockImplementation(
+      async (word: string, ctx: DictionaryLookupContext): Promise<DictionaryLookupOutcome> => {
+        const id = useCustomDictionaryStore.getState().settings.contextTranslatorId ?? 'gpt';
+        if (id === 'claude') await new Promise<void>((resolve) => (release = resolve));
+        ctx.container.append(document.createTextNode(`${id} explains ${word}`));
+        return { ok: true, headword: word, sourceLabel: id };
+      },
+    );
+    const fixed = (id: string): DictionaryProvider => ({
+      id,
+      kind: 'stardict',
+      label: id,
+      async lookup(word, ctx) {
+        ctx.container.append(document.createTextNode(`${id}: ${word}`));
+        return { ok: true, headword: word, sourceLabel: id };
+      },
+    });
+    providersForNextRender.push(fixed('one'), fixed('two'), fixed('three'), {
+      id: 'builtin:context',
+      kind: 'builtin',
+      label: 'Context Dictionary',
+      lookup: contextLookup,
+    });
+    renderSheet({ word: 'hello' });
+
+    await waitFor(() => expect(screen.getByText('gpt explains hello')).toBeTruthy());
+    const picker = screen.getByLabelText('AI Translator') as HTMLSelectElement;
+    const contextCard = picker.closest('[data-testid="dict-card"]')!;
+    const otherCards = () =>
+      screen.getAllByTestId('dict-card').filter((card) => card !== contextCard);
+    // Four results: every card starts collapsed.
+    await waitFor(() =>
+      expect(otherCards().map((c) => c.getAttribute('aria-expanded'))).toEqual([
+        'false',
+        'false',
+        'false',
+      ]),
+    );
+
+    picker.focus();
+    await act(async () => {
+      fireEvent.change(picker, { target: { value: 'claude' } });
+    });
+
+    // While the new translator answers, nothing else moves and focus stays put.
+    expect(otherCards().map((c) => c.getAttribute('aria-expanded'))).toEqual([
+      'false',
+      'false',
+      'false',
+    ]);
+    expect(screen.getByLabelText('AI Translator')).toBe(picker);
+    expect(document.activeElement).toBe(picker);
+    expect(contextCard.querySelector('[data-testid="dict-card-skeleton"]')).not.toBeNull();
+
+    await act(async () => release());
+    await waitFor(() => expect(screen.getByText('claude explains hello')).toBeTruthy());
+    expect(contextCard.querySelector('[data-testid="dict-card-skeleton"]')).toBeNull();
+    expect(otherCards().map((c) => c.getAttribute('aria-expanded'))).toEqual([
+      'false',
+      'false',
+      'false',
+    ]);
+  });
+
+  it('shows no picker with a single AI translator', async () => {
+    useCustomTranslatorStore.setState({ loaded: true, translators: [llm('gpt', 'GPT')] });
+    providersForNextRender.push({
+      id: 'builtin:context',
+      kind: 'builtin',
+      label: 'Context Dictionary',
+      lookup: contextLookup,
+    });
+    renderSheet({ word: 'hello' });
+
+    await waitFor(() => expect(screen.getByText('gpt explains hello')).toBeTruthy());
+    expect(screen.queryByLabelText('AI Translator')).toBeNull();
   });
 });
 
@@ -742,6 +966,35 @@ describe('DictionarySheet — empty state', () => {
     const gear = screen.getByLabelText('Manage Dictionaries');
     fireEvent.click(gear);
     expect(onManage).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('DictionarySheet — streaming results', () => {
+  it('reveals an entry while its provider is still generating (#7279)', async () => {
+    let context!: DictionaryLookupContext;
+    let finish!: (outcome: DictionaryLookupOutcome) => void;
+    providersForNextRender.push({
+      id: 'streaming',
+      kind: 'builtin',
+      label: 'Streaming',
+      lookup(_word, ctx) {
+        context = ctx;
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      },
+    });
+    renderSheet({ word: 'bank' });
+    await waitFor(() => expect(context).toBeDefined());
+    await act(async () => {
+      context.container.textContent = 'A river side';
+      (context as DictionaryLookupContext & { onUpdate?: () => void }).onUpdate?.();
+    });
+    expect(context.container.classList.contains('hidden')).toBe(false);
+    expect(screen.queryByTestId('dict-card-skeleton')).toBeNull();
+    await act(async () => {
+      finish({ ok: true });
+    });
   });
 });
 

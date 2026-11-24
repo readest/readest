@@ -83,6 +83,10 @@ vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({ settings: {}, setSettings: vi.fn(), saveSettings: vi.fn() }),
 }));
 
+vi.mock('@/store/readerStore', () => ({
+  useReaderStore: { getState: () => ({ viewStates: {} }) },
+}));
+
 vi.mock('@/store/trafficLightStore', () => ({
   useTrafficLightStore: () => ({ isTrafficLightVisible: false }),
 }));

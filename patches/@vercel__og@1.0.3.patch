@@ -1,0 +1,15 @@
+diff --git a/dist/index.node.js b/dist/index.node.js
+index 4f360de7f45abe8b89697a6f3c20b6b8f1a7548a..4dc9536b99aef00f9a3755effc2fad885ee077ff 100644
+--- a/dist/index.node.js
++++ b/dist/index.node.js
+@@ -15395,7 +15395,9 @@ try {
+ }
+ 
+ // node_modules/.pnpm/satori@0.33.5/node_modules/satori/dist/index.js
+-var import_harfbuzzjs = __toESM(require_harfbuzzjs(), 1);
++// Load HarfBuzz from its package so its CommonJS loader can find hb.wasm.
++import harfbuzz from "harfbuzzjs";
++var import_harfbuzzjs = { default: harfbuzz };
+ var ZI = Object.create;
+ var Jr = Object.defineProperty;
+ var jI = Object.getOwnPropertyDescriptor;

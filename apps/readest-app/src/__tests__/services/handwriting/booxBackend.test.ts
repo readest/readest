@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { BooxHandwritingBackend } from '@/services/handwriting/booxBackend';

@@ -6,12 +6,15 @@ import * as CFI from 'foliate-js/epubcfi.js';
 // this describes how CFI paths translate between the two:
 // - `containerCfi`: collapsed CFI (document part only) of the element the
 //   fragment was extracted from,
+// - `depth`: how many copies of that element and its ancestors the popup body
+//   wraps the fragment in, each the only child of the one above (#7103),
 // - `delta`: constant shift of every first-level child-step index (2 x the
 //   number of container element children preceding the extraction start),
 // - `firstIndex`/`lastIndex`: the range of first-level indices (in pristine
 //   document terms) the fragment covers, for reverse-mapping bounds.
 export interface FootnoteExtractMapping {
   containerCfi: string;
+  depth: number;
   delta: number;
   firstIndex: number;
   lastIndex: number;
@@ -71,6 +74,19 @@ const normalizeBoundary = (node: Node, offset: number, isEnd: boolean): [Node, n
   return [node, offset];
 };
 
+// CFI steps from the popup root down to the element the fragment sits in: the
+// body, or the innermost copy of the elements it came from.
+const fragmentParentParts = (
+  popupDoc: Document,
+  mapping: FootnoteExtractMapping,
+): CfiPart[] | null => {
+  let parent: Element | null = popupDoc.body;
+  for (let i = 0; i < mapping.depth; i++) parent = parent?.firstElementChild ?? null;
+  if (!parent) return null;
+  const parts = boundaryParts(parent, 0);
+  return parts?.length ? parts : null;
+};
+
 // Translate a selection range inside the (mutated) footnote popup document
 // into a CFI that resolves in the pristine section document, joined onto the
 // section's spine base CFI. Returns null when the range cannot be mapped.
@@ -80,16 +96,19 @@ export const getFootnoteSelectionCfi = (
   baseCfi: string,
 ): string | null => {
   try {
-    if (!range.startContainer.ownerDocument?.body) return null;
+    const popupDoc = range.startContainer.ownerDocument;
     const containerParts = parseSinglePath(mapping.containerCfi);
-    if (!containerParts?.length) return null;
+    if (!popupDoc || !containerParts?.length) return null;
+    // Steps down to the element the fragment sits in. Counted from its own CFI
+    // path, not from `depth`: a copy marked cfi-skip takes no CFI step.
+    const parentParts = fragmentParentParts(popupDoc, mapping);
+    if (!parentParts) return null;
 
     const mapBoundary = (node: Node, offset: number, isEnd: boolean): string | null => {
       const [n, o] = normalizeBoundary(node, offset, isEnd);
       const parts = boundaryParts(n, o);
-      // parts[0] is the popup <body> step; below it lies the fragment
-      if (!parts || parts.length < 2) return null;
-      const [, first, ...rest] = parts as [CfiPart, CfiPart, ...CfiPart[]];
+      if (!parts || parts.length <= parentParts.length) return null;
+      const [first, ...rest] = parts.slice(parentParts.length) as [CfiPart, ...CfiPart[]];
       const mapped = [...containerParts, { ...first, index: first.index + mapping.delta }, ...rest];
       return CFI.joinIndir(baseCfi, CFI.toString([mapped]) as string) as string;
     };
@@ -116,9 +135,9 @@ export const getFootnoteLocalCfi = (
 ): string | null => {
   try {
     const containerParts = parseSinglePath(mapping.containerCfi);
-    if (!containerParts?.length || !popupDoc.body) return null;
-    const bodyParts = boundaryParts(popupDoc.body, 0);
-    if (!bodyParts?.length) return null;
+    if (!containerParts?.length) return null;
+    const bodyParts = fragmentParentParts(popupDoc, mapping);
+    if (!bodyParts) return null;
 
     const mapPath = (parts: CfiPart[][]): CfiPart[][] | null => {
       const docParts = parts[parts.length - 1];

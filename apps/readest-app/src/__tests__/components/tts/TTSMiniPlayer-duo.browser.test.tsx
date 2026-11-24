@@ -39,11 +39,14 @@ vi.mock('@/store/readerStore', async () => {
 vi.mock('@/store/readerProgressStore', () => ({
   useBookProgress: () => ({ sectionLabel: 'Chapter 5' }),
 }));
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
-    getBookData: () => ({ book: { title: 'Alice in Wonderland', coverImageUrl: null } }),
-  }),
-}));
+vi.mock('@/store/bookDataStore', async () => {
+  const { bookDataStoreHooks } = await import('@/__tests__/helpers/book-data-store-mock');
+  return {
+    ...bookDataStoreHooks(() => ({
+      getBookData: () => ({ book: { title: 'Alice in Wonderland', coverImageUrl: null } }),
+    })),
+  };
+});
 
 import TTSMiniPlayer from '@/app/reader/components/tts/TTSMiniPlayer';
 import { useThemeStore } from '@/store/themeStore';

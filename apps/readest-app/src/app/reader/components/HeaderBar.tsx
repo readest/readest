@@ -7,7 +7,7 @@ import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData, useBookDataStore } from '@/store/bookDataStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -15,6 +15,7 @@ import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { useTrafficLight } from '@/hooks/useTrafficLight';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useSpatialNavigation } from '@/app/reader/hooks/useSpatialNavigation';
+import { useWindowFocusRestore } from '@/app/reader/hooks/useWindowFocusRestore';
 import { getHighlightColorHex } from '../utils/annotatorUtil';
 import { annotationToolQuickActions } from './annotator/AnnotationTools';
 import { AnnotationToolType } from '@/types/annotator';
@@ -31,6 +32,7 @@ import SidebarToggler from './SidebarToggler';
 import BookmarkToggler from './BookmarkToggler';
 import NotebookToggler from './NotebookToggler';
 import TranslationToggler from './TranslationToggler';
+import DuoBookModeToggler from './DuoBookModeToggler';
 import ViewMenu from './ViewMenu';
 import SyncInfoDialog from './SyncInfoDialog';
 
@@ -67,21 +69,24 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const { isDarkMode, systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
   const { isSideBarVisible, getIsSideBarVisible } = useSidebarStore();
   const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
-  const { getBookData, getConfig } = useBookDataStore();
   const viewSettings = getViewSettings(bookKey);
-  const bookData = getBookData(bookKey);
-  const bookConfig = getConfig(bookKey);
+  const bookData = useBookData(bookKey);
   // Readest Cloud's per-book stamps. Includes the PUSH stamps so this agrees
   // with the View menu's sync row, which has always counted them — otherwise
   // the row could read "Synced 2 minutes ago" while this dialog said "Never
-  // synced" for the same book.
-  const nativeLastSyncedAt =
-    Math.max(
-      bookConfig?.lastSyncedAtConfig || 0,
-      bookConfig?.lastSyncedAtNotes || 0,
-      bookConfig?.lastPushedAtConfig || 0,
-      bookConfig?.lastPushedAtNotes || 0,
-    ) || undefined;
+  // synced" for the same book. Selected as one number: the config itself
+  // changes on every progress save (updatedAt), which the header doesn't show.
+  const nativeLastSyncedAt = useBookDataStore((s) => {
+    const bookConfig = s.getConfig(bookKey);
+    return (
+      Math.max(
+        bookConfig?.lastSyncedAtConfig || 0,
+        bookConfig?.lastSyncedAtNotes || 0,
+        bookConfig?.lastPushedAtConfig || 0,
+        bookConfig?.lastPushedAtNotes || 0,
+      ) || undefined
+    );
+  });
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMetaHashDialogOpen, setIsMetaHashDialogOpen] = useState(false);
@@ -91,6 +96,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
+  const isWindowFocusRestore = useWindowFocusRestore();
 
   const enableAnnotationQuickActions = viewSettings?.enableAnnotationQuickActions;
   const annotationQuickActionButton =
@@ -148,12 +154,14 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   }, []);
 
   // Check if mouse is outside header area to avoid false positive event of MouseLeave when clicking inside header on Windows
+  // The top edge itself counts as inside: a pointer pushed against the top of a
+  // maximized window sits at y=0 and can't leave upward (#7015).
   const isMouseOutsideHeader = useCallback((clientX: number, clientY: number) => {
     if (!headerRef.current) return true;
 
     const rect = headerRef.current.getBoundingClientRect();
     return (
-      clientX <= rect.left || clientX >= rect.right || clientY <= rect.top || clientY >= rect.bottom
+      clientX <= rect.left || clientX >= rect.right || clientY < rect.top || clientY >= rect.bottom
     );
   }, []);
 
@@ -206,6 +214,13 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         onClick={() => setHoveredBookKey(bookKey)}
         onMouseEnter={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
         onTouchStart={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
+        // A pointer that crosses the strip straight into the book never enters
+        // the header, so the header's own mouseleave never comes (#6999).
+        onMouseLeave={(e) => {
+          if (!appService?.isMobile && isMouseOutsideHeader(e.clientX, e.clientY)) {
+            setHoveredBookKey('');
+          }
+        }}
       />
       <div
         className={clsx(
@@ -223,7 +238,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         aria-label={_('Header Bar')}
         className={clsx(
           `header-bar bg-base-100 absolute top-0 z-10 flex h-11 w-full items-center pr-4`,
-          `shadow-xs transition-[opacity,margin-top] duration-300`,
+          `shadow-xs eink:border-b eink:border-base-content transition-[opacity,margin-top] duration-300`,
           trafficLightInHeader ? 'pl-20' : isSideBarVisible ? 'ps-4' : 'ps-4 sm:ps-1.5',
           appService?.hasRoundedWindow && 'rounded-window-top-right',
           !isSideBarVisible && appService?.hasRoundedWindow && 'rounded-window-top-left',
@@ -239,7 +254,9 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
           // (#6307); clear it without losing the header's own ps-4/pr-4 padding.
           ...getHorizontalInsetStyle(insets, isIPhoneDuo, 16),
         }}
-        onFocus={() => !appService?.isMobile && setHoveredBookKey(bookKey)}
+        onFocus={() =>
+          !appService?.isMobile && !isWindowFocusRestore() && setHoveredBookKey(bookKey)
+        }
         onMouseLeave={(e) => {
           if (!appService?.isMobile && isMouseOutsideHeader(e.clientX, e.clientY)) {
             setHoveredBookKey('');
@@ -257,10 +274,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               px-1.5 reserves the 6px each 44px halo extends past its 32px
               button, so the halos do not create a draggable scroll range. */}
           <div className='no-scrollbar flex h-full min-w-0 items-center gap-x-4 overflow-x-auto px-1.5 max-[350px]:gap-x-2'>
-            {/* Tablet portrait runs the mobile footer bar, whose TOC tab opens
-                this same sidebar — showing the toggle here too gave one action
-                two buttons (#5634). Phones are already covered by `sm:`. */}
-            {!isSideBarVisible && !forceMobileLayout && (
+            {/* Tablets keep the toggle top-left in every orientation, where
+                it sits on desktop, so it is not mistaken for Go to Library
+                (#7292). Phones are hidden by `sm:`; iPhone Duo keeps the
+                phone bars, whose TOC tab opens this sidebar (#5634). */}
+            {!isSideBarVisible && !(forceMobileLayout && isIPhoneDuo) && (
               <div className='hidden sm:flex'>
                 <SidebarToggler bookKey={bookKey} />
               </div>
@@ -274,6 +292,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
             </button>
             <BookmarkToggler bookKey={bookKey} />
             <TranslationToggler bookKey={bookKey} />
+            <DuoBookModeToggler bookKey={bookKey} />
           </div>
           {enableAnnotationQuickActions && (
             <Dropdown
@@ -378,4 +397,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   );
 };
 
-export default HeaderBar;
+// Memoized: its props hold still while pages turn, so a turn's re-render of the
+// book cell skips the header and its buttons.
+export default React.memo(HeaderBar);

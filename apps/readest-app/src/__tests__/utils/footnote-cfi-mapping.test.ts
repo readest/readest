@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as CFI from 'foliate-js/epubcfi.js';
-import { getExtractMapping } from 'foliate-js/footnotes.js';
+import { extractToBody, getExtractMapping } from 'foliate-js/footnotes.js';
 import {
   FootnoteExtractMapping,
   getFootnoteSelectionCfi,
@@ -42,10 +42,16 @@ const simulatePopup = (
 ): FootnoteExtractMapping | null => {
   const range = buildRange(doc);
   const mapping = getExtractMapping(range) as FootnoteExtractMapping | null;
-  const frag = range.extractContents();
-  doc.body.replaceChildren();
-  doc.body.appendChild(frag);
+  extractToBody(doc, range);
   return mapping;
+};
+
+// The popup element the fragment was moved into: the innermost copy of the
+// elements it came from (#7103).
+const fragmentParent = (doc: Document) => {
+  let el: Element = doc.body;
+  while (el.firstElementChild && el.childNodes.length === 1) el = el.firstElementChild;
+  return el;
 };
 
 // Resolve a full (spine-prefixed) CFI against a document, the way
@@ -123,7 +129,7 @@ describe('footnote popup CFI mapping', () => {
       liContents,
       (popupDoc) => {
         // "Second note text" without the trailing part
-        const text = popupDoc.body.firstChild!;
+        const text = popupDoc.getElementById('fn2')!.firstChild!;
         const range = popupDoc.createRange();
         range.setStart(text, 7);
         range.setEnd(text, 16);
@@ -181,19 +187,19 @@ describe('footnote popup CFI mapping', () => {
     roundTrip(
       dtRun,
       (popupDoc) => {
-        // End boundary sits ON the <dl>-less popup body at a child index: the
+        // End boundary sits ON the popup's <dl> copy at a child index: the
         // raw CFI step for an element carries no offset, so the boundary must
         // be pushed into the preceding child's text or it collapses to the
         // element start and the mapped range loses everything after it.
         const dt = popupDoc.getElementById('dt1')!;
         const range = popupDoc.createRange();
         range.setStart(dt.firstChild!, 0);
-        range.setEnd(popupDoc.body, 2);
+        range.setEnd(fragmentParent(popupDoc), 2);
         return range;
       },
       (pristineDoc) => {
         const dt = pristineDoc.getElementById('dt1')!;
-        // body offset 2 is the boundary before the first <dd>, i.e. the end of
+        // <dl> offset 2 is the boundary before the first <dd>, i.e. the end of
         // the inter-element whitespace that follows <dt> — normalization must
         // land there rather than collapsing to the container's start.
         const afterDt = dt.nextSibling as Text;
@@ -264,6 +270,31 @@ describe('footnote popup CFI mapping', () => {
     expect(getFootnoteLocalCfi(bookCfi, mapping, popupDoc)).toBeNull();
   });
 
+  it('maps a selection under a cfi-skip ancestor, which the copies keep but CFI omits', () => {
+    const section = SECTION.replace(
+      '<ol class="notes">',
+      '<div class="wrap" cfi-skip=""><ol class="notes">',
+    ).replace('</ol>', '</ol></div>');
+    const popupDoc = XHTML(section);
+    const pristineDoc = XHTML(section);
+    const mapping = simulatePopup(popupDoc, liContents)!;
+    expect(mapping).not.toBeNull();
+
+    const text = popupDoc.getElementById('fn2')!.firstChild!;
+    const selection = popupDoc.createRange();
+    selection.setStart(text, 7);
+    selection.setEnd(text, 16);
+    const cfi = getFootnoteSelectionCfi(selection, mapping, BASE_CFI);
+    expect(cfi).toBeTruthy();
+    const resolved = resolveInDoc(pristineDoc, cfi!);
+    expect(resolved!.startContainer).toBe(pristineDoc.getElementById('fn2')!.firstChild);
+    expect(resolved!.startOffset).toBe(7);
+    expect(resolved!.endOffset).toBe(16);
+
+    const localCfi = getFootnoteLocalCfi(cfi!, mapping, popupDoc);
+    expect(resolveInDoc(popupDoc, localCfi!)!.toString()).toBe(selection.toString());
+  });
+
   it('returns null when the selection boundary cannot be pushed below the popup body', () => {
     const popupDoc = XHTML(SECTION);
     const mapping = simulatePopup(popupDoc, liContents)!;
@@ -280,7 +311,7 @@ describe('footnote popup CFI mapping', () => {
     const popupDoc = XHTML(SECTION);
     const mapping = simulatePopup(popupDoc, liContents)!;
     const range = popupDoc.createRange();
-    range.selectNodeContents(popupDoc.body.firstChild!);
+    range.selectNodeContents(fragmentParent(popupDoc));
     expect(
       getFootnoteSelectionCfi(range, { ...mapping, containerCfi: 'not a cfi' }, BASE_CFI),
     ).toBeNull();

@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { DocumentLoader } from '@/libs/document';
 import type { BookDoc } from '@/libs/document';
 import type { FoliateView, Renderer } from '@/types/view';
+import { NativePageTurn } from '@/app/reader/utils/nativePageTurn';
 
 // Vite serves fixture files; fetch the EPUB at runtime in the browser.
 const EPUB_URL = new URL('../fixtures/data/sample-alice.epub', import.meta.url).href;
@@ -62,6 +63,40 @@ const waitForFillComplete = async (el: Renderer, timeout = 10000) => {
   }
 };
 
+/** Hold snapshot encoding open so tests can interrupt a preview after capture starts. */
+const startPausedPreview = async (paginator: Renderer, signal?: AbortSignal) => {
+  let complete!: () => void;
+  const snapshot = new Promise<void>((resolve) => {
+    complete = resolve;
+  });
+  try {
+    return await vi.waitUntil(
+      async () => {
+        let started!: () => void;
+        const ready = new Promise<true>((resolve) => {
+          started = () => resolve(true);
+        });
+        const preview = paginator.previewPage!(
+          false,
+          () => {
+            started();
+            return snapshot;
+          },
+          signal,
+        );
+        // ResizeObserver can cancel during preview's paint frames. Wait for
+        // that attempt to finish before retrying; capture readiness alone hangs.
+        const captured = await Promise.race([ready, preview.then(() => false)]);
+        return captured ? { preview, complete } : false;
+      },
+      { timeout: 3000, interval: 20 },
+    );
+  } catch (error) {
+    complete();
+    throw error;
+  }
+};
+
 describe('Paginator multi-view architecture (browser)', () => {
   let paginator: Renderer;
 
@@ -70,11 +105,11 @@ describe('Paginator multi-view architecture (browser)', () => {
     await import('foliate-js/paginator.js');
   }, 30000);
 
-  const createPaginator = () => {
+  const createPaginator = (width = 800) => {
     const el = document.createElement('foliate-paginator') as Renderer;
     // The paginator needs non-zero dimensions for layout calculations
     Object.assign(el.style, {
-      width: '800px',
+      width: `${width}px`,
       height: '600px',
       position: 'absolute',
       left: '0',
@@ -105,6 +140,213 @@ describe('Paginator multi-view architecture (browser)', () => {
   });
 
   describe('Initial state', () => {
+    it('rejects backwards turns at the start during warm-up and still advances afterwards', async () => {
+      paginator = createPaginator(360);
+      paginator.open(book);
+      const stabilized = waitForStabilized(paginator);
+      await paginator.goTo({ index: 0 });
+      await stabilized;
+      await waitForFillComplete(paginator);
+      const keys = new Set<string>();
+      const native = new NativePageTurn(
+        {
+          getHostElement: () => document.body,
+          getContentRect: () => paginator.getBoundingClientRect(),
+          capture: async () => {
+            throw new Error('No encoded capture');
+          },
+          navigate: async (forward) => {
+            await (forward ? paginator.next() : paginator.prev());
+          },
+        },
+        {
+          renderer: paginator,
+          enabled: () => true,
+          call: async (command) => {
+            if (command.op === 'capture') {
+              expect(paginator.getPageTurnKey?.()).toBe(command.key);
+              keys.add(command.key!);
+            }
+            return { ready: true, keys: [...keys] };
+          },
+        },
+      );
+      try {
+        for (let i = 0; i < 3; i++) {
+          const warm = native.prepareCapture('curl');
+          expect(await native.turn(false, false)).toBe(false);
+          await warm;
+        }
+        for (let i = 0; i < 3; i++) {
+          const before = paginator.getPageTurnKey?.();
+          expect(await native.turn(true, false)).toBe(true);
+          const after = paginator.getPageTurnKey?.();
+          expect(after).not.toBe(before);
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          expect(paginator.getPageTurnKey?.()).toBe(after);
+        }
+      } finally {
+        native.dispose();
+      }
+    });
+
+    it('previews an adjacent page without relocating or changing the reading position', async () => {
+      await setupAt(book.sections!.findIndex((s) => s.linear !== 'no'));
+      await paginator.next();
+      await waitForFillComplete(paginator);
+      const position = paginator.containerPosition;
+      const key = paginator.getPageTurnKey?.();
+      expect(key).toBeTruthy();
+      const events: string[] = [];
+      paginator.addEventListener('relocate', () => events.push('relocate'));
+      paginator.addEventListener('scroll', () => events.push('scroll'));
+      const result = await paginator.previewPage?.(false, async () => {
+        expect(paginator.containerPosition).not.toBe(position);
+        return 'captured';
+      });
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      expect(result?.value).toBe('captured');
+      expect(result?.key).not.toBe(key);
+      expect(paginator.containerPosition).toBe(position);
+      expect(paginator.getPageTurnKey?.()).toBe(key);
+      expect(events).toEqual([]);
+    });
+
+    it('restores a failed preview before allowing the next navigation', async () => {
+      await setupAt(book.sections!.findIndex((s) => s.linear !== 'no'));
+      await paginator.next();
+      await waitForFillComplete(paginator);
+      const position = paginator.containerPosition;
+      await expect(
+        paginator.previewPage?.(false, async () => {
+          throw new Error('snapshot failed');
+        }),
+      ).rejects.toThrow('snapshot failed');
+      expect(paginator.containerPosition).toBe(position);
+      await paginator.prev();
+      expect(paginator.containerPosition).not.toBe(position);
+    });
+
+    it('restores the viewport on contact before an in-flight snapshot finishes', async () => {
+      await setupAt(book.sections!.findIndex((s) => s.linear !== 'no'));
+      await paginator.next();
+      await waitForFillComplete(paginator);
+      const position = paginator.containerPosition;
+      const abort = new AbortController();
+      const { preview, complete } = await startPausedPreview(paginator, abort.signal);
+      try {
+        expect(paginator.containerPosition).not.toBe(position);
+        abort.abort();
+        expect(paginator.containerPosition).toBe(position);
+      } finally {
+        complete();
+        await preview;
+      }
+      await paginator.prev();
+      expect(paginator.containerPosition).not.toBe(position);
+    });
+
+    it('unlocks a cancelled preview without waiting for slow snapshot encoding', async () => {
+      await setupAt(book.sections!.findIndex((s) => s.linear !== 'no'));
+      await paginator.next();
+      await waitForFillComplete(paginator);
+      const abort = new AbortController();
+      const { preview, complete } = await startPausedPreview(paginator, abort.signal);
+      abort.abort();
+      const navigation = paginator.prev();
+      try {
+        const unlockedBeforeEncoding = await Promise.race([
+          navigation.then(() => true),
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 1000)),
+        ]);
+        expect(unlockedBeforeEncoding).toBe(true);
+      } finally {
+        complete();
+        await preview;
+        await navigation;
+      }
+    });
+
+    it('does not add the legacy 100ms lock delay to a native paper commit', async () => {
+      await setupAt(book.sections!.findIndex((s) => s.linear !== 'no'));
+      await paginator.next();
+      await waitForFillComplete(paginator);
+      const timer = vi.spyOn(globalThis, 'setTimeout');
+      try {
+        paginator.setAttribute('data-native-paper-commit', '');
+        await paginator.prev();
+        expect(timer.mock.calls.filter(([, delay]) => delay === 100)).toHaveLength(0);
+      } finally {
+        timer.mockRestore();
+      }
+    });
+
+    it.each([
+      'before paint',
+      'during paint',
+    ])('reaches capture readiness after a preview is cancelled %s', async (timing) => {
+      await setupAt(book.sections!.findIndex((s) => s.linear !== 'no'));
+      await paginator.next();
+      await waitForFillComplete(paginator);
+      const previewPage = paginator.previewPage!.bind(paginator);
+      const cancelledCapture = vi.fn();
+      const previewSpy = vi
+        .spyOn(paginator, 'previewPage')
+        .mockImplementationOnce((forward, read, signal) => {
+          if (timing === 'before paint') return Promise.resolve(null);
+          const position = paginator.containerPosition;
+          const preview = previewPage(
+            forward,
+            () => {
+              cancelledCapture();
+              return read();
+            },
+            signal,
+          );
+          expect(paginator.containerPosition).not.toBe(position);
+          requestAnimationFrame(() => paginator.render!());
+          return preview;
+        });
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let paused: Awaited<ReturnType<typeof startPausedPreview>> | null = null;
+      try {
+        paused = await Promise.race([
+          startPausedPreview(paginator),
+          new Promise<null>((resolve) => {
+            timer = setTimeout(() => resolve(null), 4000);
+          }),
+        ]);
+        expect(paused, 'cancelled preview must not leave capture readiness pending').not.toBeNull();
+        expect(cancelledCapture).not.toHaveBeenCalled();
+        expect(previewSpy.mock.calls.length).toBeGreaterThan(1);
+        paused!.complete();
+        await expect(paused!.preview).resolves.not.toBeNull();
+      } finally {
+        clearTimeout(timer);
+        paused?.complete();
+        await paused?.preview;
+        previewSpy.mockRestore();
+      }
+    });
+
+    it('does not overwrite a resize reanchor when the old snapshot completes', async () => {
+      await setupAt(book.sections!.findIndex((s) => s.linear !== 'no'));
+      await paginator.next();
+      await waitForFillComplete(paginator);
+      const { preview, complete } = await startPausedPreview(paginator);
+      try {
+        paginator.style.width = '600px';
+        paginator.render!();
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const reanchored = paginator.containerPosition;
+        complete();
+        await preview;
+        expect(paginator.containerPosition).toBe(reanchored);
+      } finally {
+        complete();
+        await preview;
+      }
+    });
     it('should expose primaryIndex as -1 before any section is loaded', () => {
       paginator = createPaginator();
       paginator.open(book);

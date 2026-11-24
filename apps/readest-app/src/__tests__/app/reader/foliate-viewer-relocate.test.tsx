@@ -4,12 +4,28 @@ import type { ComponentProps } from 'react';
 import FoliateViewer from '@/app/reader/components/FoliateViewer';
 import { useFoliateEvents } from '@/app/reader/hooks/useFoliateEvents';
 
-const { setProgress, readerState } = vi.hoisted(() => {
+const { setProgress, readerState, wipe, linked } = vi.hoisted(() => {
   const setProgress = vi.fn();
+  // An Auto Scroll wipe running ahead of the reader (#7575), and the commit
+  // callback FoliateViewer hands it.
+  const wipe = {
+    ahead: false,
+    // Stable, like the hook's.
+    isWipeAhead: () => wipe.ahead,
+    commitRef: null as { current: (() => void) | null } | null,
+  };
+  // A book open in parallel reading with this one.
+  // `offset`: the section gap kept since Enter Parallel Sync (#4991).
+  const linked = { keys: new Set<string>(), offset: 0, goTo: vi.fn() };
   return {
     setProgress,
+    wipe,
+    linked,
     readerState: {
       setProgress,
+      setPreviewMode: vi.fn(),
+      getView: (key: string) =>
+        key === 'linked-book' ? { renderer: { goTo: linked.goTo } } : null,
       getViewState: () => ({}),
       getViewSettings: () => ({}),
     },
@@ -23,10 +39,22 @@ vi.mock('@/store/bookDataStore', () => ({
   useBookDataStore: (select: (s: { getBookData: () => null }) => unknown) =>
     select({ getBookData: () => null }),
 }));
-vi.mock('@/store/parallelViewStore', () => ({ useParallelViewStore: () => () => [] }));
+vi.mock('@/store/parallelViewStore', () => {
+  const state = { getParallels: () => linked.keys, getSectionOffset: () => linked.offset };
+  return { useParallelViewStore: (select: (s: typeof state) => unknown) => select(state) };
+});
 vi.mock('@/store/settingsStore', () => ({ useSettingsStore: () => ({ settings: {} }) }));
-vi.mock('@/store/themeStore', () => ({ useThemeStore: () => ({}) }));
-vi.mock('@/store/customFontStore', () => ({ useCustomFontStore: () => ({}) }));
+vi.mock('@/store/themeStore', () => {
+  const state = { isIPhoneDuo: false, duoFold: null, safeAreaInsets: null };
+  const useThemeStore = (selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state;
+  return { useThemeStore: Object.assign(useThemeStore, { getState: () => state }) };
+});
+vi.mock('@/store/customFontStore', () => ({
+  // FoliateViewer's calibration fingerprint reads the loaded-font list at
+  // render, so the minimal store mock has to provide it.
+  useCustomFontStore: () => ({ getLoadedFonts: () => [] }),
+}));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({}) }));
 vi.mock('next/navigation', () => ({ useSearchParams: () => null }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (text: string) => text }));
@@ -41,7 +69,16 @@ vi.mock('@/services/transformService', () => ({}));
 vi.mock('@/app/reader/utils/wordlensSection', () => ({}));
 vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: vi.fn() }));
 vi.mock('@/app/reader/hooks/useBrightnessGesture', () => ({ useBrightnessGesture: () => ({}) }));
-vi.mock('@/app/reader/hooks/useAutoScroll', () => ({ useAutoScroll: () => ({}) }));
+vi.mock('@/app/reader/hooks/useAutoScroll', () => ({
+  useAutoScroll: (
+    _bookKey: string,
+    _viewRef: unknown,
+    commitRef: { current: (() => void) | null },
+  ) => {
+    wipe.commitRef = commitRef;
+    return { isWipeAhead: wipe.isWipeAhead };
+  },
+}));
 vi.mock('@/app/reader/hooks/useAutoScrollSpeedGesture', () => ({
   useAutoScrollSpeedGesture: () => ({}),
 }));
@@ -70,6 +107,7 @@ vi.mock('@/hooks/useEinkMode', () => ({ useEinkMode: () => ({}) }));
 vi.mock('@/hooks/useUICSS', () => ({ useUICSS: () => {} }));
 vi.mock('@/hooks/useDiscordPresence', () => ({ useDiscordPresence: () => {} }));
 vi.mock('@/app/reader/hooks/bookOrbitProgressProvider', () => ({ bookOrbitProgressProvider: {} }));
+vi.mock('@/app/reader/hooks/grimmoryProgressProvider', () => ({ grimmoryProgressProvider: {} }));
 vi.mock('@/app/reader/components/paragraph', () => ({ ParagraphControl: () => null }));
 vi.mock('@/app/reader/components/BrightnessOverlay', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/ImageViewer', () => ({ default: () => null }));
@@ -86,6 +124,11 @@ const props = {
 const relocate = (detail: object) => {
   const handlers = vi.mocked(useFoliateEvents).mock.lastCall?.[1];
   act(() => handlers?.onRelocate?.(new CustomEvent('relocate', { detail })));
+};
+
+const rendererRelocate = (detail: object) => {
+  const handlers = vi.mocked(useFoliateEvents).mock.lastCall?.[1];
+  act(() => handlers?.onRendererRelocate?.(new CustomEvent('relocate', { detail })));
 };
 
 describe('reader relocation progress', () => {
@@ -157,5 +200,101 @@ describe('reader relocation progress', () => {
     relocate({ location: { current: 3, next: 4, total: 10 } });
     expect(setProgress).toHaveBeenCalledOnce();
     expect(setProgress.mock.lastCall?.[5]).toEqual({ current: 3, next: 4, total: 10 });
+  });
+});
+
+// #7575: the wipe turns to the next page while the reader is still on the page
+// above it; that turn is not the reading position until the page is wiped in.
+describe('reader relocation during an Auto Scroll wipe', () => {
+  const page5 = { current: 4, next: 5, total: 10 };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+    wipe.ahead = false;
+    linked.keys = new Set();
+    linked.offset = 0;
+  });
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('holds the page a wipe turned to until it is wiped in', () => {
+    render(<FoliateViewer {...props} />);
+    wipe.ahead = true;
+    relocate({ location: page5 });
+    act(() => vi.advanceTimersByTime(200));
+    expect(setProgress).not.toHaveBeenCalled();
+
+    wipe.ahead = false;
+    act(() => wipe.commitRef?.current?.());
+    expect(setProgress).toHaveBeenCalledOnce();
+    expect(setProgress.mock.lastCall?.[5]).toEqual(page5);
+  });
+
+  it('does not save the page a wipe turned to when the book closes', () => {
+    const { unmount } = render(<FoliateViewer {...props} />);
+    wipe.ahead = true;
+    relocate({ location: page5 });
+    unmount();
+    expect(setProgress).not.toHaveBeenCalled();
+  });
+
+  it('moves a linked book only once the page is wiped in', () => {
+    linked.keys = new Set(['test-book', 'linked-book']);
+    render(<FoliateViewer {...props} />);
+    wipe.ahead = true;
+    rendererRelocate({ reason: 'page', index: 2, fraction: 0.5 });
+    expect(linked.goTo).not.toHaveBeenCalled();
+
+    wipe.ahead = false;
+    act(() => wipe.commitRef?.current?.());
+    expect(linked.goTo).toHaveBeenCalledWith({ index: 2, anchor: 0.5 });
+  });
+
+  // Closing mid-wipe ends the wipe after the viewer is gone; the page it
+  // held back was never reached.
+  it('does not move a linked book to the held page when the book closes', () => {
+    linked.keys = new Set(['test-book', 'linked-book']);
+    const { unmount } = render(<FoliateViewer {...props} />);
+    wipe.ahead = true;
+    rendererRelocate({ reason: 'page', index: 2, fraction: 0.5 });
+    unmount();
+
+    wipe.ahead = false;
+    wipe.commitRef?.current?.();
+    expect(linked.goTo).not.toHaveBeenCalled();
+  });
+});
+
+describe('parallel reading', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    wipe.ahead = false;
+    linked.keys = new Set(['test-book', 'linked-book']);
+    linked.offset = 0;
+  });
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('moves a linked book to the same section and position', () => {
+    render(<FoliateViewer {...props} />);
+    rendererRelocate({ reason: 'page', index: 4, fraction: 0.25 });
+
+    expect(linked.goTo).toHaveBeenCalledWith({ index: 4, anchor: 0.25 });
+  });
+
+  // One book open twice, its English half beside its Swedish half: Enter
+  // Parallel Sync keeps the two halves apart.
+  it('moves a linked book by the section gap kept since sync was entered (#4991)', () => {
+    linked.offset = 10;
+    render(<FoliateViewer {...props} />);
+    rendererRelocate({ reason: 'page', index: 4, fraction: 0.25 });
+
+    expect(linked.goTo).toHaveBeenCalledWith({ index: 14, anchor: 0.25 });
   });
 });

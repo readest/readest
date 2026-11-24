@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { migrateHighlightColorPrefs } from '@/services/settingsService';
 import type { ReadSettings } from '@/types/settings';

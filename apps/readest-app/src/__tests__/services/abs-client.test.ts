@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ABSClient } from '@/services/audiobookshelf/client';
 import { isWebAppPlatform } from '@/services/environment';
@@ -306,5 +307,26 @@ describe('ABSClient on the web platform', () => {
     const sentHeaders = (init as RequestInit).headers as Record<string, string>;
     expect(sentHeaders['Authorization']).toBe('Bearer tok-old');
     expect(sentHeaders['Origin']).toBeUndefined();
+  });
+});
+
+describe('ABSClient – TLS certificate checks', () => {
+  it('relaxes certificate checks only when the server allows self-signed certs', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(200, { libraries: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    const onTokensUpdated = vi.fn();
+
+    await new ABSClient(
+      { ...server, allowSelfSignedCert: false },
+      { onTokensUpdated },
+    ).getLibraries();
+    await new ABSClient(
+      { ...server, allowSelfSignedCert: true },
+      { onTokensUpdated },
+    ).getLibraries();
+
+    expect((fetchMock.mock.calls[0] as unknown[])[1]).not.toHaveProperty('danger');
+    expect((fetchMock.mock.calls[1] as unknown[])[1]).toHaveProperty('danger');
+    vi.unstubAllGlobals();
   });
 });

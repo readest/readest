@@ -29,6 +29,10 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
 }) => {
   const maxSize = useResponsiveSize(250);
 
+  // The popup box this card sits in has a 1px border; stepping out over it
+  // puts the card's own border on the box's edge, where the triangle joins.
+  const edge = toolsVisible ? undefined : '-1px';
+
   const sortedNotes = useMemo(() => {
     return [...notes].sort((a, b) => b.updatedAt - a.updatedAt);
   }, [notes]);
@@ -39,15 +43,17 @@ const AnnotationNotes: React.FC<AnnotationNotesProps> = ({
       style={{
         ...(isVertical
           ? {
-              right: triangleDir === 'left' ? `${toolsVisible ? popupWidth + 16 : 0}px` : undefined,
-              left: triangleDir === 'right' ? `${toolsVisible ? popupWidth + 16 : 0}px` : undefined,
+              right: triangleDir === 'left' ? (edge ?? `${popupWidth + 16}px`) : undefined,
+              left: triangleDir === 'right' ? (edge ?? `${popupWidth + 16}px`) : undefined,
+              top: edge,
               height: `${popupHeight}px`,
               maxWidth: `${maxSize}px`,
               overflowX: 'auto',
             }
           : {
-              top: triangleDir === 'down' ? `${toolsVisible ? popupHeight + 16 : 0}px` : undefined,
-              bottom: triangleDir === 'up' ? `${toolsVisible ? popupHeight + 16 : 0}px` : undefined,
+              top: triangleDir === 'down' ? (edge ?? `${popupHeight + 16}px`) : undefined,
+              bottom: triangleDir === 'up' ? (edge ?? `${popupHeight + 16}px`) : undefined,
+              left: edge,
               width: `${popupWidth}px`,
               maxHeight: `${maxSize}px`,
               overflowY: 'auto',

@@ -19,6 +19,9 @@ interface TextEditorProps {
   onSelect?: (start: number, end: number) => void;
   onCompositionStart?: () => void;
   onCompositionEnd?: (value: string) => void;
+  // Read Aloud holds the view still while this editor has focus (#6837). The
+  // Notebook turns it off: it stays open while the page turns (#7663).
+  holdsReadAloud?: boolean;
 }
 
 export interface TextEditorRef {
@@ -49,6 +52,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
       onSelect,
       onCompositionStart,
       onCompositionEnd,
+      holdsReadAloud = true,
     },
     ref,
   ) => {
@@ -113,14 +117,20 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
       onChange(e.target.value);
     };
 
+    // Runs in the capture phase: the note popup and sheet stop every keydown
+    // inside them. A key handled here stops too, or the host closes on the
+    // same Escape and the note is cancelled twice.
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Escape' && onEscape) {
+        e.stopPropagation();
         onEscape();
         return;
       }
 
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSave) {
+      const isComposing = e.nativeEvent.isComposing || e.keyCode === 229;
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && onSave && !isComposing) {
         e.preventDefault();
+        e.stopPropagation();
         onSave();
         return;
       }
@@ -135,8 +145,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
           'content font-size-sm',
           className,
         )}
-        // Read Aloud stops following the voice while a note editor has focus.
-        data-note-editor=''
+        data-note-editor={holdsReadAloud ? '' : undefined}
         dir='auto'
         rows={minRows}
         spellCheck={spellCheck}
@@ -144,7 +153,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
         aria-label={ariaLabel}
         onChange={handleChange}
         onBlur={onBlur}
-        onKeyDown={handleKeyDown}
+        onKeyDownCapture={handleKeyDown}
         onSelect={(event) =>
           onSelect?.(event.currentTarget.selectionStart, event.currentTarget.selectionEnd)
         }

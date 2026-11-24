@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, it, expect, vi } from 'vitest';
 
 // We need to import the singleton, but also be able to test a fresh instance.

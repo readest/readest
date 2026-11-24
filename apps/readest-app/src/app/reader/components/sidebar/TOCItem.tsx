@@ -82,22 +82,28 @@ export const buildTOCDisplayItems = <T extends TOCListItem>(
   return result;
 };
 
+// The list (TOCView) holds keyboard focus and marks the focused row with
+// aria-activedescendant; the row shows the ring while the list is focused.
+const FOCUS_RING =
+  'group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-base-content/15 eink:group-focus-visible:ring-base-content';
+
 const TOCItemView = React.memo<{
+  id?: string;
+  isFocused?: boolean;
   bookKey: string;
   flatItem: FlatTOCItem;
   itemSize?: number;
   isActive: boolean;
+  screenPage?: number;
   onToggleExpand: (item: TOCItem) => void;
   onItemClick: (item: TOCItem) => void;
-}>(({ flatItem, itemSize, isActive, onToggleExpand, onItemClick }) => {
+}>(({ id, isFocused, flatItem, itemSize, isActive, screenPage, onToggleExpand, onItemClick }) => {
   const { item, depth } = flatItem;
   const expandable = !!item.subitems || !!flatItem.hasPages;
 
-  const pageNumber = item.location
-    ? item.location.current + 1
-    : item.index !== undefined
-      ? item.index + 1
-      : null;
+  const pageNumber =
+    screenPage ??
+    (item.location ? item.location.current + 1 : item.index !== undefined ? item.index + 1 : null);
   const ariaLabel = item.label
     ? pageNumber !== null
       ? `${item.label}, ${pageNumber}`
@@ -114,7 +120,7 @@ const TOCItemView = React.memo<{
   );
 
   const handleClickItem = useCallback(
-    (event: React.MouseEvent | React.KeyboardEvent) => {
+    (event: React.MouseEvent) => {
       event.preventDefault();
       onItemClick(item);
     },
@@ -123,17 +129,18 @@ const TOCItemView = React.memo<{
 
   return (
     <div
-      tabIndex={0}
+      id={id}
       role='treeitem'
       onClick={item.href ? handleClickItem : undefined}
-      onKeyDown={item.href ? (e) => e.key === 'Enter' && handleClickItem(e) : undefined}
       aria-label={ariaLabel}
+      aria-level={depth + 1}
       aria-current={isActive ? 'page' : undefined}
       aria-expanded={expandable ? (flatItem.isExpanded ? 'true' : 'false') : undefined}
       aria-selected={isActive ? 'true' : 'false'}
       data-href={item.href ? getContentMd5(item.href) : undefined}
       className={clsx(
         'flex w-full cursor-pointer items-center rounded-md py-4 sm:py-2 sm:hover:bg-base-300/75',
+        isFocused && FOCUS_RING,
       )}
       style={{
         height: itemSize ? `${itemSize}px` : 'auto',
@@ -142,6 +149,7 @@ const TOCItemView = React.memo<{
     >
       {expandable && (
         <button
+          tabIndex={-1}
           onClick={handleToggleExpand}
           onKeyDown={(e) => {
             e.stopPropagation();
@@ -157,12 +165,12 @@ const TOCItemView = React.memo<{
         </button>
       )}
       <div className='ms-2 min-w-0 break-words'>{item.label}</div>
-      {(item.location || item.index !== undefined) && (
+      {pageNumber !== null && (
         <div
           aria-hidden='true'
           className='text-base-content/50 ms-auto shrink-0 ps-1 text-xs sm:pe-1'
         >
-          {item.location ? item.location.current + 1 : item.index + 1}
+          {pageNumber}
         </div>
       )}
     </div>
@@ -172,19 +180,26 @@ const TOCItemView = React.memo<{
 TOCItemView.displayName = 'TOCItemView';
 
 interface ListRowProps {
+  id?: string;
+  isFocused?: boolean;
   bookKey: string;
   flatItem: FlatTOCItem;
   itemSize?: number;
   activeHref: string | null;
+  /** The screen page the item starts on, with Stable Page Numbers off. */
+  screenPage?: number;
   onToggleExpand: (item: TOCItem) => void;
   onItemClick: (item: TOCItem) => void;
 }
 
 export const StaticListRow: React.FC<ListRowProps> = ({
+  id,
+  isFocused,
   bookKey,
   flatItem,
   itemSize,
   activeHref,
+  screenPage,
   onToggleExpand,
   onItemClick,
 }) => {
@@ -199,10 +214,13 @@ export const StaticListRow: React.FC<ListRowProps> = ({
       title={flatItem.item.label || ''}
     >
       <TOCItemView
+        id={id}
+        isFocused={isFocused}
         bookKey={bookKey}
         flatItem={flatItem}
         itemSize={itemSize}
         isActive={isActive}
+        screenPage={screenPage}
         onToggleExpand={onToggleExpand}
         onItemClick={onItemClick}
       />
@@ -211,15 +229,17 @@ export const StaticListRow: React.FC<ListRowProps> = ({
 };
 
 export const CurrentPositionRow: React.FC<{
+  id?: string;
+  isFocused?: boolean;
   depth: number;
   page: number;
   onClick?: () => void;
-}> = ({ depth, page, onClick }) => {
+}> = ({ id, isFocused, depth, page, onClick }) => {
   const _ = useTranslation();
   const label = _('Current position');
 
   const handleClick = useCallback(
-    (event: React.MouseEvent | React.KeyboardEvent) => {
+    (event: React.MouseEvent) => {
       event.preventDefault();
       onClick?.();
     },
@@ -235,16 +255,17 @@ export const CurrentPositionRow: React.FC<{
       title={label}
     >
       <div
-        tabIndex={onClick ? 0 : undefined}
+        id={id}
         role='treeitem'
         aria-current='true'
         aria-label={`${label}, ${page}`}
+        aria-level={depth + 1}
         onClick={onClick ? handleClick : undefined}
-        onKeyDown={onClick ? (e) => e.key === 'Enter' && handleClick(e) : undefined}
         className={clsx(
           'flex w-full items-center rounded-md py-4 sm:py-2',
-          'text-bold-in-eink sm:bg-base-300/65 sm:text-base-content text-blue-500',
+          'text-bold-in-eink sm:bg-base-300/65 eink:bg-transparent sm:text-base-content text-blue-500',
           onClick && 'cursor-pointer sm:hover:bg-base-300/75',
+          isFocused && FOCUS_RING,
         )}
         style={{ paddingInlineStart: `${depth * 12 + 8}px` }}
       >

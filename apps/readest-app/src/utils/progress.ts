@@ -67,6 +67,44 @@ export function formatProgress(
   }
 }
 
+/**
+ * The '{percent}%' readout driven by the continuous reading fraction instead
+ * of the page pair. The pair is foliate's location estimate floored to a
+ * size-per-location grid, so a percent derived from it stays put for several
+ * page turns and always reads low by up to one grid cell; the fraction is the
+ * same position before that flooring (chapter-local layout interpolated,
+ * section sizes byte-weighted). The display semantics are unchanged: still the
+ * book-level percent, with the same decimals rule as formatProgress (one
+ * decimal only mid-book on books with more than 100 locations, integer
+ * elsewhere, exactly 100% on the last page). Before the first relocate has
+ * populated `fraction`, falls back to the pair-based percent.
+ *
+ * Reflowable books only: for fixed-layout books foliate weights `fraction` by
+ * section byte size (image sizes in a CBZ), so callers pass `undefined` there
+ * to keep the page-count percent.
+ */
+export function formatProgressPercent(
+  fraction: number | undefined,
+  current: number | undefined,
+  total: number | undefined,
+  localize: boolean = false,
+  language: string = 'en',
+  fractionDigits: number = 1,
+): string {
+  if (total === undefined || total <= 0) return '';
+  if (fraction === undefined || !Number.isFinite(fraction)) {
+    return formatProgress(current, total, '{percent}%', localize, language, fractionDigits);
+  }
+  const atEnd = current !== undefined && current + 1 >= total;
+  if (atEnd) return '100%';
+  const digits = total > 100 ? fractionDigits : 0;
+  // Only the last page reads 100%: cap below it so rounding (e.g. 99.96 at one
+  // decimal) cannot print "100.0%" a page early.
+  const maxPercent = 100 - 10 ** -digits;
+  const percent = Math.min(maxPercent, Math.max(0, fraction * 100));
+  return `${percent.toFixed(digits)}%`;
+}
+
 export interface ReferencePageItem {
   label?: string;
   index?: number;
@@ -78,7 +116,7 @@ export interface ReferencePageInfo {
   total: number;
 }
 
-const collectLabels = (items: ReferencePageItem[]): string[] =>
+export const collectLabels = (items: ReferencePageItem[]): string[] =>
   items.flatMap((item) => [
     item.label?.trim() ?? '',
     ...(item.subitems?.length ? collectLabels(item.subitems) : []),

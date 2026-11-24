@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import daisyuiThemes from '@/styles/daisyui-themes';
 import { themes, themeVariables } from '@/styles/themes';

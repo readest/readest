@@ -47,9 +47,9 @@ sealed class LookupDispatch {
  * @param handlers every activity that resolves `ACTION_PROCESS_TEXT` for the word.
  * @param browserPackages package names of installed web browsers (apps that
  *   handle an `https` `ACTION_VIEW` + `CATEGORY_BROWSABLE` intent).
- * @param remembered a dictionary the user previously chose from the
- *   browser-excluding chooser, or `null`. Honored only if it still appears
- *   among [handlers] as a non-browser handler.
+ * @param remembered the dictionary the user picked in Settings (#4937) or
+ *   from the browser-excluding chooser, or `null`. Honored whenever it
+ *   still appears among [handlers] as a non-browser handler.
  */
 fun decideLookupDispatch(
     handlers: List<LookupHandler>,
@@ -61,6 +61,12 @@ fun decideLookupDispatch(
     val browsers = handlers.filter { it.packageName in browserPackages }
     val dictionaries = handlers.filter { it.packageName !in browserPackages }
 
+    // A chosen dictionary is only valid if it still resolves the intent
+    // (the app could have been uninstalled or stopped registering
+    // ACTION_PROCESS_TEXT).
+    val saved = remembered?.takeIf { it in dictionaries }
+    if (saved != null) return LookupDispatch.DispatchExplicit(saved)
+
     // No browser among the handlers: nothing to filter out, so preserve
     // the existing system-driven behavior (incl. the native "Always"
     // affordance) untouched.
@@ -69,13 +75,6 @@ fun decideLookupDispatch(
     return when (dictionaries.size) {
         0 -> LookupDispatch.Unavailable
         1 -> LookupDispatch.DispatchExplicit(dictionaries[0])
-        else -> {
-            // A remembered dictionary is only valid if it still resolves
-            // the intent (the app could have been uninstalled or stopped
-            // registering ACTION_PROCESS_TEXT).
-            val saved = remembered?.takeIf { it in dictionaries }
-            if (saved != null) LookupDispatch.DispatchExplicit(saved)
-            else LookupDispatch.DispatchChooser(browsers)
-        }
+        else -> LookupDispatch.DispatchChooser(browsers)
     }
 }

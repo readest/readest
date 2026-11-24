@@ -1,9 +1,10 @@
 import clsx from 'clsx';
-import { useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import {
   MdAlarm,
   MdArrowBackIosNew,
   MdCheck,
+  MdClose,
   MdKeyboardArrowLeft,
   MdKeyboardArrowRight,
   MdKeyboardDoubleArrowLeft,
@@ -12,7 +13,7 @@ import {
   MdPlayArrow,
   MdOutlineFileDownload,
   MdChevronRight,
-  MdExpandMore,
+  MdSearch,
   MdSkipNext,
   MdSkipPrevious,
   MdTextDecrease,
@@ -21,7 +22,7 @@ import {
 import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
 import { TbArrowBarToRight } from 'react-icons/tb';
 import { useAppRouter } from '@/hooks/useAppRouter';
-import { TTSVoicesGroup } from '@/services/tts';
+import { TTSVoice, TTSVoicesGroup } from '@/services/tts';
 import { MEDIA_OVERLAY_VOICE_ID } from '@/services/tts/mediaOverlay';
 import type { TTSLoopState } from '@/services/tts/TTSController';
 import { saveViewSettings } from '@/helpers/settings';
@@ -29,16 +30,21 @@ import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useBookProgress } from '@/store/readerProgressStore';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData } from '@/store/bookDataStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { isTTSCacheAllowed } from '@/utils/access';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
-import { getLanguageName } from '@/utils/lang';
 import { formatPlaybackTime } from '@/utils/time';
+import { useVoicePreview } from '@/hooks/useVoicePreview';
+import { getBookProgress } from '@/store/readerProgressStore';
+import { MULTILINGUAL_LANG } from '@/services/tts/types';
+import { getPagePreviewText, getSampleText } from '@/services/tts/voicePreviewText';
 import Dialog from '@/components/Dialog';
+import { BoxedList, SettingsRow, SettingsSelect } from '@/components/settings/primitives';
+import VoiceList from '@/components/tts/VoiceList';
 import { PageInfo } from '@/types/book';
 import { TTSPlaybackInfo } from './usePlaybackInfo';
 import { useCountdownLabel } from './useCountdownLabel';
@@ -53,6 +59,11 @@ import { TTS_STOP_AT_CHAPTER_END } from '@/services/tts/TTSSessionManager';
 import type { UseTTSDownloadsResult } from '@/app/reader/hooks/useTTSDownloads';
 
 type SheetView = 'main' | 'speed' | 'voice' | 'timer' | 'chapters';
+
+// One section of the voice list: an engine, or one custom service / system
+// engine within it (those share an engine id). Mirrors the Settings voice
+// library so this picker narrows the very same groups that one does.
+const sectionKey = (group: TTSVoicesGroup) => `${group.engine}/${group.id}`;
 
 // Exported so the audiobook player route (src/app/player/components/PlayerView.tsx)
 // can reuse the same sleep-timer preset list instead of duplicating it.
@@ -100,8 +111,11 @@ type TTSPlayerSheetProps = {
   // The TTS clients finished initializing: until then there are no voices.
   clientsReady: boolean;
   onGetVoices: (lang: string) => Promise<TTSVoicesGroup[]>;
-  onSetVoice: (voice: string, lang: string) => void;
+  // `resume`: start reading again with the voice (a preview stopped reading).
+  onSetVoice: (voice: string, lang: string, resume?: boolean) => void;
   onGetVoiceId: () => string;
+  // The voice the engine reads with, once it has resolved one.
+  voiceId: string;
   onSelectTimeout: (bookKey: string, value: number) => void;
   onSeek: (seconds: number) => Promise<void>;
   onSeekPreview: (seconds: number) => void;
@@ -149,6 +163,7 @@ const TTSPlayerSheet = ({
   onGetVoices,
   onSetVoice,
   onGetVoiceId,
+  voiceId,
   onSelectTimeout,
   onSeek,
   onSeekPreview,
@@ -167,7 +182,6 @@ const TTSPlayerSheet = ({
   const { envConfig } = useEnv();
   const { user } = useAuth();
   const { getViewSettings, setViewSettings } = useReaderStore();
-  const { getBookData } = useBookDataStore();
   const progress = useBookProgress(bookKey);
   const viewSettings = getViewSettings(bookKey);
 
@@ -190,24 +204,26 @@ const TTSPlayerSheet = ({
   const [coverFailed, setCoverFailed] = useState(false);
   const [view, setView] = useState<SheetView>('main');
   const [voiceGroups, setVoiceGroups] = useState<TTSVoicesGroup[]>([]);
+  // The voice view's engine ('' for all of them) and filter text.
+  const [voiceSection, setVoiceSection] = useState('');
+  const [voiceQuery, setVoiceQuery] = useState('');
   const [rate, setRate] = useState(viewSettings?.ttsRate ?? 1.0);
   const [selectedVoice, setSelectedVoice] = useState('');
-  // The voice list is an accordion: at most one group open. Until the reader
-  // taps a header, the group of the voice in use (else the first) is open;
-  // tapping the open header folds it (null: all folded).
-  const [pickedGroup, setPickedGroup] = useState<string | null | undefined>(undefined);
-  const openGroup =
-    pickedGroup !== undefined
-      ? pickedGroup
-      : (voiceGroups.find((group) => group.voices.some((voice) => voice.id === selectedVoice))
-          ?.id ?? voiceGroups[0]?.id);
+  // Previews read the page being read aloud, else a sample in the voice's
+  // language; one stops reading first, and picking a voice then resumes it.
+  const voicePreview = useVoicePreview((voice) => {
+    const pageText = getPagePreviewText(getBookProgress(bookKey)?.range, ttsLang);
+    if (pageText) return { text: pageText, lang: ttsLang };
+    const lang = voice.lang === MULTILINGUAL_LANG ? ttsLang : voice.lang;
+    return { text: getSampleText(lang), lang };
+  });
   const timerLabel = useCountdownLabel(timeoutTimestamp);
   const iconSize18 = useResponsiveSize(18);
   const iconSize24 = useResponsiveSize(24);
   const iconSize28 = useResponsiveSize(28);
   const iconSize32 = useResponsiveSize(32);
 
-  const book = getBookData(bookKey)?.book;
+  const book = useBookData(bookKey)?.book;
   const sectionLabel = useMemo(() => {
     if (activeSectionIndex === null || activeSectionIndex < 0) {
       return progress?.sectionLabel;
@@ -281,12 +297,13 @@ const TTSPlayerSheet = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  // Opened while the clients initialized: pick up the voice once they are
-  // ready, without leaving the view the user is on.
+  // Opened before the engine resolved its voice (on the first utterance, after
+  // the clients are ready): pick it up then, without leaving the view the user
+  // is on. A voice already shown stays.
   useEffect(() => {
-    if (isOpen && clientsReady) setSelectedVoice(onGetVoiceId());
+    if (isOpen && voiceId) setSelectedVoice((prev) => prev || voiceId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientsReady]);
+  }, [voiceId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -295,19 +312,7 @@ const TTSPlayerSheet = ({
     let current = true;
     const fetchVoices = async () => {
       const groups = await onGetVoices(ttsLang);
-      if (!current) return;
-      const voicesCount = groups.reduce((acc, group) => acc + group.voices.length, 0);
-      if (!groups || voicesCount === 0) {
-        setVoiceGroups([
-          {
-            id: 'no-voices',
-            name: _('Voices for {{lang}}', { lang: getLanguageName(ttsLang) }),
-            voices: [],
-          },
-        ]);
-      } else {
-        setVoiceGroups(groups);
-      }
+      if (current) setVoiceGroups(groups);
     };
     fetchVoices();
     return () => {
@@ -315,6 +320,28 @@ const TTSPlayerSheet = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, ttsLang, clientsReady]);
+
+  // The engine picker narrows the list to one section; the text filter (and
+  // VoiceList's gender tabs) narrow it further. Same model as the Settings
+  // voice library, so the two pages behave identically.
+  const activeSection = voiceGroups.some((group) => sectionKey(group) === voiceSection)
+    ? voiceSection
+    : '';
+  const shownGroups = activeSection
+    ? voiceGroups.filter((group) => sectionKey(group) === activeSection)
+    : voiceGroups;
+  const sections = [
+    { value: '', label: _('All') },
+    ...voiceGroups.map((group) => ({
+      value: sectionKey(group),
+      label: group.literalName ? group.name : _(group.name),
+    })),
+  ];
+
+  const handleSectionChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    voicePreview.stop();
+    setVoiceSection(event.target.value);
+  };
 
   const handleSelectRate = (value: number) => {
     setRate(value);
@@ -334,8 +361,17 @@ const TTSPlayerSheet = ({
     saveSettings(envConfig, settings);
   };
 
+  // A preview plays only while the voice list is up.
+  const { stop: stopPreview, clearPausedReading } = voicePreview;
+  useEffect(() => {
+    if (!isOpen || view !== 'voice') stopPreview();
+  }, [isOpen, view, stopPreview]);
+  useEffect(() => {
+    if (isPlaying) clearPausedReading();
+  }, [isPlaying, clearPausedReading]);
+
   const handleSelectVoice = (voice: string, lang: string) => {
-    onSetVoice(voice, lang);
+    onSetVoice(voice, lang, voicePreview.pausedReading);
     setSelectedVoice(voice);
     const vs = getViewSettings(bookKey)!;
     vs.ttsVoice = voice;
@@ -370,9 +406,12 @@ const TTSPlayerSheet = ({
   };
 
   const timeoutOptions = getTTSTimeoutOptions(_);
-  const currentVoiceName = voiceGroups
+  // A name a user's own service gave is shown as is; built-in names are UI strings.
+  const voiceName = (item: TTSVoice | TTSVoicesGroup) =>
+    item.literalName ? item.name : _(item.name);
+  const currentVoice = voiceGroups
     .flatMap((group) => group.voices)
-    .find((voice) => voice.id === selectedVoice)?.name;
+    .find((voice) => voice.id === selectedVoice);
   // Armed timer shows its live countdown on the button; the chapter-end mode
   // has no countdown so it just names itself; otherwise the button falls
   // back to naming the feature (the alarm icon already carries the
@@ -412,7 +451,7 @@ const TTSPlayerSheet = ({
         type='button'
         aria-label={_('Close')}
         onClick={onClose}
-        className='bg-base-300/65 btn btn-ghost btn-circle absolute end-3 top-1 z-10 hidden h-6 min-h-6 w-6 focus:outline-hidden sm:flex'
+        className='bg-base-300/65 eink:bg-transparent btn btn-ghost btn-circle absolute end-3 top-1 z-10 hidden h-6 min-h-6 w-6 focus:outline-hidden sm:flex'
       >
         <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
           <path
@@ -449,6 +488,9 @@ const TTSPlayerSheet = ({
     <Dialog
       id='tts_player_sheet'
       isOpen={isOpen}
+      // The voice filter field must stay reachable while the software
+      // keyboard is up on short mobile viewports.
+      aboveKeyboard
       // The lyric sheet needs room to read as one: at the cover player's 0.65
       // it collapses to two or three visible lines.
       snapHeight={showLyrics ? 0.8 : 0.65}
@@ -693,12 +735,17 @@ const TTSPlayerSheet = ({
             <button
               type='button'
               aria-label={_('Voice')}
-              onClick={() => setView('voice')}
+              onClick={() => {
+                // Like the voice library, every visit starts on all engines, unfiltered.
+                setVoiceSection('');
+                setVoiceQuery('');
+                setView('voice');
+              }}
               className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
             >
               <RiVoiceAiFill size={iconSize18} />
               <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
-                {currentVoiceName ? _(currentVoiceName) : _('Voice')}
+                {currentVoice?.name ? voiceName(currentVoice) : _('Voice')}
               </span>
             </button>
             <button
@@ -754,84 +801,56 @@ const TTSPlayerSheet = ({
         </div>
       )}
       {view === 'voice' && (
-        <div className='flex w-full flex-col pb-4'>
-          {voiceGroups.map((voiceGroup) => {
-            const collapsed = voiceGroup.id !== openGroup;
-            // The group holding the voice in use stands out, and names it
-            // while folded (open, its check mark already shows it).
-            const current = voiceGroup.voices.find((voice) => voice.id === selectedVoice);
-            return (
-              <div key={voiceGroup.id}>
-                <button
-                  type='button'
-                  aria-expanded={!collapsed}
-                  onClick={() => setPickedGroup(collapsed ? voiceGroup.id : null)}
-                  className={clsx(
-                    'flex w-full items-center gap-1 px-2 py-1 text-start text-sm sm:text-xs',
-                    current ? 'text-base-content font-semibold' : 'text-base-content/60',
-                  )}
-                >
-                  <span className='flex-1'>
-                    {/* A single-voice group (a book's own narrator) would otherwise
-                      read "Narration: 1 voices". */}
-                    {voiceGroup.voices.length === 1
-                      ? _(voiceGroup.name)
-                      : _('{{engine}}: {{count}} voices', {
-                          engine: _(voiceGroup.name),
-                          count: voiceGroup.voices.length,
-                        })}
-                  </span>
-                  {collapsed && current && (
-                    <span className='max-w-[50%] shrink-0 truncate'>{_(current.name)}</span>
-                  )}
-                  <MdExpandMore
-                    className={clsx('shrink-0', collapsed && '-rotate-90 rtl:rotate-90')}
-                  />
-                </button>
-                {!collapsed &&
-                  voiceGroup.voices.map((voice) => (
-                    <button
-                      key={`${voiceGroup.id}-${voice.id}`}
-                      type='button'
-                      // A premium voice the plan lacks stays tappable: it
-                      // leads to the upgrade instead of speaking.
-                      disabled={voice.disabled && !voice.tier}
-                      onClick={() =>
-                        voice.disabled ? handleUpgrade() : handleSelectVoice(voice.id, voice.lang)
-                      }
-                      className='flex w-full items-center gap-2 rounded-lg px-2 py-2 text-start'
-                    >
-                      <span className='flex h-6 w-6 items-center justify-center'>
-                        {selectedVoice === voice.id && <MdCheck className='text-base-content' />}
-                      </span>
-                      <span
-                        className={clsx(
-                          'overflow-hidden text-ellipsis text-base sm:text-sm',
-                          voice.disabled && 'text-base-content/40',
-                        )}
-                      >
-                        {_(voice.name)}
-                      </span>
-                      {voice.variant && (
-                        <span className='badge badge-sm badge-ghost ms-auto shrink-0'>
-                          {voice.variant === 'multilingual' ? _('Multilingual') : _('Expressive')}
-                        </span>
-                      )}
-                      {voice.tier && (
-                        <span
-                          className={clsx(
-                            'badge badge-sm badge-ghost shrink-0',
-                            !voice.variant && 'ms-auto',
-                          )}
-                        >
-                          {voice.tier === 'pro' ? _('Pro') : _('Plus')}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-              </div>
-            );
-          })}
+        <div className='settings-content flex w-full flex-col gap-4 pb-4 pt-1'>
+          <BoxedList>
+            <SettingsRow label={_('Voice Engine')}>
+              <SettingsSelect
+                value={activeSection}
+                onChange={handleSectionChange}
+                ariaLabel={_('Voice Engine')}
+                options={sections}
+              />
+            </SettingsRow>
+          </BoxedList>
+          <div className='eink-bordered bg-base-100 focus-within:ring-base-content/15 eink:focus-within:ring-base-content flex h-9 w-full items-center rounded-lg focus-within:ring-2'>
+            <MdSearch className='text-base-content/50 ms-3 h-4 w-4 shrink-0' />
+            <input
+              type='text'
+              value={voiceQuery}
+              spellCheck={false}
+              onChange={(event) => setVoiceQuery(event.target.value)}
+              // Capture phase: the Dialog listens natively on the sheet
+              // element itself, and its bubble handler runs before React's
+              // root one — a bubble-phase stopPropagation here never fires
+              // for the keys Dialog swallows (Esc dismisses the sheet).
+              onKeyDownCapture={(event) => {
+                event.stopPropagation();
+                if (event.key === 'Escape') event.preventDefault();
+              }}
+              placeholder={_('Filter voices')}
+              aria-label={_('Filter voices')}
+              className='settings-content min-w-0 flex-1 bg-transparent px-2 focus:outline-hidden'
+            />
+            {voiceQuery && (
+              <button
+                type='button'
+                onClick={() => setVoiceQuery('')}
+                className='btn btn-ghost h-8 min-h-8 w-8 shrink-0 p-0'
+                title={_('Clear')}
+                aria-label={_('Clear')}
+              >
+                <MdClose className='text-base-content/60 h-4 w-4' />
+              </button>
+            )}
+          </div>
+          <VoiceList
+            groups={shownGroups}
+            query={voiceQuery}
+            selected={{ voiceId: selectedVoice }}
+            onSelect={(_group, voice) => handleSelectVoice(voice.id, voice.lang)}
+            onUpgrade={handleUpgrade}
+            preview={voicePreview}
+          />
         </div>
       )}
       {view === 'timer' && (

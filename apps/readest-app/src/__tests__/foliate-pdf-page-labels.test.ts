@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // readest/readest issue #5822: surface PDF page labels as the book's page list.
 //
 // A PDF's page labels (PDF 32000-1 §12.4.2) are the numbers printed on the

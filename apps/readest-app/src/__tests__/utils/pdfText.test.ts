@@ -1,6 +1,10 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, afterEach } from 'vitest';
 import { classifyPdfLineBreaks, getPdfTextFromRange, type PdfLine } from '@/utils/pdfText';
 import { getTextFromRange } from '@/utils/sel';
+import { textWalker } from 'foliate-js/text-walker.js';
+import { TTS } from 'foliate-js/tts.js';
+import { createTTSNodeFilter } from '@/services/tts/nodeFilter';
 
 // Body text: 10px em, 12px line pitch, column spanning x 0..400.
 const line = (text: string, overrides: Partial<PdfLine> = {}): PdfLine => ({
@@ -228,6 +232,24 @@ describe('getPdfTextFromRange', () => {
     );
   });
 
+  it('reads line breaks that foliate-js moved to the end of their line', () => {
+    const layer = buildTwoParagraphs();
+    // foliate-js wraps each <br> in a span placed at the end of its line.
+    for (const el of [...layer.querySelectorAll('br')]) {
+      const end = document.createElement('span');
+      end.className = 'endOfLine';
+      el.replaceWith(end);
+      end.append(el);
+    }
+    const range = document.createRange();
+    range.selectNodeContents(layer);
+
+    expect(getTextFromRange(range)).toBe(
+      'If you are ever creating printed output, the most accurate way to calibrate your monitor is to print a test image.\n' +
+        'If you are creating output for video, it pays to view your footage.',
+    );
+  });
+
   it('is used by getTextFromRange for pdf.js text layers', () => {
     const layer = buildTwoParagraphs();
     const range = document.createRange();
@@ -248,5 +270,29 @@ describe('getPdfTextFromRange', () => {
     range.selectNodeContents(layer);
 
     expect(getTextFromRange(range)).toBe('the calibration is done');
+  });
+
+  it('copies the same text after the page was read aloud', () => {
+    layer = document.createElement('div');
+    layer.className = 'textLayer';
+    layer.append(
+      span('the calibra-', 0, 0, 400),
+      br(),
+      span('tion is done in two steps:', 0, 12, 300),
+      br(),
+      span('step one ends with a hyphen-', 0, 24, 200),
+      br(),
+      span('then a short line.', 0, 36, 150),
+      br(),
+    );
+    document.body.appendChild(layer);
+    // Read Aloud joins the wrapped lines in the text layer for reading (#6935).
+    new TTS(document, textWalker, createTTSNodeFilter(), () => {}, 'word').start();
+    const range = document.createRange();
+    range.selectNodeContents(layer);
+
+    expect(getTextFromRange(range)).toBe(
+      'the calibration is done in two steps:\nstep one ends with a hyphen-\nthen a short line.',
+    );
   });
 });

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import SectionInfo from '@/app/reader/components/SectionInfo';
@@ -38,7 +39,6 @@ const bandStyle = (isIPhoneDuo: boolean) => {
   const { container } = render(
     <SectionInfo
       bookKey='book-1'
-      section='Chapter 1'
       showDoubleBorder={false}
       isScrolled={false}
       isVertical={false}

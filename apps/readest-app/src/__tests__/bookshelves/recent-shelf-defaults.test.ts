@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { defaultBookshelves, RECENT_BOOKSHELF_ID } from '@/services/bookshelves/definitions';
 import { resolveBookshelfGroupBy } from '@/services/bookshelves/grouping';

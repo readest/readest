@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
 import { computePaginatedScroll } from 'foliate-js/fixed-layout.js';

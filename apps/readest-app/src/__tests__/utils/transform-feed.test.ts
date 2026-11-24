@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { createFeedBook } from '@/services/rss/feedBook';
 import { transformBookToDB, transformBookFromDB } from '@/utils/transform';

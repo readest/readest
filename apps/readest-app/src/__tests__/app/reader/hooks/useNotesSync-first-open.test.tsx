@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 
@@ -37,19 +39,29 @@ vi.mock('@/context/AuthContext', () => ({
 }));
 
 vi.mock('@/hooks/useSync', () => ({
-  useSync: () => ({ syncedNotes: null, syncNotes: h.syncNotesMock, lastSyncedAtNotes: 2000 }),
-}));
-
-vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: h.makeStore({
-    getConfig: () => h.state.config,
-    setConfig: vi.fn(),
-    getBookData: () => ({ book: { hash: 'h1', format: 'EPUB', metaHash: 'm1' } }),
+  useSync: () => ({
+    syncedNotes: null,
+    syncNotes: h.syncNotesMock,
+    lastSyncedAtNotes: 2000,
+    useSyncInited: true,
   }),
 }));
 
+vi.mock('@/store/bookDataStore', () => ({
+  ...bookDataStoreHooks(
+    h.makeStore({
+      getConfig: () => h.state.config,
+      setConfig: vi.fn(),
+      getBookData: () => ({ book: { hash: 'h1', format: 'EPUB', metaHash: 'm1' } }),
+    }),
+  ),
+}));
+
 vi.mock('@/store/readerStore', () => ({
-  useReaderStore: h.makeStore({ getView: () => null, getViewsById: () => [] }),
+  useReaderStore: h.makeStore({
+    getView: () => ({ renderer: { getContents: () => [], primaryIndex: 0 } }),
+    getViewsById: () => [],
+  }),
 }));
 
 import { useNotesSync } from '@/app/reader/hooks/useNotesSync';

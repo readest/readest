@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi } from 'vitest';
 import { MAX_PLUGIN_RESOURCE_BYTES, PLUGIN_PROTOCOL_VERSION } from '@/services/plugins/contract';
 import {

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
+import { detectLanguage } from '@/utils/lang';
 import { TxtToEpubConverter } from '@/utils/txt';
 
 type TxtConverterExtractAPI = {
@@ -88,6 +89,11 @@ describe('createChapterRegexps — Chinese (zh) regex matching', () => {
       '部',
       '话',
     ])('should match 第一%s', (suffix) => {
+      const regex = getFirstRegex('zh');
+      expect(regex.test(`\n第一${suffix}\n`)).toBe(true);
+    });
+
+    it.each(['節', '話', '講', '冊'])('should match the traditional form 第一%s', (suffix) => {
       const regex = getFirstRegex('zh');
       expect(regex.test(`\n第一${suffix}\n`)).toBe(true);
     });
@@ -337,6 +343,31 @@ describe('createChapterRegexps — English (en) regex matching', () => {
 // Chinese chapter extraction (end-to-end)
 // ---------------------------------------------------------------------------
 describe('extractChaptersFromSegment — Chinese (zh)', () => {
+  it('should keep 第N回 titles when the file opens with a header of links (#7435)', () => {
+    const text = [
+      '书名：红楼梦',
+      '原始网址：https://www.example.com/book/1234567.html',
+      '封面图片地址：https://images.example.com/cover/9f2c1d7e4b6a8c0d3e5f7a9b1c2d4e6f_640_ori.file',
+      '![https://i.example.com/a1/%E7%AC%AC%E4%B8%80%E5%9B%9E1.png](chapter-8e6cd58956107bec68aecfb07415078b3eb77ca0.png)',
+      '![https://i.example.com/a2/%E7%AC%AC%E4%B8%80%E5%9B%9E2.png](chapter-75e6f6ad5478b5e978c8a044a80d3bb595991b9a.png)',
+      '第一回 甄士隐梦幻识通灵 贾雨村风尘怀闺秀',
+      '此开卷第一回也。作者自云：因曾历过一番梦幻之后，故将真事隐去。',
+      '第二回 贾夫人仙逝扬州城 冷子兴演说荣国府',
+      '诗云：一局输赢料不真，香销茶尽尚逡巡。',
+      '第三回 贾雨村夤缘复旧职 林黛玉抛父进京都',
+      '却说雨村忙回头看时，不是别人。',
+    ].join('\n');
+    // The converter detects the language from the first 1024 characters.
+    const titles = extractChapters(text, detectLanguage(text.slice(0, 1024))).map((c) => c.title);
+    expect(titles).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('第一回'),
+        expect.stringContaining('第二回'),
+        expect.stringContaining('第三回'),
+      ]),
+    );
+  });
+
   it('should extract chapters from text with 第N章 headings', () => {
     const text = [
       '这是一些前言内容',
@@ -388,11 +419,23 @@ describe('extractChaptersFromSegment — Chinese (zh)', () => {
     expect(chapter!.isVolume).toBe(false);
   });
 
-  it.each(['本', '册'])('should mark 第一%s as a volume', (suffix) => {
+  it.each(['本', '册', '冊'])('should mark 第一%s as a volume', (suffix) => {
     const chapters = extractChapters(`前文内容\n第一${suffix} 标题\n正文内容`, 'zh');
     const volume = chapters.find((c) => c.title.includes(`第一${suffix}`));
     expect(volume).toBeDefined();
     expect(volume!.isVolume).toBe(true);
+  });
+
+  it.each(['卷', '冊'])('should mark a spaced 第一 %s heading as a volume', (suffix) => {
+    const chapters = extractChapters(`前文内容\n第一 ${suffix} 标题\n正文内容`, 'zh');
+    const volume = chapters.find((c) => c.title.includes(`第一 ${suffix}`));
+    expect(volume).toBeDefined();
+    expect(volume!.isVolume).toBe(true);
+  });
+
+  it('should not mark a 第 卷 heading without a number as a volume', () => {
+    const chapters = extractChapters('前文内容\n第 卷 标题\n正文内容', 'zh');
+    expect(chapters.some((c) => c.isVolume)).toBe(false);
   });
 
   it('should include title text in captured heading', () => {

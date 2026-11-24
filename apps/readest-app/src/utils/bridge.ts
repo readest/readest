@@ -1,6 +1,10 @@
 import { invoke, Channel } from '@tauri-apps/api/core';
 import { getOSPlatform } from '@/utils/misc';
 
+/** Android and iOS native paper renderer; only metadata crosses this command. */
+export const paperCurl = <T>(payload: object) =>
+  invoke<T>('plugin:native-bridge|paper_curl', { payload });
+
 export interface CopyURIRequest {
   uri: string;
   dst: string;
@@ -89,7 +93,16 @@ export interface GetSafeAreaInsetsResponse {
   isIPhoneDuo?: boolean;
   /** iOS: whether the root view controller currently hides the status bar. */
   statusBarHidden?: boolean;
+  /** iPhone Duo: hinge status and folding region (window points). */
+  fold?: DuoFoldState;
   error?: string;
+}
+
+export interface DuoFoldState {
+  status: 'closed' | 'partial' | 'open' | 'unknown';
+  /** Whether the folding region currently divides the display. */
+  regionActive?: boolean;
+  region?: { x: number; y: number; width: number; height: number };
 }
 
 interface GetScreenBrightnessResponse {
@@ -432,7 +445,7 @@ export interface CoverWebviewRegionResponse {
 
 /**
  * Freeze the on-screen pixels of a webview region behind a native snapshot
- * view that `captureWebviewRegion` does not see (iOS only so far). The
+ * view/window that `captureWebviewRegion` does not see (iOS and Android). The
  * two-column page curl uses it to capture the incoming column under its
  * overlay without ever showing it (#6106). Rejects where unimplemented.
  */
@@ -505,6 +518,13 @@ export async function isSyncKeychainAvailable(): Promise<SyncKeychainAvailableRe
 export interface SetSecureItemRequest {
   key: string;
   value: string;
+  /**
+   * iOS-only: store with ThisDeviceOnly accessibility so the item does not
+   * migrate with the app container to another device (#7558). Ignored on
+   * other platforms; existing callers omit it and keep the default
+   * migratable storage.
+   */
+  deviceBound?: boolean;
 }
 
 export interface GetSecureItemRequest {
@@ -782,4 +802,38 @@ export type PenEventKind = 'DRAW_MOVE' | 'DRAW_END' | 'ERASE_MOVE' | 'ERASE_END'
 export interface PenStrokeBatch {
   kind: PenEventKind;
   points: { x: number; y: number; pressure: number }[];
+}
+
+export interface OnDeviceLLMStatusResponse {
+  available: boolean;
+  /** deviceNotEligible, appleIntelligenceNotEnabled, modelNotReady or unsupportedOS. */
+  reason?: string;
+  /** Tokens per session, shared by instructions, prompt and reply. */
+  contextSize?: number;
+  /** Base language codes the model supports, e.g. `en`, `zh`. */
+  languages?: string[];
+}
+
+export interface OnDeviceLLMGenerateRequest {
+  requestId: string;
+  instructions: string;
+  prompt: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export async function getOnDeviceLLMStatus(): Promise<OnDeviceLLMStatusResponse> {
+  return invoke<OnDeviceLLMStatusResponse>('plugin:native-bridge|on_device_llm_status');
+}
+
+export async function onDeviceLLMGenerate(
+  request: OnDeviceLLMGenerateRequest,
+): Promise<{ text: string }> {
+  return invoke<{ text: string }>('plugin:native-bridge|on_device_llm_generate', {
+    payload: request,
+  });
+}
+
+export async function cancelOnDeviceLLM(requestId: string): Promise<void> {
+  await invoke('plugin:native-bridge|on_device_llm_cancel', { payload: { requestId } });
 }

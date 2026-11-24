@@ -19,18 +19,13 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>0.12.16</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>NSExtensionActivationRule</key>
-			<dict>
-				<key>NSExtensionActivationSupportsWebPageWithMaxCount</key>
-				<integer>1</integer>
-				<key>NSExtensionActivationSupportsWebURLWithMaxCount</key>
-				<integer>1</integer>
-			</dict>
+			<string>SUBQUERY(extensionItems, $item, SUBQUERY($item.attachments, $att, (ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" AND NOT ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url") OR ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "com.apple.property-list" OR (ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.plain-text" AND NOT ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url") ).@count == $item.attachments.@count).@count &gt;= 1</string>
 			<key>NSExtensionJavaScriptPreprocessingFile</key>
 			<string>GetPageContent</string>
 		</dict>

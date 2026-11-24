@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import * as sortable from '@dnd-kit/sortable';
@@ -6,6 +7,9 @@ import { CatalogManager } from '@/app/opds/components/CatalogManager';
 import { useCustomOPDSStore } from '@/store/customOPDSStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
+import { isSelfHosted } from '@/utils/access';
+import { isWebAppPlatform } from '@/services/environment';
+import { validateOPDSURL } from '@/app/opds/utils/opdsUtils';
 import type { OPDSCatalog } from '@/types/opds';
 import type { SystemSettings } from '@/types/settings';
 
@@ -14,6 +18,16 @@ import type { SystemSettings } from '@/types/settings';
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, opts?: Record<string, unknown>) =>
     opts ? key.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => String(opts[k] ?? '')) : key,
+}));
+
+vi.mock('@/utils/access', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/access')>()),
+  isSelfHosted: vi.fn(() => false),
+}));
+
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/environment')>()),
+  isWebAppPlatform: vi.fn(() => false),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -72,6 +86,46 @@ afterEach(() => {
   vi.useRealTimers();
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+  vi.mocked(isSelfHosted).mockReturnValue(false);
+  vi.mocked(isWebAppPlatform).mockReturnValue(false);
+});
+
+describe('CatalogManager self-hosted LAN catalogs (#7105)', () => {
+  test.each([
+    true,
+    false,
+  ])('submits LAN catalogs only on self-hosted web instances (%s)', async (selfHosted) => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.mocked(isSelfHosted).mockReturnValue(selfHosted);
+    vi.mocked(isWebAppPlatform).mockReturnValue(true);
+    vi.mocked(validateOPDSURL).mockResolvedValue({
+      isValid: false,
+      error: 'Server refused catalog',
+    });
+    seed([]);
+    render(<CatalogManager />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add Catalog' }));
+    fireEvent.change(screen.getByPlaceholderText('My Calibre Library'), {
+      target: { value: 'LAN Library' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('https://example.com/opds'), {
+      target: { value: 'http://calibre.lan/opds' },
+    });
+    fireEvent.submit(screen.getByPlaceholderText('https://example.com/opds').closest('form')!);
+
+    if (selfHosted) {
+      await waitFor(() => expect(validateOPDSURL).toHaveBeenCalled());
+      expect(
+        screen.queryByText('Adding LAN addresses is not supported in the web app version.'),
+      ).toBeNull();
+    } else {
+      expect(
+        await screen.findByText('Adding LAN addresses is not supported in the web app version.'),
+      ).toBeTruthy();
+      expect(validateOPDSURL).not.toHaveBeenCalled();
+    }
+  });
 });
 
 describe('CatalogManager auto-download confirmation (#5746)', () => {

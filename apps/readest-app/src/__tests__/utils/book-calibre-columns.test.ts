@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Display formatting for Calibre custom column values (readest#4811).
 import { describe, expect, it } from 'vitest';
 

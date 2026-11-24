@@ -24,6 +24,8 @@ import {
   SettingsSwitchRow,
   Tips,
 } from '../primitives';
+import { allowsSelfSignedCert } from '@/utils/tls';
+import SelfSignedCertSwitch from './SelfSignedCertSwitch';
 
 interface BookOrbitFormProps {
   onBack: () => void;
@@ -39,6 +41,7 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
   const [url, setUrl] = useState(settings.bookorbit.serverUrl || '');
   const [username, setUsername] = useState(settings.bookorbit.username || '');
   const [password, setPassword] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [deviceName, setDeviceName] = useState('');
   const [osName, setOsName] = useState('');
@@ -46,6 +49,10 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
     formatCustomHeadersInput(settings.bookorbit.customHeaders),
   );
   const [headerError, setHeaderError] = useState('');
+  // A connection accepts self-signed certificates unless the user turns it off.
+  const [allowSelfSignedCert, setAllowSelfSignedCert] = useState(
+    allowsSelfSignedCert(settings.bookorbit),
+  );
 
   useEffect(() => {
     const formatOsName = (name: string): string => {
@@ -130,14 +137,18 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
     }
     setHeaderError('');
     setIsConnecting(true);
+    const key = apiKey.trim();
     const config = {
       ...settings.bookorbit,
       serverUrl: url,
       username,
       userkey: md5(password),
-      password,
+      // With an API key the audiobook API needs no password, so none is kept.
+      password: key ? '' : password,
+      apiKey: key,
       deviceName,
       customHeaders: hasCustomHeaders(parsedHeaders.headers) ? parsedHeaders.headers : undefined,
+      allowSelfSignedCert,
       enabled: true,
     };
     const client = new BookOrbitClient(config);
@@ -158,10 +169,17 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
     }
     setIsConnecting(false);
     setPassword('');
+    setApiKey('');
   };
 
   const handleDisconnect = async () => {
-    const bookorbit = { ...settings.bookorbit, userkey: '', password: '', enabled: false };
+    const bookorbit = {
+      ...settings.bookorbit,
+      userkey: '',
+      password: '',
+      apiKey: '',
+      enabled: false,
+    };
     const newSettings = { ...settings, bookorbit };
     setSettings(newSettings);
     await saveSettings(envConfig, newSettings);
@@ -179,6 +197,16 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
 
   const handleToggleField = (field: BookOrbitToggleField) => async () => {
     const bookorbit = { ...settings.bookorbit, [field]: !settings.bookorbit[field] };
+    const newSettings = { ...settings, bookorbit };
+    setSettings(newSettings);
+    await saveSettings(envConfig, newSettings);
+  };
+
+  const handleToggleSelfSignedCert = async () => {
+    const bookorbit = {
+      ...settings.bookorbit,
+      allowSelfSignedCert: !allowsSelfSignedCert(settings.bookorbit),
+    };
     const newSettings = { ...settings, bookorbit };
     setSettings(newSettings);
     await saveSettings(envConfig, newSettings);
@@ -272,6 +300,11 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
             </SettingsRow>
           </BoxedList>
 
+          <SelfSignedCertSwitch
+            checked={allowsSelfSignedCert(settings.bookorbit)}
+            onChange={handleToggleSelfSignedCert}
+          />
+
           <div className='space-y-1.5'>
             <SectionTitle as='label' htmlFor='bookorbit-custom-headers' className='block'>
               {_('Custom Headers (optional)')}
@@ -331,12 +364,17 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
                 id='bookorbit-server-url'
                 type='text'
                 placeholder='https://books.example.com'
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 spellCheck='false'
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
               />
             </div>
+
+            <SelfSignedCertSwitch
+              checked={allowSelfSignedCert}
+              onChange={() => setAllowSelfSignedCert(!allowSelfSignedCert)}
+            />
 
             <div className='space-y-1.5'>
               <SectionTitle as='label' htmlFor='bookorbit-username' className='block'>
@@ -346,7 +384,7 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
                 id='bookorbit-username'
                 type='text'
                 placeholder={_('Your Username')}
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 spellCheck='false'
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -362,10 +400,26 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
                 id='bookorbit-password'
                 type='password'
                 placeholder={_('Your Password')}
-                className='input eink-bordered h-11 w-full text-sm focus:outline-hidden'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete='current-password'
+              />
+            </div>
+
+            <div className='space-y-1.5'>
+              <SectionTitle as='label' htmlFor='bookorbit-api-key' className='block'>
+                {_('API Key (optional)')}
+              </SectionTitle>
+              <input
+                id='bookorbit-api-key'
+                type='password'
+                placeholder='bok_…'
+                className='input eink-bordered settings-content h-11 w-full focus:outline-hidden'
+                spellCheck='false'
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                autoComplete='off'
               />
             </div>
 
@@ -402,6 +456,11 @@ const BookOrbitForm: React.FC<BookOrbitFormProps> = ({ onBack }) => {
               <li>
                 {_(
                   'Create KOReader credentials in BookOrbit under Settings > Integrations > KOReader, then enter them here with your server address.',
+                )}
+              </li>
+              <li>
+                {_(
+                  'On BookOrbit 3.8.0 or later, an API key from Settings > Account > API keys streams audiobooks without your account password. Choose Read and write so your listening position syncs.',
                 )}
               </li>
             </Tips>

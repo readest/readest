@@ -123,6 +123,7 @@ const NotebookEditor: React.FC<NotebookEditorProps> = ({
           className='h-full min-h-0 select-text overflow-y-auto text-start'
           spellCheck
           autoResize={false}
+          holdsReadAloud={false}
         />
       </div>
       <div className='flex min-h-8 flex-wrap items-center gap-2 text-xs'>

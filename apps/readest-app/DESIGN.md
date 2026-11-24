@@ -608,15 +608,26 @@ with the card's own border and double-stack with adjacent rows.
 
 ```tsx
 <div className='hover:bg-base-200/60 focus-within:bg-base-200/60 flex max-w-[60%] items-center rounded-md'>
-  <select className='select h-9 min-w-0 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-1! ps-2! text-end text-sm focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'>
+  <select className='select h-9 min-w-0 cursor-pointer truncate border-0! bg-transparent! bg-none! pe-6! ps-2! text-end text-sm focus:border-0! focus:shadow-none! focus:outline-hidden! focus:ring-0! open:outline-hidden!'>
     {/* options */}
   </select>
   <MdArrowDropDown
     aria-hidden='true'
-    className='text-base-content/55 pointer-events-none h-5 w-5 shrink-0'
+    className='text-base-content/55 pointer-events-none -ms-5 h-5 w-5 shrink-0'
   />
 </div>
 ```
+
+The chevron is pulled back over the select's own end padding (`pe-6!` on the
+select, `-ms-5` on the icon), so it sits at the same X as before but inside
+the select's hit area: with `pointer-events-none`, a press on it lands on the
+select and opens the native picker, and a second press closes it (#7650 — a
+chevron drawn *beside* the select looked like a button and did nothing).
+
+Escape in the open picker must close only the picker. `Dialog` listens for
+Escape on its `<dialog>` element natively, which runs before any React
+`onKeyDown` on the select, so `SettingsSelect` stops the key with a native
+listener while the picker is `:open`.
 
 > **Why so many `!` overrides?** daisyui's `.select` and `.input` apply
 > `border-width: 1px` + `border-color` (base-content/20 at rest, `var(--color-base-content)` on
@@ -811,6 +822,8 @@ override layer in `src/styles/globals.css:484-622` that:
 - Adds 1px contrast borders to `.eink-bordered`, `.modal-box`, `.menu-container`,
   `.popup-container`, `.alert`, `.opds-navigation .card`, `.booknote-item`,
   `.bookitem-main`.
+- Draws daisyUI switches in ink: filled knob when on, hollow knob when off, and a dashed
+  track (knob kept on its side) when disabled.
 
 What this means for new components:
 
@@ -822,6 +835,8 @@ What this means for new components:
 | Cancel / secondary action            | `btn-ghost` (no border) | Reads as "outlined" only after pairing with the CTA           |
 | Card / panel using `border-base-200` | `eink-bordered`         | Otherwise the soft border vanishes in eink                    |
 | Modal / Popup                        | (auto)                  | `modal-box` and `.popup-container` are handled in globals.css |
+| Active tab / selected segment        | `eink-bordered`         | Outline the active item instead of a grey fill                |
+| Grey plate behind an icon button     | `eink:bg-transparent`   | The icon (filled vs outline pin, ×) carries the state         |
 
 Verification checklist before shipping a new UI:
 
@@ -847,6 +862,19 @@ Verification checklist before shipping a new UI:
 Readest ships on **macOS, Windows, Linux, iOS, Android, web**. Adwaita is desktop-GNOME-
 native; we adapt where the host OS has strong conventions, but never at the cost of
 identity.
+
+#### Placeholder book covers
+
+Books without usable cover art use the Classic placeholder: a solid muted color,
+thin spine rule, centered serif title, and a small format label and author in the
+grid. Compact list thumbnails show the title alone. Colors come from a fixed
+palette keyed by the book's file hash, so sorting, metadata edits, syncing and
+theme changes do not change the color. These colors are cover art, rather than
+UI surface or brand colors; cream text has at least 4.5:1 contrast on every color.
+E-ink replaces the color with theme paper and ink, opaque rules and a 1px border.
+The explicit Hide Covers setting retains its neutral title panels. A shelf's Plain
+placeholder covers option uses those same panels for books without art and keeps
+real covers.
 
 #### iOS
 

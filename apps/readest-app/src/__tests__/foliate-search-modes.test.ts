@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Tests for the Calibre-parity search modes added in #4560:
 //   - regex          : JS RegExp over the section's joined text
 //   - nearby-words   : whole words occurring within N words of each other

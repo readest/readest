@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import { shouldCheckAsFootnote } from '@/app/reader/utils/footnoteHeuristics';
 
@@ -73,5 +74,83 @@ describe('shouldCheckAsFootnote', () => {
     const body = parseHtml('<p>Refs: <a href="#a">1</a> <a href="#b">2</a> <a href="#c">3</a></p>');
     const a = getAnchorByText(body, '1');
     expect(shouldCheckAsFootnote(a)).toBe(false);
+  });
+
+  it('recognises bracketed and half-bracketed footnote markers', () => {
+    for (const marker of [
+      '[1]',
+      '(1)',
+      '【1】',
+      '［1］',
+      '（1）',
+      '25）',
+      '〔1〕',
+      '〈1〉',
+      '〖2〗',
+      '〖10〗',
+    ]) {
+      const body = parseHtml(`<p>Sample text<a href="#fn">${marker}</a> following text.</p>`);
+      const a = getAnchorByText(body, marker);
+      expect(shouldCheckAsFootnote(a)).toBe(true);
+    }
+  });
+
+  it('recognises prefixed footnote markers', () => {
+    for (const marker of [
+      '（注1）',
+      '注1',
+      '註1',
+      '（註1）',
+      '訳注1',
+      '訳註1',
+      '原注2',
+      '編注3',
+      '注釈1',
+      'Note 1',
+      'Notes 2',
+      'fn1',
+    ]) {
+      const body = parseHtml(`<p>Sample text<a href="#fn">${marker}</a> following text.</p>`);
+      const a = getAnchorByText(body, marker);
+      expect(shouldCheckAsFootnote(a)).toBe(true);
+    }
+  });
+
+  it('recognises footnote ranges', () => {
+    for (const marker of ['61～69）', '72～77）', '1-5', '（1〜3）']) {
+      const body = parseHtml(`<p>Sample text<a href="#fn">${marker}</a> following text.</p>`);
+      const a = getAnchorByText(body, marker);
+      expect(shouldCheckAsFootnote(a)).toBe(true);
+    }
+  });
+
+  it('recognises full-width numeric digits and circled numbers', () => {
+    for (const marker of ['１', '２', '①', '②', '⑳']) {
+      const body = parseHtml(`<p>Sample text<a href="#fn">${marker}</a> following text.</p>`);
+      const a = getAnchorByText(body, marker);
+      expect(shouldCheckAsFootnote(a)).toBe(true);
+    }
+  });
+
+  it('recognises footnote symbols with optional numbers', () => {
+    for (const marker of ['＊', '＊1', '*', '*1', '※', '※1', '†', '†2', '‡']) {
+      const body = parseHtml(`<p>Sample text<a href="#fn">${marker}</a> following text.</p>`);
+      const a = getAnchorByText(body, marker);
+      expect(shouldCheckAsFootnote(a)).toBe(true);
+    }
+  });
+
+  it('returns false for navigation links, headings, or back-links containing numbers', () => {
+    for (const text of [
+      '1.1 Note on Terminology',
+      'Chapter 1',
+      'Section 2',
+      '（本文へ戻る）',
+      'Back to top',
+    ]) {
+      const body = parseHtml(`<p>Content <a href="#target">${text}</a> more text.</p>`);
+      const a = getAnchorByText(body, text);
+      expect(shouldCheckAsFootnote(a)).toBe(false);
+    }
   });
 });

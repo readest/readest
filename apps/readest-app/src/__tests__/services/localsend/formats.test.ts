@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { partitionSupportedFiles } from '@/services/localsend/formats';
 import type { LocalSendFile } from '@/services/localsend/types';
@@ -19,8 +20,9 @@ describe('partitionSupportedFiles', () => {
       file('4', 'notes.md'),
       file('5', 'archive.tar.gz'),
       file('6', 'noextension'),
+      file('7', 'series.rbooks'),
     ]);
-    expect(supported.map((f) => f.id)).toEqual(['1', '3', '4']);
+    expect(supported.map((f) => f.id)).toEqual(['1', '3', '4', '7']);
     expect(skipped.map((f) => f.id)).toEqual(['2', '5', '6']);
   });
 

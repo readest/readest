@@ -9,13 +9,15 @@ for [CrossPoint](https://github.com/crosspoint-reader/crosspoint-reader) e-reade
   reader and download them to `/Readest/` on the SD card.
 - **Reading statistics**: every reading session on the reader (active reading
   time and how far you got) is added to your Readest reading statistics.
-- **Reading progress**: the reader's built-in KOReader Sync syncs your position
-  with Readest, with no sync server to set up.
+- **Reading progress**: the reader's built-in CrossPoint Sync syncs your
+  position with Readest, with no sync server to set up.
+- **Highlights**: with **Sync Clippings** on, the reader's clippings and your
+  Readest highlights sync both ways.
 
 ## Requirements
 
-- CrossPoint firmware with SD plugin support (the plugin system merged into
-  `develop` on 2026-09-30; releases up to 1.6.5 do not include it).
+- CrossPoint 2.0 or later, the first release with SD plugins. A new install
+  starts with them off: turn on **Settings → Connectivity → Plugins**.
 - A Readest account. Any sign-in method works, since the reader never sees your
   password.
 - Books uploaded to Readest Cloud. Only EPUBs are listed, since that is the
@@ -32,7 +34,7 @@ reader.
 ## Update
 
 The reader's plugin list shows the installed version under **Readest**, and
-so does the **Readest** card on the web **Settings** page (see Sign in below
+so does the **Readest** card on the web **Plugins** page (see Sign in below
 for opening it). On that card, select **Check for update**, then **Update**
 when a newer release is available, and reload the page.
 
@@ -43,19 +45,19 @@ Readest web app. The reader gets its own key, which works only for this plugin
 and is revoked when you sign out; your password is never stored on the reader.
 
 On the reader, open **File Transfer**, join your Wi-Fi network, and open the
-address it shows in a browser on your phone or computer. Go to **Settings**,
+address it shows in a browser on your phone or computer. Go to **Plugins**,
 find the **Readest** card, and select **Sign in**. Open the link it shows, check
 that the code matches, and select **Link Reader**.
 
 Sign-in happens only on this web page, because CrossPoint lets a plugin set up
-KOReader Sync from there but not from the reader's own screen. Until you sign
+CrossPoint Sync from there but not from the reader's own screen. Until you sign
 in, **Plugins → Readest** on the reader points you to the web page.
 
 Your library then appears on the reader under **Plugins → Readest**. With
 **Sync reading progress** on, signing in from the web page sets the reader's
-**KOReader Sync** to sync progress with Readest. The box starts on unless
-KOReader Sync is already set up with another server; turning it on replaces
-that server. **Sign out** revokes the reader's key and clears KOReader Sync
+**CrossPoint Sync** to sync progress with Readest. The box starts on unless
+CrossPoint Sync is already set up with another server; turning it on replaces
+that server. **Sign out** revokes the reader's key and clears CrossPoint Sync
 only while it still points at Readest.
 
 ## Reading statistics
@@ -73,7 +75,7 @@ under their file hash.
 
 ## Reading progress
 
-Signing in from the web page points CrossPoint's built-in KOReader Sync at
+Signing in from the web page points the reader's built-in CrossPoint Sync at
 Readest (`/api/crosspoint`) with the reader's key, your email as the username,
 and **Document Matching** set to **Binary** so books match Readest's
 partial-MD5 book ids. The key alone authenticates the reader, so changing your
@@ -83,10 +85,10 @@ to the synced position the next time they open the book (the furthest position
 wins).
 
 Positions travel as KOReader XPointers. Readest to CrossPoint lands on the right
-page. CrossPoint to Readest lands one to three lines late on current CrossPoint
-`develop`; CrossPoint PR #3424 makes it exact.
+page. CrossPoint to Readest lands one to three lines late; CrossPoint PR #3424
+makes it exact.
 
-Sign-in also turns on KOReader Sync's **Send metadata**, so each upload carries
+Sign-in also turns on CrossPoint Sync's **Send Document Metadata**, so each upload carries
 the book's title and authors. A book uploaded with the File Manager's
 **Optimize EPUB** is rewritten, so it no longer matches Readest's copy by
 partial MD5. Its first **Sync Progress** links it to the Readest EPUB with the
@@ -95,11 +97,30 @@ book must also share the first author, and of several such books (the same
 book imported twice, or another edition) the most recently read one wins. The next sync brings Readest's position over, and from then on
 it syncs both ways like the original.
 
+## Highlights
+
+Turn on **Sync Clippings** in **Settings → Connectivity → CrossPoint Sync**.
+Each **Sync Progress** then syncs the book's clippings with its Readest
+highlights first, through the same `/api/crosspoint` server, using CrossPoint
+Sync's clippings API. A clipping saved on the reader becomes a highlight in
+Readest the next time a Readest app opens the book. A highlight made in Readest
+appears on the reader after its next sync. Deleting one on either side deletes
+it on the other.
+
+CrossPoint anchors a clipping by its chapter and a range of characters in it.
+Readest keeps that anchor next to KOReader's XPointers, places the highlight by
+it, and checks the text there; when a rewritten copy shifted it, Readest finds
+the same text nearby. The reader shows no colors or notes, so those stay in
+Readest. An X3 or X4 holds 256 clippings a book, so it gets at most a book's
+first 256 highlights.
+
 ## Development
 
 Tests live with the app, in
 `apps/readest-app/src/__tests__/crosspoint-plugin/readest-plugin.test.ts`. The
 server side is the routes in `apps/readest-app/src/app/api/crosspoint/` (device
-sign-in, catalog, reading sessions and the KOSync-compatible progress routes)
-and the `/link` page where codes are approved. Reader keys and pending sign-ins
-live in the tables from `docker/volumes/db/migrations/024_crosspoint_devices.sql`.
+sign-in, catalog, reading sessions, the KOSync-compatible progress routes and
+the clippings API under `api/v1/clippings`) and the `/link` page where codes are
+approved. Reader keys and pending sign-ins live in the tables from
+`docker/volumes/db/migrations/024_crosspoint_devices.sql`; a clipping is a
+`book_notes` row with the `crosspoint` anchor from `033_add_book_notes_crosspoint.sql`.

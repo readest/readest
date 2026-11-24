@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import type { BookDoc } from '@/libs/document';
 import type { Renderer } from '@/types/view';
 import { CHUNK_ATTRIBUTE } from 'foliate-js/section-chunks.js';
@@ -56,7 +56,7 @@ const waitFor = (el: HTMLElement, type: string, timeout = 15000) =>
 
 describe('Paginator chunked section (browser)', () => {
   let paginator: Renderer;
-  let relocations: { index: number; fraction: number; range: Range }[];
+  let relocations: { index: number; fraction: number; range: Range; reason: string }[];
 
   beforeAll(async () => {
     await import('foliate-js/paginator.js');
@@ -73,8 +73,8 @@ describe('Paginator chunked section (browser)', () => {
     document.body.append(paginator);
     relocations = [];
     paginator.addEventListener('relocate', (e) => {
-      const { index, fraction, range } = (e as CustomEvent).detail;
-      relocations.push({ index, fraction, range });
+      const { index, fraction, range, reason } = (e as CustomEvent).detail;
+      relocations.push({ index, fraction, range, reason });
     });
     paginator.open(book);
   };
@@ -142,6 +142,119 @@ describe('Paginator chunked section (browser)', () => {
     expect(contents.filter((c) => c.index === 1).length).toBeGreaterThan(1);
     const primary = contents.find((c) => c.index === paginator.primaryIndex);
     expect(primary!.doc).toBe(end.range.startContainer.ownerDocument);
+  });
+
+  it('reports a page turned onto a chunk still loading once it renders', async () => {
+    // Hold every chunk after the one opened, as a loaded machine does: until
+    // its document commits, the iframe holds its initial about:blank
+    const srcdoc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'srcdoc')!;
+    const held: (() => void)[] = [];
+    let loads = 0;
+    Object.defineProperty(HTMLIFrameElement.prototype, 'srcdoc', {
+      ...srcdoc,
+      set(this: HTMLIFrameElement, value: string) {
+        if (loads++ === 0) srcdoc.set!.call(this, value);
+        else held.push(() => srcdoc.set!.call(this, value));
+      },
+    });
+    let start: (typeof relocations)[number];
+    let turned: number;
+    try {
+      open();
+      // one column, so the next chunk starts on a page of its own
+      paginator.setAttribute('max-column-count', '1');
+      const stabilized = waitFor(paginator, 'stabilized');
+      await paginator.goTo({ index: 1, anchor: 0.199 });
+      await stabilized;
+      start = relocations.at(-1)!;
+      const startDoc = start.range.startContainer.ownerDocument;
+      // page onto the next chunk's placeholder while it loads
+      await vi.waitFor(() => expect(held.length).toBeGreaterThan(0));
+      for (let i = 0; i < 40; i++) {
+        const count = relocations.length;
+        await paginator.next();
+        if (relocations.length === count) break;
+        if (relocations.at(-1)!.range.startContainer.ownerDocument !== startDoc) break;
+      }
+      expect(relocations.map((r) => r.range.startContainer.ownerDocument!.URL)).not.toContain(
+        'about:blank',
+      );
+      // a resize re-anchors meanwhile: it must keep the page turned to
+      turned = relocations.length;
+      paginator.render?.();
+    } finally {
+      Object.defineProperty(HTMLIFrameElement.prototype, 'srcdoc', srcdoc);
+    }
+    const relocated = waitFor(paginator, 'relocate', 5000);
+    held.splice(0).forEach((load) => load());
+    await relocated;
+
+    const end = relocations[turned]!;
+    expect(end.reason).toBe('page');
+    expect(end.index).toBe(1);
+    expect(end.fraction).toBeGreaterThan(start.fraction);
+    const primary = paginator.getContents().find((c) => c.index === paginator.primaryIndex);
+    expect(end.range.startContainer.ownerDocument).toBe(primary!.doc);
+    // the chunk's first page, where the turn landed
+    const first = primary!.doc.body.querySelector(`:scope > :not([${CHUNK_ATTRIBUTE}])`)!;
+    expect(end.range.intersectsNode(first)).toBe(true);
+  });
+
+  it('reports a position scrolled onto a chunk still loading once it renders', async () => {
+    open();
+    paginator.setAttribute('flow', 'scrolled');
+    // let the navigation settle: its fill loads the next chunk too
+    const settled = new Promise<void>((resolve) => {
+      let count = 0;
+      paginator.addEventListener('stabilized', () => ++count === 2 && resolve());
+    });
+    await paginator.goTo({ index: 1, anchor: 0.199 });
+    await settled;
+    await new Promise((r) => setTimeout(r, 100));
+
+    // Hold the chunk after it, which scrolling to its end preloads
+    const srcdoc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'srcdoc')!;
+    const held: (() => void)[] = [];
+    Object.defineProperty(HTMLIFrameElement.prototype, 'srcdoc', {
+      ...srcdoc,
+      set(this: HTMLIFrameElement, value: string) {
+        if (value.includes('>4500. ')) held.push(() => srcdoc.set!.call(this, value));
+        else srcdoc.set!.call(this, value);
+      },
+    });
+    const scroll = async (top: number) => {
+      container.scrollTop = top;
+      // past the scroll listener's debounce
+      await new Promise((r) => setTimeout(r, 500));
+    };
+    const container = paginator.shadowRoot!.getElementById('container')!;
+    let turned: number;
+    try {
+      await scroll(container.scrollHeight - container.clientHeight);
+      await vi.waitFor(() => expect(held.length).toBe(1));
+      // scroll onto its placeholder, the chunk before's last pixel still in
+      // view: it holds no text to report either
+      const placeholder = Array.from(container.children).find(
+        (el) => el.querySelector('iframe')?.contentDocument?.URL === 'about:blank',
+      ) as HTMLElement;
+      turned = relocations.length;
+      await scroll(placeholder.offsetTop - 1);
+      expect(container.scrollTop).toBe(placeholder.offsetTop - 1);
+      expect(relocations.slice(turned)).toEqual([]);
+    } finally {
+      Object.defineProperty(HTMLIFrameElement.prototype, 'srcdoc', srcdoc);
+    }
+    const relocated = waitFor(paginator, 'relocate', 5000);
+    held.splice(0).forEach((load) => load());
+    await relocated;
+
+    const end = relocations[turned]!;
+    expect(end.reason).toBe('scroll');
+    expect(end.index).toBe(1);
+    const primary = paginator.getContents().find((c) => c.index === paginator.primaryIndex);
+    expect(end.range.startContainer.ownerDocument).toBe(primary!.doc);
+    const first = primary!.doc.body.querySelector(`:scope > :not([${CHUNK_ATTRIBUTE}])`)!;
+    expect(end.range.intersectsNode(first)).toBe(true);
   });
 
   // A concordance-like section: tens of thousands of short entries, so every

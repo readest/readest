@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { spatialTarget, useSpatialNavigation } from '@/app/library/hooks/useSpatialNavigation';

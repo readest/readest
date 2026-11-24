@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { assignSlots, emptyManifest, slotForArticleId } from '@/services/rss/feedManifest';
 import type { ParsedFeed } from '@/types/rss';

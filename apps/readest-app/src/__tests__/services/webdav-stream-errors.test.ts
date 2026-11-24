@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, expect, test, vi } from 'vitest';
 import { createWebDAVProvider } from '@/services/sync/providers/webdav/WebDAVProvider';
 import type { WebDAVSettings } from '@/types/settings';

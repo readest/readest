@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test, vi, beforeEach } from 'vitest';
 import type { SystemSettings } from '@/types/settings';
 import type { FileSystem } from '@/types/system';
@@ -186,5 +187,45 @@ describe('broadcastGlobalSettings: readestCloud in the emitted payload', () => {
     const serialized = JSON.stringify(payload);
     expect(serialized).not.toContain('hunter2');
     expect(serialized).not.toContain('lastSyncedAt');
+  });
+});
+
+describe('a forgotten WebDAV / S3 connection reaches other windows (#7799)', () => {
+  test('the receiving window resets the forgotten connection and keeps per-device fields', () => {
+    const receiver = {
+      ...local,
+      webdav: {
+        ...DEFAULT_WEBDAV_SETTINGS,
+        serverUrl: 'https://dav.example.com',
+        username: 'alice',
+        password: 'hunter2',
+        rootPath: '/Books',
+        deviceId: 'dev-1',
+        lastSyncedAt: 42,
+      },
+    } as SystemSettings;
+
+    const merged = mergeSyncedGlobalSettings(receiver, {
+      ...globals,
+      forgottenConnection: 'webdav',
+    });
+
+    expect(merged.webdav).toMatchObject({
+      serverUrl: '',
+      username: '',
+      password: '',
+      rootPath: '/',
+      deviceId: 'dev-1',
+      lastSyncedAt: 42,
+    });
+  });
+
+  test('the broadcast names the forgotten connection', async () => {
+    vi.mocked(emit).mockClear();
+
+    await broadcastGlobalSettings(makeFullSettings(), { forgottenConnection: 's3' });
+
+    const payload = vi.mocked(emit).mock.calls[0]![1] as SettingsSyncPayload;
+    expect(payload.forgottenConnection).toBe('s3');
   });
 });

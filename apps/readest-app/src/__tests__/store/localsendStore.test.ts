@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it } from 'vitest';
 import { initialLocalSendState, useLocalSendStore } from '@/store/localsendStore';
 import type { ReceiveRequest, TransferProgress } from '@/services/localsend/types';

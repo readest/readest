@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useEnv } from '@/context/EnvContext';
+import { recordExchange } from '@/services/sync/dataFlow/log';
 import type { ChapterResolver, PositionResolver } from '@/services/bookorbit/annotationExchange';
 import { BookOrbitClient } from '@/services/bookorbit/BookOrbitClient';
 import { BookOrbitSyncStore } from '@/services/bookorbit/BookOrbitSyncStore';
 import { isBookOrbitPassEnabled, runBookOrbitNotesPass } from '@/services/bookorbit/notesPass';
 import { SYNC_NOTES_INTERVAL_SEC } from '@/services/constants';
 import { findTocItemBS } from '@/services/nav';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookDataStore, useBookConfig } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -14,7 +15,7 @@ import { BookNote, FIXED_LAYOUT_FORMATS } from '@/types/book';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { eventDispatcher } from '@/utils/event';
 import { throttle } from '@/utils/throttle';
-import { XCFI, getCFIFromXPointer, getXPointerFromCFI } from '@/utils/xcfi';
+import { getCFIFromXPointer, getCFIFromXPointerRange, getXPointerFromCFI } from '@/utils/xcfi';
 import { useWindowActiveChanged } from './useWindowActiveChanged';
 
 /**
@@ -27,10 +28,14 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, setConfig, getBookData } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const setConfig = useBookDataStore((s) => s.setConfig);
+  const getBookData = useBookDataStore((s) => s.getBookData);
   const { getView } = useReaderStore();
 
-  const config = getConfig(bookKey);
+  const config = useBookConfig(bookKey);
+  // Each page turn moves it; the sync passes below follow it.
+  const location = useBookDataStore((s) => s.getConfig(bookKey)?.location);
   const passRunning = useRef(false);
   const unmatchedHinted = useRef(false);
   const storeRef = useRef<BookOrbitSyncStore | null>(null);
@@ -62,6 +67,7 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
                 content.doc,
                 content.index || 0,
                 bookData.bookDoc ?? undefined,
+                bookData.book?.format,
               );
               enriched.push({
                 ...note,
@@ -102,12 +108,7 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
       try {
         let cfi: string | undefined;
         if (pos1) {
-          const spineIndex = XCFI.extractSpineIndex(pos0);
-          const doc = await bookData.bookDoc.sections?.[spineIndex]?.createDocument();
-          if (doc) {
-            const converter = new XCFI(doc, spineIndex);
-            cfi = converter.xPointerToCFI(pos0, pos1);
-          }
+          cfi = await getCFIFromXPointerRange(pos0, pos1, bookData.bookDoc);
         } else {
           const contents = view?.renderer.getContents() ?? [];
           const primaryIndex = view?.renderer.primaryIndex;
@@ -189,41 +190,49 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
     if (passRunning.current) return;
 
     passRunning.current = true;
+    const notes = { connector: 'bookorbit', kind: 'notes', bookTitle: book.title } as const;
+    const counts = { pushed: 0, pulled: 0 };
     try {
-      await runBookOrbitNotesPass({
-        client,
-        store,
-        book: {
-          hash: book.hash,
-          title: book.title,
-          author: book.author,
-          readingStatus: book.readingStatus,
-          readingStatusUpdatedAt: book.readingStatusUpdatedAt,
+      await runBookOrbitNotesPass(
+        {
+          client,
+          store,
+          book: {
+            hash: book.hash,
+            title: book.title,
+            author: book.author,
+            readingStatus: book.readingStatus,
+            readingStatusUpdatedAt: book.readingStatusUpdatedAt,
+          },
+          getNotes: () => getConfig(bookKey)?.booknotes ?? [],
+          mergeNotes,
+          resolvePosition,
+          populateXPointers,
+          chapterForNote,
+          syncNotes: bookorbit.syncNotes,
+          syncBookStates: bookorbit.syncBookStates,
+          now: () => Date.now(),
+          onUnmatched: () => {
+            if (unmatchedHinted.current) return;
+            unmatchedHinted.current = true;
+            // Until it is linked, BookOrbit rejects this book's progress and
+            // stats too, so this needs to be seen, not a 2-second header hint.
+            eventDispatcher.dispatch('toast', {
+              type: 'warning',
+              timeout: 8000,
+              message: _(
+                'Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.',
+              ),
+            });
+          },
         },
-        getNotes: () => getConfig(bookKey)?.booknotes ?? [],
-        mergeNotes,
-        resolvePosition,
-        populateXPointers,
-        chapterForNote,
-        syncNotes: bookorbit.syncNotes,
-        syncBookStates: bookorbit.syncBookStates,
-        now: () => Date.now(),
-        onUnmatched: () => {
-          if (unmatchedHinted.current) return;
-          unmatchedHinted.current = true;
-          // Until it is linked, BookOrbit rejects this book's progress and
-          // stats too, so this needs to be seen, not a 2-second header hint.
-          eventDispatcher.dispatch('toast', {
-            type: 'warning',
-            timeout: 8000,
-            message: _(
-              'Book not found in BookOrbit. Link it under Unmatched KOReader Books in BookOrbit to sync it.',
-            ),
-          });
-        },
-      });
+        counts,
+      );
+      recordExchange(notes, counts);
     } catch (error) {
       console.warn('[BookOrbit] notes sync failed', error);
+      // One exchange carries both ways, so a failure stops both.
+      recordExchange(notes, counts, error instanceof Error ? error.message : String(error));
     } finally {
       passRunning.current = false;
     }
@@ -251,10 +260,10 @@ export const useBookOrbitNotesSync = (bookKey: string) => {
   );
 
   useEffect(() => {
-    if (!client || !config?.location) return;
+    if (!client || !location) return;
     throttledPass();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, config?.location, config?.booknotes, throttledPass]);
+  }, [client, location, config?.booknotes, throttledPass]);
 
   useWindowActiveChanged((isActive) => {
     if (!isActive) runPassRef.current();

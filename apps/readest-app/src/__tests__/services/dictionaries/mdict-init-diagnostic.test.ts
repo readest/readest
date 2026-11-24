@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Diagnostic + benchmark for js-mdict init on a real bundle.
  *

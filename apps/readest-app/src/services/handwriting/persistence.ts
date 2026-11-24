@@ -23,6 +23,14 @@ const sectionOf = (cfi: string): number | null => {
   }
 };
 
+/** Ink as JSON with sorted keys: the server's jsonb hands strokes back in its own key order. */
+const inkJson = (value: unknown) =>
+  JSON.stringify(value, (_key, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1)))
+      : v,
+  );
+
 export const loadInkEditor = (notes: BookNote[], fixedLayout: boolean): HandwritingEditor => {
   const pages: Record<string, InkPage> = {};
   for (const note of notes) {
@@ -81,7 +89,7 @@ export const withInkNotes = (
   for (const [id, { strokes, cfi, page }] of sessions) {
     const prev = previous.get(id);
     previous.delete(id);
-    if (prev && !prev.deletedAt && JSON.stringify(prev.ink) === JSON.stringify(strokes)) {
+    if (prev && !prev.deletedAt && inkJson(prev.ink) === inkJson(strokes)) {
       result.push(prev);
       continue;
     }
@@ -102,3 +110,17 @@ export const withInkNotes = (
   }
   return result;
 };
+
+/**
+ * The book's ink as drawn, to tell outside edits from our own. Stamps are left
+ * out: sync restamps a drawing it pushed without changing its strokes, and
+ * reloading for that would drop the stroke being drawn and the undo history.
+ */
+export const inkSignature = (notes: BookNote[] | undefined) =>
+  inkJson(
+    (notes ?? [])
+      .filter((n) => n.type === 'ink')
+      // Sync moves the notes it returns to the end of the list.
+      .sort((a, b) => (a.id < b.id ? -1 : 1))
+      .map((n) => [n.id, n.deletedAt ?? 0, n.ink]),
+  );

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { BookshelfDefinition, BookshelfState } from '@/types/bookshelf';
 import type { SystemSettings } from '@/types/settings';

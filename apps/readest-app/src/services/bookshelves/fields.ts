@@ -1,7 +1,12 @@
 import type { Book } from '@/types/book';
 import type { BookshelfFieldKind, BookshelfOperator } from '@/types/bookshelf';
-import { getBookPageCount } from '@/utils/book';
 import { stubTranslation as _ } from '@/utils/misc';
+
+// Defined here, not in utils/book.ts (which re-exports it): the replica sync
+// API route reaches this module, and utils/book.ts loads the document parsers
+// and language detection on every cold Worker start.
+export const getBookPageCount = (book: Book): number | undefined =>
+  book.progress?.[1] || book.pageCount || undefined;
 
 type FieldValue = string | number | boolean | string[] | undefined;
 export interface BookshelfField {
@@ -15,7 +20,7 @@ export interface BookshelfField {
   values?: string[];
   read: (book: Book) => FieldValue;
 }
-const textList = (value: unknown): string[] => {
+export const textList = (value: unknown): string[] => {
   if (Array.isArray(value)) return value.flatMap(textList);
   if (typeof value === 'string') return [value];
   if (value && typeof value === 'object' && 'name' in value) return textList(value.name);

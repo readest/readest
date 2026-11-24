@@ -62,6 +62,7 @@ const opdsCatalogFieldsSchema = z
     customHeaders: fieldEnvelopeSchema.optional(),
     autoDownload: fieldEnvelopeSchema.optional(),
     disabled: fieldEnvelopeSchema.optional(),
+    allowSelfSignedCert: fieldEnvelopeSchema.optional(),
     addedAt: fieldEnvelopeSchema.optional(),
     sortOrder: fieldEnvelopeSchema.optional(),
     // Encrypted-credential fields. The CRDT envelope wraps a cipher
@@ -79,6 +80,7 @@ const absServerFieldsSchema = z
     addedAt: fieldEnvelopeSchema.optional(),
     libraryIds: fieldEnvelopeSchema.optional(),
     disabled: fieldEnvelopeSchema.optional(),
+    allowSelfSignedCert: fieldEnvelopeSchema.optional(),
     serverVersion: fieldEnvelopeSchema.optional(),
     // Encrypted-credential fields. The CRDT envelope wraps a cipher
     // envelope as `v` when the publishing device had its CryptoSession

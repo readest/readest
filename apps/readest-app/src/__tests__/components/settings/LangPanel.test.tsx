@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 /**
  * LangPanel — "Enable Translation" availability gate (issue #5600).
  *

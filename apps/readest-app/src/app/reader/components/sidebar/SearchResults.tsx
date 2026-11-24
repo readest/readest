@@ -6,6 +6,8 @@ import { useBookProgress } from '@/store/readerProgressStore';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { findNearestCfi } from '@/utils/cfi';
+import { loadShortcuts } from '@/helpers/shortcuts';
+import { matchesShortcut } from '@/utils/shortcutKeys';
 import useScrollToItem from '../../hooks/useScrollToItem';
 import clsx from 'clsx';
 
@@ -32,11 +34,15 @@ const clipPre = (pre: string) => {
 // adjacent visible section fall outside the location range (see #getVisibleRange
 // in foliate-js/paginator.js). The body-text mark still shows — it lives in the
 // DOM — but the location-based `isCurrent` check misses it. Complement it with a
-// direct on-screen check for results in non-primary sections.
+// direct on-screen check for results in non-primary sections. `cfiSections`
+// gives each result's section when the results are grouped by chapter, so only
+// results in an on-screen section are resolved: resolving an EPUB CFI walks the
+// package document, and this runs again after every chapter of a search (#7584).
 export const getVisibleCfiSet = (
   view: FoliateView,
   cfis: string[],
   container: DOMRect,
+  cfiSections?: Map<string, number>,
 ): Set<string> => {
   const renderer = view.renderer;
   const contents = renderer.getContents();
@@ -56,6 +62,8 @@ export const getVisibleCfiSet = (
 
   const visible = new Set<string>();
   for (const cfi of cfis) {
+    const section = cfiSections?.get(cfi);
+    if (section != null && !onScreenSections.has(section)) continue;
     try {
       const { index, anchor } = view.resolveCFI(cfi);
       if (!onScreenSections.has(index)) continue;
@@ -139,6 +147,9 @@ const SearchResultItem: React.FC<SearchResultItemProps> = ({
       tabIndex={0}
       onClick={() => onSelectResult(cfi)}
       onKeyDown={(e) => {
+        // Search in Book (Ctrl/Cmd+F) still reaches the reader so the search
+        // field selects its term.
+        if (matchesShortcut(e, loadShortcuts().onShowSearchBar.keys)) return;
         if (e.key === 'Enter' || e.key === ' ') {
           onSelectResult(cfi);
         } else {
@@ -301,16 +312,20 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
     });
   }, []);
 
-  const allCfis = useMemo(() => {
+  const { allCfis, cfiSections } = useMemo(() => {
     const cfis: string[] = [];
+    const sections = new Map<string, number>();
     for (const result of results) {
       if ('subitems' in result) {
-        for (const item of result.subitems) cfis.push(item.cfi);
+        for (const item of result.subitems) {
+          cfis.push(item.cfi);
+          if (result.index != null) sections.set(item.cfi, result.index);
+        }
       } else {
         cfis.push(result.cfi);
       }
     }
-    return cfis;
+    return { allCfis: cfis, cfiSections: sections };
   }, [results]);
 
   const nearestCfi = useMemo(() => {
@@ -326,8 +341,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({ bookKey, results, onSelec
     if (!view?.renderer) return new Set<string>();
     const containerRect = view.getBoundingClientRect();
     if (containerRect.width === 0 && containerRect.height === 0) return new Set<string>();
-    return getVisibleCfiSet(view, allCfis, containerRect);
-  }, [allCfis, progress, getView, bookKey]);
+    return getVisibleCfiSet(view, allCfis, containerRect, cfiSections);
+  }, [allCfis, cfiSections, progress, getView, bookKey]);
 
   const totalMatches = useMemo(
     () =>

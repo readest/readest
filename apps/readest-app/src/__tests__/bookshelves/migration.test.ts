@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadSettings, saveSettings, type Context } from '@/services/settingsService';
 import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';

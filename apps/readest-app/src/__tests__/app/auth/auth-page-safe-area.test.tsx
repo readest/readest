@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -46,6 +47,10 @@ vi.mock('@/store/themeStore', () => ({
 
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({ settings: {}, setSettings: vi.fn(), saveSettings: vi.fn() }),
+}));
+
+vi.mock('@/store/readerStore', () => ({
+  useReaderStore: { getState: () => ({ viewStates: {} }) },
 }));
 
 vi.mock('@/store/trafficLightStore', () => ({

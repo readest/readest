@@ -82,6 +82,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   const [showStickyProgressBar, setShowStickyProgressBar] = useState(
     viewSettings.showStickyProgressBar,
   );
+  const [solidScrolledFooter, setSolidScrolledFooter] = useState(viewSettings.solidScrolledFooter);
   const [showCurrentTime, setShowCurrentTime] = useState(viewSettings.showCurrentTime);
   const [use24HourClock, setUse24HourClock] = useState(viewSettings.use24HourClock);
   const [showCurrentBatteryStatus, setShowCurrentBatteryStatus] = useState(
@@ -151,6 +152,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       showRemainingPages: setShowRemainingPages,
       showProgressInfo: setShowProgressInfo,
       showStickyProgressBar: setShowStickyProgressBar,
+      solidScrolledFooter: setSolidScrolledFooter,
       showCurrentTime: setShowCurrentTime,
       use24HourClock: setUse24HourClock,
       showCurrentBatteryStatus: setShowCurrentBatteryStatus,
@@ -410,6 +412,11 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
   }, [showStickyProgressBar]);
 
   useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'solidScrolledFooter', solidScrolledFooter, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solidScrolledFooter]);
+
+  useEffect(() => {
     saveViewSettings(envConfig, bookKey, 'showCurrentTime', showCurrentTime, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showCurrentTime]);
@@ -557,7 +564,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           <div className='flex gap-4'>
             <button
               title={_('Default')}
-              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'auto' ? 'btn-active bg-base-300' : ''}`}
+              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'auto' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
               onClick={() => setWritingMode('auto')}
             >
               <MdOutlineAutoMode />
@@ -565,7 +572,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
 
             <button
               title={_('Horizontal Direction')}
-              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-tb' ? 'btn-active bg-base-300' : ''}`}
+              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-tb' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
               onClick={() => setWritingMode('horizontal-tb')}
             >
               <MdOutlineTextRotationNone />
@@ -573,7 +580,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
 
             <button
               title={_('Vertical Direction')}
-              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300' : ''}`}
+              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'vertical-rl' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
               onClick={() => setWritingMode('vertical-rl')}
             >
               <MdTextRotateVertical />
@@ -581,7 +588,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
 
             <button
               title={_('RTL Direction')}
-              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-rl' ? 'btn-active bg-base-300' : ''}`}
+              className={`btn btn-ghost btn-circle btn-sm ${writingMode === 'horizontal-rl' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
               onClick={() => setWritingMode('horizontal-rl')}
             >
               <TbTextDirectionRtl />
@@ -841,6 +848,13 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           data-setting-id='settings.layout.showStickyProgressBar'
         />
         <SettingsSwitchRow
+          label={_('Solid Footer in Scrolled Mode')}
+          checked={solidScrolledFooter}
+          disabled={!showFooter}
+          onChange={() => setSolidScrolledFooter(!solidScrolledFooter)}
+          data-setting-id='settings.layout.solidScrolledFooter'
+        />
+        <SettingsSwitchRow
           label={_('Current Time')}
           checked={showCurrentTime}
           disabled={!showFooter}
@@ -954,7 +968,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
             <div className='flex gap-4'>
               <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Auto')}>
                 <button
-                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'auto' ? 'btn-active bg-base-300' : ''}`}
+                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'auto' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
                   onClick={() => setScreenOrientation('auto')}
                 >
                   <MdOutlineScreenRotation />
@@ -962,7 +976,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               </div>
               <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Portrait')}>
                 <button
-                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'portrait' ? 'btn-active bg-base-300' : ''}`}
+                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'portrait' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
                   onClick={() => setScreenOrientation('portrait')}
                 >
                   <IoPhonePortraitOutline />
@@ -970,7 +984,7 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
               </div>
               <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Landscape')}>
                 <button
-                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'landscape' ? 'btn-active bg-base-300' : ''}`}
+                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'landscape' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
                   onClick={() => setScreenOrientation('landscape')}
                 >
                   <IoPhoneLandscapeOutline />

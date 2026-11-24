@@ -61,13 +61,13 @@ export class ReadwiseClient {
     notes: BookNote[],
     book: Book,
     coverImageUrl?: string,
-  ): Promise<{ success: boolean; message?: string; isNetworkError?: boolean }> {
+  ): Promise<{ success: boolean; sent?: number; message?: string; isNetworkError?: boolean }> {
     const syncable = notes.filter(
       (n) =>
         !n.deletedAt &&
         (n.type === 'bookmark' || ((n.type === 'annotation' || n.type === 'excerpt') && n.text)),
     );
-    if (syncable.length === 0) return { success: true };
+    if (syncable.length === 0) return { success: true, sent: 0 };
 
     // Readwise only accepts a fetchable image_url (max 2047 chars), never
     // image bytes; the caller resolves/publishes a public URL (issue #5424)
@@ -116,7 +116,7 @@ export class ReadwiseClient {
         }
         return { success: false, message };
       }
-      return { success: true };
+      return { success: true, sent: syncable.length };
     } catch (e) {
       return { success: false, message: (e as Error).message, isNetworkError: true };
     }

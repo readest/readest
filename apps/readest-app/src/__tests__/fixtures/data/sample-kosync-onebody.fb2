@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0" xmlns:l="http://www.w3.org/1999/xlink">
+  <description>
+    <title-info>
+      <genre>prose</genre>
+      <author><first-name>Test</first-name><last-name>Author</last-name></author>
+      <book-title>KOSync FB2 One Body</book-title>
+      <lang>en</lang>
+    </title-info>
+    <document-info>
+      <author><nickname>readest</nickname></author>
+      <id>readest-kosync-fb2-onebody</id>
+      <version>1.0</version>
+    </document-info>
+  </description>
+  <body>
+    <image l:href="#cover.png"/>
+    <title>
+      <p>One Body Sample</p>
+    </title>
+    <section>
+      <title><p>Chapter One</p></title>
+      <p>The only body has no notes.</p>
+    </section>
+    <section>
+      <title><p>Chapter Two</p></title>
+      <p>A second chapter follows the first.</p>
+    </section>
+  </body>
+  <binary id="cover.png" content-type="image/png">iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==</binary>
+</FictionBook>

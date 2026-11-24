@@ -41,13 +41,16 @@ function isBlockedV4(a: number, b: number, c: number, _d: number): boolean {
  * bare single-label names.
  *
  * Input is a hostname as the WHATWG URL parser serializes it (decimal/hex/octal
- * IPv4 already normalized to dotted-quad). This is a string check — a hostname
- * that DNS-resolves to a private address (DNS rebinding) is a documented
- * residual risk; the hosted web build runs on the Cloudflare Workers edge,
- * which has no reachable internal network or metadata endpoint.
+ * IPv4 already normalized to dotted-quad) or a resolved IP address. Trailing
+ * dots are stripped first: `localhost.` is the same DNS name as `localhost`.
+ * This is a string check — a public name whose DNS records point at a private
+ * address is caught at connect time by `publicFetch` on Node servers.
  */
 export function isBlockedHost(hostname: string): boolean {
-  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const h = hostname
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '')
+    .replace(/\.+$/, '');
   if (!h) return true;
   if (h === 'localhost' || h.endsWith('.localhost')) return true;
   if (h.endsWith('.local') || h.endsWith('.internal') || h.endsWith('.lan')) return true;

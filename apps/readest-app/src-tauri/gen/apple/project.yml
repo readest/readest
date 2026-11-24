@@ -126,8 +126,8 @@ targets:
           - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
           - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
 
-  # Share-sheet extension that lets users send article URLs from Safari /
-  # Chrome / etc. directly to Readest. The extension grabs the URL via
+  # Share-sheet extension that lets users send article URLs (or plain
+  # text) from Safari / Chrome / etc. directly to Readest. The extension grabs the URL via
   # NSExtensionContext, encodes it into `readest://share?url=...`, and
   # opens the main app — which catches the deep-link via
   # `tauri-plugin-deep-link` and runs the clip-and-import pipeline.
@@ -155,15 +155,23 @@ targets:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
           NSExtensionAttributes:
-            # Web URLs + Safari web pages only. Do NOT add
+            # Web URLs, Safari web pages (the JS preprocessing result is a
+            # property list) and shared plain text (#6747). Do NOT use
             # NSExtensionActivationSupportsText: a .txt file is
-            # public.plain-text (conforms to public.text), so that key makes
-            # this article-URL clipper activate for plain-text FILES it
-            # can't handle (the share sheet hangs). Book files must fall
-            # through to the main app's CFBundleDocumentTypes import path.
-            NSExtensionActivationRule:
-              NSExtensionActivationSupportsWebURLWithMaxCount: 1
-              NSExtensionActivationSupportsWebPageWithMaxCount: 1
+            # public.plain-text too, so that key makes the extension
+            # activate for plain-text FILES (the share sheet hangs). A file
+            # shared from Files also carries public.file-url, while text
+            # shared from an app carries public.plain-text alone, so the
+            # NOT file-url clauses keep book files on the main app's
+            # CFBundleDocumentTypes import path.
+            NSExtensionActivationRule: >-
+                SUBQUERY(extensionItems, $item, SUBQUERY($item.attachments, $att,
+                (ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url"
+                AND NOT ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url")
+                OR ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "com.apple.property-list"
+                OR (ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.plain-text"
+                AND NOT ANY $att.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url")
+                ).@count == $item.attachments.@count).@count >= 1
             # Runs GetPageContent.js inside the shared Safari page (with
             # the user's session) and hands the rendered DOM to
             # ShareViewController — the only way to capture login-walled

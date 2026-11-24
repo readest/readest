@@ -3,6 +3,7 @@ import { HandwritingEditor } from './editor';
 import {
   DEFAULT_HANDWRITING_COLOR,
   DEFAULT_HANDWRITING_WIDTH,
+  PEN_MAX_SCALING_WIDTH,
   simplifyPoints,
   roundPoints,
   type InkPoint,
@@ -19,7 +20,11 @@ export interface InkTarget {
   rect: PageRect;
   anchoring: InkAnchoring | null;
 }
-import { PointerHandwritingBackend } from './pointerBackend';
+import {
+  PointerHandwritingBackend,
+  type InkGesture,
+  type PointerBatchKind,
+} from './pointerBackend';
 import { BooxHandwritingBackend, queryPenCapabilities } from './booxBackend';
 import { isTauriAppPlatform } from '@/services/environment';
 import { getOSPlatform } from '@/utils/misc';
@@ -122,11 +127,19 @@ export class HandwritingService {
     this.router = router;
   }
 
+  /** The ink width as a fraction of this session's rect. A marker band follows the page. */
+  private strokeWidth() {
+    const { tool, widthFraction } = this.options;
+    const { width } = this.rect;
+    if (tool === 'marker' || width <= PEN_MAX_SCALING_WIDTH) return widthFraction;
+    return (widthFraction * PEN_MAX_SCALING_WIDTH) / width;
+  }
+
   private liveStroke(): InkStroke {
     return {
       id: '__live__',
       color: this.options.color,
-      width: this.options.widthFraction,
+      width: this.strokeWidth(),
       ...this.toolField(),
       points: this.live,
     };
@@ -184,7 +197,7 @@ export class HandwritingService {
   private restartBoox() {
     if (this.backend !== 'boox') return;
     void this.boox
-      .update(this.rect, this.options.widthFraction * this.rect.width, this.options.color)
+      .update(this.rect, this.strokeWidth() * this.rect.width, this.options.color)
       .catch((err) => console.warn('Failed to update BOOX pen:', err));
   }
 
@@ -262,11 +275,25 @@ export class HandwritingService {
   /** Retarget the session at a new page (page turn / section change). */
   setPage(page: string) {
     if (page === this.page) return;
+    // With no ink on either page and no stroke in progress the canvas stays
+    // empty: no repaint (every turn of a PDF is a page change).
+    const repaint =
+      this.live.length > 0 ||
+      this.editor.strokes(this.page).length > 0 ||
+      this.editor.strokes(page).length > 0;
     this.page = page;
     // An in-progress stroke belongs to the page it started on; drop it rather
     // than committing it to the page the reader just turned to.
     this.live = [];
-    this.onRender?.();
+    if (repaint) this.onRender?.();
+  }
+
+  onGesture(listener: (gesture: InkGesture) => void) {
+    this.pointer.onGesture((gesture) => {
+      if (gesture.action === 'undo') this.undo();
+      else if (gesture.action === 'redo') this.redo();
+      else listener(gesture);
+    });
   }
 
   async attach(el: HTMLElement) {
@@ -286,7 +313,7 @@ export class HandwritingService {
       await this.boox.start(
         this.rect,
         toPage,
-        this.options.widthFraction * this.rect.width,
+        this.strokeWidth() * this.rect.width,
         this.options.color,
       );
     } else if (this.backend === 'pointer') {
@@ -347,7 +374,13 @@ export class HandwritingService {
     return pinned;
   }
 
-  private onBatch(points: InkPoint[], kind: 'move' | 'end', erase: boolean) {
+  private onBatch(points: InkPoint[], kind: PointerBatchKind, erase: boolean) {
+    if (kind === 'cancel') {
+      this.live = [];
+      this.eraseTail = null;
+      this.onRender?.();
+      return;
+    }
     if (erase || this.liveErase) {
       const path = this.eraseTail ? [this.eraseTail, ...points] : points;
       if (path.length) {
@@ -373,7 +406,7 @@ export class HandwritingService {
       this.editor.addStroke(target.page, {
         id: nextStrokeId(),
         color: this.options.color,
-        width: this.options.widthFraction * target.scale,
+        width: this.strokeWidth() * target.scale,
         ...this.toolField(),
         ...(this.session ? { session: this.session } : {}),
         ...pinned,

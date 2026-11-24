@@ -1,7 +1,8 @@
 /**
- * Footnote popup placement against the cell's safe area, which only iPhone Duo
- * uses (#6307). Points stay relative to the cell's origin, because that is
- * what the popup renders against; every other device gets the raw cell rect.
+ * Footnote popup placement against the cell's safe area (#6307, #7389).
+ * Points stay relative to the cell's origin, because that is what the popup
+ * renders against, while clamping to the cell's safe-area insets on both
+ * iPhone Duo and standard phones.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, render } from '@testing-library/react';
@@ -12,6 +13,8 @@ import type { Position } from '@/utils/sel';
 
 const BOOK_KEY = 'bookid-0';
 const CELL = { width: 951, height: 669 };
+// The mocked getPopupPosition records the box size it placed the popup for.
+type SizedPosition = Position & { size?: { width: number; height: number } };
 
 const hoisted = vi.hoisted(() => ({
   isIPhoneDuo: false,
@@ -20,6 +23,7 @@ const hoisted = vi.hoisted(() => ({
   positionRects: [] as { left: number; top: number; right: number; bottom: number }[],
   popupRects: [] as { left: number; top: number; right: number; bottom: number }[],
   popupProps: { current: {} as { position?: Position; trianglePosition?: Position } },
+  popupRenders: [] as { width?: number; height?: number; position?: SizedPosition }[],
 }));
 
 vi.mock('foliate-js/footnotes.js', () => {
@@ -85,9 +89,14 @@ vi.mock('@/utils/sel', () => ({
     hoisted.positionRects.push(rect);
     return { point: { x: 100, y: 100 }, dir: 'down' };
   },
-  getPopupPosition: (_p: unknown, rect: (typeof hoisted.popupRects)[number]) => {
+  getPopupPosition: (
+    _p: unknown,
+    rect: (typeof hoisted.popupRects)[number],
+    width: number,
+    height: number,
+  ) => {
     hoisted.popupRects.push(rect);
-    return { point: { x: 10, y: 10 }, dir: 'down' };
+    return { point: { x: 10, y: 10 }, dir: 'down', size: { width, height } };
   },
 }));
 vi.mock('@/app/reader/utils/transientHighlight', () => ({ showTransientHighlight: vi.fn() }));
@@ -98,8 +107,15 @@ vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
 }));
 vi.mock('@/components/Overlay', () => ({ Overlay: () => <div /> }));
 vi.mock('@/components/Popup', () => ({
-  default: (props: { children: ReactNode; position?: Position; trianglePosition?: Position }) => {
+  default: (props: {
+    children: ReactNode;
+    width?: number;
+    height?: number;
+    position?: SizedPosition;
+    trianglePosition?: Position;
+  }) => {
     hoisted.popupProps.current = props;
+    hoisted.popupRenders.push(props);
     return <div>{props.children}</div>;
   },
 }));
@@ -151,20 +167,37 @@ beforeEach(() => {
   hoisted.onLinkClick.current = null;
   hoisted.positionRects.length = 0;
   hoisted.popupRects.length = 0;
+  hoisted.popupRenders.length = 0;
+});
+
+describe('FootnotePopup position', () => {
+  // Kept in state and set by an effect, the position trailed the size by one
+  // commit: the popup painted once at its measured size but at the spot worked
+  // out for the seed size, and in a vertical book that frame hung off the
+  // screen edge (#7586).
+  it('places the popup for the size it is drawn at', async () => {
+    await renderPopup();
+    await tapFootnoteLink();
+    const placed = hoisted.popupRenders.filter((props) => props.position);
+    expect(placed.length).toBeGreaterThan(0);
+    for (const { width, height, position } of placed) {
+      expect(position?.size).toEqual({ width, height });
+    }
+  });
 });
 
 describe('FootnotePopup safe-area clamp', () => {
-  it('off the Duo positions against the raw cell rect, whatever the insets', async () => {
+  it('off the Duo also clamps to the inset rect and translates back to cell coordinates (#7389)', async () => {
     await renderPopup({ top: 59, right: 0, bottom: 34, left: 0 });
     await tapFootnoteLink();
     expect(hoisted.positionRects.at(-1)).toMatchObject({
       left: 0,
-      top: 0,
+      top: 59,
       right: CELL.width,
-      bottom: CELL.height,
+      bottom: CELL.height - 34,
     });
-    expect(hoisted.popupProps.current.trianglePosition?.point).toEqual({ x: 100, y: 100 });
-    expect(hoisted.popupProps.current.position?.point).toEqual({ x: 10, y: 10 });
+    expect(hoisted.popupProps.current.trianglePosition?.point).toEqual({ x: 100, y: 159 });
+    expect(hoisted.popupProps.current.position?.point).toEqual({ x: 10, y: 69 });
   });
 
   it('on the Duo clamps to the inset rect and translates back to cell coordinates', async () => {

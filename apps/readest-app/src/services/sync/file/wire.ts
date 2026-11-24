@@ -1,3 +1,4 @@
+import type { TTSPacks } from '@/utils/ttsPacks';
 import { Book, BookConfig, BookNote } from '@/types/book';
 
 /**
@@ -39,6 +40,12 @@ export interface RemoteBookConfig {
    * `resolveReferencePageCount` treats an absent count as "no opinion".
    */
   referencePageCount?: number;
+  /**
+   * The downloaded read-aloud packs each sync destination holds. Its own key
+   * like referencePageCount: it merges as a union, not by updatedAt, which the
+   * scalar spread over `config` would do. Optional + additive.
+   */
+  ttsPacks?: TTSPacks;
   writerDeviceId: string;
   writerVersion: 'readest-webdav-1';
   /** When the writer last touched the row (client wall clock, millis). */
@@ -87,6 +94,7 @@ export const buildRemotePayload = (
     config: trimmed,
     booknotes: config.booknotes ?? [],
     ...(referencePageCount ? { referencePageCount } : {}),
+    ...(config.ttsPacks ? { ttsPacks: config.ttsPacks } : {}),
     writerDeviceId: deviceId,
     writerVersion: 'readest-webdav-1',
     updatedAt: Date.now(),

@@ -19,15 +19,19 @@ export interface ReadestVoiceContext {
 export const errorResponse = (error: string, status: number, headers?: HeadersInit) =>
   NextResponse.json({ error }, { status, headers });
 
+// `anyPlan`: voice previews, open to every signed-in reader.
 export const gateReadestVoice = async (
   request: Request,
+  { anyPlan = false } = {},
 ): Promise<{ ok: true; ctx: ReadestVoiceContext } | { ok: false; response: NextResponse }> => {
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
   if (!user || !token) return { ok: false, response: errorResponse('NOT_AUTHENTICATED', 403) };
   const service = await getVoiceService();
   if (!service) return { ok: false, response: errorResponse('NOT_CONFIGURED', 503) };
   const plan = getSubscriptionPlan(token);
-  if (!isTTSInPlan(plan)) return { ok: false, response: errorResponse('PLAN_REQUIRED', 403) };
+  if (!anyPlan && !isTTSInPlan(plan)) {
+    return { ok: false, response: errorResponse('PLAN_REQUIRED', 403) };
+  }
   const catalog = await getCatalog();
   if (!catalog) return { ok: false, response: errorResponse('NOT_CONFIGURED', 503) };
   return { ok: true, ctx: { user, plan, service, catalog } };

@@ -9,9 +9,10 @@ import {
   type TokenSet,
 } from '@/services/sync/providers/oauth/tokenEndpoint';
 
-// Public client (no secret): safe to ship.
-export const HARDCOVER_OAUTH_CLIENT_ID = 'd5a1461f-073a-43c2-80c1-db784fa92a06';
-const SCOPE = 'read:catalog read:library write:library read:me:content';
+// Public client (no secret): safe to ship. The app is registered on Readest's own
+// Hardcover account, @readestapp.
+export const HARDCOVER_OAUTH_CLIENT_ID = 'ce020ec5-1a79-433e-8d10-e8a0aeba0517';
+const SCOPE = 'read:catalog read:library read:journal write:library read:me:content';
 
 const OAUTH_BASE = 'https://api.hardcover.app/oauth2';
 const TOKEN_ENDPOINT = `${OAUTH_BASE}/token`;

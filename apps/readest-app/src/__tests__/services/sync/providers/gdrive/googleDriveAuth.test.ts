@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi } from 'vitest';
 import { resolveGoogleAccountLabel } from '@/services/sync/providers/gdrive/googleDriveAuth';
 import type { FetchFn } from '@/services/sync/providers/oauth/tokenEndpoint';

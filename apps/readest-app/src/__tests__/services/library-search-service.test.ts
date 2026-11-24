@@ -455,6 +455,242 @@ describe('searchLibraryBooks', () => {
     expect(service.loadBookContent).toHaveBeenCalledOnce();
   });
 
+  it('keeps serving the index after reading bumps the book updatedAt', async () => {
+    const book = makeBook('reading', 'Reading');
+    const service = makeService(new Map([['reading', makeFile('# Chapter\na needle here')]]));
+    for await (const _ of searchLibraryBooks(service, [book], 'needle', { config })) {
+    }
+    // A page turn or progress save restamps the row; the file is unchanged.
+    const turned = { ...book, updatedAt: book.updatedAt + 1000 };
+    const events = [];
+    for await (const event of searchLibraryBooks(service, [turned], 'needle', { config })) {
+      events.push(event);
+    }
+    expect(events.at(-1)).toMatchObject({ type: 'completed', matchCount: 1 });
+    expect(service.loadBookContent).toHaveBeenCalledOnce();
+  });
+
+  // A book imported in place is read from the user's own file, which can be
+  // edited (say, in Calibre) without the book getting a new hash.
+  it('rebuilds the index when the book file was edited in place', async () => {
+    const book = makeBook('in-place', 'In Place');
+    const files = new Map([['in-place', makeFile('# Chapter\na needle here')]]);
+    const service = makeService(files);
+    for await (const _ of searchLibraryBooks(service, [book], 'needle', { config })) {
+    }
+    files.set('in-place', makeFile('# Chapter\na needle here, and an edited needle'));
+    const events = [];
+    for await (const event of searchLibraryBooks(service, [book], 'needle', { config })) {
+      events.push(event);
+    }
+    expect(events.at(-1)).toMatchObject({ type: 'completed', matchCount: 2 });
+    expect(service.loadBookContent).toHaveBeenCalledTimes(2);
+  });
+
+  // The session's open document still reads the file as it was before the edit.
+  it('rebuilds from the edited file when it changes during a session', async () => {
+    const book = makeBook('in-place-session', 'In Place');
+    const files = new Map([['in-place-session', makeFile('# Chapter\na needle here')]]);
+    const service = makeService(files);
+    const session = createLibrarySearchSession(service);
+    const search = async (options: { session?: typeof session }) => {
+      const events = [];
+      for await (const event of searchLibraryBooks(service, [book], 'needle', {
+        config,
+        ...options,
+      })) {
+        events.push(event);
+      }
+      return events.at(-1);
+    };
+
+    await search({ session });
+    files.set('in-place-session', makeFile('# Chapter\na needle here, and an edited needle'));
+    expect(await search({ session })).toMatchObject({ type: 'completed', matchCount: 2 });
+    // A later session is served from the index the rebuild wrote.
+    const loads = vi.mocked(service.loadBookContent).mock.calls.length;
+    expect(await search({})).toMatchObject({ type: 'completed', matchCount: 2 });
+    expect(service.loadBookContent).toHaveBeenCalledTimes(loads);
+    await session.close();
+  });
+
+  // Here the file changes back after the search measured it, so the document
+  // the session reopens still holds the old text.
+  it('stores the size of the file whose text it indexed', async () => {
+    const book = makeBook('in-place-race', 'In Place');
+    const files = new Map([['in-place-race', makeFile('# Chapter\na needle here')]]);
+    const service = makeService(files);
+    const session = createLibrarySearchSession(service);
+    const search = async (options: { session?: typeof session }) => {
+      const events = [];
+      for await (const event of searchLibraryBooks(service, [book], 'needle', {
+        config,
+        ...options,
+      })) {
+        events.push(event);
+      }
+      return events.at(-1);
+    };
+
+    await search({ session });
+    const edited = makeFile('# Chapter\na needle here, and an edited needle');
+    vi.mocked(service.getBookFileSize).mockResolvedValueOnce(edited.size);
+    await search({ session });
+    await session.close();
+
+    files.set('in-place-race', edited);
+    expect(await search({})).toMatchObject({ type: 'completed', matchCount: 2 });
+  });
+
+  // On web, measuring a book reads the whole file, and in-book search resolves
+  // every chapter's results through the session.
+  it('resolves results without reading the book file again', async () => {
+    const book = makeBook('resolving', 'Resolving');
+    const service = makeService(new Map([['resolving', makeFile('# Chapter\na needle here')]]));
+    const session = createLibrarySearchSession(service);
+    const locators = [];
+    for await (const event of searchLibraryBooks(service, [book], 'needle', { config, session })) {
+      if (event.type === 'result') locators.push(...event.result.subitems.map((m) => m.locator));
+    }
+    const measured = vi.mocked(service.getBookFileSize).mock.calls.length;
+
+    for (let i = 0; i < 3; i++) await resolveSearchResultCfis(session, book, locators);
+
+    expect(locators).not.toHaveLength(0);
+    expect(service.getBookFileSize).toHaveBeenCalledTimes(measured);
+    expect(service.loadBookContent).toHaveBeenCalledOnce();
+    await session.close();
+  });
+
+  describe('a book edited in place while a session holds it open', () => {
+    const v1 = '# Chapter\na needle here';
+    const v2 = '# Chapter\na needle here, and an edited needle';
+    const setup = () => {
+      const book = makeBook('held', 'Held');
+      const files = new Map([['held', makeFile(v1)]]);
+      const service = makeService(files);
+      const session = createLibrarySearchSession(service);
+      const search = async (options: { session?: typeof session } = {}) => {
+        const events = [];
+        for await (const event of searchLibraryBooks(service, [book], 'needle', {
+          config,
+          ...options,
+        })) {
+          events.push(event);
+        }
+        return events;
+      };
+      return { book, files, service, session, search };
+    };
+
+    it('is reopened once when two searches find it stale together', async () => {
+      const { files, service, session, search } = setup();
+      await search({ session });
+      files.set('held', makeFile(v2));
+      // Both searches get the session's document before either goes on.
+      const open = session.open;
+      let arrived = 0;
+      let bothArrived!: () => void;
+      const together = new Promise<void>((resolve) => {
+        bothArrived = resolve;
+      });
+      vi.spyOn(session, 'open').mockImplementation(async (book) => {
+        const pending = open(book);
+        if (++arrived === 2) bothArrived();
+        if (arrived <= 2) await together;
+        return pending;
+      });
+
+      const [first, second] = await Promise.all([search({ session }), search({ session })]);
+
+      expect(first.at(-1)).toMatchObject({ type: 'completed', matchCount: 2 });
+      expect(second.at(-1)).toMatchObject({ type: 'completed', matchCount: 2 });
+      expect(service.loadBookContent).toHaveBeenCalledTimes(2);
+      await session.close();
+    });
+
+    // Another session rebuilt the index from the edited file, so this one
+    // takes the indexed path and never opens the book itself.
+    it('resolves results from a fresh index against the edited file', async () => {
+      const { book, files, service, session, search } = setup();
+      await search({ session });
+      files.set('held', makeFile(v2));
+      await search();
+
+      const locators = (await search({ session }))
+        .flatMap((event) => (event.type === 'result' ? event.result.subitems : []))
+        .map((match) => match.locator);
+      const fresh = createLibrarySearchSession(service);
+
+      expect(locators).toHaveLength(2);
+      expect(await resolveSearchResultCfis(session, book, locators)).toEqual(
+        await resolveSearchResultCfis(fresh, book, locators),
+      );
+      await Promise.all([session.close(), fresh.close()]);
+    });
+
+    it("doesn't leave a failed close unhandled when it is dropped", async () => {
+      const rejections: unknown[] = [];
+      const onRejection = (reason: unknown) => {
+        rejections.push(reason);
+      };
+      process.on('unhandledRejection', onRejection);
+      try {
+        const { book, files, session, search } = setup();
+        const held = files.get('held') as File & { close: ReturnType<typeof vi.fn> };
+        await session.open(book);
+        held.close.mockRejectedValue(new Error('close failed'));
+        files.set('held', makeFile(v2));
+
+        expect((await search({ session })).at(-1)).toMatchObject({ matchCount: 2 });
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        expect(held.close).toHaveBeenCalledOnce();
+        expect(rejections).toEqual([]);
+        await session.close();
+      } finally {
+        process.off('unhandledRejection', onRejection);
+      }
+    });
+
+    it('keeps a document another open replaced it with while it was checked', async () => {
+      const { book, files, service, session } = setup();
+      let finishLoad!: (content: BookContent) => void;
+      vi.mocked(service.loadBookContent).mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishLoad = resolve;
+        }),
+      );
+      void session.open(book);
+      const checking = session.refresh(book, makeFile(v2).size);
+      files.set('held', makeFile(v2));
+      const reopened = { ...book, updatedAt: book.updatedAt + 1 };
+      const replacement = await session.open(reopened);
+
+      finishLoad({ book, file: makeFile(v1) });
+      await checking;
+
+      expect(await session.open(reopened)).toBe(replacement);
+      expect(service.loadBookContent).toHaveBeenCalledTimes(2);
+      await session.close();
+    });
+
+    // open() replaces a document cached for an older updatedAt anyway.
+    it("doesn't wait for a document cached for an older updatedAt", async () => {
+      const { book, service, session } = setup();
+      vi.mocked(service.loadBookContent).mockReturnValueOnce(new Promise(() => {}));
+      void session.open(book);
+      const reopened = { ...book, updatedAt: book.updatedAt + 1 };
+
+      const checked = await Promise.race([
+        session.refresh(reopened, makeFile(v2).size).then(() => true),
+        new Promise((resolve) => setTimeout(() => resolve(false), 50)),
+      ]);
+
+      expect(checked).toBe(true);
+    });
+  });
+
   it('stops worker-backed searches at the result limit', async () => {
     const book = makeBook('limit', 'Limit');
     const file = makeFile('# Chapter\ntext');

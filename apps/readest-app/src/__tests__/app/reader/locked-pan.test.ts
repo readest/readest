@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { FoliateView } from '@/types/view';
 import type { ViewSettings } from '@/types/book';

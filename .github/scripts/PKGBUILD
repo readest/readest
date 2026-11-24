@@ -1,0 +1,25 @@
+pkgname=gratis-readest-nightly
+pkgver=${NIGHTLY_VERSION/-/.r}
+pkgrel=${GITHUB_RUN_NUMBER:-1}.${GITHUB_RUN_ATTEMPT:-1}
+pkgdesc='Gratis Readest nightly ebook reader'
+arch=('x86_64')
+license=('GPL-3.0-only')
+depends=('gtk3' 'webkit2gtk-4.1' 'nss' 'nspr' 'alsa-lib' 'libpulse' 'speech-dispatcher' 'libxkbcommon' 'libxkbcommon-x11' 'libx11' 'libxcomposite' 'libxdamage' 'libxext' 'libxfixes' 'libxrandr' 'libxcb' 'libxcursor' 'libxi' 'libglvnd' 'mesa' 'at-spi2-core' 'libcups' 'dbus' 'expat' 'systemd-libs')
+options=('!strip' '!debug')
+source=('readest.deb')
+noextract=('readest.deb')
+sha256sums=('SKIP')
+
+package() {
+  local payload
+  payload=$(bsdtar -tf "$srcdir/readest.deb" | grep -E '^data\.tar(\.(gz|xz|zst|bz2))?$')
+  [ -n "$payload" ] || return 1
+  bsdtar -xOf "$srcdir/readest.deb" "$payload" | bsdtar -xf - -C "$pkgdir"
+
+  [ -n "$(find "$pkgdir/usr/bin" -name gratis-readest -print -quit)" ] || return 1
+  [ -n "$(find "$pkgdir/usr" -type f -name libcef.so -print -quit)" ] || return 1
+  [ -n "$(find "$pkgdir/usr" -type f -name resources.pak -print -quit)" ] || return 1
+  [ -n "$(find "$pkgdir/usr" -type f -name icudtl.dat -print -quit)" ] || return 1
+  [ -n "$(find "$pkgdir/usr" -type d -name locales -print -quit)" ] || return 1
+  [ -n "$(find "$pkgdir/usr/share/applications" -type f -name '*.desktop' -print -quit)" ] || return 1
+}

@@ -55,8 +55,6 @@ interface FileSyncState {
    * durable "last synced" timestamp lives in the provider settings slice.
    */
   lastErrorByKind: Partial<Record<FileSyncBackendKind, string | null>>;
-  reportByKind: Partial<Record<FileSyncBackendKind, string | null>>;
-  dismissReport: (kind: FileSyncBackendKind) => void;
 
   /**
    * Acquire the library-sync mutex for `kind` and mark it syncing. Returns
@@ -84,8 +82,6 @@ export const useFileSyncStore = create<FileSyncState>((set, get) => ({
   byKind: {},
   activeKind: null,
   lastErrorByKind: {},
-  reportByKind: {},
-  dismissReport: (kind) => set((s) => ({ reportByKind: { ...s.reportByKind, [kind]: null } })),
 
   beginSync: (kind, initialLabel) => {
     // Global mutex: only one backend's library sync at a time, since they all
@@ -145,11 +141,7 @@ export const useFileSyncStore = create<FileSyncState>((set, get) => ({
     })),
 
   setLastError: (kind, message) =>
-    set((s) => ({
-      lastErrorByKind: { ...s.lastErrorByKind, [kind]: message },
-      // Keep failure details until dismissed, even if a background retry heals health.
-      ...(message ? { reportByKind: { ...s.reportByKind, [kind]: message } } : {}),
-    })),
+    set((s) => ({ lastErrorByKind: { ...s.lastErrorByKind, [kind]: message } })),
 }));
 
 /** Per-backend progress, idle when the backend has never started a run. */

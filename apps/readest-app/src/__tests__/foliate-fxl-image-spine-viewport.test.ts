@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // A bitmap spine item (EPUB 3 `image/jpeg` etc. directly in the spine, as in
 // the IDPF haruko-jpeg / page-blanche-bitmaps-in-spine samples) is loaded by
 // the browser as its own image document, which carries a synthetic

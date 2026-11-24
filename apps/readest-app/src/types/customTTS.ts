@@ -12,6 +12,12 @@ export interface CustomTTSService {
   model: string;
   /** Style instructions for models that take them (e.g. gpt-4o-mini-tts). */
   instructions?: string;
+  /** Audio format to request; unset means MP3. 'none' sends no format, for
+   * services that only produce their own default (often WAV). */
+  responseFormat?: 'mp3' | 'wav' | 'none';
+  /** Comma-separated voice names, used instead of asking the service, for
+   * services that can't list their voices (e.g. Gemini behind a gateway). */
+  voices?: string;
   disabled?: boolean;
   addedAt: number;
   updatedAt: number;

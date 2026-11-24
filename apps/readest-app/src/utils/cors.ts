@@ -20,6 +20,6 @@ export const runMiddleware = (
 };
 
 export const corsAllMethods = Cors({
-  methods: ['POST', 'GET', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'],
+  methods: ['POST', 'GET', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
   maxAge: 86400,
 });

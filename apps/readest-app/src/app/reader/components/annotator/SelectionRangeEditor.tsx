@@ -114,17 +114,20 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
   const fixedAnchorRef = useRef<SectionAnchor | null>(null);
 
   const updateFromDraggedPoint = useCallback(
-    (point: Point, commit = false) => {
+    (point: Point, commit = false, handle?: 'start' | 'end') => {
       const anchor = fixedAnchorRef.current;
       if (!anchor) return;
-      void onDragTo(anchor, point, commit).then((bounds) => {
+      const activeHandle = handle ?? draggingRef.current;
+      const yBias = isVertical ? 0 : activeHandle === 'start' ? 2 : -2;
+      const adjustedPoint = isVertical ? point : { x: point.x, y: point.y + yBias };
+      void onDragTo(anchor, adjustedPoint, commit).then((bounds) => {
         if (bounds) boundsRef.current = bounds;
       });
       // Drag the handle into the corner to turn the page; the anchored end keeps
       // the previous page's part of the selection across the turn.
-      if (!commit) noteAutoTurnPoint(viewSettings?.scrolled ? null : point);
+      if (!commit) noteAutoTurnPoint(viewSettings?.scrolled ? null : adjustedPoint);
     },
-    [onDragTo, noteAutoTurnPoint, viewSettings?.scrolled],
+    [onDragTo, noteAutoTurnPoint, viewSettings?.scrolled, isVertical],
   );
 
   // Rebuild the range from the held handle position after an auto page-turn, so
@@ -176,14 +179,15 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
   );
 
   const handleDragEnd = useCallback(() => {
-    const point = draggingRef.current === 'start' ? startRef.current : endRef.current;
+    const activeHandle = draggingRef.current;
+    const point = activeHandle === 'start' ? startRef.current : endRef.current;
+    updateFromDraggedPoint(point, true, activeHandle ?? undefined);
     draggingRef.current = null;
     setDraggingHandle(null);
     setLoupePoint(null);
     cancelAutoTurn();
     autoTurnUnsubRef.current?.();
     autoTurnUnsubRef.current = null;
-    updateFromDraggedPoint(point, true);
   }, [updateFromDraggedPoint, cancelAutoTurn]);
 
   if (currentStart.x === 0 && currentStart.y === 0) {

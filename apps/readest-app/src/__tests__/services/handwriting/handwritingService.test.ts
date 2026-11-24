@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 
 import { HandwritingEditor } from '@/services/handwriting/editor';
@@ -38,7 +39,9 @@ describe('HandwritingService page scoping', () => {
   });
 
   it('notifies listeners on a page change so the canvas repaints', () => {
-    const service = new HandwritingService(new HandwritingEditor(), 'pdf:1', rect);
+    const editor = new HandwritingEditor();
+    editor.addStroke('pdf:1', { id: 'a', color: '#000', width: 0.004, points: [[0.1, 0.1]] });
+    const service = new HandwritingService(editor, 'pdf:1', rect);
     let renders = 0;
     service.onNeedsRender(() => renders++);
 
@@ -48,6 +51,24 @@ describe('HandwritingService page scoping', () => {
     // Same page again is a no-op: no repaint, no retarget.
     service.setPage('pdf:2');
     expect(renders).toBe(1);
+
+    // onto a page with ink
+    service.setPage('pdf:1');
+    expect(renders).toBe(2);
+  });
+
+  it('does not repaint a page change between pages without ink', () => {
+    // Every turn of a PDF is a page change: with nothing drawn on either page,
+    // a repaint draws the same empty canvas and costs the overlay a render.
+    const service = new HandwritingService(new HandwritingEditor(), 'pdf:1', rect);
+    let renders = 0;
+    service.onNeedsRender(() => renders++);
+
+    service.setPage('pdf:2');
+    service.setPage('pdf:3');
+
+    expect(renders).toBe(0);
+    expect(service.strokesForRender()).toEqual([]);
   });
 
   it('drops an in-progress stroke when the page changes mid-stroke', () => {
@@ -303,5 +324,81 @@ describe('HandwritingService stored precision', () => {
       [0.1235, 0.5, 0.33],
       [0.4568, 0.9877, 0.67],
     ]);
+  });
+});
+
+describe('HandwritingService pen width on a wide page (#7094)', () => {
+  const draw = (service: HandwritingService) =>
+    (service as unknown as { onBatch: (p: InkPoint[], k: string, e: boolean) => void }).onBatch(
+      [
+        [0.1, 0.5],
+        [0.4, 0.5],
+      ],
+      'end',
+      false,
+    );
+  const desktop = { left: 0, top: 0, width: 1600, height: 900 };
+
+  it('draws the finest pen as fine on a desktop-wide page as on a small tablet', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', desktop, { widthFraction: 0.004 });
+    draw(service);
+    const [stroke] = editor.strokes('sec:1');
+    // 0.004 of a 600px page, not of the 1600px desktop page (6.4px).
+    expect(stroke!.width * desktop.width).toBeCloseTo(2.4);
+  });
+
+  it('shows the stroke being drawn at the width it is saved with', () => {
+    const service = new HandwritingService(new HandwritingEditor(), 'sec:1', desktop, {
+      widthFraction: 0.004,
+    });
+    (service as unknown as { onBatch: (p: InkPoint[], k: string, e: boolean) => void }).onBatch(
+      [[0.1, 0.1]],
+      'move',
+      false,
+    );
+    expect(service.liveStrokes()[0]!.width * desktop.width).toBeCloseTo(2.4);
+  });
+
+  it('keeps the pen a fraction of the page on a phone-sized page', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', rect, { widthFraction: 0.004 });
+    draw(service);
+    expect(editor.strokes('sec:1')[0]!.width).toBe(0.004);
+  });
+
+  it('keeps the size on screen when a stroke is routed to a smaller page', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'page:1', desktop, { widthFraction: 0.004 });
+    const page = { left: 400, top: 0, width: 800, height: 900 };
+    service.setRouter(() => ({ page: 'page:2', rect: page, anchoring: null }));
+    draw(service);
+    expect(editor.strokes('page:2')[0]!.width * page.width).toBeCloseTo(2.4);
+  });
+
+  it('keeps a marker band a fraction of the page, about a line of text', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'sec:1', desktop, {
+      tool: 'marker',
+      widthFraction: 0.03,
+    });
+    draw(service);
+    expect(editor.strokes('sec:1')[0]!.width).toBe(0.03);
+  });
+});
+
+describe('HandwritingService cancelled input', () => {
+  it('drops already-flushed palm points before committing the pen stroke', () => {
+    const editor = new HandwritingEditor();
+    const service = new HandwritingService(editor, 'pdf:1', rect);
+    const input = service as unknown as {
+      onBatch: (points: InkPoint[], kind: string, erase: boolean) => void;
+    };
+    input.onBatch([[0.8, 0.8]], 'move', false);
+    expect(service.liveStrokes()).toHaveLength(1);
+    input.onBatch([], 'cancel', false);
+    expect(service.liveStrokes()).toEqual([]);
+    input.onBatch([[0.1, 0.1, 0.8]], 'end', false);
+    expect(editor.strokes('pdf:1')[0]!.points).toEqual([[0.1, 0.1, 0.8]]);
   });
 });

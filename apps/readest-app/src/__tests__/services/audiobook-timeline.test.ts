@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { AudiobookTimeline } from '@/services/audiobook/AudiobookTimeline';
 import type { ABSChapter, ABSTrack } from '@/types/audiobookshelf';

@@ -13,7 +13,12 @@ import { nextBooknoteStamp } from '@/utils/booknoteStamp';
 import { SystemSettings } from '@/types/settings';
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { Point, snapRangeToWords } from '@/utils/sel';
-import { expandAllRenderedSections, removeGlobalAnnotationOverlays } from './globalAnnotations';
+import { toWindowPoint } from './crossDocSelection';
+import {
+  isSyntheticGlobalValue,
+  removeGlobalAnnotationOverlays,
+  sourceCfiFromSyntheticValue,
+} from './globalAnnotations';
 
 export const isDefaultHighlightColor = (
   color: HighlightColor,
@@ -150,19 +155,25 @@ export function getHandlePositionsFromRange(
 
   const firstRect = rects[0]!;
   const lastRect = rects[rects.length - 1]!;
-  const frameElement = range.commonAncestorContainer.ownerDocument?.defaultView?.frameElement;
-  const frameRect = frameElement?.getBoundingClientRect() ?? { top: 0, left: 0 };
-
-  return {
-    start: {
-      x: frameRect.left + (isVertical ? firstRect.right : firstRect.left),
-      y: frameRect.top + firstRect.top,
-    },
-    end: {
-      x: frameRect.left + (isVertical ? lastRect.left : lastRect.right),
-      y: frameRect.top + lastRect.bottom,
-    },
+  const doc = range.commonAncestorContainer.ownerDocument;
+  if (!doc) return null;
+  // The PDF page iframe is often scaled to fit the screen. getClientRects()
+  // returns coordinates in the iframe's unscaled CSS space; use the inverse
+  // transform from the selection drag hit-testing path to position both handles.
+  const startPoint = {
+    x: isVertical ? firstRect.right : firstRect.left,
+    y: firstRect.top,
   };
+  const endPoint = {
+    x: isVertical ? lastRect.left : lastRect.right,
+    y: lastRect.bottom,
+  };
+  // Popup/paragraph ranges may live in the host document, already in viewport space.
+  const inFrame = !!doc.defaultView?.frameElement;
+  const start = inFrame ? toWindowPoint(doc, startPoint) : startPoint;
+  const end = inFrame ? toWindowPoint(doc, endPoint) : endPoint;
+  if (!start || !end) return null;
+  return { start, end };
 }
 
 /**
@@ -323,7 +334,13 @@ export function buildTTSSentenceHighlight(
   };
 }
 
-export type AnnotationDrawKind = 'bubble' | 'highlight' | 'underline' | 'squiggly' | 'none';
+export type AnnotationDrawKind =
+  | 'bubble'
+  | 'highlight'
+  | 'underline'
+  | 'squiggly'
+  | 'global'
+  | 'none';
 
 /** Overlay styles the reader draws: the annotation styles plus the extra
  *  strokes only the TTS highlight offers. */
@@ -364,6 +381,7 @@ export function decideAnnotationDraw(
   style: HighlightStyle | undefined,
 ): AnnotationDrawKind {
   if (value?.startsWith(NOTE_PREFIX)) return 'bubble';
+  if (value && isSyntheticGlobalValue(value)) return 'global';
   if (style === 'highlight') return 'highlight';
   if (style === 'underline' || style === 'squiggly') return style;
   return 'none';
@@ -410,7 +428,7 @@ export function drawAnnotationOverlay(
       color: getAnnotationOverlayColor('highlight', hexColor, { isBwEink, isDarkMode }),
       vertical: viewSettings.vertical,
     });
-  } else if (kind === 'underline' || kind === 'squiggly') {
+  } else if (kind === 'underline' || kind === 'squiggly' || kind === 'global') {
     const { writingMode, lineHeight, fontSize } = doc.defaultView!.getComputedStyle(startElement());
     const fontSizeValue = parseFloat(fontSize) || viewSettings.defaultFontSize;
     const lineHeightValue = parseFloat(lineHeight) || viewSettings.lineHeight * fontSizeValue;
@@ -420,12 +438,45 @@ export function drawAnnotationOverlay(
     const padding = viewSettings.vertical
       ? (lineHeightValue - fontSizeValue) / 2 - strokeWidth + verticalCompensation
       : (lineHeightValue - fontSizeValue) / 2 - strokeWidth + horizontalCompensation;
+    if (kind === 'global') {
+      // The theme variable, not a resolved color: overlays aren't redrawn on a
+      // theme switch. Full opacity on black-and-white e-ink, which can't show a
+      // faded stroke; still dashed, so a copy stays distinct from an underline.
+      draw(Overlayer.dashedUnderline, {
+        writingMode,
+        padding,
+        color: 'var(--color-base-content)',
+        opacity: isBwEink ? 1 : 0.5,
+      });
+      return;
+    }
     draw(Overlayer[kind], {
       writingMode,
       color: getAnnotationOverlayColor(kind, hexColor, { isBwEink, isDarkMode }),
       padding,
     });
   }
+}
+
+/**
+ * The booknote a click on an overlay opens, and whether it opens as its note.
+ * A copy of a global annotation (`${cfi}#g…`) maps back to its source note and
+ * opens the note when there is one, since the copy draws no bubble.
+ */
+export function resolveAnnotationClick(
+  value: string,
+  booknotes: BookNote[],
+): { annotation: BookNote; cfi: string; isNote: boolean; isCopy: boolean } | undefined {
+  let isNote = value.startsWith(NOTE_PREFIX);
+  const rawValue = isNote ? value.replace(NOTE_PREFIX, '') : value;
+  const isCopy = isSyntheticGlobalValue(rawValue);
+  const cfi = isCopy ? sourceCfiFromSyntheticValue(rawValue) : rawValue;
+  const candidates = booknotes.filter(
+    (b) => b.type === 'annotation' && !b.deletedAt && b.cfi === cfi,
+  );
+  if (isCopy && candidates.some((b) => b.note?.trim())) isNote = true;
+  const annotation = candidates.find((b) => (!isNote && b.style) || (isNote && b.note));
+  return annotation ? { annotation, cfi, isNote, isCopy } : undefined;
 }
 
 /**
@@ -569,10 +620,5 @@ export function applyNoteBubbleTransition(
   if (transition === 'none') return;
   for (const view of views) {
     view.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` }, transition === 'remove');
-    // The copies of a global annotation carry the bubble too: redraw them.
-    if (note.global) {
-      removeGlobalAnnotationOverlays(view, note);
-      expandAllRenderedSections(view, note);
-    }
   }
 }

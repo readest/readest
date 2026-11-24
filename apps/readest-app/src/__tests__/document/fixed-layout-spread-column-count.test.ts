@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Feature test for readest/readest issue #6239.
 //
 // The captured page curl turns a two-column spread as a single leaf hinged at

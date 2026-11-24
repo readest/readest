@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -176,6 +177,23 @@ describe('ABSForm', () => {
     });
     expect(screen.getByRole('checkbox', { name: 'Sci-Fi' })).not.toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Podcasts' })).not.toBeNull();
+  });
+
+  test('the next server added starts with self-signed certificates allowed again', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_PLATFORM', 'tauri');
+    render(<ABSForm onBack={vi.fn()} />);
+    const certSwitch = () =>
+      screen.getByRole('checkbox', { name: 'Allow Self-Signed Certificate' }) as HTMLInputElement;
+    expect(certSwitch().checked).toBe(true);
+    fillAndConnect();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'All Servers' })).not.toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'All Servers' }));
+
+    expect(screen.getByRole('button', { name: 'Connect' })).not.toBeNull();
+    expect(certSwitch().checked).toBe(true);
   });
 
   test('toggling a library checkbox updates server.libraryIds', async () => {

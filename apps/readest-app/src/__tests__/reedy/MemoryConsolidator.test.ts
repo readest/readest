@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ChatModel } from '@/services/reedy/models/ChatModel';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';

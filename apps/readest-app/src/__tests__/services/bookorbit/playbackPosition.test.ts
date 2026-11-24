@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { globalFromAssetPosition, assetPositionFromGlobal } from '@/services/bookorbit/manifest';
 import type { ABSTrack } from '@/types/audiobookshelf';

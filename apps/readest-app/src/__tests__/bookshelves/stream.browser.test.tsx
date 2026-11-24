@@ -6,7 +6,11 @@ import { cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import type { Book } from '@/types/book';
 import BookCover from '@/components/BookCover';
 import BookshelfItem from '@/app/library/components/BookshelfItem';
-import { createBookshelf } from '@/services/bookshelves/definitions';
+import { createBookshelf, DEFAULT_BOOKSHELF_ID } from '@/services/bookshelves/definitions';
+import { hlcPack } from '@/libs/crdt';
+import { DEFAULT_SYSTEM_SETTINGS } from '@/services/constants';
+import { useSettingsStore } from '@/store/settingsStore';
+import type { SystemSettings } from '@/types/settings';
 import BookshelfStream, {
   BookshelfCarousel,
   type ShelfSection,
@@ -483,6 +487,76 @@ describe('mixed bookshelf stream in Chromium', () => {
     );
     expect(container.querySelector('[data-shelf-layout="grid"] img')).toBeNull();
   });
+  for (const plain of ['carousel', 'grid'] as const) {
+    it(`gives only the ${plain} shelf plain placeholder covers (#7549)`, async () => {
+      // The Default shelf has the option on; a shelf that never set it must not inherit it.
+      const stamp = hlcPack(1_700_000_000_000, 0, 'dev');
+      const defaultShelf = {
+        ...createBookshelf('', DEFAULT_BOOKSHELF_ID),
+        plainPlaceholderCovers: true,
+      };
+      const settings = useSettingsStore.getState().settings;
+      useSettingsStore.setState({
+        settings: {
+          ...DEFAULT_SYSTEM_SETTINGS,
+          bookshelves: {
+            rows: {
+              [DEFAULT_BOOKSHELF_ID]: {
+                user_id: '',
+                kind: 'bookshelf',
+                replica_id: DEFAULT_BOOKSHELF_ID,
+                fields_jsonb: { definition: { v: defaultShelf, t: stamp, s: 'dev' } },
+                deleted_at_ts: null,
+                updated_at_ts: stamp,
+                reincarnation: null,
+                manifest_jsonb: null,
+                schema_version: 1,
+              },
+            },
+          },
+        } as SystemSettings,
+      });
+      try {
+        const items = books(6).map((book) => ({ ...book, coverImageUrl: null }));
+        const { container } = render(
+          <div style={{ width: 900, height: 900 }}>
+            <BookshelfStream
+              autoColumns
+              fixedColumns={6}
+              sections={[
+                {
+                  definition: {
+                    ...createBookshelf('Carousel', 'carousel'),
+                    ...(plain === 'carousel' && { plainPlaceholderCovers: true }),
+                  },
+                  items,
+                },
+                {
+                  definition: {
+                    ...createBookshelf('Grid', 'grid'),
+                    layout: 'grid',
+                    ...(plain === 'grid' && { plainPlaceholderCovers: true }),
+                  },
+                  items,
+                },
+              ]}
+              renderItem={(item) => (
+                <div style={{ height: 180 }}>{'hash' in item && <BookCover book={item} />}</div>
+              )}
+            />
+          </div>,
+        );
+        const background = (layout: string) =>
+          container.querySelector<HTMLElement>(`[data-shelf-layout="${layout}"] .fallback-cover`)
+            ?.style.backgroundColor;
+        const colored = plain === 'carousel' ? 'grid' : 'carousel';
+        await waitFor(() => expect(background(colored)).toBeTruthy());
+        expect(background(plain)).toBe('');
+      } finally {
+        useSettingsStore.setState({ settings });
+      }
+    });
+  }
   for (const eink of [false, true]) {
     it(`uses ${eink ? 'page buttons' : 'scroll arrows'} for carousel navigation`, async () => {
       document.documentElement.setAttribute('data-eink', String(eink));

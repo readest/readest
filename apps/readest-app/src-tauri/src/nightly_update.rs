@@ -118,6 +118,13 @@ pub async fn install_nightly_update<R: tauri::Runtime>(
         .version_comparator(|current, release| {
             is_update_newer(&release.version.to_string(), &current.to_string())
         })
+        // Same bounds as download_file: a stalled download fails instead of
+        // leaving the dialog at its last progress forever.
+        .configure_client(|client| {
+            client
+                .connect_timeout(crate::transfer_file::CONNECT_TIMEOUT)
+                .read_timeout(crate::transfer_file::READ_TIMEOUT)
+        })
         .build()
         .map_err(|e| e.to_string())?;
 

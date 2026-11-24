@@ -6,7 +6,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { LuMessageSquare, LuTrash2, LuPencil, LuCheck, LuX, LuPlus } from 'react-icons/lu';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import { useBookDataStore } from '@/store/bookDataStore';
+import { useBookData } from '@/store/bookDataStore';
 import { useAIChatStore } from '@/store/aiChatStore';
 import { useNotebookStore } from '@/store/notebookStore';
 import type { AIConversation } from '@/services/ai/types';
@@ -19,7 +19,6 @@ interface ChatHistoryViewProps {
 const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { getBookData } = useBookDataStore();
   const {
     conversations,
     isLoadingHistory,
@@ -34,7 +33,7 @@ const ChatHistoryView: React.FC<ChatHistoryViewProps> = ({ bookKey }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
 
-  const bookData = getBookData(bookKey);
+  const bookData = useBookData(bookKey);
   const bookHash = bookKey.split('-')[0] || '';
   const bookTitle = bookData?.book?.title || 'Unknown';
 

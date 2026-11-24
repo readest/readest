@@ -46,7 +46,7 @@ Branch `feat/audiobookshelf-phase1` (worktree `/Users/chrox/dev/readest-feat-aud
 - File-sync backends push inert ABS metadata rows/config/cover to third-party remotes (non-stranding; add an isAudiobook guard to booksToPush).
 - No legacy-id migration: servers added before id===contentId keep Date.now() ids (self-consistent; remove/re-add heals).
 - seekToTime has a bare clock.play() (autoplay-rejection class; start() is guarded).
-- Open-relay posture: RESOLVED for ABS by removing the proxy entirely (2026-08-20); the OPDS and KOSync relays remain for the joint follow-up.
+- Open-relay posture: RESOLVED for ABS by removing the proxy entirely (2026-08-20); OPDS/KOSync notes in [[private-audiobookshelf-integration-phase1]] (local only).
 - NativeNarrationPlayer-inherited: #ensureReady wedge on start-session rejection, optimistic seek cache without rollback (shared fix with NativeAudiobookClock).
 - AudiobookController #onError has no re-entrancy guard (double-toast if a future clock both rejects load() and fires 'error').
 - Product decision pending: audiobook listening time is NOT counted in reading stats (stats gate is TTS-only).

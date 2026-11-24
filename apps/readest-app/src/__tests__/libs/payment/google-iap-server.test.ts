@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Google reports `userCancellationTimeMillis` as epoch milliseconds in a

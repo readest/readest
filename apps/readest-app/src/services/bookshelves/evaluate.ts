@@ -1,8 +1,10 @@
 import type { Book } from '@/types/book';
 import type { BookshelfDefinition, BookshelfFilterGroup, BookshelfRule } from '@/types/bookshelf';
 import { createBookSorter, withTimeRemainingLast } from '@/app/library/utils/libraryUtils';
+import type { LibrarySortCriterion } from '@/types/settings';
 import { bookshelfSchema, effectiveBookshelves, FINISHED_BOOKSHELF_ID } from './definitions';
 import { getBookshelfField } from './fields';
+import { resolveBookshelfSortOrder } from './sorting';
 
 const normalized = (value: unknown) => String(value).normalize('NFKC').toLocaleLowerCase();
 const isSet = (value: unknown) =>
@@ -163,6 +165,7 @@ export const evaluateBookshelves = (
   pageDurations?: Readonly<Record<string, number>>,
   matches = matchBookshelves(books, definitions),
   owners = assignBookshelfOwnership(definitions, matches),
+  globalSortOrder?: LibrarySortCriterion[],
 ): BookshelfResult[] =>
   effectiveBookshelves(definitions)
     .filter((s) => s.enabled)
@@ -174,9 +177,22 @@ export const evaluateBookshelves = (
           : definition.includeExclusiveBooks || !owners.has(b.hash),
       );
       const { by, thenBy, ascending, thenAscending } = definition.sort;
-      const compare = createBookSorter(by, locale, thenBy, ascending, thenAscending, pageDurations);
+      const order = resolveBookshelfSortOrder(definition, globalSortOrder);
+      const compare = createBookSorter(
+        by,
+        locale,
+        thenBy,
+        ascending,
+        thenAscending,
+        pageDurations,
+        order,
+      );
       available.sort(
-        withTimeRemainingLast<Book>(by, (a, b) => compare(a, b) || a.hash.localeCompare(b.hash)),
+        withTimeRemainingLast<Book>(
+          by,
+          (a, b) => compare(a, b) || a.hash.localeCompare(b.hash),
+          Boolean(order && order.length > 0),
+        ),
       );
       return {
         definition,

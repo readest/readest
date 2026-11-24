@@ -1,3 +1,4 @@
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { ABSClient } from '@/services/audiobookshelf/client';
 import { createAbsClient } from '@/services/audiobookshelf/createClient';
 import {
@@ -213,7 +214,7 @@ const downloadAbsCover = async (
       url: client.buildCoverUrl(itemId),
       headers: { Accept: 'image/*' },
       singleThreaded: true,
-      skipSslVerification: true,
+      skipSslVerification: client.allowSelfSignedCert,
     });
     const bytes = (await appService.readFile(tmpPath, 'None', 'binary')) as ArrayBuffer;
     if (!bytes?.byteLength) return false;
@@ -278,6 +279,8 @@ export const backfillAbsCovers = async (appService: AppService): Promise<void> =
 };
 
 /** Orchestrates: fetch, reconcile, apply to the library store, download missing covers. */
+const LIBRARY_PULL = { connector: 'audiobookshelf', direction: 'pull', kind: 'books' } as const;
+
 export const syncAbsServer = async (appService: AppService, server: ABSServer): Promise<void> => {
   const client = createAbsClient(appService, server);
 
@@ -338,6 +341,8 @@ export const syncAbsServer = async (appService: AppService, server: ABSServer): 
 
   useABSServerStore.getState().updateServer(server.id, { lastSyncedAt: now });
   await useABSServerStore.getState().saveABSServers(toEnvConfig(appService));
+  // These are streaming stubs: only an offline download moves a file.
+  recordFlow({ ...LIBRARY_PULL, count: 0 });
 };
 
 export const syncAllAbsServers = async (appService: AppService): Promise<void> => {
@@ -345,13 +350,17 @@ export const syncAllAbsServers = async (appService: AppService): Promise<void> =
     .getState()
     .getAvailableServers()
     .filter((s) => !s.disabled);
+  const failures: string[] = [];
   for (const server of servers) {
     try {
       await syncAbsServer(appService, server);
     } catch (error) {
       console.error(`[ABS] sync failed for server "${server.name}":`, error);
+      failures.push(error instanceof Error ? error.message : String(error));
     }
   }
+  // Last, so one server's success doesn't hide another's failure.
+  for (const error of failures) recordFlow({ ...LIBRARY_PULL, error });
 };
 
 /** Tombstone all books belonging to a removed server. */

@@ -2,6 +2,7 @@
  * Utility functions for CJK (Chinese, Japanese, Korean) text processing
  */
 import { cutZh, isJiebaReady } from '@/utils/jieba';
+import type { RsvpWord } from './types';
 
 /**
  * Check if a character is a CJK character
@@ -49,6 +50,33 @@ export function isRTLText(text: string): boolean {
 }
 
 /**
+ * Split a word around its focus letter (the ORP) for the RSVP display. The
+ * focus is the whole grapheme cluster at `orpIndex`, so a vowel sign or a
+ * conjunct (Bengali মা, ন্ধু) is never cut off from its consonant and drawn on
+ * a dotted circle in its own span (#7024).
+ */
+export function splitAtFocus(
+  text: string,
+  orpIndex: number,
+): { before: string; focus: string; after: string } {
+  let start = orpIndex;
+  let end = orpIndex + 1;
+  if (typeof Intl !== 'undefined' && Intl.Segmenter && orpIndex < text.length) {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    const cluster = segmenter.segment(text).containing(orpIndex);
+    if (cluster) {
+      start = cluster.index;
+      end = cluster.index + cluster.segment.length;
+    }
+  }
+  return {
+    before: text.substring(0, start),
+    focus: text.substring(start, end),
+    after: text.substring(end),
+  };
+}
+
+/**
  * Check if text is CJK punctuation
  */
 export function isCJKPunctuation(text: string): boolean {
@@ -57,6 +85,49 @@ export function isCJKPunctuation(text: string): boolean {
   const cjkPunctuationPattern =
     /[。！？，、；：""''（）《》【】『』「」〈〉〔〕〖〗〘〙〚〛…—～·․‥⋯﹐﹑﹒﹔﹕﹖﹗﹙﹚﹛﹜﹝﹞！＂＃＄％＆＇（）＊＋，－．／：；＜＝＞？＠［＼］＾＿｀｛｜｝～｟｠｡｢｣､･\u3000-\u303F\uFF00-\uFFEF]/;
   return cjkPunctuationPattern.test(text);
+}
+
+export const CHUNK_SIZE_OPTIONS = [1, 2, 3, 4, 5];
+
+// A word ending a sentence or clause, optionally followed by closing quotes or
+// brackets: `go.`, `Right?!`, `said."`, `end—`.
+const SENTENCE_END = /[.!?;\u2014\u2013。！？；][)"'”’»]*$/;
+
+const endsChunk = (word: RsvpWord) => !!word.blockEnd || SENTENCE_END.test(word.text);
+
+/**
+ * End index (exclusive) of the chunk of up to `chunkSize` words that starts at
+ * `start`. A chunk ends after a word that ends a sentence or a block, so the
+ * next sentence or paragraph starts a new chunk. Blank frames between repeated words are not
+ * counted as words.
+ */
+export function getChunkEnd(words: RsvpWord[], start: number, chunkSize: number): number {
+  let end = start;
+  let count = 0;
+  while (end < words.length && count < chunkSize) {
+    const word = words[end]!;
+    end++;
+    if (!word.text.trim()) continue;
+    count++;
+    if (endsChunk(word)) break;
+  }
+  return end;
+}
+
+/**
+ * Start of the chunk before the one at `index`. Chunks restart at every
+ * sentence, so replay the chunking from the start of the sentence that holds
+ * the previous word.
+ */
+export function getPrevChunkStart(words: RsvpWord[], index: number, chunkSize: number): number {
+  if (index <= 0) return 0;
+  let start = index - 1;
+  while (start > 0 && !endsChunk(words[start - 1]!)) start--;
+  for (;;) {
+    const end = getChunkEnd(words, start, chunkSize);
+    if (end >= index) return start;
+    start = end;
+  }
 }
 
 /**

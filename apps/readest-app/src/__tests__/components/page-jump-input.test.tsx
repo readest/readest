@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import PageJumpInput from '@/app/reader/components/footerbar/PageJumpInput';
@@ -24,19 +26,22 @@ vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string) => s,
 }));
 
+vi.mock('@/store/readerProgressStore', () => ({
+  useBookProgress: () => mocks.state.progress,
+}));
+
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     hoveredBookKey: mocks.state.hoveredBookKey,
     getView: () => mocks.view,
-    getProgress: () => mocks.state.progress,
     getViewSettings: () => mocks.state.viewSettings,
   }),
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
-  useBookDataStore: () => ({
+  ...bookDataStoreHooks(() => ({
     getBookData: () => mocks.state.bookData,
-  }),
+  })),
 }));
 
 const setup = ({
@@ -45,18 +50,44 @@ const setup = ({
   pageList = undefined as unknown,
   pageItem = undefined as unknown,
   showFraction = false,
+  fraction = undefined as number | undefined,
+  referencePageCount = undefined as number | undefined,
+  previewFraction = undefined as number | null | undefined,
 } = {}) => {
   mocks.state.progress = {
     pageinfo: { current: 93, next: 94, total: 251 },
     section: { current: 4, total: 30 },
     pageItem,
+    fraction,
   };
-  mocks.state.viewSettings = { progressStyle };
+  mocks.state.viewSettings = { progressStyle, referencePageCount };
   mocks.state.bookData = { isFixedLayout, bookDoc: { pageList } };
-  const utils = render(<PageJumpInput bookKey='book1' showFraction={showFraction} />);
+  const utils = render(
+    <PageJumpInput bookKey='book1' showFraction={showFraction} previewFraction={previewFraction} />,
+  );
   const input = utils.getByRole('textbox', { name: 'Go to Page' }) as HTMLInputElement;
   return { ...utils, input };
 };
+
+// A PDF page list: one entry per physical page, labels restart and change script.
+const pdfLabels = [
+  'i',
+  'ii',
+  'iii',
+  'iv',
+  '1',
+  '2',
+  '3',
+  '4',
+  '٤',
+  '٥',
+  '٦',
+  '٧',
+  ' Long Label - 11',
+  ' Long Label - 12',
+  ' Long Label - 13',
+  ' Long Label - 14',
+];
 
 beforeEach(() => {
   mocks.view.goTo.mockClear();
@@ -74,6 +105,17 @@ describe('PageJumpInput', () => {
   it('shows a percentage label when that progress style is selected', () => {
     const { input } = setup({ progressStyle: 'percentage' });
     expect(input.value).toBe('37%');
+  });
+
+  it('reads the continuous fraction for the percentage label of reflowable books', () => {
+    const { input } = setup({ progressStyle: 'percentage', fraction: 0.3 });
+    expect(input.value).toBe('30%');
+  });
+
+  it('keeps the page-count percentage for fixed-layout books', () => {
+    // section 4 of 30 -> (4 + 1) / 30 = 17%, not the byte-weighted fraction
+    const { input } = setup({ progressStyle: 'percentage', isFixedLayout: true, fraction: 0.3 });
+    expect(input.value).toBe('17%');
   });
 
   it('always shows the page fraction when showFraction is set', () => {
@@ -130,6 +172,34 @@ describe('PageJumpInput', () => {
     expect(mocks.view.goToFraction.mock.calls[0]![0]).toBeCloseTo(119.5 / 251);
   });
 
+  it('jumps when the field loses focus after an edit (no Enter key on iOS number pads)', () => {
+    const { input } = setup();
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: '120 / 251' } });
+    fireEvent.blur(input);
+    expect(mocks.view.goToFraction).toHaveBeenCalledTimes(1);
+    expect(mocks.view.goToFraction.mock.calls[0]![0]).toBeCloseTo(119.5 / 251);
+    expect(input.value).toBe('94 / 251');
+  });
+
+  it('does not jump when the field loses focus unedited', () => {
+    const { input } = setup();
+    fireEvent.focus(input);
+    fireEvent.blur(input);
+    expect(mocks.view.goToFraction).not.toHaveBeenCalled();
+  });
+
+  it('does not jump when the footer bar hides mid-edit', () => {
+    mocks.state.hoveredBookKey = 'book1';
+    const { input, rerender } = setup();
+    input.focus();
+    fireEvent.change(input, { target: { value: '120 / 251' } });
+    mocks.state.hoveredBookKey = '';
+    rerender(<PageJumpInput bookKey='book1' />);
+    expect(document.activeElement).not.toBe(input);
+    expect(mocks.view.goToFraction).not.toHaveBeenCalled();
+  });
+
   it('clamps out-of-range pages to the last page', () => {
     const { input } = setup();
     fireEvent.focus(input);
@@ -178,7 +248,7 @@ describe('PageJumpInput', () => {
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: '2 / 2' } });
     fireEvent.keyDown(input, { key: 'Enter' });
-    expect(mocks.view.goTo).toHaveBeenCalledWith('ch01.html#p2');
+    expect(mocks.view.goTo).toHaveBeenCalledWith('ch01.html#p2', { focus: true });
     expect(mocks.view.goToFraction).not.toHaveBeenCalled();
   });
 
@@ -209,5 +279,101 @@ describe('PageJumpInput', () => {
     });
 
     expect(input.value).toBe('Long Label - 14 / 16');
+  });
+
+  describe('while the progress slider is dragged (#7075)', () => {
+    it('previews the page under the slider', () => {
+      const { input } = setup({ previewFraction: 0.5 });
+      expect(input.value).toBe('126 / 251');
+    });
+
+    it('previews the page fraction in the mobile pill', () => {
+      const { input } = setup({
+        progressStyle: 'percentage',
+        showFraction: true,
+        previewFraction: 0.5,
+      });
+      expect(input.value).toBe('126 / 251');
+    });
+
+    it('previews the slider percentage', () => {
+      const { input } = setup({ progressStyle: 'percentage', fraction: 0.3, previewFraction: 0.5 });
+      expect(input.value).toBe('50%');
+    });
+
+    it('previews the spine page for fixed layout books', () => {
+      const { input } = setup({ isFixedLayout: true, previewFraction: 0.5 });
+      expect(input.value).toBe('15 / 30');
+    });
+
+    it('estimates the reference page', () => {
+      const { input } = setup({
+        progressStyle: 'reference',
+        referencePageCount: 300,
+        previewFraction: 0.5,
+      });
+      expect(input.value).toBe('150 / 300');
+    });
+
+    it('starts at the first page', () => {
+      const { input } = setup({ previewFraction: 0 });
+      expect(input.value).toBe('1 / 251');
+    });
+
+    it('shows the current page again without a preview', () => {
+      const { input } = setup({ previewFraction: null });
+      expect(input.value).toBe('94 / 251');
+    });
+
+    it('keeps the label box as wide as the last page while previewing', () => {
+      const { container, rerender } = setup({ previewFraction: 0 });
+      const sizer = container.querySelector('[aria-hidden="true"]')!;
+      const widths = [0, 0.05, 0.5, 1].map((previewFraction) => {
+        rerender(<PageJumpInput bookKey='book1' previewFraction={previewFraction} />);
+        return sizer.textContent;
+      });
+      expect(widths).toEqual(['251 / 251', '251 / 251', '251 / 251', '251 / 251']);
+    });
+
+    it('edits from the current page, not the preview', () => {
+      const { input } = setup({ previewFraction: 0.5 });
+      fireEvent.focus(input);
+      expect(input.value).toBe('94 / 251');
+    });
+
+    it("previews a PDF page's own label", () => {
+      const pageList = pdfLabels.map((label, index) => ({ label, href: String(index), index }));
+      const { input } = setup({
+        progressStyle: 'reference',
+        pageList,
+        pageItem: pageList[15],
+        previewFraction: 0.5,
+      });
+      expect(input.value).toBe('4 / 16');
+    });
+
+    it('keeps the label box as wide as the longest page label while previewing', () => {
+      const pageList = pdfLabels.map((label, index) => ({ label, href: String(index), index }));
+      const { container, rerender } = setup({
+        progressStyle: 'reference',
+        pageList,
+        pageItem: pageList[15],
+      });
+      const sizer = container.querySelector('[aria-hidden="true"]')!;
+      const widths = [undefined, 0.5, 0.1, 1].map((previewFraction) => {
+        rerender(<PageJumpInput bookKey='book1' previewFraction={previewFraction} />);
+        return sizer.textContent!.length;
+      });
+      expect(widths).toEqual([20, 20, 20, 20]);
+    });
+  });
+
+  it('keeps the label box width when editing starts', () => {
+    const { container, input } = setup();
+    const sizer = container.querySelector('[aria-hidden="true"]')!;
+    expect(sizer.textContent).toBe('251 / 251');
+    fireEvent.focus(input);
+    expect(input.value).toBe('94 / 251');
+    expect(sizer.textContent).toBe('251 / 251');
   });
 });

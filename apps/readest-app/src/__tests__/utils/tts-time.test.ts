@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { estimateTTSTime } from '@/utils/ttsTime';
 import { BookProgress } from '@/types/book';

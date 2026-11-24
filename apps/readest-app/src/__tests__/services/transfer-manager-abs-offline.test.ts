@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useTransferStore } from '@/store/transferStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -16,6 +17,7 @@ vi.mock('@/services/audiobookshelf/offline', () => ({
 }));
 
 import { transferManager } from '@/services/transferManager';
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import type { Book } from '@/types/book';
 
 function makeBook(overrides: Partial<Book> = {}): Book {
@@ -145,6 +147,28 @@ describe('offline Audiobookshelf downloads (#6256)', () => {
     // `downloadedAt` drives cloud upload/share affordances; an ABS copy is not that.
     expect(book.downloadedAt).toBeUndefined();
     expect(useTransferStore.getState().transfers[id!]!.status).toBe('completed');
+  });
+
+  test('counts the offline download under Audiobookshelf', async () => {
+    localStorage.clear();
+    const book = absBook();
+    const updateBook = vi.fn().mockResolvedValue(undefined);
+    await transferManager.initialize(
+      makeAppService() as never,
+      () => [book],
+      updateBook,
+      translationFn,
+    );
+
+    transferManager.queueAbsOfflineDownload(book);
+    await flushAsync();
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'audiobookshelf',
+      direction: 'pull',
+      kind: 'books',
+      count: 1,
+    });
   });
 
   test('podcast shows and regular books are not offline-downloadable', async () => {

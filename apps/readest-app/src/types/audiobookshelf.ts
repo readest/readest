@@ -14,6 +14,12 @@ export interface ABSServer {
   libraryIds?: string[];
   lastSyncedAt?: number;
   disabled?: boolean;
+  /**
+   * Accept a self-signed or mismatched TLS certificate from this server on
+   * native requests. Unset on servers saved before the option existed, which
+   * keep accepting them; see `allowsSelfSignedCert`.
+   */
+  allowSelfSignedCert?: boolean;
   contentId?: string;
   addedAt?: number;
   deletedAt?: number;

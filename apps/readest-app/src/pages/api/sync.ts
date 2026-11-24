@@ -1,8 +1,9 @@
+import { mergeTTSPacks, type TTSPacks } from '@/utils/ttsPacks';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextRequest, NextResponse } from 'next/server';
 import { PostgrestError } from '@supabase/supabase-js';
 import { createSupabaseClient } from '@/utils/supabase';
-import { BookDataRecord } from '@/types/book';
+import { BookConfig, BookDataRecord } from '@/types/book';
 import { transformBookConfigToDB } from '@/utils/transform';
 import { transformBookNoteToDB } from '@/utils/transform';
 import { transformBookToDB } from '@/utils/transform';
@@ -16,7 +17,7 @@ import {
   StatPageRecord,
 } from '@/libs/sync';
 import { validateUserAndToken } from '@/utils/access';
-import { DBBook, DBBookConfig } from '@/types/records';
+import { DBBook, DBBookConfig, DBBookNote } from '@/types/records';
 import {
   getStatsArchiveEnv,
   readSegment,
@@ -115,6 +116,79 @@ export function resolvePageCountMerge(
 ): number | null {
   const [winner, loser] = clientIsNewer ? [client, server] : [server, client];
   return winner.page_count ?? loser.page_count ?? null;
+}
+
+/**
+ * Keep what is stored for the book_notes columns a push leaves out. They came
+ * after clients shipped: older apps and the KOReader plugin never send them,
+ * and a bulk upsert writes every column any row in the batch names, as NULL
+ * for a row without it. An explicit null still clears one. New text means the
+ * range moved, so the anchor of the old range goes with it.
+ */
+export function keepOmittedNoteColumns(client: DBBookNote, server: DBBookNote): DBBookNote {
+  const keptAnchor = client.text === server.text ? server.crosspoint : null;
+  return {
+    ...client,
+    global: client.global === undefined ? server.global : client.global,
+    ink: client.ink === undefined ? server.ink : client.ink,
+    crosspoint: client.crosspoint === undefined ? keptAnchor : client.crosspoint,
+  };
+}
+
+/**
+ * The same for book_configs, whose position columns stay out of it. A pull takes
+ * the further of location and xpointer, so a location kept beside KOReader's
+ * newer xpointer would pull the reader to it.
+ */
+export function keepOmittedConfigColumns(client: DBBookConfig, server: DBBookConfig): DBBookConfig {
+  return {
+    ...client,
+    rsvp_position: client.rsvp_position === undefined ? server.rsvp_position : client.rsvp_position,
+    search_config: client.search_config === undefined ? server.search_config : client.search_config,
+    view_settings: client.view_settings === undefined ? server.view_settings : client.view_settings,
+  };
+}
+
+/**
+ * Whether a note that lost the row can still give it a CrossPoint anchor. An
+ * anchor says where a reader finds a highlight, not that it changed, so it goes
+ * on a row with none and updated_at stays: a client stamping its copy to get one
+ * in would overwrite whatever other devices did to the note. The same text means
+ * the same range, for a row with no cfi as well: KOReader's highlights have none.
+ */
+export function takesNoteAnchor(client: DBBookNote, server: DBBookNote): boolean {
+  return (
+    !!client.crosspoint &&
+    !server.crosspoint &&
+    !server.deleted_at &&
+    client.text === server.text &&
+    (!server.cfi || client.cfi === server.cfi)
+  );
+}
+
+const parseTTSPacks = (value: unknown): TTSPacks | undefined => {
+  if (!value) return undefined;
+  try {
+    return (typeof value === 'string' ? JSON.parse(value) : value) as TTSPacks;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * A book config's read-aloud packs (BookConfig.ttsPacks): the union of both
+ * rows, whichever wins on updated_at. Recording audio never bumps updated_at
+ * (it must not move reading progress), so the older row can hold packs the
+ * newer lacks. `changed` when the client adds a pack the server row lacks.
+ */
+export function resolveTTSPacksMerge(
+  client: Pick<DBBookConfig, 'tts_packs'>,
+  server: Pick<DBBookConfig, 'tts_packs'>,
+): { value: string | null; changed: boolean } {
+  const serverPacks = parseTTSPacks(server.tts_packs);
+  const merged = mergeTTSPacks(serverPacks, parseTTSPacks(client.tts_packs));
+  const value = merged ? JSON.stringify(merged) : null;
+  return { value, changed: value !== (serverPacks ? JSON.stringify(serverPacks) : null) };
 }
 
 type BookMetadataFields = Pick<
@@ -266,6 +340,17 @@ export function dedupeLatest<T extends ChangeStamps>(records: T[], keys: (keyof 
     const key = keyOf(rec);
     return !key || latest.get(key)?.rec === rec;
   });
+}
+
+/**
+ * Whether a note outranks the row another copy of the book holds for it, by
+ * dedupeLatest's rule: an insert is stamped now, so one that doesn't would put
+ * a stale copy ahead of that row, or bring back a note deleted since.
+ */
+export function outranksCopy(client: ChangeStamps, copy: ChangeStamps): boolean {
+  const at = latestChangeMs(client);
+  const copyAt = latestChangeMs(copy);
+  return at > copyAt || (at === copyAt && !!client.deleted_at && !copy.deleted_at);
 }
 
 const transformsToDB = {
@@ -635,9 +720,55 @@ export async function GET(req: NextRequest) {
           doubles: [segmentsRead, Math.min(archived.length, pageRows.length), limit],
         });
       }
+      // A book's reading statistics are deleted (#7494) by setting deleted_at on
+      // its stat_books row: every event of that book read before then is gone.
+      // Its events are still returned, so pages and cursors stay as they were,
+      // but flagged with deleted_at (and deleted_at_ms for the koplugin, whose
+      // JSON decoder turns null into a truthy function) for clients to skip.
+      // This covers archived rows and rows a device pushed after the deletion.
+      const statBooks = new Map(
+        ((sb.data ?? []) as unknown as StatBookRecord[]).map((b) => [b.book_hash, b]),
+      );
+      if (pageRows.length > 0) {
+        const deletions: StatBookRecord[] = [];
+        for (let offset = 0; ; offset += PAGE) {
+          const { data, error: delErr } = await supabase
+            .from('stat_books')
+            .select('*')
+            .eq('user_id', user.id)
+            .not('deleted_at', 'is', null)
+            .order('book_hash', { ascending: true })
+            .range(offset, offset + PAGE - 1);
+          if (delErr)
+            return NextResponse.json(
+              { error: `stat_books: ${delErr.message || 'Unknown error'}` },
+              { status: 500 },
+            );
+          const rows = (data ?? []) as StatBookRecord[];
+          deletions.push(...rows);
+          if (rows.length < PAGE) break;
+        }
+        const deletedAt = new Map<string, number>();
+        for (const d of deletions) {
+          if (d.deleted_at) deletedAt.set(d.book_hash, ms(d.deleted_at));
+          // A deletion committed after stat_books was read above is returned
+          // too: the cursor moves on the pages alone and can pass it.
+          if (ms(d.updated_at) > since.getTime()) statBooks.set(d.book_hash, d);
+        }
+        if (deletedAt.size > 0) {
+          pageRows = pageRows.map((r) => {
+            const at = deletedAt.get(r.book_hash);
+            return at && r.start_time * 1000 < at
+              ? { ...r, deleted_at: new Date(at).toISOString(), deleted_at_ms: at }
+              : r;
+          });
+        }
+      }
       (
         results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
-      ).statBooks = withMs((sb.data ?? []) as unknown as StatBookRecord[]);
+      ).statBooks = withMs([...statBooks.values()]).map((b) =>
+        b.deleted_at ? { ...b, deleted_at_ms: ms(b.deleted_at) } : b,
+      );
       (
         results as unknown as { statBooks: StatBookRecord[]; statPages: StatPageRecord[] }
       ).statPages = withMs(pageRows as unknown as StatPageRecord[]);
@@ -728,9 +859,35 @@ export async function POST(req: NextRequest) {
         serverRecordsMap.set(key, record);
       });
 
+      // A note with no row here may have one under another copy of the book, an
+      // OPDS re-download say. The insert below would stamp it now and outrank
+      // that row in dedupeLatest, so a copy no newer than it stays out.
+      const otherCopies = new Map<string, BookDataRecord>();
+      if (table === 'book_notes') {
+        const ids = dbRecords
+          .filter(
+            ({ original }) =>
+              !serverRecordsMap.has(primaryKeys.map((pk) => original[pk]).join('|')),
+          )
+          .map(({ original }) => original.id as string);
+        if (ids.length > 0) {
+          const { data, error } = await supabase
+            .from(table)
+            .select()
+            .eq('user_id', user.id)
+            .in('id', ids);
+          if (error) return { error: error.message };
+          const rows = (data ?? []).filter((row) => row.meta_hash) as (BookDataRecord &
+            DBBookNote)[];
+          for (const row of dedupeLatest(rows, ['id', 'meta_hash'])) {
+            otherCopies.set(`${row.id}|${row.meta_hash}`, row);
+          }
+        }
+      }
+
       // Separate into inserts and updates
-      const toInsert: (DBBook | DBBookConfig | DBBookConfig)[] = [];
-      const toUpdate: (DBBook | DBBookConfig | DBBookConfig)[] = [];
+      const toInsert: (DBBook | DBBookConfig | DBBookNote)[] = [];
+      const toUpdate: (DBBook | DBBookConfig | DBBookNote)[] = [];
       const batchAuthoritativeRecords: BookDataRecord[] = [];
 
       for (const { original, db: dbRec } of dbRecords) {
@@ -738,7 +895,18 @@ export async function POST(req: NextRequest) {
         const serverData = serverRecordsMap.get(key);
 
         if (!serverData) {
-          dbRec.updated_at = new Date().toISOString();
+          const otherCopy = otherCopies.get(`${original.id}|${dbRec.meta_hash}`);
+          if (otherCopy && !outranksCopy(dbRec, otherCopy)) {
+            batchAuthoritativeRecords.push(otherCopy);
+            continue;
+          }
+          const packOnly =
+            table === 'book_configs' &&
+            (original as unknown as BookConfig).updatedAt === 0 &&
+            (dbRec as DBBookConfig).tts_packs;
+          // A pack-only seed must not outrank the reader's saved position.
+          // Keep it just above epoch so the initial since=0 pull includes it.
+          dbRec.updated_at = new Date(packOnly ? 1 : Date.now()).toISOString();
           toInsert.push(dbRec);
         } else {
           const clientUpdatedAt = dbRec.updated_at ? new Date(dbRec.updated_at).getTime() : 0;
@@ -771,6 +939,7 @@ export async function POST(req: NextRequest) {
                   | 'group_name'
                   | 'group_updated_at'
                   | 'page_count'
+                  | 'original_filename'
                 >
               > &
               Pick<DBBook, 'title' | 'author' | 'tags'>;
@@ -783,6 +952,9 @@ export async function POST(req: NextRequest) {
             // Group membership likewise merges on its own clock (issue #5911).
             const group = resolveGroupMerge(clientBook, serverBook, clientIsNewer);
             const pageCount = resolvePageCountMerge(clientBook, serverBook, clientIsNewer);
+            // Import provenance only fills a blank; page-turn clocks and peers
+            // without the filename must not replace one already recorded.
+            const originalFilename = serverBook.original_filename || clientBook.original_filename;
             if (clientIsNewer) {
               // Client wins the row; graft the fresher status + cover +
               // metadata onto it (server's may be the newer one even though
@@ -800,6 +972,7 @@ export async function POST(req: NextRequest) {
               clientBook.group_name = group.group_name;
               clientBook.group_updated_at = group.group_updated_at;
               clientBook.page_count = pageCount;
+              clientBook.original_filename = originalFilename;
               toUpdate.push(clientBook);
             } else {
               // Only rewrite when a resolved field VALUE differs from the
@@ -813,12 +986,15 @@ export async function POST(req: NextRequest) {
               const metadataChanged = bookMetadataChanged(meta, serverBook);
               const groupChanged = bookGroupChanged(group, serverBook);
               const pageCountChanged = pageCount !== (serverBook.page_count ?? null);
+              const originalFilenameChanged =
+                (originalFilename ?? null) !== (serverBook.original_filename ?? null);
               if (
                 statusChanged ||
                 coverChanged ||
                 metadataChanged ||
                 groupChanged ||
-                pageCountChanged
+                pageCountChanged ||
+                originalFilenameChanged
               ) {
                 // Server wins the row, but the client's status, cover and/or
                 // metadata is the fresher one. Graft the fresher fields onto
@@ -844,10 +1020,48 @@ export async function POST(req: NextRequest) {
                 propagated.group_name = group.group_name;
                 propagated.group_updated_at = group.group_updated_at;
                 propagated.page_count = pageCount;
+                propagated.original_filename = originalFilename;
                 toUpdate.push(propagated);
               } else {
                 batchAuthoritativeRecords.push(serverData);
               }
+            }
+          } else if (table === 'book_configs') {
+            // The row is LWW, but its read-aloud packs merge as a union.
+            const ttsPacks = resolveTTSPacksMerge(
+              dbRec as DBBookConfig,
+              serverData as Pick<DBBookConfig, 'tts_packs'>,
+            );
+            if (clientIsNewer) {
+              if (ttsPacks.value) (dbRec as DBBookConfig).tts_packs = ttsPacks.value;
+              toUpdate.push(
+                keepOmittedConfigColumns(
+                  dbRec as DBBookConfig,
+                  serverData as unknown as DBBookConfig,
+                ),
+              );
+            } else if (ttsPacks.changed) {
+              // Server wins the row; graft the packs without touching
+              // updated_at, so no device's progress is overridden. Readers
+              // re-fetch a book's config on open (since=0) and see them.
+              // The runtime row carries every DBBookConfig column; the static
+              // BookDataRecord type is narrower, as in the books branch above.
+              toUpdate.push({
+                ...(serverData as unknown as DBBookConfig),
+                tts_packs: ttsPacks.value ?? undefined,
+              });
+            } else {
+              batchAuthoritativeRecords.push(serverData);
+            }
+          } else if (table === 'book_notes') {
+            const clientNote = dbRec as DBBookNote;
+            const serverNote = serverData as unknown as DBBookNote;
+            if (clientIsNewer) {
+              toUpdate.push(keepOmittedNoteColumns(clientNote, serverNote));
+            } else if (takesNoteAnchor(clientNote, serverNote)) {
+              toUpdate.push({ ...serverNote, crosspoint: clientNote.crosspoint });
+            } else {
+              batchAuthoritativeRecords.push(serverData);
             }
           } else if (clientIsNewer) {
             toUpdate.push(dbRec);
@@ -959,18 +1173,28 @@ export async function POST(req: NextRequest) {
     }
 
     if (statBooks.length > 0) {
-      const rows = statBooks.map((b: StatBookRecord) => ({
+      // A row carrying deleted_at deletes the book's statistics (#7494), stamped
+      // with the server's time. Every other row leaves deleted_at out of the
+      // upsert, so a device that hasn't pulled the deletion can't undo it.
+      const now = new Date().toISOString();
+      const toRow = (b: StatBookRecord) => ({
         user_id: user.id,
         book_hash: b.book_hash,
         title: b.title,
         authors: b.authors,
-        updated_at: new Date().toISOString(),
-        deleted_at: b.deleted_at ?? null,
-      }));
-      const { error } = await supabase
-        .from('stat_books')
-        .upsert(rows, { onConflict: 'user_id,book_hash' });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        updated_at: now,
+      });
+      const live = statBooks.filter((b) => !b.deleted_at).map(toRow);
+      const deleted = statBooks
+        .filter((b) => b.deleted_at)
+        .map((b) => ({ ...toRow(b), deleted_at: now }));
+      for (const rows of [live, deleted]) {
+        if (rows.length === 0) continue;
+        const { error } = await supabase
+          .from('stat_books')
+          .upsert(rows, { onConflict: 'user_id,book_hash' });
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      }
     }
 
     if (statPages.length > 0) {
@@ -1009,6 +1233,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+
+// Next's default body limit (1mb) rejected the single-request books push of
+// clients before #7814 for a library of ~800+ changed books. The body is parsed
+// before auth at about 4x its size in heap, so the limit stays bounded: 8mb
+// takes ~7000 books in one push.
+export const config = {
+  api: { bodyParser: { sizeLimit: '8mb' } },
+};
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!req.url) {

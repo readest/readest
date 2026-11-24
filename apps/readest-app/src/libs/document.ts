@@ -111,7 +111,15 @@ export type BookMetadata = {
   absMediaType?: 'podcast' | 'ebook';
   absEpisodeCount?: number;
   absDuration?: number;
+  // The partial MD5 of an ABS ebook's file, which KOReader uses as the
+  // book's id; the hash comes from the abs:// path instead (#7088).
+  absFileHash?: string;
 };
+
+export type BookMediaSource =
+  | { blob: Blob }
+  | { path: string; start: number; end: number }
+  | { path: string; entry: string };
 
 export interface BookDoc {
   metadata: BookMetadata;
@@ -143,6 +151,10 @@ export interface BookDoc {
   // manifest items.
   loadText?(href: string): Promise<string | null>;
   loadBlob?(href: string): Promise<Blob>;
+  // Play media in place: a lazy slice, its byte window [start, end) on disk,
+  // or a compressed ZIP entry's raw name for Linux native playout. Null when
+  // the platform cannot play the entry directly.
+  getMediaSource?(href: string, type: string): Promise<BookMediaSource | null>;
   // EPUB 3 `media:*` package metadata, used to name the narrator.
   media?: { narrator?: string; duration?: number };
 }
@@ -277,6 +289,30 @@ async function openZipEntries(file: File): Promise<Entry[]> {
   return reader.getEntries();
 }
 
+const COMIC_IMAGE_EXTS = [
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.bmp',
+  '.webp',
+  '.svg',
+  '.jxl',
+  '.avif',
+];
+
+// A plain .zip of images is a comic without the .cbz name (issue #7038).
+// Directories, macOS resource forks, dotfiles and ComicInfo.xml don't count.
+const isImageArchive = (entries: { filename: string; directory?: boolean }[]) => {
+  const files = entries
+    .filter((e) => !e.directory && !e.filename.startsWith('__MACOSX/'))
+    .map((e) => e.filename.split('/').pop()!.toLowerCase())
+    .filter((name) => name && !name.startsWith('.') && name !== 'comicinfo.xml');
+  return (
+    files.length > 0 && files.every((name) => COMIC_IMAGE_EXTS.some((ext) => name.endsWith(ext)))
+  );
+};
+
 export class DocumentLoader {
   private file: File;
   private nativeFilePath?: string;
@@ -399,6 +435,36 @@ export class DocumentLoader {
       !entry.directory ? entry.getData(new BlobWriter(type!)) : null,
     );
 
+    // A stored entry's data follows its local header, whose name and extra
+    // field lengths can differ from the central directory's copy.
+    const getMediaSource = async (name: string, type: string): Promise<BookMediaSource | null> => {
+      const entry = getEntry(name);
+      if (!entry || entry.directory || entry.encrypted) return null;
+      if (entry.compressionMethod !== 0) {
+        // Linux playout reads a deflated entry directly from the EPUB. Keep its
+        // actual ZIP name (including case, spaces and '#'), not a media URL.
+        if (
+          entry.compressionMethod === 8 &&
+          process.env['NEXT_PUBLIC_APP_PLATFORM'] === 'tauri' &&
+          getOSPlatform() === 'linux' &&
+          this.nativeFilePath?.startsWith('/')
+        ) {
+          return { path: this.nativeFilePath, entry: entry.filename };
+        }
+        return null;
+      }
+      const header = new DataView(
+        await this.file.slice(entry.offset, entry.offset + 30).arrayBuffer(),
+      );
+      if (header.byteLength < 30 || header.getUint32(0, true) !== 0x04034b50) return null;
+      const start = entry.offset + 30 + header.getUint16(26, true) + header.getUint16(28, true);
+      const end = start + entry.uncompressedSize;
+      // A plain File slices lazily; NativeFile and RemoteFile read the slice
+      // into memory, so for them the app plays the entry from disk.
+      if (!('open' in this.file)) return { blob: this.file.slice(start, end, type) };
+      return this.nativeFilePath ? { path: this.nativeFilePath, start, end } : null;
+    };
+
     // Prefetch fast-path: foliate-js's EPUB.init() reads container.xml,
     // the OPF, the EPUB3 nav and (if present) the NCX via this very
     // `loadText`. On Tauri we already have those bytes in memory from
@@ -456,7 +522,15 @@ export class DocumentLoader {
       ? (name: string) => sizesOverride.get(name) ?? getEntry(name)?.uncompressedSize ?? 0
       : (name: string) => getEntry(name)?.uncompressedSize ?? 0;
 
-    return { entries, loadText, loadBlob, getSize, getComment, sha1: undefined };
+    return {
+      entries,
+      loadText,
+      loadBlob,
+      getMediaSource,
+      getSize,
+      getComment,
+      sha1: undefined,
+    };
   }
 
   /**
@@ -578,7 +652,7 @@ export class DocumentLoader {
         const loader = await this.makeZipLoader(entriesPromise, prefetch);
         const { entries } = loader;
 
-        if (this.isCBZ()) {
+        if (this.isCBZ() || (!this.isFBZ() && isImageArchive(entries))) {
           const { makeComicBook } = await import('foliate-js/comic-book.js');
           if (this.widePages) {
             const { measureWidePages, trackWidePages } = await import('@/utils/spread');
@@ -601,7 +675,9 @@ export class DocumentLoader {
           format = 'FBZ';
         } else {
           const { EPUB } = await import('foliate-js/epub.js');
-          book = await new EPUB(loader).init();
+          book = Object.assign(await new EPUB(loader).init(), {
+            getMediaSource: loader.getMediaSource,
+          });
           format = 'EPUB';
         }
       } else if (await this.isPDF()) {

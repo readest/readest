@@ -11,4 +11,10 @@
     <item name="android:fitsSystemWindows">false</item>
     <item name="android:windowActionBar">false</item>
   </style>
+
+  <!-- E-ink devices (#7346): a plain white window behind the WebView, which is
+       also white there, so launching doesn't flip the panel dark to white. -->
+  <style name="Theme.readest.Eink" parent="Theme.readest">
+    <item name="android:windowBackground">@android:color/white</item>
+  </style>
 </resources>

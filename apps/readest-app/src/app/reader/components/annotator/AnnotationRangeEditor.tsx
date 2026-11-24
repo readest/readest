@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useAnnotationEditor } from '../../hooks/useAnnotationEditor';
 import { getExternalDragHandle, getHighlightColorHex } from '../../utils/annotatorUtil';
+import { toDocPoint } from '../../utils/crossDocSelection';
 import MagnifierLoupe from './MagnifierLoupe';
 
 interface HandleProps {
@@ -34,6 +35,7 @@ export const Handle: React.FC<HandleProps> = ({
   onDragEnd,
 }) => {
   const isDragging = useRef(false);
+  const dragOffsetRef = useRef<Point>({ x: 0, y: 0 });
   const size = useResponsiveSize(24);
   const circleRadius = useResponsiveSize(8);
   const stemHeight = useResponsiveSize(12);
@@ -43,10 +45,15 @@ export const Handle: React.FC<HandleProps> = ({
       e.preventDefault();
       e.stopPropagation();
       isDragging.current = true;
+      // Record offset between pointer position and text boundary position to avoid bulb jumping:
+      dragOffsetRef.current = {
+        x: e.clientX - position.x,
+        y: e.clientY - position.y,
+      };
       onDragStart(e.pointerType);
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [onDragStart],
+    [onDragStart, position.x, position.y],
   );
 
   const handlePointerMove = useCallback(
@@ -54,7 +61,10 @@ export const Handle: React.FC<HandleProps> = ({
       if (!isDragging.current) return;
       e.preventDefault();
       e.stopPropagation();
-      onDrag({ x: e.clientX, y: e.clientY });
+      onDrag({
+        x: e.clientX - dragOffsetRef.current.x,
+        y: e.clientY - dragOffsetRef.current.y,
+      });
     },
     [onDrag],
   );
@@ -231,13 +241,15 @@ const AnnotationRangeEditor: React.FC<AnnotationRangeEditorProps> = ({
       const doc = anchor.node.ownerDocument;
       const win = doc?.defaultView;
       if (!doc || !win) return;
-      const feRect = win.frameElement?.getBoundingClientRect();
+      const localPoint = win.frameElement ? toDocPoint(doc, point) : point;
+      if (!localPoint) return;
+      const yBias = isVertical ? 0 : draggingRef.current === 'start' ? 2 : -2;
       const built = rangeFromAnchorToPoint(
         doc,
         anchor.node,
         anchor.offset,
-        point.x - (feRect?.left ?? 0),
-        point.y - (feRect?.top ?? 0),
+        localPoint.x,
+        localPoint.y + yBias,
       );
       if (!built) return;
       lastBuiltRef.current = { range: built, index: selection.index };

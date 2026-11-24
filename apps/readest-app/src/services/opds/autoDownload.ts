@@ -6,6 +6,8 @@ import { getFileExtFromMimeType } from '@/libs/document';
 import { needsProxy, getProxiedURL, probeAuth, probeFilename } from '@/app/opds/utils/opdsReq';
 import { resolveURL, parseMediaType, getFileExtFromPath } from '@/app/opds/utils/opdsUtils';
 import { normalizeCustomHeaders } from '@/utils/customHeaders';
+import { allowsSelfSignedCertAt } from '@/utils/tls';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { READEST_OPDS_USER_AGENT } from '@/services/constants';
 import { applyOPDSCover } from './cover';
 import { applyOPDSMetadata } from './metadata';
@@ -26,6 +28,13 @@ import type { PendingItem, SyncResult, OPDSSubscriptionState, FailedEntry } from
 import { runWithConcurrency } from '@/utils/concurrency';
 import { uniqueId } from '@/utils/misc';
 
+const BOOK_PULL = { connector: 'opds', direction: 'pull', kind: 'books' } as const;
+
+interface FlowFailure {
+  bookTitle?: string;
+  error: string;
+}
+
 /**
  * Download a single item and import it into the library.
  */
@@ -34,7 +43,7 @@ async function downloadAndImport(
   catalog: OPDSCatalog,
   appService: AppService,
   books: Book[],
-): Promise<Book> {
+): Promise<{ book: Book; downloaded: boolean }> {
   const url = resolveURL(item.acquisitionHref, item.baseURL);
   // Identity gate (#5859): if this OPDS source already maps to a book still in
   // the library, it is already imported. Re-importing it would mint a NEW
@@ -50,24 +59,29 @@ async function downloadAndImport(
   // re-import anyway.
   const catalogIds = [...new Set([catalog.contentId, catalog.id].filter(Boolean) as string[])];
   let existing: Book | null = null;
-  for (const catalogId of catalogIds) {
-    existing = await findBookByOPDSSources(appService, {
-      catalogId,
-      sourceUrls: [url],
-      library: books,
-    });
-    if (existing) break;
+  try {
+    for (const catalogId of catalogIds) {
+      existing = await findBookByOPDSSources(appService, {
+        catalogId,
+        sourceUrls: [url],
+        library: books,
+      });
+      if (existing) break;
+    }
+  } catch (e) {
+    console.warn(`[OPDS] identity gate failed, proceeding without it:`, e);
   }
   if (existing) {
     console.log(`[OPDS] "${item.title}" already imported for this source — skipping re-download`);
-    return existing;
+    return { book: existing, downloaded: false };
   }
   const username = catalog.username ?? '';
   const password = catalog.password ?? '';
   const customHeaders = normalizeCustomHeaders(catalog.customHeaders);
+  const allowSelfSignedCert = allowsSelfSignedCertAt(catalog, url);
   const useProxy = needsProxy(url);
 
-  let downloadUrl = useProxy ? getProxiedURL(url, '', true, customHeaders) : url;
+  const downloadUrl = useProxy ? getProxiedURL(url, true, customHeaders) : url;
   const headers: Record<string, string> = {
     'User-Agent': READEST_OPDS_USER_AGENT,
     Accept: '*/*',
@@ -75,12 +89,16 @@ async function downloadAndImport(
   };
 
   if (username || password) {
-    const authHeader = await probeAuth(url, username, password, useProxy, customHeaders);
+    const authHeader = await probeAuth(
+      url,
+      username,
+      password,
+      useProxy,
+      customHeaders,
+      allowSelfSignedCert,
+    );
     if (authHeader) {
-      if (!useProxy) {
-        headers['Authorization'] = authHeader;
-      }
-      downloadUrl = useProxy ? getProxiedURL(url, authHeader, true, customHeaders) : url;
+      headers['Authorization'] = authHeader;
     }
   }
 
@@ -108,12 +126,11 @@ async function downloadAndImport(
     url: downloadUrl,
     headers,
     singleThreaded: true,
-    // Same self-signed/private-CA workaround as the manual download path
-    // (#2871): the native downloader's rustls validation ignores the OS
-    // trust store, so without this flag auto-download fails the TLS
-    // handshake on servers where feed browsing and manual download work
-    // (#4988).
-    skipSslVerification: true,
+    // Same per-catalog self-signed/private-CA opt-in as the manual download
+    // path (#2871): the native downloader's rustls validation ignores the OS
+    // trust store, so without it auto-download fails the TLS handshake on
+    // servers where feed browsing and manual download work (#4988).
+    skipSslVerification: allowSelfSignedCert,
   });
 
   const probedFilename = await probeFilename(responseHeaders);
@@ -135,13 +152,15 @@ async function downloadAndImport(
   // Best effort: a failure here must not fail an otherwise good import.
   if (item.coverHref) {
     try {
+      const coverUrl = resolveURL(item.coverHref, item.baseURL);
       await applyOPDSCover({
         appService,
         book,
-        coverUrl: resolveURL(item.coverHref, item.baseURL),
+        coverUrl,
         username,
         password,
         customHeaders,
+        allowSelfSignedCert: allowsSelfSignedCertAt(catalog, coverUrl),
       });
     } catch (error) {
       console.warn(`[OPDS] failed to apply the feed cover for "${item.title}":`, error);
@@ -157,7 +176,7 @@ async function downloadAndImport(
     console.error('OPDS sync: failed to update source map:', error);
   }
   console.log(`[OPDS] imported "${item.title}"`);
-  return book;
+  return { book, downloaded: true };
 }
 
 /**
@@ -174,7 +193,12 @@ async function syncCatalog(
   appService: AppService,
   books: Book[],
   onBooksImported?: (newBooks: Book[]) => Promise<void>,
-): Promise<{ newBooks: Book[]; state: OPDSSubscriptionState; error?: unknown }> {
+): Promise<{
+  newBooks: Book[];
+  state: OPDSSubscriptionState;
+  failedDownloads: FlowFailure[];
+  error?: unknown;
+}> {
   const state = await loadSubscriptionState(appService, catalog.id);
 
   // Discovery: find new items from feeds
@@ -197,7 +221,8 @@ async function syncCatalog(
     title: fe.title,
     acquisitionHref: fe.href,
     mimeType: 'application/octet-stream',
-    baseURL: catalog.url,
+    // Failures saved before baseURL was recorded fall back to the catalog root.
+    baseURL: fe.baseURL ?? catalog.url,
   }));
 
   // Dedupe: a retry-eligible failed entry can also reappear in pendingItems
@@ -213,7 +238,7 @@ async function syncCatalog(
   if (allItems.length === 0) {
     state.lastCheckedAt = Date.now();
     await saveSubscriptionState(appService, state);
-    return { newBooks: [], state };
+    return { newBooks: [], state, failedDownloads: [] };
   }
 
   // Acquisition: download with bounded concurrency, in batches.
@@ -225,6 +250,7 @@ async function syncCatalog(
   // the sync could never converge however often it was retried. Batching
   // bounds that loss to one batch and lets successive runs make progress.
   const newBooks: Book[] = [];
+  const failedDownloads: FlowFailure[] = [];
   const updatedFailedEntries: FailedEntry[] = [
     // Keep non-retry-eligible failures as-is
     ...state.failedEntries.filter((fe) => !isRetryEligible(fe)),
@@ -249,7 +275,7 @@ async function syncCatalog(
       for (const outcome of downloadResults) {
         const item = outcome.item;
         if ('result' in outcome) {
-          batchBooks.push(outcome.result);
+          batchBooks.push(outcome.result.book);
           newKnownIds.push(item.entryId);
         } else {
           const attempts = (priorAttempts.get(item.entryId) ?? 0) + 1;
@@ -263,6 +289,7 @@ async function syncCatalog(
             updatedFailedEntries.push({
               entryId: item.entryId,
               href: item.acquisitionHref,
+              baseURL: item.baseURL,
               title: item.title,
               attempts,
               lastAttemptAt: Date.now(),
@@ -281,6 +308,21 @@ async function syncCatalog(
         await onBooksImported?.(batchBooks);
         newBooks.push(...batchBooks);
       }
+      for (const outcome of downloadResults) {
+        if ('result' in outcome) {
+          recordFlow({
+            ...BOOK_PULL,
+            bookTitle: outcome.item.title,
+            count: outcome.result.downloaded ? 1 : 0,
+          });
+        } else {
+          const { error } = outcome;
+          failedDownloads.push({
+            bookTitle: outcome.item.title,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
 
       state.knownEntryIds = pruneKnownEntryIds([...state.knownEntryIds, ...newKnownIds]);
       state.failedEntries = updatedFailedEntries;
@@ -288,10 +330,10 @@ async function syncCatalog(
       await saveSubscriptionState(appService, state);
     }
   } catch (error) {
-    return { newBooks, state, error };
+    return { newBooks, state, failedDownloads, error };
   }
 
-  return { newBooks, state };
+  return { newBooks, state, failedDownloads };
 }
 
 /**
@@ -316,21 +358,28 @@ export async function syncSubscribedCatalogs(
 
   const allNewBooks: Book[] = [];
   const errors: SyncResult['errors'] = [];
+  const failures: FlowFailure[] = [];
+  let retriesPending = false;
 
   for (const catalog of eligible) {
     try {
-      const { newBooks, error } = await syncCatalog(catalog, appService, books, onBooksImported);
+      const { newBooks, state, failedDownloads, error } = await syncCatalog(
+        catalog,
+        appService,
+        books,
+        onBooksImported,
+      );
+      failures.push(...failedDownloads);
+      retriesPending ||= state.failedEntries.length > 0;
       // Take the books committed before the failure, then let the existing
       // error path run — those batches are already on disk and marked known.
       allNewBooks.push(...newBooks);
       if (error) throw error;
     } catch (reason) {
       console.error(`OPDS sync: catalog "${catalog.name}" failed:`, reason);
-      errors.push({
-        catalogId: catalog.id,
-        catalogName: catalog.name,
-        error: reason instanceof Error ? reason.message : String(reason),
-      });
+      const error = reason instanceof Error ? reason.message : String(reason);
+      errors.push({ catalogId: catalog.id, catalogName: catalog.name, error });
+      failures.push({ error });
       try {
         const state = await loadSubscriptionState(appService, catalog.id);
         state.lastCheckedAt = Date.now();
@@ -340,6 +389,10 @@ export async function syncSubscribedCatalogs(
       }
     }
   }
+  // Last, so one catalog's success doesn't hide another's failure. A clean pass
+  // with nothing new still counts, or an old failure would never clear.
+  for (const failure of failures) recordFlow({ ...BOOK_PULL, ...failure });
+  if (failures.length === 0 && !retriesPending) recordFlow({ ...BOOK_PULL, count: 0 });
 
   return {
     newBooks: allNewBooks,

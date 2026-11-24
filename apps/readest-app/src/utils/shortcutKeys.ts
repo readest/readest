@@ -76,7 +76,9 @@ export type ShortcutEventLike = Pick<
 > & { altGraphKey?: boolean };
 
 type KeyboardShortcutEventLike = ShortcutEventLike & {
-  getModifierState?: (key: string) => boolean;
+  // Only AltGraph is ever queried; the narrow key also accepts React's
+  // KeyboardEvent, whose getModifierState takes a ModifierKey union.
+  getModifierState?: (key: 'AltGraph') => boolean;
 };
 
 type MouseShortcutEventLike = Pick<MouseEvent, 'button'> &
@@ -98,9 +100,9 @@ const parseShortcut = (shortcut: string) => {
 
 // Whether a keyboard event matches any of the given shortcut strings. `alt`/`opt`
 // and `cmd`/`meta` are treated as equivalent, matching how shortcuts are authored.
-export const matchesShortcut = (event: ShortcutEventLike, keys: string[]): boolean => {
+export const matchesShortcut = (event: KeyboardShortcutEventLike, keys: string[]): boolean => {
   const key = event.key === '+' ? 'plus' : event.key.toLowerCase();
-  const altGraphKey = !!event.altGraphKey;
+  const altGraphKey = !!event.altGraphKey || event.getModifierState?.('AltGraph') === true;
   return keys.some((shortcut) => {
     const parsed = parseShortcut(shortcut);
     return (

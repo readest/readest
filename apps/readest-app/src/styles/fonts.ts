@@ -1,3 +1,4 @@
+import environmentConfig, { isTauriAppPlatform } from '@/services/environment';
 import { getRuntimeConfig } from '@/services/runtimeConfig';
 import { isCJKEnv } from '@/utils/misc';
 import { getFilename } from '@/utils/path';
@@ -114,6 +115,44 @@ const getAdditionalCJKFontFaces = () => `
 }
 `;
 
+// The WebView caches a Google Fonts stylesheet for a day and serves it stale
+// for a week more, but the font files it lists for a year. Offline after that
+// week a new section's stylesheet fails and its text falls back to the system
+// font (#7580), so the apps keep the last loaded copy in the cache dir and
+// mount it when the link fails. On the web the service worker caches it.
+const googleFontsCssPath = (href: string) => `google-fonts/${md5Fingerprint(href)}.css`;
+const keptFontCss = new Set<string>();
+
+const keepGoogleFontsCssOffline = (document: Document, link: HTMLLinkElement) => {
+  if (!isTauriAppPlatform() || !link.href.startsWith('https://fonts.googleapis.com/')) return;
+  link.addEventListener('load', async () => {
+    if (keptFontCss.has(link.href)) return;
+    try {
+      const css = Array.from(link.sheet?.cssRules ?? [], (rule) => rule.cssText).join('\n');
+      if (!css) return;
+      keptFontCss.add(link.href);
+      const appService = await environmentConfig.getAppService();
+      await appService.writeFile(googleFontsCssPath(link.href), 'Cache', css);
+    } catch {
+      // Unreadable sheet or failed write: keep whatever copy is there, and
+      // let a later load of this stylesheet try again.
+      keptFontCss.delete(link.href);
+    }
+  });
+  link.addEventListener('error', async () => {
+    try {
+      const appService = await environmentConfig.getAppService();
+      const css = await appService.readFile(googleFontsCssPath(link.href), 'Cache', 'text');
+      if (typeof css !== 'string' || !css) return;
+      const style = document.createElement('style');
+      style.textContent = css;
+      link.after(style);
+    } catch {
+      // No copy kept yet.
+    }
+  });
+};
+
 export const mountAdditionalFonts = async (document: Document, isCJK = false) => {
   // An SVG spine item has no <head> to mount into.
   if (!document.head) return;
@@ -143,6 +182,7 @@ export const mountAdditionalFonts = async (document: Document, isCJK = false) =>
       link.rel = child.getAttribute('rel') || '';
       link.href = child.getAttribute('href') || '';
       link.crossOrigin = child.getAttribute('crossorigin') || '';
+      keepGoogleFontsCssOffline(document, link);
 
       document.head.appendChild(link);
     }

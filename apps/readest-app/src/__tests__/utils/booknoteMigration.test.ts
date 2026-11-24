@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { unifyAnnotations } from '@/utils/booknoteMigration';
 import { BookNote } from '@/types/book';

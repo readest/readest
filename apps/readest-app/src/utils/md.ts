@@ -48,7 +48,7 @@ export async function makeMarkdownBook(file: File): Promise<BookDoc> {
     sanitizeHtml(rawHtml, { mathMl: true }),
     {
       author: '',
-      language: 'en',
+      language: '',
       ...frontmatter,
       title,
       // A frontmatter identifier — an explicit one, else the ISBN — makes the

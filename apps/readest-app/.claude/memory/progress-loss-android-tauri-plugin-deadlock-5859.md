@@ -44,23 +44,18 @@ only blocks out-of-range indices. Production data proves the trigger: the same r
 stored under DIFFERENT spine indices across siblings (/6/10 vs /6/8 for the same chapter-2), so a
 sibling CFI mis-resolves. This is why reconciliation must never apply a sibling CFI.
 
-## PRODUCTION DATA (rjrjr@pobox.com, Supabase readest.supabase.co, 2026-08-25) — the real signature
-Queried with SUPABASE_ADMIN_KEY (in apps/readest-app/.env.local; host+key via createSupabaseAdminClient;
-auth schema NOT exposed to PostgREST, so map email->id by paging `sb.auth.admin.listUsers` -- 176k users,
-rjrjr id 81dc6a3a-1d1d-4ea8-b50e-f7fcc42bf312). KEEP LOCAL ([[feedback-no-prod-metrics-in-public]]).
-- `books`: 333 rows (187 live / 146 deleted). **36 duplicate-title groups, EVERY ONE same meta_hash /
-  different book_hash.** So this user's dupes are NOT metaHash-change forks -- the FILE BYTES change
-  (new partialMD5 hash) while title/author/identifier stay constant. Their real calibre-web
-  (Calibre-Web Automated) DOES serve byte-varying files over time (re-convert / enforce-metadata /
-  cover-embed re-processing). This OVERTURNS the metaHash-change theory for the actual reporter (that
-  was only my synthetic on-device repro).
-- `book_configs`: 40 rows, ALL carry a location, ZERO deleted -- but 146 books are deleted. Configs
-  accumulate while books churn. The reading position is SPREAD ACROSS MANY HASHES for one book: a
-  340pp book has 6 configs marching 92->94->95->184->338 over 5 days, each under a DIFFERENT hash;
-  another book regressed 383->380 across two hashes.
-- Cross-ref: of 30 distinct READ books (metaHash with a saved location), **~21 have NO LIVE book row
-  at all** -- the position is stranded on deleted hashes; the current library entry (a fresh
-  re-download) has no/older config -> opens at page 1. THIS is the "reset to page one" in the data.
+## PRODUCTION DATA (2026-08-25) — the real signature
+The reporter's rows, counts and the query recipe are in [[private-progress-loss-android-tauri-plugin-deadlock-5859]] (local only). Summary:
+- **Every duplicate-title group had the same meta_hash / a different book_hash.** So the dupes are
+  NOT metaHash-change forks -- the FILE BYTES change (new partialMD5 hash) while title/author/identifier
+  stay constant. Calibre-Web Automated DOES serve byte-varying files over time (re-convert /
+  enforce-metadata / cover-embed re-processing). This OVERTURNS the metaHash-change theory for the
+  actual reporter (that was only my synthetic on-device repro).
+- `book_configs` accumulate while books churn: the reading position is SPREAD ACROSS MANY HASHES for
+  one book, and can regress across two hashes.
+- Most read books have NO LIVE book row at the position's hash -- the position is stranded on deleted
+  hashes; the current library entry (a fresh re-download) has no/older config -> opens at page 1.
+  THIS is the "reset to page one" in the data.
 
 **Refined root cause:** OPDS auto-download re-imports the same book under a NEW book_hash every time
 CWA's served bytes change; importBook (metaHash-match path) migrates the config to the new hash and
@@ -73,7 +68,7 @@ hash / never re-import an already-mapped source), which kills the churn for both
 
 ## PRIMARY ROOT CAUSE (device-reproduced end-to-end 2026-08-25): OPDS auto-download re-import
 The reporter loads books via OPDS from Calibre-Web Automated (CWA) with auto-download ON.
-Confirmed on a Boox Leaf5 against a live CWA (http://192.168.2.3:8083, admin/admin123) with
+Confirmed on a Boox Leaf5 against a live LAN CWA (the dev CWA login) with
 the real app driving `syncSubscribedCatalogs -> downloadAndImport -> importBook`:
 - **Identical re-download is SAFE.** Downloading the same book twice from CWA is byte-identical
   (same md5). Cleared `knownEntryIds`, relaunched -> re-import kept the same hash, hit the

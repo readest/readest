@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { DELETE, GET, PATCH, POST } from '@/app/api/notion/[...path]/route';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createProgressThrottle, webDownload, type ProgressPayload } from '@/utils/transfer';
 

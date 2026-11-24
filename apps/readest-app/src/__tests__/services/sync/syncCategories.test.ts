@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import {
@@ -49,12 +50,43 @@ describe('isSyncCategoryEnabled', () => {
     expect(isSyncCategoryEnabled('font')).toBe(true);
   });
 
+  describe('book_data', () => {
+    test('is a listed category', () => {
+      expect(SYNC_CATEGORIES).toContain('book_data');
+    });
+
+    test('defaults on when unset', () => {
+      setSettings({ syncCategories: {} });
+      expect(isSyncCategoryEnabled('book_data')).toBe(true);
+    });
+
+    test('follows its toggle', () => {
+      setSettings({ syncCategories: { book_data: false } });
+      expect(isSyncCategoryEnabled('book_data')).toBe(false);
+    });
+
+    test('is not gated by Readest Cloud', () => {
+      setSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('book_data')).toBe(true);
+    });
+  });
+
   describe('cloud sync provider gate (exclusive routing, #4380)', () => {
     test('book/progress/note are gated off while a third-party provider is selected', () => {
       setSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
       expect(isSyncCategoryEnabled('book')).toBe(false);
       expect(isSyncCategoryEnabled('progress')).toBe(false);
       expect(isSyncCategoryEnabled('note')).toBe(false);
+    });
+
+    test('fonts follow the file provider while Readest Cloud is off (#7793)', () => {
+      setSettings({ webdav: { enabled: true } } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('font')).toBe(false);
+      setSettings({
+        readestCloud: { enabled: true },
+        webdav: { enabled: true },
+      } as Partial<SystemSettings>);
+      expect(isSyncCategoryEnabled('font')).toBe(true);
     });
 
     test('legacy plural/singular aliases are gated too', () => {
@@ -70,7 +102,6 @@ describe('isSyncCategoryEnabled', () => {
       expect(isSyncCategoryEnabled('stats')).toBe(true);
       expect(isSyncCategoryEnabled('settings')).toBe(true);
       expect(isSyncCategoryEnabled('dictionary')).toBe(true);
-      expect(isSyncCategoryEnabled('font')).toBe(true);
       expect(isSyncCategoryEnabled('opds_catalog')).toBe(true);
     });
 
@@ -232,11 +263,12 @@ describe('translator category', () => {
 });
 
 describe('SYNC_CATEGORIES', () => {
-  test('covers all thirteen user-facing categories (incl. settings + stats + credentials)', () => {
+  test('covers all fifteen user-facing categories (incl. book_data + settings + stats + vocabulary + credentials)', () => {
     expect([...SYNC_CATEGORIES].sort()).toEqual(
       [
         'abs_server',
         'book',
+        'book_data',
         'credentials',
         'custom_translator',
         'custom_tts',
@@ -248,6 +280,7 @@ describe('SYNC_CATEGORIES', () => {
         'settings',
         'stats',
         'texture',
+        'vocabulary',
       ].sort(),
     );
   });

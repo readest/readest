@@ -1,0 +1,23 @@
+name = "readest-auth-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-04-10"
+workers_dev = false
+
+# Password sign-in for readers whose ISP blocks *.supabase.co (#6416). The
+# clients call this host instead of Supabase for the requests listed in
+# src/index.ts; auth.readest.com stays reserved for the Supabase custom domain.
+[[routes]]
+pattern = "auth-cf.readest.com"
+zone_name = "readest.com"
+custom_domain = true
+
+[vars]
+SUPABASE_URL = "https://vbsyxfusjjqdxkjqlysc.supabase.co"
+
+# Required secret (do not commit). Set from this directory with:
+#   wrangler secret put SUPABASE_SECRET_KEY
+# It must be an sb_secret_ key: Supabase ignores Sb-Forwarded-For with the
+# legacy service_role key, and every reader then shares this Worker's IP for
+# Auth rate limits. The project also needs IP Address Forwarding turned on
+# (security_sb_forwarded_for_enabled). Do both before a client release uses
+# this host.

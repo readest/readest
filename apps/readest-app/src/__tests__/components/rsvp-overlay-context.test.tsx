@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 'use client';
 
 import { render, cleanup, fireEvent } from '@testing-library/react';
@@ -38,8 +39,16 @@ vi.mock('@/app/reader/components/annotator/DictionarySheet', () => ({
 }));
 
 vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
-  default: ({ word, onDismiss }: { word: string; onDismiss: () => void }) => (
-    <div data-testid='rsvp-dict-popup' data-word={word}>
+  default: ({
+    word,
+    capture,
+    onDismiss,
+  }: {
+    word: string;
+    capture?: unknown;
+    onDismiss: () => void;
+  }) => (
+    <div data-testid='rsvp-dict-popup' data-word={word} data-capture={JSON.stringify(capture)}>
       <button aria-label='close-dict' onClick={onDismiss}>
         x
       </button>
@@ -60,6 +69,9 @@ const buildState = (overrides: Partial<RsvpState> = {}): RsvpState => ({
   startDelaySeconds: 3,
   hasCJK: false,
   progress: 0,
+  chunkSize: 1,
+  warmup: false,
+  longWordDelay: false,
   ...overrides,
 });
 
@@ -71,6 +83,9 @@ const buildController = (state: RsvpState) => {
     },
     get currentDisplayWord() {
       return state.words[state.currentIndex] ?? null;
+    },
+    get currentChunkIndices() {
+      return [state.currentIndex];
     },
     get currentCountdown() {
       return null;
@@ -94,6 +109,10 @@ const buildController = (state: RsvpState) => {
     getWpmOptions: vi.fn(() => [100, 200, 300]),
     getPunctuationPauseOptions: vi.fn(() => [25, 50, 100]),
     getStartDelayOptions: vi.fn(() => [0, 1, 2, 3]),
+    getChunkSizeOptions: vi.fn(() => [1, 2, 3, 4, 5]),
+    setChunkSize: vi.fn(),
+    setWarmup: vi.fn(),
+    setLongWordDelay: vi.fn(),
     addEventListener: vi.fn((type: string, listener: EventListener) => {
       if (!listeners.has(type)) listeners.set(type, []);
       listeners.get(type)!.push(listener);
@@ -107,6 +126,7 @@ const renderOverlay = (
   state: RsvpState,
   fontFamily?: string,
   gridInsets: Insets = { top: 0, bottom: 0, left: 0, right: 0 },
+  extra: Partial<React.ComponentProps<typeof RSVPOverlay>> = {},
 ) => {
   const controller = buildController(state);
   const onClose = vi.fn();
@@ -120,6 +140,7 @@ const renderOverlay = (
       onClose={onClose}
       onChapterSelect={vi.fn()}
       onRequestNextPage={vi.fn()}
+      {...extra}
     />,
   );
   return { ...result, controller, onClose };
@@ -246,6 +267,17 @@ describe('RSVPOverlay — reading font', () => {
     expect(word).not.toBeNull();
     expect(word.classList.contains('font-mono')).toBe(true);
     expect(word.style.fontFamily).toBe('');
+  });
+
+  // #7467: the context text kept the app font while the word used the book's.
+  test('applies the reader font family to the context text', () => {
+    const { getByTestId } = renderOverlay(wordState(), '"Bitter", "Source Han Serif CN", serif');
+    expect(getByTestId('rsvp-context-panel').style.fontFamily).toContain('Bitter');
+  });
+
+  test('keeps the app font on the context text when no font family is supplied', () => {
+    const { getByTestId } = renderOverlay(wordState());
+    expect(getByTestId('rsvp-context-panel').style.fontFamily).toBe('');
   });
 });
 
@@ -546,6 +578,23 @@ describe('RSVPOverlay — dictionary lookup (#4475)', () => {
     const popup = container.querySelector('[data-testid="rsvp-dict-popup"]');
     expect(popup).not.toBeNull();
     expect(popup!.getAttribute('data-word')).toBe('serendipity');
+  });
+
+  test('saves the lookup to the vocabulary under the book (#789)', () => {
+    const book = { lang: 'en', hash: 'b1', title: 'Dune', author: 'Herbert' };
+    const { container } = renderOverlay(wordsState(), undefined, undefined, {
+      vocabularyBook: book,
+    });
+    const panel = container.querySelector('[data-testid="rsvp-context-panel"]') as HTMLElement;
+    mockSelection('serendipity', panel);
+    fireEvent.mouseUp(panel);
+    fireEvent.click(container.querySelector('[aria-label="Look up"]') as HTMLElement);
+    const popup = container.querySelector('[data-testid="rsvp-dict-popup"]')!;
+    const capture = JSON.parse(popup.getAttribute('data-capture')!);
+    expect(capture).toMatchObject({
+      lang: 'en',
+      occurrence: { sentence: 'serendipity', bookHash: 'b1', bookTitle: 'Dune' },
+    });
   });
 
   test('clicking outside the popup dismisses it', () => {

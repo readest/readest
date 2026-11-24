@@ -16,6 +16,16 @@ export interface GlossEntry {
 export interface GlossSource {
   /** Resolve a surface word (handling case + inflection) to its entry, or null. */
   lookup(word: string): GlossEntry | null;
+  /** The headword a surface word inflects from (running → run), when known. */
+  lemma?(word: string): string | null;
+}
+
+/** The reader's own marks from the vocabulary builder, keyed by normalized word. */
+export interface VocabularyMarks {
+  /** Always hinted; the value is the saved hint (the pack gloss when unset). */
+  learning: Map<string, string | undefined>;
+  /** Never hinted. */
+  mastered: Set<string>;
 }
 
 /** One word to gloss, located by character offsets into the section's plain text. */

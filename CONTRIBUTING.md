@@ -171,6 +171,21 @@ pnpm build
 
 Please also make a manual, functional test of your changes. When all that's done, it's time to file a pull request to upstream and fill out the title and body appropriately.
 
+Every pull request must link the issue it addresses: open one first if none exists, then put `Fixes #<number>` in the pull request description. Until it does, CI is skipped and the pull request is labeled `needs-issue`.
+
+## Contributing with a coding agent
+
+You're welcome to use a coding agent (Claude Code, Codex, Cursor and the like) to write your changes. Every commit in your pull request must end with an attribution line that names both the agent and the model behind it, for example:
+
+```
+Co-Authored-By: <agent> (<model>) <email>
+Co-Authored-By: Claude Code (Claude Opus 5.5) <noreply@anthropic.com>
+```
+
+Most agents can add this line on their own; check your agent's settings or instructions file if it doesn't. A line that names only the agent or only the model is not enough.
+
+Until every commit (merge commits aside) carries this line, CI is skipped and the pull request is labeled `needs-attribution`. Amend the commits and force-push to fix it.
+
 ## Credits
 
 This documented was inspired by the contributing guidelines for [cloudflare/wrangler2](https://github.com/cloudflare/wrangler2/blob/main/CONTRIBUTING.md).

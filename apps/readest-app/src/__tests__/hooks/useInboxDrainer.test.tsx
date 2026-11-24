@@ -32,6 +32,7 @@ vi.mock('@/services/send/inboxDrainer', () => ({
 import { drainInbox } from '@/services/send/inboxDrainer';
 import { useInboxDrainer } from '@/hooks/useInboxDrainer';
 
+const { readFlowState } = await import('@/services/sync/dataFlow/log');
 const mockedDrain = vi.mocked(drainInbox);
 
 const advance = async (ms: number) => {
@@ -62,6 +63,40 @@ afterEach(() => {
 });
 
 describe('useInboxDrainer', () => {
+  test('reports a pass that failed', async () => {
+    localStorage.clear();
+    mockedDrain.mockRejectedValueOnce(new Error('HTTP 403'));
+    renderHook(() => useInboxDrainer());
+    await advance(0);
+
+    expect(readFlowState().entries[0]).toMatchObject({ connector: 'send', error: 'HTTP 403' });
+  });
+
+  test('does not report a drain that ran before the session was ready', async () => {
+    localStorage.clear();
+    mockedDrain.mockRejectedValueOnce(new Error('Not authenticated'));
+    renderHook(() => useInboxDrainer());
+    await advance(0);
+
+    expect(readFlowState().entries).toEqual([]);
+  });
+
+  test('reports imported and failed items as book pulls', async () => {
+    localStorage.clear();
+    mockedDrain.mockResolvedValueOnce({ processed: 2, failed: 1 });
+    renderHook(() => useInboxDrainer());
+    await advance(0);
+
+    const { entries } = readFlowState();
+    expect(entries.find((e) => !e.error)).toMatchObject({
+      connector: 'send',
+      direction: 'pull',
+      kind: 'books',
+      count: 2,
+    });
+    expect(entries.find((e) => e.error)).toMatchObject({ connector: 'send' });
+  });
+
   test('drains on mount, then polls every 5 minutes instead of every minute', async () => {
     renderHook(() => useInboxDrainer());
     await advance(0);

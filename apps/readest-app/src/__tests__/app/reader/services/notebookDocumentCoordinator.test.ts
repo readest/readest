@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { BookNote } from '@/types/book';
 import { NOTEBOOK_ID } from '@/app/reader/utils/notebookDocument';

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // Regression test for readest/readest issue #4857.
 //
 // In a fixed-layout (EPUB or PDF) two-page spread at a fractional device pixel

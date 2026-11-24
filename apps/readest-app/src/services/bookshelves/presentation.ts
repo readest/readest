@@ -1,15 +1,23 @@
 import { Book, BooksGroup } from '@/types/book';
 import { BOOK_UNGROUPED_ID, BOOK_UNGROUPED_NAME } from '@/services/constants';
 import { md5Fingerprint } from '@/utils/md5';
-import { LibraryGroupByType, type SystemSettings } from '@/types/settings';
+import {
+  LibraryGroupByType,
+  LibrarySortByType,
+  type LibrarySortCriterion,
+  type SystemSettings,
+} from '@/types/settings';
 import type { BookshelfResult } from './evaluate';
 import { resolveBookshelfGroupBy } from './grouping';
+import { resolveBookshelfMetadataSort, resolveBookshelfSortOrder } from './sorting';
+import { bookshelfOrderScope, orderBookshelfItems } from './ordering';
 import {
   createBookGroups,
   createBookSorter,
   createGroupSorter,
   createWithinGroupSorter,
   getBookSortValue,
+  getDisplayedTimeRemaining,
   getGroupSortValue,
   compareSortValues,
   withTimeRemainingLast,
@@ -84,12 +92,25 @@ export const presentBookshelf = (
   pageDurations?: Readonly<Record<string, number>>,
   groupId = '',
   manualGroupName?: string,
+  globalSortOrder?: LibrarySortCriterion[],
 ): (Book | BooksGroup)[] => {
   const groupBy = resolveBookshelfGroupBy(
     result.definition,
     settings.libraryGroupBy || LibraryGroupByType.Group,
   );
-  const { by, ascending, thenBy, thenAscending } = result.definition.sort;
+  const custom = result.definition.sort.by === LibrarySortByType.Custom;
+  const { by, ascending, thenBy, thenAscending } = resolveBookshelfMetadataSort(result.definition);
+  const order = resolveBookshelfSortOrder(result.definition, globalSortOrder);
+  const finish = <T extends Book | BooksGroup>(items: T[]) =>
+    custom
+      ? orderBookshelfItems(
+          items,
+          result.definition.manualOrder?.[bookshelfOrderScope(groupBy, manualGroupName || groupId)],
+          result.definition.manualOrderUpdatedAt?.[
+            bookshelfOrderScope(groupBy, manualGroupName || groupId)
+          ],
+        )
+      : items;
   const sortBy = by;
   const thenSortBy = thenBy;
   const sortOrder = ascending ? 'asc' : 'desc';
@@ -111,6 +132,7 @@ export const presentBookshelf = (
   // For series groups, series index is always ascending; sort direction applies to fallback only
   const sortAscending = sortOrder === 'asc';
   const thenSortAscending = thenSortOrder === 'asc';
+  const hasOrder = Boolean(order && order.length > 0);
   const withinGroupSorter = withTimeRemainingLast<Book>(
     sortBy,
     createWithinGroupSorter(
@@ -121,7 +143,9 @@ export const presentBookshelf = (
       thenSortBy,
       thenSortAscending,
       pageDurations,
+      order,
     ),
+    hasOrder,
   );
   groups.forEach((group) => {
     group.books.sort(withinGroupSorter);
@@ -138,48 +162,97 @@ export const presentBookshelf = (
     sortAscending,
     thenSortAscending,
     pageDurations,
+    order,
   );
   if (groupId && groupBy !== LibraryGroupByType.Group && groupBy !== LibraryGroupByType.None) {
     ungroupedBooks.sort(withinGroupSorter);
     // When inside a group, books are already sorted correctly — return directly
     // to avoid the merge sort below overriding the within-group sort order
-    return ungroupedBooks;
+    return finish(ungroupedBooks);
   } else {
-    ungroupedBooks.sort(withTimeRemainingLast<Book>(sortBy, bookSorter));
+    ungroupedBooks.sort(withTimeRemainingLast<Book>(sortBy, bookSorter, hasOrder));
   }
 
   // Merge groups and ungrouped books, then sort them together
   const allItems: (Book | BooksGroup)[] = [...groups, ...ungroupedBooks];
   const groupSorter = createGroupSorter(sortBy, uiLanguage, groupBy);
+  // `seriesTie` places a group named like a book's series before that series'
+  // books (as if its index were lowest), matching book-to-book order by index;
+  // falling through to Title there made the comparator cycle.
+  const compareByPriorityOrder = (
+    getA: (by: LibrarySortByType) => string | number,
+    getB: (by: LibrarySortByType) => string | number,
+    seriesTie: number,
+  ) => {
+    for (const criterion of order!) {
+      const aValue = getA(criterion.by);
+      const bValue = getB(criterion.by);
+      let cmp = compareSortValues(aValue, bValue, uiLanguage, criterion.by);
+      if (cmp === 0 && criterion.by === LibrarySortByType.Series) cmp = seriesTie;
+      if (Number.isNaN(cmp)) continue;
+      // No time remaining (Infinity) stays last in both directions, as between books.
+      const missingTime =
+        criterion.by === LibrarySortByType.TimeRemaining &&
+        Number.isFinite(aValue) !== Number.isFinite(bValue);
+      if (cmp !== 0) return missingTime ? cmp : cmp * (criterion.ascending ? 1 : -1);
+    }
+    return 0;
+  };
 
   allItems.sort(
-    withTimeRemainingLast<Book | BooksGroup>(sortBy, (a, b) => {
-      const isAGroup = 'books' in a;
-      const isBGroup = 'books' in b;
+    withTimeRemainingLast<Book | BooksGroup>(
+      sortBy,
+      (a, b) => {
+        const isAGroup = 'books' in a;
+        const isBGroup = 'books' in b;
 
-      // If both are groups, use group sorter
-      if (isAGroup && isBGroup) {
-        return groupSorter(a, b) * sortOrderMultiplier;
-      }
+        // If both are books, use book sorter
+        if (!isAGroup && !isBGroup) {
+          return bookSorter(a, b);
+        }
 
-      // If both are books, use book sorter
-      if (!isAGroup && !isBGroup) {
-        return bookSorter(a, b);
-      }
+        if (hasOrder) {
+          // The legacy helpers stay as main has them, so this path reads a book's
+          // series itself, and the time remaining a card shows (none for unread
+          // or finished books), as book-to-book comparisons do.
+          const timeLeft = (book: Book) =>
+            getDisplayedTimeRemaining(book, pageDurations?.[book.hash]) ?? Infinity;
+          const getVal = (item: Book | BooksGroup, by: LibrarySortByType) => {
+            if (by === LibrarySortByType.TimeRemaining) {
+              return 'books' in item ? Math.min(...item.books.map(timeLeft)) : timeLeft(item);
+            }
+            if ('books' in item) return getGroupSortValue(item, by, groupBy);
+            return by === LibrarySortByType.Series
+              ? item.metadata?.series || ''
+              : getBookSortValue(item, by);
+          };
+          return compareByPriorityOrder(
+            (by) => getVal(a, by),
+            (by) => getVal(b, by),
+            isAGroup === isBGroup ? 0 : isAGroup ? -1 : 1,
+          );
+        }
 
-      // For series/author groups: compare sort values to interleave properly
-      if (isAGroup && !isBGroup) {
-        const groupValue = getGroupSortValue(a, sortBy, groupBy);
-        const bookValue = getBookSortValue(b, sortBy);
-        return compareSortValues(groupValue, bookValue, uiLanguage, sortBy) * sortOrderMultiplier;
-      } else if (!isAGroup && isBGroup) {
-        const bookValue = getBookSortValue(a, sortBy);
-        const groupValue = getGroupSortValue(b, sortBy, groupBy);
-        return compareSortValues(bookValue, groupValue, uiLanguage, sortBy) * sortOrderMultiplier;
-      }
-      return 0;
-    }),
+        // If both are groups, use group sorter
+        if (isAGroup && isBGroup) {
+          return groupSorter(a, b) * sortOrderMultiplier;
+        }
+
+        // For series/author groups: compare sort values to interleave properly
+        if (isAGroup && !isBGroup) {
+          const groupValue = getGroupSortValue(a, sortBy, groupBy);
+          const bookValue = getBookSortValue(b, sortBy);
+          return compareSortValues(groupValue, bookValue, uiLanguage, sortBy) * sortOrderMultiplier;
+        } else if (!isAGroup && isBGroup) {
+          const bookValue = getBookSortValue(a, sortBy);
+          const groupValue = getGroupSortValue(b, sortBy, groupBy);
+          return compareSortValues(bookValue, groupValue, uiLanguage, sortBy) * sortOrderMultiplier;
+        }
+        return 0;
+      },
+      hasOrder,
+    ),
   );
 
-  return allItems;
+  return finish(allItems);
 };

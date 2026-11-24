@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Importer accepts raw (uncompressed) `.dict` bodies, not just `.dict.dz`.
  * The runtime body loader (`loadDictBody`) probes the gzip header and falls

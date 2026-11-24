@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { useSettingsStore } from '@/store/settingsStore';
 import { setCachedUserPlan } from '@/services/sync/cloudSyncProvider';
@@ -18,6 +19,12 @@ const syncLibrary = vi.fn().mockResolvedValue(syncResult());
 const pushBookFile = vi.fn().mockResolvedValue({ uploaded: true });
 const pushBookCover = vi.fn().mockResolvedValue({ uploaded: true });
 const downloadBookFile = vi.fn().mockResolvedValue(true);
+
+const { syncFonts, downloadFont } = vi.hoisted(() => ({
+  syncFonts: vi.fn(async () => {}),
+  downloadFont: vi.fn(async () => true),
+}));
+vi.mock('@/services/sync/file/fonts', () => ({ syncFonts, downloadFont }));
 
 vi.mock('@/services/sync/file/providerRegistry', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/sync/file/providerRegistry')>();
@@ -57,6 +64,7 @@ vi.mock('@/services/sync/providers/icloud/buildICloudProvider', () => ({
   buildICloudProvider: vi.fn(async () => null),
 }));
 
+import { readFlowState } from '@/services/sync/dataFlow/log';
 import { isWebAppPlatform } from '@/services/environment';
 import { hasValidWebDriveToken } from '@/services/sync/providers/gdrive/auth/webTokenStore';
 import {
@@ -64,9 +72,12 @@ import {
   getReadyFileSyncBackends,
   runFileBookDownload,
   runFileBookUpload,
+  runFileFontDownload,
   runFileLibrarySyncPass,
 } from '@/services/sync/file/runLibrarySync';
+import { useCustomFontStore } from '@/store/customFontStore';
 import type { Book } from '@/types/book';
+import type { CustomFont } from '@/styles/fonts';
 
 const makeBook = (hash: string): Book => ({
   hash,
@@ -116,6 +127,7 @@ describe('runFileLibrarySyncPass', () => {
 
   beforeEach(() => {
     syncLibrary.mockReset().mockResolvedValue(syncResult({ booksSynced: 1 }));
+    syncFonts.mockClear();
     useSettingsStore.getState().setSettings(multiProviderSettings);
     useLibraryStore.setState({ library: [makeBook('h1')], libraryLoaded: true });
     useFileSyncStore.setState({ byKind: {}, activeKind: null, lastErrorByKind: {} });
@@ -196,6 +208,22 @@ describe('runFileLibrarySyncPass', () => {
     expect(result?.booksSynced).toBe(3);
     expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBe('token expired');
     expect(useFileSyncStore.getState().lastErrorByKind.gdrive).toBeNull();
+  });
+
+  test('syncs custom fonts on every backend after its library pass (#7793)', async () => {
+    await runFileLibrarySyncPass(envConfig, translationFn);
+    expect(syncFonts).toHaveBeenCalledTimes(2);
+    expect(syncFonts.mock.calls.map((call) => (call as unknown[])[2])).toEqual([
+      'silent',
+      'silent',
+    ]);
+  });
+
+  test('a failed font pass leaves the library result alone', async () => {
+    syncFonts.mockRejectedValueOnce(new Error('font upload failed'));
+    const result = await runFileLibrarySyncPass(envConfig, translationFn);
+    expect(result?.booksSynced).toBe(2);
+    expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeNull();
   });
 
   test('returns null when every backend fails', async () => {
@@ -284,6 +312,39 @@ describe('runFileBookDownload', () => {
   });
 });
 
+describe('runFileFontDownload', () => {
+  const activateFontByContentId = vi.fn(async () => {});
+  const font = {
+    id: 'b1',
+    name: 'Inter Regular',
+    contentId: 'c1',
+    bundleDir: 'b1',
+    path: 'b1/Inter-Regular.ttf',
+    unavailable: true,
+  } as CustomFont;
+
+  beforeEach(() => {
+    downloadFont.mockReset();
+    activateFontByContentId.mockClear();
+    useCustomFontStore.setState({ activateFontByContentId });
+    useSettingsStore.getState().setSettings(multiProviderSettings);
+    setCachedUserPlan('pro');
+  });
+
+  test('downloads from the first backend holding the font, then mounts it', async () => {
+    downloadFont.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    expect(await runFileFontDownload(envConfig, font)).toBe(true);
+    expect(downloadFont).toHaveBeenCalledTimes(2);
+    expect(activateFontByContentId).toHaveBeenCalledWith(envConfig, 'c1');
+  });
+
+  test('fails when no backend holds the font', async () => {
+    downloadFont.mockResolvedValue(false);
+    expect(await runFileFontDownload(envConfig, font)).toBe(false);
+    expect(activateFontByContentId).not.toHaveBeenCalled();
+  });
+});
+
 describe('getReadyFileSyncBackends', () => {
   const settings = {
     version: 1,
@@ -327,5 +388,112 @@ describe('getReadyFileSyncBackends', () => {
 
   test('rules icloud out off Apple platforms (canBackendRun false)', () => {
     expect(canBackendRun('icloud')).toBe(false);
+  });
+});
+
+describe('runFileLibrarySyncPass data flow', () => {
+  const enableWebdav = () => {
+    setCachedUserPlan('pro');
+    useSettingsStore.getState().setSettings({
+      webdav: { enabled: true, serverUrl: 'https://dav', syncBooks: true },
+    } as unknown as SystemSettings);
+    useLibraryStore.setState({ library: [], libraryLoaded: true });
+    useFileSyncStore.setState({ byKind: {}, activeKind: null, lastErrorByKind: {} });
+    syncLibrary.mockReset().mockResolvedValue(syncResult());
+  };
+
+  beforeEach(() => localStorage.clear());
+
+  test('reports what the pass moved each way', async () => {
+    enableWebdav();
+    syncLibrary.mockResolvedValueOnce(
+      syncResult({ configsUploaded: 2, configsDownloaded: 3, filesUploaded: 1, booksAdded: 4 }),
+    );
+
+    await runFileLibrarySyncPass(envConfig, translationFn);
+
+    const { totals } = readFlowState();
+    expect(totals['webdav:push:progress']?.count).toBe(2);
+    expect(totals['webdav:pull:progress']?.count).toBe(3);
+    expect(totals['webdav:push:books']?.count).toBe(1);
+    // Books added to the shelf are metadata: their files aren't downloaded.
+    expect(totals['webdav:pull:books']?.count).toBe(0);
+  });
+
+  test('reports a pass that failed', async () => {
+    enableWebdav();
+    syncLibrary.mockRejectedValueOnce(new Error('401 Unauthorized'));
+
+    await runFileLibrarySyncPass(envConfig, translationFn);
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      error: '401 Unauthorized',
+    });
+  });
+
+  test('reports books that failed inside a pass', async () => {
+    enableWebdav();
+    syncLibrary.mockResolvedValueOnce(
+      syncResult({
+        failures: 1,
+        failedBooks: [{ hash: 'a', title: 'Dune', reason: 'quota exceeded' }],
+      }),
+    );
+
+    await runFileLibrarySyncPass(envConfig, translationFn);
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      bookTitle: 'Dune',
+      error: 'quota exceeded',
+    });
+  });
+
+  test('counts an explicit upload of a book file', async () => {
+    enableWebdav();
+    pushBookFile.mockResolvedValueOnce({ uploaded: true });
+
+    await runFileBookUpload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      direction: 'push',
+      kind: 'books',
+      count: 1,
+      bookTitle: 'Book h1',
+    });
+  });
+
+  test('counts a downloaded book file under the backend that served it', async () => {
+    enableWebdav();
+    downloadBookFile.mockResolvedValueOnce(true);
+
+    await runFileBookDownload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries[0]).toMatchObject({
+      connector: 'webdav',
+      direction: 'pull',
+      kind: 'books',
+      count: 1,
+    });
+  });
+
+  test('records a failed download', async () => {
+    enableWebdav();
+    downloadBookFile.mockRejectedValueOnce(new Error('404'));
+
+    await runFileBookDownload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries[0]).toMatchObject({ connector: 'webdav', error: '404' });
+  });
+
+  test('does not count a file the backend already had', async () => {
+    enableWebdav();
+    pushBookFile.mockResolvedValueOnce({ uploaded: false, reason: 'remote-matches' });
+
+    await runFileBookUpload(envConfig, makeBook('h1'));
+
+    expect(readFlowState().entries).toEqual([]);
   });
 });

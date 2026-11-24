@@ -277,8 +277,10 @@ export abstract class BaseAppService implements AppService {
     return {
       fs: this.fs,
       isMobile: this.isMobile,
+      isDesktopApp: this.isDesktopApp,
       isEink: this.isEink,
       isAppDataSandbox: this.isAppDataSandbox,
+      isIOSApp: this.isIOSApp,
     };
   }
 
@@ -668,7 +670,8 @@ export abstract class BaseAppService implements AppService {
       // the same flow used at import time and retry once. Only prompt once per
       // session so background saves don't repeatedly yank the user to system
       // settings; after that a still-denied save is logged, not crashed —
-      // the user was already shown the All Files Access screen.
+      // the user was already shown the All Files Access screen. Callers that
+      // need a completed write can opt in to receiving that failure.
       if (!this.isAndroidApp || !isStoragePermissionError(error)) {
         throw error;
       }
@@ -678,6 +681,7 @@ export abstract class BaseAppService implements AppService {
           return await LibrarySvc.saveLibraryBooks(this.fs, books, options);
         }
       }
+      if (options?.throwOnFailure) throw error;
       console.warn('[library] not saved: storage permission not granted', error);
     }
   }

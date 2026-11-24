@@ -4,6 +4,7 @@ import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useBookProgressValue } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { getHeaderBandGeometry, getMarginalInlinePadding } from '@/utils/insets';
@@ -18,7 +19,6 @@ import { useBookDataStore } from '@/store/bookDataStore';
 
 interface SectionInfoProps {
   bookKey: string;
-  section?: string;
   showDoubleBorder: boolean;
   isScrolled: boolean;
   isVertical: boolean;
@@ -34,7 +34,6 @@ interface SectionInfoProps {
 
 const SectionInfo: React.FC<SectionInfoProps> = ({
   bookKey,
-  section,
   showDoubleBorder,
   isScrolled,
   isVertical,
@@ -47,6 +46,8 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  // Subscribed here, not in the cell: a turn into the next section re-renders the title alone.
+  const section = useBookProgressValue(bookKey, (p) => p.sectionLabel);
   const { hoveredBookKey, getView, getViewSettings, setHoveredBookKey } = useReaderStore();
   const { systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
   const getBookData = useBookDataStore((s) => s.getBookData);
@@ -127,7 +128,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
             : blended
               ? 'text-white/75 mix-blend-difference font-light'
               : 'text-base-content font-light',
-          isVertical ? 'writing-vertical-rl max-h-[85%]' : 'top-0',
+          isVertical ? 'writing-vertical-rl max-h-[85%] leading-tight' : 'top-0',
           hidden && 'invisible',
         )}
         role='none'
@@ -139,12 +140,12 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
           ...(textColor ? { color: textColor } : {}),
           ...(isVertical
             ? {
-                top: `${(contentInsets.top - gridInsets.top) * 1.5}px`,
-                bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
+                top: `${gridInsets.top + (contentInsets.top - gridInsets.top) * 1.5}px`,
+                bottom: `${gridInsets.bottom + (contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
                 right: showDoubleBorder
                   ? `calc(${contentInsets.right}px)`
-                  : `calc(${Math.max(0, contentInsets.right - 32)}px)`,
-                width: showDoubleBorder ? '32px' : `${contentInsets.right}px`,
+                  : `calc(${Math.max(0, Math.max(16, contentInsets.right) - 32)}px)`,
+                width: showDoubleBorder ? '32px' : `${Math.max(16, contentInsets.right)}px`,
               }
             : {
                 top: `${band.top}px`,

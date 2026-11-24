@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { EnvConfigType } from '@/services/environment';
 import type { CustomTranslator, TranslationPrompt } from '@/types/translation';
 import { useSettingsStore } from './settingsStore';
+import { isOnDeviceLLMSupported } from '@/services/translators/custom/onDevice';
 import { getReplicaPersistEnv } from '@/services/sync/replicaPersist';
 import { publishReplicaDelete, publishReplicaUpsert } from '@/services/sync/replicaPublish';
 import {
@@ -207,11 +208,17 @@ export const findTranslationPrompt = (id: string): TranslationPrompt | undefined
   useCustomTranslatorStore.getState().prompts.find((p) => p.id === id) ??
   useSettingsStore.getState().settings?.translationPrompts?.find((p) => p.id === id);
 
-/** Usable OpenAI-compatible translators, e.g. for the AI context dictionary (#5544). */
+/** Usable LLM translators, e.g. for the AI context dictionary (#5544). */
 export const getLLMTranslators = (): CustomTranslator[] => {
   const { loaded, translators } = useCustomTranslatorStore.getState();
   const list = loaded
     ? translators
     : (useSettingsStore.getState().settings?.customTranslators ?? []);
-  return list.filter((t) => t.type === 'openai-compatible' && !t.deletedAt && !t.disabled);
+  return list.filter(
+    (t) =>
+      (t.type === 'openai-compatible' ||
+        (t.type === 'apple-intelligence' && isOnDeviceLLMSupported())) &&
+      !t.deletedAt &&
+      !t.disabled,
+  );
 };

@@ -4,7 +4,7 @@ import { ErrorCodes, TranslationProvider } from '../types';
 import { UserPlan } from '@/types/quota';
 import { getSubscriptionPlan, getTranslationQuota } from '@/utils/access';
 import { normalizeToShortLang } from '@/utils/lang';
-import { saveDailyUsage } from '../utils';
+import { saveDailyUsage } from '../dailyUsage';
 
 const DEEPL_API_ENDPOINT = getAPIBaseUrl() + '/deepl/translate';
 

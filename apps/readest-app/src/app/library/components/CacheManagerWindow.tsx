@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   RiDatabase2Line,
   RiCheckboxCircleFill,
@@ -22,6 +22,8 @@ import {
 } from '@/utils/cache';
 import { AppService } from '@/types/system';
 import Dialog from '@/components/Dialog';
+import BoxedList from '@/components/settings/primitives/BoxedList';
+import SettingsSwitchRow from '@/components/settings/primitives/SettingsSwitchRow';
 
 export const setCacheManagerDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('cache_manager_window');
@@ -36,12 +38,21 @@ export const setCacheManagerDialogVisible = (visible: boolean) => {
 type CacheStatus = 'scanning' | 'idle' | 'confirming' | 'clearing' | 'done' | 'error';
 
 /**
- * Locations Manage Cache clears (mobile only). Both iOS and Android clear the
- * app Cache and Temp bases; iOS additionally clears the `Documents/Inbox`
- * folder, where "Open in Readest" leaves already-imported book copies that
- * otherwise linger forever.
+ * Locations Manage Cache clears. Both iOS and Android clear the app Cache and
+ * Temp bases; iOS additionally clears the `Documents/Inbox` folder, where
+ * "Open in Readest" leaves already-imported book copies that otherwise linger
+ * forever. On desktop neither root is Readest's alone (WebKit's cache on
+ * macOS, the WebView2 profile on Windows, a system-wide Temp), so only the
+ * cache dirs Readest writes and rebuilds are cleared: in-app browser
+ * downloads, kept after import, and page thumbnails.
  */
-const getCacheSources = async (appService: AppService): Promise<CacheSource[]> => {
+export const getCacheSources = async (appService: AppService): Promise<CacheSource[]> => {
+  if (!appService.isMobileApp) {
+    return [
+      { base: 'Cache', dir: 'browser-downloads' },
+      { base: 'Cache', dir: 'page-thumbnails' },
+    ];
+  }
   const sources: CacheSource[] = [
     { base: 'Cache', dir: '' },
     { base: 'Temp', dir: '' },
@@ -70,9 +81,14 @@ export const CacheManagerWindow = () => {
   const [size, setSize] = useState(0);
   const [progress, setProgress] = useState<CacheClearProgress>({ current: 0, total: 0 });
   const [errorMessage, setErrorMessage] = useState('');
+  const [includeDeletedBooks, setIncludeDeletedBooks] = useState(false);
+  // Only the latest scan may fill the dialog: an older one could offer files
+  // the current option doesn't cover.
+  const scanIdRef = useRef(0);
 
-  const scanCache = async () => {
+  const scanCache = async (includeDeleted = includeDeletedBooks) => {
     if (!appService) return;
+    const scanId = ++scanIdRef.current;
     setStatus('scanning');
     setErrorMessage('');
     try {
@@ -81,7 +97,9 @@ export const CacheManagerWindow = () => {
         appService,
         await getCacheSources(appService),
         { books: library, loaded: libraryLoaded },
+        includeDeleted,
       );
+      if (scanId !== scanIdRef.current) return;
       const stats = getCacheStats(entries);
       setEntries(entries);
       setCount(stats.count);
@@ -89,6 +107,7 @@ export const CacheManagerWindow = () => {
       setSize(stats.size);
       setStatus('idle');
     } catch (error) {
+      if (scanId !== scanIdRef.current) return;
       console.error('Error scanning cache:', error);
       setErrorMessage(_('Failed to read cache'));
       setStatus('error');
@@ -115,6 +134,11 @@ export const CacheManagerWindow = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appService]);
+
+  const handleToggleDeletedBooks = () => {
+    setIncludeDeletedBooks(!includeDeletedBooks);
+    scanCache(!includeDeletedBooks);
+  };
 
   const handleClearClick = () => {
     if (status === 'idle' && count > 0) {
@@ -155,6 +179,8 @@ export const CacheManagerWindow = () => {
     setStatus('scanning');
     setProgress({ current: 0, total: 0 });
     setErrorMessage('');
+    setIncludeDeletedBooks(false);
+    scanIdRef.current++;
   };
 
   const progressPercentage =
@@ -221,6 +247,19 @@ export const CacheManagerWindow = () => {
             </div>
           </div>
 
+          {status !== 'clearing' && status !== 'done' && (
+            <BoxedList
+              description={_('Also removes the covers, progress, and notes they left behind')}
+            >
+              <SettingsSwitchRow
+                label={_('Clear Deleted Books')}
+                checked={includeDeletedBooks}
+                onChange={handleToggleDeletedBooks}
+                disabled={status !== 'idle'}
+              />
+            </BoxedList>
+          )}
+
           {/* Clearing progress */}
           {status === 'clearing' && (
             <div className='space-y-2'>
@@ -253,11 +292,15 @@ export const CacheManagerWindow = () => {
           {status === 'confirming' && (
             <p className='text-base-content/60 flex items-center justify-center gap-1.5 text-center text-[13px] leading-relaxed'>
               <RiErrorWarningFill className='text-warning h-4 w-4 shrink-0' aria-hidden='true' />
-              {orphanCount > 0
+              {includeDeletedBooks
                 ? _(
-                    'This will delete all cached files and orphaned book files not in your library. This cannot be undone.',
+                    'This will delete all cached files and the files left behind by deleted books. This cannot be undone.',
                   )
-                : _('This will delete all cached files. This cannot be undone.')}
+                : orphanCount > 0
+                  ? _(
+                      'This will delete all cached files and orphaned book files not in your library. This cannot be undone.',
+                    )
+                  : _('This will delete all cached files. This cannot be undone.')}
             </p>
           )}
 

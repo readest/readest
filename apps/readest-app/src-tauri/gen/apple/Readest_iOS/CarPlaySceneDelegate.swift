@@ -16,6 +16,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
   private var rootTemplate: CPListTemplate?
 
   private static let stateChanged = Notification.Name("readestCarPlayStateChanged")
+  private static let playBook = Notification.Name("readestCarPlayPlayBook")
 
   func templateApplicationScene(
     _ templateApplicationScene: CPTemplateApplicationScene,
@@ -77,6 +78,18 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     let items = books.prefix(10).map { book in
       let item = CPListItem(text: book.title, detailText: book.author.isEmpty ? nil : book.author)
       item.handler = { [weak self, weak item] _, completion in
+        // With the phone locked iOS suspends the reader, so the native TTS
+        // plugin reads the book itself when it can (#7566).
+        let request = NSMutableDictionary(dictionary: [
+          "hash": book.hash, "title": book.title, "author": book.author,
+          "isAudiobook": book.isAudiobook,
+        ])
+        NotificationCenter.default.post(name: Self.playBook, object: request)
+        if request["handled"] as? Bool == true {
+          self?.showNowPlaying()
+          completion()
+          return
+        }
         var components = URLComponents()
         components.scheme = "readest"
         components.host = "book"

@@ -23,8 +23,14 @@ const toService = (id: string, get: (key: string) => unknown): CustomTTSService 
   };
   const apiKey = str(get('apiKey'));
   const instructions = str(get('instructions'));
+  const voices = str(get('voices'));
   if (apiKey !== undefined) service.apiKey = apiKey;
   if (instructions !== undefined) service.instructions = instructions;
+  if (voices !== undefined) service.voices = voices;
+  const responseFormat = get('responseFormat');
+  if (responseFormat === 'mp3' || responseFormat === 'wav' || responseFormat === 'none') {
+    service.responseFormat = responseFormat;
+  }
   if (get('disabled') === true) service.disabled = true;
   return service;
 };
@@ -41,8 +47,12 @@ export const customTTSAdapter: ReplicaAdapter<CustomTTSService> = {
       addedAt: s.addedAt,
       updatedAt: s.updatedAt,
     };
-    if (s.instructions !== undefined) fields['instructions'] = s.instructions;
-    if (s.disabled !== undefined) fields['disabled'] = s.disabled;
+    // Always sent, so clearing one reaches other devices: fields merge per key,
+    // and a key left out keeps its old value there.
+    fields['instructions'] = s.instructions ?? null;
+    fields['responseFormat'] = s.responseFormat ?? null;
+    fields['voices'] = s.voices ?? null;
+    fields['disabled'] = s.disabled ?? false;
     // Plaintext here; replicaCryptoMiddleware encrypts (or drops) it.
     if (s.apiKey !== undefined) fields['apiKey'] = s.apiKey;
     return fields;

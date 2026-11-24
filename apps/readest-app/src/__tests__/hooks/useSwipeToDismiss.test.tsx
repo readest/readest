@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { impactFeedback } from '@tauri-apps/plugin-haptics';

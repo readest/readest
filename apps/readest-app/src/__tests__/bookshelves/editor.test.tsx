@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { createRef } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,12 +14,19 @@ import type { SystemSettings } from '@/types/settings';
 const DEFAULT_SYSTEM_SETTINGS = partialSettings as SystemSettings;
 import type { Book } from '@/types/book';
 import type { BookshelfDefinition } from '@/types/bookshelf';
-import type { ShelfSection } from '@/app/library/components/BookshelfStream';
 import { createBookshelf, defaultBookshelves } from '@/services/bookshelves/definitions';
 import { applyBookshelfDraft } from '@/services/bookshelves/state';
+import {
+  createBookshelfOrderModeRow,
+  createBookshelfOrderRows,
+} from '@/services/bookshelves/orderRecords';
 import { HlcGenerator } from '@/libs/crdt';
 
 const save = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const pace = vi.hoisted(() => ({
+  appService: null as object | null,
+  load: vi.fn<() => Promise<Record<string, number>>>().mockResolvedValue({}),
+}));
 const searchParamsRef = vi.hoisted(() => ({ current: new URLSearchParams() }));
 // Mirrors the real router.replace: updates the same searchParamsRef the app
 // reads, so a test can verify a "later reopen" doesn't see cleared params.
@@ -32,23 +40,34 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => searchParamsRef.current,
 }));
 vi.mock('@/utils/nav', () => ({ navigateToLibrary: vi.fn() }));
-vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ envConfig: {}, appService: pace.appService }),
+}));
 vi.mock('@/services/bookshelves/persistence', () => ({ saveBookshelfDraft: save }));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (s: string, values?: Record<string, unknown>) =>
     s.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(values?.[key] ?? '')),
 }));
-vi.mock('@/hooks/useMedianPageDurationSecs', () => ({ useMedianPageDurationsSecs: () => ({}) }));
-vi.mock('@/app/library/components/BookItem', () => ({
-  default: ({ book }: { book: Book }) => <span>{book.title}</span>,
+vi.mock('@/services/statistics/statisticsDb', () => ({
+  StatisticsDb: { open: async () => ({ getMedianPageDurationsSecs: pace.load }) },
+}));
+vi.mock('@/app/library/components/BookshelfItem', () => ({
+  default: ({ item, showTimeRemaining }: { item: Book; showTimeRemaining: boolean }) => (
+    <span data-show-time-remaining={showTimeRemaining}>{item.title}</span>
+  ),
 }));
 vi.mock('@/app/library/components/GroupItem', () => ({ default: () => null }));
 vi.mock('@/app/library/components/BookshelfStream', () => ({
-  default: ({ sections }: { sections: ShelfSection[] }) => (
+  default: ({
+    sections,
+    renderItem,
+  }: React.ComponentProps<typeof import('@/app/library/components/BookshelfStream').default>) => (
     <div data-testid='preview'>
       {sections.map((s) => (
         <div key={s.definition.id} data-layout={s.definition.layout}>
-          {s.items.map((b) => ('hash' in b ? <span key={b.hash}>{b.title}</span> : null))}
+          {s.items.map((b) =>
+            'hash' in b ? <div key={b.hash}>{renderItem(b, 'grid', s.definition)}</div> : null,
+          )}
         </div>
       ))}
     </div>
@@ -96,6 +115,8 @@ beforeEach(() => {
     },
   );
   save.mockReset().mockResolvedValue(undefined);
+  pace.appService = null;
+  pace.load.mockReset().mockResolvedValue({});
   // version: real settings always have one; its absence is what
   // useEnsureSettingsLoaded (BookshelvesDialog) treats as "not hydrated yet".
   useSettingsStore.setState({
@@ -120,6 +141,89 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 describe('bookshelf editor', () => {
+  it.each([
+    'primary',
+    'secondary',
+  ] as const)('loads reading pace for custom order with a time-remaining %s fallback', async (key) => {
+    pace.appService = {};
+    pace.load.mockResolvedValue({ slow: 60, fast: 1, pinned: 30 });
+    useLibraryStore.setState({
+      library: [
+        { hash: 'slow', title: 'Slow', progress: [1, 51] as [number, number] },
+        { hash: 'fast', title: 'Fast', progress: [1, 101] as [number, number] },
+        { hash: 'pinned', title: 'Pinned', progress: [1, 11] as [number, number] },
+      ].map((book) => ({
+        ...book,
+        author: 'Writer',
+        format: 'EPUB' as const,
+        createdAt: 0,
+        updatedAt: 0,
+      })),
+    });
+    const base = defaultBookshelves(DEFAULT_SYSTEM_SETTINGS);
+    const clock = new HlcGenerator('pace');
+    const draft = base.map((shelf) =>
+      shelf.id === 'default'
+        ? {
+            ...shelf,
+            useGlobalSort: false,
+            sort: {
+              by: 'custom' as const,
+              ascending: true,
+              thenBy: 'none' as const,
+              thenAscending: true,
+            },
+            customSortFallback: {
+              by: key === 'primary' ? ('timeRemaining' as const) : ('author' as const),
+              ascending: true,
+              thenBy: key === 'primary' ? ('none' as const) : ('timeRemaining' as const),
+              thenAscending: true,
+            },
+            manualOrder: { 'none:': ['b:pinned'] },
+          }
+        : { ...shelf, enabled: false },
+    );
+    const state = applyBookshelfDraft({ rows: {} }, base, draft, {
+      userId: '',
+      deviceId: 'pace',
+      next: () => clock.next(),
+    }).state;
+    const orderClock = { userId: '', deviceId: 'pace', next: () => clock.next() };
+    const records = [
+      ...createBookshelfOrderRows('default', 'none:', ['b:pinned'], orderClock),
+      createBookshelfOrderModeRow(
+        'default',
+        true,
+        state.rows['default']!.fields_jsonb['definition']!.t,
+        orderClock,
+      ),
+    ];
+    for (const row of records) state.rows[row.replica_id] = row;
+    useSettingsStore.setState({
+      settings: {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        version: 1,
+        libraryGroupBy: 'none',
+        bookshelves: state,
+      },
+    });
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    await waitFor(() => expect(pace.load).toHaveBeenCalledOnce());
+    await waitFor(() =>
+      expect(
+        Array.from(screen.getByTestId('preview').querySelectorAll('span')).map(
+          (node) => node.textContent,
+        ),
+      ).toEqual(['Pinned', 'Fast', 'Slow']),
+    );
+    expect(
+      Array.from(
+        screen.getByTestId('preview').querySelectorAll('[data-show-time-remaining]'),
+      ).every((card) => card.getAttribute('data-show-time-remaining') === 'true'),
+    ).toBe(true);
+  });
+
   it('shows the shelf tabs in the dialog header in place of a title', async () => {
     render(<BookshelvesDialog />);
     await act(async () => {
@@ -785,6 +889,75 @@ describe('bookshelf editor', () => {
     const draft = save.mock.calls.at(-1)![2] as BookshelfDefinition[];
     expect(draft.find((s) => s.name === 'New bookshelf 1')?.hideCovers).toBe(true);
     expect(draft.find((s) => s.id === 'default')?.hideCovers).toBe(false);
+  });
+  it('saves the page count badge for the selected shelf independently (#6909)', async () => {
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Show page count'));
+    await waitFor(() =>
+      expect(
+        save.mock.calls.at(-1)?.[2].find((s: BookshelfDefinition) => s.id === 'default'),
+      ).toMatchObject({
+        showPageCount: true,
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^Recently read/ }));
+    expect((screen.getByLabelText('Show page count') as HTMLInputElement).checked).toBe(false);
+  });
+  it('drops the page count key when the switch is turned off, so older clients still parse the shelf (#6909)', async () => {
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Show page count'));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    fireEvent.click(screen.getByLabelText('Show page count'));
+    await waitFor(() => {
+      const saved = save.mock.calls
+        .at(-1)?.[2]
+        .find((s: BookshelfDefinition) => s.id === 'default');
+      expect(JSON.parse(JSON.stringify(saved))).not.toHaveProperty('showPageCount');
+    });
+  });
+  it('saves plain placeholder covers for the selected shelf and drops the key when off (#7549)', async () => {
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Plain placeholder covers'));
+    await waitFor(() =>
+      expect(
+        save.mock.calls.at(-1)?.[2].find((s: BookshelfDefinition) => s.id === 'default'),
+      ).toMatchObject({ plainPlaceholderCovers: true }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^Recently read/ }));
+    expect((screen.getByLabelText('Plain placeholder covers') as HTMLInputElement).checked).toBe(
+      false,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Plain placeholder covers'));
+    await waitFor(() => {
+      const saved = save.mock.calls
+        .at(-1)?.[2]
+        .find((s: BookshelfDefinition) => s.id === 'default');
+      expect(JSON.parse(JSON.stringify(saved))).not.toHaveProperty('plainPlaceholderCovers');
+    });
+  });
+  it('saves Cover only for the selected shelf and drops the key when off (#7746)', async () => {
+    render(<BookshelvesEditor />);
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Cover only'));
+    await waitFor(() =>
+      expect(
+        save.mock.calls.at(-1)?.[2].find((s: BookshelfDefinition) => s.id === 'default'),
+      ).toMatchObject({ coverOnly: true }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^Recently read/ }));
+    expect((screen.getByLabelText('Cover only') as HTMLInputElement).checked).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Default' }));
+    fireEvent.click(screen.getByLabelText('Cover only'));
+    await waitFor(() => {
+      const saved = save.mock.calls
+        .at(-1)?.[2]
+        .find((s: BookshelfDefinition) => s.id === 'default');
+      expect(JSON.parse(JSON.stringify(saved))).not.toHaveProperty('coverOnly');
+    });
   });
   it('uses the library language for preview sorting', async () => {
     localStorage.setItem('i18nextLng', 'sv');

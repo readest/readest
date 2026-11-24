@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: cb51df53-15ef-424f-9bd4-07f9f549b5d5
-  modified: 2026-10-11T07:21:17.588Z
+  modified: 2026-11-03T15:52:29.889Z
 ---
 
 Hit 2026-10-11 building PR #6674 for the iPad Air M2 (iPadOS 27, Xcode 26.3) from `readest-pr-6674`.
@@ -22,3 +22,18 @@ Hit 2026-10-11 building PR #6674 for the iPad Air M2 (iPadOS 27, Xcode 26.3) fro
    wrong: cargo keeps the cached build-script result and the link fails with `could not find native static library`.
 3. Install pinned: `ideviceinstaller -u <UDID> install src-tauri/gen/apple/build/arm64/Readest.ipa` (an iPhone is also
    paired; see [[feedback-pin-adb-serial]]). The user's shell exports `iPad`/`iPhone` UDID vars.
+4. SILENT stale Swift (2026-10-30, Xcode 27.1 / Swift 6.4): the build SUCCEEDS but the app runs old plugin Swift
+   ("No command paper_curl found for plugin native-bridge"; Page Curl and Page Flip both dead on device). Swift 6.4's
+   default `--build-system swiftbuild` writes to `out/swift-rs/<pkg>/out/Products/Release-iphoneos/`, while
+   packages/swift-rs/src-rs/build.rs linked `<triple>/release/`, where libs from a pre-6.4 build lingered. With that
+   dir cleared, every iOS build fails: "could not find native static library `Tauri`". Fix MERGED in #7160:
+   build.rs reruns the swift command with `--show-bin-path` and links that dir.
+   Check: `nm <lib>.a | grep <new command>`.
+5. Seeded `target/` from another worktree (2026-11-03, #7294): BUILD FAILED with `missing required module
+   'SwiftShims'` and "precompiled file ... was compiled with module cache path '/Users/chrox/dev/readest-<other
+   worktree>/target/...'". Same fix as item 2 (`rm -rf target/aarch64-apple-ios/release/{build,.fingerprint}/tauri*`);
+   do it BEFORE the first iOS build in any new worktree to save a failed ~15 min run.
+6. Seeded `target/` again (2026-11-04, #7100): clearing only `tauri*` was NOT enough. First run: 4 plugins failed at once with
+   "The folder artifacts doesn't exist"; second: `module '_DarwinFoundation1' is defined in both '/Users/chrox/dev/readest/target/...ModuleCache...'
+   and '<worktree>/target/...'` (swift-frontend signal 11). Fix that worked: `rm -rf target/aarch64-apple-ios/release` (full iOS
+   Rust recompile, ~20 min). Do this up front in a worktree whose target/ was seeded from the main checkout.

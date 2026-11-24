@@ -61,8 +61,8 @@ queue STALLS at the first non-2xx delivery, so the sessions route answers 2xx fo
 `release.yml` job `build-crosspoint-plugin` uploads `Readest-<version>.crosspoint-plugin.zip`
 (stamps manifest.json version). CodeRabbit fixes: untitled books listed under their hash (`||`),
 token route restores the claimed code if the key insert fails. Never device-tested; `/link` signed-in
-approval untested until the migration is live. Follow-ups: device list/revoke/expiry UI, rate limit
-on /device/code, orphaned on-device key after a later web sign-in.
+approval untested until the migration is live. Follow-ups: device list/revoke/expiry UI, orphaned on-device key after a later
+web sign-in (one more in [[private-crosspoint-integration-feasibility-2026-09]], local only).
 
 **Self-update (2026-10-03, uncommitted on main when written):** web card shows the installed version
 (manifest.json via `api.pluginFile`) + Check for update (relay GET download.readest.com/releases/latest.json,

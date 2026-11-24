@@ -41,7 +41,10 @@ const SourceSelector: React.FC<SourceSelectorProps> = ({ sources, isOpen, onSele
   if (!isOpen) return null;
 
   return (
-    <div className='source-selector fixed inset-0 z-[60] flex items-center justify-center bg-black/50'>
+    <div
+      data-capture-blocking-overlay='true'
+      className='source-selector fixed inset-0 z-[60] flex items-center justify-center bg-black/50'
+    >
       <div
         ref={modalRef}
         tabIndex={-1}

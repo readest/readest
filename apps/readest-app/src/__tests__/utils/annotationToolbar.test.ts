@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, test, expect } from 'vitest';
 import { annotationToolButtons } from '@/app/reader/components/annotator/AnnotationTools';
 import {
@@ -62,12 +63,45 @@ describe('annotationToolbar helpers', () => {
       'annotate',
       'search',
       'dictionary',
+      'contextdictionary',
+      'vocabulary',
       'translate',
       'tts',
       'proofread',
       'share',
       'quotecard',
     ]);
+  });
+
+  test('vocabulary is opt-in: off the default toolbar, offered in the available tray', () => {
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('vocabulary');
+    expect(getToolbarToolTypes(undefined, true)).not.toContain('vocabulary');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, false)).toContain('vocabulary');
+    expect(getToolbarToolTypes(['copy', 'vocabulary'], false)).toEqual(['copy', 'vocabulary']);
+  });
+
+  test('contextdictionary is opt-in: off the default toolbar, offered in the available tray (#7497)', () => {
+    expect(ALL_ANNOTATION_TOOL_TYPES).toContain('contextdictionary');
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('contextdictionary');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, true)).toContain(
+      'contextdictionary',
+    );
+  });
+
+  test('systemdictionary is opt-in, and offered only where the system dictionary works (#6728)', () => {
+    expect(ALL_ANNOTATION_TOOL_TYPES).toContain('systemdictionary');
+    expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('systemdictionary');
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, true, true)).toContain(
+      'systemdictionary',
+    );
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, true, false)).not.toContain(
+      'systemdictionary',
+    );
+    expect(getToolbarToolTypes(['copy', 'systemdictionary'], true, true)).toEqual([
+      'copy',
+      'systemdictionary',
+    ]);
+    expect(getToolbarToolTypes(['copy', 'systemdictionary'], true, false)).toEqual(['copy']);
   });
 
   test('quotecard is opt-in and offered even when text share is unavailable', () => {

@@ -1,0 +1,213 @@
+import { cleanup, render, waitFor } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
+import type { ComponentProps } from 'react';
+import FoliateViewer from '@/app/reader/components/FoliateViewer';
+
+const { readerState, openGate, bookDataState, attrs, viewSettings } = vi.hoisted(() => {
+  const viewSettings = {
+    writingMode: 'auto',
+    showHeader: true,
+    vertical: false,
+    compactMarginTopPx: 16,
+    compactMarginBottomPx: 16,
+  };
+  return {
+    attrs: new Map<string, string>(),
+    bookDataState: { bookData: null as unknown },
+    openGate: { pending: null as Promise<void> | null, started: false },
+    viewSettings,
+    readerState: {
+      setProgress: vi.fn(),
+      getViewState: () => ({}),
+      getViewSettings: () => viewSettings,
+      setView: () => {},
+      setViewInited: () => {},
+    },
+  };
+});
+
+vi.mock('@/store/readerStore', () => ({
+  useReaderStore: (select: (s: typeof readerState) => unknown) => select(readerState),
+}));
+vi.mock('@/store/bookDataStore', () => ({
+  useBookDataStore: (select: (s: { getBookData: () => unknown }) => unknown) =>
+    select({ getBookData: () => bookDataState.bookData }),
+}));
+vi.mock('@/store/parallelViewStore', () => ({ useParallelViewStore: () => () => [] }));
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: Object.assign(() => ({ settings: {} }), { getState: () => ({ settings: {} }) }),
+}));
+vi.mock('@/store/themeStore', () => {
+  const state = { isIPhoneDuo: false, duoFold: null, safeAreaInsets: null };
+  const useThemeStore = (selector?: (s: typeof state) => unknown) =>
+    selector ? selector(state) : state;
+  return { useThemeStore: Object.assign(useThemeStore, { getState: () => state }) };
+});
+vi.mock('@/store/customFontStore', () => ({
+  useCustomFontStore: () => ({ getLoadedFonts: () => [], getAvailableFonts: () => [] }),
+}));
+vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({}) }));
+vi.mock('next/navigation', () => ({ useSearchParams: () => null }));
+vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (text: string) => text }));
+vi.mock('@/libs/document', () => ({}));
+vi.mock('foliate-js/view.js', () => ({}));
+vi.mock('@/types/view', () => ({
+  wrappedFoliateView: (view: HTMLElement & { book?: unknown }) => {
+    const anyCall: object = new Proxy(() => anyCall, { get: () => anyCall, apply: () => anyCall });
+    return Object.assign(view, {
+      open: async (book: unknown) => {
+        view.book = book;
+        openGate.started = true;
+        await openGate.pending;
+      },
+      init: async () => {},
+      goToFraction: async () => {},
+      // Records the attributes the reader writes; everything else is a no-op.
+      renderer: new Proxy(
+        {
+          setAttribute: (name: string, value: unknown) => attrs.set(name, String(value)),
+          getAttribute: (name: string) => attrs.get(name) ?? null,
+          removeAttribute: (name: string) => attrs.delete(name),
+        },
+        {
+          get: (target, key) => (key in target ? target[key as keyof typeof target] : anyCall),
+        },
+      ),
+    });
+  },
+}));
+vi.mock('@/utils/style', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getStyles: () => '',
+}));
+vi.mock('@/services/transformService', () => ({}));
+vi.mock('@/app/reader/utils/wordlensSection', () => ({}));
+vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: vi.fn() }));
+vi.mock('@/app/reader/hooks/useBrightnessGesture', () => ({ useBrightnessGesture: () => ({}) }));
+vi.mock('@/app/reader/hooks/useAutoScroll', () => ({
+  useAutoScroll: () => ({ isWipeAhead: () => false }),
+}));
+vi.mock('@/app/reader/hooks/useAutoScrollSpeedGesture', () => ({
+  useAutoScrollSpeedGesture: () => ({}),
+}));
+vi.mock('@/app/reader/hooks/useMiddleClickAutoscroll', () => ({
+  useMiddleClickAutoscroll: () => null,
+}));
+vi.mock('@/app/reader/hooks/useKOSync', () => ({ useKOSync: () => ({}) }));
+vi.mock('@/app/reader/hooks/useIframeEvents', () => ({
+  useMouseEvent: () => ({}),
+  useTouchEvent: () => ({}),
+  useOpenMediaEvent: () => {},
+}));
+vi.mock('@/app/reader/hooks/useCapturedTurn', () => ({
+  useCapturedTurn: () => {},
+  applyPageTurnAttributes: () => {},
+}));
+vi.mock('@/app/reader/hooks/usePagination', () => ({ usePagination: () => ({}) }));
+vi.mock('@/app/reader/hooks/useProgressSync', () => ({ useProgressSync: () => {} }));
+vi.mock('@/app/reader/hooks/useABSProgressSync', () => ({ useABSProgressSync: () => {} }));
+vi.mock('@/app/reader/hooks/useProgressAutoSave', () => ({ useProgressAutoSave: () => {} }));
+vi.mock('@/app/reader/hooks/useAutoSaveBookCover', () => ({ useBookCoverAutoSave: () => {} }));
+vi.mock('@/app/reader/hooks/useFileSync', () => ({ useFileSync: () => {} }));
+vi.mock('@/app/reader/hooks/useTextTranslation', () => ({ useTextTranslation: () => {} }));
+vi.mock('@/hooks/useBackgroundTexture', () => ({
+  useBackgroundTexture: () => ({ applyBackgroundTexture: vi.fn() }),
+}));
+vi.mock('@/hooks/useAutoFocus', () => ({ useAutoFocus: () => {} }));
+vi.mock('@/hooks/useEinkMode', () => ({ useEinkMode: () => ({ applyEinkMode: () => {} }) }));
+vi.mock('@/hooks/useUICSS', () => ({ useUICSS: () => {} }));
+vi.mock('@/hooks/useDiscordPresence', () => ({ useDiscordPresence: () => {} }));
+vi.mock('@/app/reader/hooks/bookOrbitProgressProvider', () => ({ bookOrbitProgressProvider: {} }));
+vi.mock('@/app/reader/hooks/grimmoryProgressProvider', () => ({ grimmoryProgressProvider: {} }));
+vi.mock('@/app/reader/components/paragraph', () => ({ ParagraphControl: () => null }));
+vi.mock('@/app/reader/components/BrightnessOverlay', () => ({ default: () => null }));
+vi.mock('@/app/reader/components/ImageViewer', () => ({ default: () => null }));
+vi.mock('@/app/reader/components/TableViewer', () => ({ default: () => null }));
+
+afterEach(() => {
+  viewSettings.vertical = false;
+  viewSettings.showHeader = true;
+  viewSettings.compactMarginTopPx = 16;
+  viewSettings.compactMarginBottomPx = 16;
+  cleanup();
+});
+
+const insets = (top: number) => ({ top, right: 0, bottom: 0, left: 0 });
+const props = (contentTop: number, gridTop = 0) =>
+  ({
+    bookKey: 'test-book',
+    bookDoc: { metadata: {}, transformTarget: new EventTarget() },
+    config: {},
+    gridInsets: insets(gridTop),
+    contentInsets: insets(contentTop),
+  }) as unknown as ComponentProps<typeof FoliateViewer>;
+
+// The book opens while the status bar still shows (iPhone Duo's 82pt top
+// strip in inner portrait) and the reader hides it before the open finishes.
+// The margins applied once the book is open must be the current ones.
+it('applies the insets current when the book finishes opening', async () => {
+  attrs.clear();
+  let finishOpen = () => {};
+  openGate.pending = new Promise<void>((resolve) => {
+    finishOpen = resolve;
+  });
+  openGate.started = false;
+  const shown = props(126);
+  const { rerender } = render(<FoliateViewer {...shown} />);
+  await waitFor(() => expect(openGate.started).toBe(true));
+  rerender(<FoliateViewer {...shown} contentInsets={insets(44)} />);
+  finishOpen();
+  await waitFor(() => expect(attrs.has('max-block-size')).toBe(true));
+  expect(attrs.get('margin-top')).toBe('44px');
+});
+
+it('preserves gridInsets.top / 1.5 + viewInsets.top in vertical mode (#7389)', async () => {
+  attrs.clear();
+  viewSettings.vertical = true;
+  viewSettings.showHeader = false;
+  openGate.pending = Promise.resolve();
+  openGate.started = false;
+  render(
+    <FoliateViewer
+      {...({
+        ...props(75, 59),
+        gridInsets: { top: 59, right: 0, bottom: 34, left: 0 },
+        contentInsets: { top: 75, right: 0, bottom: 50, left: 0 },
+      } as unknown as ComponentProps<typeof FoliateViewer>)}
+    />,
+  );
+  await waitFor(() => expect(attrs.has('margin-top')).toBe(true));
+  expect(attrs.get('margin-top')).toBe(`${59 / 1.5 + 16}px`);
+  expect(attrs.get('margin-bottom')).toBe(`${34 / 1.5 + 16}px`);
+});
+
+it('floors vertical header/footer side margins at 16px when side margins are 0px', async () => {
+  attrs.clear();
+  viewSettings.vertical = true;
+  viewSettings.showHeader = true;
+  Object.assign(viewSettings, {
+    showFooter: true,
+    showProgressInfo: true,
+    marginLeftPx: 0,
+    marginRightPx: 0,
+    compactMarginLeftPx: 0,
+    compactMarginRightPx: 0,
+  });
+  openGate.pending = Promise.resolve();
+  openGate.started = false;
+  render(<FoliateViewer {...props(75, 59)} />);
+  await waitFor(() => expect(attrs.has('margin-left')).toBe(true));
+  expect(attrs.get('margin-left')).toBe('16px');
+  expect(attrs.get('margin-right')).toBe('16px');
+});
+
+it('keeps horizontal mode edge-to-edge when header is hidden (#5565)', async () => {
+  attrs.clear();
+  viewSettings.vertical = false;
+  viewSettings.showHeader = false;
+  openGate.pending = Promise.resolve();
+  openGate.started = false;
+  render(<FoliateViewer {...props(75, 59)} />);
+  await waitFor(() => expect(attrs.has('margin-top')).toBe(true));
+  expect(attrs.get('margin-top')).toBe('16px');
+});

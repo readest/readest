@@ -24,6 +24,16 @@ vi.mock('@/utils/nav', () => ({
   navigateToReader: (...args: unknown[]) => navigateToReader(...args),
 }));
 
+const env = vi.hoisted(() => ({ appService: { hasWindow: false } }));
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ appService: env.appService }),
+}));
+
+const tauriHandleOnCloseWindow = vi.hoisted(() =>
+  vi.fn(async (_callback: () => unknown) => () => {}),
+);
+vi.mock('@/utils/window', () => ({ tauriHandleOnCloseWindow }));
+
 const mockManager = vi.hoisted(() => {
   class MockSessionManager extends EventTarget {
     session: {
@@ -33,6 +43,7 @@ const mockManager = vi.hoisted(() => {
         state: string;
         pause: ReturnType<typeof vi.fn>;
         start: ReturnType<typeof vi.fn>;
+        resume?: ReturnType<typeof vi.fn>;
       };
     } | null = null;
     sleepTimer: { timeoutSec: number; firesAt: number } | null = null;
@@ -66,6 +77,7 @@ const makeSession = (state = 'playing', kind: 'tts' | 'audiobook' = 'tts') => ({
     state,
     pause: vi.fn().mockResolvedValue(true),
     start: vi.fn().mockResolvedValue(undefined),
+    resume: vi.fn().mockResolvedValue(undefined),
   },
 });
 
@@ -74,6 +86,7 @@ describe('NowPlayingBar', () => {
     vi.clearAllMocks();
     mockManager.session = null;
     mockManager.sleepTimer = null;
+    env.appService.hasWindow = false;
     getBookData.mockReturnValue({
       book: { title: 'Alice in Wonderland', coverImageUrl: null },
     });
@@ -108,6 +121,26 @@ describe('NowPlayingBar', () => {
     fireEvent.click(screen.getByLabelText('Pause'));
     expect(session.controller.pause).toHaveBeenCalled();
     expect(navigateToReader).not.toHaveBeenCalled();
+  });
+
+  // #7048: Play after a mid-sentence pause continues in place instead of
+  // re-reading the sentence; other paused flavours still restart.
+  test('play resumes a mid-sentence pause in place', () => {
+    const session = makeSession('paused');
+    mockManager.session = session;
+    render(<NowPlayingBar isSelectMode={false} />);
+    fireEvent.click(screen.getByLabelText('Play'));
+    expect(session.controller.resume).toHaveBeenCalled();
+    expect(session.controller.start).not.toHaveBeenCalled();
+  });
+
+  test('play restarts after a non-resumable pause', () => {
+    const session = makeSession('forward-paused');
+    mockManager.session = session;
+    render(<NowPlayingBar isSelectMode={false} />);
+    fireEvent.click(screen.getByLabelText('Play'));
+    expect(session.controller.start).toHaveBeenCalled();
+    expect(session.controller.resume).not.toHaveBeenCalled();
   });
 
   test('glyph follows the relayed tts-playback-state channel', async () => {
@@ -162,5 +195,57 @@ describe('NowPlayingBar', () => {
     mockManager.sleepTimer = { timeoutSec: 600, firesAt: Date.now() + 90_000 };
     render(<NowPlayingBar isSelectMode={false} />);
     expect(screen.getByText(/^1:(2\d|30)$/)).toBeTruthy();
+  });
+
+  // The session outlives its book but not the window: native narration keeps
+  // playing after the webview is destroyed, so closing the window stops it.
+  test('closing the window stops a live session', async () => {
+    env.appService.hasWindow = true;
+    mockManager.session = makeSession();
+    render(<NowPlayingBar isSelectMode={false} />);
+    expect(tauriHandleOnCloseWindow).toHaveBeenCalledTimes(1);
+
+    await tauriHandleOnCloseWindow.mock.calls[0]![0]();
+    expect(mockManager.stopActive).toHaveBeenCalledWith('quit');
+  });
+
+  // A stalled native teardown must not keep the window open.
+  test('a stalled stop does not hold the window close', async () => {
+    vi.useFakeTimers();
+    try {
+      env.appService.hasWindow = true;
+      mockManager.session = makeSession();
+      mockManager.stopActive.mockReturnValueOnce(new Promise<void>(() => {}));
+      render(<NowPlayingBar isSelectMode={false} />);
+
+      let closed = false;
+      void Promise.resolve(tauriHandleOnCloseWindow.mock.calls[0]![0]()).then(() => {
+        closed = true;
+      });
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(closed).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  // Quit exits the process without closing the window first.
+  test('quitting the app stops a live session', async () => {
+    env.appService.hasWindow = true;
+    mockManager.session = makeSession();
+    render(<NowPlayingBar isSelectMode={false} />);
+
+    await eventDispatcher.dispatch('quit-app');
+    expect(mockManager.stopActive).toHaveBeenCalledWith('quit');
+  });
+
+  test('leaves the window close alone without a session or a window', () => {
+    env.appService.hasWindow = true;
+    render(<NowPlayingBar isSelectMode={false} />);
+    cleanup();
+    env.appService.hasWindow = false;
+    mockManager.session = makeSession();
+    render(<NowPlayingBar isSelectMode={false} />);
+    expect(tauriHandleOnCloseWindow).not.toHaveBeenCalled();
   });
 });

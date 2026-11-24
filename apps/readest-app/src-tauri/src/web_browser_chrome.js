@@ -113,7 +113,7 @@
     pill.appendChild(refs.back);
     pill.appendChild(refs.forward);
     pill.appendChild(refs.reload);
-    pill.appendChild(refs.clip);
+    if (!OPTIONS.selectImage) pill.appendChild(refs.clip);
     pill.appendChild(refs.status);
     pill.appendChild(el('span', 'sep'));
     pill.appendChild(refs.close);

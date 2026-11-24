@@ -245,8 +245,9 @@ const dictionaryPullConfig: ReplicaPullConfig<ImportedDictionary> = {
   // would write back only the just-applied rows and clobber every
   // persisted dict that hadn't been hydrated by an Annotator/Settings
   // mount. Library-page refreshes were the visible victim.
-  hydrateLocalStore: (envConfig) =>
-    useCustomDictionaryStore.getState().loadCustomDictionaries(envConfig),
+  hydrateLocalStore: async (envConfig) => {
+    await useCustomDictionaryStore.getState().loadCustomDictionaries(envConfig);
+  },
   applyRemote: (dict) => useCustomDictionaryStore.getState().applyRemoteDictionary(dict),
   softDeleteByContentId: (id) => useCustomDictionaryStore.getState().softDeleteByContentId(id),
 };

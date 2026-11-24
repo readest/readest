@@ -6,6 +6,12 @@ import type { CustomTranslator } from '@/types/translation';
 import { ErrorCodes, TranslationContext, TranslationProvider } from '../types';
 import { renderPrompt } from './prompts';
 import { CUSTOM_TRANSLATOR_PREFIX } from './constants';
+import {
+  generateOnDeviceText,
+  onDeviceInputChars,
+  prepareOnDevice,
+  splitForOnDevice,
+} from './onDevice';
 
 const BATCH_DELAY_MS = 50;
 const MAX_BATCH_ITEMS = 4;
@@ -44,14 +50,112 @@ export const loadSDK = () =>
 export const stripReasoning = (text: string) =>
   text.replace(/^\s*<think>[\s\S]*?<\/think>/, '').trim();
 
-export const createChatModel = async (config: CustomTranslator): Promise<LanguageModel> => {
+const onDomain = (host: string, domains: string[]) =>
+  domains.some((d) => host === d || host.endsWith(`.${d}`));
+
+/** The request fields that turn thinking off, in the dialect of the service's host. */
+const thinkingOffParams = (baseUrl: string): Record<string, unknown> => {
+  let host = '';
+  try {
+    host = new URL(baseUrl).hostname;
+  } catch {
+    // An unparsable URL fails on the request itself.
+  }
+  if (onDomain(host, ['openrouter.ai'])) return { reasoning: { effort: 'none' } };
+  if (onDomain(host, ['deepseek.com', 'bigmodel.cn', 'z.ai', 'volces.com'])) {
+    return { thinking: { type: 'disabled' } };
+  }
+  if (onDomain(host, ['siliconflow.cn', 'siliconflow.com', 'aliyuncs.com'])) {
+    return { enable_thinking: false };
+  }
+  // OpenAI's field, which Gemini and Ollama also read.
+  return { reasoning_effort: 'none' };
+};
+
+const createChatModel = async (
+  config: CustomTranslator,
+  thinkingOff = false,
+): Promise<LanguageModel> => {
   const [, { createOpenAICompatible }] = await loadSDK();
   return createOpenAICompatible({
     name: 'custom',
     baseURL: (config.baseUrl ?? '').replace(/\/+$/, ''),
     apiKey: config.apiKey || undefined,
     fetch: getAIFetch(),
+    ...(thinkingOff && {
+      transformRequestBody: (body: Record<string, unknown>) => ({
+        ...body,
+        ...thinkingOffParams(config.baseUrl ?? ''),
+      }),
+    }),
   }).chatModel(config.model ?? '');
+};
+
+// Models that answered 400 to the thinking parameter (one that always thinks,
+// or one that has no such switch), by base URL and model.
+const thinkingRejected = new Set<string>();
+
+/** Runs one chat request, honouring the translator's Thinking setting where the model allows it. */
+export const generateChatText = async (
+  config: CustomTranslator,
+  options: {
+    system: string;
+    prompt: string;
+    maxOutputTokens?: number;
+    maxRetries: number;
+    abortSignal: AbortSignal;
+    /** When provided, request SSE and publish the accumulated answer. */
+    onText?: (text: string) => void | Promise<void>;
+    onProgress?: () => void;
+  },
+): Promise<string> => {
+  if (config.type === 'apple-intelligence') return generateOnDeviceText(config, options);
+  const [{ generateText, streamText }] = await loadSDK();
+  const { onText, onProgress, ...settings } = options;
+  const run = async (thinkingOff: boolean) => {
+    const model = await createChatModel(config, thinkingOff);
+    const args = { ...settings, model, temperature: config.temperature };
+    if (!onText) {
+      const { text } = await generateText(args);
+      return text;
+    }
+    let text = '';
+    // textStream omits error events, including a rejected thinking parameter.
+    for await (const part of streamText(args).fullStream) {
+      if (part.type === 'error') {
+        const error = part.error;
+        if (
+          !(error instanceof Error) &&
+          typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ) {
+          throw new Error(error.message);
+        }
+        throw error;
+      }
+      settings.abortSignal.throwIfAborted();
+      if (part.type === 'abort') throw new DOMException('Aborted', 'AbortError');
+      onProgress?.();
+      if (part.type === 'text-delta') {
+        text += part.text;
+        await onText(text);
+      }
+    }
+    settings.abortSignal.throwIfAborted();
+    return text;
+  };
+  const key = `${config.baseUrl}\n${config.model}`;
+  if (config.thinking !== 'off' || thinkingRejected.has(key)) return run(false);
+  try {
+    return await run(true);
+  } catch (err) {
+    if ((err as { statusCode?: number }).statusCode !== 400) throw err;
+    const text = await run(false);
+    thinkingRejected.add(key);
+    return text;
+  }
 };
 
 /** Splits a `[1]\n…\n\n[2]\n…` reply; returns null unless it holds exactly blocks 1..n. */
@@ -73,12 +177,11 @@ const toTranslatorError = (err: unknown): Error => {
 };
 
 export const createOpenAICompatibleTranslator = (config: CustomTranslator): TranslationProvider => {
-  let model: LanguageModel | undefined;
   const pending = new Map<string, PendingBatch>();
   const queue: PendingBatch[] = [];
   let inflight = 0;
-
-  const getModel = async () => (model ??= await createChatModel(config));
+  // Apple's on-device model shares a small window between input and reply.
+  let maxBatchChars = MAX_BATCH_CHARS;
 
   const renderSystem = (sourceLang: string, targetLang: string, context?: TranslationContext) =>
     renderPrompt(getPromptTemplate(context?.promptId), {
@@ -95,12 +198,9 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const [{ generateText }] = await loadSDK();
-      const { text } = await generateText({
-        model: await getModel(),
+      const text = await generateChatText(config, {
         system,
         prompt,
-        temperature: config.temperature,
         maxRetries: 2,
         abortSignal: controller.signal,
       });
@@ -164,7 +264,7 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
     const batch = pending.get(system);
     if (
       batch &&
-      (batch.items.length >= MAX_BATCH_ITEMS || batch.chars + item.text.length > MAX_BATCH_CHARS)
+      (batch.items.length >= MAX_BATCH_ITEMS || batch.chars + item.text.length > maxBatchChars)
     ) {
       flush(system);
     }
@@ -188,15 +288,30 @@ export const createOpenAICompatibleTranslator = (config: CustomTranslator): Tran
       )}`,
     translate: async (texts, sourceLang, targetLang, _token, _useCache, signal, context) => {
       signal?.throwIfAborted();
+      const onDevice = config.type === 'apple-intelligence';
+      if (onDevice) {
+        maxBatchChars = onDeviceInputChars((await prepareOnDevice(targetLang)).contextSize);
+        signal?.throwIfAborted();
+      }
       const system = renderSystem(sourceLang, targetLang, context);
       const items: Item[] = [];
-      const results = texts.map((text) => {
-        if (!text?.trim()) return Promise.resolve(text);
-        return new Promise<string>((resolve, reject) => {
+      const queueText = (text: string) =>
+        new Promise<string>((resolve, reject) => {
           const item: Item = { text, resolve, reject };
           items.push(item);
           enqueue(system, item);
         });
+      // Chinese and Japanese run sentences together; other languages space them.
+      const joiner = /^(zh|ja)\b/i.test(targetLang) ? '' : ' ';
+      const results = texts.map((text) => {
+        if (!text?.trim()) return Promise.resolve(text);
+        // Apple's small window can't take a long paragraph whole.
+        if (onDevice && text.length > maxBatchChars) {
+          return Promise.all(splitForOnDevice(text, maxBatchChars).map(queueText)).then((parts) =>
+            parts.join(joiner),
+          );
+        }
+        return queueText(text);
       });
       const all = Promise.all(results);
       if (!signal) return all;

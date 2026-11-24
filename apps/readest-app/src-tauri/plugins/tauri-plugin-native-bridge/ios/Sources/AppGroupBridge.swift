@@ -30,6 +30,10 @@ enum AppGroupBridge {
     /// when the share came from Safari with the JS preprocessor, so the
     /// host can convert the signed-in tab's DOM without re-fetching.
     let htmlFile: String?
+    /// Bare file name of shared text (not a URL) in `SharedClips/`; the host
+    /// imports it as a TXT book titled `title`. `url` is empty for these.
+    let textFile: String?
+    let title: String?
   }
 
   static func readGroups() -> [LibraryGroup] {
@@ -84,15 +88,15 @@ enum AppGroupBridge {
       .appendingPathComponent("SharedClips", isDirectory: true)
   }
 
-  /// Persist captured page HTML into the App Group container. Returns the
-  /// bare file name for the PendingSave payload, or nil on any failure —
-  /// callers fall back to the URL-only save.
-  static func writeSharedClipHtml(_ html: String) -> String? {
+  /// Persist captured page HTML or shared text into the App Group
+  /// container. Returns the bare file name for the PendingSave payload, or
+  /// nil on any failure.
+  static func writeSharedClip(_ content: String, pathExtension: String) -> String? {
     guard let dir = sharedClipsDirectory else { return nil }
     do {
       try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-      let name = UUID().uuidString + ".html"
-      try html.write(to: dir.appendingPathComponent(name), atomically: true, encoding: .utf8)
+      let name = UUID().uuidString + "." + pathExtension
+      try content.write(to: dir.appendingPathComponent(name), atomically: true, encoding: .utf8)
       return name
     } catch {
       return nil

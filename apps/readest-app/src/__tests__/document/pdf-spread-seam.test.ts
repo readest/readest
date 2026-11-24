@@ -121,17 +121,18 @@ describe('PDF spread canvas seam (#4587)', () => {
     const canvas = doc.querySelector('#canvas canvas') as HTMLCanvasElement;
     expect(canvas).toBeTruthy();
 
-    // The over-sampled bitmap width is an integer and is truncated below its
-    // ideal size — this is the truncation that, left to drive layout, produced
-    // the seam.
+    // The over-sampled bitmap width is an integer, so it can't equal the
+    // fractional ideal size. Truncated and left to drive layout, it produced the
+    // seam.
     expect(Number.isInteger(canvas.width)).toBe(true);
-    expect(canvas.width).toBeLessThan(bitmapWidth);
+    expect(canvas.width).toBe(Math.ceil(bitmapWidth));
 
-    // The fix: the canvas CSS box is the un-truncated *display* size (the page
-    // box), independent of the truncated bitmap, so the page fills its box
-    // exactly (displayed width = box width) and the left page reaches the spine —
-    // no white seam. The browser scales the over-sampled bitmap to fill the box.
+    // The fix: the canvas has an explicit CSS box that covers the whole page box
+    // (here rounded up to the next device pixel, so the raster also maps 1:1 onto
+    // the screen, #6928), and the left page reaches the spine: no white seam.
     expect(canvas.style.width).not.toBe('');
-    expect(parseFloat(canvas.style.width)).toBeCloseTo(pageBoxWidth, 3);
+    const cssWidth = parseFloat(canvas.style.width);
+    expect(cssWidth).toBeGreaterThanOrEqual(pageBoxWidth);
+    expect(cssWidth - pageBoxWidth).toBeLessThan(1 / 1.5);
   });
 });

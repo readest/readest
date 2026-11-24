@@ -47,6 +47,33 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
       `,
     },
   ],
+  'grimmory-sync': [
+    {
+      name: '2026110501_grimmory_sync',
+      sql: `
+        CREATE TABLE IF NOT EXISTS grimmory_books (
+          account TEXT NOT NULL,
+          book_hash TEXT NOT NULL,
+          book_id INTEGER NOT NULL,
+          book_file_id INTEGER NOT NULL,
+          book_type TEXT,
+          is_primary INTEGER NOT NULL,
+          status_pushed_at INTEGER NOT NULL DEFAULT 0,
+          PRIMARY KEY (account, book_hash)
+        );
+
+        CREATE TABLE IF NOT EXISTS grimmory_note_links (
+          account TEXT NOT NULL,
+          book_hash TEXT NOT NULL,
+          note_id TEXT NOT NULL,
+          kind TEXT NOT NULL,
+          server_id INTEGER NOT NULL,
+          local_updated_at INTEGER NOT NULL,
+          PRIMARY KEY (account, book_hash, kind, note_id)
+        );
+      `,
+    },
+  ],
   'hardcover-sync': [
     {
       name: '2026032901_hardcover_note_mappings',

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
 import { computeScrollPinchTransform } from 'foliate-js/fixed-layout.js';

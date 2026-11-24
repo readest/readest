@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 // The `column-gap` override of foliate-js's paginator: the centre gap of a
 // two-column spread becomes the given width, the host grid hands the
 // difference back so the text keeps its outer edge, and the column-width hint

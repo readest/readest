@@ -2,6 +2,8 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { DocumentLoader, getDirection } from '@/libs/document';
+import { getImportErrorMessage } from '@/services/errors';
+import { BlobWriter, TextReader, ZipWriter } from '@zip.js/zip.js';
 
 if (typeof globalThis['CSS'] === 'undefined') {
   (globalThis as Record<string, unknown>)['CSS'] = {
@@ -28,6 +30,21 @@ const loadFixtureBytes = (name: string): Uint8Array => {
 };
 
 describe('DocumentLoader.open', () => {
+  it('reports a ZIP with no book inside as an unsupported format, not a raw parser error', async () => {
+    const writer = new ZipWriter(new BlobWriter('application/zip'));
+    await writer.add('readme.txt', new TextReader('This archive is not a book.'));
+    const file = new File([await writer.close()], 'notes.zip');
+
+    const error = await new DocumentLoader(file).open().then(
+      () => null,
+      (e: Error) => e,
+    );
+    // bookService wraps loader errors before the import toast maps them.
+    expect(getImportErrorMessage(`Failed to open the book file: ${error?.message}`)).toBe(
+      'This book format is not supported',
+    );
+  });
+
   it('opens an EPUB whose first local file header has a non-standard signature byte', async () => {
     // Some EPUB writers in the wild produce a malformed first local file header
     // signature - PK\x03\x02 instead of the spec-mandated PK\x03\x04.
@@ -106,6 +123,68 @@ describe('DocumentLoader format probes with a duplicate-download marker', () => 
     const { format } = await new DocumentLoader(file).open();
 
     expect(format).toBe('MD');
+  });
+});
+
+// Issue #7038: the folder import offers "CBZ/ZIP", but a plain .zip of images
+// went down the EPUB path and failed with "Failed to load container file".
+describe('DocumentLoader format probes for a .zip of images', () => {
+  const makeZip = async (names: string[], filename: string): Promise<File> => {
+    const { BlobWriter, TextReader, ZipWriter } = await import('@zip.js/zip.js');
+    const writer = new ZipWriter(new BlobWriter('application/zip'));
+    for (const name of names) {
+      await writer.add(name, new TextReader(name), { directory: name.endsWith('/') });
+    }
+    return new File([await writer.close()], filename, { type: 'application/zip' });
+  };
+
+  it('opens a .zip holding only images as a comic', async () => {
+    const file = await makeZip(
+      ['Vol 1/', 'Vol 1/001.jpg', 'Vol 1/002.png', 'ComicInfo.xml', '.DS_Store'],
+      'manga.zip',
+    );
+
+    const result = await new DocumentLoader(file).open().catch((e: Error) => e);
+
+    expect(result instanceof Error ? result.message : result.format).toBe('CBZ');
+    expect(result instanceof Error ? 0 : result.book.sections.length).toBe(2);
+  });
+
+  it('ignores the __MACOSX folder a Finder-made zip carries', async () => {
+    const file = await makeZip(['001.jpg', '__MACOSX/._001.jpg'], 'manga.zip');
+
+    const { format, book } = await new DocumentLoader(file).open();
+
+    expect(format).toBe('CBZ');
+    expect(book.sections.map((s: { id: string }) => s.id)).toEqual(['001.jpg']);
+  });
+
+  it('keeps uppercase .JPG pages when it opens a .zip as a comic', async () => {
+    const file = await makeZip(['001.JPG', '002.Jpg'], 'manga.zip');
+
+    const result = await new DocumentLoader(file).open().catch((e: Error) => e);
+
+    expect(result instanceof Error ? result.message : result.format).toBe('CBZ');
+    expect(
+      result instanceof Error ? [] : result.book.sections.map((s: { id: string }) => s.id),
+    ).toEqual(['001.JPG', '002.Jpg']);
+  });
+
+  it('still opens an EPUB renamed to .zip as an EPUB', async () => {
+    const file = new File(
+      [readFileSync(resolve(__dirname, '../fixtures/data/sample-alice.epub'))],
+      'alice.zip',
+    );
+
+    const { format } = await new DocumentLoader(file).open();
+
+    expect(format).toBe('EPUB');
+  }, 15000);
+
+  it('does not treat a .zip with non-image files as a comic', async () => {
+    const file = await makeZip(['cover.jpg', 'word/document.xml'], 'report.zip');
+
+    await expect(new DocumentLoader(file).open()).rejects.toThrow();
   });
 });
 

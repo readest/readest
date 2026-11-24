@@ -5,6 +5,14 @@ import { fetchWithTimeout } from '@/utils/fetch';
 
 const SYNC_API_ENDPOINT = getAPIBaseUrl() + '/sync';
 
+/**
+ * Books per push request. A pushed book is about 1-5 KB with its parsed
+ * metadata, so a bulk-imported library sent in one request went over the
+ * server's body limit (1 MB before #7814, still the limit on servers not yet
+ * updated) and failed on every sync. 100 books stay well under it.
+ */
+export const BOOKS_PUSH_BATCH_SIZE = 100;
+
 export type SyncType = 'books' | 'configs' | 'notes' | 'stats';
 export type SyncOp = 'push' | 'pull' | 'both';
 
@@ -19,7 +27,9 @@ export interface StatBookRecord {
   authors: string;
   updated_at?: string;
   updated_at_ms?: number; // epoch ms, attached by the GET response for cursor math
+  // Set when the book's statistics were deleted: its events read before then are gone.
   deleted_at?: string | null;
+  deleted_at_ms?: number; // epoch ms of deleted_at, attached by the GET response
 }
 
 export interface StatPageRecord {
@@ -33,6 +43,7 @@ export interface StatPageRecord {
   updated_at?: string;
   updated_at_ms?: number; // epoch ms, attached by the GET response for cursor math
   deleted_at?: string | null;
+  deleted_at_ms?: number; // set by the GET response when the book's statistics were deleted
 }
 
 export interface SyncResult {
@@ -91,8 +102,23 @@ export class SyncClient {
   /**
    * Push local changes to the server.
    * Uses last-writer-wins logic as implemented on the server side.
+   * Books go BOOKS_PUSH_BATCH_SIZE per request, returned as one result; the
+   * first failed request throws. Which unsent books a later push picks up
+   * again is getNewBooks' cursor rule (#7824).
    */
   async pushChanges(payload: SyncData): Promise<SyncResult> {
+    const books = payload.books ?? [];
+    const result = await this.pushRequest(
+      payload.books ? { ...payload, books: books.slice(0, BOOKS_PUSH_BATCH_SIZE) } : payload,
+    );
+    for (let i = BOOKS_PUSH_BATCH_SIZE; i < books.length; i += BOOKS_PUSH_BATCH_SIZE) {
+      const batch = await this.pushRequest({ books: books.slice(i, i + BOOKS_PUSH_BATCH_SIZE) });
+      result.books = [...(result.books ?? []), ...(batch.books ?? [])];
+    }
+    return result;
+  }
+
+  private async pushRequest(payload: SyncData): Promise<SyncResult> {
     const token = await getAccessToken();
     if (!token) throw new Error('Not authenticated');
 

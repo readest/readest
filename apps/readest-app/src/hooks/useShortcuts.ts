@@ -16,9 +16,13 @@ const isInteractiveTarget = (target: EventTarget | null): boolean => {
   return !!element?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(element?.tagName ?? '');
 };
 
+// Enter and Space activate a button or link, native or ARIA (a sidebar row is
+// an `li role="button"`), and must not also run a reader shortcut.
 const isNativeActivation = (event: KeyboardEvent): boolean => {
   const target = event.target as HTMLElement | null;
-  return /^(A|BUTTON)$/.test(target?.tagName ?? '') && (event.key === 'Enter' || event.key === ' ');
+  const isButton =
+    /^(A|BUTTON)$/.test(target?.tagName ?? '') || target?.getAttribute?.('role') === 'button';
+  return isButton && (event.key === 'Enter' || event.key === ' ');
 };
 
 const useShortcuts = (
@@ -77,9 +81,13 @@ const useShortcuts = (
   const unifiedHandleKeyDown = (event: KeyboardEvent | MessageEvent) => {
     if (document.querySelector('[data-shortcut-recording="true"]')) return;
 
-    // Check if the focus is on an input, textarea, or contenteditable element
+    // Check if the key is typed in an input, textarea, or contenteditable
+    // element: the focused one, or the one it was typed in, which its own
+    // handler may already have removed (the vim find line on Enter).
     const activeElement = document.activeElement as HTMLElement | null;
-    const isInteractiveElement = isInteractiveTarget(activeElement);
+    const isInteractiveElement =
+      isInteractiveTarget(activeElement) ||
+      (event instanceof KeyboardEvent && isInteractiveTarget(event.target));
     const iframeInteractiveTarget =
       event instanceof MessageEvent &&
       event.data?.type === 'iframe-keydown' &&

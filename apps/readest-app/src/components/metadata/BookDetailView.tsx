@@ -36,6 +36,7 @@ import { isFeedBook } from '@/services/rss/feedBookUrl';
 import { saveSysSettings } from '@/helpers/settings';
 import BookCover from '@/components/BookCover';
 import BookCoverViewer, { useBookCoverViewer } from '@/components/BookCoverViewer';
+import BookStatsSection from '@/components/stats/BookStatsSection';
 import Dropdown from '../Dropdown';
 import MenuItem from '../MenuItem';
 
@@ -45,6 +46,7 @@ interface BookDetailViewProps {
   fileSize: number | null;
   shareEnabled?: boolean;
   onEdit?: () => void;
+  onRefreshMetadata?: () => void;
   onDelete?: () => void;
   onDeleteCloudBackup?: () => void;
   onDeleteLocalCopy?: () => void;
@@ -65,6 +67,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   fileSize,
   shareEnabled,
   onEdit,
+  onRefreshMetadata,
   onDelete,
   onDeleteCloudBackup,
   onDeleteLocalCopy,
@@ -239,6 +242,15 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     openExternalUrl(getGoodreadsSearchUrl(getBookGoodreadsQuery(book)))
                   }
                 />
+                {onRefreshMetadata && (
+                  <MenuItem
+                    noIcon
+                    transient
+                    label={_('Refresh Metadata')}
+                    disabled={!hasLocalFile}
+                    onClick={onRefreshMetadata}
+                  />
+                )}
                 {onShare && (
                   <MenuItem
                     noIcon
@@ -451,6 +463,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
             </div>
           )}
         </div>
+        <BookStatsSection book={book} />
         <div className='metadata-description'>
           <button
             className={clsx(

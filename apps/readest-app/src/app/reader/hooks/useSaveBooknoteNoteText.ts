@@ -17,7 +17,9 @@ export function useSaveBooknoteNoteText(bookKey: string) {
   const savingRef = useRef(false);
   const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
-  const { getConfig, saveConfig, updateBooknotes } = useBookDataStore();
+  const getConfig = useBookDataStore((s) => s.getConfig);
+  const saveConfig = useBookDataStore((s) => s.saveConfig);
+  const updateBooknotes = useBookDataStore((s) => s.updateBooknotes);
   const { getViewsById } = useReaderStore();
 
   return useCallback(

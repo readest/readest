@@ -87,7 +87,7 @@ export const HandwritingDock: React.FC<HandwritingDockProps> = ({
             color={penColor}
             width={penWidth}
             onSelectColor={choose(onSelectColor)}
-            onSelectWidth={choose(onSelectWidth)}
+            onSelectWidth={onSelectWidth}
           />
         </div>
       )}

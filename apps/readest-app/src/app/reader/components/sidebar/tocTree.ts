@@ -1,6 +1,6 @@
 import { TOCItem } from '@/libs/document';
 import { findParentPath } from '@/services/nav';
-import type { PageThumbnailsItem, TOCDisplayItem, TOCListItem } from './TOCItem';
+import type { FlatTOCItem, PageThumbnailsItem, TOCDisplayItem, TOCListItem } from './TOCItem';
 
 const DEFAULT_THUMBNAILS_PER_ROW = 3;
 const MIN_THUMBNAILS_PER_ROW = 2;
@@ -117,4 +117,46 @@ export const findActiveRowIndex = (
     if (idx !== -1) return idx;
   }
   return activeHref ? rows.findIndex((r) => 'item' in r && r.item.href === activeHref) : -1;
+};
+
+// Where a key moves the TOC's keyboard focus, following the tree view pattern:
+// Up/Down step through the rows, Home/End jump to the ends, Right unfolds a
+// heading and then steps into it, Left folds it and then steps out to its
+// parent (Left and Right swap in a right-to-left sidebar). Thumbnail rows are
+// skipped: their pages are buttons of their own.
+export const getTOCKeyTarget = (
+  rows: TOCDisplayItem[],
+  index: number,
+  key: string,
+  rtl: boolean,
+): { focus: number } | { toggle: FlatTOCItem } | null => {
+  const row = rows[index];
+  if (!row) return null;
+  const step = (from: number, dir: 1 | -1) => {
+    for (let i = from + dir; i >= 0 && i < rows.length; i += dir) {
+      if (!('pages' in rows[i]!)) return i;
+    }
+    return -1;
+  };
+  // The section being read sits in the expanded set even when it is a leaf, so
+  // only a heading with something to unfold counts as open or closed.
+  const heading = 'item' in row && (row.item.subitems || row.hasPages) ? row : null;
+  const openKey = rtl ? 'ArrowLeft' : 'ArrowRight';
+  const closeKey = rtl ? 'ArrowRight' : 'ArrowLeft';
+  let target = -1;
+  if (key === 'ArrowDown') target = step(index, 1);
+  else if (key === 'ArrowUp') target = step(index, -1);
+  else if (key === 'Home') target = step(-1, 1);
+  else if (key === 'End') target = step(rows.length, -1);
+  else if (key === openKey && heading) {
+    if (!heading.isExpanded) return { toggle: heading };
+    const next = step(index, 1);
+    if (next !== -1 && rows[next]!.depth > row.depth) target = next;
+  } else if (key === closeKey) {
+    if (heading?.isExpanded) return { toggle: heading };
+    for (let i = index - 1; i >= 0 && target === -1; i--) {
+      if (!('pages' in rows[i]!) && rows[i]!.depth < row.depth) target = i;
+    }
+  }
+  return target === -1 ? null : { focus: target };
 };

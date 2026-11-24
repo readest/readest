@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { useDndContext } from '@dnd-kit/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -11,7 +12,8 @@ import { eventDispatcher } from '@/utils/event';
 import { openExternalUrl } from '@/utils/open';
 import { getBookGoodreadsQuery, getGoodreadsSearchUrl } from '@/utils/goodreads';
 import { getOSPlatform } from '@/utils/misc';
-import { getSeriesIndex } from '@/utils/book';
+import { getBookPageCount, getSeriesIndex } from '@/utils/book';
+import { isAudiobook } from '@/utils/audiobook';
 import { throttle } from '@/utils/throttle';
 import { LibraryCoverFitType, LibraryViewModeType } from '@/types/settings';
 import { FILE_REVEAL_LABELS, FILE_REVEAL_PLATFORMS } from '@/utils/os';
@@ -83,10 +85,13 @@ const releaseMenu = (built: Promise<NativeMenu>) => {
 };
 
 interface BookshelfItemProps {
+  dragEnabled?: boolean;
   mode: LibraryViewModeType;
   item: Book | BooksGroup;
   coverFit: LibraryCoverFitType;
   skeuomorphicCovers?: boolean;
+  showPageCount?: boolean;
+  coverOnly?: boolean;
   isSelectMode: boolean;
   itemSelected: boolean;
   transferProgress: number | null;
@@ -108,10 +113,13 @@ interface BookshelfItemProps {
 }
 
 const BookshelfItem: React.FC<BookshelfItemProps> = ({
+  dragEnabled = false,
   mode,
   item,
   coverFit,
   skeuomorphicCovers,
+  showPageCount,
+  coverOnly = false,
   isSelectMode,
   itemSelected,
   transferProgress,
@@ -129,6 +137,18 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
+  const { active: dragActive } = useDndContext();
+  const itemRef = useRef<HTMLDivElement>(null);
+  const pressWasDragged = useRef(false);
+  useEffect(() => {
+    if (
+      dragActive &&
+      itemRef.current
+        ?.closest('[data-bookshelf-drag-id]')
+        ?.getAttribute('data-bookshelf-drag-id') === String(dragActive.id)
+    )
+      pressWasDragged.current = true;
+  }, [dragActive]);
   const { settings } = useSettingsStore();
   const { openBook } = useOpenBook({ setLoading, handleBookDownload });
 
@@ -409,10 +429,10 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
   const { pressing, handlers } = useLongPress(
     {
       onLongPress: () => {
-        handleSelectItem();
+        if (!dragEnabled) handleSelectItem();
       },
       onTap: () => {
-        handleOpenItem();
+        if (!dragActive && !pressWasDragged.current) handleOpenItem();
       },
       onContextMenu: (e) => {
         if (appService?.hasContextMenu) {
@@ -422,7 +442,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         }
       },
     },
-    [isSelectMode, handleSelectItem, handleOpenItem, handleContextMenu],
+    [isSelectMode, handleSelectItem, handleOpenItem, handleContextMenu, dragEnabled, dragActive],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -446,6 +466,8 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
     showSeriesIndex && mode === 'grid' && 'format' in item
       ? getSeriesIndex(item.metadata?.seriesIndex)
       : undefined;
+  const pageCount =
+    showPageCount && 'format' in item && !isAudiobook(item) ? getBookPageCount(item) : undefined;
   const itemDataAttrs =
     'format' in item ? { 'data-book-hash': item.hash } : { 'data-group-name': item.name };
 
@@ -461,13 +483,23 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
           pressing && mode === 'grid' ? 'not-eink:scale-95' : 'scale-100',
         )}
         role='button'
+        ref={itemRef}
         tabIndex={0}
         aria-label={
           'format' in item
-            ? seriesIndex !== undefined
-              ? `${item.title} #${seriesIndex}`
-              : item.title
+            ? [
+                seriesIndex !== undefined ? `${item.title} #${seriesIndex}` : item.title,
+                pageCount && _('{{count}} pages', { count: pageCount }),
+              ]
+                .filter(Boolean)
+                .join(', ')
             : item.name
+        }
+        aria-description={dragEnabled ? _('Drag to reorder') : undefined}
+        aria-keyshortcuts={
+          dragEnabled
+            ? 'Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown Alt+Shift+ArrowUp'
+            : undefined
         }
         style={{
           transition: 'transform 0.2s',
@@ -478,6 +510,22 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
         }}
         {...itemDataAttrs}
         {...handlers}
+        onPointerDown={(event) => {
+          pressWasDragged.current = false;
+          handlers.onPointerDown(event);
+        }}
+        onPointerUp={(event) => {
+          handlers.onPointerUp(event);
+          pressWasDragged.current = false;
+        }}
+        onPointerLeave={(event) => {
+          handlers.onPointerLeave(event);
+          pressWasDragged.current = false;
+        }}
+        onPointerCancel={(event) => {
+          handlers.onPointerCancel(event);
+          pressWasDragged.current = false;
+        }}
       >
         <div className='flex h-full flex-col justify-end'>
           {'format' in item ? (
@@ -486,6 +534,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               book={item}
               coverFit={coverFit}
               skeuomorphicCovers={skeuomorphicCovers}
+              coverOnly={coverOnly}
               isSelectMode={isSelectMode}
               bookSelected={itemSelected}
               transferProgress={transferProgress}
@@ -494,6 +543,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               showBookDetailsModal={showBookDetailsModal}
               showTimeRemaining={showTimeRemaining}
               seriesIndex={seriesIndex}
+              pageCount={pageCount}
             />
           ) : (
             <GroupItem
@@ -501,6 +551,7 @@ const BookshelfItem: React.FC<BookshelfItemProps> = ({
               group={item}
               coverFit={coverFit}
               skeuomorphicCovers={skeuomorphicCovers}
+              coverOnly={coverOnly}
               isSelectMode={isSelectMode}
               groupSelected={itemSelected}
             />

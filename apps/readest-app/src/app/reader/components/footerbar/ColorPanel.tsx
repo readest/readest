@@ -9,7 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useDeviceControlStore } from '@/store/deviceStore';
 import { saveSysSettings } from '@/helpers/settings';
-import { themes } from '@/styles/themes';
+import { customThemeToTheme, themes } from '@/styles/themes';
 import { debounce } from '@/utils/debounce';
 import { nextThemeMode } from '@/utils/ambientLight';
 import Slider from '@/components/Slider';
@@ -39,6 +39,13 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
   const { settings } = useSettingsStore();
   const { getScreenBrightness, setScreenBrightness } = useDeviceControlStore();
   const { themeMode, themeColor, isDarkMode, setThemeMode, setThemeColor } = useThemeStore();
+
+  const customThemes = settings.globalReadSettings?.customThemes;
+  const allThemes = useMemo(
+    () => themes.concat((customThemes ?? []).map(customThemeToTheme)),
+    [customThemes],
+  );
+  const currentTheme = allThemes.find((t) => t.name === themeColor) || themes[0]!;
 
   const [screenBrightnessValue, setScreenBrightnessValue] = useState(
     settings.screenBrightness >= 0 ? settings.screenBrightness : SCREEN_BRIGHTNESS_LIMITS.DEFAULT,
@@ -141,7 +148,7 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
           className='flex gap-3 overflow-x-auto p-2'
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {themes.map(({ name, label, colors }) => (
+          {allThemes.map(({ name, label, colors }) => (
             <button
               key={name}
               onClick={() => setThemeColor(name)}
@@ -163,18 +170,17 @@ export const ColorPanel: React.FC<ColorPanelProps> = ({
           <button
             onClick={() => cycleThemeMode()}
             className={clsx(
-              'flex shrink-0 flex-col items-center justify-center rounded-lg p-3 transition-all',
+              // Previews the dark palette in every mode, but e-ink forces the
+              // icon to the current base-content: flatten it so the icon shows.
+              'eink-bordered flex shrink-0 flex-col items-center justify-center rounded-lg p-3 transition-all',
               'h-[40px] min-w-[80px]',
               themeMode === 'dark'
                 ? 'ring-primary ring-offset-base-200 ring-2 ring-offset-2'
                 : 'hover:opacity-80',
             )}
             style={{
-              backgroundColor: (themes.find((t) => t.name === themeColor) || themes[0]!).colors
-                .dark['base-100'],
-              color: (themes.find((t) => t.name === themeColor) || themes[0]!).colors.dark[
-                'base-content'
-              ],
+              backgroundColor: currentTheme.colors.dark['base-100'],
+              color: currentTheme.colors.dark['base-content'],
             }}
           >
             {themeMode === 'light' ? (

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
 import {
   formatKeyForDisplay,
@@ -186,6 +187,17 @@ describe('matchesShortcut', () => {
 
   it('returns false for an empty key list', () => {
     expect(matchesShortcut(evt('p', { shiftKey: true }), [])).toBe(false);
+  });
+
+  // A raw KeyboardEvent reports AltGr only through getModifierState (Windows
+  // also sets ctrl and alt), so callers that pass the event itself still match.
+  it('reads AltGr from getModifierState when altGraphKey is not given', () => {
+    const altGr = {
+      ...evt('@', { ctrlKey: true, altKey: true }),
+      getModifierState: (key: string) => key === 'AltGraph',
+    };
+    expect(matchesShortcut(altGr, ['altgr+@'])).toBe(true);
+    expect(matchesShortcut(altGr, ['ctrl+alt+@'])).toBe(false);
   });
 });
 

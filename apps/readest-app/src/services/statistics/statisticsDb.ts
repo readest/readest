@@ -1,7 +1,8 @@
 import type { AppService } from '@/types/system';
 import type { DatabaseService, DatabaseRow } from '@/types/database';
 import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
-import type { PageStatEvent, StatBook } from '@/types/statistics';
+import type { BookStats, PageStatEvent, StatBook } from '@/types/statistics';
+import type { BookQuarterHourDuration } from './readingStats';
 
 interface BookRow extends DatabaseRow {
   id: number;
@@ -14,7 +15,7 @@ interface BookRow extends DatabaseRow {
   pages: number;
 }
 
-type CursorKey = 'push' | 'pull' | 'bookorbit-push';
+type CursorKey = 'push' | 'pull' | 'bookorbit-push' | `grimmory-push:${string}`;
 
 // Readest caps one page visit at this, so a longer event spans several pages
 // (a CrossPoint session recorded in whole percents) and says nothing about pace.
@@ -48,8 +49,8 @@ function bindLifecycle(): void {
  * leaves this class.
  */
 export class StatisticsDb {
-  // Serializes applyRemoteEvents so two concurrent pulls can't nest BEGINs.
-  private applyRemoteLock: Promise<void> = Promise.resolve();
+  // Serializes pulls and deletions so two can't nest BEGINs or interleave.
+  private writeLock: Promise<void> = Promise.resolve();
 
   private constructor(private readonly db: DatabaseService) {}
 
@@ -198,6 +199,43 @@ export class StatisticsDb {
     return medians;
   }
 
+  /**
+   * Seconds read in each quarter hour (`start_time / 900`). Every UTC offset is
+   * a multiple of 15 minutes, so callers can fold these into local days in JS
+   * instead of trusting SQL `localtime` to know the host's time zone.
+   */
+  async getQuarterHourDurations(): Promise<{ quarter: number; seconds: number }[]> {
+    return this.db.select<{ quarter: number; seconds: number }>(
+      `SELECT start_time / 900 AS quarter, SUM(duration) AS seconds
+       FROM page_stat_data GROUP BY quarter ORDER BY quarter`,
+    );
+  }
+
+  /** Bounded month query shared by native Turso and browser WASM databases. */
+  async getBookQuarterHourDurations(
+    startTime: number,
+    endTime: number,
+  ): Promise<BookQuarterHourDuration[]> {
+    return this.db.select<BookQuarterHourDuration>(
+      `SELECT b.md5 AS bookMd5, b.title, b.authors,
+              p.start_time / 900 AS quarter, SUM(p.duration) AS seconds
+       FROM page_stat_data p JOIN book b ON b.id = p.id_book
+       WHERE p.start_time >= ? AND p.start_time < ? AND p.duration > 0
+       GROUP BY b.md5, b.title, b.authors, quarter ORDER BY quarter, b.md5`,
+      [startTime, endTime],
+    );
+  }
+
+  async getReadingTotals(): Promise<{ seconds: number; books: number; pages: number }> {
+    const rows = await this.db.select<{ seconds: number; books: number; pages: number }>(
+      `SELECT COALESCE(SUM(duration), 0) AS seconds,
+              COUNT(DISTINCT id_book) AS books,
+              COUNT(DISTINCT id_book || '-' || page) AS pages
+       FROM page_stat_data`,
+    );
+    return rows[0] ?? { seconds: 0, books: 0, pages: 0 };
+  }
+
   async getBookByMd5(md5: string): Promise<BookRow | null> {
     const rows = await this.db.select<BookRow>(`SELECT * FROM book WHERE md5 = ? LIMIT 1`, [md5]);
     return rows[0] ?? null;
@@ -250,18 +288,115 @@ export class StatisticsDb {
     return { events, books: [...bookMap.values()] };
   }
 
-  async applyRemoteEvents(books: StatBook[], events: PageStatEvent[]): Promise<void> {
-    if (books.length === 0 && events.length === 0) return;
-    // Serialize against other pulls: the statistics connection is shared across
-    // ReadingStatsTracker instances (split view), and a second concurrent pull
-    // would open a BEGIN inside this one's still-open BEGIN ("cannot start a
-    // transaction within a transaction", Sentry READEST-N). The per-op native
-    // lock can't make this multi-statement transaction atomic on its own.
-    const prev = this.applyRemoteLock;
+  // The statistics connection is shared across ReadingStatsTracker instances
+  // (split view), and a second concurrent pull would open a BEGIN inside this
+  // one's still-open BEGIN ("cannot start a transaction within a transaction",
+  // Sentry READEST-N). The per-op native lock can't make a multi-statement
+  // transaction atomic on its own, so pulls and deletions run one at a time.
+  private async exclusive(work: () => Promise<void>): Promise<void> {
+    const prev = this.writeLock;
     let release!: () => void;
-    this.applyRemoteLock = new Promise<void>((resolve) => (release = resolve));
+    this.writeLock = new Promise<void>((resolve) => (release = resolve));
     await prev;
     try {
+      await work();
+    } finally {
+      release();
+    }
+  }
+
+  /** Per-book totals, most recently read first; only `md5` when given. */
+  async getBookStats(md5?: string): Promise<BookStats[]> {
+    return this.db.select<BookStats>(
+      `SELECT b.md5 AS md5, b.title AS title, b.authors AS authors,
+              SUM(p.duration) AS seconds, COUNT(DISTINCT p.page) AS pages,
+              MAX(p.start_time + p.duration) AS lastRead
+       FROM page_stat_data p JOIN book b ON b.id = p.id_book
+       ${md5 ? 'WHERE b.md5 = ?' : ''}
+       GROUP BY b.md5 ORDER BY lastRead DESC`,
+      md5 ? [md5] : [],
+    );
+  }
+
+  /** Delete every page event of a book, and its book row. */
+  async deleteBook(md5: string): Promise<void> {
+    await this.exclusive(() => this.deleteEventsBefore(md5, Number.MAX_SAFE_INTEGER));
+  }
+
+  /** Every page event of a book, oldest first. */
+  async getBookEvents(md5: string): Promise<PageStatEvent[]> {
+    const rows = await this.db.select<{
+      page: number;
+      startTime: number;
+      duration: number;
+      totalPages: number;
+    }>(
+      `SELECT p.page AS page, p.start_time AS startTime, p.duration AS duration,
+              p.total_pages AS totalPages
+       FROM page_stat_data p JOIN book b ON b.id = p.id_book
+       WHERE b.md5 = ? ORDER BY p.start_time, p.page`,
+      [md5],
+    );
+    return rows.map((r) => ({ bookMd5: md5, ...r }));
+  }
+
+  /**
+   * Move every event of `source` onto `target` (a key both hold keeps the
+   * longer duration), then delete `source`.
+   */
+  /**
+   * Record a book's page events and refresh its totals, after any merge,
+   * deletion or pull in progress: run between them, the events could go to a
+   * row that is then deleted, or be deleted without being merged.
+   */
+  async recordEvents(
+    book: StatBook,
+    events: { page: number; startTime: number; duration: number; totalPages: number }[],
+  ): Promise<void> {
+    await this.exclusive(async () => {
+      const id = await this.upsertBook(book);
+      for (const e of events) await this.insertPageEvent(id, e);
+      await this.recomputeBookTotals(id);
+    });
+  }
+
+  async mergeBook(source: string, target: StatBook): Promise<void> {
+    await this.exclusive(async () => {
+      await this.db.execute('BEGIN');
+      try {
+        const events = await this.getBookEvents(source);
+        const id = await this.upsertBook(target);
+        for (const e of events) await this.insertPageEvent(id, e);
+        await this.recomputeBookTotals(id);
+        await this.deleteEventsBefore(source, Number.MAX_SAFE_INTEGER);
+        await this.db.execute('COMMIT');
+      } catch (err) {
+        await this.db.execute('ROLLBACK');
+        throw err;
+      }
+    });
+  }
+
+  /** Delete a book's events that started before `before`; drop its row once none are left. */
+  private async deleteEventsBefore(md5: string, before: number): Promise<void> {
+    const rows = await this.db.select<BookRow>(`SELECT id FROM book WHERE md5 = ?`, [md5]);
+    for (const { id } of rows) {
+      await this.db.execute(`DELETE FROM page_stat_data WHERE id_book = ? AND start_time < ?`, [
+        id,
+        before,
+      ]);
+      const left = await this.db.select<{ n: number }>(
+        `SELECT COUNT(*) AS n FROM page_stat_data WHERE id_book = ?`,
+        [id],
+      );
+      if (left[0]?.n) await this.recomputeBookTotals(id);
+      else await this.db.execute(`DELETE FROM book WHERE id = ?`, [id]);
+    }
+  }
+
+  async applyRemoteEvents(books: StatBook[], events: PageStatEvent[]): Promise<void> {
+    if (books.length === 0 && events.length === 0) return;
+    await this.exclusive(async () => {
       // One transaction for the whole pulled batch: a single commit instead of
       // O(rows) fsyncs, and the apply is atomic (a failed pull leaves no partial
       // state). Critical when a fresh device backfills tens of thousands of rows.
@@ -281,14 +416,16 @@ export class StatisticsDb {
           touched.add(id);
         }
         for (const id of touched) await this.recomputeBookTotals(id);
+        // A book whose statistics were deleted on another device (#7494).
+        for (const b of books) {
+          if (b.deletedAt !== undefined) await this.deleteEventsBefore(b.bookMd5, b.deletedAt);
+        }
         await this.db.execute('COMMIT');
       } catch (err) {
         await this.db.execute('ROLLBACK');
         throw err;
       }
-    } finally {
-      release();
-    }
+    });
   }
 
   async getCursor(key: CursorKey): Promise<number> {

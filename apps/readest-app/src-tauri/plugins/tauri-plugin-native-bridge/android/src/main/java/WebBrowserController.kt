@@ -48,6 +48,8 @@ class WebBrowserArgs {
     var url: String? = null
     var downloadDir: String? = null
     var captureScript: String? = null
+    var selectImage: Boolean? = null
+    var imageSelectionScript: String? = null
     var background: String? = null
     var foreground: String? = null
     var isEink: Boolean? = null
@@ -70,6 +72,7 @@ data class WebBrowserDownloadEvent(
 )
 
 data class WebBrowserPage(val url: String, val html: String)
+data class WebBrowserImage(val url: String, val pageUrl: String)
 
 /**
  * Full-screen in-app browser (#5775): header bar (close, back, title + host,
@@ -82,7 +85,7 @@ class WebBrowserController(
     activity: Activity,
     private val args: WebBrowserArgs,
     private val onDownload: (WebBrowserDownloadEvent) -> Unit,
-    private val completion: (String?, WebBrowserPage?) -> Unit,
+    private val completion: (String?, WebBrowserPage?, WebBrowserImage?) -> Unit,
 ) {
     companion object {
         private const val TAG = "WebBrowser"
@@ -125,12 +128,12 @@ class WebBrowserController(
     fun show() {
         val urlStr = args.url
         if (urlStr.isNullOrBlank() || !(urlStr.startsWith("http://") || urlStr.startsWith("https://"))) {
-            completion(null, null)
+            completion(null, null, null)
             return
         }
         val act = activityRef.get()
         if (act == null || act.isFinishing || act.isDestroyed) {
-            completion(null, null)
+            completion(null, null, null)
             return
         }
         mainHandler.post { present(act, urlStr) }
@@ -296,7 +299,7 @@ class WebBrowserController(
         val anchor = menuButton ?: return
         val wv = webView ?: return
         val popup = PopupMenu(act, anchor)
-        popup.menu.add(0, MENU_CLIP_PAGE, 0, label("clipPage", "Clip Page"))
+        if (args.selectImage != true) popup.menu.add(0, MENU_CLIP_PAGE, 0, label("clipPage", "Clip Page"))
         popup.menu.add(0, MENU_FORWARD, 0, label("forward", "Forward")).isEnabled = wv.canGoForward()
         popup.menu.add(0, MENU_OPEN_EXTERNAL, 1, label("openInBrowser", "Open in Browser"))
         popup.menu.add(0, MENU_COPY_LINK, 2, label("copyLink", "Copy Link"))
@@ -428,6 +431,20 @@ class WebBrowserController(
 
         wv.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                if (request.url.host == "readest-browser.invalid") {
+                    if (args.selectImage == true && request.isForMainFrame && request.url.path == "/image") {
+                        val imageUrl = request.url.getQueryParameter("url")
+                        val pageUrl = request.url.getQueryParameter("pageUrl")
+                        fun isHttpUrl(value: String?): Boolean {
+                            val uri = value?.let { Uri.parse(it) } ?: return false
+                            return uri.scheme?.lowercase() in listOf("http", "https") && !uri.host.isNullOrEmpty()
+                        }
+                        if (isHttpUrl(imageUrl) && isHttpUrl(pageUrl)) {
+                            mainHandler.post { finish(null, image = WebBrowserImage(imageUrl!!, pageUrl!!)) }
+                        }
+                    }
+                    return true
+                }
                 val scheme = request.url.scheme?.lowercase() ?: return false
                 if (scheme == "http" || scheme == "https" || scheme == "about" || scheme == "blob" || scheme == "data") return false
                 openExternal(act, request.url.toString())
@@ -447,6 +464,9 @@ class WebBrowserController(
             override fun onPageFinished(view: WebView, url: String?) {
                 setLoading(false)
                 setProgress(100)
+                if (args.selectImage == true) {
+                    args.imageSelectionScript?.let { view.evaluateJavascript(it, null) }
+                }
             }
         }
 
@@ -477,7 +497,7 @@ class WebBrowserController(
         }
 
         wv.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
-            startDownload(url, userAgent, contentDisposition, mimeType)
+            if (args.selectImage != true) startDownload(url, userAgent, contentDisposition, mimeType)
         }
     }
 
@@ -549,7 +569,7 @@ class WebBrowserController(
 
     // MARK: lifecycle
 
-    private fun finish(hash: String?, page: WebBrowserPage? = null) {
+    private fun finish(hash: String?, page: WebBrowserPage? = null, image: WebBrowserImage? = null) {
         if (finished) return
         finished = true
         mainHandler.removeCallbacks(hideBannerRunnable)
@@ -571,7 +591,7 @@ class WebBrowserController(
         }
         dialog = null
         webView = null
-        completion(hash, page)
+        completion(hash, page, image)
     }
 
     private fun isLight(color: Int): Boolean =

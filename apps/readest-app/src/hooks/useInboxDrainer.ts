@@ -8,6 +8,7 @@ import { getAPIBaseUrl } from '@/services/environment';
 import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
 import { drainInbox, DEFAULT_MAX_ITEMS_PER_PASS } from '@/services/send/inboxDrainer';
+import { recordFlow } from '@/services/sync/dataFlow/log';
 import { isInboxDrainEnabled } from '@/services/send/devicePrefs';
 import {
   convertToEpubWithWorker,
@@ -38,6 +39,8 @@ function getDeviceId(): string {
     return crypto.randomUUID();
   }
 }
+
+const INBOX_PULL = { connector: 'send', direction: 'pull', kind: 'books' } as const;
 
 /**
  * Background controller that drains the Send to Readest inbox. Mounted once in
@@ -145,7 +148,7 @@ export function useInboxDrainer(): void {
         await useLibraryStore.getState().updateBooks(envConfig, [book]);
       };
 
-      await drainInbox(
+      const { processed, failed } = await drainInbox(
         {
           claimItem: claimRow,
           renewClaim: async (id) => {
@@ -175,8 +178,14 @@ export function useInboxDrainer(): void {
         },
         DEFAULT_MAX_ITEMS_PER_PASS,
       );
+      recordFlow({ ...INBOX_PULL, count: processed });
+      if (failed > 0) recordFlow({ ...INBOX_PULL, error: `${failed} failed` });
     } catch (err) {
       console.warn('Inbox drain pass failed:', err);
+      const error = err instanceof Error ? err.message : String(err);
+      // At startup the drain can beat the session. A session that's really
+      // gone fails the connection check, so this isn't a broken inbox.
+      if (error !== 'Not authenticated') recordFlow({ ...INBOX_PULL, error });
     } finally {
       runningRef.current = false;
     }

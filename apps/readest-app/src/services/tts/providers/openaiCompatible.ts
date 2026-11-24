@@ -1,5 +1,6 @@
-// The user's own OpenAI-compatible speech services (OpenAI, Kokoro-FastAPI,
-// SiliconFlow, LocalAI, ...) as one SpeechProvider: POST {baseUrl}/audio/speech
+// The user's own speech services (OpenAI, Kokoro-FastAPI, SiliconFlow,
+// LocalAI, Xiaomi MiMo, ...) as one SpeechProvider. OpenAI-compatible
+// services use POST {baseUrl}/audio/speech; Xiaomi MiMo uses chat completions
 // with their key, straight from the device. Every configured service lives
 // behind this one provider; a voice id is `<service id>:<voice>`, so a request
 // routes to the service the picked voice belongs to. These APIs return no word
@@ -35,6 +36,23 @@ export const OPENAI_TTS_VOICES = [
 // How long a service gets to list its voices before the standard names stand in.
 const VOICE_LIST_TIMEOUT_MS = 5000;
 
+// Xiaomi MiMo has no /audio/voices endpoint; its preset voices are fixed.
+// https://github.com/XiaomiMiMo/MiMo-Skills/tree/main/skills/mimo-v2-5-tts
+const MIMO_VOICES: ListedVoice[] = [
+  ...['冰糖', '茉莉', '苏打', '白桦'].map((name) => ({ name, lang: 'zh-CN' })),
+  ...['Mia', 'Chloe', 'Milo', 'Dean'].map((name) => ({ name, lang: 'en-US' })),
+];
+
+// MiMo serves speech only from chat completions, so any service on its host
+// (whatever the model) uses them; a proxy elsewhere keeps the OpenAI route.
+export const isMiMoService = (service: Pick<CustomTTSService, 'baseUrl'>): boolean => {
+  try {
+    return /(^|\.)xiaomimimo\.com$/.test(new URL(service.baseUrl).hostname);
+  } catch {
+    return false;
+  }
+};
+
 // Statuses that no later request can get past (bad key, wrong URL or model).
 const FATAL_STATUSES = new Set([401, 403, 404]);
 // Statuses worth retrying; any other 4xx is about this sentence.
@@ -42,15 +60,25 @@ const TRANSIENT_STATUSES = new Set([408, 409, 425, 429]);
 
 export const customVoiceId = (serviceId: string, voice: string) => `${serviceId}:${voice}`;
 
+// A base URL pasted with the endpoint on it (`…/v1/audio/speech`) works too.
 const endpoint = (service: CustomTTSService, path: string) =>
-  `${service.baseUrl.replace(/\/+$/, '')}${path}`;
+  `${service.baseUrl.replace(/(\/audio\/(speech|voices))?\/*$/, '')}${path}`;
+
+// MiMo's endpoint is known, so the path typed into its base URL is ignored.
+export const speechEndpoint = (service: CustomTTSService) =>
+  isMiMoService(service)
+    ? new URL('/v1/chat/completions', service.baseUrl).href
+    : endpoint(service, '/audio/speech');
 
 const authHeaders = (service: CustomTTSService): Record<string, string> =>
   service.apiKey ? { Authorization: `Bearer ${service.apiKey}` } : {};
 
 interface ListedVoice {
+  /** The voice sent to the service. */
   name: string;
   lang?: string;
+  /** What the picker shows, when the service names the voice apart from its id. */
+  label?: string;
 }
 
 // Kokoro names a voice by language and gender (`zf_xiaobei`: Mandarin, female).
@@ -66,13 +94,19 @@ const KOKORO_LANGS: Record<string, string> = {
   z: 'zh-CN',
 };
 
+// A Kokoro name's gender letter; other services do not say.
+const voiceGender = ({ name }: ListedVoice): TTSVoice['gender'] => {
+  const letter = name.match(/^[a-z]([fm])_/)?.[1];
+  return letter ? (letter === 'f' ? 'female' : 'male') : undefined;
+};
+
 // A voice's language: the one the service states, else the one a Kokoro name
 // carries, else any (OpenAI's voices speak every language).
 const voiceLang = ({ name, lang }: ListedVoice): string =>
   lang ?? (/^[a-z][fm]_/.test(name) ? KOKORO_LANGS[name[0]!] : undefined) ?? MULTILINGUAL_LANG;
 
 // `{ voices: [...] }` of names (Kokoro-FastAPI) or of `{ id, name, lang }`
-// objects (`language` also read).
+// objects (`language` also read). An object's id is spoken with, its name shown.
 const parseVoiceList = (body: unknown): ListedVoice[] => {
   const list = (body as { voices?: unknown } | null)?.voices;
   if (!Array.isArray(list)) return [];
@@ -82,13 +116,18 @@ const parseVoiceList = (body: unknown): ListedVoice[] => {
     const voice = typeof id === 'string' ? id : typeof name === 'string' ? name : null;
     if (!voice) return [];
     const stated = typeof lang === 'string' ? lang : typeof language === 'string' ? language : '';
-    return [stated ? { name: voice, lang: stated } : { name: voice }];
+    const label = typeof name === 'string' && name.trim() ? name.trim() : undefined;
+    return [{ name: voice, ...(stated && { lang: stated }), ...(label && { label }) }];
   });
 };
 
-// The voices a service offers, from GET {baseUrl}/audio/voices. OpenAI itself
-// has no such endpoint, so a service that lists nothing gets its standard voices.
+// The voices a service offers: the names typed for it, else GET
+// {baseUrl}/audio/voices. OpenAI itself has no such endpoint, so a service that
+// lists nothing gets its standard voices.
 const fetchServiceVoices = async (service: CustomTTSService): Promise<ListedVoice[]> => {
+  const typed = service.voices?.split(',').flatMap((name) => name.trim() || []);
+  if (typed?.length) return typed.map((name) => ({ name }));
+  if (isMiMoService(service)) return MIMO_VOICES;
   // A timer rather than AbortSignal.timeout: tauriFetch rejects unhandled when
   // a finished request is aborted.
   const controller = new AbortController();
@@ -108,7 +147,48 @@ const fetchServiceVoices = async (service: CustomTTSService): Promise<ListedVoic
   return OPENAI_TTS_VOICES.map((name) => ({ name }));
 };
 
+// MiMo chat completions wraps the generated MP3 in a Base64 audio.data field.
+const decodeMiMoAudio = async (res: Response): Promise<ArrayBuffer> => {
+  const body = (await res.json()) as {
+    choices?: { message?: { audio?: { data?: unknown } } }[];
+  };
+  const data = body.choices?.[0]?.message?.audio?.data;
+  const binary = atob(typeof data === 'string' ? data : '');
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  if (!bytes.length) throw new Error('MiMo returned no audio data');
+  return bytes.buffer;
+};
+
 const abortError = () => new DOMException('Aborted', 'AbortError');
+
+const fourCC = (bytes: Uint8Array, at: number) =>
+  String.fromCharCode(...bytes.subarray(at, at + 4));
+
+const isWav = (bytes: Uint8Array) =>
+  bytes.length >= 12 && fourCC(bytes, 0) === 'RIFF' && fourCC(bytes, 8) === 'WAVE';
+
+// Some proxies (LiteLLM with Gemini TTS) take a service's whole WAV file for
+// raw PCM and wrap it in a WAV of their own. Players then read the inner
+// header and whatever follows its audio (Gemini's C2PA provenance manifest)
+// as samples: a click before every sentence and static after it. The inner
+// file is the service's own and intact, so it is the one to play.
+const unwrapNestedWav = (audio: ArrayBuffer): ArrayBuffer => {
+  const bytes = new Uint8Array(audio);
+  if (!isWav(bytes)) return audio;
+  const view = new DataView(audio);
+  for (let at = 12; at + 8 <= bytes.length; ) {
+    const size = view.getUint32(at + 4, true);
+    const start = at + 8;
+    if (fourCC(bytes, at) === 'data') {
+      const inner = bytes.subarray(start, start + size);
+      if (!isWav(inner)) return audio;
+      const innerLength = 8 + new DataView(inner.buffer, inner.byteOffset).getUint32(4, true);
+      return inner.slice(0, innerLength).buffer;
+    }
+    at = start + size + (size & 1);
+  }
+  return audio;
+};
 
 export class OpenAICompatibleSpeechProvider implements SpeechProvider {
   readonly id = CUSTOM_TTS_PROVIDER_ID;
@@ -131,11 +211,16 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     const services = this.getServices();
     const lists = await Promise.all(services.map(fetchServiceVoices));
     return services.flatMap((service, i) =>
-      lists[i]!.map((voice) => ({
-        id: customVoiceId(service.id, voice.name),
-        name: voice.name,
-        lang: voiceLang(voice),
-      })),
+      lists[i]!.map((voice) => {
+        const gender = voiceGender(voice);
+        return {
+          id: customVoiceId(service.id, voice.name),
+          name: voice.label ?? voice.name,
+          literalName: true,
+          lang: voiceLang(voice),
+          ...(gender && { gender }),
+        };
+      }),
     );
   }
 
@@ -143,13 +228,21 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     return this.getServices().map((service) => ({
       id: `${this.id}:${service.id}`,
       name: service.name,
+      literalName: true,
       voices: voices.filter((voice) => voice.id.startsWith(`${service.id}:`)),
     }));
   }
 
   cacheScope(req: SpeechSynthesisRequest): string {
     const service = this.#resolve(req.voice)?.service;
-    return JSON.stringify([service?.baseUrl, service?.model, service?.instructions]);
+    // Only a non-MP3 format joins the key, so existing MP3 caches stay valid.
+    const format = service?.responseFormat;
+    return JSON.stringify([
+      service?.baseUrl,
+      service?.model,
+      service?.instructions,
+      ...(format && format !== 'mp3' ? [format] : []),
+    ]);
   }
 
   async synthesize(
@@ -160,22 +253,35 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     if (!resolved) throw new SpeechSynthesisPermanentError(`Unknown voice: ${req.voice}`);
     if (signal.aborted) throw abortError();
     const { service, voice } = resolved;
+    const isMiMo = isMiMoService(service);
     // Follow the caller's signal only while the request is in flight: tauriFetch
     // rejects unhandled when a finished request is aborted.
     const controller = new AbortController();
     const onAbort = () => controller.abort();
     signal.addEventListener('abort', onAbort, { once: true });
     try {
-      const res = await getAIFetch()(endpoint(service, '/audio/speech'), {
+      const body = isMiMo
+        ? {
+            model: service.model,
+            messages: [
+              ...(service.instructions ? [{ role: 'user', content: service.instructions }] : []),
+              { role: 'assistant', content: req.text },
+            ],
+            audio: { format: 'mp3', voice },
+          }
+        : {
+            model: service.model,
+            input: req.text,
+            voice,
+            ...(service.responseFormat !== 'none' && {
+              response_format: service.responseFormat ?? 'mp3',
+            }),
+            ...(service.instructions ? { instructions: service.instructions } : {}),
+          };
+      const res = await getAIFetch()(speechEndpoint(service), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders(service) },
-        body: JSON.stringify({
-          model: service.model,
-          input: req.text,
-          voice,
-          response_format: 'mp3',
-          ...(service.instructions ? { instructions: service.instructions } : {}),
-        }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
       if (!res.ok) {
@@ -187,7 +293,8 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
         }
         throw new Error(message);
       }
-      return { audio: await res.arrayBuffer(), boundaries: [] };
+      const audio = isMiMo ? await decodeMiMoAudio(res) : unwrapNestedWav(await res.arrayBuffer());
+      return { audio, boundaries: [] };
     } finally {
       signal.removeEventListener('abort', onAbort);
     }

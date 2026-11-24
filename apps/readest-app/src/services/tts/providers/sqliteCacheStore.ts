@@ -641,6 +641,19 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
   }
 
   async #packSection(section: number, fingerprint: string): Promise<boolean> {
+    // A synced pack of these very sentences is already here (stored under an
+    // imported fingerprint, so the query above cannot see it): reading the
+    // audio back only to find the pack name taken would repeat every run.
+    const markKeys = await this.#db.select<DatabaseRow & { key: string }>(
+      'SELECT key FROM manifest_marks WHERE section = ? ORDER BY ordinal ASC',
+      [section],
+    );
+    const covered = await this.#db.select<DatabaseRow & { id: number }>(
+      'SELECT id FROM packs WHERE keys_fingerprint = ?',
+      [md5(JSON.stringify(markKeys.map((row) => row.key)))],
+    );
+    if (covered.length) return false;
+
     const rows = await this.#db.select<
       DatabaseRow & {
         key: string;
@@ -971,15 +984,20 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     return rows[0]?.total ?? 0;
   }
 
-  // ── Pack sync surface (services/sync/file/ttsPackSync) ────────────────
+  // ── Pack sync surface (services/sync/bookData/ttsKind) ────────────────
   // The database is the source of truth for what packs exist; the sidecar
   // is REBUILT from rows rather than read from disk, so a stale or missing
   // sidecar file can never poison a push.
 
+  // Only explicitly downloaded sections sync; packs from ordinary listening
+  // stay local. In-progress downloads count, since compaction pushes before
+  // completeDownloadSections sets the pin.
   async listPacks(): Promise<{ name: string; size: number }[]> {
     await this.#ensureSchema();
     const rows = await this.#db.select<DatabaseRow & { path: string; size: number }>(
-      'SELECT path, size FROM packs',
+      `SELECT p.path, p.size FROM packs p
+        JOIN pinned_sections ps ON ps.section = p.section
+       WHERE ps.active > 0 OR ps.pinned = 1`,
     );
     return rows.map((row) => ({ name: row.path, size: row.size }));
   }
@@ -1017,6 +1035,10 @@ export class SqliteTTSCacheStore implements TTSCacheStore {
     const pack = packs[0];
     // Packs from before keys-based identity have no fingerprint: not portable.
     if (!pack?.keys_fingerprint) return null;
+    // Prefer the sidecar written with the pack: an imported pack sharing a
+    // sentence repoints that row, so the rows alone can miss entries.
+    const stored = await this.#packFs?.readSidecar(packSidecarName(name)).catch(() => null);
+    if (stored?.keysFingerprint === pack.keys_fingerprint) return stored;
     const entries = await this.#db.select<
       DatabaseRow & {
         key: string;

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // ── Mocks ────────────────────────────────────────────────────────
@@ -180,6 +181,18 @@ describe('parseOpenWithFiles', () => {
       expect(result).toEqual(['/path/to/book.epub']);
     });
 
+    test.each([
+      'A%23B.epub',
+      '100%25.epub',
+      'Report%2520Final.epub',
+      '%E4%B8%89%E4%BD%93%20book.epub',
+    ])('preserves the raw iOS file URL for %s', async (basename) => {
+      const url = `file:///path/to/${basename}`;
+      mockGetCurrent.mockResolvedValue([url]);
+      const result = await parseOpenWithFiles({ isIOSApp: true } as never);
+      expect(result).toEqual([url]);
+    });
+
     test('preserves file:// prefix for iOS', async () => {
       const mockAppService = { isIOSApp: true } as MockAppService;
       mockGetCurrent.mockResolvedValue(['file:///path/to/book.epub']);
@@ -217,6 +230,31 @@ describe('parseOpenWithFiles', () => {
       expect(result).toEqual(['/path/to/my book.epub']);
     });
 
+    // #7553: a `;` (or `#`, `?`, `&`) in the filename arrives percent-encoded
+    // in the file:// URL macOS hands the app; decodeURI() leaves those
+    // reserved-character escapes untouched, so the path kept a literal `%3B`
+    // and named no real file.
+    test.each([
+      ['file:///path/to/Anne_Carson%3B.epub', '/path/to/Anne_Carson;.epub'],
+      ['file:///path/to/A%23B.epub', '/path/to/A#B.epub'],
+      ['file:///path/to/What%3F.epub', '/path/to/What?.epub'],
+      ['file:///path/to/A%26B.epub', '/path/to/A&B.epub'],
+    ])('decodes percent-encoded reserved characters in file paths: %s', async (url, expected) => {
+      mockGetCurrent.mockResolvedValue([url]);
+
+      const result = await parseOpenWithFiles(null);
+
+      expect(result).toEqual([expected]);
+    });
+
+    test('falls back to the raw path when the URL has a malformed escape', async () => {
+      mockGetCurrent.mockResolvedValue(['file:///path/to/100%zz.epub']);
+
+      const result = await parseOpenWithFiles(null);
+
+      expect(result).toEqual(['/path/to/100%zz.epub']);
+    });
+
     test('returns null when no deep link URLs', async () => {
       mockGetCurrent.mockResolvedValue(null);
 
@@ -231,6 +269,15 @@ describe('parseOpenWithFiles', () => {
       const result = await parseOpenWithFiles(null);
 
       expect(result).toBeNull();
+    });
+
+    test('returns null when the deep-link plugin rejects', async () => {
+      // A runtime without the deep-link plugin (Readest Lite) rejects getCurrent();
+      // the library init that awaits this must still load the library.
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      mockGetCurrent.mockRejectedValue('Command plugin:deep-link|get_current not allowed by ACL');
+
+      await expect(parseOpenWithFiles(null)).resolves.toBeNull();
     });
   });
 

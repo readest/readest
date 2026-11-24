@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test, vi } from 'vitest';
 import { WebDriveAuth } from '@/services/sync/providers/gdrive/WebDriveAuth';
 import { FileSyncError } from '@/services/sync/file/provider';

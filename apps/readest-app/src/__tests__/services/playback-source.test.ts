@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import type { PlaybackSource } from '@/services/playback/playbackSource';
 import { TTSController } from '@/services/tts/TTSController';

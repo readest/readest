@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { render, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -27,7 +28,10 @@ vi.mock('@/utils/event', () => ({
   eventDispatcher: { dispatch: vi.fn(), on: vi.fn(), off: vi.fn() },
 }));
 
-vi.mock('@/utils/misc', () => ({ getContentMd5: (s: string) => s }));
+vi.mock('@/utils/misc', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getContentMd5: (s: string) => s,
+}));
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: null }) }));
 

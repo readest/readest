@@ -16,7 +16,8 @@ export interface NarrationPar {
   // names let the client resolve a mark to its clip without tracking blocks.
   markName: string;
   blockIndex: number;
-  // Range over the narrated element's contents, in the section document.
+  // Range over the narrated element's text (or its image, when it has no
+  // text), in the section document.
   range: Range;
   text: string;
   audioHref: string;
@@ -88,7 +89,7 @@ const blockAncestor = (el: Element): Element => {
 // re-anchored to nothing and the highlight silently never painted. foliate's own
 // TTS ranges come from its text walker and are always text-node-based; these
 // have to match. Returns null for an element with no readable text (a narrated
-// image), whose clip is still heard because a block plays as one span.
+// image), which `mediaRangeOf` covers instead.
 const textRangeOf = (doc: Document, el: Element): Range | null => {
   const walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT);
   let first: Text | null = null;
@@ -107,6 +108,42 @@ const textRangeOf = (doc: Document, el: Element): Range | null => {
   range.setStart(first, startOffset);
   range.setEnd(last, endOffset);
   return range;
+};
+
+const MEDIA_SELECTOR = 'img, svg, image, video';
+
+// A target with no text but an image in it (a title page drawn as a picture, a
+// map whose alt text the narrator reads) still plays its clip, over a range from
+// the target's start to inside its last image. The highlighter round-trips the
+// range through a CFI, and foliate reads an element boundary (el, i) back as
+// (el, 0): selectNode(target) would come back from the parent's start and paint
+// the text before the image, and selectNodeContents(target) collapses when the
+// target ends in Readest's cfi-inert skip link (a section's last element). Both
+// ends here are element starts, so they survive, and the overlayer paints the
+// images the range touches. A bare <img> target has no inside to end in: it
+// comes back collapsed and paints nothing, but its clip still plays.
+const mediaRangeOf = (doc: Document, el: Element): Range | null => {
+  const media = el.matches(MEDIA_SELECTOR) ? el : [...el.querySelectorAll(MEDIA_SELECTOR)].at(-1);
+  if (!media) return null;
+  const range = doc.createRange();
+  range.setStart(el, 0);
+  if (media === el) range.setEndAfter(el);
+  else range.setEnd(media, 0);
+  return range;
+};
+
+// The par's text only feeds the SSML mark bookkeeping (it is never spoken or
+// shown), but parseSSMLMarks drops a mark with no letter or digit, which would
+// skip the clip. Carry the image's description when it has one.
+const describeMedia = (el: Element): string => {
+  const media = el.matches(MEDIA_SELECTOR) ? el : el.querySelector(MEDIA_SELECTOR)!;
+  const label = (
+    el.getAttribute('aria-label') ||
+    media.getAttribute('aria-label') ||
+    media.getAttribute('alt') ||
+    ''
+  ).trim();
+  return /[\p{L}\p{N}]/u.test(label) ? label : 'image';
 };
 
 const escapeXML = (text: string): string =>
@@ -198,10 +235,10 @@ export const loadMediaOverlaySection = async (
   for (const smilPar of parseSmil(xml, overlay.href)) {
     const el = doc.getElementById(smilPar.textId);
     if (!el) continue;
-    const range = textRangeOf(doc, el);
+    const textRange = textRangeOf(doc, el);
+    const range = textRange ?? mediaRangeOf(doc, el);
     if (!range) continue;
-    const text = range.toString().trim();
-    if (!text) continue;
+    const text = textRange ? range.toString().trim() : describeMedia(el);
 
     const blockEl = blockAncestor(el);
     if (blockEl !== lastBlockEl) {

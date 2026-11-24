@@ -8,6 +8,7 @@ export {
 } from './MediaOverlaySection';
 export { MediaOverlayTTS } from './MediaOverlayTTS';
 export {
+  audioType,
   MediaOverlayClient,
   MEDIA_OVERLAY_CLIENT_NAME,
   MEDIA_OVERLAY_VOICE_ID,

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { sliceSinceLastId } from '@/services/reedy/memory/consolidatorCursor';
 import type { ReedyMessage } from '@/services/reedy/store/reedyStore';

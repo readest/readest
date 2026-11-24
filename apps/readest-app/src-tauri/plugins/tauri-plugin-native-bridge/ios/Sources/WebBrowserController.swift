@@ -7,6 +7,8 @@ final class WebBrowserArgs: Decodable {
   let url: String
   let downloadDir: String
   let captureScript: String
+  let selectImage: Bool?
+  let imageSelectionScript: String?
   let background: String?
   let foreground: String?
   let isEink: Bool?
@@ -35,6 +37,11 @@ struct WebBrowserDownloadEvent {
 struct WebBrowserPage {
   let url: String
   let html: String
+}
+
+struct WebBrowserImage {
+  let url: String
+  let pageUrl: String
 }
 
 /// Full-screen in-app browser (#5775): a header bar (close, back, title +
@@ -73,7 +80,7 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
   private var capturing = false
 
   var onDownload: ((WebBrowserDownloadEvent) -> Void)?
-  var onFinish: ((String?, WebBrowserPage?) -> Void)?
+  var onFinish: ((String?, WebBrowserPage?, WebBrowserImage?) -> Void)?
 
   init(args: WebBrowserArgs) {
     self.args = args
@@ -248,6 +255,10 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
     let config = WKWebViewConfiguration()
     config.websiteDataStore = .default()
     config.allowsInlineMediaPlayback = true
+    if args.selectImage == true, let script = args.imageSelectionScript {
+      config.userContentController.addUserScript(
+        WKUserScript(source: script, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+    }
     let wv = WKWebView(frame: .zero, configuration: config)
     wv.customUserAgent = ClipUrlController.browserUserAgent
     wv.navigationDelegate = self
@@ -293,10 +304,12 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
 
   private func buildMenu() -> UIMenu {
     var actions: [UIAction] = []
-    actions.append(
-      UIAction(title: args.label("clipPage", "Clip Page"), image: UIImage(systemName: "doc.badge.plus")) {
-        [weak self] _ in self?.capturePage()
-      })
+    if args.selectImage != true {
+      actions.append(
+        UIAction(title: args.label("clipPage", "Clip Page"), image: UIImage(systemName: "doc.badge.plus")) {
+          [weak self] _ in self?.capturePage()
+        })
+    }
     if webView?.canGoForward == true {
       actions.append(
         UIAction(
@@ -423,14 +436,14 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
     }
   }
 
-  private func finish(_ hash: String?, page: WebBrowserPage? = nil) {
+  private func finish(_ hash: String?, page: WebBrowserPage? = nil, image: WebBrowserImage? = nil) {
     if finished { return }
     finished = true
     bannerHideWork?.cancel()
     webView.stopLoading()
     webView.navigationDelegate = nil
     webView.uiDelegate = nil
-    dismiss(animated: true) { [onFinish] in onFinish?(hash, page) }
+    dismiss(animated: true) { [onFinish] in onFinish?(hash, page, image) }
   }
 
   // MARK: - WKNavigationDelegate
@@ -441,11 +454,28 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
     decisionHandler: @escaping (WKNavigationActionPolicy, WKWebpagePreferences) -> Void
   ) {
     if navigationAction.shouldPerformDownload {
-      decisionHandler(.download, preferences)
+      decisionHandler(args.selectImage == true ? .cancel : .download, preferences)
       return
     }
     guard let url = navigationAction.request.url else {
       decisionHandler(.allow, preferences)
+      return
+    }
+    if url.host == "readest-browser.invalid" {
+      decisionHandler(.cancel, preferences)
+      if args.selectImage == true, navigationAction.sourceFrame.isMainFrame,
+        navigationAction.targetFrame?.isMainFrame == true,
+        url.path == "/image", let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+        let imageUrl = components.queryItems?.first(where: { $0.name == "url" })?.value,
+        let pageUrl = components.queryItems?.first(where: { $0.name == "pageUrl" })?.value
+      {
+        let valid = [imageUrl, pageUrl].allSatisfy { value in
+          guard let parsed = URL(string: value), let scheme = parsed.scheme?.lowercased(),
+            parsed.host != nil else { return false }
+          return scheme == "http" || scheme == "https"
+        }
+        if valid { finish(nil, image: WebBrowserImage(url: imageUrl, pageUrl: pageUrl)) }
+      }
       return
     }
     let scheme = url.scheme?.lowercased() ?? ""
@@ -474,7 +504,7 @@ final class WebBrowserController: UIViewController, WKNavigationDelegate, WKUIDe
         (navigationResponse.response as? HTTPURLResponse)?
         .value(forHTTPHeaderField: "Content-Disposition")?.lowercased() ?? ""
       if !navigationResponse.canShowMIMEType || disposition.hasPrefix("attachment") {
-        decisionHandler(.download)
+        decisionHandler(args.selectImage == true ? .cancel : .download)
         return
       }
     }

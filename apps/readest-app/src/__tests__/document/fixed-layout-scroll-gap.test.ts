@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
 import { scrollGapToCss } from 'foliate-js/fixed-layout.js';

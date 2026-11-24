@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { describe, expect, test } from 'vitest';
 import { countSyncedRecords } from '@/hooks/useSync';
 import type { BookDataRecord } from '@/types/book';

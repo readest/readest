@@ -146,4 +146,46 @@ describe("library.localscanner", function()
             assert.is_false(localscanner.should_skip_dir("Foo.sdr"))  -- the walk visits these
         end)
     end)
+
+    -- =====================================================================
+    -- lightScan's stale sweep (issue #7577): a downloaded book whose file was
+    -- deleted on the device must turn back into a cloud-only book, so a tap
+    -- offers the download instead of "File moved or deleted" forever.
+    -- =====================================================================
+    describe("lightScan", function()
+        local LibraryStore = require("library.librarystore")
+
+        before_each(function()
+            package.loaded["libs/libkoreader-lfs"] = lfs
+            package.loaded["readhistory"] = { hist = {} }
+            package.loaded["docsettings"] = {}
+            package.loaded["ui/time"] = {
+                now = function() return 0 end,
+                since = function() return 0 end,
+                to_ms = function() return 0 end,
+            }
+        end)
+        after_each(function()
+            package.loaded["libs/libkoreader-lfs"] = nil
+            package.loaded["readhistory"] = nil
+            package.loaded["docsettings"] = nil
+            package.loaded["ui/time"] = nil
+        end)
+
+        it("marks a book whose file is gone as not on this device (issue #7577)", function()
+            local store = LibraryStore.new({ user_id = "u1" })
+            store:upsertBook({
+                hash = "h1", title = "Dune", format = "EPUB",
+                cloud_present = 1, uploaded_at = 1, local_present = 1,
+                file_path = "/nonexistent-7577/Dune.epub",
+            })
+            local stale = localscanner.lightScan({ store = store })
+            assert.are.equal(1, stale)
+            assert.are.equal(0, store:_getRowRaw("h1").local_present)
+            local cloud_only = store:listCloudOnlyBooks()
+            assert.are.equal(1, #cloud_only)
+            assert.are.equal("h1", cloud_only[1].hash)
+            store:close()
+        end)
+    end)
 end)

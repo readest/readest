@@ -265,6 +265,7 @@ const DevicePickerDialog: React.FC<DevicePickerDialogProps> = ({ files, onClose 
           book can be selected while picking a target. Tapping it closes the
           picker, except mid-transfer (matching the Close button). */}
       <div
+        data-capture-blocking-overlay='true'
         className='absolute inset-0 bg-black/50'
         aria-hidden='true'
         onClick={sendState ? undefined : onClose}

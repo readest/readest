@@ -1,5 +1,5 @@
 import type { ViewSettings } from '@/types/book';
-import { footerInfoVisible } from './footerBand';
+import { footerAtBottom } from './footerBand';
 
 // Card height of the TTS mini player (h-14). See getTTSMiniPlayerClearance for
 // when the reader text reserves a band of this height.
@@ -29,11 +29,9 @@ export const getTTSMiniPlayerBottomOffset = (
     const aboveBar = usesMobileBar ? ABOVE_MOBILE_BAR : ABOVE_DESKTOP_BAR;
     return Math.max(aboveBar, panelTopOffset + PANEL_GAP);
   }
-  const footerAtBottom =
-    viewSettings.showFooter &&
-    !viewSettings.vertical &&
-    (footerInfoVisible(viewSettings) || viewSettings.showStickyProgressBar);
-  return footerAtBottom ? Math.max(viewSettings.marginBottomPx, BASE_OFFSET) : BASE_OFFSET;
+  return footerAtBottom(viewSettings)
+    ? Math.max(viewSettings.marginBottomPx, BASE_OFFSET)
+    : BASE_OFFSET;
 };
 
 /**

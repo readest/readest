@@ -54,7 +54,11 @@ export const SETTINGS_WHITELIST = [
   'dictionarySettings.webSearches',
   'dictionarySettings.fontScale',
   'dictionarySettings.autoPlayPronunciation',
+  'dictionarySettings.saveLookupsToVocabulary',
   'dictionarySettings.contextTranslatorId',
+  'dictionarySettings.contextPromptId',
+  'dictionarySettings.contextSystemPrompt',
+  'dictionarySettings.contextMaxOutputTokens',
   // External integrations. Server URL + identifiers sync as plaintext;
   // the credential fields are listed in `encryptedFields` below so the
   // publish/pull middleware wraps them in cipher envelopes.
@@ -63,11 +67,19 @@ export const SETTINGS_WHITELIST = [
   'kosync.userkey',
   'kosync.password',
   'kosync.customHeaders',
+  'kosync.allowSelfSignedCert',
   'bookorbit.serverUrl',
   'bookorbit.username',
   'bookorbit.userkey',
   'bookorbit.password',
+  'bookorbit.apiKey',
   'bookorbit.customHeaders',
+  'bookorbit.allowSelfSignedCert',
+  'grimmory.serverUrl',
+  'grimmory.username',
+  'grimmory.password',
+  'grimmory.customHeaders',
+  'grimmory.allowSelfSignedCert',
   'readwise.baseUrl',
   'readwise.accessToken',
   'hardcover.accessToken',
@@ -123,7 +135,11 @@ export const SETTINGS_DICTIONARY_FIELDS = [
   'dictionarySettings.webSearches',
   'dictionarySettings.fontScale',
   'dictionarySettings.autoPlayPronunciation',
+  'dictionarySettings.saveLookupsToVocabulary',
   'dictionarySettings.contextTranslatorId',
+  'dictionarySettings.contextPromptId',
+  'dictionarySettings.contextSystemPrompt',
+  'dictionarySettings.contextMaxOutputTokens',
 ] as const;
 
 /**
@@ -147,7 +163,11 @@ export const SETTINGS_ENCRYPTED_FIELDS = [
   'bookorbit.username',
   'bookorbit.userkey',
   'bookorbit.password',
+  'bookorbit.apiKey',
   'bookorbit.customHeaders',
+  'grimmory.username',
+  'grimmory.password',
+  'grimmory.customHeaders',
   'readwise.accessToken',
   'hardcover.accessToken',
   'notion.accessToken',
@@ -167,7 +187,11 @@ export type SettingsWhitelistKey = (typeof SETTINGS_WHITELIST)[number];
  * to/from a JSON string at this boundary so the crypto middleware only
  * ever sees a string.
  */
-const OBJECT_VALUED_ENCRYPTED_PATHS = ['kosync.customHeaders', 'bookorbit.customHeaders'] as const;
+const OBJECT_VALUED_ENCRYPTED_PATHS = [
+  'kosync.customHeaders',
+  'bookorbit.customHeaders',
+  'grimmory.customHeaders',
+] as const;
 
 // In practice every path comes from the compile-time SETTINGS_WHITELIST so
 // these never appear, but readPath/writePath are exported helpers and the

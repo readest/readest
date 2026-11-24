@@ -27,8 +27,7 @@ export const getBookDocPageCount = (bookDoc: BookDoc, format: BookFormat): numbe
   return Math.ceil(size / 1500) || undefined;
 };
 
-export const getBookPageCount = (book: Book): number | undefined =>
-  book.progress?.[1] || book.pageCount || undefined;
+export { getBookPageCount } from '@/services/bookshelves/fields';
 
 export const getDir = (book: Book) => {
   return `${book.hash}`;

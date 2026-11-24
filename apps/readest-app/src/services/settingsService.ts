@@ -29,12 +29,15 @@ import {
 import { DEFAULT_AI_SETTINGS } from './ai/constants';
 import { getTargetLang, isCJKEnv } from '@/utils/misc';
 import { safeLoadJSON, safeSaveJSON } from './persistence';
+import { ensureDeviceIdentity } from './deviceIdentity';
 
 export interface Context {
   fs: FileSystem;
   isMobile: boolean;
+  isDesktopApp?: boolean;
   isEink: boolean;
   isAppDataSandbox: boolean;
+  isIOSApp?: boolean;
 }
 
 export function getDefaultViewSettings(ctx: Context): ViewSettings {
@@ -49,6 +52,7 @@ export function getDefaultViewSettings(ctx: Context): ViewSettings {
     ...DEFAULT_ANNOTATOR_CONFIG,
     ...DEFAULT_WORD_LENS_CONFIG,
     ...DEFAULT_VIEW_SETTINGS_CONFIG,
+    spreadMode: ctx.isDesktopApp ? 'auto' : 'none',
     ...(ctx.isMobile ? DEFAULT_MOBILE_VIEW_SETTINGS : {}),
     ...(ctx.isEink ? DEFAULT_EINK_VIEW_SETTINGS : {}),
     ...(isCJKEnv() ? DEFAULT_CJK_VIEW_SETTINGS : {}),
@@ -199,6 +203,11 @@ export async function loadSettings(ctx: Context): Promise<SystemSettings> {
 
   if (!settings.replicaDeviceId) {
     settings.replicaDeviceId = uuidv4();
+    await saveSettings(ctx.fs, settings);
+  }
+
+  // iOS device-to-device migration copies settings.json, sync IDs included (#7558).
+  if (ctx.isIOSApp && (await ensureDeviceIdentity(settings))) {
     await saveSettings(ctx.fs, settings);
   }
 

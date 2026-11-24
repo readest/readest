@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, test } from 'vitest';
 import { isReplicaRowAlive } from '@/libs/replicaInterpret';
 import { hlcPack } from '@/libs/crdt';

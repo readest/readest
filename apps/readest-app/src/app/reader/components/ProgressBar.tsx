@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useSyncExternalStore } from 'react';
 import { Trans } from 'react-i18next';
 import type { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
@@ -11,6 +11,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import {
   formatNumber,
   formatProgress,
+  formatProgressPercent,
   getChapterTickFractions,
   getChapterEndLocation,
   getReferencePageInfo,
@@ -34,7 +35,36 @@ import { convertPagesToTimeRemainingMinutes } from '@/app/library/utils/libraryU
 import { formatDuration } from '@/utils/duration';
 import { getMarginalInlinePadding } from '@/utils/insets';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
+import { getChapterScreensVersion, subscribeChapterScreens } from '@/utils/chapterScreens';
+import { getScreenPageInfo, usesScreenPages } from '../utils/screenPages';
 import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
+
+// Private-use characters standing in for the time and the page count in a
+// translated readout; no translation contains them.
+const TIME_MARK = '\uE000';
+const PAGES_MARK = '\uE001';
+
+// A marked readout as spans: the time, the page count, and the words around
+// them in `labelClass`.
+const renderMarked = (marked: string, time: string, pages: string, labelClass: string) =>
+  marked
+    .split(new RegExp(`(${TIME_MARK}|${PAGES_MARK})`))
+    .filter(Boolean)
+    .map((part, i) =>
+      part === TIME_MARK ? (
+        <span key={i} className='time-left-number'>
+          {time}
+        </span>
+      ) : part === PAGES_MARK ? (
+        <span key={i} className='pages-left-number'>
+          {pages}
+        </span>
+      ) : (
+        <span key={i} className={labelClass}>
+          {part}
+        </span>
+      ),
+    );
 
 interface ProgressBarProps {
   bookKey: string;
@@ -49,6 +79,14 @@ interface ProgressBarProps {
   hidden?: boolean;
 }
 
+/**
+ * The in-page footer overlay: the book's bottom margin band carries the
+ * progress readout, remaining time/pages and clock/battery as a 3-zone row.
+ * The percent style reads the continuous fraction (formatProgressPercent)
+ * while page-number/reference styles keep foliate's location pair; the strip
+ * is display-only (subscribes to the progress store, never writes it), and
+ * taps toggle the info's visibility without touching settings (#5293).
+ */
 const ProgressBar: React.FC<ProgressBarProps> = ({
   bookKey,
   horizontalGap,
@@ -87,6 +125,26 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const lang = localStorage?.getItem('i18nextLng') || '';
   const localize = isVertical && lang.toLowerCase().startsWith('zh');
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
+  // The 页码 pair calibrated into screen space: the renderer's page/pages are
+  // the primary section's own measured spread coordinates (0-based), and
+  // chapters sampled this session (FoliateViewer records them on entry)
+  // contribute their real spread counts, while unmeasured ones are estimated
+  // in whole screens from uncompressed bytes (chapterScreens.ts). The readout
+  // advances exactly one page per turn within a chapter; estimate corrections
+  // land only when a chapter is entered. The footer bar and the TOC read the
+  // same pages (screenPages.ts). Fixed layout keeps its real page pairs,
+  // scrolled mode has no spreads, and formats without section sizes keep the
+  // byte-grid pair.
+  const { page: current = 0, pages: total = 0 } = view?.renderer || {};
+  const sectionFractions = view?.getSectionFractions() ?? [];
+  const sectionIndex = section?.current ?? 0;
+  const sections = bookData?.bookDoc?.sections;
+  // A snapshot taken with no page turn (Stable Page Numbers just turned off)
+  // re-renders the pair.
+  useSyncExternalStore(subscribeChapterScreens, getChapterScreensVersion);
+  const calibratedPair = usesScreenPages(viewSettings, bookData?.isFixedLayout, sections)
+    ? getScreenPageInfo(bookKey, view, sections!, progress)
+    : null;
   const referenceInfo =
     readingProgressStyle === 'reference'
       ? getReferencePageInfo({
@@ -98,10 +156,22 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       : null;
   const progressInfo = referenceInfo
     ? `${referenceInfo.current}${isVertical ? ' · ' : ' / '}${referenceInfo.total}`
-    : formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
+    : template === '{percent}%'
+      ? formatProgressPercent(
+          bookData?.isFixedLayout ? undefined : progress?.fraction,
+          pageInfo?.current,
+          pageInfo?.total,
+          localize,
+          lang,
+        )
+      : calibratedPair && calibratedPair.total > 0
+        ? formatProgress(calibratedPair.current, calibratedPair.total, template, localize, lang)
+        : formatProgress(pageInfo?.current, pageInfo?.total, template, localize, lang);
 
-  // Sticky progress bar is horizontal-only; vertical mode keeps its side footer.
-  const stickyBarActive = viewSettings.showStickyProgressBar && !isVertical;
+  const stickyBarActive = !!viewSettings.showStickyProgressBar;
+  // The info sits on a reserved bottom band (paginated, sticky bar, or Solid
+  // Footer in scrolled mode, #6793) rather than over the text.
+  const bandReserved = footerReservesBand(viewSettings) && !isVertical;
   const tickFractions = useMemo(
     () => (stickyBarActive ? getChapterTickFractions(view, bookData?.bookDoc?.toc) : []),
     [stickyBarActive, view, bookData?.bookDoc?.toc],
@@ -112,7 +182,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     progress?.fraction ??
     (pageInfo && pageInfo.total > 0 ? (pageInfo.current + 1) / pageInfo.total : 0);
 
-  const { page: current = 0, pages: total = 0 } = view?.renderer || {};
   const screenPagesLeft = bookData?.isFixedLayout
     ? pageInfo
       ? Math.max(pageInfo.total - pageInfo.current, 1)
@@ -125,8 +194,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     chapterEnd !== undefined && progress
       ? Math.max(1, chapterEnd - progress.pageinfo.current)
       : undefined;
-  const sectionFractions = view?.getSectionFractions() ?? [];
-  const sectionIndex = section?.current ?? 0;
   const sectionLocation = bookData?.bookDoc?.sections?.[sectionIndex]?.location;
   // Foliate rounds current/next locations down. Their difference can alternate
   // between 0, 1 and 2 for identical screens, so use the unrounded section span.
@@ -167,35 +234,43 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         (n) => formatNumber(n, localize, lang),
       )
     : '';
-  const timeLeftStr = showPagesLeft
+  // The time readouts are translated with marks in place of the time and the
+  // page count, so the footer can wrap each part (renderMarked) for Custom
+  // Reader UI CSS (#7483) in any word order. `replace` feeds the marks to
+  // i18next while `count` still picks the plural form.
+  const timeLeftMarked = showPagesLeft
     ? remainingInBook
-      ? _('{{time}} left in book', { time: durationLeft })
-      : _('{{time}} left in chapter', { time: durationLeft })
+      ? _('{{time}} left in book', { time: TIME_MARK })
+      : _('{{time}} left in chapter', { time: TIME_MARK })
     : '';
   // One sentence when both are on, so "left in book/chapter" isn't said twice.
-  const numberLeft = localize && showBothRemaining ? formatNumber(pagesLeft, true, lang) : '';
-  const timeAndPagesLeftStr =
+  const numberLeft = localize ? formatNumber(pagesLeft, true, lang) : String(pagesLeft);
+  const timeAndPagesLeftMarked =
     showBothRemaining && showPagesLeft
       ? localize
         ? remainingInBook
           ? _('{{time}} and {{number}} pages left in book', {
-              time: durationLeft,
-              number: numberLeft,
+              time: TIME_MARK,
+              number: PAGES_MARK,
             })
           : _('{{time}} and {{number}} pages left in chapter', {
-              time: durationLeft,
-              number: numberLeft,
+              time: TIME_MARK,
+              number: PAGES_MARK,
             })
         : remainingInBook
           ? _('{{time}} and {{count}} pages left in book', {
-              time: durationLeft,
               count: pagesLeft,
+              replace: { time: TIME_MARK, count: PAGES_MARK },
             })
           : _('{{time}} and {{count}} pages left in chapter', {
-              time: durationLeft,
               count: pagesLeft,
+              replace: { time: TIME_MARK, count: PAGES_MARK },
             })
       : '';
+  const fillMarks = (marked: string) =>
+    marked.split(TIME_MARK).join(durationLeft).split(PAGES_MARK).join(numberLeft);
+  const timeLeftStr = fillMarks(timeLeftMarked);
+  const timeAndPagesLeftStr = fillMarks(timeAndPagesLeftMarked);
   const pagesLeftStr = showPagesLeft
     ? localize
       ? remainingInBook
@@ -226,27 +301,27 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   // pills in scrolled mode, see below) is a tap target.
   const [dismissed, setDismissed] = useState(false);
 
-  // Scrolled mode reserves no bottom band (footerReservesBand) — the info
-  // floats over the book text, so each segment carries its own shrink-wrapped
-  // pill backdrop to stay legible instead of a full-width bar. The pills
-  // double as the tap targets there: making the whole strip tappable would
-  // swallow taps and text selection over the last lines of the page, so the
-  // strip is only a target where it sits on reserved margin space (paginated
-  // band, sticky-bar band, vertical side column).
+  // Scrolled mode reserves no bottom band by default (footerReservesBand) —
+  // the info floats over the book text, so each segment carries its own
+  // shrink-wrapped pill backdrop to stay legible instead of a full-width bar.
+  // The pills double as the tap targets there: making the whole strip
+  // tappable would swallow taps and text selection over the last lines of the
+  // page, so the strip is only a target where it sits on reserved margin space
+  // (paginated band, sticky-bar band, Solid Footer band, vertical side column).
   const hasFooterContent = stickyBarActive || footerInfoVisible(viewSettings);
   const stripTappable = hasFooterContent && (isVertical || footerReservesBand(viewSettings));
-  // The sticky bar reserves the band again, so `auto` needs no pill there; a
-  // color the reader chose still paints, since they asked to see it (#5938).
+  // On a reserved band `auto` needs no pill; a color the reader chose still
+  // paints, since they asked to see it (#5938).
   const chip = getChromeChip(viewSettings, 'footer', {
     isEink,
     isScrolled: !!viewSettings.scrolled,
     isVertical: !!isVertical,
-    bandReserved: stickyBarActive,
+    bandReserved,
   });
   // The segment is the tap target for #5293 wherever the info floats over the
   // text -- that has to hold even when the reader turns the backdrop off, or
   // "Background: none" would silently take tap-to-toggle away with it.
-  const pillTappable = !!viewSettings.scrolled && !isVertical && !stickyBarActive;
+  const pillTappable = !!viewSettings.scrolled && !isVertical && !bandReserved;
   const pillClass =
     (pillTappable || chip) &&
     clsx(
@@ -288,7 +363,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         bookData?.isFixedLayout && !isEink && !pillClass && !isChromeStyled(viewSettings)
           ? 'text-white/75 mix-blend-difference'
           : 'text-base-content',
-        isVertical ? 'writing-vertical-rl' : 'w-full',
+        isVertical ? 'writing-vertical-rl leading-tight' : 'w-full',
         hidden && 'invisible',
       )}
       aria-label={[
@@ -309,12 +384,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         ...(textColor ? { color: textColor } : {}),
         ...(isVertical
           ? {
-              top: `${(contentInsets.top - gridInsets.top) * 1.5}px`,
-              bottom: `${(contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
+              top: `${gridInsets.top + (contentInsets.top - gridInsets.top) * 1.5}px`,
+              bottom: `${gridInsets.bottom + (contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
               left: showDoubleBorder
                 ? `calc(${contentInsets.left}px)`
-                : `calc(${Math.max(0, contentInsets.left - 32)}px)`,
-              width: showDoubleBorder ? '32px' : `${contentInsets.left}px`,
+                : `calc(${Math.max(0, Math.max(16, contentInsets.left) - 32)}px)`,
+              width: showDoubleBorder ? '32px' : `${Math.max(16, contentInsets.left)}px`,
             }
           : {
               ...(isIPhoneDuo
@@ -356,37 +431,40 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           'progress-strip flex items-center',
           stripTappable && 'pointer-events-auto cursor-pointer',
           dismissed && 'opacity-0',
-          !isEink && 'transition-opacity duration-300',
+          // Hide immediately so a page turn during the old 300 ms fade cannot
+          // repaint a partly visible footer. Showing may still fade in.
+          !isEink && !dismissed && 'transition-opacity duration-300',
           isVertical ? 'h-full' : 'w-full',
-          // Sticky bar grows on the left; the info widgets pack to the right
-          // with even gaps. Without it, keep the 3-zone left/center/right row.
-          stickyBarActive ? 'gap-x-3' : 'justify-between gap-x-2',
+          // Sticky bar grows on the start side; the info widgets pack to the
+          // end side with even gaps. Without it, keep the 3-zone row/column.
+          stickyBarActive ? (isVertical ? 'gap-3' : 'gap-x-3') : 'justify-between gap-x-2',
         )}
         style={isVertical ? {} : { height: `${viewSettings.marginBottomPx}px` }}
       >
         {stickyBarActive && (
           <StickyProgressBar
-            className='h-3 flex-1'
+            className={isVertical ? 'w-3 flex-1' : 'h-3 flex-1'}
             fraction={fillFraction}
             tickFractions={tickFractions}
             rtl={viewSettings.rtl}
+            vertical={isVertical}
             isEink={isEink}
           />
         )}
         {hasRemainingInfo && (
           <div
             className={clsx(
-              'remaining-info text-start truncate',
-              !stickyBarActive && 'flex-1 min-w-0',
+              'remaining-info text-start truncate tabular-nums',
+              !stickyBarActive && clsx('flex-1', isVertical ? 'min-h-0' : 'min-w-0'),
             )}
           >
             {showBothRemaining ? (
               <span className={clsx('time-left-label text-start', pillClass)} style={pillStyle}>
-                {timeAndPagesLeftStr}
+                {renderMarked(timeAndPagesLeftMarked, durationLeft, numberLeft, 'pages-left-label')}
               </span>
             ) : viewSettings.showRemainingTime ? (
               <span className={clsx('time-left-label text-start', pillClass)} style={pillStyle}>
-                {timeLeftStr}
+                {renderMarked(timeLeftMarked, durationLeft, numberLeft, 'time-left-text')}
               </span>
             ) : viewSettings.showRemainingPages && showPagesLeft ? (
               <span className={clsx('text-start', pillClass)} style={pillStyle}>
@@ -441,7 +519,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         <div
           className={clsx(
             'progress-readout items-center text-end tabular-nums truncate',
-            !stickyBarActive && 'flex-1 min-w-0',
+            !stickyBarActive && clsx('flex-1', isVertical ? 'min-h-0' : 'min-w-0'),
           )}
         >
           {viewSettings.showProgressInfo && (

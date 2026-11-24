@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { LibraryPageDurationsContext } from '@/hooks/useMedianPageDurationSecs';
-import { HideBookCoversContext } from '@/components/BookCover';
+import { HideBookCoversContext, PlainPlaceholderCoversContext } from '@/components/BookCover';
 import {
   useCallback,
   useEffect,
@@ -108,6 +108,20 @@ export const buildBookshelfRows = (
     return rows;
   });
 const itemKey = (item: Book | BooksGroup) => ('hash' in item ? item.hash : item.id);
+/** Hands a shelf's cover options to every BookCover rendered inside it. */
+const ShelfCovers = ({
+  definition,
+  children,
+}: {
+  definition: BookshelfDefinition;
+  children: React.ReactNode;
+}) => (
+  <HideBookCoversContext.Provider value={definition.hideCovers}>
+    <PlainPlaceholderCoversContext.Provider value={!!definition.plainPlaceholderCovers}>
+      {children}
+    </PlainPlaceholderCoversContext.Provider>
+  </HideBookCoversContext.Provider>
+);
 
 /** A bounded horizontal window; vertical scrolling belongs only to the parent stream. */
 export const BookshelfCarousel = ({
@@ -171,7 +185,7 @@ export const BookshelfCarousel = ({
     });
   };
   return (
-    <HideBookCoversContext.Provider value={section.definition.hideCovers}>
+    <ShelfCovers definition={section.definition}>
       <div className='group/carousel relative px-4 sm:px-2' data-shelf-layout='carousel'>
         <div
           ref={scroller}
@@ -243,7 +257,7 @@ export const BookshelfCarousel = ({
           </div>
         )}
       </div>
-    </HideBookCoversContext.Provider>
+    </ShelfCovers>
   );
 };
 interface StreamContext {
@@ -423,7 +437,7 @@ export default function BookshelfStream({
                   </div>
                 );
               return (
-                <HideBookCoversContext.Provider value={definition.hideCovers}>
+                <ShelfCovers definition={definition}>
                   <div
                     data-shelf-layout={definition.layout}
                     className={clsx(
@@ -446,7 +460,7 @@ export default function BookshelfStream({
                     ))}
                     {row.hasImport && <div className='min-w-0'>{importTile}</div>}
                   </div>
-                </HideBookCoversContext.Provider>
+                </ShelfCovers>
               );
             }}
           />

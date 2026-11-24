@@ -14,7 +14,6 @@ import {
   ShortcutAction,
   ShortcutConfig,
 } from '@/helpers/shortcuts';
-import { useKeyDownActions } from '@/hooks/useKeyDownActions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isMacPlatform } from '@/services/environment';
 import {
@@ -60,7 +59,6 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const replacementDialogRef = useRef<HTMLDivElement>(null);
-  useKeyDownActions({ onCancel: onBack, enabled: !listening && !pendingReplacement });
 
   useEffect(() => {
     const syncShortcuts = () => {

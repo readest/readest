@@ -1,0 +1,36 @@
+name: PR gate
+# Labels and comments on outside PRs that don't link an issue or whose commits
+# lack an agent attribution line. The same check runs as the `gate` job in
+# pull-request.yml and codeql.yml, which skips the rest of CI when it fails.
+#
+# This job ("PR gate") is the one to make a required check: it runs main's copy
+# of the workflow and script, so a PR can't edit it away. The CI gate jobs only
+# save CI minutes; a PR can edit those.
+#
+# pull_request_target gives the token write access, so this must never check
+# out or run the PR's code: the checkout below is the base branch.
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+    branches: [main]
+permissions: {}
+concurrency:
+  group: pr-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  gate:
+    name: PR gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+      - run: node .github/scripts/pr-gate.mjs --report
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

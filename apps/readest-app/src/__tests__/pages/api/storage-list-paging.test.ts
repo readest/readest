@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { IN_CHUNK_SIZE, MAX_PAGE_SIZE, chunkIds, resolvePageSize } from '@/pages/api/storage/list';
 
