@@ -38,7 +38,7 @@ import { xrayProvider } from '@/services/dictionaries/providers/xrayProvider';
 import { readPassages, type XRayPassage } from '@/services/xray/bookText';
 import { groundXRay } from '@/services/xray/extract';
 import { findEntity, linksOf, mergeXRay } from '@/services/xray/snapshot';
-import { findMentions } from '@/services/xray/mentions';
+import { cfiOfMention, findMentions } from '@/services/xray/mentions';
 import { __resetXRayStoreForTests } from '@/services/xray/store';
 import { clearBookXRay, getBookXRay, updateXRay, useXRayStore } from '@/services/xray/xrayService';
 import type { XRayData } from '@/services/xray/types';
@@ -191,7 +191,7 @@ describe('linksOf', () => {
 describe('findMentions', () => {
   it('counts a name as a word up to the page, and keeps the first and latest', async () => {
     const sections = [
-      '<p>Ann saw Anna. Annabel slept.</p>',
+      '<p>Ann saw Anna. Annabel and JoAnna slept.</p>',
       '<p>Later\n   Anna &amp; Boris left.</p><p>“No!” Anna wept.</p>',
       '<p>Anna died.</p>',
     ].map((html) => ({
@@ -202,12 +202,12 @@ describe('findMentions', () => {
       },
     }));
     const bookDoc = { sections } as unknown as BookDoc;
-    const { count, quotes } = await findMentions(bookDoc, pageAt(2), ['Anna'], 2);
+    const { count, mentions } = await findMentions(bookDoc, pageAt(2), ['Anna'], 2);
     expect(count).toBe(3);
-    expect(quotes.map(({ text }) => text)).toEqual(['Ann saw Anna.', 'Anna wept.']);
+    expect(mentions.map(({ text }) => text)).toEqual(['Ann saw Anna.', 'Anna wept.']);
     // The quote's CFI is the name's own place, past the collapsed white space.
     const later = await findMentions(bookDoc, pageAt(2), ['Boris'], 2);
-    expect(later.quotes[0]!.cfi).toBe('epubcfi(/6/4!/4/2/1:16)');
+    expect(await cfiOfMention(bookDoc, later.mentions[0]!)).toBe('epubcfi(/6/4!/4/2/1:16)');
   });
 });
 

@@ -9,7 +9,7 @@ import { getSignedInToken, isCustomTranslatorAllowed } from '@/utils/access';
 import { getTargetLang } from '@/utils/misc';
 import { readPassages, type XRayPassage } from './bookText';
 import { extractXRay } from './extract';
-import { findMentions, type XRayMentions } from './mentions';
+import { cfiOfMention, findMentions, type XRayMention, type XRayMentions } from './mentions';
 import { checkpointXRay, clearXRay, getXRay, getXRayEnd, saveXRayBatch } from './store';
 import type { XRayData } from './types';
 
@@ -62,12 +62,17 @@ export const getBookMentions = async (
 ): Promise<XRayMentions> => {
   const location = getBookProgress(bookKey)?.location;
   const bookDoc = useBookDataStore.getState().getBookData(bookKey)?.bookDoc;
-  if (!location || !bookDoc) return { count: 0, quotes: [] };
+  if (!location || !bookDoc) return { count: 0, mentions: [] };
   return findMentions(bookDoc, location, names, limit);
 };
 
 export const openQuote = (bookKey: string, cfi: string) =>
   useReaderStore.getState().getView(bookKey)?.goTo(cfi);
+
+export const openMention = async (bookKey: string, mention: XRayMention) => {
+  const bookDoc = useBookDataStore.getState().getBookData(bookKey)?.bookDoc;
+  if (bookDoc) openQuote(bookKey, await cfiOfMention(bookDoc, mention));
+};
 
 const controllers = new Map<string, AbortController>();
 

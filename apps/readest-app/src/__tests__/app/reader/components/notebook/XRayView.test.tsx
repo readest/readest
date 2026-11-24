@@ -6,6 +6,7 @@ const h = vi.hoisted(() => ({
   xray: null as unknown,
   available: true,
   openQuote: vi.fn(),
+  openMention: vi.fn(),
   updateXRay: vi.fn(),
   stopXRayUpdate: vi.fn(),
   getBookMentions: vi.fn(),
@@ -20,6 +21,7 @@ vi.mock('@/services/xray/xrayService', async () => {
     getBookMentions: h.getBookMentions,
     isXRayAvailable: () => h.available,
     openQuote: h.openQuote,
+    openMention: h.openMention,
     updateXRay: h.updateXRay,
     stopXRayUpdate: h.stopXRayUpdate,
     clearBookXRay: vi.fn(),
@@ -58,7 +60,7 @@ beforeEach(() => {
   h.xray = data;
   h.available = true;
   vi.clearAllMocks();
-  h.getBookMentions.mockResolvedValue({ count: 0, quotes: [] });
+  h.getBookMentions.mockResolvedValue({ count: 0, mentions: [] });
   useXRayStore.setState({ updates: {}, revision: 0, lookup: null, isDocked: false });
 });
 afterEach(cleanup);
@@ -72,17 +74,15 @@ describe('XRayView', () => {
   });
 
   it('shows the entry of a pinned lookup, where it was mentioned, and what it links to', async () => {
-    h.getBookMentions.mockResolvedValue({
-      count: 12,
-      quotes: [{ text: 'Anna came in.', cfi: 'cfi-in' }],
-    });
+    const mention = { text: 'Anna came in.', section: 1, offset: 4 };
+    h.getBookMentions.mockResolvedValue({ count: 12, mentions: [mention] });
     useXRayStore.setState({ lookup: { word: 'mrs. petrovna', id: 1 } });
     await renderView();
     expect(screen.queryByText('Boris')).toBeNull();
     expect(h.getBookMentions.mock.calls[0]![1]).toEqual(['Anna', 'Mrs. Petrovna']);
     expect(screen.getByText('Mentions · 12')).toBeTruthy();
     fireEvent.click(screen.getByText('“Anna came in.”'));
-    expect(h.openQuote).toHaveBeenCalledWith('hash-1', 'cfi-in');
+    expect(h.openMention).toHaveBeenCalledWith('hash-1', mention);
 
     fireEvent.click(screen.getByRole('button', { name: 'Anna · married to · Boris' }));
     await act(async () => {});

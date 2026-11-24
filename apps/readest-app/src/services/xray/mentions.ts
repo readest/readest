@@ -1,8 +1,7 @@
 import type { BookDoc } from '@/libs/document';
 import { extractSentence } from '@/services/vocabulary/entry';
 import { XCFI } from '@/utils/xcfi';
-import { loadSection, type SectionText } from './bookText';
-import type { XRayQuote } from './types';
+import { loadSection } from './bookText';
 
 /** Around a mention, enough to hold its sentence. */
 const CONTEXT_CHARS = 400;
@@ -12,6 +11,9 @@ const CONTEXT_CHARS = 400;
 let cached: { bookDoc: BookDoc; texts: Map<number, string> } | null = null;
 
 // A name between other letters is another word; CJK has no spaces to tell.
+const CJK = /[぀-ヿ㐀-鿿가-힯]/;
+const WORD = /[\p{L}\p{N}]/u;
+
 const namePattern = (names: readonly string[]) =>
   new RegExp(
     names
@@ -22,18 +24,38 @@ const namePattern = (names: readonly string[]) =>
           .trim()
           .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
           .replace(/\s+/g, ' ');
-        const cjk = /[぀-ヿ㐀-鿿가-힯]/.test(name);
-        return cjk ? escaped : `(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`;
+        return CJK.test(name) ? escaped : `${escaped}(?![\\p{L}\\p{N}])`;
       })
       .join('|'),
     'gu',
   );
 
+/** Whether a match starts a word. Older WebKit has no lookbehind to do it in the pattern. */
+const startsWord = (text: string, { 0: match, index }: RegExpExecArray) =>
+  CJK.test(match) || !WORD.test(text[index - 1] ?? '');
+
+export interface XRayMention {
+  /** Its sentence. */
+  text: string;
+  section: number;
+  /** Where it is in the section's text. */
+  offset: number;
+}
+
 export interface XRayMentions {
   count: number;
   /** The first, and the latest ones. */
-  quotes: XRayQuote[];
+  mentions: XRayMention[];
 }
+
+const sentenceOf = (text: string, at: number, word: string) =>
+  extractSentence(
+    text.slice(Math.max(0, at - CONTEXT_CHARS), at),
+    word,
+    text.slice(at + word.length, at + word.length + CONTEXT_CHARS),
+  )
+    // A sentence end leaves the closing quote of the sentence before.
+    .replace(/^[”’"'»)\]\s]+/, '');
 
 /** Where the book mentions any of `names`, up to the page at `location`. */
 export const findMentions = async (
@@ -43,46 +65,38 @@ export const findMentions = async (
   limit: number,
 ): Promise<XRayMentions> => {
   const pattern = namePattern(names);
-  if (!pattern.source || pattern.source === '(?:)') return { count: 0, quotes: [] };
+  if (pattern.source === '(?:)') return { count: 0, mentions: [] };
   if (cached?.bookDoc !== bookDoc) cached = { bookDoc, texts: new Map() };
   const { texts } = cached;
   const current = Math.min(XCFI.extractSpineIndex(location), bookDoc.sections.length - 1);
-  const found: { index: number; at: number; word: string }[] = [];
-  let first: (typeof found)[number] | undefined;
+  // The first mention, then a window that slides to the latest ones.
+  const found: { section: number; offset: number; word: string }[] = [];
   let count = 0;
-  for (let index = 0; index <= current; index++) {
-    if (bookDoc.sections[index]!.linear === 'no') continue;
-    let text = texts.get(index);
-    if (text === undefined || index === current) {
-      const section = await loadSection(bookDoc, index);
-      text = section.text;
-      texts.set(index, text);
-      if (index === current) text = text.slice(0, section.offsetOf(location));
+  for (let section = 0; section <= current; section++) {
+    if (bookDoc.sections[section]!.linear === 'no') continue;
+    let text = texts.get(section);
+    if (text === undefined || section === current) {
+      const loaded = await loadSection(bookDoc, section);
+      texts.set(section, loaded.text);
+      text = section === current ? loaded.text.slice(0, loaded.offsetOf(location)) : loaded.text;
     }
     for (const match of text.matchAll(pattern)) {
-      const mention = { index, at: match.index, word: match[0] };
-      first ??= mention;
+      if (!startsWord(text, match)) continue;
       count++;
-      found.push(mention);
-      if (found.length > limit) found.shift();
+      if (found.length === limit) found.splice(1, 1);
+      found.push({ section, offset: match.index, word: match[0] });
     }
   }
-  if (first && !found.includes(first)) found.splice(0, found.length === limit ? 1 : 0, first);
-  const sections = new Map<number, SectionText>();
-  const quotes: XRayQuote[] = [];
-  for (const { index, at, word } of found) {
-    const section = sections.get(index) ?? (await loadSection(bookDoc, index));
-    sections.set(index, section);
-    const { text } = section;
-    quotes.push({
-      // A sentence end leaves the closing quote of the sentence before.
-      text: extractSentence(
-        text.slice(Math.max(0, at - CONTEXT_CHARS), at),
-        word,
-        text.slice(at + word.length, at + word.length + CONTEXT_CHARS),
-      ).replace(/^[”’"'»)\]\s]+/, ''),
-      cfi: section.cfiAt(at),
-    });
-  }
-  return { count, quotes };
+  return {
+    count,
+    mentions: found.map(({ section, offset, word }) => ({
+      text: sentenceOf(texts.get(section)!, offset, word),
+      section,
+      offset,
+    })),
+  };
 };
+
+/** The CFI of a mention. */
+export const cfiOfMention = async (bookDoc: BookDoc, { section, offset }: XRayMention) =>
+  (await loadSection(bookDoc, section)).cfiAt(offset);

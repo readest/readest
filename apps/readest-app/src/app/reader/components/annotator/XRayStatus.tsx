@@ -4,6 +4,7 @@ import type { XRayMentions } from '@/services/xray/mentions';
 import {
   getBookMentions,
   isXRayAvailable,
+  openMention,
   openQuote,
   stopXRayUpdate,
   updateXRay,
@@ -14,19 +15,16 @@ import { useBookXRay } from '../../hooks/useBookXRay';
 
 const MENTIONS = 5;
 
-export const XRayQuotes: React.FC<{ bookKey: string; quotes: readonly XRayQuote[] }> = ({
-  bookKey,
-  quotes,
-}) => {
+const Quotes: React.FC<{ quotes: { text: string; open: () => void }[] }> = ({ quotes }) => {
   const _ = useTranslation();
   return (
     <ul className='mt-1 space-y-1'>
-      {quotes.map(({ text, cfi }) => (
-        <li key={cfi}>
+      {quotes.map(({ text, open }, index) => (
+        <li key={index}>
           <button
             type='button'
             title={_('Jump to quote')}
-            onClick={() => openQuote(bookKey, cfi)}
+            onClick={open}
             className='not-eink:opacity-75 not-eink:hover:bg-base-300/60 min-h-8 w-full rounded-md px-1.5 py-1 text-start text-sm italic'
           >
             “{text}”
@@ -36,6 +34,13 @@ export const XRayQuotes: React.FC<{ bookKey: string; quotes: readonly XRayQuote[
     </ul>
   );
 };
+
+export const XRayQuotes: React.FC<{ bookKey: string; quotes: readonly XRayQuote[] }> = ({
+  bookKey,
+  quotes,
+}) => (
+  <Quotes quotes={quotes.map(({ text, cfi }) => ({ text, open: () => openQuote(bookKey, cfi) }))} />
+);
 
 /** Where the book has mentioned `names`: the first time and the latest ones. */
 export const XRayMentionList: React.FC<{ bookKey: string; names: readonly string[] }> = ({
@@ -60,7 +65,12 @@ export const XRayMentionList: React.FC<{ bookKey: string; names: readonly string
       <p className='not-eink:opacity-60 text-xs'>
         {_('Mentions')} · {mentions.count}
       </p>
-      <XRayQuotes bookKey={bookKey} quotes={mentions.quotes} />
+      <Quotes
+        quotes={mentions.mentions.map((mention) => ({
+          text: mention.text,
+          open: () => void openMention(bookKey, mention),
+        }))}
+      />
     </div>
   );
 };
