@@ -112,15 +112,70 @@ describe('useDragDropImport skipped-file toast', () => {
       ),
     );
 
-    const toasts = toastPayloads(spy);
-    expect(toasts).toHaveLength(1);
-    expect(toasts[0]!.type).toBe('error');
-    expect(toasts[0]!.message).toBe('Failed to import book(s): b.exe, c.doc');
-
+    // The import reports them with its own result: a toast of their own was
+    // replaced by its success toast (#6991).
+    expect(toastPayloads(spy)).toHaveLength(0);
     const importPayload = spy.mock.calls.find((call) => call[0] === 'import-book-files')?.[1] as {
       files: { file?: File; path?: string }[];
+      skipped: string[];
     };
     expect(importPayload.files).toEqual([{ file: undefined, path: 'C:\\Library\\a.epub' }]);
+    expect(importPayload.skipped).toEqual(['b.exe', 'c.doc']);
+  });
+
+  it('names the skipped file of a folder drop once the folder has imported (#6991)', async () => {
+    isDirectory.mockImplementation(async (path: string) => path === 'C:\\Library');
+    const spy = vi.spyOn(eventDispatcher, 'dispatch');
+    // The library page imports the folder, then toasts its own result.
+    const importFolder = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      await eventDispatcher.dispatch('toast', {
+        type: 'success',
+        message: 'Successfully imported 1 book(s)',
+      });
+    };
+    eventDispatcher.on('import-book-directory', importFolder);
+    try {
+      renderHook(() => useDragDropImport());
+      await dropTauriPaths(['C:\\Library', 'C:\\Library\\notes.xyz']);
+
+      await waitFor(() => expect(toastPayloads(spy)).toHaveLength(2));
+      expect(toastPayloads(spy).map(({ type, message }) => [type, message])).toEqual([
+        ['success', 'Successfully imported 1 book(s)'],
+        ['error', 'Failed to import book(s): notes.xyz'],
+      ]);
+    } finally {
+      eventDispatcher.off('import-book-directory', importFolder);
+    }
+  });
+
+  // Import runs are serialized: a folder imported after the loose files would
+  // toast its result over the one that names the skipped files.
+  it('imports the folders of a mixed drop before its loose files, which name the skipped ones', async () => {
+    isDirectory.mockImplementation(async (path: string) => path === 'C:\\Library');
+    const spy = vi.spyOn(eventDispatcher, 'dispatch');
+    const order: string[] = [];
+    const importFolder = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      order.push('folder');
+    };
+    const importFiles = async () => {
+      order.push('files');
+    };
+    eventDispatcher.on('import-book-directory', importFolder);
+    eventDispatcher.on('import-book-files', importFiles);
+    try {
+      renderHook(() => useDragDropImport());
+      await dropTauriPaths(['C:\\Library', 'C:\\a.epub', 'C:\\notes.xyz']);
+
+      await waitFor(() => expect(order).toEqual(['folder', 'files']));
+      const importPayload = spy.mock.calls.find((call) => call[0] === 'import-book-files')?.[1];
+      expect(importPayload).toMatchObject({ skipped: ['notes.xyz'] });
+      expect(toastPayloads(spy)).toHaveLength(0);
+    } finally {
+      eventDispatcher.off('import-book-directory', importFolder);
+      eventDispatcher.off('import-book-files', importFiles);
+    }
   });
 
   it('keeps the supported-formats hint when nothing in the drop is supported', async () => {
@@ -174,13 +229,12 @@ describe('useDragDropImport skipped-file toast', () => {
 
     await waitFor(() => expect(spy).toHaveBeenCalledWith('import-book-files', expect.anything()));
 
-    const toasts = toastPayloads(spy);
-    expect(toasts).toHaveLength(1);
-    expect(toasts[0]!.message).toBe('Failed to import book(s): b.exe');
-
+    expect(toastPayloads(spy)).toHaveLength(0);
     const importPayload = spy.mock.calls.find((call) => call[0] === 'import-book-files')?.[1] as {
       files: { file?: File; path?: string }[];
+      skipped: string[];
     };
     expect(importPayload.files).toEqual([{ file: expect.any(File), path: undefined }]);
+    expect(importPayload.skipped).toEqual(['b.exe']);
   });
 });

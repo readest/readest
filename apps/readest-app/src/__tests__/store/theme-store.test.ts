@@ -37,6 +37,9 @@ import { addPluginListener } from '@tauri-apps/api/core';
 import { startAmbientLightUpdates, stopAmbientLightUpdates } from '@/utils/bridge';
 import { useThemeStore, loadDataTheme, initSystemThemeListener } from '@/store/themeStore';
 import type { AppService } from '@/types/system';
+import type { EnvConfigType } from '@/services/environment';
+import type { SystemSettings } from '@/types/settings';
+import type { CustomTheme } from '@/styles/themes';
 
 describe('themeStore', () => {
   beforeEach(() => {
@@ -471,6 +474,49 @@ describe('themeStore', () => {
 
       useThemeStore.setState({ isDarkMode: false });
       expect(useThemeStore.getState().getIsDarkMode()).toBe(false);
+    });
+  });
+
+  describe('saveCustomTheme', () => {
+    const makeTheme = (name: string, bg: string): CustomTheme => ({
+      name,
+      label: name,
+      colors: {
+        light: { bg, fg: '#000000', primary: '#0066cc' },
+        dark: { bg: '#000000', fg: bg, primary: '#0066cc' },
+      },
+    });
+
+    // The footer Color panel memoizes on the list it was given, so a theme
+    // pushed into that same array stayed hidden there until a reload (#7716).
+    test('hands settings a new list and leaves the one already on screen as it was', async () => {
+      const saveSettings = vi.fn();
+      const envConfig = {
+        getAppService: async () => ({ saveSettings }),
+      } as unknown as EnvConfigType;
+      const paper = makeTheme('paper', '#f4ecd8');
+      const ink = makeTheme('ink', '#e8e8e8');
+      const shown = [paper];
+      const settings = {
+        globalReadSettings: { customThemes: shown },
+      } as unknown as SystemSettings;
+      const { saveCustomTheme } = useThemeStore.getState();
+
+      await saveCustomTheme(envConfig, settings, ink);
+      expect(shown).toEqual([paper]);
+      expect(settings.globalReadSettings.customThemes).toEqual([paper, ink]);
+
+      const added = settings.globalReadSettings.customThemes;
+      const edited = makeTheme('ink', '#dddddd');
+      await saveCustomTheme(envConfig, settings, edited);
+      expect(added).toEqual([paper, ink]);
+      expect(settings.globalReadSettings.customThemes).toEqual([paper, edited]);
+
+      const beforeDelete = settings.globalReadSettings.customThemes;
+      await saveCustomTheme(envConfig, settings, paper, true);
+      expect(beforeDelete).toEqual([paper, edited]);
+      expect(settings.globalReadSettings.customThemes).toEqual([edited]);
+      expect(saveSettings).toHaveBeenCalledTimes(3);
     });
   });
 });

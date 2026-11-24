@@ -526,6 +526,70 @@ describe('ReplicaSyncManager.pull', () => {
   });
 });
 
+// A push does not move the pull cursor, so the next pull brings this device's
+// own last push back. A change queued since then must not lose to that older
+// copy: the Context Dictionary switch flipped back after a focus pull (#7670).
+describe('ReplicaSyncManager pull with a change still queued', () => {
+  const nameRow = (id: string, name: string, t: Hlc): ReplicaRow => ({
+    ...makeRow(id, t),
+    fields_jsonb: { name: { v: name, t, s: DEV } },
+  });
+
+  test('pull keeps the queued value over the older pulled one', async () => {
+    const pushed = nameRow('r1', 'off', hlcPack(NOW + 100, 0, DEV) as Hlc);
+    const other = nameRow('r2', 'remote', hlcPack(NOW + 150, 0, DEV) as Hlc);
+    const { manager, cursors } = makeManager({ pull: vi.fn(async () => [pushed, other]) });
+    manager.markDirty(nameRow('r1', 'on', hlcPack(NOW + 200, 0, DEV) as Hlc));
+
+    const rows = await manager.pull('dictionary');
+
+    expect(rows.map((row) => row.fields_jsonb['name']!.v)).toEqual(['on', 'remote']);
+    expect(cursors.get('dictionary')).toBe(other.updated_at_ts);
+    expect(manager.pendingCount()).toBe(1);
+  });
+
+  test('pullMany keeps the queued value over the older pulled one', async () => {
+    const pushed = nameRow('r1', 'off', hlcPack(NOW + 100, 0, DEV) as Hlc);
+    const { manager } = makeManager({
+      pullBatch: vi.fn(async () => [{ kind: 'dictionary', rows: [pushed] }]),
+    });
+    manager.markDirty(nameRow('r1', 'on', hlcPack(NOW + 200, 0, DEV) as Hlc));
+
+    const rows = (await manager.pullMany(['dictionary'])).get('dictionary')!;
+
+    expect(rows.map((row) => row.fields_jsonb['name']!.v)).toEqual(['on']);
+  });
+
+  // The online handler flushes while the online pull is in flight: the push
+  // lands, its queued entry goes, then the pull answers with the older copy.
+  test('pull keeps a value pushed while it was in flight over the older pulled one', async () => {
+    const older = nameRow('r1', 'off', hlcPack(NOW + 100, 0, DEV) as Hlc);
+    let answer!: (rows: ReplicaRow[]) => void;
+    const { manager } = makeManager({
+      pull: vi.fn(() => new Promise<ReplicaRow[]>((resolve) => (answer = resolve))),
+    });
+    manager.markDirty(nameRow('r1', 'on', hlcPack(NOW + 200, 0, DEV) as Hlc));
+
+    const pulling = manager.pull('dictionary');
+    await manager.flush();
+    expect(manager.pendingCount()).toBe(0);
+    answer([older]);
+    const [row] = await pulling;
+
+    expect(row!.fields_jsonb['name']!.v).toBe('on');
+  });
+
+  test('a newer remote value still wins over an older queued one', async () => {
+    const remote = nameRow('r1', 'remote', hlcPack(NOW + 300, 0, 'dev-b') as Hlc);
+    const { manager } = makeManager({ pull: vi.fn(async () => [remote]) });
+    manager.markDirty(nameRow('r1', 'local', hlcPack(NOW + 200, 0, DEV) as Hlc));
+
+    const [row] = await manager.pull('dictionary');
+
+    expect(row!.fields_jsonb['name']!.v).toBe('remote');
+  });
+});
+
 describe('ReplicaSyncManager.pullMany (batched incremental)', () => {
   test("one pullBatch round-trip per call, with each kind's persisted cursor", async () => {
     // Seed cursors so we can verify each kind\'s cursor reaches the

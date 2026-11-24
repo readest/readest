@@ -412,19 +412,15 @@ export const useThemeStore = create<ThemeState>((set, get) => {
       }
     },
     saveCustomTheme: async (envConfig, settings, theme, isDelete) => {
-      const customThemes = settings.globalReadSettings.customThemes || [];
-      const index = customThemes.findIndex((t) => t.name === theme.name);
-      if (isDelete) {
-        if (index > -1) {
-          customThemes.splice(index, 1);
-        }
-      } else {
-        if (index > -1) {
-          customThemes[index] = theme;
-        } else {
-          customThemes.push(theme);
-        }
-      }
+      // A new list, not the one on screen changed in place: the footer Color
+      // panel memoizes on it and missed a new theme until a reload (#7716).
+      const current = settings.globalReadSettings.customThemes || [];
+      const exists = current.some((t) => t.name === theme.name);
+      const customThemes = isDelete
+        ? current.filter((t) => t.name !== theme.name)
+        : exists
+          ? current.map((t) => (t.name === theme.name ? theme : t))
+          : [...current, theme];
       settings.globalReadSettings.customThemes = customThemes;
       localStorage.setItem('customThemes', JSON.stringify(customThemes));
       const appService = await envConfig.getAppService();

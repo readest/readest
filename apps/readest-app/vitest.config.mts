@@ -20,6 +20,11 @@ const prebundled = [
   'i18next-browser-languagedetector',
 ];
 
+// One time zone for every host, and not UTC: CI runs in UTC, where a UTC date
+// and a local one are the same and a test can't tell them apart. Set here, in
+// the main process: worker threads can't change the zone once started.
+process.env.TZ = 'Asia/Tokyo';
+
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   resolve: {

@@ -12,6 +12,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useFileSelector } from '@/hooks/useFileSelector';
 import { useScreenWakeLock } from '@/hooks/useScreenWakeLock';
 import { restoreFromBackupZip, saveBackupFile } from '@/services/backupService';
+import { toDateKey } from '@/services/statistics/readingStats';
 import { useLibraryStore } from '@/store/libraryStore';
 import Dialog from '@/components/Dialog';
 
@@ -102,7 +103,8 @@ export const BackupWindow: React.FC<BackupWindowProps> = ({ onPullLibrary }) => 
     setProgress({ current: 0, total: 0 });
 
     try {
-      const timestamp = new Date().toISOString().slice(0, 10);
+      // The user's own date: in UTC an early-morning backup carried yesterday's.
+      const timestamp = toDateKey(new Date());
       const filename = `readest-backup-${timestamp}.zip`;
       const saved = await saveBackupFile(
         appService,

@@ -26,6 +26,7 @@ import {
 import { renderNoteTemplate, formatBlockQuote } from '@/utils/note';
 import { getPublicCoverUrl } from '@/utils/cover';
 import { sanitizeNoteHtml } from '@/app/reader/utils/noteMarkdown';
+import { toDateKey } from '@/services/statistics/readingStats';
 import {
   AnnotationLinkType,
   buildAnnotationAppUrl,
@@ -357,7 +358,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
 
       // Add export date
       if (exportConfig.includeDate) {
-        lines.push(`**${_('Exported from Readest')}**: ${new Date().toISOString().slice(0, 10)}`);
+        lines.push(`**${_('Exported from Readest')}**: ${toDateKey(new Date())}`);
         lines.push('');
       }
 

@@ -35,8 +35,27 @@ export interface SelectedFile {
 
 export interface FileSelectionResult {
   files: SelectedFile[];
+  // Names of the picked book files the extension whitelist dropped, for the
+  // caller to report with the import's own result (#6991).
+  skipped?: string[];
   error?: string;
 }
+
+/**
+ * Name the files a book pick or drop skipped for their format (#5959), when
+ * there are no books to import with them. With books, `importBooks` reports
+ * them with its own result instead: its toast replaced this one (#6991).
+ */
+export const toastSkippedBooks = (_: TranslationFunc, filenames: string[]) => {
+  if (filenames.length === 0) return;
+  eventDispatcher.dispatch('toast', {
+    type: 'error',
+    message: _('Failed to import book(s): {{filenames}}', {
+      filenames: filenames.join(', '),
+    }),
+    timeout: 5000,
+  });
+};
 
 /**
  * Whether `filename` is one of `extensions` (lowercase, no leading dot), with
@@ -100,7 +119,7 @@ const selectFileTauri = async (
   options: FileSelectorOptions,
   appService: AppService,
   _: TranslationFunc,
-): Promise<SelectedFile[]> => {
+): Promise<FileSelectionResult> => {
   // A gamescope session (SteamOS Gaming Mode) runs no XDG portal backend, so
   // the FileChooser dialog can never appear, and the sandboxed Flatpak relies
   // on that dialog to grant file access — there is no in-app fallback. The
@@ -148,30 +167,25 @@ const selectFileTauri = async (
     paths.map(async (path) => ({ path, name: await resolveTauriFileName(path, appService) })),
   );
 
+  let skipped: string[] | undefined;
   if (noFilter && options.extensions) {
     const extensions = options.extensions;
     const kept = files.filter(({ name }) => hasAllowedExtension(name, extensions));
     // Whatever the whitelist drops here disappears without a trace: an
     // all-dropped selection is indistinguishable from a cancel, and a mixed one
     // imports part of the pick and stays quiet about the rest (issue #5959).
-    // Name the skipped files. Only book selections get the toast — it is the
-    // one message already translated, and it would read as nonsense for an
-    // audio or dictionary pick.
+    // Return the skipped names for the caller to toast. Only book selections
+    // get them — the toast is the one message already translated, and it
+    // would read as nonsense for an audio or dictionary pick.
     if (options.type === 'books' && kept.length < files.length) {
-      const skipped = files.filter((file) => !kept.includes(file));
-      const filenames = skipped.map(({ name, path }) => name || getFilename(path!)).join(', ');
-      eventDispatcher.dispatch('toast', {
-        type: 'error',
-        message: _('Failed to import book(s): {{filenames}}', {
-          filenames,
-        }),
-        timeout: 5000,
-      });
+      skipped = files
+        .filter((file) => !kept.includes(file))
+        .map(({ name, path }) => name || getFilename(path!));
     }
     files = kept;
   }
 
-  return files;
+  return { files, skipped };
 };
 
 const processWebFiles = (files: File[]): SelectedFile[] => {
@@ -188,8 +202,7 @@ export const useFileSelector = (appService: AppService | null, _: TranslationFun
     }
     try {
       if (isTauriAppPlatform()) {
-        const files = await selectFileTauri(options, appService, _);
-        return { files };
+        return await selectFileTauri(options, appService, _);
       } else {
         const webFiles = await selectFileWeb(options);
         const files = processWebFiles(webFiles);

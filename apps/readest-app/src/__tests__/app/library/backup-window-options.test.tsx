@@ -81,6 +81,27 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+// Half past midnight is still the day before in UTC: the unit tests run in
+// Asia/Tokyo (vitest.config.mts).
+const localNov23 = new Date(2026, 10, 23, 0, 30);
+
+describe('BackupWindow backup file name', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('names the backup by the local date', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(localNov23);
+    mocks.saveBackupFile.mockResolvedValue(true);
+    await open();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Create Backup' }));
+    });
+    expect(mocks.saveBackupFile.mock.lastCall?.[1]).toBe('readest-backup-2026-11-23.zip');
+  });
+});
+
 describe('BackupWindow backup options (#7752)', () => {
   it('backs up the library and settings without credentials by default', async () => {
     mocks.saveBackupFile.mockResolvedValue(true);

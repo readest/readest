@@ -10,7 +10,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { LibraryGroupByType } from '@/types/settings';
 import { ensureLibraryGroupByType } from '../utils/libraryUtils';
 import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
-import { hasAllowedExtension } from '@/hooks/useFileSelector';
+import { hasAllowedExtension, toastSkippedBooks } from '@/hooks/useFileSelector';
 import { getFilename } from '@/utils/path';
 import { useSearchParams } from 'next/navigation';
 
@@ -62,33 +62,32 @@ export const useDragDropImport = () => {
       return;
     }
 
-    // A mixed drop must not make the whitelist-dropped files vanish without a
-    // trace while the rest imports — the picker path names them for the same
-    // reason (#5959). An all-unsupported drop is answered above with the
-    // supported-format list instead.
-    if (skippedItems.length > 0) {
-      const filenames = skippedItems.map(itemName).join(', ');
-      eventDispatcher.dispatch('toast', {
-        type: 'error',
-        message: _('Failed to import book(s): {{filenames}}', {
-          filenames,
-        }),
-        timeout: 5000,
-      });
-    }
-
     if (appService.hasHaptics) {
       impactFeedback('medium');
     }
 
+    // A mixed drop must not make the whitelist-dropped files vanish without a
+    // trace while the rest imports — the picker path names them for the same
+    // reason (#5959). An all-unsupported drop is answered above with the
+    // supported-format list instead.
+    const skipped = skippedItems.map(itemName);
+    // Folders first: import runs are serialized, and a folder imported after
+    // the loose files would toast its result over the one naming the skipped
+    // files (#6991).
+    await Promise.allSettled(
+      directoryPaths.map((path) => eventDispatcher.dispatch('import-book-directory', { path })),
+    );
     if (fileSelections.length > 0) {
+      // Reported with the import's own result: a toast of their own was
+      // replaced by its success or failure toast.
       eventDispatcher.dispatch('import-book-files', {
         files: fileSelections,
         groupId: group,
+        skipped,
       });
-    }
-    for (const dir of directoryPaths) {
-      eventDispatcher.dispatch('import-book-directory', { path: dir });
+    } else {
+      // Folders and unsupported files only: named once the folders are in.
+      toastSkippedBooks(_, skipped);
     }
   };
 

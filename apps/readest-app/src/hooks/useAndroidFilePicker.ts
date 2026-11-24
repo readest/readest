@@ -7,8 +7,6 @@ import {
   hasAllowedExtension,
   resolveTauriFileName,
 } from '@/hooks/useFileSelector';
-import { useTranslation } from '@/hooks/useTranslation';
-import { eventDispatcher } from '@/utils/event';
 
 interface FilePickerResultPayload {
   uris: string[];
@@ -32,7 +30,7 @@ interface FilePickerResultPayload {
  */
 export function useAndroidPickedBooks(
   appService: AppService | null,
-  onPickedBooks: (files: SelectedFile[]) => void,
+  onPickedBooks: (files: SelectedFile[], skipped: string[]) => void,
 ) {
   // Keep the native listener registered once per appService while always
   // dispatching to the latest callback: re-registering on every render would
@@ -40,9 +38,6 @@ export function useAndroidPickedBooks(
   // unregister/register pair.
   const onPickedBooksRef = useRef(onPickedBooks);
   onPickedBooksRef.current = onPickedBooks;
-  const _ = useTranslation();
-  const _ref = useRef(_);
-  _ref.current = _;
 
   useEffect(() => {
     if (!appService?.isAndroidApp) return;
@@ -61,23 +56,14 @@ export function useAndroidPickedBooks(
         );
         const extensions = FILE_SELECTION_PRESETS.books.extensions;
         const books = files.filter(({ name }) => hasAllowedExtension(name, extensions));
-        if (books.length > 0) {
-          onPickedBooksRef.current(books);
-        }
         // Files the whitelist drops used to vanish without a trace, so an
         // unsupported (or oddly named) pick looked like the import button doing
-        // nothing at all (issue #5959). Name them, whether or not anything else
-        // in the same pick made it through.
-        if (books.length < files.length) {
-          const skipped = files.filter((file) => !books.includes(file));
-          eventDispatcher.dispatch('toast', {
-            type: 'error',
-            message: _ref.current('Failed to import book(s): {{filenames}}', {
-              filenames: skipped.map(({ name, path }) => name || path).join(', '),
-            }),
-            timeout: 5000,
-          });
-        }
+        // nothing at all (issue #5959). Hand their names over with the books,
+        // to be reported with the import's own result (#6991).
+        const skipped = files
+          .filter((file) => !books.includes(file))
+          .map(({ name, path }) => name || path!);
+        onPickedBooksRef.current(books, skipped);
       },
     );
 

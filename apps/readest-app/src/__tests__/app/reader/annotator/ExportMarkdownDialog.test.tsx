@@ -204,6 +204,29 @@ describe('ExportMarkdownDialog highlight context', () => {
   });
 });
 
+// Half past midnight is still the day before in UTC: the unit tests run in
+// Asia/Tokyo (vitest.config.mts).
+const localNov23 = new Date(2026, 10, 23, 0, 30);
+
+describe('ExportMarkdownDialog export date', () => {
+  beforeEach(() => {
+    h.appService = {};
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  it('writes the local date the notes were exported on', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(localNov23);
+    const onExport = renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }));
+    expect(onExport.mock.lastCall?.[0]).toContain('**Exported from Readest**: 2026-11-23');
+  });
+});
+
 describe('ExportMarkdownDialog preview', () => {
   beforeEach(() => {
     h.appService = {};
