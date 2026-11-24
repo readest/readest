@@ -89,10 +89,22 @@ describe('Word Lens rendering (browser)', () => {
       const computed = getComputedStyle(ruby);
       expect(computed.whiteSpace).toBe('nowrap');
       expect(computed.rubyAlign).toBe('center');
-      const range = document.createRange();
-      range.selectNodeContents(ruby.firstChild!);
-      const lineTops = new Set([...range.getClientRects()].map((r) => Math.round(r.top)));
-      expect(lineTops.size).toBe(1);
+      const baseRange = document.createRange();
+      baseRange.selectNodeContents(ruby.firstChild!);
+      const baseLineTops = new Set([...baseRange.getClientRects()].map((r) => Math.round(r.top)));
+      expect(baseLineTops.size).toBe(1);
+
+      const rt = ruby.querySelector('rt')!;
+      const rtRange = document.createRange();
+      rtRange.selectNodeContents(rt.firstChild!);
+      const rtLineTops = new Set([...rtRange.getClientRects()].map((r) => Math.round(r.top)));
+      expect(rtLineTops.size).toBe(1);
+
+      const baseRect = baseRange.getBoundingClientRect();
+      const rtRect = rtRange.getBoundingClientRect();
+      const baseCenter = (baseRect.left + baseRect.right) / 2;
+      const rtCenter = (rtRect.left + rtRect.right) / 2;
+      expect(Math.abs(baseCenter - rtCenter)).toBeLessThanOrEqual(2);
     }
   });
 });
