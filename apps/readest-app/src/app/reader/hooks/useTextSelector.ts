@@ -104,6 +104,12 @@ export const useTextSelector = (
   const isPopuped = useRef(false);
   const isUpToPopup = useRef(false);
   const isTextSelected = useRef(false);
+  // A touch or pen tap while the selection toolbar is up is there to dismiss
+  // it. The webview clears the selection only after the release (WebView2 with
+  // the tap's compatibility mousedown), so the toolbar is already closed when
+  // the tap's single click arrives, and that click must not also turn the page.
+  // A mouse release marks its click instead (markSelectionDismissClick).
+  const isTapDismissingPopup = useRef(false);
   const isTouchStarted = useRef(false);
   // A touch selectionchange deferred until the gesture ends: iOS streams
   // selectionchange while a finger drags the system selection handles, and
@@ -796,6 +802,8 @@ export const useTextSelector = (
     beginSelectionDrag();
     setImageHoldClick(bookKey, null);
     lastPointerType.current = ev.pointerType;
+    isTapDismissingPopup.current =
+      ev.pointerType !== 'mouse' && (isTextSelected.current || isPopuped.current);
     const selection = ev.pointerType === 'mouse' ? doc.getSelection() : null;
     mouseSelectionAtPointerDown.current = selection
       ? {
@@ -1428,6 +1436,8 @@ export const useTextSelector = (
 
   useEffect(() => {
     const handleSingleClick = (): boolean => {
+      const tapDismissedPopup = isTapDismissingPopup.current;
+      isTapDismissingPopup.current = false;
       if (isUpToPopup.current) {
         isUpToPopup.current = false;
         return true;
@@ -1443,7 +1453,7 @@ export const useTextSelector = (
         handleDismissPopup();
         return true;
       }
-      return false;
+      return tapDismissedPopup;
     };
 
     eventDispatcher.onSync('iframe-single-click', handleSingleClick);
