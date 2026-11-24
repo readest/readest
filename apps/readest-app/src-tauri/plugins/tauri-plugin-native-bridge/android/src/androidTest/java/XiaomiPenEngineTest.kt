@@ -61,7 +61,17 @@ class XiaomiPenEngineTest {
         }
     }
 
-    private fun onMain(block: () -> Unit) = instrumentation.runOnMainSync(block)
+    private fun onMain(block: () -> Unit) {
+        var failure: Throwable? = null
+        instrumentation.runOnMainSync {
+            try {
+                block()
+            } catch (error: Throwable) {
+                failure = error
+            }
+        }
+        failure?.let { throw it }
+    }
 
     @Test fun voidRegistrationAndIndependentTeardown() {
         val context = BindingContext(instrumentation.targetContext)
