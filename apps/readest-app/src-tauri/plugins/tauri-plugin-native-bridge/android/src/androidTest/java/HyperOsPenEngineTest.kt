@@ -46,7 +46,11 @@ class HyperOsPenEngineTest {
         override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
             data.enforceInterface("com.xiaomi.touchservice.pencilengine.IPencilEngine")
             when (code) {
+                // Which register call arrives depends on the device's engine version.
                 1 -> calls.add("register:" + (data.readStrongBinder() != null))
+                4 -> calls.add(
+                    "register:" + (data.readStrongBinder() != null && data.readString() != null),
+                )
                 2 -> calls.add("unregister")
                 3 -> {
                     val feature = data.readInt()

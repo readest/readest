@@ -75,6 +75,7 @@ class HyperOsPenEngine(context: Context) : PenEngine, ServiceConnection {
             }
             call(service, SET_FEATURE) { writeInt(TOUCH_GESTURES); writeInt(1) } == 0
         } catch (e: Exception) {
+            // No retry on a live binding: the next onPause/onResume binds afresh.
             Log.w(TAG, "Pen engine registration failed", e)
             false
         }
