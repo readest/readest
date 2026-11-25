@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { FoliateView } from '@/types/view';
 import { UseTranslatorOptions } from '@/services/translators';
 import { useReaderStore } from '@/store/readerStore';
@@ -212,9 +212,9 @@ export function useTextTranslation(
   const progress = useBookProgress(bookKey);
 
   const enabled = useRef(viewSettings?.translationEnabled);
-  const [provider, setProvider] = useState(viewSettings?.translationProvider);
-  const [targetLang, setTargetLang] = useState(viewSettings?.translateTargetLang);
-  const [promptId, setPromptId] = useState(viewSettings?.translationPromptId);
+  const provider = viewSettings?.translationProvider;
+  const targetLang = viewSettings?.translateTargetLang;
+  const promptId = viewSettings?.translationPromptId;
   const book = useBookDataStore((s) => s.getBookData(bookKey)?.book);
   const showTranslateSourceRef = useRef(viewSettings?.showTranslateSource);
 
@@ -231,7 +231,13 @@ export function useTextTranslation(
   const translatorPreservesMarkup = !!getTranslators().find(
     (translator) => translator.name === provider,
   )?.preservesMarkup;
-  const translationRef = useRef({ translate, targetLang, translatorPreservesMarkup });
+  const translationRef = useRef({
+    translate,
+    provider,
+    targetLang,
+    promptId,
+    translatorPreservesMarkup,
+  });
   const observerRefs = useRef<IntersectionObserver[]>([]);
   const translatedElements = useRef<HTMLElement[]>([]);
   const allTextNodes = useRef<HTMLElement[]>([]);
@@ -282,10 +288,6 @@ export function useTextTranslation(
     });
   };
 
-  useEffect(() => {
-    translationRef.current = { translate, targetLang, translatorPreservesMarkup };
-  }, [translate, targetLang, translatorPreservesMarkup]);
-
   const hintInitialTranslating = () => {
     setIsLoading(bookKey, true);
     eventDispatcher.dispatch('hint', {
@@ -333,9 +335,6 @@ export function useTextTranslation(
     });
 
     translatedElements.current = [];
-    if (viewSettings?.translationEnabled && view) {
-      recreateTranslationObserver();
-    }
   };
 
   const createTranslationObserver = (document: Document) => {
@@ -540,12 +539,20 @@ export function useTextTranslation(
   }, [progress]);
 
   useEffect(() => {
+    const previous = translationRef.current;
+    translationRef.current = {
+      translate,
+      provider,
+      targetLang,
+      promptId,
+      translatorPreservesMarkup,
+    };
     if (!viewSettings) return;
 
     const enabledChanged = enabled.current !== viewSettings.translationEnabled;
-    const providerChanged = provider !== viewSettings.translationProvider;
-    const targetLangChanged = targetLang !== viewSettings.translateTargetLang;
-    const promptChanged = promptId !== viewSettings.translationPromptId;
+    const providerChanged = previous.provider !== provider;
+    const targetLangChanged = previous.targetLang !== targetLang;
+    const promptChanged = previous.promptId !== promptId;
     const showTranslateSourceChanged =
       showTranslateSourceRef.current !== viewSettings.showTranslateSource;
 
@@ -553,37 +560,22 @@ export function useTextTranslation(
       enabled.current = viewSettings.translationEnabled;
     }
 
-    if (providerChanged) {
-      setProvider(viewSettings.translationProvider);
-    }
-
-    if (targetLangChanged) {
-      setTargetLang(viewSettings.translateTargetLang);
-    }
-
-    if (promptChanged) {
-      setPromptId(viewSettings.translationPromptId);
-    }
-
     if (showTranslateSourceChanged) {
       showTranslateSourceRef.current = viewSettings.showTranslateSource;
     }
 
+    const translationChanged =
+      providerChanged || targetLangChanged || promptChanged || showTranslateSourceChanged;
+    if (translationChanged) updateTranslation();
+
     if (enabledChanged) {
       toggleTranslationVisibility(viewSettings.translationEnabled);
-      if (enabled.current) {
-        observeTextNodes();
-      }
-    } else if (
-      providerChanged ||
-      targetLangChanged ||
-      promptChanged ||
-      showTranslateSourceChanged
-    ) {
-      updateTranslation();
+      if (enabled.current) observeTextNodes();
+    } else if (translationChanged && enabled.current && view) {
+      recreateTranslationObserver();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookKey, viewSettings, provider, targetLang, promptId]);
+  }, [bookKey, viewSettings, provider, targetLang, promptId, translate, translatorPreservesMarkup]);
 
   useEffect(() => {
     if (!view || !enabled.current) return;

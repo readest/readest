@@ -401,7 +401,12 @@ describe('useTextTranslation', () => {
     vi.unstubAllGlobals();
   });
 
-  it('discards an in-flight translation after the target language changes', async () => {
+  it.each([
+    { intersectDuringReset: false },
+    { intersectDuringReset: true },
+  ])('discards a previous language after a reset ($intersectDuringReset)', async ({
+    intersectDuringReset,
+  }) => {
     const getViewSettings = readerState.getViewSettings;
     let settings = { ...viewSettings, translateTargetLang: 'fr' };
     readerState.getViewSettings = () => settings;
@@ -412,13 +417,17 @@ describe('useTextTranslation', () => {
       .mockImplementationOnce(() => new Promise((resolve) => (resolveSpanish = resolve)));
 
     let onIntersect!: IntersectionObserverCallback;
+    let observerCount = 0;
     vi.stubGlobal(
       'IntersectionObserver',
       class {
         constructor(callback: IntersectionObserverCallback) {
           onIntersect = callback;
+          observerCount++;
         }
-        observe() {}
+        observe() {
+          if (intersectDuringReset && observerCount === 2) showParagraph();
+        }
         disconnect() {}
       },
     );
@@ -437,7 +446,7 @@ describe('useTextTranslation', () => {
       showParagraph();
       settings = { ...settings, translateTargetLang: 'es' };
       rerender();
-      showParagraph();
+      if (!intersectDuringReset) showParagraph();
 
       resolveFrench(['Paragraphe traduit.']);
       await vi.advanceTimersByTimeAsync(50);
