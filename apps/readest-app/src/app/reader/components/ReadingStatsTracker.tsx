@@ -155,10 +155,11 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
 
   const armIdle = () => {
     if (idleRef.current) clearTimeout(idleRef.current);
-    idleRef.current = setTimeout(() => {
-      speedTracker.reset();
-      void persist(coreRef.current.onIdle(nowSec()));
-    }, DEFAULT_STATS_TRACKING_CONFIG.idleTimeoutSeconds * 1000);
+    // The speed tracker keeps timing: it judges a long page by its pace.
+    idleRef.current = setTimeout(
+      () => void persist(coreRef.current.onIdle(nowSec())),
+      DEFAULT_STATS_TRACKING_CONFIG.idleTimeoutSeconds * 1000,
+    );
   };
 
   const openPageAt = (info: { current?: number; total: number } | undefined) => {

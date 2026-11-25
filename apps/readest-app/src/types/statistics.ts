@@ -58,4 +58,5 @@ export const DEFAULT_STATS_TRACKING_CONFIG: StatsTrackingConfig = {
   minEventSeconds: 3,
 };
 
-export const MAX_READING_SPEED_SAMPLE_MS = DEFAULT_STATS_TRACKING_CONFIG.idleTimeoutSeconds * 1000;
+/** No reading speed sample is timed longer than this. */
+export const MAX_READING_SPEED_SAMPLE_MS = 15 * 60_000;

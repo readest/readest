@@ -100,6 +100,30 @@ describe('ReadingSpeedTracker', () => {
     });
   });
 
+  it('keeps a page past the idle timeout only when read at a plausible pace', () => {
+    const turn = (text: string, end: number, ms: number, language = 'en') => {
+      const position = section(text);
+      const tracker = new ReadingSpeedTracker();
+      tracker.onPosition(position(0, end), 0, false, language);
+      return tracker.onPosition(position(end), ms, false, language);
+    };
+    // a two-page desktop spread at 250 words/min
+    expect(turn(`${'word '.repeat(750)}next`, 3750, 180_000)).toMatchObject({ count: 750 });
+    // 100 words or 300 characters in 3 minutes: time away, not reading
+    expect(turn(`${'word '.repeat(100)}next`, 500, 180_000)).toBeNull();
+    expect(turn(`${'字'.repeat(300)}。下`, 300, 180_000, 'zh')).toBeNull();
+    expect(turn(`${'字'.repeat(450)}。下`, 450, 180_000, 'zh')).toMatchObject({ count: 450 });
+    // no page is timed past the hard limit
+    expect(turn(`${'word '.repeat(5000)}next`, 25_000, 16 * 60_000)).toBeNull();
+  });
+
+  it('keeps the idle limit while scrolling, where one step says nothing about pace', () => {
+    const position = section(`${'word '.repeat(750)}next`);
+    const tracker = new ReadingSpeedTracker();
+    tracker.onPosition(position(0, 3750), 0, true, 'en');
+    expect(tracker.onPosition(position(3750), 130_000, true, 'en')).toBeNull();
+  });
+
   it('does not count a new range caused by switching the reading layout', () => {
     const position = section('one two three four five');
     const tracker = new ReadingSpeedTracker();

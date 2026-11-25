@@ -7,6 +7,10 @@ import {
 import { getRenderedTextFromRange } from '@/utils/sel';
 
 const MIN_SAMPLE_MS = DEFAULT_STATS_TRACKING_CONFIG.minEventSeconds * 1000;
+const IDLE_MS = DEFAULT_STATS_TRACKING_CONFIG.idleTimeoutSeconds * 1000;
+// A page kept past the idle timeout counts only if read at this pace or
+// faster; slower, it was partly time away from the book.
+const MIN_UNITS_PER_MINUTE: Record<ReadingSpeedUnit, number> = { words: 60, characters: 120 };
 const readable = /[\p{L}\p{N}]/u;
 const eastAsian = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
 const needsDictionary = /[\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
@@ -127,9 +131,12 @@ export class ReadingSpeedTracker {
     this.previous = { index: position.index, range, timeMs: nowMs, scrolled };
     if (!old) return null;
     const durationMs = nowMs - old.timeMs;
+    // A long page (a desktop spread) can outlast the idle timeout and is then
+    // judged by its pace below. Scrolled text leaves the screen in steps
+    // unrelated to how long it took to read, so scrolling keeps the limit.
     if (
       durationMs < 0 ||
-      durationMs >= MAX_READING_SPEED_SAMPLE_MS ||
+      durationMs >= (scrolled ? IDLE_MS : MAX_READING_SPEED_SAMPLE_MS) ||
       (!scrolled && durationMs < MIN_SAMPLE_MS)
     ) {
       this.pending = null;
@@ -159,6 +166,10 @@ export class ReadingSpeedTracker {
       before,
       after,
     );
+    if (durationMs >= IDLE_MS && count * 60_000 < durationMs * MIN_UNITS_PER_MINUTE[unit]) {
+      this.pending = null;
+      return null;
+    }
     const pending = this.pending;
     if (!count && !pending) return null;
     const canJoin =

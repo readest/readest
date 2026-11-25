@@ -123,30 +123,40 @@ describe('ReadingStatsTracker while TTS plays', () => {
     expect(mocks.db.recordEvents).toHaveBeenCalled();
   });
 
-  it('records the visible text passed during a forward turn as a timed speed sample', async () => {
+  // A page of `words` words followed by the next page's text.
+  const pageOf = (words: number) => {
     const doc = new Window().document as unknown as Document;
-    const text = doc.createTextNode('A short English sentence. The next page.');
+    const page = 'word '.repeat(words);
+    const text = doc.createTextNode(`${page}The next page.`);
     doc.body.append(text);
-    const openRange = (current: number, start: number, end: number) => {
+    return (current: number) => {
       setPage(current);
       const range = doc.createRange();
-      range.setStart(text, start);
-      range.setEnd(text, end);
+      range.setStart(text, current ? page.length : 0);
+      range.setEnd(text, current ? text.length : page.length - 1);
       mocks.progress = { ...mocks.progress!, index: 0, range };
     };
+  };
+
+  it.each([
+    [80, 20_000],
+    // A desktop two-page spread read at 250 words/min outlasts the idle timeout.
+    [750, 180_000],
+  ])('records the %i words passed during a forward turn after %i ms', async (words, ms) => {
+    const openPage = pageOf(words);
     const startTimeMs = Date.now();
-    openRange(0, 0, 25);
+    openPage(0);
     const { rerender } = mount();
-    await settle(20_000);
-    openRange(1, 26, text.length);
+    await settle(ms);
+    openPage(1);
     rerender(<ReadingStatsTracker bookKey={BOOK_KEY} />);
     await settle();
 
     expect(mocks.db.insertReadingSpeed).toHaveBeenCalledWith('md5-1', {
       unit: 'words',
-      count: 4,
+      count: words,
       startTimeMs,
-      durationMs: 20_000,
+      durationMs: ms,
     });
   });
 
