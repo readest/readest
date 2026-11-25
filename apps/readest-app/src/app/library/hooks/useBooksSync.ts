@@ -33,7 +33,7 @@ export const useBooksSync = () => {
   const { user } = useAuth();
   const { envConfig, appService } = useEnv();
   const { library, isSyncing, libraryLoaded } = useLibraryStore();
-  const { setLibrary, setIsSyncing, setSyncProgress } = useLibraryStore();
+  const { setLibrary, setIsSyncing, setIsPullingLibrary, setSyncProgress } = useLibraryStore();
   const { useSyncInited, syncedBooks, syncBooks, lastSyncedAtBooks } = useSync();
   const isPullingRef = useRef(false);
   // A library change that lands while a sync is in flight must not be lost.
@@ -127,8 +127,15 @@ export const useBooksSync = () => {
         let nativeSynced = 0;
         if (runNativePull) {
           const library = useLibraryStore.getState().library;
-          const since = (libraryLoaded && library.length === 0) || fullRefresh ? 0 : undefined;
-          nativeSynced = (await syncBooks([], 'pull', since)) ?? 0;
+          const emptyLibrary = libraryLoaded && library.length === 0;
+          const since = emptyLibrary || fullRefresh ? 0 : undefined;
+          // Not isSyncing: books arriving while it is set wait 10 s to be added.
+          if (emptyLibrary) setIsPullingLibrary(true);
+          try {
+            nativeSynced = (await syncBooks([], 'pull', since)) ?? 0;
+          } finally {
+            if (emptyLibrary) setIsPullingLibrary(false);
+          }
         }
 
         if (verbose) {
@@ -148,7 +155,7 @@ export const useBooksSync = () => {
         releaseSyncLock();
       }
     },
-    [_, user, libraryLoaded, syncBooks, envConfig, releaseSyncLock],
+    [_, user, libraryLoaded, syncBooks, envConfig, releaseSyncLock, setIsPullingLibrary],
   );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps

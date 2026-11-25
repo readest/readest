@@ -36,20 +36,24 @@ const syncState = vi.hoisted(() => ({
   lastSyncedAtBooks: 1000,
 }));
 
+// Stable across renders, as AuthContext and EnvContext keep them: fresh ones
+// would make pullLibrary a new callback each render and re-run the mount pull.
+const contexts = vi.hoisted(() => ({ auth: { user: { id: 'user-1' } }, envConfig: {} }));
 vi.mock('@/context/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'user-1' } }),
+  useAuth: () => contexts.auth,
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService }),
+  useEnv: () => ({ envConfig: contexts.envConfig, appService }),
 }));
 
 vi.mock('@/context/SyncContext', () => ({
   useSyncContext: () => ({ syncClient: {} }),
 }));
 
+const translate = vi.hoisted(() => (text: string) => text);
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (text: string) => text,
+  useTranslation: () => translate,
 }));
 
 vi.mock('@/hooks/useSync', () => ({
