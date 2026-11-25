@@ -24,7 +24,7 @@ import {
   getThemeCode,
   keepTextAlignment,
 } from '@/utils/style';
-import { getPopupPosition, getPosition, isPointInRect, Position } from '@/utils/sel';
+import { getPopupPosition, getPosition, Position } from '@/utils/sel';
 import { getPopupBounds, offsetPosition, PopupBounds } from '@/utils/insets';
 import { Insets } from '@/types/misc';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
@@ -201,6 +201,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   };
 
   const [popupBounds, setPopupBounds] = useState<PopupBounds | null>(null);
+  // The width of the bounds the anchor was measured in.
+  const anchorWidthRef = useRef(0);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
   const sizeAdjustCountRef = useRef(0);
@@ -211,17 +213,23 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const size18 = useResponsiveSize(18);
   const popupPadding = useResponsiveSize(10);
 
-  // A pinned panel resizes the book cell without resizing the window.
+  // A pinned panel resizes the book cell without resizing the window. Only a
+  // width change refits: the soft keyboard shortens the cell, and the popup
+  // stays put over a note being typed in it (#6390).
   useEffect(() => {
     if (!showPopup) return;
     const cell = containerRef.current?.closest(`#gridcell-${bookKey}`);
     if (!cell) return;
+    let { width } = cell.getBoundingClientRect();
     const observer = new ResizeObserver(() => {
-      setPopupBounds(getPopupBounds(cell.getBoundingClientRect(), gridInsetsRef.current));
+      const rect = cell.getBoundingClientRect();
+      if (rect.width === width) return;
+      width = rect.width;
+      setPopupBounds(getPopupBounds(rect, gridInsetsRef.current));
     });
     observer.observe(cell);
     return () => observer.disconnect();
-  }, [bookKey, showPopup, gridInsets.top, gridInsets.right, gridInsets.bottom, gridInsets.left]);
+  }, [bookKey, showPopup]);
 
   const width = popupBounds
     ? Math.min(
@@ -268,15 +276,11 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     const { rect, origin } = popupBounds;
     const localAnchor = offsetPosition(anchor, { x: -origin.x, y: -origin.y });
     const position = getPopupPosition(localAnchor, rect, width, height, popupPadding);
-    const anchorIsVisible = isPointInRect(
-      localAnchor.point,
-      { left: 0, top: 0, right: rect.right - rect.left, bottom: rect.bottom - rect.top },
-      0,
-    );
     return {
       position: offsetPosition(position, origin),
-      // An off-cell anchor appears again when a panel gives the book its space back.
-      triangle: anchorIsVisible ? anchor : undefined,
+      // At another width the page has reflowed and the noteref is no longer
+      // where the arrow was measured; it is again once a panel gives the space back.
+      triangle: rect.right - rect.left === anchorWidthRef.current ? anchor : undefined,
     };
   }, [anchor, popupBounds, width, height, popupPadding]);
 
@@ -745,6 +749,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     setPopupVertical(null);
     seedPopupSize(viewSettings.vertical);
     setPopupBounds(bounds);
+    anchorWidthRef.current = bounds.rect.right - bounds.rect.left;
     setTrianglePosition(triangPos);
     trianglePositionRef.current = triangPos;
 
@@ -845,6 +850,19 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     return () => eventDispatcher.off('paragraph-focus', onParagraphFocus);
   }, [bookKey, showPopup, handleDismissPopup]);
 
+  useEffect(() => {
+    const renderer = view?.renderer;
+    if (!showPopup || !renderer) return;
+    // A TOC entry, a booknote or a search result in a panel beside the cell
+    // takes the book away from the noteref. A reflow ('anchor') keeps it.
+    const onRelocate = (event: Event) => {
+      const { reason } = (event as CustomEvent<{ reason?: string }>).detail ?? {};
+      if (reason === 'navigation' || reason === 'selection') handleDismissPopup();
+    };
+    renderer.addEventListener('relocate', onRelocate);
+    return () => renderer.removeEventListener('relocate', onRelocate);
+  }, [view, showPopup, handleDismissPopup]);
+
   // Handle custom footnote popup event from iframe event
   const handleFootnotePopupEvent = (event: CustomEvent) => {
     const { element, footnote } = event.detail;
@@ -907,6 +925,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
       footnoteRef.current.replaceChildren(elem);
       setPopupBounds(bounds);
+      anchorWidthRef.current = bounds.rect.right - bounds.rect.left;
       setTrianglePosition(triangPos);
       trianglePositionRef.current = triangPos;
       setShowPopup(true);
