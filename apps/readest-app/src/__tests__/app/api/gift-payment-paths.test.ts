@@ -294,6 +294,8 @@ describe('Stripe gift payments', () => {
       status: 'succeeded',
       metadata: { gift: 'plus' },
     });
+    // Review (CodeRabbit): indexOf is -1 with no write at all, which also passes.
+    expect(hooks.log).toContain('payments.write');
     expect(hooks.log.indexOf('payments.write')).toBeLessThan(hooks.log.indexOf('gift.activate'));
   });
 
@@ -480,6 +482,8 @@ describe('App Store gift payments', () => {
       paymentRef: 'otx-1',
       giftCardId: DRAFT_ID,
     });
+    // Review (CodeRabbit): indexOf is -1 with no write at all, which also passes.
+    expect(hooks.log).toContain('payments.write');
     expect(hooks.log.indexOf('payments.write')).toBeLessThan(hooks.log.indexOf('gift.activate'));
   });
 
@@ -525,6 +529,9 @@ describe('App Store gift payments', () => {
   });
 
   it('Apple ONE_TIME_CHARGE for a gift product activates without a draft', async () => {
+    // Review (CodeRabbit): through the live check, as production runs it.
+    vi.stubEnv('NODE_ENV', 'production');
+    hooks.verifyTransaction.mockResolvedValue(appleVerification(GIFT_PLUS, 'active'));
     hooks.decodeNotificationPayload.mockResolvedValue({
       notificationType: NotificationType.OneTimeCharge,
       data: { bundleId: BUNDLE_ID, environment: 'Production', signedTransactionInfo: 'SIGNED_TX' },
@@ -545,6 +552,8 @@ describe('App Store gift payments', () => {
     const res = await handleAppleNotification('payload');
 
     expect(res).toMatchObject({ handled: true, status: 'active' });
+    expect(hooks.verifyTransaction).toHaveBeenCalledWith('otx-1');
+    vi.unstubAllEnvs();
     expect(hooks.activateGiftCard).toHaveBeenCalledTimes(1);
     expect(hooks.activateGiftCard.mock.calls[0]![0]).toEqual({
       buyerId: BUYER,
@@ -603,6 +612,37 @@ describe('App Store gift charges against a refund', () => {
     expect(hooks.activateGiftCard).toHaveBeenCalledTimes(1);
   });
 
+  // Review (CodeRabbit): a card this charge already made is revoked, as
+  // Stripe does, when Apple now reports the purchase refunded.
+  it('a ONE_TIME_CHARGE for a gift Apple has since refunded revokes a card it already made', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    charge();
+    hooks.verifyTransaction.mockResolvedValue({
+      ...appleVerification(GIFT_PLUS, 'expired'),
+      revocationDate: new Date('2026-11-24T00:00:00Z'),
+    });
+
+    await handleAppleNotification('payload');
+
+    expect(hooks.revokeGiftCardForPayment).toHaveBeenCalledWith(
+      'apple_original_transaction_id',
+      'otx-1',
+    );
+    expect(hooks.activateGiftCard).not.toHaveBeenCalled();
+  });
+
+  it('a revoked gift charge whose recipient sync fails throws, so Apple retries', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    charge();
+    hooks.verifyTransaction.mockResolvedValue({
+      ...appleVerification(GIFT_PLUS, 'expired'),
+      revocationDate: new Date('2026-11-24T00:00:00Z'),
+    });
+    hooks.revokeGiftCardForPayment.mockRejectedValue(new Error('sync failed'));
+
+    await expect(handleAppleNotification('payload')).rejects.toThrow('sync failed');
+  });
+
   it('a gift charge whose live check fails throws, so Apple retries', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     charge();
@@ -628,6 +668,8 @@ describe('Google Play gift payments', () => {
       paymentRef: 'gift-token-1',
       giftCardId: DRAFT_ID,
     });
+    // Review (CodeRabbit): indexOf is -1 with no write at all, which also passes.
+    expect(hooks.log).toContain('payments.write');
     expect(hooks.log.indexOf('payments.write')).toBeLessThan(hooks.log.indexOf('gift.activate'));
     expect(hooks.consumeProductPurchase).toHaveBeenCalledWith(googleParams);
     // Play consumes only once the card is recorded: an unconsumed purchase

@@ -2,7 +2,7 @@ import { ApplePaymentData } from '@/types/payment';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { updateUserStorage } from '@/libs/payment/storage';
 import { resolveUserPlan } from '@/libs/payment/entitlements';
-import { activateGiftCard } from '@/libs/payment/gift/server';
+import { activateGiftCard, revokeGiftCardForPayment } from '@/libs/payment/gift/server';
 import {
   giftTierForProduct,
   isEntitledStatus,
@@ -151,9 +151,16 @@ export async function createOrUpdatePayment(
     await updateUserStorage(userId);
 
     // The client's verify carries the buyer's draft; ONE_TIME_CHARGE and a
-    // restore re-verify don't, and make a card the buyer fills in later.
+    // restore re-verify don't, and make a card the buyer fills in later. A
+    // card follows its payment, as with Stripe: one Apple now reports revoked
+    // takes back a card already made (a no-op when there is none).
     const giftTier = giftTierForProduct(purchase.productId);
-    if (giftTier && purchase.status === 'active') {
+    if (giftTier && purchase.revocationDate) {
+      await revokeGiftCardForPayment(
+        'apple_original_transaction_id',
+        purchase.originalTransactionId,
+      );
+    } else if (giftTier && purchase.status === 'active') {
       await activateGiftCard({
         buyerId: userId,
         tier: giftTier,
