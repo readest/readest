@@ -782,6 +782,26 @@ export const parseAuthors = (authorString: string, bookLang?: string | string[])
 };
 
 /**
+ * A book's authors. The stored author joins separate creators in the book's
+ * language ("A und B", "A y B"), and parsing that join can't tell a
+ * conjunction from a name ("José Ortega y Gasset"), so read the creators
+ * while the stored author is still their join, not a user's edit.
+ */
+const getBookAuthors = (book: Book): string[] => {
+  const creators = book.metadata?.author;
+  if (
+    Array.isArray(creators) &&
+    creators.length > 1 &&
+    formatAuthors(creators, book.primaryLanguage) === book.author
+  ) {
+    return getContributorNames(creators).flatMap((name) =>
+      parseAuthors(name, book.primaryLanguage),
+    );
+  }
+  return parseAuthors(book.author, book.primaryLanguage);
+};
+
+/**
  * Create groups from books based on the groupBy setting.
  * Returns a mix of BooksGroup and ungrouped Book items.
  */
@@ -888,7 +908,7 @@ const createAuthorGroups = (books: Book[]): (Book | BooksGroup)[] => {
       continue;
     }
 
-    const authors = parseAuthors(authorString, book.primaryLanguage);
+    const authors = getBookAuthors(book);
 
     if (authors.length === 0) {
       ungroupedBooks.push(book);
