@@ -87,15 +87,21 @@ const SideBar = ({}) => {
     settings.globalViewSettings?.isEink;
 
   useEffect(() => {
+    if (isSideBarVisible) updateAppTheme(isEink ? 'base-100' : 'base-200');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSideBarVisible, isEink]);
+
+  // Only a visibility change resets the color: an e-ink change while hidden
+  // must not repaint over an open notebook.
+  useEffect(() => {
     if (isSideBarVisible) {
-      updateAppTheme(isEink ? 'base-100' : 'base-200');
       overlayRef.current = document.querySelector('.overlay') as HTMLDivElement | null;
     } else {
       updateAppTheme('base-100');
       overlayRef.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSideBarVisible, isEink]);
+  }, [isSideBarVisible]);
 
   useEffect(() => {
     eventDispatcher.on('search-term', onSearchEvent);

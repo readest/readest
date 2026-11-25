@@ -93,14 +93,19 @@ const Notebook: React.FC = () => {
     settings.globalViewSettings?.isEink;
 
   useEffect(() => {
+    if (isNotebookVisible) updateAppTheme(isEink ? 'base-100' : 'base-200');
+  }, [isNotebookVisible, isEink, updateAppTheme]);
+
+  // Only a visibility change resets the color: an e-ink change while hidden
+  // must not repaint over an open sidebar.
+  useEffect(() => {
     if (isNotebookVisible) {
-      updateAppTheme(isEink ? 'base-100' : 'base-200');
       overlayRef.current = document.querySelector('.overlay') as HTMLDivElement | null;
     } else {
       updateAppTheme('base-100');
       overlayRef.current = null;
     }
-  }, [isNotebookVisible, isEink, overlayRef, updateAppTheme]);
+  }, [isNotebookVisible, overlayRef, updateAppTheme]);
 
   useEffect(() => {
     setNotebookWidth(settings.globalReadSettings.notebookWidth);

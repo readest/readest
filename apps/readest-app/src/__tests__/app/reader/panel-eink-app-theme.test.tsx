@@ -180,6 +180,21 @@ describe('Reader SideBar and Notebook e-ink app theme sync', () => {
     expect(h.updateAppTheme).toHaveBeenLastCalledWith('base-100');
   });
 
+  it('keeps the open SideBar color when e-ink changes with Notebook hidden', () => {
+    h.isNotebookVisible = false;
+    // ReaderContent mounts SideBar before Notebook, so Notebook's effects run last.
+    const panels = () => (
+      <>
+        <SideBar />
+        <Notebook />
+      </>
+    );
+    const { rerender } = render(panels());
+    h.isEink = false;
+    rerender(panels());
+    expect(h.updateAppTheme).toHaveBeenLastCalledWith('base-200');
+  });
+
   it('follows an e-ink change while Notebook stays open', () => {
     h.isEink = false;
     const { rerender } = render(<Notebook />);
