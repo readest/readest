@@ -602,6 +602,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     let preparePaintRaf = 0;
     let prepareNotBefore = 0;
     let cleanedUp = false;
+    let fontsSettledUnderTouch = false;
     const cancelPreparedCaptureSchedule = () => {
       if (prepareTimer !== null) clearTimeout(prepareTimer);
       if (prepareRaf) cancelAnimationFrame(prepareRaf);
@@ -642,6 +643,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           if (isLayeredTurnTouchActive(bookKey)) {
             schedulePreparedCapture(PREPARED_CAPTURE_DELAY_MS);
             return;
+          }
+          if (fontsSettledUnderTouch) {
+            fontsSettledUnderTouch = false;
+            invalidatePagePixels();
+            controller.invalidatePreparedCapture();
           }
           const appService = getInitializedAppService();
           if (!appService?.isMobileApp && !appService?.isMacOSApp) return;
@@ -721,9 +727,34 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       controller.refreshCurrentPage();
       schedulePreparedCapture();
     });
-    const observeOverlays = () => {
+    // An embedded font can change the page's pixels without changing its key,
+    // capture rectangle, or current location. Drop the old sheet on settlement.
+    // Under a finger that would take the surface its turn is about to use and
+    // swallow the swipe, so the first capture after the touch drops it instead.
+    // `loadingdone` also fires when a font fails to load.
+    const fontObservers = new Map<FontFaceSet, AbortController>();
+    const handleBookFontsSettled = () => {
+      if (isLayeredTurnTouchActive(bookKey)) {
+        fontsSettledUnderTouch = true;
+        return;
+      }
+      invalidatePagePixels();
+      invalidateAndSchedulePreparedCapture();
+    };
+    const observeRenderedSurfaces = () => {
       let drawn = false;
+      const renderedFonts = new Set<FontFaceSet>();
       for (const { doc, overlayer } of view.renderer.getContents()) {
+        if (doc?.fonts) {
+          const fonts = doc.fonts;
+          renderedFonts.add(fonts);
+          if (!fontObservers.has(fonts)) {
+            const observer = new AbortController();
+            const { signal } = observer;
+            fonts.addEventListener('loadingdone', handleBookFontsSettled, { signal });
+            fontObservers.set(fonts, observer);
+          }
+        }
         if (controller instanceof NativePageTurn && doc?.body && !canvasDocs.has(doc)) {
           canvasDocs.add(doc);
           canvasObserver.observe(doc.body, { childList: true, subtree: true });
@@ -734,6 +765,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         overlayObserver.observe(overlay, { childList: true });
         drawn ||= overlay.querySelector(':scope > :not(defs)') !== null;
       }
+      for (const [fonts, observer] of fontObservers) {
+        if (renderedFonts.has(fonts)) continue;
+        observer.abort();
+        fontObservers.delete(fonts);
+      }
       return drawn;
     };
 
@@ -741,10 +777,10 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     // Coalesce the renderer's noisy lifecycle into one post-paint capture and
     // discard any result whose generation changed while native work ran.
     const handleCapturedSurfaceChange = (event: Event) => {
-      if (observeOverlays() || event.type !== 'relocate') invalidatePagePixels();
+      if (observeRenderedSurfaces() || event.type !== 'relocate') invalidatePagePixels();
       invalidateAndSchedulePreparedCapture();
     };
-    observeOverlays();
+    observeRenderedSurfaces();
     view.addEventListener('relocate', handleCapturedSurfaceChange);
     view.addEventListener('show-annotation', handleCapturedSurfaceChange);
     view.renderer.addEventListener('stabilized', handleCapturedSurfaceChange);
@@ -983,6 +1019,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       resizeObserver?.disconnect();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       view.removeEventListener('relocate', handleCapturedSurfaceChange);
+      for (const observer of fontObservers.values()) observer.abort();
       overlayObserver.disconnect();
       canvasObserver.disconnect();
       view.removeEventListener('show-annotation', handleCapturedSurfaceChange);
