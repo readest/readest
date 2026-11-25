@@ -1,6 +1,6 @@
 // Makes wide/tall block content (tables, code blocks, equations) scroll inside the
-// reading column instead of overflowing the page, and routes touch/wheel gestures so
-// scrolling a box never turns the page. The matching CSS lives in getLayoutStyles()
+// reading column and gives scroll boxes priority when routing touch/wheel gestures.
+// The matching CSS lives in getLayoutStyles()
 // in ./style.ts and keys off these class names.
 
 export const SCROLL_WRAPPER_CLASS = 'scroll-wrapper';
@@ -14,6 +14,7 @@ export const SCROLL_WRAPPER_FIT_CLASS = 'scroll-wrapper-fit';
 // scroll itself (its box reports no overflow) — it's wrapped instead.
 const SCROLLABLE_SELECTOR = `.${SCROLL_WRAPPER_CLASS}`;
 const SCROLL_WRAPPER_TOLERANCE_PX = 4;
+const TOUCH_SLOP_PX = 8;
 // Set on <html> when links get an enlarged hit area (applyLinkHitArea in ./style.ts),
 // which reaches this far past each link.
 export const LINK_HIT_AREA_CLASS = 'link-hit-area';
@@ -47,18 +48,44 @@ export const findScrollableBox = (target: EventTarget | null): HTMLElement | nul
 };
 
 /**
- * A swipe along a box's scrollable axis scrolls the box and never turns the page —
- * the box owns that axis, even when already scrolled to the edge (no chaining into
- * a page turn). A swipe along a non-scrollable axis is left alone, so the reader
- * can still turn pages by swiping the other way over the box.
+ * By default a scroll box owns swipes along each of its scrollable axes,
+ * including at an edge. Swipes along any other axis reach the paginator.
  */
 export const shouldTableScrollConsumeTouch = (
   wrapper: HTMLElement,
   dx: number,
   dy: number,
 ): boolean => {
-  if (Math.abs(dx) > Math.abs(dy)) return Math.abs(dx) >= 8 && canScrollX(wrapper);
-  return Math.abs(dy) >= 8 && canScrollY(wrapper);
+  if (Math.abs(dx) > Math.abs(dy)) return Math.abs(dx) >= TOUCH_SLOP_PX && canScrollX(wrapper);
+  return Math.abs(dy) >= TOUCH_SLOP_PX && canScrollY(wrapper);
+};
+
+/** Finger direction that leaves a full-page table at its current horizontal edge. */
+const getFullPageTableExitDirection = (wrapper: HTMLElement): number => {
+  const doc = wrapper.ownerDocument;
+  if (
+    !doc.body?.classList.contains('paginated-mode') ||
+    !wrapper.firstElementChild?.matches('table') ||
+    !canScrollX(wrapper) ||
+    !canScrollY(wrapper)
+  ) {
+    return 0;
+  }
+  const style = doc.defaultView?.getComputedStyle(wrapper);
+  const pageHeight = Number.parseFloat(style?.getPropertyValue('--available-height') ?? '');
+  if (
+    !(pageHeight > 0) ||
+    wrapper.getBoundingClientRect().height < pageHeight - SCROLL_WRAPPER_TOLERANCE_PX
+  ) {
+    return 0;
+  }
+
+  const extent = wrapper.scrollWidth - wrapper.clientWidth;
+  // Modern browsers expose negative scrollLeft toward the left of an RTL box.
+  const rtl = style?.direction === 'rtl';
+  if (wrapper.scrollLeft <= (rtl ? -extent : 0) + 1) return 1;
+  if (wrapper.scrollLeft >= (rtl ? 0 : extent) - 1) return -1;
+  return 0;
 };
 
 /**
@@ -87,9 +114,14 @@ export const applyTableTouchScroll = (document: Document) => {
   let touchStartX = 0;
   let touchStartY = 0;
   let activeWrapper: HTMLElement | null = null;
+  let exitDirection = 0;
+  let swipeStaysInTable: boolean | undefined;
 
   const onTouchStart = (e: TouchEvent) => {
     activeWrapper = findScrollableBox(e.target);
+    exitDirection =
+      activeWrapper && e.touches.length === 1 ? getFullPageTableExitDirection(activeWrapper) : 0;
+    swipeStaysInTable = undefined;
     if (!activeWrapper) return;
     const touch = e.changedTouches[0];
     if (!touch) return;
@@ -106,6 +138,18 @@ export const applyTableTouchScroll = (document: Document) => {
 
     const dx = touch.screenX - touchStartX;
     const dy = touch.screenY - touchStartY;
+    if (exitDirection) {
+      // Decide once per swipe, so a drag inside the table cannot turn a page
+      // when it reaches an edge or reverses direction before release.
+      if (
+        swipeStaysInTable === undefined &&
+        Math.max(Math.abs(dx), Math.abs(dy)) >= TOUCH_SLOP_PX
+      ) {
+        swipeStaysInTable = Math.abs(dx) <= Math.abs(dy) || Math.sign(dx) !== exitDirection;
+      }
+      if (swipeStaysInTable !== false) e.stopImmediatePropagation();
+      return;
+    }
     if (!shouldTableScrollConsumeTouch(activeWrapper, dx, dy)) return;
 
     e.stopImmediatePropagation();
