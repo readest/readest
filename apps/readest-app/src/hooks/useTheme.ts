@@ -53,7 +53,6 @@ export const useTheme = ({
   }, [themeScope, setThemeScope]);
 
   useEffect(() => {
-    updateAppTheme(appThemeColor);
     if (appService?.isAndroidApp) {
       getStatusBarHeight().then((res) => {
         if (res.height && res.height > 0) {
@@ -159,9 +158,15 @@ export const useTheme = ({
   }, [settings.globalReadSettings?.customThemes]);
 
   useEffect(() => {
+    updateAppTheme(isEink ? 'base-100' : appThemeColor);
+  }, [isEink, appThemeColor, updateAppTheme]);
+
+  useEffect(() => {
     const colorScheme = isDarkMode ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', `${themeColor}-${colorScheme}`);
     document.documentElement.style.setProperty('color-scheme', colorScheme);
+    // Re-resolve the active key (an open panel's, if any) in the new palette.
+    updateAppTheme();
     document.documentElement.style.setProperty('--scroll-bg-opacity', isBwEink ? '1.0' : '0.5');
     document.documentElement.style.setProperty(
       '--overlayer-highlight-opacity',
@@ -177,7 +182,14 @@ export const useTheme = ({
       '--bg-texture-blend-mode',
       isDarkMode ? 'lighten' : 'multiply',
     );
-  }, [themeColor, isDarkMode, isBwEink, highlightOpacity]);
+  }, [
+    themeColor,
+    isDarkMode,
+    isBwEink,
+    highlightOpacity,
+    updateAppTheme,
+    settings.globalReadSettings?.customThemes,
+  ]);
 
   return { onUpdateInsets };
 };
