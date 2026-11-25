@@ -4,8 +4,11 @@
 // command called, and how it ended: ipc-log.js) and OUT/step-NNN.png (the viewport when the step
 // was captured). The app runs under a scratch HOME in OUT/home and a private D-Bus session, with
 // its DevTools endpoint on a local port, on its own Xvfb display at the scenario's device scale
-// (GDK_SCALE), its window sized to the scenario's size.
-import { spawn } from 'node:child_process';
+// (GDK_SCALE), its window sized to the scenario's size. With PARITY_BACKEND (backend.py's DIR) the
+// app uses that server, signed in; with PARITY_HOME (a previous run's OUT/home) it starts on a copy
+// of that home, as after a restart.
+import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -23,9 +26,30 @@ const port = scenario.cdp_port ?? 9333;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 fs.rmSync(out, { recursive: true, force: true });
+const restart = process.env.PARITY_HOME;
+if (restart) fs.cpSync(restart, `${out}/home`, { recursive: true, verbatimSymlinks: true });
 fs.mkdirSync(`${out}/home`, { recursive: true });
 // The window opens at the scenario's size: the window-state plugin restores this saved state
 // (physical px), so the book is never laid out at another size.
+// CEF keeps the page's profile (its localStorage among it) in a folder named after the data
+// directory's absolute path (tauri-runtime-cef, request_context.rs): a copied home gets that name.
+const home = path.resolve(`${out}/home`);
+const cefDir = `${home}/.cache/com.bilingify.readest/cef`;
+const dataDir = `${home}/.local/share/com.bilingify.readest`;
+const profileDir = `${cefDir}/Profile-${createHash('sha256').update(dataDir).digest().subarray(0, 16).toString('base64url')}`;
+for (const d of restart && fs.existsSync(cefDir) ? fs.readdirSync(cefDir) : []) {
+  if (d.startsWith('Profile-') && `${cefDir}/${d}` !== profileDir) fs.renameSync(`${cefDir}/${d}`, profileDir);
+}
+// A local server is on loopback, which Chromium lets http://tauri.localhost reach only once allowed.
+// Readest allows it itself since #7525 (src-tauri/src/cef_local_network.rs), with this same setting.
+if (process.env.PARITY_BACKEND) {
+  const prefsPath = `${profileDir}/Preferences`;
+  const prefs = fs.existsSync(prefsPath) ? JSON.parse(fs.readFileSync(prefsPath, 'utf8')) : {};
+  const exceptions = (((prefs.profile ??= {}).content_settings ??= {}).exceptions ??= {});
+  (exceptions.loopback_network ??= {})['http://tauri.localhost:80,*'] = { setting: 1 };
+  fs.mkdirSync(profileDir, { recursive: true });
+  fs.writeFileSync(prefsPath, JSON.stringify(prefs));
+}
 const configDir = `${out}/home/.config/com.bilingify.readest`;
 fs.mkdirSync(configDir, { recursive: true });
 fs.writeFileSync(`${configDir}/.window-state.json`, JSON.stringify({
@@ -96,19 +120,28 @@ page.on('console', (m) => {
   if (t.startsWith('PARITY-IPC ')) ipc.push(JSON.parse(t.slice('PARITY-IPC '.length)));
 });
 await page.addInitScript({ content: fs.readFileSync(path.join(here, 'ipc-log.js'), 'utf8') });
+if (process.env.PARITY_BACKEND) {
+  const init = spawnSync('python3', [path.join(here, 'backend.py'), 'init', process.env.PARITY_BACKEND], { encoding: 'utf8' });
+  if (init.status !== 0) throw new Error(`backend.py init: ${init.stderr}`);
+  await page.addInitScript({ content: init.stdout });
+}
 await page.addInitScript({
   content: `window.__READEST_SINGLE_WINDOW = true;${scenario.eink ? ' window.__READEST_IS_EINK = true;' : ''}` +
     (scenario.book ? ` window.OPEN_WITH_FILES = ${JSON.stringify([path.resolve(scenario.book)])};` : ''),
 });
 // The app's first start, before the flags above, saved its settings (e-ink mode off): start it
-// again on a blank profile.
+// again on a blank profile. A restart keeps what the earlier run left; its first start ran without
+// the backend's config, so the sign-in it saw was the one the build points at, which it can't
+// reach (the proxy above): supabase-js keeps the backend's session, which the start below finds.
 const startUrl = page.url();
 await page.goto('about:blank');
-await cdp.send('Storage.clearDataForOrigin', { origin: new URL(startUrl).origin, storageTypes: 'all' });
-for (const f of ['settings.json', 'settings.json.bak']) fs.rmSync(`${configDir}/${f}`, { force: true });
-// The scenario's saved settings (run_lite.py starts Readest Lite with the same).
-if (scenario.settings) fs.writeFileSync(`${configDir}/settings.json`, JSON.stringify(scenario.settings));
-fs.rmSync(`${out}/home/.local/share/com.bilingify.readest/Readest`, { recursive: true, force: true });
+if (!restart) {
+  await cdp.send('Storage.clearDataForOrigin', { origin: new URL(startUrl).origin, storageTypes: 'all' });
+  for (const f of ['settings.json', 'settings.json.bak']) fs.rmSync(`${configDir}/${f}`, { force: true });
+  // The scenario's saved settings (run_lite.py starts Readest Lite with the same).
+  if (scenario.settings) fs.writeFileSync(`${configDir}/settings.json`, JSON.stringify(scenario.settings));
+  fs.rmSync(`${out}/home/.local/share/com.bilingify.readest/Readest`, { recursive: true, force: true });
+}
 await page.goto(startUrl);
 await page.waitForLoadState('load');
 // The app navigates while it starts (library, then the reader), which drops what an evaluation

@@ -1,0 +1,11 @@
+{
+  "name": "sync-first",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "probe": "parity/session-probe.js",
+  "capture_ms": 10000,
+  "step_ms": 12000,
+  "steps": ["wait:20000", "text:novel"]
+}

@@ -3,7 +3,9 @@
 Writes OUT/captures.jsonl (capture.js per step), OUT/timing.json (per step: handler time and the
 latency of the first and last frame), OUT/ipc.json (every Tauri command called, and how it ended:
 ipc-log.js) and OUT/step-NNN.pgm (the frame shown when the step was captured). Runs under a
-scratch HOME in OUT/home and a private D-Bus session.
+scratch HOME in OUT/home and a private D-Bus session. With PARITY_BACKEND (backend.py's DIR) the
+app uses that server, signed in; with PARITY_HOME (a previous run's OUT/home) it starts on a copy
+of that home, as after a restart.
 """
 import json, os, re, shutil, signal, subprocess, sys, threading, time
 
@@ -11,7 +13,11 @@ scenario, out, binary = json.load(open(sys.argv[1])), sys.argv[2], sys.argv[3]
 here = os.path.dirname(os.path.abspath(__file__))
 shutil.rmtree(out, ignore_errors=True)
 frames_dir, home = f'{out}/frames', f'{out}/home'
-os.makedirs(frames_dir); os.makedirs(home)
+os.makedirs(frames_dir)
+if os.environ.get('PARITY_HOME'):
+    shutil.copytree(os.environ['PARITY_HOME'], home, symlinks=True)
+else:
+    os.makedirs(home)
 # `text:Label` taps the element showing Label (text-steps.js tags it).
 texts = [s[5:] for s in scenario['steps'] if s.startswith('text:')]
 steps = [f'[data-parity-text="{s[5:]}"]' if s.startswith('text:') else s for s in scenario['steps']]
@@ -55,7 +61,10 @@ hooks = """
 """ % (delay, len(input_steps), scenario.get('settle_ms', 8000))
 init = f'{out}/init.js'
 probe = open(scenario['probe']).read() if scenario.get('probe') else ''
-open(init, 'w').write(open(f'{here}/ipc-log.js').read() + open(f'{here}/capture.js').read()
+backend = os.environ.get('PARITY_BACKEND')
+backend_js = subprocess.run([sys.executable, f'{here}/backend.py', 'init', backend], check=True,
+                            capture_output=True, text=True).stdout if backend else ''
+open(init, 'w').write(backend_js + open(f'{here}/ipc-log.js').read() + open(f'{here}/capture.js').read()
                      + open(f'{here}/text-steps.js').read() + probe + hooks
                      + f'\n__parityTexts({json.dumps(texts)});\n')
 
@@ -67,7 +76,7 @@ env.update(HOME=home, BLITZ_TAURI_SIZE=f'{w * scale}x{h * scale}', BLITZ_TAURI_S
 if scenario.get('eink'):  # Readest's e-ink mode, as the Kindle launcher starts it
     env['READEST_LITE_EINK'] = '1'
 if scenario.get('settings'):  # saved settings the app starts with (Readest fills in the rest)
-    os.makedirs(f'{home}/.config/com.bilingify.readest-lite')
+    os.makedirs(f'{home}/.config/com.bilingify.readest-lite', exist_ok=True)
     json.dump(scenario['settings'], open(f'{home}/.config/com.bilingify.readest-lite/settings.json', 'w'))
 if scenario.get('fonts'):  # the only fonts installed (run_cef.mjs gives Readest the same)
     env['BLITZ_FONTS'] = scenario['fonts']
