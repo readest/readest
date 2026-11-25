@@ -148,6 +148,13 @@ const openAtChapter2 = async (vertical: boolean) => {
 const moves = (samples: { at: number }[], from: number) =>
   samples.map((s) => s.at - from).filter((d) => d !== 0);
 
+// WebKit on iOS 16 has no scroll anchoring at all (readest#7896).
+const withoutScrollAnchoring = () => {
+  const style = document.createElement('style');
+  style.textContent = '#container, #container * { overflow-anchor: none !important; }';
+  paginator.shadowRoot!.appendChild(style);
+};
+
 beforeAll(async () => {
   await import('foliate-js/paginator.js');
 });
@@ -276,10 +283,12 @@ describe('Scrolled strip keeps the reading position (browser)', () => {
   // A chapter before the one being read grows after it rendered (a late image
   // or font). The text in view must not move.
   it.each([
-    ['vertical', true],
-    ['horizontal', false],
-  ])('keeps the %s text in view still when an earlier chapter grows', async (_, vertical) => {
+    ['vertical', true, true],
+    ['horizontal', false, true],
+    ['horizontal', false, false],
+  ])('keeps the %s text in view still when an earlier chapter grows (scroll anchoring: %s)', async (_, vertical, anchoring) => {
     open(vertical, vertical);
+    if (!anchoring) withoutScrollAnchoring();
     await paginator.goTo({ index: 2, anchor: 0.3 });
     await settle();
     expect(loaded()).toContain(1);
