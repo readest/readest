@@ -50,7 +50,7 @@ const claimCards = async (
   try {
     await syncUserPlan(userId);
   } catch (error) {
-    console.error(`gift claim by ${column} for ${userId}: plan sync failed`, error);
+    console.error('Gift claim: plan sync failed', { column, userId }, error);
   }
   return claimed;
 };

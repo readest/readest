@@ -186,7 +186,7 @@ export const activateGiftCard = async (payment: GiftPayment): Promise<GiftCardRo
   try {
     return await claimForRecipient(card);
   } catch (error) {
-    console.error(`gift ${card.id}: claim for the recipient failed`, error);
+    console.error('Gift card: claim for the recipient failed', { cardId: card.id }, error);
     return card;
   }
 };
@@ -284,7 +284,7 @@ export const revokeGiftCardForPayment = async (
   try {
     await syncUserPlan(recipient);
   } catch (error) {
-    console.error(`gift ${column} ${value}: plan sync after the refund failed`, error);
+    console.error('Gift refund: plan sync failed', { column, value }, error);
   }
 };
 
