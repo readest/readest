@@ -1066,6 +1066,11 @@
     transition: none;
   }
 
+  /* Same for the stripe an indeterminate bar sweeps along its track. */
+  [data-eink='true'] .progress:indeterminate {
+    animation: none;
+  }
+
   /* Hide the horizontal scrollbar on the virtualized OPDS group carousels. */
   .no-scrollbar {
     scrollbar-width: none;
