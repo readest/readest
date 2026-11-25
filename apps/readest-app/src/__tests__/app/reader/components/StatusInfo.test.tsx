@@ -54,8 +54,10 @@ describe('StatusInfo battery percentage legibility', () => {
     expect(base.classList.contains('text-base-content')).toBe(true);
     expect(knockout.textContent).toBe('35');
     expect(knockout.classList.contains('text-base-100')).toBe(true);
-    // Fill ends at 0.5 + 21 * 0.35 = 7.85px of the 25px icon.
-    expect(knockout.parentElement?.style.clipPath).toBe('inset(0px 17.15px 0px 0px)');
+    // Fill ends at 0.5 + 21 * 0.35 = 7.85px of the 25px icon; the copy's
+    // nested svg ends there too, clipping it to the fill.
+    expect(knockout.parentElement?.getAttribute('width')).toBe('7.85');
+    expect(knockout.parentElement?.getAttribute('overflow')).toBe('hidden');
   });
 });
 
