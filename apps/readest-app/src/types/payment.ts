@@ -21,7 +21,11 @@ export interface StripeProductMetadata {
   translationChars?: string;
   tokensM?: string;
   customization?: string;
-  /** Marks a gift card product; such a product has no `plan`. */
+  /**
+   * Marks a gift card product. Its metadata follows the storage packs
+   * (`plan: 'purchase'`, `feature: 'gift'`), but only this key is read:
+   * `/api/stripe/plans` leaves gift products out.
+   */
   gift?: GiftTier;
 }
 
