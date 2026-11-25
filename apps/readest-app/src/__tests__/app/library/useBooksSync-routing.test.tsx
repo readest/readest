@@ -362,6 +362,27 @@ describe('useBooksSync first pull indicator', () => {
     expect(useLibraryStore.getState().isPullingLibrary).toBe(false);
   });
 
+  it('shows it too for a library that holds only deleted books', async () => {
+    useLibraryStore.setState({
+      library: [
+        { hash: 'book-1', title: 'Book', format: 'EPUB', updatedAt: 100, deletedAt: 100 } as Book,
+      ],
+    });
+    let finishPull = (_count: number) => {};
+    syncState.syncBooks.mockImplementationOnce(
+      () =>
+        new Promise<number>((resolve) => {
+          finishPull = resolve;
+        }),
+    );
+    renderHook(() => useBooksSync());
+
+    await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalledWith([], 'pull', undefined));
+    expect(useLibraryStore.getState().isPullingLibrary).toBe(true);
+    await act(async () => finishPull(0));
+    expect(useLibraryStore.getState().isPullingLibrary).toBe(false);
+  });
+
   it('leaves a library that has books as it is during a pull', async () => {
     useLibraryStore.setState({
       library: [{ hash: 'book-1', title: 'Book', format: 'EPUB', updatedAt: 100 } as Book],

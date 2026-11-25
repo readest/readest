@@ -127,14 +127,15 @@ export const useBooksSync = () => {
         let nativeSynced = 0;
         if (runNativePull) {
           const library = useLibraryStore.getState().library;
-          const emptyLibrary = libraryLoaded && library.length === 0;
-          const since = emptyLibrary || fullRefresh ? 0 : undefined;
-          // Not isSyncing: books arriving while it is set wait 10 s to be added.
-          if (emptyLibrary) setIsPullingLibrary(true);
+          const since = (libraryLoaded && library.length === 0) || fullRefresh ? 0 : undefined;
+          // The shelf shows nothing (deleted books stay in the library as tombstones). Not
+          // isSyncing: books arriving while it is set wait 10 s to be added.
+          const emptyShelf = libraryLoaded && library.every((book) => book.deletedAt);
+          if (emptyShelf) setIsPullingLibrary(true);
           try {
             nativeSynced = (await syncBooks([], 'pull', since)) ?? 0;
           } finally {
-            if (emptyLibrary) setIsPullingLibrary(false);
+            if (emptyShelf) setIsPullingLibrary(false);
           }
         }
 
