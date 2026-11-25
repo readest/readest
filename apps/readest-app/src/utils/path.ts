@@ -1,15 +1,9 @@
 import { join } from '@tauri-apps/api/path';
-import { isValidURL } from './misc';
 
 export const getFilename = (fileOrUri: string) => {
-  const isUri = isValidURL(fileOrUri) || /^(?:content|file):\/\//i.test(fileOrUri);
-  if (isUri) {
-    fileOrUri = decodeURI(fileOrUri);
-  }
-  const normalizedPath = fileOrUri.replace(/\\/g, '/');
-  const parts = normalizedPath.split('/');
-  const lastPart = parts.pop()!;
-  return isUri ? lastPart.split('?')[0]! : lastPart;
+  const isUri = /^(?:https?|content|file):\/\//i.test(fileOrUri);
+  const path = isUri ? decodeURI(fileOrUri.split('?', 1)[0]!) : fileOrUri;
+  return path.replace(/\\/g, '/').split('/').pop()!;
 };
 
 export const getPathFilename = (path: string) => {

@@ -20,6 +20,15 @@ describe('getFileExtension', () => {
     expect(getFilename('CONTENT://provider/Books/Book.EPUB?download=1')).toBe('Book.EPUB');
   });
 
+  test('keeps scheme-like local names literal', () => {
+    expect(getFilename('https:book?.epub')).toBe('https:book?.epub');
+    expect(getFileExtension('https:book?.epub')).toBe('epub');
+  });
+
+  test('ignores slashes in URL queries when extracting a filename', () => {
+    expect(getFileExtension('https://example.org/book.epub?redirect=/login')).toBe('epub');
+  });
+
   test('looks past a duplicate marker appended after the extension', () => {
     expect(getFileExtension('The_Amazing_Traveling.epub (1)')).toBe('epub');
     expect(getFileExtension('The_Amazing_Traveling.epub(2)')).toBe('epub');
