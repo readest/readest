@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useId, FormEvent } from 'react';
 import { IoSearch } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { OPDSSearch } from '@/types/opds';
@@ -14,6 +14,7 @@ interface SearchViewProps {
 
 export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchViewProps) {
   const _ = useTranslation();
+  const fieldId = useId();
   const [formData, setFormData] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     search.params?.forEach((param) => {
@@ -78,15 +79,23 @@ export function SearchView({ search, baseURL, onNavigate, resolveURL }: SearchVi
       </div>
 
       <form onSubmit={handleSubmit} className='space-y-4'>
-        {(search.params || []).map((param) => (
+        {(search.params || []).map((param, index) => (
           <div key={`${param.ns || 'default'}-${param.name}`} className='flex flex-col'>
-            <label className='flex select-none items-center justify-between px-1 py-2'>
+            <label
+              htmlFor={`${fieldId}-${index}`}
+              className='flex select-none items-center justify-between px-1 py-2'
+            >
               <span className='text-sm font-medium'>
                 {getParamLabel(param.name)}
-                {param.required && <span className='text-error ml-1'>*</span>}
+                {param.required && (
+                  <span className='text-error ml-1' aria-hidden='true'>
+                    *
+                  </span>
+                )}
               </span>
             </label>
             <input
+              id={`${fieldId}-${index}`}
               type={param.name === 'searchTerms' || param.name === 'query' ? 'search' : 'text'}
               value={formData[param.name] || ''}
               onChange={(e) => handleInputChange(param.name, e.target.value)}

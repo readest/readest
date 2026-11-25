@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CustomTheme } from '@/styles/themes';
@@ -99,6 +99,7 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
   );
 
   const [themeName, setThemeName] = useState(customTheme?.label || _('Custom'));
+  const themeNameId = useId();
 
   const existingTheme = settings.globalReadSettings.customThemes.find(
     (theme) => theme.name === md5Fingerprint(themeName),
@@ -164,8 +165,11 @@ const ThemeEditor: React.FC<ThemeEditorProps> = ({ customTheme, onSave, onDelete
   return (
     <div ref={rootRef} className='flex flex-col gap-2 mt-6 rounded-lg'>
       <div className='flex items-center gap-4'>
-        <label className='font-medium whitespace-nowrap'>{_('Theme Name')}</label>
+        <label htmlFor={themeNameId} className='font-medium whitespace-nowrap'>
+          {_('Theme Name')}
+        </label>
         <input
+          id={themeNameId}
           type='text'
           value={themeName}
           onChange={(e) => setThemeName(e.target.value)}

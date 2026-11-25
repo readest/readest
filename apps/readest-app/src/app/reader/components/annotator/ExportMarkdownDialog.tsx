@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useId } from 'react';
 import { marked } from 'marked';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -144,6 +144,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
 
   const [showSource, setShowSource] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const templateId = useId();
 
   // Resolving a cover URL may publish the local cover to public storage, so it
   // runs only when the export actually references one: the checkbox in simple
@@ -772,7 +773,9 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                   <>
                     <div className='space-y-2'>
                       <div className='flex items-center justify-between'>
-                        <label className='text-sm font-medium'>{_('Export Template')}</label>
+                        <label htmlFor={templateId} className='text-sm font-medium'>
+                          {_('Export Template')}
+                        </label>
                         <button
                           onClick={() =>
                             setExportConfig({ ...exportConfig, customTemplate: defaultTemplate })
@@ -783,6 +786,7 @@ const ExportMarkdownDialog: React.FC<ExportMarkdownDialogProps> = ({
                         </button>
                       </div>
                       <textarea
+                        id={templateId}
                         value={exportConfig.customTemplate}
                         onChange={(e) =>
                           setExportConfig({ ...exportConfig, customTemplate: e.target.value })

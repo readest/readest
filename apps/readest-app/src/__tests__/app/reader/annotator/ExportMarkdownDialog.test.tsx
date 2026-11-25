@@ -270,3 +270,24 @@ describe('ExportMarkdownDialog preview', () => {
     expect(container.querySelector('[onerror], [onload], script, iframe')).toBeNull();
   });
 });
+
+describe('ExportMarkdownDialog custom template', () => {
+  beforeEach(() => {
+    h.appService = {};
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  // The template editor's label named nothing, so screen readers read an
+  // unnamed text area and tapping the label didn't focus it (#7911).
+  it('names the template editor by its Export Template label', () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    fireEvent.click(screen.getByLabelText('Use Custom Template'));
+
+    const editor = screen.getByLabelText('Export Template');
+    expect(editor.tagName).toBe('TEXTAREA');
+  });
+});
