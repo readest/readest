@@ -158,10 +158,15 @@ export const useTheme = ({
   }, [settings.globalReadSettings?.customThemes]);
 
   useEffect(() => {
+    updateAppTheme(isEink ? 'base-100' : appThemeColor);
+  }, [isEink, appThemeColor, updateAppTheme]);
+
+  useEffect(() => {
     const colorScheme = isDarkMode ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', `${themeColor}-${colorScheme}`);
     document.documentElement.style.setProperty('color-scheme', colorScheme);
-    updateAppTheme(isEink ? 'base-100' : appThemeColor);
+    // Re-resolve the active key (an open panel's, if any) in the new palette.
+    updateAppTheme();
     document.documentElement.style.setProperty('--scroll-bg-opacity', isBwEink ? '1.0' : '0.5');
     document.documentElement.style.setProperty(
       '--overlayer-highlight-opacity',
@@ -180,10 +185,8 @@ export const useTheme = ({
   }, [
     themeColor,
     isDarkMode,
-    isEink,
     isBwEink,
     highlightOpacity,
-    appThemeColor,
     updateAppTheme,
     settings.globalReadSettings?.customThemes,
   ]);

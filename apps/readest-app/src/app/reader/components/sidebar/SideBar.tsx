@@ -82,11 +82,12 @@ const SideBar = ({}) => {
     (data) => setIsFullHeightInMobile(data.clientY < 44),
   );
 
+  const isEink =
+    (sideBarBookKey ? getViewSettings(sideBarBookKey)?.isEink : undefined) ??
+    settings.globalViewSettings?.isEink;
+
   useEffect(() => {
     if (isSideBarVisible) {
-      const isEink =
-        (sideBarBookKey ? getViewSettings(sideBarBookKey)?.isEink : undefined) ??
-        settings.globalViewSettings?.isEink;
       updateAppTheme(isEink ? 'base-100' : 'base-200');
       overlayRef.current = document.querySelector('.overlay') as HTMLDivElement | null;
     } else {
@@ -94,7 +95,7 @@ const SideBar = ({}) => {
       overlayRef.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSideBarVisible]);
+  }, [isSideBarVisible, isEink]);
 
   useEffect(() => {
     eventDispatcher.on('search-term', onSearchEvent);

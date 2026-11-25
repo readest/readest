@@ -133,6 +133,23 @@ describe('useTheme web theme-color and html background', () => {
     unmount();
   });
 
+  it('keeps an open panel color when the theme changes under it', () => {
+    const { unmount } = renderHook(() =>
+      useTheme({ systemUIVisible: true, appThemeColor: 'base-100', themeScope: 'reader' }),
+    );
+    // The sidebar or notebook opens and asks for its own surface color.
+    act(() => {
+      useThemeStore.getState().updateAppTheme('base-200');
+    });
+    expect(getMetaThemeColor()).toBe(defaultDarkBase200);
+
+    act(() => {
+      useThemeStore.getState().setThemeMode('light');
+    });
+    expect(getMetaThemeColor()).toBe(defaultLightBase200);
+    unmount();
+  });
+
   it('does not touch meta[name="theme-color"] or html backgroundColor on non-web platforms', () => {
     h.isWeb = false;
     const { unmount } = renderHook(() =>

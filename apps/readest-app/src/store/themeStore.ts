@@ -96,7 +96,8 @@ interface ThemeState {
   setScopedThemeColor: (scope: ThemeScope, color: string) => void;
   getScopedTheme: (scope: ThemeScope) => { themeMode: ThemeMode; themeColor: string };
   resetThemeScopes: () => void;
-  updateAppTheme: (color: keyof Palette) => void;
+  /** Paints the browser chrome in `color`; with no argument, re-resolves the last one. */
+  updateAppTheme: (color?: keyof Palette) => void;
   saveCustomTheme: (
     envConfig: EnvConfigType,
     settings: SystemSettings,
@@ -192,6 +193,11 @@ const resolveThemePalette = (themeColor: string, isDarkMode: boolean): Palette =
   const resolved = matched ?? themes[0]!;
   return isDarkMode ? resolved.colors.dark : resolved.colors.light;
 };
+
+// The palette key the page chrome last asked for: the route's background, or an
+// open sidebar's or notebook's. A theme change re-resolves this key in the new
+// palette instead of resetting it to the route's.
+let appThemeColorKey: keyof Palette = 'base-100';
 
 const applyDataTheme = (themeColor: string, isDarkMode: boolean) => {
   document.documentElement.setAttribute(
@@ -432,7 +438,8 @@ export const useThemeStore = create<ThemeState>((set, get) => {
       );
       syncAmbientLightSubscription(activeMode);
     },
-    updateAppTheme: (color) => {
+    updateAppTheme: (color = appThemeColorKey) => {
+      appThemeColorKey = color;
       if (!isWebAppPlatform() || typeof document === 'undefined') return;
       const { themeColor, isDarkMode } = get();
       const resolved = resolveThemePalette(themeColor, isDarkMode)[color];

@@ -23,12 +23,15 @@ vi.mock('@/store/bookDataStore', async () => {
   );
 });
 
-vi.mock('@/store/readerStore', () => ({
-  useReaderStore: () => ({
+vi.mock('@/store/readerStore', () => {
+  // One store object, so its getters keep their identity across renders the
+  // way zustand's do.
+  const store = {
     getView: () => ({ clearSearch: vi.fn() }),
     getViewSettings: () => ({ isEink: h.isEink, rtl: false }),
-  }),
-}));
+  };
+  return { useReaderStore: () => store };
+});
 
 vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({
@@ -98,14 +101,16 @@ vi.mock('@/context/EnvContext', () => ({
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (value: string) => value,
 }));
-vi.mock('@/hooks/useSwipeToDismiss', () => ({
-  useSwipeToDismiss: () => ({
+vi.mock('@/hooks/useSwipeToDismiss', () => {
+  // Refs keep their identity across renders, as useRef's do.
+  const swipe = {
     panelRef: { current: null },
     overlayRef: { current: null },
     panelHeight: { current: 0 },
     handleVerticalDragStart: vi.fn(),
-  }),
-}));
+  };
+  return { useSwipeToDismiss: () => swipe };
+});
 vi.mock('@/hooks/usePanelResize', () => ({
   usePanelResize: () => ({ handleResizeStart: vi.fn(), handleResizeKeyDown: vi.fn() }),
 }));
@@ -164,5 +169,23 @@ describe('Reader SideBar and Notebook e-ink app theme sync', () => {
     h.isEink = false;
     render(<Notebook />);
     expect(h.updateAppTheme).toHaveBeenCalledWith('base-200');
+  });
+
+  it('follows an e-ink change while SideBar stays open', () => {
+    h.isEink = false;
+    const { rerender } = render(<SideBar />);
+    expect(h.updateAppTheme).toHaveBeenLastCalledWith('base-200');
+    h.isEink = true;
+    rerender(<SideBar />);
+    expect(h.updateAppTheme).toHaveBeenLastCalledWith('base-100');
+  });
+
+  it('follows an e-ink change while Notebook stays open', () => {
+    h.isEink = false;
+    const { rerender } = render(<Notebook />);
+    expect(h.updateAppTheme).toHaveBeenLastCalledWith('base-200');
+    h.isEink = true;
+    rerender(<Notebook />);
+    expect(h.updateAppTheme).toHaveBeenLastCalledWith('base-100');
   });
 });
