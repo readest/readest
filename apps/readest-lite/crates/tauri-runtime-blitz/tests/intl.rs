@@ -97,7 +97,7 @@ fn collator_number_list_locale() {
             "RangeError",
             "ar EG ar-EG rtl ltr Hant",
             "3 days ago | in 1 hour",
-            "undefined string",
+            "French string",
             "Nov 8, 2026 11/8/2026",
         ]
     );
@@ -161,6 +161,38 @@ return [
             "Invalid Date / Invalid Date",
             "T",
             "1,234 1,234,567.891",
+        ]
+    );
+}
+
+#[test]
+fn display_names_in_english_and_a_language_s_own_name() {
+    // readest-app labels voices with `languageDisplay: 'standard'` names in the UI language, and
+    // picks a Wiktionary edition's section by the language's own name (`new
+    // Intl.DisplayNames([lang]).of(lang)`). Lite has no locale data but English: other UI
+    // languages get English names too.
+    let logs = run("
+        const names = (locales, options, codes) => { const d = new Intl.DisplayNames(locales, options); return codes.map((c) => String(d.of(c))).join(' | '); };
+        console.log(names(['en'], { type: 'language', languageDisplay: 'standard' }, ['en', 'en-US', 'EN-us', 'sr-Latn-RS', 'fil-PH', 'zh-CN']));
+        console.log(names(['en'], { type: 'language' }, ['en-US', 'zh-Hant', 'pt-BR', 'xx']));
+        console.log(names(['fr'], { type: 'language' }, ['fr']));
+        console.log(names(['de'], { type: 'language' }, ['de']));
+        console.log(names(['pt-BR'], { type: 'language' }, ['pt']));
+        console.log(names(['en'], { type: 'language', fallback: 'none' }, ['xx']));
+        console.log(names(['en'], { type: 'region' }, ['US', 'GB', '419']));
+        console.log(names(['en'], { type: 'script' }, ['Latn', 'Hant']));
+    ");
+    assert_eq!(
+        logs,
+        [
+            "English | English (United States) | English (United States) | Serbian (Latin, Serbia) | Filipino (Philippines) | Chinese (China)",
+            "American English | Traditional Chinese | Brazilian Portuguese | xx",
+            "français",
+            "Deutsch",
+            "português",
+            "undefined",
+            "United States | United Kingdom | Latin America",
+            "Latin | Traditional",
         ]
     );
 }
