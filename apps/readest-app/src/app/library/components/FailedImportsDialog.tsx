@@ -17,6 +17,8 @@ interface FailedImportsDialogProps {
 
 const FailedImportsDialog: React.FC<FailedImportsDialogProps> = ({ failedImports, onClose }) => {
   const _ = useTranslation();
+  const collator = new Intl.Collator(undefined, { numeric: true });
+  const sortedImports = [...failedImports].sort((a, b) => collator.compare(a.filename, b.filename));
 
   const uniqueErrors = Array.from(
     new Set(failedImports.map((f) => f.errorMessage).filter(Boolean)),
@@ -49,7 +51,7 @@ const FailedImportsDialog: React.FC<FailedImportsDialogProps> = ({ failedImports
             'divide-base-300/50 divide-y',
           )}
         >
-          {failedImports.map((item, index) => (
+          {sortedImports.map((item, index) => (
             <li key={`${item.filename}-${index}`} className='flex items-center gap-2.5 px-3 py-2'>
               <MdInsertDriveFile
                 className='text-base-content/40 h-4 w-4 shrink-0'
