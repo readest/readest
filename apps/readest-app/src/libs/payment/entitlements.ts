@@ -1,6 +1,7 @@
 import { UserPlan } from '@/types/quota';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { mapProductIdToUserPlan } from './iap/utils';
+import { GiftTimeline, giftTimeline } from './gift/timeline';
 
 type IapSubscriptionRow = { product_id: string; status: string };
 
@@ -59,6 +60,41 @@ export const getHighestActiveIapPlan = async (userId: string): Promise<UserPlan>
   return plan;
 };
 
+type GiftRow = { id: string; tier: 'plus' | 'pro'; days: number; redeemed_at: string };
+
+/**
+ * Where the user's redeemed gift cards stand at `now`. Pro cards chain, Plus
+ * cards chain and pause while Pro runs, so the rows go through `giftTimeline`.
+ * As with the reads above, a failed read throws rather than reading as "no gift".
+ */
+export const getGiftTimelineForUser = async (
+  userId: string,
+  now: Date = new Date(),
+): Promise<GiftTimeline> => {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from('gift_cards')
+    .select('id, tier, days, redeemed_at')
+    .eq('redeemed_by', userId)
+    .eq('status', 'active');
+  if (error) throw error;
+  return giftTimeline(
+    ((data ?? []) as GiftRow[]).map((row) => ({
+      id: row.id,
+      tier: row.tier,
+      days: row.days,
+      redeemedAt: new Date(row.redeemed_at),
+    })),
+    now,
+  );
+};
+
+/** Highest plan still entitled by a redeemed gift card. */
+export const getHighestActiveGiftPlan = async (
+  userId: string,
+  now: Date = new Date(),
+): Promise<UserPlan> => (await getGiftTimelineForUser(userId, now)).plan;
+
 /** Highest plan still entitled by an active (or trialing) Stripe subscription. */
 export const getHighestActiveStripePlan = async (
   userId: string,
@@ -107,11 +143,17 @@ export const resolveUserPlan = async (
      * grace period — see {@link ENTITLED_STORED_IAP_STATUSES}.
      */
     entitledPlan?: UserPlan;
+    /** The moment to judge gift cards at; defaults to now. */
+    now?: Date;
   } = {},
 ): Promise<UserPlan> => {
-  const [stripePlan, iapPlan] = await Promise.all([
+  const [stripePlan, iapPlan, giftPlan] = await Promise.all([
     getHighestActiveStripePlan(userId, options.stripeCustomerId),
     getHighestActiveIapPlan(userId),
+    getHighestActiveGiftPlan(userId, options.now),
   ]);
-  return higherPlan(higherPlan(stripePlan, iapPlan), options.entitledPlan ?? 'free');
+  return higherPlan(
+    higherPlan(higherPlan(stripePlan, iapPlan), giftPlan),
+    options.entitledPlan ?? 'free',
+  );
 };

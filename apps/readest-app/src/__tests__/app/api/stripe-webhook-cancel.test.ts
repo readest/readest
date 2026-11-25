@@ -63,6 +63,13 @@ vi.mock('@/utils/supabase', () => ({
           }),
         };
       }
+      if (table === 'gift_cards') {
+        return {
+          select: () => ({
+            eq: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }),
+          }),
+        };
+      }
       throw new Error(`unexpected table: ${table}`);
     },
   }),

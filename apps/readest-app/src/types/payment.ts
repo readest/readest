@@ -1,3 +1,4 @@
+import { GiftTier } from './gift';
 import { QuotaFeature, UserPlan } from './quota';
 
 export type PaymentProvider = 'stripe' | 'apple' | 'google';
@@ -20,6 +21,18 @@ export interface StripeProductMetadata {
   translationChars?: string;
   tokensM?: string;
   customization?: string;
+  /**
+   * Marks a gift card product. Its metadata follows the storage packs
+   * (`plan: 'purchase'`, `feature: 'gift'`), but only this key is read:
+   * `/api/stripe/plans` leaves gift products out.
+   */
+  gift?: GiftTier;
+  /**
+   * A gift card's length, like `storageGB` for a storage pack. Every product
+   * says "365" and nothing reads it yet: a card takes `gift_cards.days`'
+   * default of 365, and the card prints "1 year".
+   */
+  giftDays?: string;
 }
 
 export interface BasePaymentData {

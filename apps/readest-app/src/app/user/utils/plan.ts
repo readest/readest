@@ -82,10 +82,15 @@ export const getYearlySavingsPercent = (availablePlans: AvailablePlan[]): number
  * A user who already holds a Stripe subscription must change it through the
  * billing portal: a second checkout session would leave both subscriptions
  * running and bill them twice. `purchase` means storage add-ons with no
- * subscription behind them, so those users still go to checkout.
+ * subscription behind them, so those users still go to checkout. A gift-only
+ * holder has no Stripe subscription at all, so they go to checkout too.
  */
-export const shouldUseBillingPortal = (userPlan: UserPlan, planType: PlanType): boolean =>
-  planType === 'subscription' && (userPlan === 'plus' || userPlan === 'pro');
+export const shouldUseBillingPortal = (
+  userPlan: UserPlan,
+  planType: PlanType,
+  giftOnly = false,
+): boolean =>
+  !giftOnly && planType === 'subscription' && (userPlan === 'plus' || userPlan === 'pro');
 
 /**
  * Per-tier accent. The store front is the one surface that is actively selling,

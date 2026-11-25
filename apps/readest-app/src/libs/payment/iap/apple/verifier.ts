@@ -146,6 +146,10 @@ export class AppleIAPVerifier {
 export const createAppleIAPVerifier = (config: AppleIAPConfig) => new AppleIAPVerifier(config);
 
 let defaultIAPVerifier: AppleIAPVerifier | undefined;
+/** The one App Store environment the verifier reads; it can't see the other. */
+export const appleVerifierEnvironment = (): 'sandbox' | 'production' =>
+  process.env.NODE_ENV === 'production' ? 'production' : 'sandbox';
+
 export const getAppleIAPVerifier = () => {
   if (!defaultIAPVerifier) {
     defaultIAPVerifier = createAppleIAPVerifier({
@@ -156,7 +160,7 @@ export const getAppleIAPVerifier = () => {
         process.env['APPLE_IAP_PRIVATE_KEY_BASE64']! || '',
         'base64',
       ).toString('utf-8'),
-      environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+      environment: appleVerifierEnvironment(),
     });
   }
   return defaultIAPVerifier;

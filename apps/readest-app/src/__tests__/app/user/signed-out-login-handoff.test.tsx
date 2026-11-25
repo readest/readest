@@ -12,11 +12,10 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   dispatch: vi.fn(),
   userActions: {} as { signingOut?: boolean },
+  params: new URLSearchParams({ redirect: '/reader?ids=book1' }),
 }));
 
-vi.mock('next/navigation', () => ({
-  useSearchParams: () => new URLSearchParams({ redirect: '/reader?ids=book1' }),
-}));
+vi.mock('next/navigation', () => ({ useSearchParams: () => mocks.params }));
 vi.mock('@/hooks/useAppRouter', () => ({ useAppRouter: () => mocks.router }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: { getState: () => ({ viewStates: {} }) },
@@ -71,9 +70,16 @@ vi.mock('@/app/user/components/SyncCategoriesSection', () => ({
   SyncCategoriesSection: () => null,
 }));
 vi.mock('@/app/user/components/Checkout', () => ({ default: () => null }));
+vi.mock('@/app/user/components/gift/GiftCardsSection', () => ({ default: () => null }));
+vi.mock('@/libs/payment/gift/client', () => ({
+  claimGiftCards: vi.fn(),
+  fetchGiftCards: vi.fn(),
+  fetchGiftPrices: vi.fn().mockResolvedValue([]),
+}));
 
 afterEach(() => {
   mocks.userActions = {};
+  mocks.params = new URLSearchParams({ redirect: '/reader?ids=book1' });
   cleanup();
   vi.clearAllMocks();
   vi.useRealTimers();
@@ -101,4 +107,23 @@ it('stays out of the way while its Sign Out opens the library', () => {
   act(() => vi.advanceTimersByTime(1000));
 
   expect(mocks.router.replace).not.toHaveBeenCalled();
+});
+
+// A gift link opened signed out comes back to the Gift Cards view with its
+// code once the user has signed in.
+it('keeps a gift link as the redirect', () => {
+  vi.useFakeTimers();
+  mocks.params = new URLSearchParams({ gift: 'ABCD1234EFGH5678' });
+  // The page takes the code out of its URL first, as a real router would.
+  mocks.router.replace.mockImplementationOnce((url: string) => {
+    mocks.params = new URLSearchParams(url.split('?')[1]);
+  });
+  const { rerender } = render(<ProfilePage />);
+  rerender(<ProfilePage />);
+
+  act(() => vi.advanceTimersByTime(1000));
+
+  expect(mocks.router.replace).toHaveBeenCalledWith(
+    `/auth?redirect=${encodeURIComponent('/user?gift=ABCD1234EFGH5678')}`,
+  );
 });
