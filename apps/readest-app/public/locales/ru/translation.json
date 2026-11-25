@@ -3118,5 +3118,8 @@
   "Title - Author": "Название - Автор",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "«Формат имени файла» составляет имя из названия и авторов так же, как KOReader называет загрузки из OPDS.",
   "Set a single book's file name in the reader's Sync Info.": "Имя файла отдельной книги задаётся в «Информации о синхронизации» в режиме чтения.",
-  "The answer is incomplete: {{message}}": "Ответ неполный: {{message}}"
+  "The answer is incomplete: {{message}}": "Ответ неполный: {{message}}",
+  "Pen Squeeze": "Сжатие стилуса",
+  "Pen Slide Up": "Скольжение стилуса вверх",
+  "Pen Slide Down": "Скольжение стилуса вниз"
 }

@@ -2960,5 +2960,8 @@
   "Title - Author": "शीर्षक - लेखक",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"फाइल नाम फॉर्मेट\" शीर्षक और लेखकों से नाम बनाता है, जैसे KOReader OPDS डाउनलोड को नाम देता है।",
   "Set a single book's file name in the reader's Sync Info.": "किसी एक पुस्तक का फाइल नाम रीडर की सिंक जानकारी में सेट करें।",
-  "The answer is incomplete: {{message}}": "उत्तर अधूरा है: {{message}}"
+  "The answer is incomplete: {{message}}": "उत्तर अधूरा है: {{message}}",
+  "Pen Squeeze": "पेन स्क्वीज़",
+  "Pen Slide Up": "पेन ऊपर स्लाइड",
+  "Pen Slide Down": "पेन नीचे स्लाइड"
 }

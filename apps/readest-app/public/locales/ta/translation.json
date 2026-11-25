@@ -2960,5 +2960,8 @@
   "Title - Author": "தலைப்பு - ஆசிரியர்",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "\"கோப்புப் பெயர் வடிவம்\", KOReader OPDS பதிவிறக்கங்களுக்குப் பெயரிடுவது போலவே, தலைப்பு மற்றும் ஆசிரியர்களைக் கொண்டு பெயரை உருவாக்குகிறது.",
   "Set a single book's file name in the reader's Sync Info.": "ஒரு புத்தகத்தின் கோப்புப் பெயரை வாசிப்புப் பக்கத்தின் ஒத்திசைவு தகவலில் அமைக்கவும்.",
-  "The answer is incomplete: {{message}}": "பதில் முழுமையடையவில்லை: {{message}}"
+  "The answer is incomplete: {{message}}": "பதில் முழுமையடையவில்லை: {{message}}",
+  "Pen Squeeze": "பேனா அழுத்துதல்",
+  "Pen Slide Up": "பேனா மேலே சறுக்கல்",
+  "Pen Slide Down": "பேனா கீழே சறுக்கல்"
 }

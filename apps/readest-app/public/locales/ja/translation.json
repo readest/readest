@@ -2881,5 +2881,8 @@
   "Title - Author": "タイトル - 著者",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "「ファイル名の形式」は、KOReader が OPDS のダウンロードに名前を付けるのと同じように、タイトルと著者から名前を作ります。",
   "Set a single book's file name in the reader's Sync Info.": "1 冊ごとのファイル名は、リーダーの同期情報で設定できます。",
-  "The answer is incomplete: {{message}}": "回答が途中で終了しました：{{message}}"
+  "The answer is incomplete: {{message}}": "回答が途中で終了しました：{{message}}",
+  "Pen Squeeze": "ペンのスクイーズ",
+  "Pen Slide Up": "ペンの上スライド",
+  "Pen Slide Down": "ペンの下スライド"
 }

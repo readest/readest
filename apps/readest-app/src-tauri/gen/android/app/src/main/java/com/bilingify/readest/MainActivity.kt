@@ -21,8 +21,10 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import app.tauri.plugin.JSArray
 import app.tauri.plugin.JSObject
+import com.readest.native_bridge.HyperOsPenEngine
 import com.readest.native_bridge.KeyDownInterceptor
 import com.readest.native_bridge.NativeBridgePlugin
+import com.readest.native_bridge.PenEngine
 import com.readest.native_bridge.SelectionMenuSuppressor
 
 internal fun shouldCaptureNativeLearnKey(keyCode: Int): Boolean = when (keyCode) {
@@ -42,6 +44,8 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
     private var interceptBackKeyEnabled = false
     private var interceptPageTurnerKeysEnabled = false
     private var keyLearnModeEnabled = false
+    // System pen engines (#7875); another vendor's engine is added to this list.
+    private val penEngines: List<PenEngine> by lazy { listOf(HyperOsPenEngine(this)) }
     // touchmove fires continuously; throttle its dispatch to ~10/s since each one
     // is an evaluateJavascript round-trip into the WebView.
     private val touchMoveThrottleMs = 100L
@@ -199,6 +203,15 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         if (event.action == KeyEvent.ACTION_DOWN) {
             val keyCode = event.keyCode
 
+            // Pen gestures are always forwarded, like Apple Pencil on iOS: JS
+            // binds them and turns pages without any interception. A held
+            // gesture auto-repeats, so forward only its first DOWN.
+            val penKeyName = penEngines.firstNotNullOfOrNull { it.gestureKeyName(keyCode, event.source) }
+            if (penKeyName != null) {
+                if (event.repeatCount == 0) forwardKeyToWebView(penKeyName, keyCode)
+                return true
+            }
+
             // Only keys forwarded natively at runtime are learned natively.
             // Keyboard, D-pad, and remote keys continue to WebView so their
             // DOM identity and complete modifier chord are preserved.
@@ -342,6 +355,18 @@ class MainActivity : TauriActivity(), KeyDownInterceptor {
         // a process death behind the picker, #1217) is stashed and replayed
         // from load() instead of being dropped.
         NativeBridgePlugin.deliverActivityResult(requestCode, resultCode, data)
+    }
+
+    // A pen engine sends its gestures to the registered app instead of the
+    // system, so hold the registration only while Readest is in front.
+    override fun onResume() {
+        super.onResume()
+        penEngines.forEach { it.register() }
+    }
+
+    override fun onPause() {
+        penEngines.forEach { it.unregister() }
+        super.onPause()
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -3039,5 +3039,8 @@
   "Title - Author": "Titre - Auteur",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "« Format du nom de fichier » compose le nom à partir du titre et des auteurs, comme KOReader nomme les téléchargements OPDS.",
   "Set a single book's file name in the reader's Sync Info.": "Définissez le nom de fichier d'un livre précis dans les Infos de synchronisation de la vue de lecture.",
-  "The answer is incomplete: {{message}}": "La réponse est incomplète : {{message}}"
+  "The answer is incomplete: {{message}}": "La réponse est incomplète : {{message}}",
+  "Pen Squeeze": "Pression du stylet",
+  "Pen Slide Up": "Glissement du stylet vers le haut",
+  "Pen Slide Down": "Glissement du stylet vers le bas"
 }

@@ -269,6 +269,9 @@ class MediaKeyHandler {
   private weak var webView: WKWebView?
   private var registered = false
   private let commandCenter = MPRemoteCommandCenter.shared()
+  // native-tts registers its own targets on this shared center, so keep our
+  // tokens and remove only those on stop.
+  private var targets: [(MPRemoteCommand, Any)] = []
 
   func start(webView: WKWebView) {
     self.webView = webView
@@ -276,22 +279,28 @@ class MediaKeyHandler {
     registered = true
     commandCenter.nextTrackCommand.isEnabled = true
     commandCenter.previousTrackCommand.isEnabled = true
-    commandCenter.nextTrackCommand.addTarget { [weak self] _ in
+    let next = commandCenter.nextTrackCommand.addTarget { [weak self] _ in
       self?.forward("MediaNext")
       return .success
     }
-    commandCenter.previousTrackCommand.addTarget { [weak self] _ in
+    let previous = commandCenter.previousTrackCommand.addTarget { [weak self] _ in
       self?.forward("MediaPrevious")
       return .success
     }
+    targets = [
+      (commandCenter.nextTrackCommand, next),
+      (commandCenter.previousTrackCommand, previous),
+    ]
     logger.log("MediaKeyHandler: started")
   }
 
   func stop() {
     if !registered { return }
     registered = false
-    commandCenter.nextTrackCommand.removeTarget(nil)
-    commandCenter.previousTrackCommand.removeTarget(nil)
+    for (command, token) in targets {
+      command.removeTarget(token)
+    }
+    targets.removeAll()
     logger.log("MediaKeyHandler: stopped")
   }
 

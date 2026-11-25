@@ -19,4 +19,11 @@ class KeyLearnCaptureTest {
         assertTrue(shouldCaptureNativeLearnKey(KeyEvent.KEYCODE_MEDIA_NEXT))
         assertTrue(shouldCaptureNativeLearnKey(KeyEvent.KEYCODE_VOLUME_UP))
     }
+
+    // #7875: a pen engine may send gamepad keycodes; learn mode leaves them to the WebView.
+    @Test
+    fun `gamepad buttons 7 to 10 continue to WebView during learn mode`() {
+        assertFalse(shouldCaptureNativeLearnKey(KeyEvent.KEYCODE_BUTTON_7))
+        assertFalse(shouldCaptureNativeLearnKey(KeyEvent.KEYCODE_BUTTON_10))
+    }
 }

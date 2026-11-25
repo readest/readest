@@ -3039,5 +3039,8 @@
   "Title - Author": "כותרת - מחבר",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "„תבנית שם קובץ” בונה את השם מהכותרת ומהמחברים, כפי ש-KOReader נותן שמות להורדות OPDS.",
   "Set a single book's file name in the reader's Sync Info.": "הגדירו שם קובץ לספר בודד ב„פרטי סנכרון” במצב קריאה.",
-  "The answer is incomplete: {{message}}": "התשובה אינה שלמה: {{message}}"
+  "The answer is incomplete: {{message}}": "התשובה אינה שלמה: {{message}}",
+  "Pen Squeeze": "לחיצה על העט",
+  "Pen Slide Up": "החלקת העט למעלה",
+  "Pen Slide Down": "החלקת העט למטה"
 }

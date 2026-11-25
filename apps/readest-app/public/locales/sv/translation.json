@@ -2960,5 +2960,8 @@
   "Title - Author": "Titel - Författare",
   "File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.": "”Filnamnsformat” bygger namnet av titeln och författarna, så som KOReader namnger OPDS-nedladdningar.",
   "Set a single book's file name in the reader's Sync Info.": "Ange en enskild boks filnamn i Synkroniseringsinformation i läsvyn.",
-  "The answer is incomplete: {{message}}": "Svaret är ofullständigt: {{message}}"
+  "The answer is incomplete: {{message}}": "Svaret är ofullständigt: {{message}}",
+  "Pen Squeeze": "Pennans klämning",
+  "Pen Slide Up": "Pennans glid uppåt",
+  "Pen Slide Down": "Pennans glid nedåt"
 }
