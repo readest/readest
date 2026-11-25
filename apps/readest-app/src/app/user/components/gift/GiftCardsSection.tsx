@@ -86,9 +86,11 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
   const [composerKey, setComposerKey] = useState(0);
   // The card just paid for, opened in Sent for the buyer to write.
   const [writeId, setWriteId] = useState<string | null>(null);
-  const [checkout, setCheckout] = useState<{ clientSecret: string; sessionId: string } | null>(
-    null,
-  );
+  const [checkout, setCheckout] = useState<{
+    clientSecret: string;
+    sessionId: string;
+    giftCardId: string;
+  } | null>(null);
   // Where the gifted plan stood at the last load; a change means the page's
   // plan cards and session are stale.
   const giftState = useRef<string | null>(null);
@@ -118,17 +120,22 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
     }
   }, [onPlanChanged, toast, _]);
 
+  // Every way back from paying lands here. The store and the embedded
+  // checkout know which card they paid for; a redirected checkout returns with
+  // only its session, so it opens the newest card.
   const finishPurchase = useCallback(
-    async (paid: boolean) => {
+    async (paid: boolean, giftCardId?: string) => {
       const next = await load();
       if (!paid) return;
       setComposerKey((key) => key + 1);
-      // Every way back from paying (store, embedded or redirected checkout)
-      // lands here, and only the newest card is the one just bought.
-      const bought = next?.sent.reduce<SentGiftCard | null>(
-        (newest, card) => (!newest || card.purchasedAt > newest.purchasedAt ? card : newest),
-        null,
-      );
+      // `load` has said the list failed; "ready" over it would read as a lie.
+      if (!next) return;
+      const bought =
+        next.sent.find((card) => card.id === giftCardId) ??
+        next.sent.reduce<SentGiftCard | null>(
+          (newest, card) => (!newest || card.purchasedAt > newest.purchasedAt ? card : newest),
+          null,
+        );
       setWriteId(bought?.id ?? null);
       toast(_('Your gift card is ready'));
     },
@@ -193,7 +200,7 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
           await load();
           return;
         }
-        await finishPurchase(true);
+        await finishPurchase(true, giftCardId);
         return;
       }
       const { sessionId, clientSecret, url } = await createStripeCheckoutSession(
@@ -202,7 +209,7 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
         { giftCardId },
       );
       if (isTauriAppPlatform() && sessionId && clientSecret) {
-        setCheckout({ sessionId, clientSecret });
+        setCheckout({ sessionId, clientSecret, giftCardId });
       } else {
         await redirectToStripeCheckout(url);
         leaving = true;
@@ -225,10 +232,14 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
 
   const handleCheckoutSuccess = useCallback(
     async (sessionId: string) => {
+      const giftCardId = checkout?.giftCardId;
       setCheckout(null);
-      await finishPurchase((await checkStripeSession(sessionId)) === true);
+      const paid = (await checkStripeSession(sessionId)) === true;
+      // The checkout says it's paid; the webhook still activates the card.
+      if (!paid) toast(_('Payment received. Your gift card will appear here shortly.'));
+      await finishPurchase(paid, giftCardId);
     },
-    [finishPurchase],
+    [checkout, finishPurchase, toast, _],
   );
 
   const handleUpdate = useCallback(

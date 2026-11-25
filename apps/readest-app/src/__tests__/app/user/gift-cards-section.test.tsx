@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GiftCardsSection from '@/app/user/components/gift/GiftCardsSection';
 import type { GiftCardsResponse, GiftPrice, ReceivedGiftCard, SentGiftCard } from '@/types/gift';
@@ -16,6 +16,8 @@ const h = vi.hoisted(() => ({
   purchaseIAPProduct: vi.fn(),
   writeTextToClipboard: vi.fn(),
   dispatch: vi.fn(),
+  tauri: false,
+  checkoutProps: null as null | { onSuccess: (sessionId: string) => void },
   router: { replace: vi.fn() },
   // Stable identity, like the real memoized useTranslation.
   translate: (key: string, params?: Record<string, string | number>): string =>
@@ -36,9 +38,14 @@ vi.mock('@/libs/payment/stripe/client', () => ({
   redirectToStripeCheckout: h.redirectToStripeCheckout,
 }));
 vi.mock('@/libs/payment/iap/client', () => ({ purchaseIAPProduct: h.purchaseIAPProduct }));
-vi.mock('@/app/user/components/Checkout', () => ({ default: () => null }));
+vi.mock('@/app/user/components/Checkout', () => ({
+  default: (props: { onSuccess: (sessionId: string) => void }) => {
+    h.checkoutProps = props;
+    return null;
+  },
+}));
 vi.mock('@/services/environment', () => ({
-  isTauriAppPlatform: () => false,
+  isTauriAppPlatform: () => h.tauri,
   getAPIBaseUrl: () => '/api',
 }));
 vi.mock('@/utils/access', () => ({ getAccessToken: async () => 'test-token' }));
@@ -120,6 +127,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  h.tauri = false;
+  h.checkoutProps = null;
   vi.clearAllMocks();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -233,16 +242,24 @@ describe('GiftCardsSection', () => {
 
   it('after paying, the card just bought opens for writing', async () => {
     const older = sentCard({ id: 'old', code: 'OLDC-OLDC-OLDC-OLDC' });
+    // The draft this purchase paid for (createGiftDraft answers 'draft-1').
     const bought = sentCard({
-      id: 'new',
+      id: 'draft-1',
       recipientName: '',
       message: '',
       code: 'NEWC-NEWC-NEWC-NEWC',
       purchasedAt: '2026-11-25T10:00:00Z',
     });
+    // Review (CodeRabbit): a card bought on another device just after is
+    // newer, but it isn't the one this purchase paid for.
+    const elsewhere = sentCard({
+      id: 'elsewhere',
+      code: 'ELSE-ELSE-ELSE-ELSE',
+      purchasedAt: '2026-11-25T10:00:05Z',
+    });
     h.fetchGiftCards
       .mockResolvedValueOnce(response({ sent: [older] }))
-      .mockResolvedValue(response({ sent: [older, bought] }));
+      .mockResolvedValue(response({ sent: [older, bought, elsewhere] }));
     h.purchaseIAPProduct.mockResolvedValue({ platform: 'ios', transactionId: 'txn-1' });
     h.verifyGiftIAPPurchase.mockResolvedValue(undefined);
     renderSection({ useIAP: true, prices: IAP_PRICES });
@@ -257,6 +274,43 @@ describe('GiftCardsSection', () => {
       item('NEWC-NEWC-NEWC-NEWC').querySelector('[data-tier]')?.getAttribute('data-side'),
     ).toBe('back');
     expect(within(item('OLDC-OLDC-OLDC-OLDC')).queryByRole('textbox')).toBeNull();
+    expect(within(item('ELSE-ELSE-ELSE-ELSE')).queryByRole('textbox')).toBeNull();
+  });
+
+  // Review (CodeRabbit): "ready" over a list that didn't load reads as a lie.
+  it("doesn't announce the card ready when the list fails to load after paying", async () => {
+    h.fetchGiftCards.mockResolvedValueOnce(response()).mockRejectedValueOnce(new Error('offline'));
+    h.purchaseIAPProduct.mockResolvedValue({ platform: 'ios', transactionId: 'txn-1' });
+    h.verifyGiftIAPPurchase.mockResolvedValue(undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderSection({ useIAP: true, prices: IAP_PRICES });
+
+    fireEvent.click(await buyButton());
+
+    await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(2));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(h.dispatch).not.toHaveBeenCalledWith('toast', {
+      type: 'info',
+      message: 'Your gift card is ready',
+    });
+  });
+
+  // Review (CodeRabbit): an embedded checkout that paid but couldn't be
+  // checked left the buyer back on Buy with no word.
+  it('says the payment was received when the embedded checkout check fails', async () => {
+    h.tauri = true;
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderSection();
+
+    fireEvent.click(await buyButton());
+    await waitFor(() => expect(h.checkoutProps).not.toBeNull());
+    await act(async () => h.checkoutProps!.onSuccess('cs_test_1'));
+
+    expect(h.dispatch).toHaveBeenCalledWith('toast', {
+      type: 'info',
+      message: 'Payment received. Your gift card will appear here shortly.',
+    });
   });
 
   it('buying with IAP verifies with the draft id', async () => {
