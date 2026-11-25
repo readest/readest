@@ -6,11 +6,28 @@ import {
 } from '@/types/statistics';
 import { getRenderedTextFromRange } from '@/utils/sel';
 
+type ReadingPosition = { index: number; range?: Range | null };
+type VisiblePosition = { index: number; range: Range };
+
 const MIN_SAMPLE_MS = DEFAULT_STATS_TRACKING_CONFIG.minEventSeconds * 1000;
-const IDLE_MS = DEFAULT_STATS_TRACKING_CONFIG.idleTimeoutSeconds * 1000;
-// A page kept past the idle timeout counts only if read at this pace or
-// faster; slower, it was partly time away from the book.
-const MIN_UNITS_PER_MINUTE: Record<ReadingSpeedUnit, number> = { words: 60, characters: 120 };
+// The paces, per minute, a page counts at. Slower, part of the time was spent
+// away from it; faster, it was skimmed or flipped past.
+const READING_PACE: Record<ReadingSpeedUnit, { slowest: number; fastest: number }> = {
+  words: { slowest: 60, fastest: 1000 },
+  characters: { slowest: 120, fastest: 2500 },
+};
+
+const isReadingPace = ({ unit, count, durationMs }: ReadingSpeedSample) => {
+  if (durationMs < MIN_SAMPLE_MS || durationMs >= MAX_READING_SPEED_SAMPLE_MS) return false;
+  const pace = (count * 60_000) / durationMs;
+  return pace >= READING_PACE[unit].slowest && pace <= READING_PACE[unit].fastest;
+};
+
+/** Whether all of `screen` is above the start of `next`. */
+const hasLeftScreen = (screen: VisiblePosition, next: VisiblePosition) =>
+  next.index !== screen.index ||
+  next.range.compareBoundaryPoints(Range.END_TO_START, screen.range) >= 0;
+
 const readable = /[\p{L}\p{N}]/u;
 const eastAsian = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
 const needsDictionary = /[\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
@@ -68,9 +85,6 @@ export const countReadingUnits = (
   return { unit: 'words', count };
 };
 
-type ReadingPosition = { index: number; range?: Range | null };
-type VisiblePosition = { index: number; range: Range };
-
 const hasReadableText = (range: Range) =>
   readable.test(range.toString()) && readable.test(getRenderedTextFromRange(range));
 
@@ -103,14 +117,40 @@ const getPassedRange = (previous: VisiblePosition, next: VisiblePosition): Range
   return hasReadableText(gap) ? null : passed;
 };
 
-/** Measures forward reading from renderer ranges, independently of book page numbering. */
+/** Count the words or characters in `passed`, with the text around it for cut-off words. */
+const countPassedUnits = (passed: Range, language: string) => {
+  const { startContainer, startOffset, endContainer, endOffset } = passed;
+  const root = startContainer.ownerDocument?.documentElement;
+  const startText =
+    startContainer.nodeType === Node.TEXT_NODE ? (startContainer.nodeValue ?? '') : '';
+  const prefix = startText.slice(Math.max(0, startOffset - WORD_CONTEXT_LENGTH), startOffset);
+  // Rendered extraction drops leading collapsible space. Keep its word boundary.
+  const before = /[\t\n\r ]/.test(startText.charAt(startOffset)) ? `${prefix} ` : prefix;
+  const after =
+    endContainer.nodeType === Node.TEXT_NODE
+      ? endContainer.nodeValue?.slice(endOffset, endOffset + WORD_CONTEXT_LENGTH)
+      : '';
+  return countReadingUnits(
+    getRenderedTextFromRange(passed),
+    root?.getAttribute('lang') || root?.getAttribute('xml:lang') || language,
+    before,
+    after,
+  );
+};
+
+/**
+ * Measures forward reading from renderer ranges, independently of book page
+ * numbering. A sample is one page: a page turn, or while scrolling, the screen
+ * shown when the sample started, until all of it has scrolled past.
+ */
 export class ReadingSpeedTracker {
   private previous: (VisiblePosition & { timeMs: number; scrolled: boolean }) | null = null;
-  private pending: ReadingSpeedSample | null = null;
+  // While scrolling: the screen the current sample started on, and its total.
+  private screen: { start: VisiblePosition; sample: ReadingSpeedSample } | null = null;
 
   reset() {
     this.previous = null;
-    this.pending = null;
+    this.screen = null;
   }
 
   onPosition(position: ReadingPosition | null, nowMs: number, scrolled: boolean, language = '') {
@@ -128,64 +168,29 @@ export class ReadingSpeedTracker {
       old.range = range;
       return null;
     }
-    this.previous = { index: position.index, range, timeMs: nowMs, scrolled };
+    const next = { index: position.index, range };
+    this.previous = { ...next, timeMs: nowMs, scrolled };
     if (!old) return null;
-    const durationMs = nowMs - old.timeMs;
-    // A long page (a desktop spread) can outlast the idle timeout and is then
-    // judged by its pace below. Scrolled text leaves the screen in steps
-    // unrelated to how long it took to read, so scrolling keeps the limit.
-    if (
-      durationMs < 0 ||
-      durationMs >= (scrolled ? IDLE_MS : MAX_READING_SPEED_SAMPLE_MS) ||
-      (!scrolled && durationMs < MIN_SAMPLE_MS)
-    ) {
-      this.pending = null;
-      return null;
-    }
-    const passed = getPassedRange(old, this.previous);
+    const passed = nowMs >= old.timeMs ? getPassedRange(old, next) : null;
     if (!passed) {
-      this.pending = null;
+      this.screen = null;
       return null;
     }
+    const { unit, count } = countPassedUnits(passed, language);
 
-    const { startContainer, startOffset, endContainer, endOffset } = passed;
-    const root = startContainer.ownerDocument?.documentElement;
-    const startText =
-      startContainer.nodeType === Node.TEXT_NODE ? (startContainer.nodeValue ?? '') : '';
-    const prefix = startText.slice(Math.max(0, startOffset - WORD_CONTEXT_LENGTH), startOffset);
-    // Rendered extraction drops leading collapsible space. Keep its word boundary.
-    const before = /[\t\n\r ]/.test(startText.charAt(startOffset)) ? `${prefix} ` : prefix;
-    const after =
-      endContainer.nodeType === Node.TEXT_NODE
-        ? endContainer.nodeValue?.slice(endOffset, endOffset + WORD_CONTEXT_LENGTH)
-        : '';
-    const text = getRenderedTextFromRange(passed);
-    const { unit, count } = countReadingUnits(
-      text,
-      root?.getAttribute('lang') || root?.getAttribute('xml:lang') || language,
-      before,
-      after,
-    );
-    if (durationMs >= IDLE_MS && count * 60_000 < durationMs * MIN_UNITS_PER_MINUTE[unit]) {
-      this.pending = null;
-      return null;
+    if (!scrolled) {
+      const sample = { unit, count, startTimeMs: old.timeMs, durationMs: nowMs - old.timeMs };
+      return isReadingPace(sample) ? sample : null;
     }
-    const pending = this.pending;
-    if (!count && !pending) return null;
-    const canJoin =
-      pending &&
-      (!count || pending.unit === unit) &&
-      nowMs - pending.startTimeMs < MAX_READING_SPEED_SAMPLE_MS;
-    const sample = canJoin
-      ? {
-          unit: pending.unit,
-          count: pending.count + count,
-          startTimeMs: pending.startTimeMs,
-          durationMs: nowMs - pending.startTimeMs,
-        }
-      : { unit, count, startTimeMs: old.timeMs, durationMs };
-    this.pending =
-      scrolled && sample.count > 0 && sample.durationMs < MIN_SAMPLE_MS ? sample : null;
-    return !this.pending && sample.count > 0 && sample.durationMs >= MIN_SAMPLE_MS ? sample : null;
+    // One scroll step says nothing about pace: the text passing the top edge
+    // was read while it was lower on the screen. A whole screen does.
+    const screen =
+      this.screen && (this.screen.sample.unit === unit || !count)
+        ? this.screen
+        : { start: old, sample: { unit, count: 0, startTimeMs: old.timeMs, durationMs: 0 } };
+    screen.sample.count += count;
+    screen.sample.durationMs = nowMs - screen.sample.startTimeMs;
+    this.screen = hasLeftScreen(screen.start, next) ? null : screen;
+    return !this.screen && isReadingPace(screen.sample) ? screen.sample : null;
   }
 }
