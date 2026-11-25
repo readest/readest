@@ -101,13 +101,14 @@ interface GiftComposerProps {
   onBuy: (draft: GiftDraftInput, price: GiftPrice) => void;
 }
 
-// What a year of the tier gives, from its plan card: the storage line takes its
-// size, and Free's benefits go unsaid on a paid gift.
+// What a year of the tier gives, from its plan card: the storage line leads
+// with its size ("5 GB Cloud Sync Storage"), and Free's benefits go unsaid on a
+// paid gift.
 const tierFeatures = (tier: GiftTier, _: TranslationFunc): string[] => {
   const { features, limits = {} } = getPlanDetails(tier, []);
   return features
     .filter(({ label }) => label !== 'Includes All Free Plan Benefits')
-    .map(({ label }) => (limits[label] ? `${_(label)} · ${limits[label]}` : _(label)));
+    .map(({ label }) => (limits[label] ? `${limits[label]} ${_(label)}` : _(label)));
 };
 
 // Owner chose "buy, then write": the buyer picks a plan and pays; the card is

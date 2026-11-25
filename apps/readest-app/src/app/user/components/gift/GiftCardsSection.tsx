@@ -27,6 +27,7 @@ import type {
   SentGiftCard,
 } from '@/types/gift';
 import Checkout from '../Checkout';
+import { Fleuron, SERIF } from './GiftCard';
 import GiftComposer from './GiftComposer';
 import ReceivedGiftList from './ReceivedGiftList';
 import RedeemGiftForm from './RedeemGiftForm';
@@ -277,10 +278,20 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
 
   return (
     <div className='flex flex-col gap-10'>
-      {/* No title: the Gift Card tile that opens this already says it. One
-          checkout-width column, so Buy sits under the plan on any screen. */}
+      {/* One checkout-width column, so Buy sits under the plan on any screen. */}
       <section className='mx-auto flex w-full max-w-md flex-col gap-4'>
-        {description(_('Give someone a year of Readest Plus or Pro'))}
+        {/* A headline in the card's own type and ornament, not a label: the Gift
+            Card tile that opens this already names it. */}
+        <header className='mb-2 flex flex-col items-center gap-2 text-center'>
+          <h2
+            className='text-[1.75rem] font-semibold leading-tight tracking-tight'
+            style={{ fontFamily: SERIF }}
+          >
+            {_('The gift of reading')}
+          </h2>
+          <Fleuron className='h-auto w-24 not-eink:text-[#b8923f]' />
+          {description(_('Give someone a year of Readest Plus or Pro'))}
+        </header>
         <GiftComposer
           key={composerKey}
           prices={prices}

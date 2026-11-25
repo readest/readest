@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { type TranslationFunc, useTranslation } from '@/hooks/useTranslation';
 import type { GiftCardFace, GiftTier } from '@/types/gift';
 
@@ -34,7 +35,8 @@ const TIERS: Record<GiftTier, { cloth: string; endpaper: string; ink: string; ma
     },
   };
 
-const SERIF = "'Iowan Old Style', Palatino, 'Palatino Linotype', 'Book Antiqua', Georgia, serif";
+export const SERIF =
+  "'Iowan Old Style', Palatino, 'Palatino Linotype', 'Book Antiqua', Georgia, serif";
 
 // Gold foil: a metallic gradient through the letters, pressed into the cloth.
 const GILT =
@@ -145,23 +147,7 @@ const FRAME = (
   </>
 );
 
-// An open book with a ribbon, after the Readest icon, cut as an engraving.
-const Emblem = ({ className }: { className?: string }) => (
-  <svg aria-hidden='true' viewBox='0 0 64 44' className={className}>
-    <g fill='none' stroke='currentColor' strokeLinecap='round' strokeLinejoin='round'>
-      <path strokeWidth='1.3' d='M32 36 C24 32 13 31.5 4 34.5 V8.5 C13 5.5 24 6 32 10.5 Z' />
-      <path strokeWidth='1.3' d='M32 36 C40 32 51 31.5 60 34.5 V8.5 C51 5.5 40 6 32 10.5 Z' />
-      <path strokeWidth='0.9' d='M2 37.5 C12 34.5 24 35 32 39 C40 35 52 34.5 62 37.5' />
-      <path
-        strokeWidth='0.7'
-        d='M8 13 C14 11 21 11.5 28 14 M8 17 C14 15 21 15.5 28 18 M8 21 C14 19 21 19.5 28 22 M8 25 C14 23 21 23.5 28 26 M8 29 C14 27 19 27.5 22 28.5 M36 14 C43 11.5 50 11 56 13 M36 18 C43 15.5 50 15 56 17 M36 22 C43 19.5 50 19 56 21 M36 26 C43 23.5 50 23 56 25 M42 28.5 C46 27.5 51 27 56 29'
-      />
-    </g>
-    <path fill='currentColor' d='M35 33 V44 L37.5 41.4 L40 44 V32.2 Z' />
-  </svg>
-);
-
-const Fleuron = ({ className }: { className?: string }) => (
+export const Fleuron = ({ className }: { className?: string }) => (
   <svg aria-hidden='true' viewBox='0 0 80 12' className={className}>
     <g fill='none' stroke='currentColor' strokeWidth='0.8' strokeLinecap='round'>
       <path d='M2 6 H30 M50 6 H78' />
@@ -331,7 +317,15 @@ const GiftCard: React.FC<GiftCardProps> = ({
           </svg>
 
           <div className='absolute inset-0 flex flex-col items-center justify-center ps-[6.5%] text-center'>
-            <Emblem className='mb-[2.2cqw] h-auto w-[14cqw] not-eink:drop-shadow-[0_0.6px_0_rgb(0_0_0/0.6)]' />
+            {/* The Readest icon, set on the cloth like a pasted cover picture. Its
+                transparent margin is taken back so the cover keeps its height. */}
+            <Image
+              src='/icon.png'
+              alt=''
+              width={64}
+              height={64}
+              className='-mt-[1.7cqw] mb-[0.8cqw] h-auto w-[13cqw] eink:grayscale not-eink:drop-shadow-[0_1px_1.5px_rgb(0_0_0/0.55)]'
+            />
             <span
               className={clsx(
                 'mb-[1.2cqw] leading-tight',

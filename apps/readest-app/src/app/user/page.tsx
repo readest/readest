@@ -536,7 +536,8 @@ const ProfilePage = () => {
                   </>
                 )}
 
-                <LegalLinks />
+                {/* The account page already carries them; the buy page ends at Buy. */}
+                {giftView !== 'give' && <LegalLinks />}
               </div>
             </div>
           )}

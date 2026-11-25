@@ -153,6 +153,8 @@ describe('GiftCardsSection', () => {
       expect(screen.queryByRole('heading', { name: 'Gift Card' })).toBeNull();
       expect(screen.queryByRole('heading', { name: 'Give a Gift' })).toBeNull();
       expect(screen.getByText('Give someone a year of Readest Plus or Pro')).toBeTruthy();
+      // Owner: "we need a better header".
+      expect(screen.getByRole('heading', { name: 'The gift of reading' })).toBeTruthy();
       // Owner chose "buy, then write": nothing to fill in before Buy.
       expect(screen.queryByRole('textbox')).toBeNull();
       expect(screen.getByText('One payment, no subscription')).toBeTruthy();
@@ -219,12 +221,13 @@ describe('GiftCardsSection', () => {
     await buyButton();
 
     expect(screen.getByText('Unlimited AI Read Aloud Hours')).toBeTruthy();
-    expect(screen.getByText('Cloud Sync Storage · 5 GB')).toBeTruthy();
+    // Owner: "Cloud Sync Storage • 5 GB, don't use the •".
+    expect(screen.getByText('5 GB Cloud Sync Storage')).toBeTruthy();
     expect(screen.queryByText('Includes All Free Plan Benefits')).toBeNull();
 
     fireEvent.click(screen.getByRole('radio', { name: /Readest Pro/ }));
     expect(screen.getByText('Includes All Plus Plan Benefits')).toBeTruthy();
-    expect(screen.getByText('Cloud Sync Storage · 20 GB')).toBeTruthy();
+    expect(screen.getByText('20 GB Cloud Sync Storage')).toBeTruthy();
     expect(screen.queryByText('Priority Support')).toBeNull();
   });
 

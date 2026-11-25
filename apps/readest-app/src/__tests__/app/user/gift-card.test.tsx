@@ -47,6 +47,17 @@ describe('GiftCard', () => {
     expect(screen.getAllByText('MMXXVI').length).toBeGreaterThan(0);
   });
 
+  // Owner: "Can we use the Readest icon on the card".
+  it('stamps the Readest icon on the cover', () => {
+    render(<GiftCard face={face()} year={2026} />);
+
+    const icon = card().querySelector("[data-face='front'] img") as HTMLImageElement | null;
+    // next/image routes it through /_next/image here; the app serves it as is.
+    expect(decodeURIComponent(icon?.getAttribute('src') ?? '')).toContain('/icon.png');
+    // The cover's text already names it; the picture is decoration.
+    expect(icon?.getAttribute('alt')).toBe('');
+  });
+
   it('omits To and the signature when the names are empty', () => {
     render(<GiftCard face={face({ recipientName: '', senderName: '  ' })} />);
 

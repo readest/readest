@@ -59,7 +59,7 @@ vi.mock('@/libs/payment/gift/client', () => ({
     giftOnly: false,
   }),
 }));
-vi.mock('@/components/LegalLinks', () => ({ default: () => null }));
+vi.mock('@/components/LegalLinks', () => ({ default: () => <div>legal links</div> }));
 vi.mock('@/components/Spinner', () => ({ default: () => null }));
 vi.mock('@/components/Toast', () => ({ Toast: () => null }));
 vi.mock('@/app/user/components/Header', () => ({ default: () => null }));
@@ -209,4 +209,17 @@ it.each([
   render(<ProfilePage />);
 
   expect(!!screen.queryByText('account block')).toBe(shown);
+});
+
+// Owner: "remove the tos and privacy line on the gift card buy page since the
+// line is already present in the user page".
+it.each([
+  ['the buy view', false, { section: 'gifts' }],
+  ['the redeem view', true, { section: 'redeem' }],
+  ['the plans', true, {}],
+] as const)('%s shows the Terms and Privacy line: %s', (_name, shown, params) => {
+  mocks.params = new URLSearchParams(params);
+  render(<ProfilePage />);
+
+  expect(!!screen.queryByText('legal links')).toBe(shown);
 });
