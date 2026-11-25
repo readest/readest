@@ -88,8 +88,8 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
     </div>
   );
 
-  // The price stays on an unlocked Full Customization as the anchor for the
-  // tiles around it.
+  // An unlocked Full Customization goes last, below what can still be bought,
+  // and keeps its price as the anchor for the tiles above it.
   const customization = customizationProducts[0];
   const customizationPrice =
     customization && formatPrice(customization.price, customization.currency);
@@ -111,9 +111,7 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
         </div>
       )}
 
-      {customizationPurchased ? (
-        statusTile(`${_('Full Customization')} (${_('Unlocked')})`, customizationPrice)
-      ) : customizationProducts.length > 0 ? (
+      {customizationPurchased ? null : customizationProducts.length > 0 ? (
         <div className='grid grid-cols-1 gap-2'>
           {customizationProducts.map((product) => (
             <button
@@ -131,6 +129,9 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
       )}
 
       {giftCardButton}
+
+      {customizationPurchased &&
+        statusTile(`${_('Full Customization')} (${_('Unlocked')})`, customizationPrice)}
     </div>
   );
 };

@@ -142,7 +142,6 @@ describe('PlansComparison', () => {
 
     it.each([
       ['for sale', [STORAGE, CUSTOMIZATION], false],
-      ['owned', [STORAGE, CUSTOMIZATION], true],
       ['coming soon', [STORAGE], false],
     ] as const)('follows Full Customization (%s) in the Lifetime card and opens the gift view', (_state, products, customizationPurchased) => {
       const onGiftCard = vi.fn();
@@ -184,6 +183,19 @@ describe('PlansComparison', () => {
           {...props}
         />,
       );
+
+    // Owner: "When Full Customization is unlocked, put it at the end of the products".
+    it('an unlocked Full Customization moves to the end, after the Gift Card', () => {
+      lifetime({ customizationPurchased: true });
+
+      const card = within(planCard('Lifetime Plan'));
+      const giftCard = card.getByRole('button', { name: 'Gift Card' });
+      const unlocked = card.getByText('Full Customization (Unlocked)');
+      expect(
+        giftCard.compareDocumentPosition(unlocked) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(card.getAllByRole('button').at(-1)).toBe(giftCard);
+    });
 
     // Owner: "Gift Card also has a price on it (starts from $49.99)".
     it('starts from the lowest gift price', () => {
