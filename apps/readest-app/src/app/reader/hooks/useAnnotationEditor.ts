@@ -13,6 +13,7 @@ import {
   HandlePositions,
   removeBookNoteOverlays,
 } from '../utils/annotatorUtil';
+import { expandAllRenderedSections } from '../utils/globalAnnotations';
 
 const drawAnnotation = (view: FoliateView | null, note: BookNote) => {
   if (note.style) view?.addAnnotation(note);
@@ -61,7 +62,10 @@ export const useAnnotationEditor = ({
       const views = getViewsById(bookKey.split('-')[0]!);
       for (const view of views) {
         removeBookNoteOverlays(view, preview.note);
-        if (saved) drawAnnotation(view, saved);
+        if (!saved) continue;
+        drawAnnotation(view, saved);
+        // Nothing was saved, so the reader won't fan a global highlight out again.
+        expandAllRenderedSections(view, saved);
       }
       if (preview.popup && saved) {
         void eventDispatcher.dispatch('footnote-annotation-preview', { key: bookKey, note: saved });
