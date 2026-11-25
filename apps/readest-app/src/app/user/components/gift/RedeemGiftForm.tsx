@@ -50,13 +50,24 @@ const RedeemGiftForm: React.FC<RedeemGiftFormProps> = ({ initialCode = '', onRed
           placeholder='XXXX-XXXX-XXXX-XXXX'
           dir='ltr'
           value={code}
+          // The code sent is the one cleared or reported on when it answers.
+          readOnly={busy}
           autoComplete='off'
           autoCapitalize='characters'
           spellCheck={false}
-          onChange={(event) => setCode(event.target.value)}
+          onChange={(event) => {
+            setCode(event.target.value);
+            setError('');
+          }}
           className='input eink-bordered min-w-0 flex-1 font-mono uppercase tracking-wider'
         />
-        <button type='submit' disabled={busy || !code.trim()} className='btn btn-contrast'>
+        <button
+          type='submit'
+          disabled={busy || !code.trim()}
+          aria-busy={busy}
+          className='btn btn-contrast'
+        >
+          {busy && <span className='loading loading-spinner loading-sm' />}
           {_('Redeem')}
         </button>
       </div>

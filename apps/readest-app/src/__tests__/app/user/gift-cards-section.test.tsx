@@ -661,6 +661,90 @@ describe('GiftCardsSection', () => {
     expect(await screen.findByText("This is a test card and can't be redeemed.")).toBeTruthy();
   });
 
+  // Review (CodeRabbit), the redeem form and the Sent editors while they wait.
+  describe('while a request is pending', () => {
+    const pending = () => {
+      let finish!: (value: unknown) => void;
+      let fail!: (error: Error) => void;
+      const promise = new Promise((resolve, reject) => {
+        finish = resolve;
+        fail = reject;
+      });
+      return { promise, finish, fail };
+    };
+
+    it('the redeem form holds the code it sent and shows it is working', async () => {
+      const request = pending();
+      h.redeemGiftCode.mockReturnValue(request.promise);
+      renderSection({ view: 'redeem', initialCode: 'ABCD-EFGH-JKMN-PQRS' });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Redeem' }));
+
+      const input = screen.getByRole('textbox', { name: 'Gift code' }) as HTMLInputElement;
+      expect(input.readOnly).toBe(true);
+      expect(screen.getByRole('button', { name: 'Redeem' }).getAttribute('aria-busy')).toBe('true');
+      await act(async () => request.finish(null));
+      expect(input.readOnly).toBe(false);
+    });
+
+    it('editing the code clears the last error', async () => {
+      h.redeemGiftCode.mockRejectedValue(new Error('invalid_or_used'));
+      renderSection({ view: 'redeem', initialCode: 'ABCD-EFGH-JKMN-PQRS' });
+      fireEvent.click(await screen.findByRole('button', { name: 'Redeem' }));
+      await screen.findByText('This code is invalid or has already been used.');
+
+      fireEvent.change(screen.getByRole('textbox', { name: 'Gift code' }), {
+        target: { value: 'WXYZ' },
+      });
+
+      expect(screen.queryByText('This code is invalid or has already been used.')).toBeNull();
+      expect(screen.getByRole('textbox', { name: 'Gift code' }).getAttribute('aria-invalid')).toBe(
+        'false',
+      );
+    });
+
+    it('a failed email confirmation can go back to the address', async () => {
+      h.fetchGiftCards.mockResolvedValue(response({ sent: [sentCard()] }));
+      h.updateGiftCard.mockRejectedValue(new Error('offline'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      renderSection();
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Add recipient email' }));
+      fireEvent.change(within(sentRegion()).getByRole('textbox', { name: 'Recipient email' }), {
+        target: { value: 'sam@exmaple.test' },
+      });
+      fireEvent.click(within(sentRegion()).getByRole('button', { name: 'Save' }));
+      fireEvent.click(within(sentRegion()).getByRole('button', { name: 'Confirm' }));
+      await waitFor(() => expect(h.updateGiftCard).toHaveBeenCalled());
+
+      fireEvent.click(await within(sentRegion()).findByRole('button', { name: 'Back' }));
+      expect(
+        (within(sentRegion()).getByRole('textbox', { name: 'Recipient email' }) as HTMLInputElement)
+          .value,
+      ).toBe('sam@exmaple.test');
+    });
+
+    it('a message save shows it is working, and closes only its own editor', async () => {
+      const request = pending();
+      h.fetchGiftCards.mockResolvedValue(response({ sent: [sentCard()] }));
+      h.updateGiftCard.mockReturnValue(request.promise);
+      renderSection();
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Edit message' }));
+      fireEvent.click(within(sentRegion()).getByRole('button', { name: 'Save' }));
+      expect(
+        within(sentRegion()).getByRole('button', { name: 'Save' }).getAttribute('aria-busy'),
+      ).toBe('true');
+
+      // Cancel, open the email editor, then the old save lands.
+      fireEvent.click(within(sentRegion()).getByRole('button', { name: 'Cancel' }));
+      fireEvent.click(within(sentRegion()).getByRole('button', { name: 'Add recipient email' }));
+      await act(async () => request.finish(sentCard({ message: 'Saved' })));
+
+      expect(within(sentRegion()).getByRole('textbox', { name: 'Recipient email' })).toBeTruthy();
+    });
+  });
+
   it('sent cards show the code only while unredeemed', async () => {
     h.fetchGiftCards.mockResolvedValue(
       response({
@@ -673,7 +757,13 @@ describe('GiftCardsSection', () => {
             code: 'BBBB-BBBB-BBBB-BBBB',
           }),
           sentCard({ id: 'c', status: 'refunded', code: 'CCCC-CCCC-CCCC-CCCC' }),
-          sentCard({ id: 'd', status: 'redeemed', code: null, redeemedAt: '2026-12-25T09:00:00Z' }),
+          // Review (CodeRabbit): a code the UI must hide, not one already null.
+          sentCard({
+            id: 'd',
+            status: 'redeemed',
+            code: 'DDDD-DDDD-DDDD-DDDD',
+            redeemedAt: '2026-12-25T09:00:00Z',
+          }),
         ],
       }),
     );
@@ -683,6 +773,7 @@ describe('GiftCardsSection', () => {
     const sent = sentRegion();
     expect(within(sent).getByText('BBBB-BBBB-BBBB-BBBB')).toBeTruthy();
     expect(within(sent).queryByText('CCCC-CCCC-CCCC-CCCC')).toBeNull();
+    expect(within(sent).queryByText('DDDD-DDDD-DDDD-DDDD')).toBeNull();
     expect(within(sent).getByText('Refunded')).toBeTruthy();
     expect(within(sent).getByText(/^Redeemed on /)).toBeTruthy();
     expect(within(sent).getAllByRole('button', { name: 'Copy code' })).toHaveLength(2);

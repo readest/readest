@@ -34,6 +34,7 @@ const EmailEditor: React.FC<{ onSave: (email: string) => Promise<void>; onCancel
   const trimmed = email.trim();
 
   const confirm = async () => {
+    if (saving) return;
     setSaving(true);
     try {
       await onSave(trimmed);
@@ -80,13 +81,26 @@ const EmailEditor: React.FC<{ onSave: (email: string) => Promise<void>; onCancel
         <button type='button' onClick={onCancel} className='btn btn-ghost btn-sm'>
           {_('Cancel')}
         </button>
+        {/* Back to the address, kept, to correct it (after a failed save too). */}
+        {confirming && (
+          <button
+            type='button'
+            disabled={saving}
+            onClick={() => setConfirming(false)}
+            className='btn btn-ghost btn-sm'
+          >
+            {_('Back')}
+          </button>
+        )}
         {confirming ? (
           <button
             type='button'
             disabled={saving}
+            aria-busy={saving}
             onClick={confirm}
             className='btn btn-contrast btn-sm'
           >
+            {saving && <span className='loading loading-spinner loading-xs' />}
             {_('Confirm')}
           </button>
         ) : (
@@ -110,12 +124,19 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: Upd
   const [saving, setSaving] = useState(false);
   const [side, setSide] = useState<GiftCardSide>('front');
   const item = useRef<HTMLLIElement>(null);
+  // Each opened editor is a session; a save closes only the one it began in,
+  // not an editor opened while it was on its way.
+  const session = useRef(0);
+  const openEditor = (kind: 'email' | 'message' | null) => {
+    session.current++;
+    setEditing(kind);
+  };
 
   // Just paid for: open it on the bookplate, ready to write.
   useEffect(() => {
     if (!write) return;
     setFace(card);
-    setEditing('message');
+    openEditor('message');
     setSide('back');
     item.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
     // Only when it becomes the card to write, not on every reload of it.
@@ -140,9 +161,10 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: Upd
 
   // The section toasts a failure and rethrows it, so the editor stays open.
   const save = async (patch: GiftCardPatch) => {
+    const mine = session.current;
     try {
       await onUpdate(card.id, patch);
-      setEditing(null);
+      if (mine === session.current) setEditing(null);
     } catch {
       // Already shown to the buyer; keep what they typed.
     }
@@ -150,6 +172,7 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: Upd
 
   const saveFace = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (saving) return;
     setSaving(true);
     await save({
       recipientName: face.recipientName.trim(),
@@ -201,7 +224,7 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: Upd
               <ActionButton
                 icon={MdOutlineEmail}
                 label={_('Add recipient email')}
-                onClick={() => setEditing('email')}
+                onClick={() => openEditor('email')}
               />
             )}
             <ActionButton
@@ -209,7 +232,7 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: Upd
               label={_('Edit message')}
               onClick={() => {
                 setFace(card);
-                setEditing('message');
+                openEditor('message');
                 setSide('back');
               }}
             />
@@ -219,7 +242,7 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: Upd
         {editing === 'email' && (
           <EmailEditor
             onSave={(email) => save({ recipientEmail: email })}
-            onCancel={() => setEditing(null)}
+            onCancel={() => openEditor(null)}
           />
         )}
 
@@ -229,12 +252,18 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: Upd
             <div className='flex justify-end gap-2'>
               <button
                 type='button'
-                onClick={() => setEditing(null)}
+                onClick={() => openEditor(null)}
                 className='btn btn-ghost btn-sm'
               >
                 {_('Cancel')}
               </button>
-              <button type='submit' disabled={saving} className='btn btn-contrast btn-sm'>
+              <button
+                type='submit'
+                disabled={saving}
+                aria-busy={saving}
+                className='btn btn-contrast btn-sm'
+              >
+                {saving && <span className='loading loading-spinner loading-xs' />}
                 {_('Save')}
               </button>
             </div>
