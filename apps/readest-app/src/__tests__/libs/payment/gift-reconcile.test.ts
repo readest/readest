@@ -85,6 +85,28 @@ describe('reconcileGiftCards', () => {
     expect(h.synced).toEqual(['refunded-recently']);
   });
 
+  // Review (CodeRabbit): a claim whose plan sync failed for the whole window
+  // was never retried. Every plan write counts the gift, so a stored plan
+  // below it can only be a missed sync, whenever the claim was.
+  it('syncs a recipient whose stored plan is below their gift, outside the window', async () => {
+    claimed('stale', 3 * HOUR);
+    h.db!.rows('plans').push({ id: 'stale', plan: 'free' });
+
+    await reconcileGiftCards(NOW);
+
+    expect(h.synced).toEqual(['stale']);
+  });
+
+  it('leaves a recipient whose stored plan already covers the gift', async () => {
+    claimed('covered', 3 * HOUR);
+    claimed('paying-pro', 3 * HOUR);
+    h.db!.rows('plans').push({ id: 'covered', plan: 'plus' }, { id: 'paying-pro', plan: 'pro' });
+
+    await reconcileGiftCards(NOW);
+
+    expect(h.synced).toEqual([]);
+  });
+
   it("one failing recipient doesn't stop the rest", async () => {
     claimed('a', 365 * DAY + HOUR);
     claimed('b', 365 * DAY + HOUR);

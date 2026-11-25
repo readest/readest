@@ -1,5 +1,7 @@
-import { GiftCardRow } from '@/types/gift';
+import { GiftCardRow, GiftTier } from '@/types/gift';
+import { UserPlan } from '@/types/quota';
 import { createSupabaseAdminClient } from '@/utils/supabase';
+import { higherPlan } from '../entitlements';
 import { syncUserPlan } from './claim';
 import { giftTimeline } from './timeline';
 
@@ -9,11 +11,13 @@ const DRAFT_TTL_MS = 7 * 24 * HOUR_MS;
 // runs, and a repeated sync is harmless.
 const WINDOW_MS = 2 * HOUR_MS;
 export const RECONCILE_PAGE_SIZE = 1000;
+// Ids per `plans` read: they go in the query string.
+const PLAN_READ_CHUNK = 200;
 
 /**
- * The cron's three jobs: hand cards to newly confirmed emails, re-sync every
- * recipient whose gift began, ended or was refunded since the last runs, and
- * drop drafts that were never paid.
+ * The cron's jobs: hand cards to newly confirmed emails; re-sync every
+ * recipient whose gift began, ended or was refunded since the last runs, or
+ * whose stored plan is below their gift; and drop drafts that were never paid.
  */
 export const reconcileGiftCards = async (
   now: Date = new Date(),
@@ -48,8 +52,9 @@ export const reconcileGiftCards = async (
   for (const card of active) {
     byRecipient.set(card.redeemed_by!, [...(byRecipient.get(card.redeemed_by!) ?? []), card]);
   }
+  const gifted = new Map<string, GiftTier>();
   for (const [userId, cards] of byRecipient) {
-    const { boundaries } = giftTimeline(
+    const { plan, boundaries } = giftTimeline(
       cards.map((c) => ({
         id: c.id,
         tier: c.tier,
@@ -59,6 +64,23 @@ export const reconcileGiftCards = async (
       now,
     );
     if (boundaries.some(inWindow)) picked.add(userId);
+    else if (plan !== 'free') gifted.set(userId, plan);
+  }
+
+  // A claim whose plan sync failed through the whole window would otherwise
+  // never be retried. Every plan write counts the gift, so a stored plan below
+  // it can only be a missed sync; once a sync lands it no longer matches.
+  const holders = [...gifted.keys()];
+  for (let i = 0; i < holders.length; i += PLAN_READ_CHUNK) {
+    const plans = await supabase
+      .from('plans')
+      .select('id, plan')
+      .in('id', holders.slice(i, i + PLAN_READ_CHUNK));
+    if (plans.error) throw plans.error;
+    for (const row of (plans.data ?? []) as { id: string; plan: UserPlan }[]) {
+      const gift = gifted.get(row.id)!;
+      if (higherPlan(row.plan, gift) !== row.plan) picked.add(row.id);
+    }
   }
 
   // A refund can land between a claim and its plan sync; sync the recipient
