@@ -1343,6 +1343,19 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
       expect(mockView.renderer.containerPosition).toBe(1000 + 700 - 500 - 100);
     });
 
+    it('keeps a short view clear of the header band when the word fits below it', async () => {
+      const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+      mockView.renderer.end = 700;
+      mockViewSettings.showHeader = true;
+      mockViewSettings.marginTopPx = 120;
+      para.style.lineHeight = '80px';
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => textAt(700, 20) });
+
+      handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+      expect(mockView.renderer.containerPosition).toBe(1000 + 700 - 500 - 120);
+    });
+
     // A fixed-layout page measures its text from the page, while the renderer
     // counts from the book's start.
     it('leaves fixed-layout pages to foliate', async () => {

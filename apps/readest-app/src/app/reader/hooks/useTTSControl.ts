@@ -114,12 +114,12 @@ const followInScrolledView = (view: FoliateView, range: Range, viewSettings: Vie
     view.renderer.scrollToAnchor?.(range);
     return;
   }
-  // Below the header band the check above counts as hidden, too: text landing
-  // inside it would be followed again on every line. Never past halfway down,
-  // or in a short view the text would stay below it.
-  const context = Math.min(
-    Math.max(SCROLLED_FOLLOW_CONTEXT_LINES * lineHeightAt(range), headerScrollOverlap),
-    (end - start) / 2,
+  // At most halfway down, or in a short view the text would stay below it.
+  // Never inside the header band the check above counts as hidden: text
+  // landing there would be followed again on every line.
+  const context = Math.max(
+    Math.min(SCROLLED_FOLLOW_CONTEXT_LINES * lineHeightAt(range), (end - start) / 2),
+    headerScrollOverlap,
   );
   view.renderer.containerPosition += rangeTop - start - context;
 };
