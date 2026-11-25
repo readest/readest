@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GiftDb } from '../../helpers/gift-db';
 
@@ -65,6 +65,8 @@ vi.mock('@/utils/access', () => ({
 
 vi.mock('@/libs/payment/iap/apple/verifier', () => ({
   getAppleIAPVerifier: () => ({ verifyTransaction: hooks.verifyTransaction }),
+  appleVerifierEnvironment: () =>
+    process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
 }));
 
 vi.mock('@/libs/payment/iap/google/verifier', () => ({
@@ -552,6 +554,62 @@ describe('App Store gift payments', () => {
       paymentRef: 'otx-1',
       giftCardId: undefined,
     });
+  });
+});
+
+describe('App Store gift charges against a refund', () => {
+  const charge = () => {
+    hooks.decodeNotificationPayload.mockResolvedValue({
+      notificationType: NotificationType.OneTimeCharge,
+      data: { bundleId: BUNDLE_ID, environment: 'Production', signedTransactionInfo: 'SIGNED_TX' },
+    });
+    hooks.decodeTransaction.mockResolvedValue({
+      bundleId: BUNDLE_ID,
+      productId: GIFT_PLUS,
+      transactionId: 'tx-1',
+      originalTransactionId: 'otx-1',
+      purchaseDate: 1_700_000_000_000,
+      quantity: 1,
+      type: TransactionType.Consumable,
+      appAccountToken: BUYER,
+      price: 49990,
+      currency: 'USD',
+    });
+  };
+  afterEach(() => vi.unstubAllEnvs());
+
+  // Review (CodeRabbit): a REFUND that came before any payment row found
+  // nothing to revoke and answered 200; Apple's later retry of the charge
+  // then activated a card for a refunded purchase.
+  it('a ONE_TIME_CHARGE for a gift Apple has since refunded does not activate', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    charge();
+    hooks.verifyTransaction.mockResolvedValue(appleVerification(GIFT_PLUS, 'expired'));
+
+    const res = await handleAppleNotification('payload');
+
+    expect(hooks.verifyTransaction).toHaveBeenCalledWith('otx-1');
+    expect(hooks.activateGiftCard).not.toHaveBeenCalled();
+    expect(res).toMatchObject({ handled: true, status: 'expired' });
+  });
+
+  it('a ONE_TIME_CHARGE for a gift still paid activates after the live check', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    charge();
+    hooks.verifyTransaction.mockResolvedValue(appleVerification(GIFT_PLUS, 'active'));
+
+    await handleAppleNotification('payload');
+
+    expect(hooks.activateGiftCard).toHaveBeenCalledTimes(1);
+  });
+
+  it('a gift charge whose live check fails throws, so Apple retries', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    charge();
+    hooks.verifyTransaction.mockResolvedValue({ success: false, error: 'TRANSACTION_NOT_FOUND' });
+
+    await expect(handleAppleNotification('payload')).rejects.toThrow('TRANSACTION_NOT_FOUND');
+    expect(hooks.activateGiftCard).not.toHaveBeenCalled();
   });
 });
 
