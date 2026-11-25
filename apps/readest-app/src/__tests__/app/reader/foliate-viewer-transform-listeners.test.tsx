@@ -4,11 +4,19 @@ import type { ComponentProps } from 'react';
 import { EPUB } from 'foliate-js/epub.js';
 import FoliateViewer from '@/app/reader/components/FoliateViewer';
 
+type CustomFontStub = {
+  id: string;
+  path: string;
+  loaded?: boolean;
+  unavailable?: boolean;
+  blobUrl?: string;
+};
+
 const { readerState, openGate, bookDataState, fontState } = vi.hoisted(() => {
   return {
     bookDataState: { bookData: null as unknown },
     fontState: {
-      availableFonts: [] as { id: string; path: string; loaded?: boolean; blobUrl?: string }[],
+      availableFonts: [] as CustomFontStub[],
       loadFont: async (_env: unknown, _id: string) => ({}) as { blobUrl?: string },
     },
     openGate: { pending: null as Promise<void> | null, started: false },
@@ -232,7 +240,10 @@ const FONT_BOOK: Record<string, string> = {
 
 // Opens FONT_BOOK in the viewer and returns the text of its first section's
 // stylesheet, as foliate built it on the first load.
-async function loadFontBookStylesheet(loadFont: () => Promise<{ blobUrl?: string }>) {
+async function loadFontBookStylesheet(
+  loadFont: (id: string) => Promise<{ blobUrl?: string }>,
+  fonts: CustomFontStub[] = [{ id: 'bookerly', path: 'custom/Bookerly.ttf', loaded: false }],
+) {
   const files = FONT_BOOK;
   const book = new EPUB({
     entries: Object.keys(files).map((filename) => ({ filename })),
@@ -243,8 +254,8 @@ async function loadFontBookStylesheet(loadFont: () => Promise<{ blobUrl?: string
   });
   await book.init();
 
-  fontState.availableFonts = [{ id: 'bookerly', path: 'custom/Bookerly.ttf', loaded: false }];
-  fontState.loadFont = loadFont;
+  fontState.availableFonts = fonts;
+  fontState.loadFont = (_env, id) => loadFont(id);
   // jsdom has no object URLs; keep each blob so the stylesheet can be read back.
   const blobs = new Map<string, Blob>();
   const originalCreate = URL.createObjectURL;
@@ -289,4 +300,19 @@ it('still loads the chapter when the custom font file cannot be read', async () 
     throw new Error('Font file not found');
   });
   expect(css).toContain('p { color: red; }');
+});
+
+// A cloud-only font has no file on disk yet, so it can't stand in; a loaded
+// font with the same file name can.
+it('prefers a loaded same-named custom font over a cloud-only one', async () => {
+  const fonts = [
+    { id: 'remote', path: 'remote/Bookerly.ttf', unavailable: true },
+    { id: 'local', path: 'local/bookerly.ttf', loaded: true, blobUrl: 'blob:local-bookerly' },
+  ];
+  const css = await loadFontBookStylesheet(async (id) => {
+    const font = fonts.find((font) => font.id === id)!;
+    if (!font.blobUrl) throw new Error('File not found');
+    return font;
+  }, fonts);
+  expect(css).toContain('url("blob:local-bookerly")');
 });

@@ -1108,9 +1108,12 @@ const FoliateViewer: React.FC<{
         }
         if (isFontType(detail.type) && detail.href?.startsWith('fonts/')) {
           const fontFileName = detail.href.split('/').pop()?.toLowerCase();
-          const font = getAvailableFonts().find(
-            (font) => font.path.split('/').pop()?.toLowerCase() === fontFileName,
+          // A cloud-only font has no file on disk yet; prefer one already loaded.
+          const fonts = getAvailableFonts().filter(
+            (font) =>
+              !font.unavailable && font.path.split('/').pop()?.toLowerCase() === fontFileName,
           );
+          const font = fonts.find((font) => font.loaded) ?? fonts[0];
           // foliate reads `detail.url` as soon as this handler returns, then
           // returns it from its async loadItem, so it waits for the promise.
           if (font) {
