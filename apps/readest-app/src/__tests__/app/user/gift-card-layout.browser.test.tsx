@@ -90,6 +90,25 @@ describe('gift card layout', () => {
     expect(message.scrollHeight).toBeLessThanOrEqual(message.clientHeight + 1);
   });
 
+  // The card's serifs aren't everywhere: Android sets it in its own serif,
+  // measured wider than Georgia, and CI's Linux WebKit in a wider one still.
+  // A 300-character message there needs a line more than the bookplate holds,
+  // so the card steps down a size rather than cut the last line.
+  it('a 300-character message is shown whole at 390px in a wide fallback font', async () => {
+    const style = document.createElement('style');
+    style.textContent =
+      '[data-tier], [data-tier] * { font-family: Verdana, sans-serif !important; }';
+    document.head.append(style);
+    try {
+      const { message, messageBox, signature } = await renderCard(390, LONG);
+
+      expect(message.scrollHeight).toBeLessThanOrEqual(message.clientHeight + 1);
+      expect(messageBox.bottom).toBeLessThanOrEqual(signature.top);
+    } finally {
+      style.remove();
+    }
+  });
+
   it('a six-line letter keeps its sign-off on a phone-width card', async () => {
     const { message, messageBox, signature } = await renderCard(390, LETTER);
 

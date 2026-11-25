@@ -103,7 +103,7 @@ const UPRIGHT_SCRIPTS =
 /** Whether text can take the card's italics and spaced capitals. */
 export const slantsAndSpaces = (text: string) => !UPRIGHT_SCRIPTS.test(text);
 
-export type GiftMessageSize = 'large' | 'medium' | 'small';
+export type GiftMessageSize = 'large' | 'medium' | 'small' | 'xsmall';
 
 // Long messages set smaller. A line break starts a new line however short the
 // one before it, so lines count as well as characters: about 40 characters
@@ -118,12 +118,14 @@ export const messageSize = (message: string): GiftMessageSize => {
 };
 
 // In card widths, so the bookplate reads the same at every size, but never
-// below 11px.
+// below 11px. `xsmall` is only a fallback: see `step` in GiftCard.
 const MESSAGE_SIZES: Record<GiftMessageSize, string> = {
   large: 'text-[max(11px,3.9cqw)]',
   medium: 'text-[max(11px,3.4cqw)]',
   small: 'text-[max(11px,3cqw)]',
+  xsmall: 'text-[max(10px,2.7cqw)]',
 };
+const SIZE_STEPS: GiftMessageSize[] = ['large', 'medium', 'small', 'xsmall'];
 
 // The cover's double rule with a curl in each corner, set off the spine.
 const FRAME = (
@@ -202,7 +204,15 @@ const GiftCard: React.FC<GiftCardProps> = ({
     message: message || placeholders?.message || '',
   };
   const faint = (filled: string) => !filled && 'not-eink:opacity-55';
-  const size = messageSize(shown.message);
+  // `messageSize` guesses from the length, for the card's own serifs. Where
+  // the card falls back to a wider one (Android's serif, measured wider than
+  // Georgia), a long message can still need a line more than the bookplate
+  // holds; then it steps down a size, for this message, instead of losing its
+  // last line to the ellipsis.
+  const [step, setStep] = useState({ message: '', by: 0 });
+  const by = step.message === shown.message ? step.by : 0;
+  const sizeIndex = Math.min(SIZE_STEPS.indexOf(messageSize(shown.message)) + by, 3);
+  const size = SIZE_STEPS[sizeIndex]!;
   const roman = romanYear(year);
   const label = _('Gift card');
   const exDono = _('Ex dono');
@@ -254,6 +264,15 @@ const GiftCard: React.FC<GiftCardProps> = ({
     observer.observe(area);
     return () => observer.disconnect();
   }, [size]);
+
+  // A clamped paragraph still reports its whole height as scrollHeight.
+  useLayoutEffect(() => {
+    const text = messageArea.current?.querySelector('p');
+    if (!text || lines === undefined || sizeIndex === SIZE_STEPS.length - 1) return;
+    if (text.scrollHeight > text.clientHeight + 1) {
+      setStep({ message: shown.message, by: by + 1 });
+    }
+  }, [lines, sizeIndex, by, shown.message]);
 
   return (
     <div
