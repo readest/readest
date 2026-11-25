@@ -338,6 +338,21 @@ describe('PlansComparison', () => {
       expect(within(proCard).getByText('Subscribe to Pro Plan')).toBeTruthy();
     });
 
+    // Review (CodeRabbit): a Subscribe button needs a product to subscribe to.
+    it('a gift-only holder gets no Subscribe for a tier with no product loaded', () => {
+      render(
+        <PlansComparison
+          availablePlans={[plan('pro', 'month', 999, 'price_month_pro')]}
+          userPlan='pro'
+          gift={gift(true, 'pro')}
+          onSubscribe={vi.fn()}
+        />,
+      );
+
+      expect(within(planCard('Plus Plan')).queryByText('Subscribe to Plus Plan')).toBeNull();
+      expect(within(planCard('Pro Plan')).getByText('Subscribe to Pro Plan')).toBeTruthy();
+    });
+
     it('a lower tier stays without a button for a paying subscriber', () => {
       render(
         <PlansComparison

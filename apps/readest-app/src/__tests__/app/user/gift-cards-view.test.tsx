@@ -10,6 +10,10 @@ const STRIPE_RETURN = { section: 'gifts', session_id: 'cs_returning' };
 
 const mocks = vi.hoisted(() => ({
   fetchGiftPrices: vi.fn().mockResolvedValue([]),
+  fetchGiftCards: vi.fn(),
+  profilePlan: 'free' as string,
+  createStripeCheckoutSession: vi.fn(),
+  createStripePortalSession: vi.fn(),
   router: { push: vi.fn(), replace: vi.fn(), back: vi.fn() },
   sectionProps: vi.fn(),
   plansProps: vi.fn(),
@@ -25,17 +29,23 @@ vi.mock('@/store/readerStore', () => ({
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { hasIAP: true } }),
 }));
+const authRefresh = vi.hoisted(() => vi.fn());
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
     token: 'test-token',
     user: { email: 'reader@example.test', user_metadata: {} },
-    refresh: vi.fn(),
+    // Stable, like AuthContext's useCallback: a new one each render loops the page's claim effect.
+    refresh: authRefresh,
   }),
 }));
 vi.mock('@/hooks/useTheme', () => ({ useTheme: vi.fn() }));
 vi.mock('@/store/themeStore', () => ({ useThemeStore: () => ({}) }));
 vi.mock('@/hooks/useQuotaStats', () => ({
-  useQuotaStats: () => ({ quotas: [], userProfilePlan: 'free', customizationPurchased: false }),
+  useQuotaStats: () => ({
+    quotas: [],
+    userProfilePlan: mocks.profilePlan,
+    customizationPurchased: false,
+  }),
 }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (key: string) => key }));
 vi.mock('@/hooks/useUserActions', () => ({ useUserActions: () => ({}) }));
@@ -47,11 +57,17 @@ vi.mock('@/utils/nav', () => ({ navigateBackFromProfile: vi.fn() }));
 vi.mock('@/utils/event', () => ({ eventDispatcher: { dispatch: vi.fn() } }));
 vi.mock('@/services/environment', () => ({ isTauriAppPlatform: () => false }));
 vi.mock('@/libs/payment/iap/client', () => ({}));
-vi.mock('@/libs/payment/stripe/client', () => ({}));
+vi.mock('@/libs/payment/stripe/client', () => ({
+  createStripeCheckoutSession: mocks.createStripeCheckoutSession,
+  createStripePortalSession: mocks.createStripePortalSession,
+  redirectToStripeCheckout: vi.fn(),
+  redirectToStripePortal: vi.fn(),
+  handleStripeCheckoutError: vi.fn(),
+}));
 vi.mock('@/libs/payment/gift/client', () => ({
   claimGiftCards: vi.fn().mockResolvedValue(0),
   fetchGiftPrices: mocks.fetchGiftPrices,
-  fetchGiftCards: vi.fn().mockResolvedValue({
+  fetchGiftCards: mocks.fetchGiftCards.mockResolvedValue({
     sent: [],
     received: [],
     giftPlan: 'free',
@@ -97,6 +113,7 @@ vi.mock('@/app/user/components/gift/GiftCardsSection', () => ({
 
 afterEach(() => {
   cleanup();
+  mocks.profilePlan = 'free';
   vi.clearAllMocks();
   mocks.params = new URLSearchParams(STRIPE_RETURN);
   window.history.replaceState(null, '', '/');
@@ -222,4 +239,46 @@ it.each([
   render(<ProfilePage />);
 
   expect(!!screen.queryByText('legal links')).toBe(shown);
+});
+
+// Review (CodeRabbit): AuthContext's refresh is stable, so the page claims and
+// loads the gift info once, not on every render.
+it('loads the gift info once', async () => {
+  mocks.params = new URLSearchParams();
+  render(<ProfilePage />);
+
+  await waitFor(() => expect(mocks.fetchGiftCards).toHaveBeenCalled());
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(mocks.fetchGiftCards).toHaveBeenCalledTimes(1);
+});
+
+// Review (CodeRabbit): whether a gift alone sets the plan decides between a
+// new checkout and the billing portal, so the page waits for it.
+it('asks for the gift status before sending a plan holder to the billing portal', async () => {
+  mocks.params = new URLSearchParams();
+  mocks.profilePlan = 'plus';
+  mocks.fetchGiftCards
+    .mockImplementationOnce(() => new Promise(() => {}))
+    .mockResolvedValueOnce({
+      sent: [],
+      received: [],
+      giftPlan: 'plus',
+      giftActiveUntil: '2027-11-26T00:00:00Z',
+      giftOnly: true,
+    });
+  mocks.createStripeCheckoutSession.mockResolvedValue({ url: 'https://checkout.stripe.test' });
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  render(<ProfilePage />);
+  // The opening load is in flight and hasn't answered.
+  await waitFor(() => expect(mocks.fetchGiftCards).toHaveBeenCalledTimes(1));
+
+  await act(async () => {
+    await lastProps<{ onSubscribe: (id: string) => Promise<void> }>(mocks.plansProps).onSubscribe(
+      'price_month_pro',
+    );
+  });
+
+  expect(mocks.fetchGiftCards).toHaveBeenCalledTimes(2);
+  expect(mocks.createStripePortalSession).not.toHaveBeenCalled();
+  expect(mocks.createStripeCheckoutSession).toHaveBeenCalledWith('price_month_pro', 'subscription');
 });

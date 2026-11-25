@@ -135,12 +135,15 @@ const ProfilePage = () => {
 
   useTheme({ systemUIVisible: false });
 
-  const loadGiftInfo = useCallback(async () => {
+  const loadGiftInfo = useCallback(async (): Promise<GiftInfo | null> => {
     try {
       const { giftPlan, giftActiveUntil, giftOnly } = await fetchGiftCards();
-      setGiftInfo({ giftPlan, giftActiveUntil, giftOnly });
+      const info = { giftPlan, giftActiveUntil, giftOnly };
+      setGiftInfo(info);
+      return info;
     } catch (error) {
       console.error('Failed to load gift cards:', error);
+      return null;
     }
   }, []);
 
@@ -222,8 +225,22 @@ const ProfilePage = () => {
 
     // Someone who already holds a subscription changes plan or billing period
     // in the billing portal. Opening a second checkout session would leave the
-    // old subscription running alongside the new one and bill them twice.
-    if (shouldUseBillingPortal(userProfilePlan, planType, giftInfo?.giftOnly)) {
+    // old subscription running alongside the new one and bill them twice. A
+    // plan a gift alone sets has no subscription to change, so until the gift
+    // status is known the page asks for it rather than guess.
+    let giftOnly = giftInfo?.giftOnly;
+    if (!giftInfo && shouldUseBillingPortal(userProfilePlan, planType)) {
+      const info = await loadGiftInfo();
+      if (!info) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('Failed to load gift cards'),
+        });
+        return;
+      }
+      giftOnly = info.giftOnly;
+    }
+    if (shouldUseBillingPortal(userProfilePlan, planType, giftOnly)) {
       await openStripePortal('subscription_update');
       return;
     }

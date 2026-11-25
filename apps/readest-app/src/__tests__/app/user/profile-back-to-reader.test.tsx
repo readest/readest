@@ -22,11 +22,13 @@ vi.mock('@/store/readerStore', () => ({
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { hasIAP: true } }),
 }));
+const authRefresh = vi.hoisted(() => vi.fn());
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
     token: 'test-token',
     user: { email: 'reader@example.test', user_metadata: {} },
-    refresh: vi.fn(),
+    // Stable, like AuthContext's useCallback: a new one each render loops the page's claim effect.
+    refresh: authRefresh,
   }),
 }));
 vi.mock('@/hooks/useTheme', () => ({ useTheme: vi.fn() }));
