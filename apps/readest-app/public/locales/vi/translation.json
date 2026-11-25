@@ -2884,5 +2884,9 @@
   "The answer is incomplete: {{message}}": "Câu trả lời chưa đầy đủ: {{message}}",
   "Pen Squeeze": "Bóp bút",
   "Pen Slide Up": "Vuốt lên bút",
-  "Pen Slide Down": "Vuốt xuống bút"
+  "Pen Slide Down": "Vuốt xuống bút",
+  "{{speed}} characters/min": "{{speed}} ký tự/phút",
+  "{{speed}} words/min": "{{speed}} từ/phút",
+  "Reading Speed": "Tốc độ đọc",
+  "Reading Speed Today": "Tốc độ đọc hôm nay"
 }

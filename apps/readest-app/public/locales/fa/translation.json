@@ -2963,5 +2963,9 @@
   "The answer is incomplete: {{message}}": "پاسخ ناقص است: {{message}}",
   "Pen Squeeze": "فشردن قلم",
   "Pen Slide Up": "لغزش قلم به بالا",
-  "Pen Slide Down": "لغزش قلم به پایین"
+  "Pen Slide Down": "لغزش قلم به پایین",
+  "{{speed}} characters/min": "{{speed}} نویسه در دقیقه",
+  "{{speed}} words/min": "{{speed}} واژه در دقیقه",
+  "Reading Speed": "سرعت مطالعه",
+  "Reading Speed Today": "سرعت مطالعهٔ امروز"
 }

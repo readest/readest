@@ -51,6 +51,25 @@ describe('mergeBook', () => {
     expect((await stats.getBookStats()).map((b) => b.md5).sort()).toEqual(['new', 'other']);
   });
 
+  it('moves the source’s reading speed samples onto the target', async () => {
+    const stats = await db();
+    await seed(stats, 'old', [{ page: 1, startTime: 100, duration: 30 }]);
+    await seed(stats, 'new', [{ page: 1, startTime: 300, duration: 30 }]);
+    // split view can start both books' samples on the same millisecond
+    const sample = { unit: 'words' as const, count: 30, startTimeMs: 100_000, durationMs: 10_000 };
+    await stats.insertReadingSpeed('old', sample);
+    await stats.insertReadingSpeed('new', sample);
+    await stats.insertReadingSpeed('old', { ...sample, startTimeMs: 200_000, count: 20 });
+
+    await stats.mergeBook('old', NEW);
+    expect(await stats.getReadingSpeedTotals()).toEqual([
+      { unit: 'words', count: 50, durationMs: 20_000 },
+    ]);
+    // deleting the merged book now removes every sample it took over
+    await stats.deleteBook('new');
+    expect(await stats.getReadingSpeedTotals()).toEqual([]);
+  });
+
   it('creates the target when it has no statistics yet', async () => {
     const stats = await db();
     await seed(stats, 'old', [{ page: 1, startTime: 100, duration: 30 }]);

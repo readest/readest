@@ -2884,5 +2884,9 @@
   "The answer is incomplete: {{message}}": "Jawaban tidak lengkap: {{message}}",
   "Pen Squeeze": "Picit pena",
   "Pen Slide Up": "Geser pena ke atas",
-  "Pen Slide Down": "Geser pena ke bawah"
+  "Pen Slide Down": "Geser pena ke bawah",
+  "{{speed}} characters/min": "{{speed}} karakter/menit",
+  "{{speed}} words/min": "{{speed}} kata/menit",
+  "Reading Speed": "Kecepatan Membaca",
+  "Reading Speed Today": "Kecepatan Membaca Hari Ini"
 }

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Window } from 'happy-dom';
 import type { BookProgress } from '@/types/book';
 
 const mocks = vi.hoisted(() => ({
@@ -10,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   playbackState: null as 'playing' | 'paused' | null,
   db: {
     recordEvents: vi.fn(),
+    insertReadingSpeed: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -30,6 +32,9 @@ vi.mock('@/services/statistics/statsSync', () => ({
   pullStats: vi.fn(),
 }));
 vi.mock('@/services/sync/syncCategories', () => ({ isSyncCategoryEnabled: () => false }));
+vi.mock('@/store/settingsStore', () => ({
+  useSettingsStore: { getState: () => ({ settings: { bookorbit: {}, grimmory: {} } }) },
+}));
 vi.mock('@/libs/sync', () => ({ SyncClient: class {} }));
 vi.mock('@/services/tts/TTSSessionManager', () => ({
   ttsSessionManager: {
@@ -116,6 +121,43 @@ describe('ReadingStatsTracker while TTS plays', () => {
     await settle();
 
     expect(mocks.db.recordEvents).toHaveBeenCalled();
+  });
+
+  // A page of `words` words followed by the next page's text.
+  const pageOf = (words: number) => {
+    const doc = new Window().document as unknown as Document;
+    const page = 'word '.repeat(words);
+    const text = doc.createTextNode(`${page}The next page.`);
+    doc.body.append(text);
+    return (current: number) => {
+      setPage(current);
+      const range = doc.createRange();
+      range.setStart(text, current ? page.length : 0);
+      range.setEnd(text, current ? text.length : page.length - 1);
+      mocks.progress = { ...mocks.progress!, index: 0, range };
+    };
+  };
+
+  it.each([
+    [80, 20_000],
+    // A desktop two-page spread read at 250 words/min outlasts the idle timeout.
+    [750, 180_000],
+  ])('records the %i words passed during a forward turn after %i ms', async (words, ms) => {
+    const openPage = pageOf(words);
+    const startTimeMs = Date.now();
+    openPage(0);
+    const { rerender } = mount();
+    await settle(ms);
+    openPage(1);
+    rerender(<ReadingStatsTracker bookKey={BOOK_KEY} />);
+    await settle();
+
+    expect(mocks.db.insertReadingSpeed).toHaveBeenCalledWith('md5-1', {
+      unit: 'words',
+      count: words,
+      startTimeMs,
+      durationMs: ms,
+    });
   });
 
   it('stops recording page dwell while TTS is playing', async () => {

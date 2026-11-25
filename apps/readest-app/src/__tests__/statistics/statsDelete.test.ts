@@ -56,6 +56,19 @@ describe('deleteBook', () => {
     expect((await stats.getBookStats()).map((b) => b.md5)).toEqual(['b']);
     expect(await stats.getReadingTotals()).toEqual({ seconds: 10, books: 1, pages: 1 });
   });
+
+  it('removes the book’s reading speed samples too', async () => {
+    const stats = await db();
+    await seed(stats, 'a', [100]);
+    await seed(stats, 'b', [300]);
+    const sample = { unit: 'words' as const, count: 30, durationMs: 10_000 };
+    await stats.insertReadingSpeed('a', { ...sample, startTimeMs: 100_000 });
+    await stats.insertReadingSpeed('b', { ...sample, startTimeMs: 300_000, count: 50 });
+    await stats.deleteBook('a');
+    expect(await stats.getReadingSpeedTotals()).toEqual([
+      { unit: 'words', count: 50, durationMs: 10_000 },
+    ]);
+  });
 });
 
 describe('pullStats with a deleted book', () => {
@@ -63,6 +76,9 @@ describe('pullStats with a deleted book', () => {
     const stats = await db();
     // a local event at 2000 s, inside the deletion's fractional second
     await seed(stats, 'a', [100, 2000, 2500]);
+    const sample = { unit: 'words' as const, count: 30, durationMs: 10_000 };
+    await stats.insertReadingSpeed('a', { ...sample, startTimeMs: 2_000_400 });
+    await stats.insertReadingSpeed('a', { ...sample, startTimeMs: 2_500_000, count: 40 });
     const client = {
       pullChanges: vi
         .fn()
@@ -77,6 +93,10 @@ describe('pullStats with a deleted book', () => {
     const [a] = await stats.getBookStats('a');
     expect(a).toMatchObject({ seconds: 10, lastRead: 2510 });
     expect((await stats.getBookByMd5('a'))!.total_read_time).toBe(10);
+    // speed samples follow the same rule as the page events
+    expect(await stats.getReadingSpeedTotals()).toEqual([
+      { unit: 'words', count: 40, durationMs: 10_000 },
+    ]);
     // the cursor still advances past the flagged row
     expect(await stats.getCursor('pull')).toBe(5_000_000);
   });
