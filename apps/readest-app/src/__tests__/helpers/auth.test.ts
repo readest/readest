@@ -313,12 +313,32 @@ describe('handleAuthCallback', () => {
       next: '/reader',
     });
 
+    // /auth goes on to /reader once a device is signed out.
     await vi.waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/auth');
+      expect(mockNavigate).toHaveBeenCalledWith('/auth?redirect=%2Freader');
     });
     expect(mockCheckDeviceLimit).toHaveBeenCalledWith('free-token');
     expect(mockLogin).not.toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalledWith('/reader');
+  });
+
+  it('keeps a held password recovery headed for the recovery form', async () => {
+    mockSetSession.mockResolvedValue({ error: null });
+    mockGetUser.mockResolvedValue({ data: { user: fakeUser } });
+    mockCheckDeviceLimit.mockResolvedValue({ devices: [], limit: 3, blocked: true });
+
+    handleAuthCallback({
+      accessToken: 'free-token',
+      refreshToken: 'refresh',
+      login: mockLogin,
+      navigate: mockNavigate,
+      type: 'recovery',
+    });
+
+    await vi.waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/auth?redirect=%2Fauth%2Frecovery');
+    });
+    expect(mockLogin).not.toHaveBeenCalled();
   });
 
   it('hands a sign-in over the device limit to onDeviceLimit when given', async () => {
@@ -351,7 +371,7 @@ describe('handleAuthCallback', () => {
     handleAuthCallback({ login: mockLogin, navigate: mockNavigate });
 
     await vi.waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/auth');
+      expect(mockNavigate).toHaveBeenCalledWith('/auth?redirect=%2Flibrary');
     });
     expect(mockCheckDeviceLimit).toHaveBeenCalledWith('url-token');
     expect(mockNavigate).not.toHaveBeenCalledWith('/library');

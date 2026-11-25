@@ -12,8 +12,11 @@ interface UseAuthCallbackOptions {
   error?: string | null;
   errorCode?: string | null;
   errorDescription?: string | null;
-  /** Over the Free plan's device limit. Goes to /auth, which lists the devices. */
-  onDeviceLimit?: () => void;
+  /**
+   * Over the Free plan's device limit. Goes to /auth, which lists the devices
+   * and goes on to `destination` once one is signed out.
+   */
+  onDeviceLimit?: (destination: string) => void;
 }
 
 export interface OAuthCallbackParams {
@@ -51,7 +54,7 @@ export function handleAuthCallback({
   type,
   next = '/',
   error,
-  onDeviceLimit = () => navigate('/auth'),
+  onDeviceLimit = (destination) => navigate(`/auth?redirect=${encodeURIComponent(destination)}`),
 }: UseAuthCallbackOptions) {
   async function finalizeSession() {
     if (error) {
@@ -63,7 +66,7 @@ export function handleAuthCallback({
       // On web, supabase-js takes the tokens from the URL and clears it first.
       const { data } = await supabase.auth.getSession();
       if (data.session && (await checkSignInDeviceLimit(data.session.access_token))) {
-        onDeviceLimit();
+        onDeviceLimit('/library');
         return;
       }
       navigate('/library');
@@ -86,7 +89,7 @@ export function handleAuthCallback({
     } = await supabase.auth.getUser();
     if (user) {
       if (await checkSignInDeviceLimit(accessToken)) {
-        onDeviceLimit();
+        onDeviceLimit(type === 'recovery' ? '/auth/recovery' : next);
         return;
       }
       login(accessToken, user);

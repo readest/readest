@@ -67,6 +67,9 @@ export default function AuthPage() {
   const [heldSignIn, setHeldSignIn] = useState<(SyncDevicesResponse & { session: Session }) | null>(
     null,
   );
+  // Counts cancelled holds, so a device sign-out that answers after Cancel or
+  // Go Back can't sign in the session they ended.
+  const cancelledHolds = useRef(0);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -251,6 +254,7 @@ export default function AuthPage() {
   };
 
   const cancelHeldSignIn = () => {
+    cancelledHolds.current += 1;
     setHeldSignIn(null);
     void supabase.auth.signOut({ scope: 'local' });
   };
@@ -330,7 +334,9 @@ export default function AuthPage() {
   const handleSignOutDevice = async (device: SyncDevice) => {
     if (!heldSignIn) return;
     const { session } = heldSignIn;
+    const hold = cancelledHolds.current;
     const next = await signOutSyncDevice(session.access_token, device.id);
+    if (hold !== cancelledHolds.current) return;
     if (next.blocked) {
       setHeldSignIn({ ...next, session });
     } else {

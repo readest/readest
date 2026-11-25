@@ -174,6 +174,20 @@ describe('AuthPage over the Free plan device limit', () => {
     expect(mocks.login).not.toHaveBeenCalled();
   });
 
+  it('stays signed out when a device sign-out finishes after Cancel', async () => {
+    let finish = (_value: unknown) => {};
+    mocks.signOutSyncDevice.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    signIn();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out Chrome on macOS' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await act(async () => finish({ ...BLOCKED, blocked: false }));
+
+    expect(screen.getByText('sign-in form')).toBeTruthy();
+    expect(mocks.login).not.toHaveBeenCalled();
+    expect(mocks.router.replace).not.toHaveBeenCalled();
+  });
+
   it('signs this device out again when leaving with Go Back', async () => {
     signIn();
     await screen.findByText('Chrome on macOS');

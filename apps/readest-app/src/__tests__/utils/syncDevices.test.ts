@@ -115,7 +115,7 @@ describe('isDeviceLimitReached', () => {
     session('c', UA.koreader, '2026-01-03T00:00:00Z'),
   ];
   const limitFor = (rows: AuthSessionRow[], current: string, limit: number | null) =>
-    isDeviceLimitReached(groupSessionsByDevice(rows, current), rows, current, limit);
+    isDeviceLimitReached(groupSessionsByDevice(rows, current), limit);
 
   it('blocks a new session once three other devices are signed in', () => {
     const rows = [...three, session('new', UA.appIPhone, '2026-01-04T00:00:00Z')];
@@ -139,6 +139,18 @@ describe('isDeviceLimitReached', () => {
     expect(limitFor(rows, 'a', 3)).toBe(false);
     expect(limitFor(rows, 'c', 3)).toBe(false);
     expect(limitFor(rows, 'd', 3)).toBe(true);
+  });
+
+  // Device A signs in again while a fourth device's sign-in is held: A keeps
+  // its place from its first sign-in, and the held device stays out.
+  it('keeps the place of a device that signs in again', () => {
+    const rows = [
+      ...three,
+      session('held', UA.appIPhone, '2026-01-04T00:00:00Z'),
+      session('a-again', UA.chromeMacNewer, '2026-01-05T00:00:00Z'),
+    ];
+    expect(limitFor(rows, 'a-again', 3)).toBe(false);
+    expect(limitFor(rows, 'held', 3)).toBe(true);
   });
 
   it('never blocks without a limit', () => {

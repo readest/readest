@@ -8,6 +8,10 @@
 -- through these functions. Only the service role may call them: either one
 -- would let anyone else see or end another account's sessions.
 
+-- On a fresh self-hosted database this runs before GoTrue has created
+-- auth.sessions, so the bodies are checked when first called instead.
+SET check_function_bodies = false;
+
 -- A user's live sessions. last_active_at is the last token refresh, which
 -- GoTrue records in UTC without a time zone.
 CREATE OR REPLACE FUNCTION public.list_user_sessions(p_user_id uuid)

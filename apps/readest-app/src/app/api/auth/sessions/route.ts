@@ -9,7 +9,7 @@ import {
   type SyncDevicesResponse,
 } from '@/utils/syncDevices';
 
-const listDevices = async (request: Request, userId: string, token: string) => {
+const readSessions = async (request: Request, userId: string, token: string) => {
   const { data, error } = await createSupabaseAdminClient().rpc('list_user_sessions', {
     p_user_id: userId,
   });
@@ -22,12 +22,16 @@ const listDevices = async (request: Request, userId: string, token: string) => {
   const rows = (data as AuthSessionRow[]).map((row) =>
     row.id === sessionId && userAgent ? { ...row, user_agent: userAgent } : row,
   );
+  return { rows, sessionId };
+};
+
+const respond = (rows: AuthSessionRow[], sessionId: string | null, token: string) => {
   const groups = groupSessionsByDevice(rows, sessionId);
   const limit = getDeviceLimit(token);
   const response: SyncDevicesResponse = {
     devices: groups.map(({ sessionIds: _ids, firstSeenAt: _first, ...device }) => device),
     limit,
-    blocked: isDeviceLimitReached(groups, rows, sessionId, limit),
+    blocked: isDeviceLimitReached(groups, limit),
   };
   return { groups, response };
 };
@@ -40,7 +44,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 403 });
   }
   try {
-    return NextResponse.json((await listDevices(request, user.id, token)).response);
+    const { rows, sessionId } = await readSessions(request, user.id, token);
+    return NextResponse.json(respond(rows, sessionId, token).response);
   } catch (error) {
     console.error('Failed to list sessions:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
@@ -59,15 +64,20 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Missing device' }, { status: 400 });
   }
   try {
-    const { groups } = await listDevices(request, user.id, token);
-    const device = groups.find((group) => group.id === body.id && !group.current);
+    const { rows, sessionId } = await readSessions(request, user.id, token);
+    const device = respond(rows, sessionId, token).groups.find(
+      (group) => group.id === body.id && !group.current,
+    );
     if (!device) return NextResponse.json({ error: 'Device not found' }, { status: 404 });
     const { error } = await createSupabaseAdminClient().rpc('delete_user_sessions', {
       p_user_id: user.id,
       p_session_ids: device.sessionIds,
     });
     if (error) throw error;
-    return NextResponse.json((await listDevices(request, user.id, token)).response);
+    // The devices left, from the same read: reading again could fail after
+    // the sign-out has already happened.
+    const left = rows.filter((row) => !device.sessionIds.includes(row.id));
+    return NextResponse.json(respond(left, sessionId, token).response);
   } catch (error) {
     console.error('Failed to sign out a device:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });

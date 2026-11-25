@@ -121,18 +121,14 @@ export const groupSessionsByDevice = (
 };
 
 /**
- * Whether this session is one device too many. Only devices signed in before
- * it count, so a new sign-in sees every other device, and the devices that
- * were signed in first are never sent away by later ones.
+ * Whether this device is one too many. Only devices signed in before it
+ * count, so a new sign-in sees every other device, and the devices that were
+ * signed in first are never sent away by later ones, even when they sign in
+ * again.
  */
-export const isDeviceLimitReached = (
-  devices: SyncDeviceGroup[],
-  rows: AuthSessionRow[],
-  currentSessionId: string | null,
-  limit: number | null,
-): boolean => {
+export const isDeviceLimitReached = (devices: SyncDeviceGroup[], limit: number | null): boolean => {
   if (limit === null) return false;
-  const signedInAt = rows.find((row) => row.id === currentSessionId)?.created_at;
+  const signedInAt = devices.find((device) => device.current)?.firstSeenAt;
   const earlier = devices.filter(
     (device) => !device.current && (!signedInAt || time(device.firstSeenAt) < time(signedInAt)),
   );

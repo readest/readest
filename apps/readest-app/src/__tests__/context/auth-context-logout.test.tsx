@@ -21,6 +21,12 @@ vi.mock('@/utils/supabase', async () => {
 });
 
 vi.mock('posthog-js', () => ({ default: { identify: vi.fn() } }));
+// The test token has no plan claim, so it reads as the Free plan; the device
+// check at sign-in is covered in auth-context-device-limit.test.tsx.
+vi.mock('@/libs/syncDevices', () => ({
+  hasDeviceLimit: () => false,
+  checkSignInDeviceLimit: async () => null,
+}));
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { supabase } from '@/utils/supabase';

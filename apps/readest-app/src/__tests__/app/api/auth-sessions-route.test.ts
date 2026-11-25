@@ -7,6 +7,8 @@ const h = vi.hoisted(() => ({
   sessions: [] as AuthSessionRow[],
   rpcCalls: [] as [string, Record<string, unknown>][],
   listError: null as { message: string } | null,
+  // Fail every list after this many, as a flaky connection would.
+  listsBeforeError: Infinity,
 }));
 
 const jwt = (claims: Record<string, unknown>) =>
@@ -23,6 +25,7 @@ vi.mock('@/utils/supabase', () => ({
     rpc: async (fn: string, args: Record<string, unknown>) => {
       h.rpcCalls.push([fn, args]);
       if (fn === 'list_user_sessions') {
+        if (h.listsBeforeError-- <= 0) return { data: null, error: { message: 'timeout' } };
         return h.listError ? { data: null, error: h.listError } : { data: h.sessions, error: null };
       }
       const ids = args['p_session_ids'] as string[];
@@ -67,6 +70,7 @@ beforeEach(() => {
   ];
   h.rpcCalls = [];
   h.listError = null;
+  h.listsBeforeError = Infinity;
 });
 
 describe('GET /api/auth/sessions', () => {
@@ -126,6 +130,25 @@ describe('DELETE /api/auth/sessions', () => {
     const body = await res.json();
     expect(body.blocked).toBe(false);
     expect(body.devices.map((d: { client: string }) => d.client)).not.toContain('Chrome');
+  });
+
+  // The sign-out has happened by then: a 500 would leave the device listed,
+  // and asking again would only find it gone.
+  it('answers with the devices left without reading the sessions again', async () => {
+    const id = await deviceId('KOReader');
+    h.rpcCalls = [];
+    h.listsBeforeError = 1;
+
+    const res = await DELETE(req('DELETE', { id }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.blocked).toBe(false);
+    expect(body.devices.map((d: { client: string }) => d.client)).toEqual([
+      'Readest',
+      'Readest',
+      'Chrome',
+    ]);
+    expect(h.rpcCalls.map(([fn]) => fn)).toEqual(['list_user_sessions', 'delete_user_sessions']);
   });
 
   it('refuses to sign out this device', async () => {
