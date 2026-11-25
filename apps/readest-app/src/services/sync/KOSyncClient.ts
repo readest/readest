@@ -1,6 +1,6 @@
 import { md5 } from 'js-md5';
 import { Book } from '@/types/book';
-import { KOSyncSettings } from '@/types/settings';
+import { KOSyncFilenameFormat, KOSyncSettings } from '@/types/settings';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import { KoSyncProxyPayload } from '@/types/kosync';
 import { isLanAddress } from '@/utils/network';
@@ -9,7 +9,9 @@ import { normalizeCustomHeaders } from '@/utils/customHeaders';
 import { allowsSelfSignedCert, tlsFetch } from '@/utils/tls';
 import { getAPIBaseUrl, isTauriAppPlatform } from '../environment';
 
-const getContributorName = (contributor: unknown): string => {
+// A name map picks `preferredLang` when given, else its first entry: the name
+// as written in the book (foliate lists alternate scripts after it).
+const getContributorName = (contributor: unknown, preferredLang?: string): string => {
   if (typeof contributor === 'string') return contributor.trim();
   if (!contributor || typeof contributor !== 'object') return '';
 
@@ -18,7 +20,7 @@ const getContributorName = (contributor: unknown): string => {
   if (!name || typeof name !== 'object') return '';
 
   const names = name as Record<string, unknown>;
-  const preferredName = names[getUserLang()];
+  const preferredName = preferredLang ? names[preferredLang] : undefined;
   if (typeof preferredName === 'string' && preferredName.trim()) return preferredName.trim();
 
   const fallbackName = Object.values(names).find(
@@ -31,9 +33,37 @@ const getMetadataAuthors = (book: Book): string => {
   const contributors = book.metadata?.author as unknown;
   if (!Array.isArray(contributors)) return book.author;
 
-  const authors = contributors.map(getContributorName).filter(Boolean);
+  const authors = contributors.map((c) => getContributorName(c, getUserLang())).filter(Boolean);
   return authors.length > 0 ? authors.join('\n') : book.author;
 };
+
+/**
+ * The file name a format gives the book. Author - Title and Title - Author
+ * follow KOReader's OPDS browser, which names a download from the feed's
+ * title and authors (joined with ", "), drops the authors when there are
+ * none, and replaces the characters util.replaceAllInvalidChars does.
+ */
+export const formatKOSyncFilename = (book: Book, format: KOSyncFilenameFormat): string => {
+  if (format === 'original') {
+    return book.originalFilename || `${book.title}.${book.format.toLowerCase()}`;
+  }
+  const contributors = book.metadata?.author as unknown;
+  // Not the UI language: every device must hash the same name for a book.
+  const names = (Array.isArray(contributors) ? contributors : [contributors])
+    .map((c) => getContributorName(c))
+    .filter(Boolean);
+  const authors = (names.length > 0 ? names : [book.author].filter(Boolean)).join(', ');
+  const name = !authors
+    ? book.title
+    : format === 'author-title'
+      ? `${authors} - ${book.title}`
+      : `${book.title} - ${authors}`;
+  return `${name.replace(/[\\/:*?"<>|]/g, '_').replace(/[.\s]+$/, '')}.${book.format.toLowerCase()}`;
+};
+
+/** The file name the File Name checksum hashes: the book's own, else the format's. */
+export const getKOSyncFilename = (book: Book, format: KOSyncFilenameFormat = 'original') =>
+  book.metadata?.kosyncFilename || formatKOSyncFilename(book, format);
 
 /**
  * Interface for KOSync progress response from the server
@@ -335,7 +365,7 @@ export class KOSyncClient {
 
   getDocumentDigest(book: Book): string {
     if (this.config.checksumMethod === 'filename') {
-      return md5(book.originalFilename || `${book.title}.${book.format.toLowerCase()}`);
+      return md5(getKOSyncFilename(book, this.config.filenameFormat));
     }
     return book.metadata?.absFileHash ?? book.hash;
   }

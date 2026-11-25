@@ -15,7 +15,15 @@ import {
   resolveThemeIsDarkMode,
 } from '@/utils/ambientLight';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { CustomTheme, getDefaultThemeColor, Palette, ThemeMode, ThemeScope } from '@/styles/themes';
+import {
+  CustomTheme,
+  customThemeToTheme,
+  getDefaultThemeColor,
+  Palette,
+  ThemeMode,
+  ThemeScope,
+  themes,
+} from '@/styles/themes';
 import { EnvConfigType, isWebAppPlatform } from '@/services/environment';
 import { SystemSettings } from '@/types/settings';
 import type { DuoFoldState } from '@/utils/bridge';
@@ -88,7 +96,8 @@ interface ThemeState {
   setScopedThemeColor: (scope: ThemeScope, color: string) => void;
   getScopedTheme: (scope: ThemeScope) => { themeMode: ThemeMode; themeColor: string };
   resetThemeScopes: () => void;
-  updateAppTheme: (color: keyof Palette) => void;
+  /** Paints the browser chrome in `color`; with no argument, re-resolves the last one. */
+  updateAppTheme: (color?: keyof Palette) => void;
   saveCustomTheme: (
     envConfig: EnvConfigType,
     settings: SystemSettings,
@@ -165,6 +174,30 @@ const persistAmbientIsDarkMode = (isDark: boolean) => {
     localStorage.setItem('ambientIsDarkMode', isDark ? 'true' : 'false');
   }
 };
+
+const resolveThemePalette = (themeColor: string, isDarkMode: boolean): Palette => {
+  let matched = themes.find((theme) => theme.name === themeColor);
+  if (!matched && typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const customThemes = JSON.parse(
+        window.localStorage.getItem('customThemes') || '[]',
+      ) as CustomTheme[];
+      const custom = customThemes.find((theme) => theme.name === themeColor);
+      if (custom) {
+        matched = customThemeToTheme(custom);
+      }
+    } catch {
+      // Ignore malformed customThemes in storage
+    }
+  }
+  const resolved = matched ?? themes[0]!;
+  return isDarkMode ? resolved.colors.dark : resolved.colors.light;
+};
+
+// The palette key the page chrome last asked for: the route's background, or an
+// open sidebar's or notebook's. A theme change re-resolves this key in the new
+// palette instead of resetting it to the route's.
+let appThemeColorKey: keyof Palette = 'base-100';
 
 const applyDataTheme = (themeColor: string, isDarkMode: boolean) => {
   document.documentElement.setAttribute(
@@ -405,11 +438,20 @@ export const useThemeStore = create<ThemeState>((set, get) => {
       );
       syncAmbientLightSubscription(activeMode);
     },
-    updateAppTheme: (color) => {
-      if (isWebAppPlatform()) {
-        const { palette } = get().themeCode;
-        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', palette[color]);
+    updateAppTheme: (color = appThemeColorKey) => {
+      appThemeColorKey = color;
+      if (!isWebAppPlatform() || typeof document === 'undefined') return;
+      const { themeColor, isDarkMode } = get();
+      const resolved = resolveThemePalette(themeColor, isDarkMode)[color];
+      if (!resolved) return;
+      let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        document.head.appendChild(meta);
       }
+      meta.setAttribute('content', resolved);
+      document.documentElement.style.backgroundColor = resolved;
     },
     saveCustomTheme: async (envConfig, settings, theme, isDelete) => {
       // A new list, not the one on screen changed in place: the footer Color

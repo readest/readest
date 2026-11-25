@@ -356,6 +356,9 @@ msgstr "புத்தக கைரேகை"
 msgid "Identifiers"
 msgstr "அடையாளங்காட்டிகள்"
 
+msgid "File Name"
+msgstr "கோப்பு பெயர்"
+
 msgid "Last Synced"
 msgstr "கடைசி ஒத்திசைவு"
 

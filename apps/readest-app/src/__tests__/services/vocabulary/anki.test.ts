@@ -10,8 +10,12 @@ import {
   cleanAnkiField,
   defaultImportLang,
   ankiEntryGaps,
+  ankiLayouts,
   ankiNoteFills,
+  ankiNoteView,
   ankiNotesToSend,
+  ankiProfileOf,
+  ankiSyncNotes,
   ankiWordsToSend,
   ankiTagUpdates,
   ankiTtsLang,
@@ -20,7 +24,11 @@ import {
   planAnkiImport,
 } from '@/services/vocabulary/anki';
 import { ankiCardOf } from '@/services/vocabulary/export';
-import type { VocabularyEntry } from '@/services/vocabulary/types';
+import type {
+  AnkiProfile,
+  AnkiProfileSettings,
+  VocabularyEntry,
+} from '@/services/vocabulary/types';
 
 const entry = (key: string, patch: Partial<VocabularyEntry> = {}): VocabularyEntry => ({
   id: `${patch.lang ?? 'en'}:${key}`,
@@ -400,9 +408,9 @@ describe('dictionary entries on the card (#7728)', () => {
       // Read before this Sync added the fields.
       { id: 4, mid: 5, fields: ['Haus', 'house'], tags: 'readest::lang::de' },
     ];
-    expect(ankiEntryGaps(notes, noteType, 'en')).toEqual([
-      { id: 1, word: 'R&D', lang: 'en' },
-      { id: 4, word: 'Haus', lang: 'de' },
+    expect(ankiEntryGaps(notes, ankiLayouts(undefined, [], noteType), 'en')).toEqual([
+      { id: 1, field: 4, word: 'R&D', lang: 'en' },
+      { id: 4, field: 4, word: 'Haus', lang: 'de' },
     ]);
   });
 
@@ -415,7 +423,8 @@ describe('dictionary entries on the card (#7728)', () => {
       tags: '',
     });
     const notes = [note(30), note(10), note(20)];
-    const ids = (after?: number) => ankiEntryGaps(notes, noteType, 'en', after).map((g) => g.id);
+    const layouts = ankiLayouts(undefined, [], noteType);
+    const ids = (after?: number) => ankiEntryGaps(notes, layouts, 'en', after).map((g) => g.id);
     expect(ids()).toEqual([10, 20, 30]);
     expect(ids(10)).toEqual([20, 30, 10]);
     expect(ids(30)).toEqual([10, 20, 30]);
@@ -423,7 +432,216 @@ describe('dictionary entries on the card (#7728)', () => {
 
   it('finds none when the note type has no Entry field', () => {
     const notes = [{ id: 1, mid: 5, fields: ['spice', 'x'], tags: '' }];
-    expect(ankiEntryGaps(notes, { id: 5, fields: ['Front', 'Back'] }, 'en')).toEqual([]);
+    const layouts = ankiLayouts(undefined, [], { id: 5, fields: ['Front', 'Back'] });
+    expect(ankiEntryGaps(notes, layouts, 'en')).toEqual([]);
+  });
+});
+
+describe('card profiles (#7849)', () => {
+  const MINING = { id: 40, name: 'Mining', fields: ['Expression', 'Sentence', 'Meaning', 'Notes'] };
+  const profiles = (patch: Partial<AnkiProfileSettings> = {}): AnkiProfileSettings => ({
+    profiles: [
+      {
+        id: 'p1',
+        name: 'German mining',
+        deck: 'German::Reading',
+        noteType: 'Mining',
+        fields: { Expression: 'word', Sentence: 'sentence', Meaning: 'hint', Notes: 'link' },
+        tags: ['from-readest'],
+      },
+      { id: 'p2', name: 'Plain', deck: 'Books', noteType: '', fields: {}, tags: ['novel'] },
+    ],
+    languages: { de: 'p1' },
+    books: {},
+    ...patch,
+  });
+  const haus = entry('haus', {
+    lang: 'de',
+    word: 'Haus',
+    state: 'learning',
+    hint: 'house',
+    occurrences: [
+      {
+        sentence: 'Das Haus ist alt.',
+        at: 1,
+        bookHash: 'b1',
+        bookTitle: 'Der Prozess',
+        bookAuthor: 'Kafka',
+        cfi: 'epubcfi(/6/4!/4/2)',
+      },
+    ],
+  });
+
+  it("uses the latest book's profile over the language's, and none without either", () => {
+    expect(ankiProfileOf(haus, profiles())?.id).toBe('p1');
+    expect(ankiProfileOf(haus, profiles({ books: { b1: 'p2' } }))?.id).toBe('p2');
+    expect(ankiProfileOf(entry('spice', {}), profiles())).toBeUndefined();
+    expect(ankiProfileOf(haus, undefined)).toBeUndefined();
+    // A profile deleted on another device leaves the word on Readest's own cards.
+    expect(ankiProfileOf(haus, profiles({ languages: { de: 'gone' } }))).toBeUndefined();
+  });
+
+  it("fills the profile's note type field by field, in its deck, with its tags", () => {
+    const [note] = ankiNotesToSend([haus], [], {}, profiles(), [MINING]);
+    expect(note).toEqual({
+      deck: 'German::Reading',
+      modelId: 40,
+      fields: [
+        'Haus',
+        'Das <b>Haus</b> ist alt.',
+        'house',
+        '<a href="readest://book/b1?cfi=epubcfi(%2F6%2F4!%2F4%2F2)">Der Prozess</a>',
+      ],
+      tags: ['readest', 'Der_Prozess', 'readest::lang::de', 'readest::learning', 'from-readest'],
+    });
+  });
+
+  it('can put the dictionary entry, the audio, the book and the author in any field', () => {
+    const settings = profiles();
+    settings.profiles[0]!.fields = {
+      Expression: 'word',
+      Sentence: 'audio',
+      Meaning: 'entry',
+      Notes: 'author',
+    };
+    const [note] = ankiNotesToSend([haus], [], { [haus.id]: '<p>das Haus</p>' }, settings, [
+      MINING,
+    ]);
+    expect(note!.fields).toEqual([
+      'Haus',
+      '[anki:tts lang=de_DE]Haus[/anki:tts]',
+      '<p>das Haus</p>',
+      'Kafka',
+    ]);
+    settings.profiles[0]!.fields = { Expression: 'word', Notes: 'book' };
+    expect(ankiNotesToSend([haus], [], {}, settings, [MINING])[0]!.fields).toEqual([
+      'Haus',
+      '',
+      '',
+      'Der Prozess',
+    ]);
+    // The language as the CSV export writes it: its code.
+    settings.profiles[0]!.fields = { Expression: 'word', Notes: 'language' };
+    expect(ankiNotesToSend([haus], [], {}, settings, [MINING])[0]!.fields[3]).toBe('de');
+  });
+
+  it("keeps Readest's own note type for a profile without one, in the profile's deck", () => {
+    const card = ankiCardOf(haus);
+    expect(ankiNotesToSend([haus], [], {}, profiles({ languages: { de: 'p2' } }), [])).toEqual([
+      {
+        deck: 'Books',
+        fields: [card.front, card.back, 'Haus', 'de_DE', ''],
+        tags: [...card.tags, 'readest::lang::de', 'readest::learning', 'novel'],
+      },
+    ]);
+  });
+
+  it('files a word under its language subdeck when the profile names no deck', () => {
+    const settings = profiles();
+    settings.profiles[0]!.deck = '';
+    expect(ankiNotesToSend([haus], [], {}, settings, [MINING])[0]!.deck).toBe(
+      'Readest Vocabulary::German',
+    );
+  });
+
+  it("holds a word back while its profile's note type isn't in the collection", () => {
+    expect(ankiNotesToSend([haus], [], {}, profiles(), [])).toEqual([]);
+  });
+
+  it("holds a word back while its profile's Word field is gone from the note type", () => {
+    // Expression was renamed: a note without its word would be sent again on every Sync.
+    const renamed = { ...MINING, fields: ['Term', 'Sentence', 'Meaning', 'Notes'] };
+    expect(ankiNotesToSend([haus], [], {}, profiles(), [renamed])).toEqual([]);
+  });
+
+  it("reads a profile note's word and hint from the fields its profile maps", () => {
+    const layouts = ankiLayouts(profiles(), [MINING]);
+    const note = { id: 1, mid: 40, fields: ['Haus', 'Das Haus.', 'house', ''], tags: 'readest' };
+    expect(ankiNoteView(note, layouts).fields).toEqual(['Haus', 'house']);
+    // Other note types read as before: word first, hint second.
+    const other = { id: 2, mid: 9, fields: ['spice', 'a drug'], tags: '' };
+    expect(ankiNoteView(other, layouts)).toBe(other);
+  });
+
+  it('reads a note type through a profile whose Word field it still has', () => {
+    const settings = profiles();
+    const repaired: AnkiProfile = {
+      ...settings.profiles[0]!,
+      id: 'p3',
+      fields: { Term: 'word', Meaning: 'hint' },
+    };
+    settings.profiles.push(repaired);
+    // Expression was renamed to Term: p1 still names the old field.
+    const renamed = { ...MINING, fields: ['Term', 'Sentence', 'Meaning', 'Notes'] };
+    expect(ankiLayouts(settings, [renamed]).get(40)).toEqual({ word: 0, hint: 2, entry: -1 });
+  });
+
+  it('takes each read field from the first profile that still has it', () => {
+    const settings = profiles();
+    settings.profiles[0]!.fields = { Expression: 'word', Meaning: 'hint', Notes: 'entry' };
+    // Meaning and Notes were renamed; only the second profile was repaired.
+    settings.profiles.push({
+      ...settings.profiles[0]!,
+      id: 'p3',
+      fields: { Expression: 'word', Gloss: 'hint', Extra: 'entry' },
+    });
+    const renamed = { ...MINING, fields: ['Expression', 'Sentence', 'Gloss', 'Extra'] };
+    expect(ankiLayouts(settings, [renamed]).get(40)).toEqual({ word: 0, hint: 2, entry: 3 });
+  });
+
+  it("keeps the reader's own notes of a profile's note type out even with its Word field gone", () => {
+    // Expression was renamed and no profile maps the new field yet.
+    const renamed = { ...MINING, fields: ['Term', 'Sentence', 'Meaning', 'Notes'] };
+    const layouts = ankiLayouts(profiles(), [renamed]);
+    const own = [{ id: 3, mid: 40, fields: ['Baum', '', 'tree', ''], tags: 'mine' }];
+    const { notes, known } = ankiSyncNotes(own, [], layouts);
+    expect(notes).toEqual([]);
+    expect(known.map((n) => n.id)).toEqual([3]);
+  });
+
+  it("works with every note of Readest's decks but only Readest's notes in a profile's deck", () => {
+    const layouts = ankiLayouts(profiles(), [MINING]);
+    const own = [{ id: 1, mid: 9, fields: ['kettle'], tags: '' }];
+    const other = [
+      { id: 1, mid: 9, fields: ['kettle'], tags: '' },
+      { id: 2, mid: 40, fields: ['Haus', '', 'house', ''], tags: 'readest readest::lang::de' },
+      // The reader's own cards: they only keep Sync from adding the word again.
+      { id: 3, mid: 40, fields: ['Baum', '', 'tree', ''], tags: 'mine' },
+      { id: 4, mid: 77, fields: ['Kanji'], tags: '' },
+    ];
+    const { notes, known } = ankiSyncNotes(own, other, layouts);
+    expect(notes.map((n) => n.id)).toEqual([1, 2]);
+    expect(known.map((n) => n.id)).toEqual([3]);
+    const baum = entry('baum', { lang: 'de', word: 'Baum', state: 'learning' });
+    const view = known.map((n) => ankiNoteView(n, layouts));
+    expect(ankiNotesToSend([baum], view, {}, profiles(), [MINING])).toEqual([]);
+  });
+
+  it("takes only Readest's notes of a profile's note type in Readest's own decks too", () => {
+    const layouts = ankiLayouts(profiles(), [MINING]);
+    const own = [
+      // Another note type in Readest's decks: everything there is Readest's, as before.
+      { id: 1, mid: 9, fields: ['kettle'], tags: '' },
+      { id: 2, mid: 40, fields: ['Haus', '', 'house', ''], tags: 'readest readest::lang::de' },
+      // A profile that sends to a deck under Readest Vocabulary meets the reader's own cards.
+      { id: 3, mid: 40, fields: ['Baum', '', 'tree', ''], tags: 'mine' },
+    ];
+    const { notes, known } = ankiSyncNotes(own, [], layouts);
+    expect(notes.map((n) => n.id)).toEqual([1, 2]);
+    expect(known.map((n) => n.id)).toEqual([3]);
+  });
+
+  it("finds the empty Entry field a profile maps on Readest's notes", () => {
+    const settings = profiles();
+    settings.profiles[0]!.fields = { Expression: 'word', Notes: 'entry' };
+    const layouts = ankiLayouts(settings, [MINING]);
+    const notes = [
+      { id: 1, mid: 40, fields: ['Haus', '', '', ''], tags: 'readest readest::lang::de' },
+      { id: 2, mid: 40, fields: ['Baum', '', '', '<p>kept</p>'], tags: 'readest' },
+    ];
+    expect(ankiEntryGaps(notes, layouts, 'en')).toEqual([
+      { id: 1, field: 3, word: 'Haus', lang: 'de' },
+    ]);
   });
 });
 

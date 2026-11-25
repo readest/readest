@@ -356,6 +356,9 @@ msgstr "ลายนิ้วมือหนังสือ"
 msgid "Identifiers"
 msgstr "ตัวระบุ"
 
+msgid "File Name"
+msgstr "ชื่อไฟล์"
+
 msgid "Last Synced"
 msgstr "ซิงค์ล่าสุด"
 

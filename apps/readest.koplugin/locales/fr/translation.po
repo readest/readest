@@ -356,6 +356,9 @@ msgstr "Empreinte du livre"
 msgid "Identifiers"
 msgstr "Identifiants"
 
+msgid "File Name"
+msgstr "Nom du fichier"
+
 msgid "Last Synced"
 msgstr "Dernière synchronisation"
 

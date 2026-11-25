@@ -1335,7 +1335,8 @@ export async function refreshBookMetadata(fs: FileSystem, book: Book): Promise<b
     ({ book: bookDoc } = await new DocumentLoader(file).open());
     if (!bookDoc) return false;
 
-    book.metadata = bookDoc.metadata;
+    const kosyncFilename = book.metadata?.kosyncFilename;
+    book.metadata = { ...bookDoc.metadata, ...(kosyncFilename && { kosyncFilename }) };
     // A filename-salted metaHash can't be reproduced after import (the
     // original filename is lost), so keep the value stamped at import time.
     if (!isFilenameSalted(book.format) || !book.metaHash) {

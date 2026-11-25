@@ -219,8 +219,6 @@ const FoliateViewer: React.FC<{
   const setConfig = useBookDataStore((s) => s.setConfig);
   const { applyBackgroundTexture } = useBackgroundTexture();
   const { applyEinkMode } = useEinkMode();
-  const { registerBrightnessListeners, overlayVisible, overlayLevel } =
-    useBrightnessGesture(bookKey);
   const bookData = getBookData(bookKey);
   const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
@@ -246,6 +244,11 @@ const FoliateViewer: React.FC<{
   const autoScroll = useAutoScroll(bookKey, viewRef, wipeCommitRef);
   const { registerSpeedListeners, overlayVisible: speedOverlayVisible } =
     useAutoScrollSpeedGesture(autoScroll);
+  // The page copy of an Auto Scroll wipe takes the page's touches while up.
+  const { registerBrightnessListeners, overlayVisible, overlayLevel } = useBrightnessGesture(
+    bookKey,
+    autoScroll.wipeCopyRef,
+  );
 
   // The book document outlives this view: bookDataStore keeps it for the next
   // open, so listeners left on its transformTarget would keep the closed view,
@@ -1692,27 +1695,31 @@ const FoliateViewer: React.FC<{
         {...touchHandlers}
       />
       {autoscrollAnchor && <AutoscrollIndicator anchor={autoscrollAnchor} />}
+      {/* The copy of the page being read during a page wipe (revealPageWipe):
+          over the page, under its header, footer and the controls. Kept
+          after a session ends, until the turn back under the copy lands. */}
+      <div ref={autoScroll.wipeCopyRef} className='pointer-events-none absolute inset-0' />
       {autoScroll.active && autoScroll.wipe && (
-        // The edge of a page wipe, moved by useAutoScroll every frame: the next
-        // page is pulled down over the page being read like a blind, and its
-        // edge casts a short shadow onto it, with a lit rim on dark themes.
-        // E-ink gets a plain 1px line (the global rule drops `shadow-`). The
-        // full-cell layer keeps the edge above the page snapshot.
-        <div
-          aria-hidden
-          data-page-wipe-above=''
-          className='pointer-events-none absolute inset-0 z-10 overflow-hidden'
-        >
-          <div
-            ref={autoScroll.wipeLineRef}
-            className={clsx(
-              'absolute left-0 top-0 h-2',
-              'not-eink:bg-linear-to-b theme-dark:from-black/55 from-black/30 to-transparent',
-              'theme-dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.4)]',
-              'eink:border-base-content eink:border-t',
-            )}
-          />
-        </div>
+        <>
+          {/* The edge of a page wipe, moved by useAutoScroll every frame: the
+              next page is pulled over the page being read like a blind, down
+              horizontal lines and across vertical ones in reading order, and
+              its edge casts a short shadow onto that page, with a lit rim on
+              dark themes. E-ink gets a plain 1px line (the global rule drops
+              `shadow-`). */}
+          <div aria-hidden className='pointer-events-none absolute inset-0 z-10 overflow-hidden'>
+            <div
+              ref={autoScroll.wipeLineRef}
+              className={clsx(
+                'absolute left-0 top-0',
+                'theme-dark:from-black/55 eink:border-base-content from-black/30 to-transparent',
+                'data-[axis=h]:not-eink:bg-linear-to-b data-[axis=h]:theme-dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.4)] data-[axis=h]:eink:border-t data-[axis=h]:h-2',
+                'data-[axis=rtl]:not-eink:bg-linear-to-l data-[axis=rtl]:theme-dark:shadow-[inset_-1px_0_0_rgb(255_255_255/0.4)] data-[axis=rtl]:eink:border-r data-[axis=rtl]:w-2 data-[axis=rtl]:-translate-x-full',
+                'data-[axis=ltr]:not-eink:bg-linear-to-r data-[axis=ltr]:theme-dark:shadow-[inset_1px_0_0_rgb(255_255_255/0.4)] data-[axis=ltr]:eink:border-l data-[axis=ltr]:w-2',
+              )}
+            />
+          </div>
+        </>
       )}
       {autoScroll.active && (
         <AutoScrollControl

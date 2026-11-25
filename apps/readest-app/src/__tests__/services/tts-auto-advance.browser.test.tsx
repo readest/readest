@@ -8,14 +8,17 @@ import { FoliateView, wrappedFoliateView } from '@/types/view';
 import type { Book, BookConfig, PageInfo, ViewSettings } from '@/types/book';
 import type { FileSystem } from '@/types/system';
 import type { TTSClient, TTSMessageEvent } from '@/services/tts/TTSClient';
+import { TTSController } from '@/services/tts/TTSController';
 import type { SystemSettings } from '@/types/settings';
 import { getDefaultViewSettings } from '@/services/settingsService';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
+import { parseSSMLMarks } from '@/utils/ssml';
 import { useTTSControl } from '@/app/reader/hooks/useTTSControl';
 import { useParagraphMode } from '@/app/reader/hooks/useParagraphMode';
+import type { Overlayer } from 'foliate-js/overlayer.js';
 
 // ---------------------------------------------------------------------------
 // Mock ONLY the speech client. Everything else is real: the foliate
@@ -267,6 +270,106 @@ afterEach(async () => {
   document.querySelectorAll('foliate-view').forEach((el) => el.parentElement?.remove());
   useBookDataStore.setState(() => ({ booksData: {} }));
   useReaderStore.setState(() => ({ viewStates: {} }));
+});
+
+// #7882: closing the book keeps Read Aloud going headless, and reopening it
+// attaches a new view. The sentence read is mid-paragraph, so a reattach that
+// forgets it starts the paragraph (or the chapter) over.
+describe('TTS position after the reader reopens', () => {
+  it.each([
+    'sentence',
+    'word',
+  ] as const)('restores the clock, lyric and %s highlight after repeated reopens', async (granularity) => {
+    const viewSettings = getDefaultViewSettings({
+      fs: {} as FileSystem,
+      isMobile: false,
+      isEink: false,
+      isAppDataSandbox: false,
+    });
+    const openChapter = async () => {
+      const { view } = createView(viewSettings);
+      await view.open(bookDoc);
+      await view.renderer.goTo({ index: CH4_SECTION_INDEX });
+      return view;
+    };
+    let view = await openChapter();
+    const controller = new TTSController(null, view);
+    const client = makeMockTTSClient('edge');
+    controller.ttsClient = {
+      ...client,
+      getCapabilities: () => ({
+        ...client.getCapabilities(),
+        mediaClock: true,
+        wordBoundaries: granularity === 'word',
+      }),
+    };
+    controller.setHighlightGranularity(granularity);
+    try {
+      await controller.initViewTTS(CH4_SECTION_INDEX);
+      const timeline = (await controller.ensureTimeline())!;
+      const index = Array.from({ length: timeline.length }, (_, i) => i).find(
+        (i) =>
+          i > 1 &&
+          timeline.sentenceAt(i - 1)?.blockIndex === timeline.sentenceAt(i)?.blockIndex &&
+          timeline.sentenceAt(i + 1)?.blockIndex === timeline.sentenceAt(i)?.blockIndex,
+      )!;
+      expect(index).toBeGreaterThan(1);
+      const ssml = controller.startFromRange(timeline.sentenceAt(index)!.range)!;
+      controller.dispatchSpeakMark(parseSSMLMarks(ssml).marks[0]);
+      if (granularity === 'word') {
+        const words = timeline
+          .sentenceAt(index)!
+          .range.toString()
+          .match(/\p{L}+/gu)!
+          .slice(0, 2);
+        expect(words).toHaveLength(2);
+        controller.prepareSpeakWords(words);
+        controller.dispatchSpeakWord(0);
+        expect(controller.getCurrentHighlightCfi()).toBeTruthy();
+      }
+      expect(controller.getCurrentLyricIndex()).toBe(index);
+      const clock = controller.getPlaybackInfo();
+      expect(clock?.position).toBeGreaterThan(0);
+      const cfi = controller.getCurrentPlaybackCfi();
+      expect(cfi).toBeTruthy();
+
+      for (const state of ['paused', 'playing', 'playing'] as const) {
+        controller.state = state;
+        controller.detachView();
+        view.close();
+        view.parentElement?.remove();
+        view = await openChapter();
+        const overlayer = view.renderer.getContents().find((c) => c.index === CH4_SECTION_INDEX)!
+          .overlayer as Overlayer;
+        const draw = vi.spyOn(overlayer, 'add');
+        await controller.attachView(view, { bookKey: BOOK_KEY });
+        await controller.ensureTimeline();
+
+        expect(controller.getCurrentLyricIndex()).toBe(index);
+        expect(controller.getPlaybackInfo()).toEqual(clock);
+        expect(controller.getCurrentPlaybackCfi()).toBe(cfi);
+        expect(draw.mock.calls.map(([key]) => key)).toContain('tts-highlight');
+      }
+      // The paragraph's look-ahead can still fire after a reopen. It steps the
+      // new iterator, and must put the sentence back (#6850).
+      await controller.preloadNextSSML();
+      expect(controller.getCurrentLyricIndex()).toBe(index);
+
+      if (granularity === 'word') {
+        const wordEvents = vi.fn();
+        controller.addEventListener('tts-highlight-word', wordEvents);
+        controller.dispatchSpeakWord(1);
+        expect(wordEvents).toHaveBeenCalledOnce();
+        expect(controller.getCurrentHighlightCfi()).not.toBe(cfi);
+      }
+      controller.state = 'paused';
+      await controller.forward(true);
+      expect(controller.getCurrentLyricIndex()).toBe(index + 1);
+    } finally {
+      await controller.shutdown();
+      view.close();
+    }
+  });
 });
 
 describe('TTS auto-advance across a chapter boundary (browser e2e)', () => {

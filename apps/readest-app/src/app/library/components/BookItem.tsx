@@ -213,7 +213,7 @@ const BookItem: React.FC<BookItemProps> = ({
               className={clsx(
                 'overflow-hidden text-ellipsis font-semibold',
                 mode === 'grid' && 'block whitespace-nowrap text-xs',
-                mode === 'list' && 'line-clamp-1 text-base',
+                mode === 'list' && 'text-base max-sm:[overflow-wrap:anywhere] sm:line-clamp-1',
               )}
             >
               {book.title}

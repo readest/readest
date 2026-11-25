@@ -67,6 +67,7 @@ object AnkiDroidLink {
         ".card { font-family: sans-serif; font-size: 20px; text-align: center; }"
 
     data class Deck(val id: Long, val name: String)
+    data class NoteType(val id: Long, val name: String, val fields: List<String>)
     data class Note(val id: Long, val mid: Long, val fields: List<String>, val tags: String)
     data class Card(val noteId: Long, val type: Int, val interval: Long)
 
@@ -143,12 +144,17 @@ object AnkiDroidLink {
         }
     }
 
-    /** A note's [current] fields with [entry] in an empty Entry field; null when there's none to fill. */
-    fun withEntry(current: List<String>, names: List<String>, entry: String): List<String>? {
-        val i = names.indexOf("Entry")
-        if (i < 0 || current.getOrElse(i) { "" }.isNotEmpty()) return null
-        return names.indices.map { if (it == i) entry else current.getOrElse(it) { "" } }
+    /**
+     * A note's [current] fields, for a note type of [size] fields, with [entry]
+     * in its empty field [field]; null when that field isn't there or isn't empty.
+     */
+    fun withEntry(current: List<String>, size: Int, field: Int, entry: String): List<String>? {
+        if (field !in 0 until size || current.getOrElse(field) { "" }.isNotEmpty()) return null
+        return (0 until size).map { if (it == field) entry else current.getOrElse(it) { "" } }
     }
+
+    /** [values] padded or cut to one per field of a note type of [size] fields. */
+    fun fitFields(values: List<String>, size: Int): List<String> = List(size) { values.getOrElse(it) { "" } }
 
     // Built on use: android.net.Uri is a stub in host-JVM unit tests.
     private const val AUTHORITY = "$PACKAGE.flashcards"
@@ -206,15 +212,19 @@ object AnkiDroidLink {
             ?: cr.insert(uri("decks"), ContentValues().apply { put("deck_name", name) })!!
                 .lastPathSegment!!.toLong()
 
-    /** The Readest note type's id and field names, or null before Sync first created it. */
-    fun findNoteType(cr: ContentResolver): Pair<Long, List<String>>? =
+    /** Every note type in the collection, with its field names (#7849). */
+    fun listNoteTypes(cr: ContentResolver): List<NoteType> =
         cr.query(uri("models"), arrayOf("_id", "name", "field_names"), null, null, null).rows {
-            Triple(
+            NoteType(
                 it.getLong(it.getColumnIndexOrThrow("_id")),
                 it.getString(it.getColumnIndexOrThrow("name")),
-                it.getString(it.getColumnIndexOrThrow("field_names")) ?: "",
+                splitFields(it.getString(it.getColumnIndexOrThrow("field_names")) ?: ""),
             )
-        }.firstOrNull { it.second == NOTE_TYPE_NAME }?.let { it.first to splitFields(it.third) }
+        }
+
+    /** The Readest note type's id and field names, or null before Sync first created it. */
+    fun findNoteType(cr: ContentResolver): Pair<Long, List<String>>? =
+        listNoteTypes(cr).firstOrNull { it.name == NOTE_TYPE_NAME }?.let { it.id to it.fields }
 
     /** True when the note type exists and isn't fully upgraded (see [outdated]). */
     fun noteTypeOutdated(cr: ContentResolver): Boolean {
@@ -284,15 +294,31 @@ object AnkiDroidLink {
         return filled
     }
 
-    /** Add notes to the named deck, creating the deck and note type as needed. */
-    fun addNotes(cr: ContentResolver, deckName: String, notes: List<Pair<List<String>, List<String>>>): Int {
+    /**
+     * Add notes to the named deck, creating the deck as needed. Without [modelId]
+     * they are Readest's notes, its note type created as needed; with it, notes of
+     * that note type (a card profile's, #7849) whose fields are given in its order.
+     */
+    fun addNotes(
+        cr: ContentResolver,
+        deckName: String,
+        modelId: Long?,
+        notes: List<Pair<List<String>, List<String>>>,
+    ): Int {
         if (notes.isEmpty()) return 0
+        val (mid, layout) = if (modelId == null) {
+            val (mid, names) = findOrCreateNoteType(cr)
+            mid to { fields: List<String> -> arrangeFields(fields, names) }
+        } else {
+            val size = listNoteTypes(cr).firstOrNull { it.id == modelId }?.fields?.size
+                ?: throw IOException("AnkiDroid has no note type $modelId")
+            modelId to { fields: List<String> -> fitFields(fields, size) }
+        }
         val deckId = findOrCreateDeck(cr, deckName)
-        val (mid, names) = findOrCreateNoteType(cr)
         val rows = notes.map { (fields, tags) ->
             ContentValues().apply {
                 put("mid", mid)
-                put("flds", joinFields(arrangeFields(fields, names)))
+                put("flds", joinFields(layout(fields)))
                 put("tags", joinTags(tags))
             }
         }
@@ -303,18 +329,20 @@ object AnkiDroidLink {
     }
 
     /**
-     * Put dictionary entries (#7728) into the empty Entry field of Readest's
-     * notes ([entries]: note id, entry HTML). Notes of other types, and an
-     * Entry the reader wrote, are left alone. Resolves with how many were set.
+     * Put dictionary entries (#7728) into the empty entry field of notes
+     * ([entries]: note id, the field's index, entry HTML): Readest's Entry, or
+     * the field a card profile maps (#7849). An entry the reader wrote is left
+     * alone. Resolves with how many were set.
      */
-    fun setEntries(cr: ContentResolver, entries: List<Pair<Long, String>>): Int {
-        val (mid, names) = findNoteType(cr) ?: return 0
-        return entries.sumOf { (id, entry) ->
+    fun setEntries(cr: ContentResolver, entries: List<Triple<Long, Int, String>>): Int {
+        if (entries.isEmpty()) return 0
+        val sizes = listNoteTypes(cr).associate { it.id to it.fields.size }
+        return entries.sumOf { (id, field, entry) ->
             val note = cr.query(uri("notes/$id"), arrayOf("mid", "flds"), null, null, null).rows {
                 it.getLong(it.getColumnIndexOrThrow("mid")) to (it.getString(it.getColumnIndexOrThrow("flds")) ?: "")
-            }.firstOrNull()
-            if (note == null || note.first != mid) return@sumOf 0
-            val fields = withEntry(splitFields(note.second), names, entry) ?: return@sumOf 0
+            }.firstOrNull() ?: return@sumOf 0
+            val size = sizes[note.first] ?: return@sumOf 0
+            val fields = withEntry(splitFields(note.second), size, field, entry) ?: return@sumOf 0
             cr.update(uri("notes/$id"), ContentValues().apply { put("flds", joinFields(fields)) }, null, null)
         }
     }

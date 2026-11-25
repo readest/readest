@@ -135,7 +135,7 @@ export function useOpenLaunchLinks() {
         open: () => {
           // Android Auto cold-resume: start read-aloud once this book's view inits.
           if (book.autoplay) setPendingTTSAutoplay(book.bookHash);
-          return openBook(book.bookHash);
+          return openBook(book.bookHash, book.cfi);
         },
       };
     }

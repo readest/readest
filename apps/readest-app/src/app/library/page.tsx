@@ -228,6 +228,7 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     library: libraryBooks,
     libraryLoaded: libraryLoadedFromDisk,
     isSyncing,
+    isPullingLibrary,
     syncProgress,
     updateBook,
     updateBooks,
@@ -2062,8 +2063,14 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
           max='100'
         />
       </div>
-      {(loading || isSyncing) && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center'>
+      {(loading || isSyncing || isPullingLibrary) && (
+        <div
+          className={clsx(
+            'fixed inset-0 z-50 flex items-center justify-center',
+            // The pull alone can take minutes, or hang: keep the empty library usable meanwhile.
+            !loading && !isSyncing && 'pointer-events-none',
+          )}
+        >
           <Spinner loading />
         </div>
       )}

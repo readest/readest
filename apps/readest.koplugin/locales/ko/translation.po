@@ -356,6 +356,9 @@ msgstr "책 지문"
 msgid "Identifiers"
 msgstr "식별자"
 
+msgid "File Name"
+msgstr "파일 이름"
+
 msgid "Last Synced"
 msgstr "마지막 동기화"
 

@@ -99,10 +99,6 @@ const AutoScrollControl: React.FC<AutoScrollControlProps> = ({
 
   return (
     <div
-      // Stays live above the page snapshot of a paginated wipe (pageWipe.ts),
-      // and holds the snapshot off while shown so its buttons get the clicks.
-      data-page-wipe-above=''
-      data-visible={isVisible || undefined}
       className={clsx(
         // `absolute` so the pill centers on the book's grid cell rather than
         // the viewport: with a pinned sidebar (or a split view) the reading

@@ -89,6 +89,34 @@ describe('parseAuthors', () => {
   it('should handle single author with extra spaces', () => {
     expect(parseAuthors('  John Smith  ')).toEqual(['John Smith']);
   });
+
+  // #7863: stores and calibre often fill dc:creator as "Last, First".
+  it('should keep one name written last name first', () => {
+    expect(parseAuthors('Hale, Tessa')).toEqual(['Hale, Tessa']);
+    expect(parseAuthors('Le Guin, Ursula K.')).toEqual(['Le Guin, Ursula K.']);
+    expect(parseAuthors('Tolkien, J. R. R.')).toEqual(['Tolkien, J. R. R.']);
+    expect(parseAuthors('Doyle, Arthur Conan')).toEqual(['Doyle, Arthur Conan']);
+    expect(parseAuthors('García Márquez, Gabriel')).toEqual(['García Márquez, Gabriel']);
+  });
+
+  it('should split three one-word names in the join Readest writes', () => {
+    expect(parseAuthors('Plato, Homer, and Virgil')).toEqual(['Plato', 'Homer', 'Virgil']);
+  });
+
+  it('should split names written last name first at "and" and "&"', () => {
+    expect(parseAuthors('Hale, Tessa and Doe, John')).toEqual(['Hale, Tessa', 'Doe, John']);
+    expect(parseAuthors('Hale, Tessa & Jane Doe')).toEqual(['Hale, Tessa', 'Jane Doe']);
+  });
+
+  it('should still split two full names at a comma', () => {
+    expect(parseAuthors('J.K. Rowling, Stephen King')).toEqual(['J.K. Rowling', 'Stephen King']);
+    expect(parseAuthors('Stephen King, J.K. Rowling')).toEqual(['Stephen King', 'J.K. Rowling']);
+    expect(parseAuthors('村上春树, 林少华')).toEqual(['村上春树', '林少华']);
+    expect(parseAuthors('Plato, Tessa Hale y Stephen King')).toEqual([
+      'Plato',
+      'Tessa Hale y Stephen King',
+    ]);
+  });
 });
 
 describe('createBookGroups', () => {
@@ -224,6 +252,83 @@ describe('createBookGroups', () => {
       expect(john?.books).toHaveLength(1);
       expect(jane?.books).toHaveLength(1);
       expect(john?.books[0]?.hash).toBe(jane?.books[0]?.hash);
+    });
+
+    it('should group a "Last, First" author as one author (#7863)', () => {
+      const books = [createMockBook({ hash: '1', title: 'Book 1', author: 'Hale, Tessa' })];
+
+      const result = createBookGroups(books, LibraryGroupByType.Author);
+
+      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+      expect(groups.map((g) => g.name)).toEqual(['Hale, Tessa']);
+    });
+
+    it('should split two authors joined by a bare comma in a Malayalam book (#7863)', () => {
+      const books = [createMockBook({ hash: '1', author: 'ബഷീർ, തകഴി', primaryLanguage: 'ml' })];
+
+      const result = createBookGroups(books, LibraryGroupByType.Author);
+
+      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+      expect(groups.map((g) => g.name)).toEqual(['ബഷീർ', 'തകഴി']);
+    });
+
+    // foliate-js gives several dc:creators as an array, which BookMetadata's type leaves out.
+    const asCreators = (names: string[]) =>
+      names.map((name) => ({ name })) as unknown as BookMetadata['author'];
+
+    // The stored author joins separate creators in the book's language.
+    it.each([
+      ['de', 'Tessa Hale und Stephen King', ['Tessa Hale', 'Stephen King']],
+      ['es', 'Tessa Hale y Stephen King', ['Tessa Hale', 'Stephen King']],
+      ['es', 'Tessa Hale e Isabel Allende', ['Tessa Hale', 'Isabel Allende']],
+      ['de', 'Hale, Tessa und King, Stephen', ['Hale, Tessa', 'King, Stephen']],
+      ['es', 'José Ortega y Gasset y Julián Marías', ['José Ortega y Gasset', 'Julián Marías']],
+    ])('should split a %s book stored as "%s" into its creators', (lang, author, creators) => {
+      const books = [
+        createMockBook({
+          hash: '1',
+          author,
+          primaryLanguage: lang,
+          metadata: { author: asCreators(creators) },
+        }),
+      ];
+
+      const result = createBookGroups(books, LibraryGroupByType.Author);
+
+      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+      expect(groups.map((g) => g.name)).toEqual(creators);
+    });
+
+    it('should keep one creator whose name holds the conjunction', () => {
+      const books = [
+        createMockBook({
+          hash: '1',
+          author: 'José Ortega y Gasset',
+          primaryLanguage: 'es',
+          metadata: { author: 'José Ortega y Gasset' },
+        }),
+      ];
+
+      const result = createBookGroups(books, LibraryGroupByType.Author);
+
+      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+      expect(groups.map((g) => g.name)).toEqual(['José Ortega y Gasset']);
+    });
+
+    it("should group by the user's author edit over the file's creators", () => {
+      const books = [
+        createMockBook({
+          hash: '1',
+          author: 'Tessa Hale',
+          primaryLanguage: 'de',
+          metadata: { author: asCreators(['Tessa Hale', 'Stephen King']) },
+        }),
+      ];
+
+      const result = createBookGroups(books, LibraryGroupByType.Author);
+
+      const groups = result.filter((item): item is BooksGroup => 'books' in item);
+      expect(groups.map((g) => g.name)).toEqual(['Tessa Hale']);
     });
 
     it('should leave books without author as ungrouped', () => {
@@ -954,6 +1059,19 @@ describe('createGroupSorter', () => {
     expect(sorted[1]!.name).toBe('Umberto Eco');
     expect(sorted[2]!.name).toBe('Terry Pratchett');
   });
+
+  it('should sort a "Last, First" author group by its last name (#7863)', () => {
+    const groups = [
+      createMockGroup({ name: 'Terry Pratchett', books: [createMockBook()] }),
+      createMockGroup({ name: 'Hale, Tessa', books: [createMockBook()] }),
+      createMockGroup({ name: 'Isaac Asimov', books: [createMockBook()] }),
+    ];
+
+    const sorter = createGroupSorter(LibrarySortByType.Author, 'en', LibraryGroupByType.Author);
+    const sorted = [...groups].sort(sorter);
+
+    expect(sorted.map((g) => g.name)).toEqual(['Isaac Asimov', 'Hale, Tessa', 'Terry Pratchett']);
+  });
 });
 
 describe('createBookSorter', () => {
@@ -1132,6 +1250,18 @@ describe('createBookSorter - independent sort orders', () => {
     const sorted = [...books].sort(sorter);
 
     expect(sorted.map((book) => book.title)).toEqual(['Mango', 'Apple', 'Zebra']);
+  });
+
+  it('should sort a "Last, First" author by the last name (#7863)', () => {
+    const authors = [
+      createMockBook({ title: 'Discworld', author: 'Terry Pratchett', primaryLanguage: 'en' }),
+      createMockBook({ title: 'Hale Book', author: 'Hale, Tessa', primaryLanguage: 'en' }),
+      createMockBook({ title: 'Foundation', author: 'Isaac Asimov', primaryLanguage: 'en' }),
+    ];
+    const sorter = createBookSorter(LibrarySortByType.Author, 'en');
+    const sorted = [...authors].sort(sorter);
+
+    expect(sorted.map((book) => book.title)).toEqual(['Foundation', 'Hale Book', 'Discworld']);
   });
 });
 

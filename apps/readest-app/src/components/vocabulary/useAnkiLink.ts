@@ -11,10 +11,17 @@ import { useVocabularyStore } from '@/store/vocabularyStore';
 import { getEnabledProviders } from '@/services/dictionaries/registry';
 import {
   ANKI_DECK,
+  ANKI_NOTE_TYPE,
   type AnkiImportPlan,
+  type AnkiNoteType,
   ankiEntryGaps,
+  ankiLayouts,
   ankiNoteFills,
+  ankiNoteView,
   ankiNotesToSend,
+  ankiProfileNoteType,
+  ankiProfileOf,
+  ankiSyncNotes,
   ankiTagUpdates,
   ankiWordsToSend,
   defaultImportLang,
@@ -29,6 +36,7 @@ import {
   AnkiError,
   ankiAddNotes,
   ankiListDecks,
+  ankiListNoteTypes,
   ankiNoteType,
   ankiReadDeck,
   ankiRequestPermission,
@@ -39,7 +47,7 @@ import {
 } from '@/services/vocabulary/ankiDroid';
 import { lookupEntry } from '@/services/vocabulary/ankiEntry';
 import { hintProviders } from '@/services/vocabulary/hintSources';
-import type { VocabularyEntry } from '@/services/vocabulary/types';
+import type { AnkiProfileSettings, VocabularyEntry } from '@/services/vocabulary/types';
 import { isAnkiAllowed } from '@/utils/access';
 import { eventDispatcher } from '@/utils/event';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
@@ -117,6 +125,13 @@ export interface AnkiEntryPickerState {
   selected: string;
 }
 
+export interface AnkiProfilesState {
+  decks: string[];
+  /** The collection's note types, without Readest's own. */
+  noteTypes: AnkiNoteType[];
+  settings: AnkiProfileSettings;
+}
+
 export interface AnkiImportState {
   decks: AnkiDeck[];
   languages: { code: string; label: string }[];
@@ -138,6 +153,7 @@ export const useAnkiLink = () => {
   const [status, setStatus] = useState<{ installed: boolean; granted: boolean } | null>(null);
   const [importState, setImportState] = useState<AnkiImportState | null>(null);
   const [entryPicker, setEntryPicker] = useState<AnkiEntryPickerState | null>(null);
+  const [profilesState, setProfilesState] = useState<AnkiProfilesState | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [audioDeclined, setAudioDeclined] = useState(readAudioDeclined);
   // Resolves the open "Add audio" prompt with the reader's answer.
@@ -195,23 +211,57 @@ export const useAnkiLink = () => {
     }
   };
 
+  /** The card profiles, and the fields of the note types they use (#7849). */
+  const profileLayouts = async () => {
+    const profiles = useSettingsStore.getState().settings.ankiProfiles;
+    const noteTypes = profiles?.profiles.some((p) => p.noteType) ? await ankiListNoteTypes() : [];
+    return { profiles, noteTypes, layouts: ankiLayouts(profiles, noteTypes) };
+  };
+
+  const readDecks = async (ids: number[]) =>
+    ids.length
+      ? ankiReadDeck(ids, true)
+      : { notes: [] as AnkiNoteRow[], cards: [] as AnkiCardRow[] };
+
   /**
-   * Read the Readest deck family and apply it to the list: newly mature cards
+   * Read the Readest deck family, and Readest's notes in the decks card
+   * profiles send to (#7849), and apply them to the list: newly mature cards
    * make words Mastered, notes for words Readest doesn't have come in as Learning.
    */
   const pull = async () => {
-    const ids = deckFamily(await ankiListDecks(), ANKI_DECK);
-    const { notes: rows, cards } = ids.length
-      ? await ankiReadDeck(ids, true)
-      : { notes: [], cards: [] as AnkiCardRow[] };
+    const decks = await ankiListDecks();
+    const { profiles, noteTypes, layouts } = await profileLayouts();
+    const ownIds = deckFamily(decks, ANKI_DECK);
+    const otherIds = new Set(
+      profiles?.profiles.flatMap((p) => (p.deck ? deckFamily(decks, p.deck) : [])),
+    );
+    const own = await readDecks(ownIds);
+    const other = await readDecks([...otherIds].filter((id) => !ownIds.includes(id)));
+    const { notes: rows, known } = ankiSyncNotes(own.notes, other.notes, layouts);
+    const cards = own.cards && other.cards ? [...own.cards, ...other.cards] : undefined;
     const store = useVocabularyStore.getState();
     const lang = defaultImportLang(store.entries);
-    const notes = withNoteLangs(rows, store.entries, lang);
+    const notes = withNoteLangs(
+      rows.map((n) => ankiNoteView(n, layouts)),
+      store.entries,
+      lang,
+    );
     const plan = planAnkiImport(importNotes(notes, cards), store.entries, lang, readMatured());
     store.importWords(plan.ops);
     // Without the cards no card reads as mature, which says nothing about lapses.
     if (cards) saveMatured(plan.matured);
-    return { notes, lang, plan, cardsRead: !!cards };
+    return {
+      notes,
+      // As read, with the language tags `notes` gave them: entries go by field.
+      rows: rows.map((n, i) => ({ ...n, tags: notes[i]!.tags })),
+      // Only for matching: the reader's own notes in a profile's deck.
+      known: known.map((n) => ankiNoteView(n, layouts)),
+      profiles,
+      noteTypes,
+      lang,
+      plan,
+      cardsRead: !!cards,
+    };
   };
 
   const pullSummary = (plan: AnkiImportPlan) => [
@@ -270,12 +320,10 @@ export const useAnkiLink = () => {
     );
   };
 
-  /** The reader's card dictionary, when the note type has an Entry field to fill. */
-  const entryProvider = (fields?: string[]) => {
+  /** The reader's card dictionary. */
+  const entryProvider = () => {
     const id = useCustomDictionaryStore.getState().settings.ankiEntryProviderId;
-    // No fields yet: Sync creates the note type, with Entry.
-    if (!id || (fields && !fields.includes('Entry'))) return undefined;
-    return entryProviders().find((p) => p.id === id);
+    return id ? entryProviders().find((p) => p.id === id) : undefined;
   };
 
   /** Pull, then add Learning words the deck lacks, then bring mark tags in step. */
@@ -287,8 +335,10 @@ export const useAnkiLink = () => {
       const first = await pull();
       const add = await askAudio();
       // The prompt asks the reader to sync AnkiDroid first, which can bring in notes.
-      const { notes, lang, plan, cardsRead } = add === null ? first : await pull();
+      const { notes, rows, known, profiles, noteTypes, lang, plan, cardsRead } =
+        add === null ? first : await pull();
       const voiced = add ? await ankiUpgradeNoteType(ankiNoteFills(notes)) : 0;
+      const existing = [...notes, ...known];
       // Words with no sentence came in from Anki, so they're already there.
       const learningOf = (all: Record<string, VocabularyEntry>) =>
         Object.values(all).filter((e) => e.state === 'learning' && e.occurrences.length);
@@ -297,25 +347,41 @@ export const useAnkiLink = () => {
       // older cards without one, within the lookup budget.
       const noteType = await ankiNoteType();
       await loadDictionaries();
-      const provider = entryProvider(noteType.fields);
+      const provider = entryProvider();
+      // A card has a place for the entry: Readest's Entry (no fields yet: Sync
+      // creates the note type, with Entry), or the field its profile maps in a
+      // note type it can send with.
+      const takesEntry = (e: VocabularyEntry) => {
+        const profile = ankiProfileOf(e, profiles);
+        if (profile?.noteType) {
+          const type = ankiProfileNoteType(profile, noteTypes);
+          return !!type?.fields.some((f) => profile.fields[f] === 'entry');
+        }
+        return !noteType.fields || noteType.fields.includes('Entry');
+      };
       const looked: Record<string, string> = {};
-      const gapEntries: { id: number; entry: string }[] = [];
+      const gapEntries: { id: number; field: number; entry: string }[] = [];
       if (provider) {
-        const words = ankiWordsToSend(learning, notes).slice(0, MAX_ENTRY_LOOKUPS);
+        const words = ankiWordsToSend(learning, existing)
+          .filter(takesEntry)
+          .slice(0, MAX_ENTRY_LOOKUPS);
         for (const e of words) looked[e.id] = await lookupEntry(e.word, e.lang, provider);
-        const gaps = ankiEntryGaps(notes, noteType, lang, readEntryAfter()).slice(
+        const layouts = ankiLayouts(profiles, noteTypes, noteType);
+        const gaps = ankiEntryGaps(rows, layouts, lang, readEntryAfter()).slice(
           0,
           MAX_ENTRY_LOOKUPS - words.length,
         );
         for (const gap of gaps) {
           const entry = await lookupEntry(gap.word, gap.lang, provider);
-          if (entry) gapEntries.push({ id: gap.id, entry });
+          if (entry) gapEntries.push({ id: gap.id, field: gap.field, entry });
         }
         if (gaps.length) saveEntryAfter(gaps[gaps.length - 1]!.id);
       }
       // The lookups take a while: send and tag what the list holds now.
-      const { entries } = useVocabularyStore.getState();
-      const outgoing = ankiNotesToSend(learningOf(entries), notes, looked);
+      const toSend = learningOf(useVocabularyStore.getState().entries);
+      const outgoing = ankiNotesToSend(toSend, existing, looked, profiles, noteTypes);
+      // Their profile's note type isn't in this collection, or has no Word field.
+      const waiting = ankiWordsToSend(toSend, existing).length - outgoing.length;
       const sent = outgoing.length ? await ankiAddNotes(outgoing) : 0;
       const entered =
         Object.values(looked).filter(Boolean).length +
@@ -327,6 +393,14 @@ export const useAnkiLink = () => {
         ...(voiced ? [_('Added audio to {{count}} cards', { count: voiced })] : []),
         ...(entered ? [_('Added dictionary entries to {{count}} cards', { count: entered })] : []),
         ...(sent ? [_('Added {{count}} words to Anki', { count: sent })] : []),
+        ...(waiting
+          ? [
+              _(
+                "{{count}} words not sent: their profile's note type is missing from AnkiDroid or has no Word field",
+                { count: waiting },
+              ),
+            ]
+          : []),
         ...pullSummary(
           plan === first.plan
             ? plan
@@ -372,8 +446,11 @@ export const useAnkiLink = () => {
       const decks = importState?.decks ?? [];
       const name = decks.find((d) => d.id === deckId)?.name;
       const { notes, cards } = await ankiReadDeck(name ? deckFamily(decks, name) : [deckId], true);
+      // A profile's note type reads its word and hint from the fields it maps.
+      const { layouts } = await profileLayouts();
       const store = useVocabularyStore.getState();
-      const plan = planAnkiImport(importNotes(notes, cards), store.entries, lang);
+      const views = notes.map((n) => ankiNoteView(n, layouts));
+      const plan = planAnkiImport(importNotes(views, cards), store.entries, lang);
       store.importWords(plan.ops);
       setImportState(null);
       const parts = [_('Imported {{count}} new words', { count: plan.added })];
@@ -383,6 +460,44 @@ export const useAnkiLink = () => {
       toast('success', parts.join(' · '));
     } catch (err) {
       fail(err);
+    }
+  };
+
+  /** The card profiles panel (#7849), with the collection's decks and note types to pick. */
+  const openProfiles = async () => {
+    if (!guard()) return;
+    try {
+      if (!(await ready())) return;
+      const [decks, noteTypes] = await Promise.all([ankiListDecks(), ankiListNoteTypes()]);
+      setProfilesState({
+        decks: decks.map((d) => d.name).sort((a, b) => a.localeCompare(b)),
+        noteTypes: noteTypes.filter((t) => t.name !== ANKI_NOTE_TYPE),
+        settings: useSettingsStore.getState().settings.ankiProfiles ?? {
+          profiles: [],
+          languages: {},
+          books: {},
+        },
+      });
+    } catch (err) {
+      fail(err);
+    }
+  };
+
+  const saveProfiles = async (ankiProfiles: AnkiProfileSettings) => {
+    const { settings, setSettings, saveSettings } = useSettingsStore.getState();
+    const next = { ...settings, ankiProfiles };
+    try {
+      setSettings(next);
+      await saveSettings(envConfig, next);
+      setProfilesState(null);
+    } catch (err) {
+      console.warn('[anki] saving the card profiles failed', err);
+      // Only the profiles: other settings may have changed during the save.
+      setSettings({
+        ...useSettingsStore.getState().settings,
+        ankiProfiles: settings.ankiProfiles,
+      });
+      toast('error', _("Couldn't save"));
     }
   };
 
@@ -423,6 +538,10 @@ export const useAnkiLink = () => {
     importState,
     runImport,
     closeImport: () => setImportState(null),
+    profilesState,
+    openProfiles,
+    saveProfiles,
+    closeProfiles: () => setProfilesState(null),
     entryPicker,
     openEntryPicker,
     saveEntryPicker,

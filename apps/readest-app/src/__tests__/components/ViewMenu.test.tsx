@@ -353,8 +353,8 @@ describe('ViewMenu layout', () => {
   });
 });
 
-// #7575: in paginated mode Auto Scroll wipes each page from the top down. It
-// needs horizontal lines, so vertical and fixed-layout books keep it scrolled-only.
+// #7575: in paginated mode Auto Scroll wipes each page in, down horizontal
+// lines and across vertical ones. Fixed-layout books keep it scrolled-only.
 describe('ViewMenu Auto Scroll in paginated mode (#7575)', () => {
   // A disabled MenuItem drops its menuitem role, so find it by its label.
   const autoScrollItem = () => screen.getByText('Auto Scroll').closest('button')!;
@@ -379,13 +379,13 @@ describe('ViewMenu Auto Scroll in paginated mode (#7575)', () => {
     expect(autoScrollItem().disabled).toBe(false);
   });
 
-  it('keeps Auto Scroll scrolled-only for vertical and fixed-layout books', () => {
+  it('offers Auto Scroll for a paginated vertical book', () => {
     currentViewSettings.vertical = true;
     render(<ViewMenu bookKey='book-1' />);
-    expect(autoScrollItem().disabled).toBe(true);
-    cleanup();
+    expect(autoScrollItem().disabled).toBe(false);
+  });
 
-    currentViewSettings.vertical = false;
+  it('keeps Auto Scroll scrolled-only for fixed-layout books', () => {
     mockBookData.isFixedLayout = true;
     render(<ViewMenu bookKey='book-1' />);
     expect(autoScrollItem().disabled).toBe(true);

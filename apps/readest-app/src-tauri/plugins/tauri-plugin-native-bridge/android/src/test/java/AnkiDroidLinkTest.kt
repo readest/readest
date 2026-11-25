@@ -129,14 +129,37 @@ class AnkiDroidLinkTest {
 
     @Test
     fun withEntry_fillsOnlyAnEmptyEntry() {
-        val names = listOf("Front", "Back", "Word", "Language", "Entry")
         assertEquals(
             listOf("f", "b", "w", "en_US", "<p>def</p>"),
-            AnkiDroidLink.withEntry(listOf("f", "b", "w", "en_US", ""), names, "<p>def</p>"),
+            AnkiDroidLink.withEntry(listOf("f", "b", "w", "en_US", ""), 5, 4, "<p>def</p>"),
         )
-        // An entry the reader edited stays, and a note type without Entry is left alone.
-        assertEquals(null, AnkiDroidLink.withEntry(listOf("f", "b", "w", "en_US", "mine"), names, "<p>def</p>"))
-        assertEquals(null, AnkiDroidLink.withEntry(listOf("f", "b"), listOf("Front", "Back"), "<p>def</p>"))
+        // An entry the reader edited stays, and a field the note type lacks is left alone.
+        assertEquals(null, AnkiDroidLink.withEntry(listOf("f", "b", "w", "en_US", "mine"), 5, 4, "<p>def</p>"))
+        assertEquals(null, AnkiDroidLink.withEntry(listOf("f", "b"), 2, 4, "<p>def</p>"))
+        assertEquals(null, AnkiDroidLink.withEntry(listOf("f", "b"), 2, -1, "<p>def</p>"))
+    }
+
+    @Test
+    fun withEntry_fillsAProfileNoteTypesEntryField() {
+        // A card profile's note type keeps its entry wherever the reader mapped it (#7849).
+        assertEquals(
+            listOf("Haus", "Das Haus.", "<p>def</p>", ""),
+            AnkiDroidLink.withEntry(listOf("Haus", "Das Haus.", "", ""), 4, 2, "<p>def</p>"),
+        )
+    }
+
+    @Test
+    fun withEntry_padsANoteReadBeforeItsFieldsWereAdded() {
+        assertEquals(
+            listOf("Haus", "house", "", "", "<p>def</p>"),
+            AnkiDroidLink.withEntry(listOf("Haus", "house"), 5, 4, "<p>def</p>"),
+        )
+    }
+
+    @Test
+    fun fitFields_givesTheNoteTypeExactlyOneValuePerField() {
+        assertEquals(listOf("a", "b", ""), AnkiDroidLink.fitFields(listOf("a", "b"), 3))
+        assertEquals(listOf("a", "b"), AnkiDroidLink.fitFields(listOf("a", "b", "c"), 2))
     }
 
     @Test

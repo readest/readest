@@ -14,6 +14,7 @@ import {
   getBookPageCount,
   getContributorNames,
   isCurrentlyReadingBook,
+  isLastNameFirst,
 } from '@/utils/book';
 import { matchesFieldedQuery, parseFieldedQuery } from './fieldedQuery';
 import { getBookshelfField, textList } from '@/services/bookshelves/fields';
@@ -763,21 +764,41 @@ export const getBreadcrumbs = (currentPath: string) => {
 
 /**
  * Parse a combined author string into individual author names.
- * Handles common separators like ", ", " & ", " and ".
+ * Handles common separators like ", ", " & ", " and ", but keeps a name
+ * written last name first ("Hale, Tessa") whole in a book of that language.
  */
-export const parseAuthors = (authorString: string): string[] => {
+export const parseAuthors = (authorString: string, bookLang?: string | string[]): string[] => {
   if (!authorString || !authorString.trim()) {
     return [];
   }
 
-  // Split by common separators: comma, ampersand, "and"
-  // Use regex to handle variations with different spacing
   const authors = authorString
-    .split(/\s*(?:,|&|\band\b)\s*/i)
+    .split(/\s*(?:&|\band\b)\s*/i)
+    .flatMap((part) => (isLastNameFirst(part, bookLang) ? [part] : part.split(',')))
     .map((author) => author.trim())
     .filter((author) => author.length > 0);
 
   return authors;
+};
+
+/**
+ * A book's authors. The stored author joins separate creators in the book's
+ * language ("A und B", "A y B"), and parsing that join can't tell a
+ * conjunction from a name ("José Ortega y Gasset"), so read the creators
+ * while the stored author is still their join, not a user's edit.
+ */
+const getBookAuthors = (book: Book): string[] => {
+  const creators = book.metadata?.author;
+  if (
+    Array.isArray(creators) &&
+    creators.length > 1 &&
+    formatAuthors(creators, book.primaryLanguage) === book.author
+  ) {
+    return getContributorNames(creators).flatMap((name) =>
+      parseAuthors(name, book.primaryLanguage),
+    );
+  }
+  return parseAuthors(book.author, book.primaryLanguage);
 };
 
 /**
@@ -887,7 +908,7 @@ const createAuthorGroups = (books: Book[]): (Book | BooksGroup)[] => {
       continue;
     }
 
-    const authors = parseAuthors(authorString);
+    const authors = getBookAuthors(book);
 
     if (authors.length === 0) {
       ungroupedBooks.push(book);

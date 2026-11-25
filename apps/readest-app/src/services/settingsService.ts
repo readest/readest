@@ -227,20 +227,27 @@ let settingsWrites: Promise<void> = Promise.resolve();
  * link that resolves after a write carrying their data or newer, and reject with
  * it when it fails — the stamp is only dropped once the write succeeds, so the
  * next link retries instead of reporting a silent success.
+ *
+ * The stamp is dropped only when no save arrived during the write: callers such
+ * as saveSysSettings change the store's object in place and save it again, so
+ * the same object can carry changes the in-flight write never serialized.
  */
 let pendingSettings: SystemSettings | null = null;
+let saveCount = 0;
 export async function saveSettings(fs: FileSystem, settings: SystemSettings): Promise<void> {
   pendingSettings = settings;
+  saveCount++;
   const write = async () => {
     const next = pendingSettings;
     if (!next) return;
+    const writing = saveCount;
     const disk = await safeLoadJSON<Partial<SystemSettings>>(fs, SETTINGS_FILENAME, 'Settings', {});
     const merged =
       next.bookshelves || disk.bookshelves
         ? { ...next, bookshelves: mergeBookshelfStates(disk.bookshelves, next.bookshelves) }
         : next;
     await safeSaveJSON(fs, SETTINGS_FILENAME, 'Settings', merged);
-    if (pendingSettings === next) pendingSettings = null;
+    if (saveCount === writing) pendingSettings = null;
   };
   settingsWrites = settingsWrites.catch(() => {}).then(write);
   await settingsWrites;

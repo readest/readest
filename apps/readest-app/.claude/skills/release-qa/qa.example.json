@@ -1,0 +1,105 @@
+{
+  "title": "Readest QA v0.12.16 → main",
+  "from": "v0.12.16",
+  "heading": "main",
+  "to": "origin/main",
+  "sha": "c17767ecd",
+  "date": "23 Nov 2026",
+  "rangeNote": "v0.12.20 was released inside this range",
+  "repo": "readest/readest",
+  "environments": [
+    {"platform": "Linux", "detail": "Tauri CEF runtime, debug build with the production frontend bundled. Isolated profile (fake HOME, private D-Bus, stub file-chooser portal), driven over CDP with Playwright."},
+    {"platform": "Android", "detail": "Emulator, Android 15 (API 35), Pixel 7 profile, WebView Chrome 124. x86_64 debug APK, driven with adb input, screencap and WebView CDP."}
+  ],
+  "evidence": [
+    {"contains": "ParagraphOverlay is role=\"dialog\"", "shots": ["a-para-strip.png"], "caption": "Paragraph Mode: Volume Down opens the system volume panel; the paragraph stays"},
+    {"contains": "A price like $5 and $10", "shots": ["md-1.png"], "caption": "\"$5 and $10\" rendered as math (5and10)"},
+    {"contains": "right after creating \"Paper\"", "shots": ["a-colorpanel2.png"], "caption": "Color panel scrolled to its end right after creating Paper: no Paper swatch"},
+    {"contains": "inline $e^{i\\pi}+1=0$", "status": "PASS", "shots": ["md-1.png"]},
+    {"contains": "Animation Style \"Page Flip\" (Push/Slide/Page Curl/Page Flip)", "shots": ["flip-strip.jpg"]},
+    {"contains": "Page Flip on a slow drag", "shots": ["a-flip-mid.png"]},
+    {"contains": "with the reader toolbar open, Vol Up", "shots": ["a-vol-toolbar.png", "a-vol-off.png"]},
+    {"contains": "Single Section Scroll: at the end of Chapter 7", "shots": ["a-sss-strip.png"]},
+    {"contains": "Export Annotations sheet", "shots": ["a-export-scrolled.png"]},
+    {"contains": "Lookup App lists Default", "shots": ["a-eudic.png", "a-chooser.png"]},
+    {"contains": "Customize Toolbar offers System Dictionary", "shots": ["a-sysdict-tb.png"]},
+    {"contains": "group=… -> system Back", "shots": ["a-series-in.png", "a-series.png"]},
+    {"contains": "taps on the on-screen keyboard reach the note", "shots": ["a-kb-curl.png"]},
+    {"contains": "Sort by shows Custom + draggable", "shots": ["sort-after-drag.png"]},
+    {"contains": "Plain placeholder covers", "shots": ["shelf-plain-pages.png", "shelf-coveronly.png"]},
+    {"contains": "select mode at 420px", "shots": ["select-narrow.png"]},
+    {"contains": "From Pasted Text", "shots": ["paste-imported.png"]},
+    {"contains": "Manage Cache opens on desktop", "shots": ["manage-cache.png"]},
+    {"contains": "Backup & Restore has Library / Settings", "shots": ["backup.png"]},
+    {"contains": "reader View menu", "shots": ["view-menu.png"]},
+    {"contains": "Serif Font list has a Search box", "shots": ["font-search.png"]},
+    {"contains": "Dialogue Highlighting: Background on", "shots": ["single-quotes.png"]},
+    {"contains": "label shows the page under the thumb", "shots": ["slider-preview.png"]},
+    {"contains": "Ruler Style \"Line\"", "shots": ["ruler-page.png"]},
+    {"contains": "opens a command line at the page bottom", "shots": ["vim-2.png"]},
+    {"contains": "Week/Month/Year tabs", "shots": ["stats-1.png"]},
+    {"contains": "Reading Calendar: month grid", "shots": ["stats-calendar.png"]},
+    {"contains": "merge Arabic (2m) into Alice", "shots": ["stats-merged.png"]},
+    {"contains": "Pin to Notebook docks", "shots": ["dict-pinned.png"]},
+    {"contains": "Vocabulary window lists the word", "shots": ["vocab-detail.png"]},
+    {"contains": "Customize Toolbar lists Copy Link", "shots": ["customize-toolbar.png"]},
+    {"contains": "Voice Library: engine select", "shots": ["voicelib-all-fav.png"]},
+    {"contains": "leaf background texture", "shots": ["fn-texture.png"]},
+    {"contains": "Image Comic (fixed layout) defaults", "shots": ["comic-viewer.png"]},
+    {"contains": "Remaining Time + Remaining Pages", "shots": ["footer-remaining.png"]},
+    {"contains": "paginated Auto Scroll", "shots": ["autoscroll-2.png"]},
+    {"contains": "Words per Flash 3", "shots": ["rsvp-chunk3.png"]},
+    {"contains": "family-tree figure", "shots": ["ar-fig-dark.png"]},
+    {"contains": "two-page mode: Demian", "shots": ["spread-ch8.png"]},
+    {"contains": "Parallel Read lists every book", "shots": ["parallel-2.png"]},
+    {"contains": "Data Flow (info icon)", "shots": ["dataflow.png", "dataflow-detail.png"]},
+    {"contains": "Edit Metadata > Search", "shots": ["bing-window.png", "cover-confirm.png"]},
+    {"contains": "search history dropdown", "shots": ["search-history.png"]},
+    {"contains": "Pack -> portal SaveFile", "shots": ["rbooks-import.png"]}
+  ],
+  "premium": {
+    "note": "Testing is in progress on fresh, empty-library profiles signed in with a premium test account. Results land here as they are logged.",
+    "planned": [
+      {"text": "Anki sync on Android: a subdeck per language, card audio, the dictionary entry field, import back", "prs": ["7328", "7718", "7736", "7740"]},
+      {"text": "Context Dictionary tool in the selection toolbar, its translator picker, streamed answers and the Thinking setting", "prs": ["7670", "7690", "7285", "7275"]},
+      {"text": "Deleting a book's reading statistics on one device removes them on the other", "prs": ["7664"]},
+      {"text": "Remove from Device Only on a cloud book", "prs": ["7324"]}
+    ]
+  },
+  "checklist": [
+    {"title": "Platforms not run here", "items": [
+      {"id": "plat-ios", "text": "iOS and iPadOS"},
+      {"id": "plat-macos", "text": "macOS"},
+      {"id": "plat-windows", "text": "Windows"},
+      {"id": "plat-web", "text": "Web app and PWA"},
+      {"id": "plat-kindle", "text": "Kindle (Readest Lite)"},
+      {"id": "plat-koplugin", "text": "KOReader plugin"},
+      {"id": "plat-server", "text": "Server-side changes (sync and API routes)"}
+    ]},
+    {"title": "Premium and account features", "note": "Some of these are being covered by the signed-in run above; tick them when its results are in.", "items": [
+      {"id": "acct-anki", "text": "Anki sync: subdeck per language, card audio, dictionary entry field, import back", "prs": ["7328", "7718", "7736", "7740"]},
+      {"id": "acct-ctxdict", "text": "Context Dictionary tool and its translator picker", "prs": ["7670", "7690"]},
+      {"id": "acct-statsdel", "text": "Statistics deletion reaching other devices", "prs": ["7664"]},
+      {"id": "acct-dataflow", "text": "Data Flow with real connectors", "prs": ["7366"]},
+      {"id": "acct-integrations", "text": "Grimmory, Obsidian, Notion, Hardcover, KOSync, BookOrbit and CrossPoint integrations"},
+      {"id": "acct-removedevice", "text": "Remove from Device Only on a cloud book", "prs": ["7324"]}
+    ]},
+    {"title": "Needs a real device", "items": [
+      {"id": "dev-7608", "text": "Note sheet stays above the keyboard on a phone with a current WebView, and popups in iPad landscape", "prs": ["7608"]},
+      {"id": "dev-7784", "text": "Holding a volume key down turns pages without running away", "prs": ["7784"]},
+      {"id": "dev-7767", "text": "E-ink starting window on a pre-Android-12 device such as a BOOX", "prs": ["7767"]},
+      {"id": "dev-7593", "text": "Ctrl+W pressed on a real Linux keyboard", "prs": ["7593"]}
+    ]},
+    {"title": "Partly checked", "items": [
+      {"id": "part-7290", "text": "Web cover search: the edit form's preview after picking a cover", "prs": ["7290"]},
+      {"id": "part-7654", "text": "Note popup size in a narrow parallel-reading column", "prs": ["7654"]},
+      {"id": "part-7404", "text": "Backups leave out the search index, with a book that has one", "prs": ["7404"]},
+      {"id": "part-7298", "text": "Ignore publisher font names, on a book that names its fonts", "prs": ["7298"]}
+    ]},
+    {"title": "Not run", "items": [
+      {"id": "notrun-7437", "text": "Inline glyphs (gaiji) in a book that has them", "prs": ["7437"]},
+      {"id": "notrun-restore", "text": "Restore from a backup"},
+      {"id": "notrun-rsvp", "text": "Speed reading capped at 2000 WPM", "prs": ["7416"]}
+    ]}
+  ]
+}

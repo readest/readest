@@ -356,6 +356,9 @@ msgstr "বইয়ের ফিঙ্গারপ্রিন্ট"
 msgid "Identifiers"
 msgstr "শনাক্তকারী"
 
+msgid "File Name"
+msgstr "ফাইলের নাম"
+
 msgid "Last Synced"
 msgstr "শেষ সিঙ্ক"
 

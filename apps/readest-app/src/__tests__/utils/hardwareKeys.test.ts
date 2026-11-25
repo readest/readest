@@ -295,3 +295,45 @@ describe('Apple Pencil native keys (#5501)', () => {
     );
   });
 });
+
+describe('pen gesture native keys (#7875)', () => {
+  test('maps pen gesture ids to brand-neutral labels', () => {
+    expect(normalizeNativeKey('PenSqueeze')).toEqual({
+      source: 'native',
+      id: 'PenSqueeze',
+      label: 'Pen Squeeze',
+    });
+    expect(normalizeNativeKey('PenSlideUp')).toEqual({
+      source: 'native',
+      id: 'PenSlideUp',
+      label: 'Pen Slide Up',
+    });
+    expect(normalizeNativeKey('PenSlideDown')).toEqual({
+      source: 'native',
+      id: 'PenSlideDown',
+      label: 'Pen Slide Down',
+    });
+  });
+
+  test('isPencilNativeKey treats pen gestures as stylus keys', () => {
+    expect(isPencilNativeKey('PenSqueeze')).toBe(true);
+    expect(isPencilNativeKey('PenSlideUp')).toBe(true);
+    expect(isPencilNativeKey('PenSlideDown')).toBe(true);
+    expect(isPencilNativeKey('PenDoubleTap')).toBe(false);
+  });
+
+  test('resolvePageTurn resolves bound pen gestures', () => {
+    const settings: HardwarePageTurnerSettings = {
+      enabled: true,
+      bindings: {
+        pagePrev: { source: 'native', id: 'PenSlideUp', label: 'Pen Slide Up' },
+        pageNext: { source: 'native', id: 'PenSlideDown', label: 'Pen Slide Down' },
+        sectionPrev: null,
+        sectionNext: null,
+        refresh: null,
+      },
+    };
+    expect(resolvePageTurn(settings, { source: 'native', id: 'PenSlideDown' })).toBe('pageNext');
+    expect(resolvePageTurn(settings, { source: 'native', id: 'PenSlideUp' })).toBe('pagePrev');
+  });
+});

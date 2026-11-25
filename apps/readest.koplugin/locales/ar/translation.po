@@ -356,6 +356,9 @@ msgstr "بصمة الكتاب"
 msgid "Identifiers"
 msgstr "المعرفات"
 
+msgid "File Name"
+msgstr "اسم الملف"
+
 msgid "Last Synced"
 msgstr "آخر مزامنة"
 

@@ -78,6 +78,46 @@ describe('KOSyncForm checksum method', () => {
   });
 });
 
+describe('KOSyncForm file name format (#7864)', () => {
+  test('is offered only for File Name checksums and persists the chosen format', async () => {
+    render(<KOSyncForm onBack={vi.fn()} />);
+    expect(screen.queryByRole('combobox', { name: 'File Name Format' })).toBeNull();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Checksum Method' }), {
+      target: { value: 'filename' },
+    });
+    const format = await screen.findByRole('combobox', { name: 'File Name Format' });
+    expect((format as HTMLSelectElement).value).toBe('original');
+    expect(
+      [...(format as HTMLSelectElement).options].map((option) => [option.value, option.text]),
+    ).toEqual([
+      ['original', 'Original'],
+      ['author-title', 'Author - Title'],
+      ['title-author', 'Title - Author'],
+    ]);
+
+    fireEvent.change(format, { target: { value: 'author-title' } });
+    await waitFor(() => {
+      expect(saveSettings).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          kosync: expect.objectContaining({
+            checksumMethod: 'filename',
+            filenameFormat: 'author-title',
+          }),
+        }),
+      );
+    });
+    expect(
+      screen.queryByText('File Name uses the original filename, including its extension.'),
+    ).toBeNull();
+    expect(
+      screen.getByText(
+        'File Name Format builds the name from the title and authors, like KOReader names OPDS downloads.',
+      ),
+    ).toBeTruthy();
+  });
+});
+
 describe('KOSyncForm Send Document Metadata setting', () => {
   test('defaults off and persists both toggle states', async () => {
     render(<KOSyncForm onBack={vi.fn()} />);

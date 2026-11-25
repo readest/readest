@@ -6,6 +6,7 @@ import {
   getBookDataAttributes,
   getBookDocPageCount,
   getBookPageCount,
+  isLastNameFirst,
   markBookDeleted,
   parseSeriesPosition,
 } from '@/utils/book';
@@ -48,6 +49,43 @@ describe('formatSeries', () => {
     // devices; the badge must not drop the index for those books.
     expect(formatSeries('Harry Potter', '2' as unknown as number)).toBe('Harry Potter #2');
     expect(formatSeries('Harry Potter', 'abc' as unknown as number)).toBe('Harry Potter');
+  });
+});
+
+// #7863: one name written last name first, the way stores and calibre fill dc:creator.
+describe('isLastNameFirst', () => {
+  it('matches a name written last name first', () => {
+    for (const name of [
+      'Hale, Tessa',
+      'Le Guin, Ursula K.',
+      'Tolkien, J. R. R.',
+      'Doyle, Arthur Conan',
+      'García Márquez, Gabriel',
+    ]) {
+      expect(isLastNameFirst(name), name).toBe(true);
+      expect(isLastNameFirst(name, 'de'), name).toBe(true);
+    }
+  });
+
+  it('rejects two people joined by a comma', () => {
+    expect(isLastNameFirst('John Smith, Jane Doe')).toBe(false);
+    expect(isLastNameFirst('J.K. Rowling, Stephen King')).toBe(false);
+    expect(isLastNameFirst('Stephen King, J.K. Rowling')).toBe(false);
+    expect(isLastNameFirst('村上春树, 林少华')).toBe(false);
+  });
+
+  it("rejects the joins Readest writes in the book's language", () => {
+    // Malayalam, Mongolian and Maori join two authors with a bare comma.
+    expect(isLastNameFirst('ബഷീർ, തകഴി', 'ml')).toBe(false);
+    expect(isLastNameFirst('Hale, Tessa', 'mn')).toBe(false);
+    expect(isLastNameFirst('Hale, Tessa', 'mi')).toBe(false);
+    // Three authors: one comma and the language's conjunction.
+    expect(isLastNameFirst('Platon, Homer und Vergil', 'de')).toBe(false);
+    expect(isLastNameFirst('Platón, Homero y Virgilio', 'es')).toBe(false);
+    // Spanish "y" turns "e" before an i sound.
+    expect(isLastNameFirst('Platón, Homero e Isabel', 'es')).toBe(false);
+    expect(isLastNameFirst('Hale, Tessa and Plato', 'en')).toBe(false);
+    expect(isLastNameFirst('Hale, Tessa & Plato')).toBe(false);
   });
 });
 
