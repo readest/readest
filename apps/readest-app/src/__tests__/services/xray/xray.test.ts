@@ -36,7 +36,7 @@ import { getMigrations } from '@/services/database/migrations';
 import { NodeDatabaseService } from '@/services/database/nodeDatabaseService';
 import { xrayProvider } from '@/services/dictionaries/providers/xrayProvider';
 import { readPassages, type XRayPassage } from '@/services/xray/bookText';
-import { groundXRay } from '@/services/xray/extract';
+import { extractXRay, groundXRay } from '@/services/xray/extract';
 import { XRay } from '@/services/xray/snapshot';
 import { cfiOfMention, findMentions } from '@/services/xray/mentions';
 import { __resetXRayStoreForTests } from '@/services/xray/store';
@@ -108,6 +108,18 @@ beforeEach(async () => {
 });
 afterEach(() => db.close());
 
+describe('a book without text, such as a comic', () => {
+  it('has no passages and no mentions', async () => {
+    const sections = [{ load: async () => 'page.jpg' }, { load: async () => 'page.jpg' }];
+    const bookDoc = { sections } as unknown as BookDoc;
+    await expect(collect(bookDoc, -1, pageAt(1))).resolves.toEqual([]);
+    await expect(findMentions(bookDoc, pageAt(1), ['Anna'], 2)).resolves.toEqual({
+      count: 0,
+      mentions: [],
+    });
+  });
+});
+
 describe('readPassages', () => {
   it('ends before the page being read and parses only the sections it needs', async () => {
     const { bookDoc, parsed } = createBook();
@@ -131,15 +143,15 @@ describe('readPassages', () => {
 describe('groundXRay', () => {
   const passages: XRayPassage[] = [
     { position: 0, text: 'Soon Anna met Boris.', cfiAt: (offset) => `cfi-${offset}` },
+    { position: 1, text: 'Then Clara left.', cfiAt: (offset) => `next-${offset}` },
   ];
 
-  it('keeps only items quoted from the passage they name', () => {
+  it('keeps only items quoted from the passages sent', () => {
     const data = groundXRay(
       {
         entities: [
           entity('Anna', 'Anna met Boris.'),
           entity('Boris', 'Boris is the killer.'),
-          entity('Clara', 'Anna met Boris.', 7),
           { name: 'broken' },
         ],
         events: 'not a list',
@@ -149,6 +161,45 @@ describe('groundXRay', () => {
     expect(data.entities.map(({ name }) => name)).toEqual(['Anna']);
     expect(data.entities[0]!.quotes).toEqual([{ text: 'Anna met Boris.', cfi: 'cfi-5' }]);
     expect(data.events).toEqual([]);
+  });
+
+  it('places a verbatim quote that the reply says is in another passage', () => {
+    // Local models often number the passage wrong, then every item was lost.
+    const data = groundXRay(
+      { entities: [entity('Clara', 'Clara left.', 0), entity('Anna', 'Anna met Boris.', 7)] },
+      passages,
+    );
+    expect(data.entities.map(({ quotes }) => quotes)).toEqual([
+      [{ text: 'Clara left.', cfi: 'next-5' }],
+      [{ text: 'Anna met Boris.', cfi: 'cfi-5' }],
+    ]);
+  });
+});
+
+describe('extractXRay', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('waits for a busy server to start its reply, then stops one gone silent', async () => {
+    vi.useFakeTimers();
+    let options!: { abortSignal: AbortSignal; onProgress: (type: string) => void };
+    h.generateChatText.mockImplementation((_translator, sent) => {
+      options = sent;
+      return new Promise(() => {});
+    });
+    const passages = [{ position: 0, text: 'Soon Anna met Boris.', cfiAt: () => '' }];
+    const input = { bookTitle: 'Sea', bookAuthor: 'A', sourceLang: 'en', targetLang: 'de' };
+    const translator = useCustomTranslatorStore.getState().translators[0]!;
+    void extractXRay(translator, passages, [], input, new AbortController().signal).catch(() => {});
+    // The SDK starts its stream at once; a local server answers one request at
+    // a time, so the others sent with it wait their turn.
+    options.onProgress('start');
+    await vi.advanceTimersByTimeAsync(4 * 60_000);
+    expect(options.abortSignal.aborted).toBe(false);
+    options.onProgress('text-delta');
+    await vi.advanceTimersByTimeAsync(59_000);
+    expect(options.abortSignal.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(options.abortSignal.aborted).toBe(true);
   });
 });
 

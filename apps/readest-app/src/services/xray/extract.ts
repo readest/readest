@@ -8,6 +8,9 @@ import type { CustomTranslator } from '@/types/translation';
 import type { XRayPassage } from './bookText';
 import { XRAY_ENTITY_TYPES, type XRayData, type XRayEntityType, type XRayQuote } from './types';
 
+// A server that answers one request at a time keeps the others sent with it
+// waiting, with nothing streamed, until their turn.
+const FIRST_REPLY_TIMEOUT_MS = 300_000;
 const IDLE_TIMEOUT_MS = 60_000;
 
 const QUOTES = '"quotes": [{"passage": 0, "text": ""}]';
@@ -43,7 +46,7 @@ const string = (item: Item, key: string): string => {
   return typeof value === 'string' ? value.trim() : '';
 };
 
-/** Keeps the items backed by a quote that is in the passage they name. */
+/** Keeps the items backed by a quote that is in the passages sent. */
 export const groundXRay = (reply: Item, passages: readonly XRayPassage[]): XRayData => {
   const grounded = <T extends object>(value: unknown, read: (item: Item) => T | null) =>
     items(value, (item) => {
@@ -51,7 +54,11 @@ export const groundXRay = (reply: Item, passages: readonly XRayPassage[]): XRayD
       if (!result) return null;
       const quotes = items<XRayQuote>(item['quotes'], (quote) => {
         const text = string(quote, 'text').replace(/\s+/g, ' ');
-        const passage = passages[quote['passage'] as number];
+        const named = passages[quote['passage'] as number];
+        // Models often number the passage of a verbatim quote wrong.
+        const passage = named?.text.includes(text)
+          ? named
+          : passages.find((p) => p.text.includes(text));
         const at = text && passage ? passage.text.indexOf(text) : -1;
         return at < 0 ? null : { text, cfi: passage!.cfiAt(at) };
       });
@@ -89,7 +96,10 @@ export const groundXRay = (reply: Item, passages: readonly XRayPassage[]): XRayD
   };
 };
 
-/** One streamed request that stops with `signal`, or when the model is silent for a minute. */
+/**
+ * One streamed request that stops with `signal`, when its reply hasn't started
+ * in five minutes, or when the reply then goes silent for a minute.
+ */
 const ask = async (
   translator: CustomTranslator,
   system: string,
@@ -101,7 +111,7 @@ const ask = async (
   // signal of a finished request fires (see openaiCompatible.ts).
   const controller = new AbortController();
   const abort = () => controller.abort();
-  let timer = setTimeout(abort, IDLE_TIMEOUT_MS);
+  let timer = setTimeout(abort, FIRST_REPLY_TIMEOUT_MS);
   signal.addEventListener('abort', abort, { once: true });
   try {
     const text = await generateChatText(translator, {
@@ -110,7 +120,9 @@ const ask = async (
       maxRetries: 1,
       abortSignal: controller.signal,
       onText: () => {},
-      onProgress: () => {
+      onProgress: (type) => {
+        // The SDK starts its stream before the server takes the request.
+        if (type === 'start') return;
         clearTimeout(timer);
         timer = setTimeout(abort, IDLE_TIMEOUT_MS);
       },

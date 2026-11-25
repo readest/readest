@@ -1,5 +1,5 @@
 import * as CFI from 'foliate-js/epubcfi.js';
-import type { BookDoc } from '@/libs/document';
+import type { BookDoc, SectionItem } from '@/libs/document';
 import { XCFI } from '@/utils/xcfi';
 
 const SKIPPED = new Set(['script', 'style', 'noscript', 'template', 'rt', 'rp', 'head']);
@@ -112,6 +112,10 @@ class SectionText {
   }
 }
 
+/** Whether a section is read: in reading order, and with text, which a comic's pages lack. */
+export const hasText = ({ linear, createDocument }: SectionItem) =>
+  linear !== 'no' && !!createDocument;
+
 // The section being read is asked for again on every page turn.
 let last: { bookDoc: BookDoc; index: number; section: SectionText } | null = null;
 
@@ -134,7 +138,7 @@ async function* readSections(
 ): AsyncGenerator<{ index: number; end: number; section: SectionText }> {
   const current = Math.min(XCFI.extractSpineIndex(location), bookDoc.sections.length - 1);
   for (let index = from; index <= current; index++) {
-    if (bookDoc.sections[index]!.linear === 'no') continue;
+    if (!hasText(bookDoc.sections[index]!)) continue;
     const section = await loadSection(bookDoc, index);
     const end = index === current ? section.offsetOf(location) : section.text.length;
     yield { index, end, section };

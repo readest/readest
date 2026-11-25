@@ -1,7 +1,7 @@
 import type { BookDoc } from '@/libs/document';
 import { extractSentence } from '@/services/vocabulary/entry';
 import { XCFI } from '@/utils/xcfi';
-import { loadSection } from './bookText';
+import { hasText, loadSection } from './bookText';
 
 /** Around a mention, enough to hold its sentence. */
 const CONTEXT_CHARS = 400;
@@ -73,7 +73,7 @@ export const findMentions = async (
   const found: { section: number; offset: number; word: string }[] = [];
   let count = 0;
   for (let section = 0; section <= current; section++) {
-    if (bookDoc.sections[section]!.linear === 'no') continue;
+    if (!hasText(bookDoc.sections[section]!)) continue;
     let text = texts.get(section);
     if (text === undefined || section === current) {
       const loaded = await loadSection(bookDoc, section);
