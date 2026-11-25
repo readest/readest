@@ -1045,6 +1045,20 @@
     background-color: var(--color-base-100) !important;
   }
 
+  /* daisyUI paints the `.progress` track as `color-mix(in oklab, currentColor
+     20%, transparent)`, and the build ships `background-color: currentColor`
+     ahead of it as the fallback for engines without color-mix() (Chromium < 111;
+     the WebView 109 on our e-ink devices). The value is currentColor too, so
+     there the track and the fill read as one solid bar at any progress. Outline
+     the track instead: a 1px rule of the fill's own ink needs no translucency.
+     This negates the build's own gate, so exactly one of the two applies. */
+  @supports not (color: color-mix(in lab, red, red)) {
+    .progress {
+      border: 1px solid currentColor;
+      background-color: transparent;
+    }
+  }
+
   /* Hide the horizontal scrollbar on the virtualized OPDS group carousels. */
   .no-scrollbar {
     scrollbar-width: none;
