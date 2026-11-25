@@ -201,6 +201,7 @@ export default function AuthPage() {
       if (getUserProfilePlan(accessToken) === 'free') {
         nextPath = '/user';
       }
+      const attempt = abandonedSignIns.current;
       handleAuthCallback({
         accessToken,
         refreshToken,
@@ -210,6 +211,7 @@ export default function AuthPage() {
         navigate: router.push,
         // This page hears the session too, and lists the devices.
         onDeviceLimit: (destination) => {
+          if (attempt !== abandonedSignIns.current) return;
           heldDestination.current = destination;
         },
       });

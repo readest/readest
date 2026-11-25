@@ -291,6 +291,25 @@ describe('AuthPage over the Free plan device limit', () => {
     expect(mocks.router.replace).not.toHaveBeenCalledWith('/auth/recovery');
   });
 
+  // The link's own device check runs after the page's, so it can answer
+  // after Cancel; a later sign-in must not follow the cancelled link.
+  it('forgets a reset link whose device check answers after Cancel', async () => {
+    let finish = (_value: unknown) => {};
+    const linkCheck = new Promise((resolve) => (finish = resolve));
+    mocks.checkSignInDeviceLimit.mockImplementation(async (token) =>
+      token === 'free-token' ? BLOCKED : linkCheck,
+    );
+    await openDeepLink('recovery');
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    await act(async () => finish(BLOCKED));
+    mocks.checkSignInDeviceLimit.mockResolvedValue(null);
+
+    signIn();
+
+    await waitFor(() => expect(mocks.router.replace).toHaveBeenCalledWith('/library'));
+    expect(mocks.router.replace).not.toHaveBeenCalledWith('/auth/recovery');
+  });
+
   it('signs in at once under the limit', async () => {
     mocks.checkSignInDeviceLimit.mockResolvedValue(null);
     signIn();
