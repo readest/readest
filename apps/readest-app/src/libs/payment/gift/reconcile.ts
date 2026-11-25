@@ -1,4 +1,4 @@
-import { GiftCardRow, GiftTier } from '@/types/gift';
+import { GiftCardRow } from '@/types/gift';
 import { UserPlan } from '@/types/quota';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { higherPlan } from '../entitlements';
@@ -10,6 +10,9 @@ const DRAFT_TTL_MS = 7 * 24 * HOUR_MS;
 // The cron runs every 10 minutes; the window is wide enough to survive missed
 // runs, and a repeated sync is harmless.
 const WINDOW_MS = 2 * HOUR_MS;
+// How long after a gift ends its sync is still checked against the stored
+// plan, in case it failed through the whole window.
+const LOOKBACK_MS = 7 * 24 * HOUR_MS;
 export const RECONCILE_PAGE_SIZE = 1000;
 // Ids per `plans` read: they go in the query string.
 const PLAN_READ_CHUNK = 200;
@@ -25,6 +28,8 @@ export const reconcileGiftCards = async (
   const supabase = createSupabaseAdminClient();
   const windowStart = new Date(now.getTime() - WINDOW_MS);
   const inWindow = (t: Date) => t > windowStart && t <= now;
+  const lookbackStart = new Date(now.getTime() - LOOKBACK_MS);
+  const recent = (t: Date) => t > lookbackStart && t <= windowStart;
 
   const swept = await supabase.rpc('claim_gifts_for_confirmed_emails');
   if (swept.error) throw swept.error;
@@ -32,29 +37,34 @@ export const reconcileGiftCards = async (
   const picked = new Set(claimedIds);
 
   // PostgREST answers at most `max-rows` rows (1000 on Supabase), so the
-  // claimed cards are read a page at a time, in a stable order.
+  // claimed cards are read a page at a time, after the last id read: an
+  // offset would skip a card when one ahead of it leaves the set meanwhile.
   const active: GiftCardRow[] = [];
-  for (let from = 0; ; from += RECONCILE_PAGE_SIZE) {
-    const page = await supabase
+  for (let lastId: string | null = null; ; ) {
+    let query = supabase
       .from('gift_cards')
       .select('*')
       .eq('status', 'active')
       .not('redeemed_at', 'is', null)
       .not('redeemed_by', 'is', null)
-      .order('id')
-      .range(from, from + RECONCILE_PAGE_SIZE - 1);
+      .order('id');
+    if (lastId) query = query.gt('id', lastId);
+    const page = await query.range(0, RECONCILE_PAGE_SIZE - 1);
     if (page.error) throw page.error;
     const rows = (page.data ?? []) as GiftCardRow[];
     active.push(...rows);
     if (rows.length < RECONCILE_PAGE_SIZE) break;
+    lastId = rows[rows.length - 1]!.id;
   }
   const byRecipient = new Map<string, GiftCardRow[]>();
   for (const card of active) {
     byRecipient.set(card.redeemed_by!, [...(byRecipient.get(card.redeemed_by!) ?? []), card]);
   }
-  const gifted = new Map<string, GiftTier>();
+  // What each holder's stored plan is checked against: their gift plan now,
+  // and the tiers of any gift that ended within the lookback.
+  const expected = new Map<string, { plan: UserPlan; ended: UserPlan[] }>();
   for (const [userId, cards] of byRecipient) {
-    const { plan, boundaries } = giftTimeline(
+    const { plan, boundaries, perCard } = giftTimeline(
       cards.map((c) => ({
         id: c.id,
         tier: c.tier,
@@ -63,14 +73,20 @@ export const reconcileGiftCards = async (
       })),
       now,
     );
-    if (boundaries.some(inWindow)) picked.add(userId);
-    else if (plan !== 'free') gifted.set(userId, plan);
+    if (boundaries.some(inWindow)) {
+      picked.add(userId);
+      continue;
+    }
+    const ended = cards.filter((c) => recent(perCard[c.id]!.endsAt)).map((c) => c.tier);
+    if (plan !== 'free' || ended.length > 0) expected.set(userId, { plan, ended });
   }
 
-  // A claim whose plan sync failed through the whole window would otherwise
-  // never be retried. Every plan write counts the gift, so a stored plan below
-  // it can only be a missed sync; once a sync lands it no longer matches.
-  const holders = [...gifted.keys()];
+  // A sync that failed through the whole window would otherwise never be
+  // retried. Every plan write counts the gift, so a stored plan below it can
+  // only be a missed start; one still on a tier whose gift just ended, above
+  // the gift now, is a missed end (or a payment the sync will keep). Once a
+  // sync lands, neither matches.
+  const holders = [...expected.keys()];
   for (let i = 0; i < holders.length; i += PLAN_READ_CHUNK) {
     const plans = await supabase
       .from('plans')
@@ -78,8 +94,10 @@ export const reconcileGiftCards = async (
       .in('id', holders.slice(i, i + PLAN_READ_CHUNK));
     if (plans.error) throw plans.error;
     for (const row of (plans.data ?? []) as { id: string; plan: UserPlan }[]) {
-      const gift = gifted.get(row.id)!;
-      if (higherPlan(row.plan, gift) !== row.plan) picked.add(row.id);
+      const { plan, ended } = expected.get(row.id)!;
+      const missedStart = higherPlan(row.plan, plan) !== row.plan;
+      const missedEnd = ended.includes(row.plan) && row.plan !== plan;
+      if (missedStart || missedEnd) picked.add(row.id);
     }
   }
 

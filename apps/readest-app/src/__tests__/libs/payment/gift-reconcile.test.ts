@@ -107,6 +107,58 @@ describe('reconcileGiftCards', () => {
     expect(h.synced).toEqual([]);
   });
 
+  // Review (CodeRabbit): offset paging skips a card when one ahead of it
+  // leaves the active set between pages.
+  it('reads every claimed card when one leaves the active set between pages', async () => {
+    for (let i = 0; i <= RECONCILE_PAGE_SIZE; i++) claimed(`ended-${i}`, 365 * DAY + HOUR);
+    const byId = () =>
+      [...h.db!.rows('gift_cards')].sort((a, b) => (String(a['id']) < String(b['id']) ? -1 : 1));
+    const last = byId().at(-1)!;
+    const client = h.db!.client;
+    const from = client.from.bind(client);
+    let cardReads = 0;
+    client.from = ((table: string) => {
+      // Before the second page, the first card is refunded.
+      if (table === 'gift_cards' && ++cardReads === 2) byId()[0]!['status'] = 'refunded';
+      return from(table);
+    }) as typeof client.from;
+
+    await reconcileGiftCards(NOW);
+
+    expect(h.synced).toContain(last['redeemed_by']);
+  });
+
+  // Review (CodeRabbit): a gift's end whose sync failed through the whole
+  // window left the recipient on the ended tier.
+  it('re-syncs a recipient whose gift ended outside the window while plans still has it', async () => {
+    claimed('ended-pro', 365 * DAY + 3 * HOUR, { tier: 'pro' });
+    h.db!.rows('plans').push({ id: 'ended-pro', plan: 'pro' });
+
+    await reconcileGiftCards(NOW);
+
+    expect(h.synced).toEqual(['ended-pro']);
+  });
+
+  it('re-syncs when a Pro gift ended outside the window and a Plus gift carries on', async () => {
+    claimed('pro-then-plus', 365 * DAY + 3 * HOUR, { tier: 'pro' });
+    claimed('pro-then-plus', 300 * DAY);
+    h.db!.rows('plans').push({ id: 'pro-then-plus', plan: 'pro' });
+
+    await reconcileGiftCards(NOW);
+
+    expect(h.synced).toEqual(['pro-then-plus']);
+  });
+
+  it('leaves a settled recipient alone once the recent boundary is past the lookback', async () => {
+    claimed('long-ended', 365 * DAY + 10 * DAY, { tier: 'pro' });
+    claimed('mid-plus', 100 * DAY);
+    h.db!.rows('plans').push({ id: 'long-ended', plan: 'pro' }, { id: 'mid-plus', plan: 'pro' });
+
+    await reconcileGiftCards(NOW);
+
+    expect(h.synced).toEqual([]);
+  });
+
   it("one failing recipient doesn't stop the rest", async () => {
     claimed('a', 365 * DAY + HOUR);
     claimed('b', 365 * DAY + HOUR);
