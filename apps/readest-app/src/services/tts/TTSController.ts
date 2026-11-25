@@ -959,7 +959,13 @@ export class TTSController extends EventTarget {
   }
 
   async #initTTSForSection(sectionIndex: number): Promise<boolean> {
-    const initialization = this.#initializeTTSForSection(sectionIndex);
+    // Finish building one chapter before another request can change its
+    // index or install a different iterator. Reattach waits on the whole queue.
+    const initialize = () => this.#initializeTTSForSection(sectionIndex);
+    const initialization = Promise.resolve(this.#sectionInitialization).then(
+      initialize,
+      initialize,
+    );
     this.#sectionInitialization = initialization;
     try {
       return await initialization;
@@ -1042,7 +1048,7 @@ export class TTSController extends EventTarget {
       // unnarrated and keep looking; the scan above moves monotonically toward
       // the spine edge, so this terminates.
       console.warn(`[TTS] no usable narration in section ${sectionIndex}`);
-      return await this.#initTTSForSection(sectionIndex + direction);
+      return await this.#initializeTTSForSection(sectionIndex + direction);
     }
 
     this.#mediaOverlaySection = null;

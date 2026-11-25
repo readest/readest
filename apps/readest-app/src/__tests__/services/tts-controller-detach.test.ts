@@ -314,4 +314,25 @@ describe('TTSController detach/attach', () => {
     expect(controller.view).toBe(newView);
     expect(vi.mocked(newView.getCFI)).not.toHaveBeenCalledWith(1, oldRange);
   });
+
+  test('keeps the latest chapter iterator when navigation requests overlap', async () => {
+    const chapterOneDoc = view.tts!.doc;
+    controller.detachView();
+    let releaseDoc!: (doc: Document) => void;
+    view.book.sections![1]!.createDocument = () =>
+      new Promise((resolve) => {
+        releaseDoc = resolve;
+      });
+    const forward = controller.forward();
+    await flush();
+    expect(controller.getSectionIndex()).toBe(1);
+
+    const backward = controller.backward();
+    await flush();
+    releaseDoc(document.implementation.createHTMLDocument('second chapter'));
+    await Promise.all([forward, backward]);
+
+    expect(controller.getSectionIndex()).toBe(0);
+    expect(view.tts?.doc).toBe(chapterOneDoc);
+  });
 });
