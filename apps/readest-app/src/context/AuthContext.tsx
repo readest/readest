@@ -79,7 +79,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       void checkSignInDeviceLimit(session.access_token).then((blocked) => {
-        if (!blocked && latestSession === session) publishSession(session);
+        if (!blocked && !signingOut.current && latestSession === session) {
+          publishSession(session);
+        }
       });
     };
     const refreshSession = async () => {

@@ -188,6 +188,21 @@ describe('AuthPage over the Free plan device limit', () => {
     expect(mocks.router.replace).not.toHaveBeenCalled();
   });
 
+  it('abandons a sign-in whose device check is still running on Go Back', async () => {
+    let finish = (_value: unknown) => {};
+    mocks.checkSignInDeviceLimit.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    signIn();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go Back' })[0]!);
+    await waitFor(() => expect(mocks.router.back).toHaveBeenCalledTimes(1));
+    await act(async () => finish(null));
+
+    expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(mocks.login).not.toHaveBeenCalled();
+    expect(mocks.router.replace).not.toHaveBeenCalled();
+    expect(mocks.router.back).toHaveBeenCalledTimes(1);
+  });
+
   it('signs this device out again when leaving with Go Back', async () => {
     signIn();
     await screen.findByText('Chrome on macOS');

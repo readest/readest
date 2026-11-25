@@ -67,9 +67,12 @@ export default function AuthPage() {
   const [heldSignIn, setHeldSignIn] = useState<(SyncDevicesResponse & { session: Session }) | null>(
     null,
   );
-  // Counts cancelled holds, so a device sign-out that answers after Cancel or
-  // Go Back can't sign in the session they ended.
-  const cancelledHolds = useRef(0);
+  // A Free plan sign-in whose device check is running, or that is held.
+  const pendingSignIn = useRef(false);
+  // Counts abandoned sign-ins (Cancel, Go Back, leaving the page), so a device
+  // check or sign-out that answers afterwards can't sign in or hold the
+  // session they ended.
+  const abandonedSignIns = useRef(0);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -253,8 +256,9 @@ export default function AuthPage() {
     }
   };
 
-  const cancelHeldSignIn = () => {
-    cancelledHolds.current += 1;
+  const abandonSignIn = () => {
+    abandonedSignIns.current += 1;
+    pendingSignIn.current = false;
     setHeldSignIn(null);
     void supabase.auth.signOut({ scope: 'local' });
   };
@@ -262,7 +266,7 @@ export default function AuthPage() {
   const handleGoBack = async () => {
     if (isLeaving.current) return;
     isLeaving.current = true;
-    if (heldSignIn) cancelHeldSignIn();
+    if (pendingSignIn.current) abandonSignIn();
     // Keep login false to avoid infinite loop to redirect to the login page.
     // Leave only once it is saved: the library reads settings from disk when it
     // mounts, and an unfinished write opened this page once more (#7726).
@@ -313,6 +317,7 @@ export default function AuthPage() {
   }, []);
 
   const finishSignIn = (session: Session) => {
+    pendingSignIn.current = false;
     setHeldSignIn(null);
     login(session.access_token, session.user);
     const redirectTo = new URLSearchParams(window.location.search).get('redirect');
@@ -334,9 +339,9 @@ export default function AuthPage() {
   const handleSignOutDevice = async (device: SyncDevice) => {
     if (!heldSignIn) return;
     const { session } = heldSignIn;
-    const hold = cancelledHolds.current;
+    const attempt = abandonedSignIns.current;
     const next = await signOutSyncDevice(session.access_token, device.id);
-    if (hold !== cancelledHolds.current) return;
+    if (attempt !== abandonedSignIns.current) return;
     if (next.blocked) {
       setHeldSignIn({ ...next, session });
     } else {
@@ -352,7 +357,10 @@ export default function AuthPage() {
         finishSignIn(session);
         return;
       }
+      pendingSignIn.current = true;
+      const attempt = abandonedSignIns.current;
       void checkSignInDeviceLimit(session.access_token).then((blocked) => {
+        if (attempt !== abandonedSignIns.current) return;
         if (!blocked) {
           finishSignIn(session);
           return;
@@ -363,6 +371,7 @@ export default function AuthPage() {
 
     return () => {
       subscription?.subscription.unsubscribe();
+      abandonedSignIns.current += 1;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
@@ -442,7 +451,7 @@ export default function AuthPage() {
               devices={heldSignIn.devices}
               limit={heldSignIn.limit ?? 0}
               onSignOut={handleSignOutDevice}
-              onCancel={cancelHeldSignIn}
+              onCancel={abandonSignIn}
             />
           ) : (
             <AuthPanel
@@ -472,7 +481,7 @@ export default function AuthPage() {
           devices={heldSignIn.devices}
           limit={heldSignIn.limit ?? 0}
           onSignOut={handleSignOutDevice}
-          onCancel={cancelHeldSignIn}
+          onCancel={abandonSignIn}
         />
       ) : (
         <AuthPanel

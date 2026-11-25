@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
   listener: undefined as Listener | undefined,
   hasDeviceLimit: vi.fn((_token: string) => true),
   checkSignInDeviceLimit: vi.fn(async (_token: string): Promise<unknown> => null),
+  refreshSession: vi.fn(async (): Promise<unknown> => ({ data: { session: null }, error: null })),
 }));
 
 vi.mock('@/utils/supabase', () => ({
@@ -20,7 +21,7 @@ vi.mock('@/utils/supabase', () => ({
         h.listener = listener;
         return { data: { subscription: { unsubscribe: vi.fn() } } };
       },
-      refreshSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      refreshSession: h.refreshSession,
       signOut: vi.fn().mockResolvedValue(undefined),
     },
   },
@@ -108,4 +109,29 @@ it('does not sign in when the session ended while the check ran', async () => {
 
   expect(auth.current.token).toBeNull();
   expect(localStorage.getItem('token')).toBeNull();
+});
+
+// Sign Out clears the app at once and then waits on the network; a device
+// check answering meanwhile must not sign the user back in.
+it('does not sign in when the device check answers during Sign Out', async () => {
+  let finishCheck = (_value: unknown) => {};
+  h.checkSignInDeviceLimit.mockReturnValue(new Promise((resolve) => (finishCheck = resolve)));
+  const auth = renderAuth();
+  await act(async () => {});
+
+  act(() => h.listener?.('SIGNED_IN', session('new-token')));
+  let finishRefresh = (_value: unknown) => {};
+  h.refreshSession.mockReturnValue(new Promise((resolve) => (finishRefresh = resolve)));
+  let loggingOut: Promise<void> = Promise.resolve();
+  act(() => {
+    loggingOut = Promise.resolve(auth.current.logout());
+  });
+  await act(async () => finishCheck(null));
+
+  expect(auth.current.token).toBeNull();
+  expect(localStorage.getItem('token')).toBeNull();
+  await act(async () => {
+    finishRefresh({ data: { session: null }, error: null });
+    await loggingOut;
+  });
 });
