@@ -1,8 +1,8 @@
 import { join } from '@tauri-apps/api/path';
-import { isContentURI, isFileURI, isValidURL } from './misc';
+import { isValidURL } from './misc';
 
 export const getFilename = (fileOrUri: string) => {
-  const isUri = isValidURL(fileOrUri) || isContentURI(fileOrUri) || isFileURI(fileOrUri);
+  const isUri = isValidURL(fileOrUri) || /^(?:content|file):\/\//i.test(fileOrUri);
   if (isUri) {
     fileOrUri = decodeURI(fileOrUri);
   }

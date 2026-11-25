@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, test } from 'vitest';
-import { getFileExtension } from '@/utils/path';
+import { getFileExtension, getFilename } from '@/utils/path';
 
 // Issue #5959: browsers and download managers append a duplicate marker when a
 // download would overwrite an existing file, and several put it AFTER the
@@ -16,6 +16,8 @@ describe('getFileExtension', () => {
   test('keeps literal question marks in filenames and ignores query strings on URLs', () => {
     expect(getFileExtension('Who is there?.epub')).toBe('epub');
     expect(getFileExtension('https://example.org/book.epub?download=1')).toBe('epub');
+    expect(getFileExtension('FILE:///books/book.epub?download=1')).toBe('epub');
+    expect(getFilename('CONTENT://provider/Books/Book.EPUB?download=1')).toBe('Book.EPUB');
   });
 
   test('looks past a duplicate marker appended after the extension', () => {
