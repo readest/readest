@@ -205,7 +205,7 @@ describe('bookshelf layouts from the View menu', () => {
   it('opens Group by and Sort by collapsed, then remembers each one', async () => {
     const section = (label: string) =>
       screen.getByRole('listitem', { name: label }).querySelector('details')!;
-    const toggle = (label: string) => fireEvent.click(section(label).querySelector('summary')!);
+    const toggle = (label: string) => fireEvent.click(screen.getByRole('button', { name: label }));
 
     const { unmount } = render(<ViewMenu />);
     expect(section('Group by...').open).toBe(false);
