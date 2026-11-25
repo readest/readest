@@ -1145,3 +1145,32 @@ describe('ProgressBar vertical safe-area and 0px margin floor (#7389)', () => {
     expect(readout.classList.contains('min-w-0')).toBe(false);
   });
 });
+
+// The vertical footer takes the 32px of the left margin next to the text, as
+// under Double Border, or the whole margin when it is narrower. The text's left
+// edge is max(16, contentInsets.left) in from the cell's left.
+describe('ProgressBar vertical band at large side margins (#7912)', () => {
+  const renderVertical = (gridLeft: number, contentLeft: number) => {
+    currentViewSettings = { ...baseSettings, vertical: true } as ViewSettings;
+    return render(
+      <ProgressBar
+        bookKey='book-1'
+        horizontalGap={0}
+        contentInsets={{ top: 16, right: 0, bottom: 16, left: contentLeft }}
+        gridInsets={{ top: 0, right: 0, bottom: 0, left: gridLeft }}
+      />,
+    ).container.querySelector('.progressinfo') as HTMLElement;
+  };
+
+  it('sits against the text in a 144px left margin instead of over it', () => {
+    const bar = renderVertical(0, 144);
+    expect(bar.style.left).toBe('calc(112px)');
+    expect(bar.style.width).toBe('32px');
+  });
+
+  it('sits between a left safe-area inset and the text', () => {
+    const bar = renderVertical(47, 63);
+    expect(bar.style.left).toBe('calc(47px)');
+    expect(bar.style.width).toBe('16px');
+  });
+});

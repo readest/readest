@@ -43,6 +43,19 @@ export const getHeaderBandGeometry = (topInset: number, marginTopPx: number) => 
 };
 
 /**
+ * Where the vertical side header (right) and footer (left) sit: the 32px of the
+ * side margin next to the text, as Double Border lays them out, or the whole
+ * margin when it is narrower (#7912). The margin is the header band turned on
+ * its side, so the text edge keeps FoliateViewer's 16px side floor and a wide
+ * margin never pulls the chrome into the side safe area.
+ */
+export const getVerticalChromeBand = (sideInset: number, sideMarginPx: number) => {
+  const band = getHeaderBandGeometry(sideInset, sideMarginPx);
+  const width = Math.min(band.height, 32);
+  return { offset: band.bottom - width, width };
+};
+
+/**
  * Height (px) of the header bar's hover trigger — the invisible strip along the
  * top of the book cell that reveals the toolbar.
  *

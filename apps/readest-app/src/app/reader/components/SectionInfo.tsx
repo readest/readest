@@ -7,7 +7,11 @@ import { useReaderStore } from '@/store/readerStore';
 import { useBookProgressValue } from '@/store/readerProgressStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
-import { getHeaderBandGeometry, getMarginalInlinePadding } from '@/utils/insets';
+import {
+  getHeaderBandGeometry,
+  getMarginalInlinePadding,
+  getVerticalChromeBand,
+} from '@/utils/insets';
 import { getBookDataAttributes } from '@/utils/book';
 import {
   getChromeChip,
@@ -61,6 +65,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   // into the notch instead of collapsing it (#5303).
   const band = getHeaderBandGeometry(topInset, viewSettings.marginTopPx);
   const maskHeight = Math.min(topInset, band.bottom);
+  const sideBand = getVerticalChromeBand(gridInsets.right, contentInsets.right - gridInsets.right);
 
   // The header band is reserved margin except for a fixed-layout book in
   // scrolled mode, where FoliateViewer pins scrollTop to 0 and the pages run
@@ -144,8 +149,8 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
                 bottom: `${gridInsets.bottom + (contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
                 right: showDoubleBorder
                   ? `calc(${contentInsets.right}px)`
-                  : `calc(${Math.max(0, Math.max(16, contentInsets.right) - 32)}px)`,
-                width: showDoubleBorder ? '32px' : `${Math.max(16, contentInsets.right)}px`,
+                  : `calc(${sideBand.offset}px)`,
+                width: showDoubleBorder ? '32px' : `${sideBand.width}px`,
               }
             : {
                 top: `${band.top}px`,

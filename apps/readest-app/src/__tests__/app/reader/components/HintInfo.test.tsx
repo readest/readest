@@ -88,3 +88,26 @@ describe('HintInfo shares the header title band', () => {
     expect(hint.style.height).toBe('16px');
   });
 });
+
+describe('HintInfo vertical band at large side margins (#7912)', () => {
+  // In vertical mode the hint shares the title's band next to the text.
+  it('sits against the text with the title in a 144px right margin', () => {
+    const props = {
+      ...baseProps,
+      isVertical: true,
+      gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
+      contentInsets: { top: 16, right: 144, bottom: 16, left: 144 },
+    };
+    const hint = render(<HintInfo {...props} />).container.querySelector(
+      '.hintinfo',
+    ) as HTMLElement;
+    const section = render(<SectionInfo {...props} />).container.querySelector(
+      '.sectioninfo',
+    ) as HTMLElement;
+
+    expect(hint.style.right).toBe('calc(112px)');
+    expect(hint.style.width).toBe('32px');
+    expect(hint.style.right).toBe(section.style.right);
+    expect(hint.style.width).toBe(section.style.width);
+  });
+});
