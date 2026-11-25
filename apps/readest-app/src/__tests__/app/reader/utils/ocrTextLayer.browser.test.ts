@@ -68,28 +68,25 @@ it('preserves word boundaries from manga recognition through native text selecti
         { mangaMode: true, textLanguage: language, languages: getTesseractLanguages(language) },
         async () => worker,
         () => ({
-          detect: async () => ({
-            page,
-            blocks: [
-              {
-                box: { xMin: 0, yMin: 0, xMax: width, yMax: 100 },
+          detect: async () => [
+            {
+              box: { xMin: 0, yMin: 0, xMax: width, yMax: 100 },
+              score: 1,
+              language: 'ja',
+              vertical: false,
+              lines: [0, 50].map((y) => ({
+                box: { xMin: 0, yMin: y, xMax: width, yMax: y + 40 },
+                polygon: [
+                  { x: 0, y },
+                  { x: width, y },
+                  { x: width, y: y + 40 },
+                  { x: 0, y: y + 40 },
+                ],
                 score: 1,
-                language: 'ja',
                 vertical: false,
-                lines: [0, 50].map((y) => ({
-                  box: { xMin: 0, yMin: y, xMax: width, yMax: y + 40 },
-                  polygon: [
-                    { x: 0, y },
-                    { x: width, y },
-                    { x: width, y: y + 40 },
-                    { x: 0, y: y + 40 },
-                  ],
-                  score: 1,
-                  vertical: false,
-                })),
-              },
-            ],
-          }),
+              })),
+            },
+          ],
           terminate: async () => undefined,
         }),
         undefined,

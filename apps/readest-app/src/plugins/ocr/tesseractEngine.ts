@@ -8,12 +8,7 @@ import type {
   WorkerParams,
 } from 'tesseract.js';
 
-import {
-  ComicTextDetector,
-  type ComicTextBlock,
-  type ComicTextDetectionResult,
-  type ComicTextLine,
-} from './comicTextDetector';
+import { ComicTextDetector, type ComicTextBlock, type ComicTextLine } from './comicTextDetector';
 import { LazyModel } from './lazyModel';
 import { loadModelAsset } from './modelAssets';
 import {
@@ -85,7 +80,7 @@ export interface MangaTextDetector {
   detect: (
     source: CanvasImageSource,
     page: Pick<OcrImagePage, 'width' | 'height'>,
-  ) => Promise<ComicTextDetectionResult>;
+  ) => Promise<ComicTextBlock[]>;
   terminate: () => Promise<void>;
 }
 
@@ -124,9 +119,7 @@ interface MangaLineProgress {
   total: number;
 }
 
-const getMangaFontSize = (
-  block: ComicTextDetectionResult['blocks'][number],
-): number | undefined => {
+const getMangaFontSize = (block: ComicTextBlock): number | undefined => {
   let vectorX = 0;
   let vectorY = 0;
   let lineCount = 0;
@@ -297,9 +290,9 @@ export class TesseractOcrEngine {
     if (this.#mangaDetectorUnavailable) return this.#recognizeWholePage(prepared, signal);
     this.#prepareRecognizer();
     this.#onProgress?.({ status: 'detecting manga text', progress: 0 });
-    let detection: ComicTextDetectionResult;
+    let detectedBlocks: ComicTextBlock[];
     try {
-      detection = await this.#getMangaDetector().detect(prepared.image, {
+      detectedBlocks = await this.#getMangaDetector().detect(prepared.image, {
         width: prepared.page.width,
         height: prepared.page.height,
       });
@@ -316,7 +309,7 @@ export class TesseractOcrEngine {
     signal?.throwIfAborted();
     this.#onProgress?.({ status: 'detecting manga text', progress: 1 });
     if (this.#terminated) throw new Error('OCR engine has been terminated');
-    const totalLines = detection.blocks.reduce((total, block) => total + block.lines.length, 0);
+    const totalLines = detectedBlocks.reduce((total, block) => total + block.lines.length, 0);
 
     const imageData = readCanvasRgba(prepared.image);
     const japanese = isJapaneseLanguage(this.#textLanguage);
@@ -324,13 +317,11 @@ export class TesseractOcrEngine {
       makeMangaTextCrops(imageData, line, {
         // Tesseract accepts whole lines. Splitting can cut through words.
         split: japanese,
-        mask: detection.mask,
-        page: detection.page,
         vertical: block.vertical,
       });
     const lineCrops = new Map<ComicTextLine, MangaTextCrop[]>();
     if (japanese) {
-      for (const block of detection.blocks) {
+      for (const block of detectedBlocks) {
         for (const line of block.lines) lineCrops.set(line, makeCrops(block, line));
       }
     }
@@ -339,7 +330,7 @@ export class TesseractOcrEngine {
     const blocks: OcrTextBlock[] = [];
     const wordSeparator = getOcrLineSeparator(this.#textLanguage);
     let recognitionIndex = 0;
-    for (const [blockIndex, detectedBlock] of detection.blocks.entries()) {
+    for (const [blockIndex, detectedBlock] of detectedBlocks.entries()) {
       const textLines: string[] = [];
       const confidences: number[] = [];
       const fontSize = getMangaFontSize(detectedBlock);

@@ -1,14 +1,10 @@
-import type { ComicMask, ComicPageSize, ComicPoint, ComicTextLine } from './comicTextDetector';
+import type { ComicPoint, ComicTextLine } from './comicTextDetector';
 import { createOcrCanvas, isHtmlCanvas, type OcrCanvas } from './canvas';
 
-interface Raster {
-  data: Uint8Array | Uint8ClampedArray;
+export interface RgbaImage {
+  data: Uint8ClampedArray;
   width: number;
   height: number;
-}
-
-export interface RgbaImage extends Raster {
-  data: Uint8ClampedArray;
 }
 
 /** A line of text, or a part of a long one, as it's written on the page. */
@@ -18,8 +14,6 @@ export interface MangaTextCrop extends RgbaImage {
 
 interface MangaTextCropOptions {
   split?: boolean;
-  mask?: ComicMask;
-  page?: ComicPageSize;
   vertical?: boolean;
 }
 
@@ -72,7 +66,7 @@ const getWarpDimensions = (
 };
 
 const perspectiveWarp = (
-  image: Raster,
+  image: RgbaImage,
   [topLeft, topRight, bottomRight, bottomLeft]: Polygon,
   width: number,
   height: number,
@@ -94,8 +88,7 @@ const perspectiveWarp = (
   const e = bottomLeft.y - topLeft.y + h * bottomLeft.y;
   const f = topLeft.y;
   const { data: pixels, width: sourceWidth, height: sourceHeight } = image;
-  const channels = pixels.length / (sourceWidth * sourceHeight);
-  const data = new Uint8ClampedArray(width * height * channels);
+  const data = new Uint8ClampedArray(width * height * 4);
 
   let target = 0;
   for (let y = 0; y < height; y += 1) {
@@ -111,10 +104,10 @@ const perspectiveWarp = (
       const yWeight = sourceY - row;
       const x0 = Math.max(0, Math.min(sourceWidth - 1, column));
       const y0 = Math.max(0, Math.min(sourceHeight - 1, row)) * sourceWidth;
-      const right = x0 < sourceWidth - 1 ? channels : 0;
-      const below = y0 < (sourceHeight - 1) * sourceWidth ? sourceWidth * channels : 0;
-      const pixel = (y0 + x0) * channels;
-      for (let channel = pixel; channel < pixel + channels; channel += 1) {
+      const right = x0 < sourceWidth - 1 ? 4 : 0;
+      const below = y0 < (sourceHeight - 1) * sourceWidth ? sourceWidth * 4 : 0;
+      const pixel = (y0 + x0) * 4;
+      for (let channel = pixel; channel < pixel + 4; channel += 1) {
         const top = pixels[channel]! * (1 - xWeight) + pixels[channel + right]! * xWeight;
         const bottom =
           pixels[channel + below]! * (1 - xWeight) + pixels[channel + below + right]! * xWeight;
@@ -127,19 +120,21 @@ const perspectiveWarp = (
 
 /** Where to cut a line, along its text, so that it doesn't cut through a letter. */
 const findCutPoints = (
-  mask: Uint8ClampedArray | undefined,
-  length: number,
-  vertical: boolean,
+  { data, width, height, vertical }: MangaTextCrop,
   chunks: number,
 ): number[] => {
-  const anchors = Array.from({ length: chunks - 1 }, (_, index) =>
-    Math.round((length * (index + 1)) / chunks),
-  );
-  if (!mask) return anchors;
+  const length = vertical ? height : width;
+  const along = vertical ? width * 4 : 4;
+  const across = vertical ? 4 : width * 4;
+  // How much the green of the pixels changes across the line, which is little
+  // between two letters.
   const density = new Float64Array(length);
-  for (let pixel = 0; pixel < mask.length; pixel += 1) {
-    const position = vertical ? Math.floor(pixel / TEXT_THICKNESS) : pixel % length;
-    density[position]! += mask[pixel]!;
+  for (let position = 0; position < length; position += 1) {
+    let pixel = position * along + 1;
+    for (let row = 1; row < TEXT_THICKNESS; row += 1) {
+      density[position]! += Math.abs(data[pixel + across]! - data[pixel]!);
+      pixel += across;
+    }
   }
   const getSmoothed = (position: number): number => {
     let sum = 0;
@@ -149,7 +144,8 @@ const findCutPoints = (
     }
     return sum;
   };
-  return anchors.map((anchor) => {
+  return Array.from({ length: chunks - 1 }, (_, index) => {
+    const anchor = Math.round((length * (index + 1)) / chunks);
     const start = Math.max(1, anchor - ANCHOR_WINDOW / 2);
     const end = Math.min(length - 1, anchor + ANCHOR_WINDOW / 2);
     let best = start;
@@ -189,7 +185,7 @@ export const readCanvasRgba = (canvas: OcrCanvas): RgbaImage => {
 export const makeMangaTextCrops = (
   image: RgbaImage,
   line: ComicTextLine,
-  { split = true, mask, page, vertical = line.vertical }: MangaTextCropOptions = {},
+  { split = true, vertical = line.vertical }: MangaTextCropOptions = {},
 ): MangaTextCrop[] => {
   const polygon = getPolygon(line);
   const dimensions = getWarpDimensions(polygon, vertical);
@@ -200,22 +196,7 @@ export const makeMangaTextCrops = (
   const maximumRatio = vertical ? MAXIMUM_VERTICAL_RATIO : MAXIMUM_HORIZONTAL_RATIO;
   const chunks = split ? Math.ceil(length / TEXT_THICKNESS / maximumRatio) : 1;
   if (chunks === 1) return [crop];
-  let textMask: Uint8ClampedArray | undefined;
-  if (mask && page) {
-    const scale = ({ x, y }: ComicPoint): ComicPoint => ({
-      x: (x * mask.width) / page.width,
-      y: (y * mask.height) / page.height,
-    });
-    const [topLeft, topRight, bottomRight, bottomLeft] = polygon;
-    const maskPolygon: Polygon = [
-      scale(topLeft),
-      scale(topRight),
-      scale(bottomRight),
-      scale(bottomLeft),
-    ];
-    textMask = perspectiveWarp(mask, maskPolygon, width, height);
-  }
-  const boundaries = [0, ...findCutPoints(textMask, length, vertical, chunks), length];
+  const boundaries = [0, ...findCutPoints(crop, chunks), length];
   return boundaries.slice(1).flatMap((end, index) => {
     const start = boundaries[index]!;
     return end > start ? [sliceCrop(crop, start, end)] : [];

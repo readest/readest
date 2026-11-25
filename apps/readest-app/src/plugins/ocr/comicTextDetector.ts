@@ -4,6 +4,7 @@ import { loadModelAsset, type ModelAsset } from './modelAssets';
 import { LazyModel } from './lazyModel';
 import { createOnnxSession, loadOnnxRuntime, type OnnxRuntime } from './onnxRuntime';
 import { createOcrCanvas, isHtmlCanvas } from './canvas';
+import { trimOnnxModel } from './trimOnnxModel';
 
 const INPUT_SIZE = 1024;
 const MODEL: ModelAsset = {
@@ -12,11 +13,42 @@ const MODEL: ModelAsset = {
   bytes: 94_669_756,
 };
 
-const OUTPUT_LENGTHS = {
-  blk: 64_512 * 7,
-  seg: INPUT_SIZE * INPUT_SIZE,
-  det: 2 * INPUT_SIZE * INPUT_SIZE,
-};
+// The model reads square pages only, and goes on to a text mask and to line borders
+// that aren't needed. Read before that, its blocks and lines come for any page.
+const BLOCK_LEVELS = [
+  {
+    output: '647',
+    stride: 8,
+    anchors: [
+      [10, 13],
+      [16, 30],
+      [33, 23],
+    ],
+  },
+  {
+    output: '762',
+    stride: 16,
+    anchors: [
+      [30, 61],
+      [62, 45],
+      [59, 119],
+    ],
+  },
+  {
+    output: '877',
+    stride: 32,
+    anchors: [
+      [116, 90],
+      [156, 198],
+      [373, 326],
+    ],
+  },
+];
+const BLOCK_VALUES = 7;
+const LINES_OUTPUT = '1179';
+const OUTPUTS = [...BLOCK_LEVELS.map(({ output }) => output), LINES_OUTPUT];
+// What the sides of the model's input are multiples of.
+const INPUT_STEP = 64;
 
 type ComicTextLanguage = 'eng' | 'ja' | 'unknown';
 
@@ -28,11 +60,6 @@ export interface ComicPageSize {
 export interface ComicPoint {
   x: number;
   y: number;
-}
-
-/** A detector-resolution grayscale page mask. Values are 0..255. */
-export interface ComicMask extends ComicPageSize {
-  data: Uint8Array;
 }
 
 export interface ComicTextLine {
@@ -49,15 +76,6 @@ export interface ComicTextBlock {
   vertical: boolean;
   lines: readonly ComicTextLine[];
 }
-
-export interface ComicTextDetectionResult {
-  page: ComicPageSize;
-  mask?: ComicMask;
-  blocks: readonly ComicTextBlock[];
-}
-
-/** The text blocks, text mask and text lines of the model, in that order. */
-export type ComicDetectorOutputs = Record<keyof typeof OUTPUT_LENGTHS, Float32Array>;
 
 interface BlockCandidate extends ComicTextBlock {
   lines: ComicTextLine[];
@@ -80,7 +98,7 @@ const LINE_THRESHOLD = 0.3;
 const MAXIMUM_BLOCKS = 300;
 const MAXIMUM_LINES = 1_000;
 
-/** The size of the page inside the model's input. */
+/** The size of the page inside the model's input, which starts with it. */
 const getInputSize = (page: ComicPageSize): ComicPageSize => {
   const scale = Math.min(INPUT_SIZE / page.width, INPUT_SIZE / page.height);
   return {
@@ -88,6 +106,11 @@ const getInputSize = (page: ComicPageSize): ComicPageSize => {
     height: Math.max(1, Math.min(INPUT_SIZE, Math.round(page.height * scale))),
   };
 };
+
+const padInputSize = ({ width, height }: ComicPageSize): ComicPageSize => ({
+  width: Math.ceil(width / INPUT_STEP) * INPUT_STEP,
+  height: Math.ceil(height / INPUT_STEP) * INPUT_STEP,
+});
 
 const clamp = (value: number, minimum: number, maximum: number): number =>
   Math.min(maximum, Math.max(minimum, value));
@@ -143,33 +166,47 @@ const unionBoxes = (boxes: readonly OcrBoundingBox[]): OcrBoundingBox => ({
   yMax: Math.max(...boxes.map((box) => box.yMax)),
 });
 
-/** Decode the YOLOv5 block tensor into page-coordinate text block candidates. */
+const sigmoid = (value: number): number => 1 / (1 + Math.exp(-value));
+
+/** Decode the YOLOv5 block levels into page-coordinate text block candidates. */
 const decodeBlocks = (
-  data: Float32Array,
+  levels: readonly Float32Array[],
   page: ComicPageSize,
   input: ComicPageSize,
 ): ComicTextBlock[] => {
   const candidates: ComicTextBlock[] = [];
-  for (let offset = 0; offset < data.length; offset += 7) {
-    const englishScore = data[offset + 5]!;
-    const japaneseScore = data[offset + 6]!;
-    const score = data[offset + 4]! * Math.max(englishScore, japaneseScore);
-    if (!(score >= BLOCK_CONFIDENCE)) continue;
-    const centerX = data[offset]!;
-    const centerY = data[offset + 1]!;
-    const halfWidth = data[offset + 2]! / 2;
-    const halfHeight = data[offset + 3]! / 2;
-    const box = mapInputBox(
-      centerX - halfWidth,
-      centerY - halfHeight,
-      centerX + halfWidth,
-      centerY + halfHeight,
-      page,
-      input,
-    );
-    if (!box) continue;
-    const language = japaneseScore > englishScore ? 'ja' : 'eng';
-    candidates.push({ box, score, language, vertical: false, lines: [] });
+  const padded = padInputSize(input);
+  for (const [level, { stride, anchors }] of BLOCK_LEVELS.entries()) {
+    const data = levels[level]!;
+    const columns = padded.width / stride;
+    const cells = columns * (padded.height / stride);
+    for (const [anchor, [anchorWidth, anchorHeight]] of anchors.entries()) {
+      for (let cell = 0; cell < cells; cell += 1) {
+        const read = (value: number) =>
+          sigmoid(data[(anchor * BLOCK_VALUES + value) * cells + cell]!);
+        const objectness = read(4);
+        if (!(objectness >= BLOCK_CONFIDENCE)) continue;
+        const englishScore = read(5);
+        const japaneseScore = read(6);
+        const score = objectness * Math.max(englishScore, japaneseScore);
+        if (!(score >= BLOCK_CONFIDENCE)) continue;
+        const centerX = (read(0) * 2 - 0.5 + (cell % columns)) * stride;
+        const centerY = (read(1) * 2 - 0.5 + Math.floor(cell / columns)) * stride;
+        const halfWidth = ((read(2) * 2) ** 2 * anchorWidth!) / 2;
+        const halfHeight = ((read(3) * 2) ** 2 * anchorHeight!) / 2;
+        const box = mapInputBox(
+          centerX - halfWidth,
+          centerY - halfHeight,
+          centerX + halfWidth,
+          centerY + halfHeight,
+          page,
+          input,
+        );
+        if (!box) continue;
+        const language = japaneseScore > englishScore ? 'ja' : 'eng';
+        candidates.push({ box, score, language, vertical: false, lines: [] });
+      }
+    }
   }
 
   candidates.sort((left, right) => right.score - left.score);
@@ -293,8 +330,7 @@ const getLineBox = (polygon: readonly ComicPoint[]): OcrBoundingBox => ({
  * met. Rows are read once into runs of pixels, which join the runs they touch in
  * the row above.
  */
-const findLineComponents = (map: Float32Array, threshold: number): LineComponent[] => {
-  const size = INPUT_SIZE;
+const findLineComponents = (map: Float32Array, width: number): LineComponent[] => {
   // Each run's first pixel, the pixel after its last, its sum, and an earlier run
   // of the same area (itself for the first).
   const starts: number[] = [];
@@ -306,22 +342,22 @@ const findLineComponents = (map: Float32Array, threshold: number): LineComponent
     return run;
   };
   let rowAbove = 0;
-  for (let y = 0; y < size; y += 1) {
+  for (let y = 0; y * width < map.length; y += 1) {
     const row = starts.length;
-    const rowEnd = (y + 1) * size;
+    const rowEnd = (y + 1) * width;
     let above = rowAbove;
-    for (let pixel = y * size; pixel < rowEnd; pixel += 1) {
-      if (!(map[pixel]! > threshold)) continue;
+    for (let pixel = y * width; pixel < rowEnd; pixel += 1) {
+      if (!(map[pixel]! > LINE_THRESHOLD)) continue;
       const start = pixel;
       let sum = 0;
-      for (; pixel < rowEnd && map[pixel]! > threshold; pixel += 1) sum += map[pixel]!;
+      for (; pixel < rowEnd && map[pixel]! > LINE_THRESHOLD; pixel += 1) sum += map[pixel]!;
       let root = starts.length;
       starts.push(start);
       ends.push(pixel);
       sums.push(sum);
       parents.push(root);
-      while (above < row && ends[above]! + size < start) above += 1;
-      for (let run = above; run < row && starts[run]! + size <= pixel; run += 1) {
+      while (above < row && ends[above]! + width < start) above += 1;
+      for (let run = above; run < row && starts[run]! + width <= pixel; run += 1) {
         const other = findRoot(run);
         const first = Math.min(root, other);
         parents[root] = parents[other] = root = first;
@@ -333,9 +369,9 @@ const findLineComponents = (map: Float32Array, threshold: number): LineComponent
   const components = new Map<number, LineComponent>();
   for (let run = 0; run < starts.length; run += 1) {
     const root = findRoot(run);
-    const y = Math.floor(starts[run]! / size);
-    const left = starts[run]! - y * size;
-    const right = ends[run]! - 1 - y * size;
+    const y = Math.floor(starts[run]! / width);
+    const left = starts[run]! - y * width;
+    const right = ends[run]! - 1 - y * width;
     let component = components.get(root);
     if (!component) {
       component = { count: 0, sum: 0, minX: left, maxX: right, minY: y, edges: [] };
@@ -352,14 +388,14 @@ const findLineComponents = (map: Float32Array, threshold: number): LineComponent
   return [...components.values()];
 };
 
-/** Extract oriented DB text-line polygons from the first `det` channel. */
+/** Extract oriented DB text-line polygons. */
 export const extractComicLines = (
   data: Float32Array,
   page: ComicPageSize,
   input = getInputSize(page),
 ): ComicTextLine[] => {
   const lines: ComicTextLine[] = [];
-  for (const component of findLineComponents(data, LINE_THRESHOLD)) {
+  for (const component of findLineComponents(data, padInputSize(input).width)) {
     const score = component.sum / component.count;
     if (component.maxX === component.minX || component.edges.length === 2) continue;
     if (score < LINE_CONFIDENCE) continue;
@@ -374,34 +410,6 @@ export const extractComicLines = (
         left.box.xMin - right.box.xMin,
     )
     .slice(0, MAXIMUM_LINES);
-};
-
-const sampleMaskCoverage = (mask: ComicMask, box: OcrBoundingBox, page: ComicPageSize): number => {
-  const xMin = clamp(Math.floor((box.xMin * mask.width) / page.width), 0, mask.width - 1);
-  const yMin = clamp(Math.floor((box.yMin * mask.height) / page.height), 0, mask.height - 1);
-  const xMax = clamp(Math.ceil((box.xMax * mask.width) / page.width), xMin + 1, mask.width);
-  const yMax = clamp(Math.ceil((box.yMax * mask.height) / page.height), yMin + 1, mask.height);
-  let sum = 0;
-  let count = 0;
-  for (let y = yMin; y < yMax; y += 1) {
-    for (let x = xMin; x < xMax; x += 1) {
-      sum += mask.data[y * mask.width + x]!;
-      count += 1;
-    }
-  }
-  return count > 0 ? sum / count / 255 : 0;
-};
-
-const readInputMask = (data: Float32Array, input: ComicPageSize): ComicMask => {
-  const result = new Uint8Array(input.width * input.height);
-  for (let y = 0; y < input.height; y += 1) {
-    const sourceOffset = y * INPUT_SIZE;
-    const targetOffset = y * input.width;
-    for (let x = 0; x < input.width; x += 1) {
-      result[targetOffset + x] = clamp(data[sourceOffset + x]!, 0, 1) * 255 + 0.5;
-    }
-  }
-  return { width: input.width, height: input.height, data: result };
 };
 
 const sortLines = (lines: readonly ComicTextLine[], vertical: boolean): ComicTextLine[] =>
@@ -464,7 +472,6 @@ const rectangleLine = (box: OcrBoundingBox, score: number): ComicTextLine => ({
 const groupComicText = (
   blocks: readonly ComicTextBlock[],
   lines: readonly ComicTextLine[],
-  rawMask: ComicMask,
   page: ComicPageSize,
 ): ComicTextBlock[] => {
   const grouped: BlockCandidate[] = blocks.map((block) => ({ ...block, lines: [] }));
@@ -483,7 +490,7 @@ const groupComicText = (
     }
     if (bestIndex >= 0 && bestCoverage > 0.4) {
       grouped[bestIndex]!.lines.push(line);
-    } else if (sampleMaskCoverage(rawMask, line.box, page) >= 0.1) {
+    } else {
       grouped.push({
         box: line.box,
         score: line.score,
@@ -496,10 +503,7 @@ const groupComicText = (
 
   const finalBlocks: BlockCandidate[] = [];
   for (const block of grouped) {
-    if (block.lines.length === 0) {
-      if (sampleMaskCoverage(rawMask, block.box, page) < 0.1) continue;
-      block.lines.push(rectangleLine(block.box, block.score));
-    }
+    if (block.lines.length === 0) block.lines.push(rectangleLine(block.box, block.score));
     block.vertical = getBlockVertical(block);
     block.lines = sortLines(block.lines, block.vertical);
     block.box = unionBoxes([block.box, ...block.lines.map((line) => line.box)]);
@@ -515,15 +519,15 @@ const groupComicText = (
   }));
 };
 
+/** The text blocks of the model's outputs, the block levels first. */
 export const postprocessComicDetectorOutputs = (
-  outputs: ComicDetectorOutputs,
+  outputs: readonly Float32Array[],
   page: ComicPageSize,
-): ComicTextDetectionResult => {
+): ComicTextBlock[] => {
   const input = getInputSize(page);
-  const mask = readInputMask(outputs.seg, input);
-  const blocks = decodeBlocks(outputs.blk, page, input);
-  const lines = extractComicLines(outputs.det, page, input);
-  return { page, mask, blocks: groupComicText(blocks, lines, mask, page) };
+  const blocks = decodeBlocks(outputs, page, input);
+  const lines = extractComicLines(outputs[BLOCK_LEVELS.length]!, page, input);
+  return groupComicText(blocks, lines, page);
 };
 
 const PIXEL_VALUES = Float32Array.from({ length: 256 }, (_, value) => value / 255);
@@ -538,17 +542,6 @@ const makeImageTensor = (pixels: Uint8ClampedArray): Float32Array => {
     values[pixelCount * 2 + pixel] = PIXEL_VALUES[pixels[rgba + 2]!]!;
   }
   return values;
-};
-
-const getOutput = (
-  outputs: InferenceSession.ReturnType,
-  name: keyof ComicDetectorOutputs,
-): Float32Array => {
-  const data = outputs[name]?.data;
-  if (!(data instanceof Float32Array) || data.length !== OUTPUT_LENGTHS[name]) {
-    throw new Error(`Comic text detector returned an invalid ${name} output`);
-  }
-  return data;
 };
 
 interface Model {
@@ -568,7 +561,7 @@ const loadModel = async (
     }),
   ]);
   signal.throwIfAborted();
-  return { runtime, session: await createOnnxSession(runtime, model) };
+  return { runtime, session: await createOnnxSession(runtime, trimOnnxModel(model, OUTPUTS)) };
 };
 
 export class ComicTextDetector {
@@ -581,7 +574,7 @@ export class ComicTextDetector {
     );
   }
 
-  detect(source: CanvasImageSource, page: ComicPageSize): Promise<ComicTextDetectionResult> {
+  detect(source: CanvasImageSource, page: ComicPageSize): Promise<ComicTextBlock[]> {
     return this.#model.use((model) => this.#detect(model, source, page));
   }
 
@@ -593,27 +586,20 @@ export class ComicTextDetector {
     { runtime, session }: Model,
     source: CanvasImageSource,
     page: ComicPageSize,
-  ): Promise<ComicTextDetectionResult> {
-    const { width, height } = getInputSize(page);
-    const canvas = createOcrCanvas(
-      INPUT_SIZE,
-      INPUT_SIZE,
-      isHtmlCanvas(source) ? source : undefined,
-    );
+  ): Promise<ComicTextBlock[]> {
+    const input = getInputSize(page);
+    const { width, height } = padInputSize(input);
+    const canvas = createOcrCanvas(width, height, isHtmlCanvas(source) ? source : undefined);
     const context = canvas.getContext('2d', { willReadFrequently: true });
     if (!context) throw new Error('Comic text detector could not create a canvas context');
-    context.drawImage(source, 0, 0, width, height);
-    const { data: pixels } = context.getImageData(0, 0, INPUT_SIZE, INPUT_SIZE);
-    const shape = [1, 3, INPUT_SIZE, INPUT_SIZE];
+    context.drawImage(source, 0, 0, input.width, input.height);
+    const { data: pixels } = context.getImageData(0, 0, width, height);
+    const shape = [1, 3, height, width];
     const images = new runtime.Tensor('float32', makeImageTensor(pixels), shape);
     const outputs = await session.run({ images });
     this.#model.throwIfTerminated();
     return postprocessComicDetectorOutputs(
-      {
-        blk: getOutput(outputs, 'blk'),
-        seg: getOutput(outputs, 'seg'),
-        det: getOutput(outputs, 'det'),
-      },
+      OUTPUTS.map((name) => outputs[name]!.data as Float32Array),
       page,
     );
   }

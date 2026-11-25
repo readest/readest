@@ -35,10 +35,12 @@ const createRuntime = () => {
   };
 };
 
-const createDetectorOutputs = () => ({
-  blk: { data: new Float32Array(64_512 * 7) },
-  seg: { data: new Float32Array(1024 * 1024) },
-  det: { data: new Float32Array(2 * 1024 * 1024) },
+/** What the model makes of a page without text: logits of its blocks, and its lines. */
+const createDetectorOutputs = (width = 1024, height = 1024) => ({
+  647: { data: new Float32Array((width * height * 21) / 64).fill(-10) },
+  762: { data: new Float32Array((width * height * 21) / 256).fill(-10) },
+  877: { data: new Float32Array((width * height * 21) / 1024).fill(-10) },
+  1179: { data: new Float32Array(width * height) },
 });
 
 const mockCanvas = () => {
@@ -73,6 +75,7 @@ beforeEach(() => {
     };
   });
   vi.doMock('@/plugins/ocr/modelAssets', () => ({ loadModelAsset: mocks.fetchModel }));
+  vi.doMock('@/plugins/ocr/trimOnnxModel', () => ({ trimOnnxModel: (model: unknown) => model }));
 });
 
 const fillRectangle = (
@@ -93,7 +96,7 @@ describe('Comic text detection', () => {
   it('starts runtime and model loading together and shares one session across pages', async () => {
     const runtime = deferred<ReturnType<typeof createRuntime>>();
     const model = deferred<ArrayBuffer>();
-    const run = vi.fn(async () => createDetectorOutputs());
+    const run = vi.fn(async (_: { images: { dims: number[] } }) => createDetectorOutputs(704));
     mocks.createSession.mockResolvedValue({
       run,
       release: vi.fn(async () => undefined),
@@ -118,9 +121,11 @@ describe('Comic text detection', () => {
       model.resolve(new ArrayBuffer(1));
       const [firstResult, secondResult] = await Promise.all([first, second]);
 
-      expect(firstResult).toMatchObject({ page, blocks: [] });
-      expect(secondResult).toMatchObject({ page, blocks: [] });
+      expect(firstResult).toEqual([]);
+      expect(secondResult).toEqual([]);
       expect(run).toHaveBeenCalledTimes(2);
+      // As wide as the page, not a square.
+      expect(run.mock.calls[0]![0].images.dims).toEqual([1, 3, 1024, 704]);
       expect(mocks.createSession).toHaveBeenCalledOnce();
     } finally {
       runtime.resolve(createRuntime());
@@ -132,7 +137,7 @@ describe('Comic text detection', () => {
 
   it('aborts a failed model attempt and retries with a fresh attempt', async () => {
     mocks.createSession.mockResolvedValue({
-      run: vi.fn(async () => createDetectorOutputs()),
+      run: vi.fn(async () => createDetectorOutputs(704)),
       release: vi.fn(async () => undefined),
     });
     mocks.loadRuntime.mockResolvedValue(createRuntime());
@@ -155,7 +160,7 @@ describe('Comic text detection', () => {
       expect(failedSignal?.aborted).toBe(true);
 
       const retried = await detector.detect(source, { width: 1200, height: 1800 });
-      expect(retried.blocks).toEqual([]);
+      expect(retried).toEqual([]);
       expect(mocks.fetchModel).toHaveBeenCalledTimes(2);
       expect(mocks.createSession).toHaveBeenCalledOnce();
     } finally {
@@ -230,27 +235,33 @@ describe('Comic text detection', () => {
   });
 
   it('maps the pinned detector output to ordered Japanese text lines', () => {
-    const blocks = new Float32Array(64_512 * 7);
-    const segmentation = new Float32Array(1024 * 1024);
-    const lines = new Float32Array(2 * 1024 * 1024);
-    blocks.set([512, 400, 240, 120, 0.95, 0.05, 0.95]);
-    fillRectangle(segmentation, 392, 340, 632, 460);
-    fillRectangle(lines, 420, 360, 600, 420);
+    const outputs = createDetectorOutputs();
+    const blocks = outputs[877].data;
+    // The block of the cell at 512, 384: 116 by 95, and Japanese.
+    const cell = 12 * 32 + 16;
+    for (const [value, logit] of [0, 0, 0, 0.041, 3, -3, 3].entries()) {
+      blocks[value * 32 * 32 + cell] = logit;
+    }
+    const lines = outputs[1179].data;
+    fillRectangle(lines, 480, 375, 544, 393);
+    // A line outside of any block, and a block without a line.
+    fillRectangle(lines, 100, 800, 200, 830);
+    const other = 28 * 32 + 28;
+    for (const [value, logit] of [0, 0, 0, 0, 3, -3, 3].entries()) {
+      blocks[value * 32 * 32 + other] = logit;
+    }
 
     const result = postprocessComicDetectorOutputs(
-      {
-        blk: blocks,
-        seg: segmentation,
-        det: lines,
-      },
+      [outputs[647].data, outputs[762].data, blocks, lines],
       { width: 1024, height: 1024 },
     );
 
-    expect(result.blocks).toEqual([
-      expect.objectContaining({
-        language: 'ja',
-        lines: [expect.objectContaining({ vertical: false })],
-      }),
+    expect(result.map(({ language, lines }) => [language, lines.length])).toEqual([
+      ['ja', 1],
+      ['ja', 1],
+      ['unknown', 1],
     ]);
+    expect(result[0]!.lines[0]!.vertical).toBe(false);
+    expect(result[1]!.box).toEqual({ xMin: 854, yMin: 867, xMax: 970, yMax: 957 });
   });
 });

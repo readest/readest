@@ -99,18 +99,15 @@ describe('Tesseract manga OCR', () => {
     source.width = page.width;
     source.height = page.height;
     const detector = {
-      detect: vi.fn(async () => ({
-        page,
-        blocks: [
-          {
-            box: blockBox,
-            score: 0.9,
-            language: 'ja' as const,
-            vertical: true,
-            lines: [line, secondLine],
-          },
-        ],
-      })),
+      detect: vi.fn(async () => [
+        {
+          box: blockBox,
+          score: 0.9,
+          language: 'ja' as const,
+          vertical: true,
+          lines: [line, secondLine],
+        },
+      ]),
       terminate: vi.fn(async () => undefined),
     };
     const worker = makeWorker();
@@ -198,18 +195,15 @@ describe('Tesseract manga OCR', () => {
       source.width = page.width;
       source.height = page.height;
       const detector = {
-        detect: vi.fn(async () => ({
-          page,
-          blocks: [
-            {
-              box: longLine.box,
-              score: 0.9,
-              language: 'ja' as const,
-              vertical: true,
-              lines: [longLine],
-            },
-          ],
-        })),
+        detect: vi.fn(async () => [
+          {
+            box: longLine.box,
+            score: 0.9,
+            language: 'ja' as const,
+            vertical: true,
+            lines: [longLine],
+          },
+        ]),
         terminate: vi.fn(async () => undefined),
       };
       const worker = makeWorker();
@@ -257,18 +251,15 @@ describe('Tesseract manga OCR', () => {
     source.width = page.width;
     source.height = page.height;
     const detector = {
-      detect: vi.fn(async () => ({
-        page,
-        blocks: [
-          {
-            box: blockBox,
-            score: 0.9,
-            language: 'ja' as const,
-            vertical: true,
-            lines: [line],
-          },
-        ],
-      })),
+      detect: vi.fn(async () => [
+        {
+          box: blockBox,
+          score: 0.9,
+          language: 'ja' as const,
+          vertical: true,
+          lines: [line],
+        },
+      ]),
       terminate: vi.fn(async () => undefined),
     };
     const recognizer = {
@@ -328,7 +319,7 @@ describe('Tesseract manga OCR', () => {
       { mangaMode: true },
       vi.fn(async () => worker),
       () => ({
-        detect: async () => ({ page, blocks: [] }),
+        detect: async () => [],
         terminate: async () => undefined,
       }),
     );
