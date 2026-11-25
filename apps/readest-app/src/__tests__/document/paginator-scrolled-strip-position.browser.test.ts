@@ -309,4 +309,41 @@ describe('Scrolled strip keeps the reading position (browser)', () => {
     const moved = Math.abs(position(2, 'p30', vertical) - before);
     expect(moved, 'text in view moved when chapter 1 grew').toBeLessThanOrEqual(1);
   });
+
+  // WebKit on iOS 16 gives the iframes a resized reader's width only after the
+  // paginator re-rendered, so it anchors again when the chapter being read
+  // expands (readest#7896). A jump made before that expand has its own anchor.
+  it('keeps a jump to another chapter when a late expand follows a resize', async () => {
+    open(false, false);
+    await paginator.goTo({ index: 2, anchor: 0.5 });
+    await settle();
+    expect(loaded()).toContain(3);
+
+    // The resize renders while chapter 2's iframe still has its old width. Only
+    // the height changes, so chapter 2 doesn't expand and anchor again here.
+    const frame = viewElement(2).querySelector('iframe')!;
+    const rect = frame.getBoundingClientRect.bind(frame);
+    frame.getBoundingClientRect = () => {
+      const r = rect();
+      return new DOMRect(r.x, r.y, r.width + 100, r.height);
+    };
+    paginator.style.height = '560px';
+    await frames(3);
+    Reflect.deleteProperty(frame, 'getBoundingClientRect');
+
+    await paginator.goTo({ index: 3, anchor: 0 });
+    await settle();
+    expect(paginator.primaryIndex).toBe(3);
+    const before = position(3, 'head', false);
+    const height = () => viewElement(3).getBoundingClientRect().height;
+    const heightBefore = height();
+    const doc = paginator.getContents().find((c) => c.index === 3)!.doc;
+    const block = doc.createElement('div');
+    block.style.height = '500px';
+    doc.body.append(block);
+    await waitFor(() => height() >= heightBefore + 500, 'chapter 3 to grow in the strip');
+    await frames(2);
+    const moved = Math.abs(position(3, 'head', false) - before);
+    expect(moved, 'chapter 3 head moved when chapter 3 grew').toBeLessThanOrEqual(1);
+  });
 });
