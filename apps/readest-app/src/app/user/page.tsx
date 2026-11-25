@@ -478,7 +478,12 @@ const ProfilePage = () => {
                     <SyncPassphraseSection />
                   </div>
                 ) : giftView ? (
-                  <div className='flex flex-col gap-y-8 px-6'>
+                  // Without the account block above it, the buy page clears the
+                  // fixed header itself (64px on phones, 84px under macOS
+                  // traffic lights).
+                  <div
+                    className={clsx('flex flex-col gap-y-8 px-6', giftView === 'give' && 'pt-12')}
+                  >
                     <GiftCardsSection
                       view={giftView}
                       prices={giftPrices}
