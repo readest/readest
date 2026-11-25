@@ -44,13 +44,17 @@ beforeEach(() => {
 describe('markPaymentRefunded — gift cards', () => {
   it("markPaymentRefunded on a gift's stripe_payment_intent_id marks the card refunded and re-syncs the recipient's plan", async () => {
     const card = giftCard('friend-1');
+    // Review (CodeRabbit): check the stored row, not the recorded write, which
+    // the helper records even when it matches nothing.
+    db().rows('payments').push({
+      user_id: 'buyer-1',
+      stripe_payment_intent_id: 'pi_gift',
+      status: 'succeeded',
+    });
 
     await markPaymentRefunded('buyer-1', 'stripe_payment_intent_id', 'pi_gift');
 
-    expect(db().writes.find((w) => w.table === 'payments')).toMatchObject({
-      values: { status: 'refunded' },
-      match: { stripe_payment_intent_id: 'pi_gift' },
-    });
+    expect(db().rows('payments')[0]?.['status']).toBe('refunded');
     expect(db().card(card.id)?.status).toBe('refunded');
     expect(db().planWrites()).toEqual([{ id: 'friend-1', plan: 'free' }]);
     expect(h.updateUserStorage).toHaveBeenCalledWith('buyer-1');
