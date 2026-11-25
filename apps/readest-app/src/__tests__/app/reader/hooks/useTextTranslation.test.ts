@@ -401,6 +401,60 @@ describe('useTextTranslation', () => {
     vi.unstubAllGlobals();
   });
 
+  it('discards an in-flight translation after the target language changes', async () => {
+    const getViewSettings = readerState.getViewSettings;
+    let settings = { ...viewSettings, translateTargetLang: 'fr' };
+    readerState.getViewSettings = () => settings;
+    let resolveFrench!: (texts: string[]) => void;
+    let resolveSpanish!: (texts: string[]) => void;
+    translate
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveFrench = resolve)))
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveSpanish = resolve)));
+
+    let onIntersect!: IntersectionObserverCallback;
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          onIntersect = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const view = document.createElement('div');
+    view.innerHTML = '<p>Source paragraph.</p>';
+    const paragraph = view.querySelector('p')!;
+    const showParagraph = () =>
+      onIntersect(
+        [{ isIntersecting: true, target: paragraph } as unknown as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+
+    try {
+      vi.useFakeTimers();
+      const { rerender } = renderHook(() => useTextTranslation('book-1', view));
+      showParagraph();
+      settings = { ...settings, translateTargetLang: 'es' };
+      rerender();
+      showParagraph();
+
+      resolveFrench(['Paragraphe traduit.']);
+      await vi.advanceTimersByTimeAsync(50);
+      expect(paragraph.querySelector('.translation-target')).toBeNull();
+
+      resolveSpanish(['Párrafo traducido.']);
+      await vi.advanceTimersByTimeAsync(50);
+      const target = paragraph.querySelector('.translation-target');
+      expect(target?.textContent).toBe('Párrafo traducido.');
+      expect(target?.getAttribute('lang')).toBe('es');
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+      readerState.getViewSettings = getViewSettings;
+    }
+  });
+
   it('cancels a queued batch on unmount when translation was enabled after mount', async () => {
     const getViewSettings = readerState.getViewSettings;
     let settings = { ...viewSettings, translationEnabled: false };

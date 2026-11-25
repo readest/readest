@@ -226,17 +226,19 @@ export function useTextTranslation(
     bookAuthor: book?.author,
   } as UseTranslatorOptions);
 
-  const translateRef = useRef(translate);
   // `translationProvider` is a loose string in settings, so match by name
   // rather than narrowing to TranslatorName.
   const translatorPreservesMarkup = !!getTranslators().find(
     (translator) => translator.name === provider,
   )?.preservesMarkup;
+  const translationRef = useRef({ translate, targetLang, translatorPreservesMarkup });
   const observerRefs = useRef<IntersectionObserver[]>([]);
   const translatedElements = useRef<HTMLElement[]>([]);
   const allTextNodes = useRef<HTMLElement[]>([]);
   const translationQueue = useRef<HTMLElement[]>([]);
   const activeTranslations = useRef(0);
+  // A reset starts a fresh queue while its previous requests can still resolve.
+  const translationGeneration = useRef(0);
   // Read through a ref: the queue drains from observer callbacks created on
   // earlier renders. Batching providers ask for more in-flight paragraphs.
   const maxConcurrentRef = useRef(5);
@@ -254,6 +256,7 @@ export function useTextTranslation(
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      translationGeneration.current++;
       // The `[view]` cleanup misses these when translation was off at mount.
       if (batchTimerRef.current) {
         clearTimeout(batchTimerRef.current);
@@ -280,8 +283,8 @@ export function useTextTranslation(
   };
 
   useEffect(() => {
-    translateRef.current = translate;
-  }, [translate]);
+    translationRef.current = { translate, targetLang, translatorPreservesMarkup };
+  }, [translate, targetLang, translatorPreservesMarkup]);
 
   const hintInitialTranslating = () => {
     setIsLoading(bookKey, true);
@@ -312,6 +315,7 @@ export function useTextTranslation(
   };
 
   const updateTranslation = () => {
+    translationGeneration.current++;
     translationQueue.current = [];
     activeTranslations.current = 0;
     if (batchTimerRef.current) {
@@ -364,6 +368,7 @@ export function useTextTranslation(
   };
 
   const drainTranslationQueue = () => {
+    const generation = translationGeneration.current;
     while (
       activeTranslations.current < maxConcurrentRef.current &&
       translationQueue.current.length > 0
@@ -371,7 +376,8 @@ export function useTextTranslation(
       const el = translationQueue.current.shift()!;
       if (el.querySelector('.translation-target') || !enabled.current) continue;
       activeTranslations.current++;
-      translateElement(el).finally(() => {
+      translateElement(el, generation).finally(() => {
+        if (generation !== translationGeneration.current) return;
         activeTranslations.current--;
         drainTranslationQueue();
       });
@@ -403,8 +409,9 @@ export function useTextTranslation(
     );
   };
 
-  const translateElement = async (el: HTMLElement) => {
+  const translateElement = async (el: HTMLElement, generation: number) => {
     if (!enabled.current) return;
+    const { translate, targetLang, translatorPreservesMarkup } = translationRef.current;
     // The payload's text leaves out ruby readings and injected nodes.
     const payload = extractSourcePayload(el);
     const text = payload.text.replaceAll('\n', '').trim();
@@ -430,8 +437,8 @@ export function useTextTranslation(
           : [];
       const useMarkup = markupChunks.length > 0;
 
-      const translated = await translateRef.current(useMarkup ? markupChunks : [text]);
-      if (!mountedRef.current) return;
+      const translated = await translate(useMarkup ? markupChunks : [text]);
+      if (!mountedRef.current || generation !== translationGeneration.current) return;
       const translatedText = translated.join('');
       if (!translatedText || text === translatedText) return;
 
@@ -595,6 +602,7 @@ export function useTextTranslation(
       observerRefs.current.forEach((observer) => observer.disconnect());
       observerRefs.current = [];
       translatedElements.current = [];
+      translationGeneration.current++;
       translationQueue.current = [];
       activeTranslations.current = 0;
       if (batchTimerRef.current) {
