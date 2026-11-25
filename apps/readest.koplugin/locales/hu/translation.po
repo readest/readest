@@ -356,6 +356,9 @@ msgstr "Könyv ujjlenyomata"
 msgid "Identifiers"
 msgstr "Azonosítók"
 
+msgid "File Name"
+msgstr "Fájlnév"
+
 msgid "Last Synced"
 msgstr "Utolsó szinkronizálás"
 

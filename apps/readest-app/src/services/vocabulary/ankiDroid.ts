@@ -1,7 +1,7 @@
 // AnkiDroid's content provider, reached through the native bridge (Android
 // only). See docs/superpowers/specs/2026-11-04-anki-link-design.md
 import { invoke } from '@tauri-apps/api/core';
-import type { AnkiNoteFill, AnkiOutgoingNote, AnkiTagUpdate } from './anki';
+import type { AnkiNoteFill, AnkiNoteType, AnkiOutgoingNote, AnkiTagUpdate } from './anki';
 
 /** `permission`: Readest can't use AnkiDroid. `not_ready`: AnkiDroid was never opened. */
 export type AnkiErrorCode = 'permission' | 'not_ready';
@@ -57,6 +57,11 @@ export const ankiRequestPermission = async (): Promise<boolean> =>
 export const ankiListDecks = async (): Promise<AnkiDeck[]> =>
   (await call<{ decks?: AnkiDeck[]; error?: string }>('anki_list_decks')).decks ?? [];
 
+/** Every note type in the collection, with its field names (#7849). */
+export const ankiListNoteTypes = async (): Promise<AnkiNoteType[]> =>
+  (await call<{ noteTypes?: AnkiNoteType[]; error?: string }>('anki_list_note_types')).noteTypes ??
+  [];
+
 /**
  * The notes in these decks and, unless AnkiDroid is older than 2.24, their
  * mature cards (only those are returned).
@@ -72,19 +77,24 @@ export const ankiReadDeck = async (
   return { notes: res.notes ?? [], cards: res.cards };
 };
 
-/** Add notes to their decks (created if missing); resolves with how many were added. */
+/**
+ * Add notes to their decks (created if missing), one call per deck and note
+ * type; resolves with how many were added.
+ */
 export const ankiAddNotes = async (notes: AnkiOutgoingNote[]): Promise<number> => {
-  const byDeck = new Map<string, Omit<AnkiOutgoingNote, 'deck'>[]>();
-  for (const { deck, ...note } of notes) {
-    const group = byDeck.get(deck);
-    if (group) group.push(note);
-    else byDeck.set(deck, [note]);
+  const groups = new Map<
+    string,
+    { deckName: string; modelId?: number; notes: Pick<AnkiOutgoingNote, 'fields' | 'tags'>[] }
+  >();
+  for (const { deck, modelId, fields, tags } of notes) {
+    const key = JSON.stringify([deck, modelId]);
+    const group = groups.get(key) ?? { deckName: deck, modelId, notes: [] };
+    group.notes.push({ fields, tags });
+    groups.set(key, group);
   }
   let added = 0;
-  for (const [deckName, group] of byDeck) {
-    added +=
-      (await call<{ added?: number; error?: string }>('anki_add_notes', { deckName, notes: group }))
-        .added ?? 0;
+  for (const group of groups.values()) {
+    added += (await call<{ added?: number; error?: string }>('anki_add_notes', group)).added ?? 0;
   }
   return added;
 };
@@ -112,10 +122,12 @@ export const ankiNoteType = async (): Promise<{
 };
 
 /**
- * Put dictionary entries (#7728) into the empty Entry field of Readest's notes;
+ * Put dictionary entries (#7728) into notes' empty entry field, at `field`;
  * resolves with how many were set.
  */
-export const ankiSetEntries = async (notes: { id: number; entry: string }[]): Promise<number> =>
+export const ankiSetEntries = async (
+  notes: { id: number; field: number; entry: string }[],
+): Promise<number> =>
   (await call<{ updated?: number; error?: string }>('anki_set_entries', { notes })).updated ?? 0;
 
 /**

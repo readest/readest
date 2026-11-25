@@ -118,6 +118,37 @@ afterEach(() => {
   cleanup();
 });
 
+describe('usePagination pen gesture bindings (#7875)', () => {
+  test.each([
+    'PenSqueeze',
+    'PenSlideUp',
+    'PenSlideDown',
+  ])('%s forwards through the native handler exactly once without media interception', async (id) => {
+    h.settingsState.settings.hardwarePageTurner = {
+      enabled: true,
+      bindings: {
+        pagePrev: null,
+        pageNext: { source: 'native', id, label: id },
+        sectionPrev: null,
+        sectionNext: null,
+        refresh: null,
+      },
+    };
+    const view = makeView();
+    setupWithView(view);
+
+    expect(window.onNativeKeyDown).toBeDefined();
+    expect(interceptKeys).not.toHaveBeenCalledWith(
+      expect.objectContaining({ pageTurnerKeys: true }),
+    );
+    await act(async () => {
+      window.onNativeKeyDown?.(id);
+    });
+    expect(view.next).toHaveBeenCalledTimes(1);
+    expect(view.prev).not.toHaveBeenCalled();
+  });
+});
+
 describe('usePagination Apple Pencil bindings (#5501)', () => {
   test('a bound pencil double tap turns to the next page', async () => {
     h.settingsState.settings.hardwarePageTurner = PENCIL_TURNER;

@@ -136,6 +136,8 @@ pub struct GetSysFontsListResponse {
 pub struct InterceptKeysRequest {
     pub volume_keys: Option<bool>,
     pub back_key: Option<bool>,
+    pub page_turner_keys: Option<bool>,
+    pub learn_mode: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -969,6 +971,24 @@ pub struct AnkiListDecksResponse {
     pub error: Option<String>,
 }
 
+/// A note type in the collection and its field names (#7849).
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiNoteTypeInfo {
+    pub id: i64,
+    pub name: String,
+    pub fields: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AnkiListNoteTypesResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note_types: Option<Vec<AnkiNoteTypeInfo>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnkiReadDeckRequest {
@@ -1018,6 +1038,10 @@ pub struct AnkiOutgoingNote {
 #[serde(rename_all = "camelCase")]
 pub struct AnkiAddNotesRequest {
     pub deck_name: String,
+    /// A card profile's note type (#7849), whose fields the notes carry in its
+    /// order; Readest's own note type when absent.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<i64>,
     pub notes: Vec<AnkiOutgoingNote>,
 }
 
@@ -1081,11 +1105,13 @@ pub struct AnkiUpgradeNoteTypeRequest {
     pub notes: Vec<AnkiNoteFill>,
 }
 
-/// A dictionary entry for a note's empty Entry field (#7728).
+/// A dictionary entry for a note's empty entry field (#7728, #7849).
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AnkiEntry {
     pub id: i64,
+    /// The index of the note's entry field.
+    pub field: i64,
     pub entry: String,
 }
 
@@ -1131,4 +1157,34 @@ pub struct OnDeviceLlmGenerateResponse {
 #[serde(rename_all = "camelCase")]
 pub struct OnDeviceLlmCancelRequest {
     pub request_id: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::InterceptKeysRequest;
+    use serde_json::{json, Value};
+
+    // The JS payload is deserialized here and re-serialized for the Android and
+    // iOS plugins, so a field missing from the struct never reaches them.
+    #[test]
+    fn intercept_keys_request_forwards_every_field_to_the_mobile_plugins() {
+        let payload = json!({
+            "volumeKeys": true,
+            "backKey": false,
+            "pageTurnerKeys": true,
+            "learnMode": false,
+        });
+        let request: InterceptKeysRequest = serde_json::from_value(payload.clone()).unwrap();
+        assert_eq!(serde_json::to_value(request).unwrap(), payload);
+    }
+
+    #[test]
+    fn intercept_keys_request_leaves_unset_fields_null() {
+        let request: InterceptKeysRequest =
+            serde_json::from_value(json!({ "learnMode": true })).unwrap();
+        let forwarded = serde_json::to_value(request).unwrap();
+        assert_eq!(forwarded["learnMode"], Value::Bool(true));
+        assert_eq!(forwarded["pageTurnerKeys"], Value::Null);
+        assert_eq!(forwarded["volumeKeys"], Value::Null);
+    }
 }

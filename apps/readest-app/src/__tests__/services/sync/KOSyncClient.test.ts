@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { KOSyncClient } from '@/services/sync/KOSyncClient';
+import { md5 } from 'js-md5';
+import { KOSyncClient, getKOSyncFilename } from '@/services/sync/KOSyncClient';
 import { Book } from '@/types/book';
 import { KOSyncSettings } from '@/types/settings';
 
@@ -106,6 +107,62 @@ describe('KOSyncClient – filename checksums', () => {
       'eff390be0b42c506d89e5a2ef5b79c36',
     );
     expect(new KOSyncClient(makeConfig()).getDocumentDigest(book)).toBe('abs-content-hash');
+  });
+
+  const opdsBook = (author: unknown): Book =>
+    ({
+      ...makeBook(),
+      title: 'Good Omens: The Nice and Accurate Prophecies.',
+      author: 'Terry Pratchett and Neil Gaiman',
+      format: 'EPUB',
+      originalFilename: 'Good Omens - Terry Pratchett.epub',
+      metadata: { title: 'Good Omens', author, language: 'en' },
+    }) as Book;
+
+  it.each([
+    [
+      'author-title',
+      [{ name: 'Terry Pratchett' }, { name: 'Neil Gaiman' }],
+      'Terry Pratchett, Neil Gaiman - Good Omens_ The Nice and Accurate Prophecies.epub',
+    ],
+    [
+      'title-author',
+      [{ name: 'Terry Pratchett' }, { name: 'Neil Gaiman' }],
+      'Good Omens_ The Nice and Accurate Prophecies. - Terry Pratchett, Neil Gaiman.epub',
+    ],
+    [
+      'author-title',
+      'Terry Pratchett',
+      'Terry Pratchett - Good Omens_ The Nice and Accurate Prophecies.epub',
+    ],
+    ['author-title', [], 'Good Omens_ The Nice and Accurate Prophecies.epub'],
+    ['original', [{ name: 'Terry Pratchett' }], 'Good Omens - Terry Pratchett.epub'],
+  ] as const)('names the file %s like KOReader names OPDS downloads (%j)', (format, author, filename) => {
+    const book = { ...opdsBook(author), author: author.length ? 'Terry Pratchett' : '' };
+    const client = new KOSyncClient(
+      makeConfig({ checksumMethod: 'filename', filenameFormat: format }),
+    );
+    expect(getKOSyncFilename(book, format)).toBe(filename);
+    expect(client.getDocumentDigest(book)).toBe(md5(filename));
+  });
+
+  it('names a multilingual author as written in the book, whatever the UI language', () => {
+    // Foliate keys an author's name map by the element's own language first,
+    // then its alternate scripts; the UI language (en here) must not pick one.
+    const book = opdsBook([{ name: { ja: '村上春樹', en: 'Haruki Murakami' } }]);
+    expect(getKOSyncFilename(book, 'author-title')).toBe(
+      '村上春樹 - Good Omens_ The Nice and Accurate Prophecies.epub',
+    );
+  });
+
+  it("hashes a book's own file name over the chosen format", () => {
+    const book = opdsBook([{ name: 'Terry Pratchett' }]);
+    book.metadata!.kosyncFilename = 'Pratchett, Terry - Good Omens.epub';
+    for (const filenameFormat of ['original', 'author-title', 'title-author'] as const) {
+      const client = new KOSyncClient(makeConfig({ checksumMethod: 'filename', filenameFormat }));
+      expect(client.getDocumentDigest(book)).toBe(md5('Pratchett, Terry - Good Omens.epub'));
+    }
+    expect(new KOSyncClient(makeConfig()).getDocumentDigest(book)).toBe(book.hash);
   });
 
   it.each([

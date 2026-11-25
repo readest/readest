@@ -54,6 +54,13 @@ let captureBroken = false;
 const isPanningFixedLayout = (viewSettings: ViewSettings) =>
   viewSettings.zoomLevel > 100 || viewSettings.zoomMode !== 'fit-page';
 
+// An Auto Scroll session turns the pages itself, without animation (#7575):
+// a curl, flip or slide would play over its wipe.
+const isAutoScrolling = (view: FoliateView) =>
+  Object.values(useReaderStore.getState().viewStates).some(
+    (state) => state?.view === view && state.autoScrollEnabled,
+  );
+
 const canCaptureTurn = (viewSettings: ViewSettings) =>
   isTauriAppPlatform() &&
   !captureBroken &&
@@ -101,7 +108,8 @@ export const getCapturedTurnStyle = (
  * (the touch interceptor scrubs the turn instead of the paginator's
  * finger-tracked View Transition). Outside the captured mobile path, layered
  * `turn-style` values are withheld from engines without full View Transitions
- * support — iOS 18 WebKit crashes on them — leaving those on push.
+ * support — iOS 18 WebKit crashes on them — leaving those on push. An Auto
+ * Scroll session has no turn style, and a swipe turns no page in its wipe.
  */
 export const applyPageTurnAttributes = (
   view: FoliateView,
@@ -109,14 +117,23 @@ export const applyPageTurnAttributes = (
   isFixedLayout: boolean,
   prepareNativeSlide = getInitializedAppService()?.isMobileApp === true,
 ) => {
-  const captured = getCapturedTurnStyle(viewSettings, isFixedLayout, prepareNativeSlide);
-  const style = viewSettings.pageTurnStyle === 'flip' ? 'curl' : viewSettings.pageTurnStyle;
+  const animated = !isAutoScrolling(view);
+  const captured = animated
+    ? getCapturedTurnStyle(viewSettings, isFixedLayout, prepareNativeSlide)
+    : null;
+  const style = !animated
+    ? null
+    : viewSettings.pageTurnStyle === 'flip'
+      ? 'curl'
+      : viewSettings.pageTurnStyle;
   if (style && style !== 'push' && !captured && detectViewTransitionGroup()) {
     view.renderer.setAttribute('turn-style', style);
   } else {
     view.renderer.removeAttribute('turn-style');
   }
-  if (viewSettings.disableSwipe || captured) {
+  // A page wipe's swipes don't turn pages: its page copy takes most of them.
+  const wiping = !animated && !viewSettings.scrolled;
+  if (viewSettings.disableSwipe || captured || wiping) {
     view.renderer.setAttribute('no-swipe', '');
   } else {
     view.renderer.removeAttribute('no-swipe');
@@ -609,6 +626,10 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           if (cleanedUp || document.hidden) return;
           const currentViewState = useReaderStore.getState().viewStates[bookKey];
           if (!currentViewState?.inited || currentViewState.ttsEnabled) return;
+          // An Auto Scroll page wipe turns the pages itself (#7575). A warm-up
+          // parks the live view on a neighbouring page under a native cover,
+          // which flashed a stale page in the middle of the wipe.
+          if (currentViewState.autoScrollEnabled) return;
           // The observer below schedules a fresh post-paint surface after the
           // last covering dialog or popup has left the composited page.
           if (isPreparedSurfaceBlockedByOverlay()) return;
@@ -839,8 +860,9 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     const capturedTurn = async (forward: boolean, distance?: number) => {
       const viewSettings = getViewSettings(bookKey);
       const boundary = forward ? view.renderer.atEnd : view.renderer.atStart;
+      const autoScrolling = useReaderStore.getState().viewStates[bookKey]?.autoScrollEnabled;
       const style =
-        viewSettings && distance === undefined && !boundary
+        viewSettings && distance === undefined && !boundary && !autoScrolling
           ? getCapturedTurnStyle(viewSettings, isFixedLayout())
           : null;
       if (!viewSettings || !style || isCapturedSurfaceBlockedByOverlay()) {
@@ -1039,6 +1061,9 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       const currentView = viewRef.current;
       const controller = controllerRef.current;
       if (!currentView || !controller) return false;
+      // A touch in an Auto Scroll session takes no capture: its native cover
+      // showed a stale page over the wipe.
+      if (useReaderStore.getState().viewStates[bookKey]?.autoScrollEnabled) return false;
 
       if (detail.phase === 'start') {
         cancelPreparedCaptureScheduleRef.current?.();

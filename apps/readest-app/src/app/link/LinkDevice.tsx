@@ -60,9 +60,7 @@ export default function LinkDevice() {
     const current = ++approval.current;
     setStatus('linking');
     try {
-      // The CrossPoint path, which every server has: in the apps this goes to web.readest.com,
-      // which may not serve /api/auth/device yet.
-      await fetchWithAuth(`${getAPIBaseUrl()}/crosspoint/device/approve`, {
+      await fetchWithAuth(`${getAPIBaseUrl()}/auth/device/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_code: code }),

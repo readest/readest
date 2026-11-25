@@ -10,6 +10,7 @@ vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
 import {
   AnkiError,
   ankiAddNotes,
+  ankiListNoteTypes,
   ankiNoteType,
   ankiSetEntries,
   ankiReadDeck,
@@ -49,12 +50,31 @@ describe('ankiDroid', () => {
     });
   });
 
-  it('sends dictionary entries for empty Entry fields', async () => {
+  it('sends dictionary entries for empty entry fields, with the field to fill', async () => {
     invokeSpy.mockResolvedValue({ updated: 1 });
-    await expect(ankiSetEntries([{ id: 1, entry: '<p>a drug</p>' }])).resolves.toBe(1);
+    await expect(ankiSetEntries([{ id: 1, field: 4, entry: '<p>a drug</p>' }])).resolves.toBe(1);
     expect(invokeSpy).toHaveBeenCalledWith('plugin:native-bridge|anki_set_entries', {
-      payload: { notes: [{ id: 1, entry: '<p>a drug</p>' }] },
+      payload: { notes: [{ id: 1, field: 4, entry: '<p>a drug</p>' }] },
     });
+  });
+
+  it("lists the collection's note types with their fields (#7849)", async () => {
+    const mining = { id: 40, name: 'Mining', fields: ['Expression', 'Sentence'] };
+    invokeSpy.mockResolvedValue({ noteTypes: [mining] });
+    await expect(ankiListNoteTypes()).resolves.toEqual([mining]);
+    expect(invokeSpy).toHaveBeenCalledWith('plugin:native-bridge|anki_list_note_types', undefined);
+  });
+
+  it("sends a profile's notes apart from Readest's own in the same deck (#7849)", async () => {
+    invokeSpy.mockResolvedValue({ added: 1 });
+    await ankiAddNotes([
+      { deck: 'German', fields: ['Front'], tags: [] },
+      { deck: 'German', modelId: 40, fields: ['Haus', 'Das Haus.'], tags: [] },
+    ]);
+    expect(invokeSpy.mock.calls.map(([, { payload }]) => payload)).toEqual([
+      { deckName: 'German', notes: [{ fields: ['Front'], tags: [] }] },
+      { deckName: 'German', modelId: 40, notes: [{ fields: ['Haus', 'Das Haus.'], tags: [] }] },
+    ]);
   });
 
   it('turns an error field into an AnkiError with its code', async () => {

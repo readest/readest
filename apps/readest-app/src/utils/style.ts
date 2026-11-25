@@ -1230,8 +1230,15 @@ const getRubyStyles = (viewSettings: ViewSettings) => {
   rp {
     display: none !important;
   }
+  /* Keep each glossed word as a single line-level unit and center it under its
+     hint (#7880): Chromium 128+ makes <ruby> line-breakable, which splits words
+     and hints across lines under overflow-wrap: break-word, and default
+     ruby-align: space-around stretches narrow bases with diacritics when the
+     hint is wider. */
   ruby.wl-gloss {
     cursor: help;
+    white-space: nowrap;
+    ruby-align: center;
   }
   ruby.wl-gloss > rt {
     font-size: ${fontSize}em;

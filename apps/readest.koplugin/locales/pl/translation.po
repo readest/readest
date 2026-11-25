@@ -356,6 +356,9 @@ msgstr "Odcisk książki"
 msgid "Identifiers"
 msgstr "Identyfikatory"
 
+msgid "File Name"
+msgstr "Nazwa pliku"
+
 msgid "Last Synced"
 msgstr "Ostatnia synchronizacja"
 

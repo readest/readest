@@ -51,16 +51,15 @@ export async function POST(request: NextRequest) {
         }
         break;
 
-      case 'invoice.payment_succeeded':
-        await handleSuccessfulInvoice(event.data.object);
-        break;
-
+      // A renewal, a retry, or a failed payment: re-read the subscription
+      // from Stripe rather than guess its status from the event.
+      case 'invoice.paid':
       case 'invoice.payment_failed':
-        await handleFailedInvoice(event.data.object);
+        await handleInvoice(event.data.object);
         break;
 
       case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object);
+        await syncStoredSubscription(event.data.object.id);
         break;
 
       case 'customer.subscription.deleted':
@@ -114,80 +113,20 @@ async function handleSuccessfulSubscription(session: Stripe.Checkout.Session, us
   await createOrUpdateSubscription(userId, customerId, subscriptionId);
 }
 
-async function handleSuccessfulInvoice(invoice: Stripe.Invoice) {
-  const customerId = invoice.customer;
-  const subscriptionId = invoice.parent?.subscription_details?.subscription;
+// The live endpoint sends 2024-11-20.acacia payloads, where an invoice names
+// its subscription in `subscription`. From 2025-03-31.basil on, which the
+// SDK's types follow, it is in `parent.subscription_details`.
+type InvoicePayload = Stripe.Invoice & { subscription?: string | Stripe.Subscription | null };
 
-  if (!subscriptionId) {
-    return;
-  }
-
-  const supabase = createSupabaseAdminClient();
-  const { data: customerData } = await supabase
-    .from('customers')
-    .select('user_id')
-    .eq('stripe_customer_id', customerId)
-    .single();
-
-  if (!customerData?.user_id) {
-    console.error('Customer not found:', customerId);
-    return;
-  }
-
-  await supabase
-    .from('subscriptions')
-    .update({
-      status: 'active',
-      current_period_end: new Date(invoice.lines.data[0]!.period.end * 1000).toISOString(),
-    })
-    .eq('stripe_subscription_id', subscriptionId);
-
-  await supabase
-    .from('plans')
-    .update({
-      status: 'active',
-    })
-    .eq('user_id', customerData.user_id);
+async function handleInvoice(invoice: InvoicePayload) {
+  const subscription = invoice.parent?.subscription_details?.subscription ?? invoice.subscription;
+  if (!subscription) return;
+  await syncStoredSubscription(typeof subscription === 'string' ? subscription : subscription.id);
 }
 
-async function handleFailedInvoice(invoice: Stripe.Invoice) {
-  const customerId = invoice.customer;
-  const subscriptionId = invoice.parent?.subscription_details?.subscription;
-
-  if (!subscriptionId) {
-    return;
-  }
-
-  const supabase = createSupabaseAdminClient();
-  const { data: customerData } = await supabase
-    .from('customers')
-    .select('user_id')
-    .eq('stripe_customer_id', customerId)
-    .single();
-
-  if (!customerData?.user_id) {
-    console.error('Customer not found:', customerId);
-    return;
-  }
-
-  await supabase
-    .from('subscriptions')
-    .update({
-      status: 'past_due',
-    })
-    .eq('stripe_subscription_id', subscriptionId);
-
-  await supabase
-    .from('plans')
-    .update({
-      status: 'past_due',
-    })
-    .eq('id', customerData.user_id);
-}
-
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const subscriptionId = subscription.id;
-
+// Only a subscription already stored is updated. checkout.session.completed
+// stores it, and the first invoice can arrive before that.
+async function syncStoredSubscription(subscriptionId: string) {
   const supabase = createSupabaseAdminClient();
   const { data: subscriptionData } = await supabase
     .from('subscriptions')

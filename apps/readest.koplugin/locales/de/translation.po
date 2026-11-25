@@ -356,6 +356,9 @@ msgstr "Buch-Fingerabdruck"
 msgid "Identifiers"
 msgstr "Bezeichner"
 
+msgid "File Name"
+msgstr "Dateiname"
+
 msgid "Last Synced"
 msgstr "Zuletzt synchronisiert"
 

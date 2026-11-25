@@ -15,7 +15,7 @@ import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import type { CustomTranslator } from '@/types/translation';
 import type { DictionaryProvider } from '../types';
 import { BUILTIN_PROVIDER_IDS } from '../types';
-import { lookupInContext, type ContextEntry } from '../contextDictionary';
+import { IncompleteEntryError, lookupInContext, type ContextEntry } from '../contextDictionary';
 
 const _ = (key: string, options?: Record<string, string>) =>
   i18n.t(key, { defaultValue: key, ...options });
@@ -131,6 +131,18 @@ export const contextProvider: DictionaryProvider = {
       return { ok: true, headword: entry.headword || word, sourceLabel: translator.name };
     } catch (err) {
       if (ctx.signal.aborted) return { ok: false, reason: 'error', message: 'aborted' };
+      // Registered messages (e.g. the on-device ones) are translated.
+      const message = _(err instanceof Error ? err.message : String(err));
+      if (err instanceof IncompleteEntryError) {
+        // Keep the part that arrived before the stream ended, marked as cut off.
+        append(
+          ctx.container,
+          'p',
+          'mt-2 text-sm text-error',
+          _('The answer is incomplete: {{message}}', { message }),
+        );
+        return { ok: true, headword: word, sourceLabel: translator.name };
+      }
       // Unlike a dictionary miss, a failed AI request (bad key, quota, model
       // name) is something the user has to fix, so it stays visible.
       ctx.container.replaceChildren();
@@ -138,10 +150,7 @@ export const contextProvider: DictionaryProvider = {
         ctx.container,
         'p',
         'text-sm text-error',
-        _('Context Dictionary failed: {{message}}', {
-          // Registered messages (e.g. the on-device ones) are translated.
-          message: _(err instanceof Error ? err.message : String(err)),
-        }),
+        _('Context Dictionary failed: {{message}}', { message }),
       );
       return { ok: true, headword: word, sourceLabel: translator.name };
     }

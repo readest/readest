@@ -162,6 +162,7 @@ class AnkiOutgoingNoteArg {
 @InvokeArg
 class AnkiAddNotesArgs {
     var deckName: String = ""
+    var modelId: Long? = null
     var notes: Array<AnkiOutgoingNoteArg> = emptyArray()
 }
 
@@ -191,6 +192,7 @@ class AnkiUpgradeNoteTypeArgs {
 @InvokeArg
 class AnkiEntryArg {
     var id: Long = 0
+    var field: Int = -1
     var entry: String = ""
 }
 
@@ -2206,6 +2208,20 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         JSObject().apply { put("decks", decks) }
     }
 
+    /** Every note type in the collection with its field names, for card profiles (#7849). */
+    @Command
+    fun anki_list_note_types(invoke: Invoke) = ankiCall(invoke) { cr ->
+        val types = JSArray()
+        AnkiDroidLink.listNoteTypes(cr).forEach { t ->
+            types.put(JSObject().apply {
+                put("id", t.id)
+                put("name", t.name)
+                put("fields", JSArray(t.fields))
+            })
+        }
+        JSObject().apply { put("noteTypes", types) }
+    }
+
     @Command
     fun anki_read_deck(invoke: Invoke) {
         val args = invoke.parseArgs(AnkiReadDeckArgs::class.java)
@@ -2248,7 +2264,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
         val args = invoke.parseArgs(AnkiAddNotesArgs::class.java)
         ankiCall(invoke) { cr ->
             val notes = args.notes.map { it.fields.toList() to it.tags.toList() }
-            JSObject().apply { put("added", AnkiDroidLink.addNotes(cr, args.deckName, notes)) }
+            JSObject().apply { put("added", AnkiDroidLink.addNotes(cr, args.deckName, args.modelId, notes)) }
         }
     }
 
@@ -2277,7 +2293,7 @@ class NativeBridgePlugin(private val activity: Activity): Plugin(activity) {
     fun anki_set_entries(invoke: Invoke) {
         val args = invoke.parseArgs(AnkiSetEntriesArgs::class.java)
         ankiCall(invoke) { cr ->
-            val entries = args.notes.map { it.id to it.entry }
+            val entries = args.notes.map { Triple(it.id, it.field, it.entry) }
             JSObject().apply { put("updated", AnkiDroidLink.setEntries(cr, entries)) }
         }
     }

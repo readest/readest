@@ -1460,6 +1460,14 @@ export const useTextSelector = (
     };
 
     eventDispatcher.onSync('iframe-single-click', handleSingleClick);
+    // Another iframe-single-click listener (auto-scroll, handwriting) can take a
+    // dismissing tap before handleSingleClick sees it. Presses on the page never
+    // reach this window, so a press here starts a click outside the page (the
+    // header, beside the page): the tap's mark must not swallow it.
+    const clearTapDismiss = () => {
+      isTapDismissingPopup.current = false;
+    };
+    window.addEventListener('pointerdown', clearTapDismiss, true);
     // After any auto page-turn, re-anchor the Android selection scroll-pin to the
     // page we landed on (the #873 pin in handleScroll). Harmless when nothing is
     // pinned (instant highlight / range editors carry no DOM selection).
@@ -1469,6 +1477,7 @@ export const useTextSelector = (
     });
     return () => {
       eventDispatcher.offSync('iframe-single-click', handleSingleClick);
+      window.removeEventListener('pointerdown', clearTapDismiss, true);
       unsubAfterTurn();
       instantGestureCleanup.current?.();
       if (instantHoldTimer.current) clearTimeout(instantHoldTimer.current);

@@ -14,6 +14,8 @@
         </intent>
         <!-- AnkiDroid's content provider, for the vocabulary Anki link (#789). -->
         <package android:name="com.ichi2.anki" />
+        <!-- HyperOS's pen engine (HyperOsPenEngine, #7875). -->
+        <package android:name="com.xiaomi.touchservice" />
     </queries>
 
     <uses-permission android:name="com.ichi2.anki.permission.READ_WRITE_DATABASE" />
