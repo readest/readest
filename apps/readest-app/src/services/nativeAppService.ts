@@ -876,7 +876,11 @@ export class NativeAppService extends BaseAppService {
       // See the note in selectDirectory above.
       await this.allowPathsInScopes(decoded, false);
     }
-    return decoded;
+    // The iOS native copy decodes security-scoped file URLs itself. Returning
+    // the scoped path here would decode literal percent escapes twice.
+    return OS_TYPE === 'ios'
+      ? files.map((file, i) => (isFileURI(file) ? file : decoded[i]!))
+      : files;
   }
 
   /**
