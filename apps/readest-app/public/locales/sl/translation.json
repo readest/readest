@@ -3144,7 +3144,6 @@
   "Plan": "Paket",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "E-pošte pozneje ni mogoče spremeniti. Če se obdarovanec prijavlja z Applovo funkcijo Skrij mojo e-pošto, raje uporabite kodo.",
   "Recipient email": "E-pošta prejemnika",
-  "Optional": "Neobvezno",
   "Buy for {{price}}": "Kupi za {{price}}",
   "Starts {{date}}": "Začne se {{date}}",
   "Ended": "Končana",
@@ -3171,5 +3170,8 @@
   "Cards sent to your email appear here on their own": "Kartice, poslane na vaš e-poštni naslov, se tukaj prikažejo samodejno",
   "Gift Card": "Darilna kartica",
   "Give someone a year of Readest Plus or Pro": "Podarite komu leto paketa Readest Plus ali Pro",
-  "From {{price}}": "Od {{price}}"
+  "From {{price}}": "Od {{price}}",
+  "One payment, no subscription": "Enkratno plačilo, brez naročnine",
+  "Write the card after you pay": "Kartico napišete po plačilu",
+  "Their year starts when they redeem it": "Njihovo leto se začne, ko kartico unovčijo"
 }

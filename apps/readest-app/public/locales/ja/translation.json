@@ -2907,7 +2907,6 @@
   "Plan": "プラン",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "メールアドレスは後から変更できません。相手が Apple の「メールを非公開」でサインインする場合は、代わりにコードをお使いください。",
   "Recipient email": "受取人のメールアドレス",
-  "Optional": "任意",
   "Buy for {{price}}": "{{price}} で購入",
   "Starts {{date}}": "{{date}} から開始",
   "Ended": "終了",
@@ -2934,5 +2933,8 @@
   "Cards sent to your email appear here on their own": "あなたのメールアドレス宛てのカードは、ここに自動で表示されます",
   "Gift Card": "ギフトカード",
   "Give someone a year of Readest Plus or Pro": "Readest Plus または Pro の1年分を大切な人に贈りましょう",
-  "From {{price}}": "{{price}}から"
+  "From {{price}}": "{{price}}から",
+  "One payment, no subscription": "1回払い、サブスクリプションなし",
+  "Write the card after you pay": "カードは支払い後に書けます",
+  "Their year starts when they redeem it": "1年間は相手が引き換えた時から始まります"
 }

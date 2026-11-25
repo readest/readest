@@ -3065,7 +3065,6 @@
   "Plan": "Abonament",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "E-mailul nu poate fi schimbat ulterior. Dacă persoana se conectează cu Hide My Email de la Apple, folosiți codul.",
   "Recipient email": "E-mailul destinatarului",
-  "Optional": "Opțional",
   "Buy for {{price}}": "Cumpărați pentru {{price}}",
   "Starts {{date}}": "Începe la {{date}}",
   "Ended": "Încheiat",
@@ -3092,5 +3091,8 @@
   "Cards sent to your email appear here on their own": "Cardurile trimise pe adresa dvs. de e-mail apar aici automat",
   "Gift Card": "Card cadou",
   "Give someone a year of Readest Plus or Pro": "Oferiți cuiva un an de Readest Plus sau Pro",
-  "From {{price}}": "De la {{price}}"
+  "From {{price}}": "De la {{price}}",
+  "One payment, no subscription": "O singură plată, fără abonament",
+  "Write the card after you pay": "Scrieți felicitarea după plată",
+  "Their year starts when they redeem it": "Anul începe când cardul este folosit"
 }

@@ -2986,7 +2986,6 @@
   "Plan": "طرح",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "ایمیل بعداً قابل تغییر نیست. اگر گیرنده با Hide My Email در Apple وارد می‌شود، به‌جای آن از کد استفاده کنید.",
   "Recipient email": "ایمیل گیرنده",
-  "Optional": "اختیاری",
   "Buy for {{price}}": "خرید به قیمت {{price}}",
   "Starts {{date}}": "شروع از {{date}}",
   "Ended": "پایان یافته",
@@ -3013,5 +3012,8 @@
   "Cards sent to your email appear here on their own": "کارت‌هایی که به ایمیل شما فرستاده شده‌اند خودبه‌خود اینجا نمایش داده می‌شوند",
   "Gift Card": "کارت هدیه",
   "Give someone a year of Readest Plus or Pro": "یک سال Readest Plus یا Pro به کسی هدیه دهید",
-  "From {{price}}": "از {{price}}"
+  "From {{price}}": "از {{price}}",
+  "One payment, no subscription": "یک‌بار پرداخت، بدون اشتراک",
+  "Write the card after you pay": "کارت را پس از پرداخت بنویسید",
+  "Their year starts when they redeem it": "سال او از زمان استفاده از کارت شروع می‌شود"
 }

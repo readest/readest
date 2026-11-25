@@ -2986,7 +2986,6 @@
   "Plan": "Plan",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "E-postadressen kan inte ändras senare. Om mottagaren loggar in med Apples Dölj min e-postadress, använd koden i stället.",
   "Recipient email": "Mottagarens e-post",
-  "Optional": "Valfritt",
   "Buy for {{price}}": "Köp för {{price}}",
   "Starts {{date}}": "Börjar {{date}}",
   "Ended": "Avslutat",
@@ -3013,5 +3012,8 @@
   "Cards sent to your email appear here on their own": "Kort som skickats till din e-post dyker upp här av sig själva",
   "Gift Card": "Presentkort",
   "Give someone a year of Readest Plus or Pro": "Ge någon ett år av Readest Plus eller Pro",
-  "From {{price}}": "Från {{price}}"
+  "From {{price}}": "Från {{price}}",
+  "One payment, no subscription": "En betalning, ingen prenumeration",
+  "Write the card after you pay": "Skriv kortet efter att du betalat",
+  "Their year starts when they redeem it": "Deras år börjar när de löser in kortet"
 }

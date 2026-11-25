@@ -3065,7 +3065,6 @@
   "Plan": "תוכנית",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "לא ניתן לשנות את האימייל מאוחר יותר. אם הנמען מתחבר באמצעות Hide My Email של Apple, השתמש בקוד במקום.",
   "Recipient email": "אימייל הנמען",
-  "Optional": "אופציונלי",
   "Buy for {{price}}": "קנה ב-{{price}}",
   "Starts {{date}}": "מתחיל ב-{{date}}",
   "Ended": "הסתיים",
@@ -3092,5 +3091,8 @@
   "Cards sent to your email appear here on their own": "כרטיסים שנשלחו לכתובת הדוא״ל שלך מופיעים כאן מעצמם",
   "Gift Card": "כרטיס מתנה",
   "Give someone a year of Readest Plus or Pro": "תן למישהו שנה של Readest Plus או Pro",
-  "From {{price}}": "החל מ-{{price}}"
+  "From {{price}}": "החל מ-{{price}}",
+  "One payment, no subscription": "תשלום אחד, ללא מנוי",
+  "Write the card after you pay": "כותבים את הכרטיס אחרי התשלום",
+  "Their year starts when they redeem it": "השנה מתחילה כשהכרטיס ממומש"
 }

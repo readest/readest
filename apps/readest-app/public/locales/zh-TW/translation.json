@@ -2907,7 +2907,6 @@
   "Plan": "方案",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "電子郵件之後無法變更。如果對方使用 Apple 的「隱藏我的電子郵件」登入，請改用兌換代碼。",
   "Recipient email": "收件人電子郵件",
-  "Optional": "選填",
   "Buy for {{price}}": "以 {{price}} 購買",
   "Starts {{date}}": "{{date}} 開始",
   "Ended": "已結束",
@@ -2934,5 +2933,8 @@
   "Cards sent to your email appear here on their own": "寄到您電子郵件信箱的禮物卡會自動顯示在這裡",
   "Gift Card": "禮物卡",
   "Give someone a year of Readest Plus or Pro": "送給他人一年的 Readest Plus 或 Pro",
-  "From {{price}}": "{{price}} 起"
+  "From {{price}}": "{{price}} 起",
+  "One payment, no subscription": "一次付款，非訂閱",
+  "Write the card after you pay": "付款後再寫賀卡",
+  "Their year starts when they redeem it": "對方兌換後一年才開始計算"
 }

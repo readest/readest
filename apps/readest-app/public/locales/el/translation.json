@@ -2986,7 +2986,6 @@
   "Plan": "Πρόγραμμα",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "Το email δεν μπορεί να αλλάξει αργότερα. Αν ο παραλήπτης συνδέεται με την Απόκρυψη email της Apple, χρησιμοποιήστε τον κωδικό.",
   "Recipient email": "Email παραλήπτη",
-  "Optional": "Προαιρετικό",
   "Buy for {{price}}": "Αγορά για {{price}}",
   "Starts {{date}}": "Ξεκινά στις {{date}}",
   "Ended": "Έληξε",
@@ -3013,5 +3012,8 @@
   "Cards sent to your email appear here on their own": "Οι κάρτες που στάλθηκαν στο email σας εμφανίζονται εδώ αυτόματα",
   "Gift Card": "Δωροκάρτα",
   "Give someone a year of Readest Plus or Pro": "Χαρίστε σε κάποιον ένα έτος Readest Plus ή Pro",
-  "From {{price}}": "Από {{price}}"
+  "From {{price}}": "Από {{price}}",
+  "One payment, no subscription": "Μία πληρωμή, χωρίς συνδρομή",
+  "Write the card after you pay": "Γράψτε την κάρτα μετά την πληρωμή",
+  "Their year starts when they redeem it": "Η χρονιά του ξεκινά όταν την εξαργυρώσει"
 }

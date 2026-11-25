@@ -2986,7 +2986,6 @@
   "Plan": "Csomag",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "Az e-mail-cím később nem módosítható. Ha a címzett az Apple E-mail-címem elrejtése funkciójával jelentkezik be, használd inkább a kódot.",
   "Recipient email": "Címzett e-mail-címe",
-  "Optional": "Nem kötelező",
   "Buy for {{price}}": "Vásárlás: {{price}}",
   "Starts {{date}}": "Kezdete: {{date}}",
   "Ended": "Lejárt",
@@ -3013,5 +3012,8 @@
   "Cards sent to your email appear here on their own": "Az e-mail-címedre küldött kártyák maguktól megjelennek itt",
   "Gift Card": "Ajándékkártya",
   "Give someone a year of Readest Plus or Pro": "Ajándékozz valakinek egy évnyi Readest Plus vagy Pro csomagot",
-  "From {{price}}": "{{price}}-tól"
+  "From {{price}}": "{{price}}-tól",
+  "One payment, no subscription": "Egyszeri fizetés, nincs előfizetés",
+  "Write the card after you pay": "A kártyát a fizetés után írhatja meg",
+  "Their year starts when they redeem it": "Az év a kártya beváltásakor kezdődik"
 }

@@ -2907,7 +2907,6 @@
   "Plan": "요금제",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "이메일은 나중에 변경할 수 없습니다. 상대방이 Apple의 '나의 이메일 가리기'로 로그인한다면 코드를 대신 사용하세요.",
   "Recipient email": "받는 사람 이메일",
-  "Optional": "선택 사항",
   "Buy for {{price}}": "{{price}}에 구매",
   "Starts {{date}}": "{{date}} 시작",
   "Ended": "종료됨",
@@ -2934,5 +2933,8 @@
   "Cards sent to your email appear here on their own": "내 이메일로 전송된 카드는 여기에 자동으로 표시됩니다",
   "Gift Card": "기프트 카드",
   "Give someone a year of Readest Plus or Pro": "소중한 사람에게 Readest Plus 또는 Pro 1년 이용권을 선물하세요",
-  "From {{price}}": "{{price}}부터"
+  "From {{price}}": "{{price}}부터",
+  "One payment, no subscription": "한 번 결제, 구독 없음",
+  "Write the card after you pay": "카드는 결제 후에 작성하세요",
+  "Their year starts when they redeem it": "1년은 받는 분이 사용할 때 시작됩니다"
 }

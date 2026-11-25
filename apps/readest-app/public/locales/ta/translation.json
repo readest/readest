@@ -2986,7 +2986,6 @@
   "Plan": "திட்டம்",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "மின்னஞ்சலைப் பின்னர் மாற்ற முடியாது. அவர்கள் Apple-இன் Hide My Email மூலம் உள்நுழைந்தால், அதற்குப் பதிலாகக் குறியீட்டைப் பயன்படுத்தவும்.",
   "Recipient email": "பெறுநரின் மின்னஞ்சல்",
-  "Optional": "விருப்பம்",
   "Buy for {{price}}": "{{price}} க்கு வாங்கவும்",
   "Starts {{date}}": "{{date}} அன்று தொடங்கும்",
   "Ended": "முடிந்தது",
@@ -3013,5 +3012,8 @@
   "Cards sent to your email appear here on their own": "உங்கள் மின்னஞ்சலுக்கு அனுப்பப்பட்ட அட்டைகள் தானாகவே இங்கே தோன்றும்",
   "Gift Card": "பரிசு அட்டை",
   "Give someone a year of Readest Plus or Pro": "ஒருவருக்கு ஓராண்டு Readest Plus அல்லது Pro-வைப் பரிசளிக்கவும்",
-  "From {{price}}": "{{price}} முதல்"
+  "From {{price}}": "{{price}} முதல்",
+  "One payment, no subscription": "ஒருமுறை கட்டணம், சந்தா இல்லை",
+  "Write the card after you pay": "பணம் செலுத்திய பிறகு அட்டையை எழுதுங்கள்",
+  "Their year starts when they redeem it": "அட்டையைப் பயன்படுத்தும்போது அவர்களின் ஆண்டு தொடங்கும்"
 }

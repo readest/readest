@@ -19,7 +19,13 @@ import { purchaseIAPProduct } from '@/libs/payment/iap/client';
 import { getAPIBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { getAccessToken } from '@/utils/access';
 import { eventDispatcher } from '@/utils/event';
-import type { GiftCardPatch, GiftCardsResponse, GiftDraftInput, GiftPrice } from '@/types/gift';
+import type {
+  GiftCardPatch,
+  GiftCardsResponse,
+  GiftDraftInput,
+  GiftPrice,
+  SentGiftCard,
+} from '@/types/gift';
 import Checkout from '../Checkout';
 import GiftComposer from './GiftComposer';
 import ReceivedGiftList from './ReceivedGiftList';
@@ -76,6 +82,8 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
   const [busy, setBusy] = useState(false);
   // Bumped after a purchase so the composer starts blank for the next gift.
   const [composerKey, setComposerKey] = useState(0);
+  // The card just paid for, opened in Sent for the buyer to write.
+  const [writeId, setWriteId] = useState<string | null>(null);
   const [checkout, setCheckout] = useState<{ clientSecret: string; sessionId: string } | null>(
     null,
   );
@@ -88,24 +96,33 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
     [],
   );
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<GiftCardsResponse | null> => {
     try {
       const next = await fetchGiftCards();
       const state = `${next.giftPlan}:${next.giftActiveUntil}`;
       if (giftState.current !== null && giftState.current !== state) onPlanChanged();
       giftState.current = state;
       setCards(next);
+      return next;
     } catch (error) {
       console.error('Failed to load gift cards:', error);
       toast(_('Failed to load gift cards'));
+      return null;
     }
   }, [onPlanChanged, toast, _]);
 
   const finishPurchase = useCallback(
     async (paid: boolean) => {
-      await load();
+      const next = await load();
       if (!paid) return;
       setComposerKey((key) => key + 1);
+      // Every way back from paying (store, embedded or redirected checkout)
+      // lands here, and only the newest card is the one just bought.
+      const bought = next?.sent.reduce<SentGiftCard | null>(
+        (newest, card) => (!newest || card.purchasedAt > newest.purchasedAt ? card : newest),
+        null,
+      );
+      setWriteId(bought?.id ?? null);
       toast(_('Your gift card is ready'));
     },
     [load, toast, _],
@@ -260,8 +277,9 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
 
   return (
     <div className='flex flex-col gap-10'>
-      {/* No title: the Gift Card tile that opens this already says it. */}
-      <section className='flex flex-col gap-4'>
+      {/* No title: the Gift Card tile that opens this already says it. One
+          checkout-width column, so Buy sits under the plan on any screen. */}
+      <section className='mx-auto flex w-full max-w-md flex-col gap-4'>
         {description(_('Give someone a year of Readest Plus or Pro'))}
         <GiftComposer
           key={composerKey}
@@ -275,7 +293,7 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
       {sent.length > 0 && (
         <section aria-labelledby={sentId} className='flex flex-col gap-2'>
           <SectionTitle id={sentId}>{_('Sent')}</SectionTitle>
-          <SentGiftList cards={sent} onUpdate={handleUpdate} />
+          <SentGiftList cards={sent} writeId={writeId} onUpdate={handleUpdate} />
         </section>
       )}
     </div>

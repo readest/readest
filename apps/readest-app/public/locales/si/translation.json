@@ -2986,7 +2986,6 @@
   "Plan": "සැලැස්ම",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "ඊමේල් ලිපිනය පසුව වෙනස් කළ නොහැක. ඔවුන් Apple හි Hide My Email සමඟ පුරනය වන්නේ නම්, ඒ වෙනුවට කේතය භාවිත කරන්න.",
   "Recipient email": "ලබන්නාගේ ඊමේල්",
-  "Optional": "අත්‍යාවශ්‍ය නොවේ",
   "Buy for {{price}}": "{{price}} කට මිලදී ගන්න",
   "Starts {{date}}": "{{date}} ආරම්භ වේ",
   "Ended": "අවසන් විය",
@@ -3013,5 +3012,8 @@
   "Cards sent to your email appear here on their own": "ඔබගේ ඊමේල් වෙත යවන ලද කාඩ්පත් ස්වයංක්‍රීයව මෙහි දිස් වේ",
   "Gift Card": "තෑගි කාඩ්පත",
   "Give someone a year of Readest Plus or Pro": "කෙනෙකුට Readest Plus හෝ Pro වසරක් තෑගි කරන්න",
-  "From {{price}}": "{{price}} සිට"
+  "From {{price}}": "{{price}} සිට",
+  "One payment, no subscription": "එක් වරක් ගෙවීම, දායකත්වයක් නැත",
+  "Write the card after you pay": "ගෙවීමෙන් පසු කාඩ්පත ලියන්න",
+  "Their year starts when they redeem it": "කාඩ්පත භාවිත කළ විට ඔවුන්ගේ වසර ආරම්භ වේ"
 }

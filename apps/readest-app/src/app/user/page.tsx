@@ -446,19 +446,23 @@ const ProfilePage = () => {
           ) : (
             <div className='sm:bg-base-200 overflow-hidden rounded-lg sm:p-6 sm:shadow-md'>
               <div className='flex flex-col gap-y-8'>
-                <div className='flex flex-col gap-y-8 px-6'>
-                  <UserInfo
-                    avatarUrl={avatarUrl}
-                    userFullName={userFullName}
-                    userEmail={userEmail}
-                    planDetails={userPlanDetails}
-                  />
+                {/* The gift buy page sells to whoever opens it; their own account
+                    isn't part of that. */}
+                {giftView !== 'give' && (
+                  <div className='flex flex-col gap-y-8 px-6'>
+                    <UserInfo
+                      avatarUrl={avatarUrl}
+                      userFullName={userFullName}
+                      userEmail={userEmail}
+                      planDetails={userPlanDetails}
+                    />
 
-                  {!showStorageManager &&
-                    !showSharedLinksManager &&
-                    !showSyncManager &&
-                    !giftView && <UsageStats quotas={quotas} />}
-                </div>
+                    {!showStorageManager &&
+                      !showSharedLinksManager &&
+                      !showSyncManager &&
+                      !giftView && <UsageStats quotas={quotas} />}
+                  </div>
+                )}
 
                 {showStorageManager ? (
                   <div className='flex flex-col gap-y-8 px-6'>

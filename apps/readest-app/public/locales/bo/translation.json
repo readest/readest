@@ -2907,7 +2907,6 @@
   "Plan": "ཐུམ་སྒྲིལ།",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "གློག་འཕྲིན་ཁ་བྱང་རྗེས་སུ་བསྒྱུར་མི་ཐུབ། གལ་ཏེ་ཁོང་གིས་ Apple ཡི་ Hide My Email བརྒྱུད་ནང་འཛུལ་བྱེད་ན། དེའི་ཚབ་ཏུ་ཨང་རྟགས་བེད་སྤྱོད་གཏོང་རོགས།",
   "Recipient email": "ལེན་མཁན་གྱི་གློག་འཕྲིན།",
-  "Optional": "འདེམས་རུང་།",
   "Buy for {{price}}": "{{price}} ལ་ཉོ།",
   "Starts {{date}}": "{{date}} ནས་འགོ་འཛུགས།",
   "Ended": "མཇུག་རྫོགས།",
@@ -2934,5 +2933,8 @@
   "Cards sent to your email appear here on their own": "ཁྱེད་ཀྱི་གློག་འཕྲིན་དུ་བསྐུར་བའི་ཤོག་བྱང་རྣམས་འདིར་རང་བཞིན་གྱིས་མངོན།",
   "Gift Card": "ལེགས་སྐྱེས་ཤོག་བྱང་།",
   "Give someone a year of Readest Plus or Pro": "མི་ཞིག་ལ་ Readest Plus ཡང་ན་ Pro ལོ་གཅིག་ལེགས་སྐྱེས་སུ་འབུལ།",
-  "From {{price}}": "{{price}} ནས་འགོ་འཛུགས།"
+  "From {{price}}": "{{price}} ནས་འགོ་འཛུགས།",
+  "One payment, no subscription": "ཐེངས་གཅིག་རིན་སྤྲོད། མུ་མཐུད་མཁོ་མངགས་མེད།",
+  "Write the card after you pay": "རིན་སྤྲད་རྗེས་བྱང་བུ་འབྲི་ཆོག",
+  "Their year starts when they redeem it": "ཁོ་ཚོའི་ལོ་གཅིག་དེ་བྱང་བུ་བེད་སྤྱོད་བྱེད་དུས་འགོ་འཛུགས།"
 }

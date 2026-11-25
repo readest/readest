@@ -2986,7 +2986,6 @@
   "Plan": "გეგმა",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "ელფოსტის შეცვლა მოგვიანებით შეუძლებელია. თუ მიმღები Apple-ის Hide My Email-ით შედის, ამის ნაცვლად გამოიყენეთ კოდი.",
   "Recipient email": "მიმღების ელფოსტა",
-  "Optional": "არასავალდებულო",
   "Buy for {{price}}": "ყიდვა {{price}}-ად",
   "Starts {{date}}": "იწყება {{date}}",
   "Ended": "დასრულდა",
@@ -3013,5 +3012,8 @@
   "Cards sent to your email appear here on their own": "თქვენს ელფოსტაზე გამოგზავნილი ბარათები აქ ავტომატურად გამოჩნდება",
   "Gift Card": "სასაჩუქრე ბარათი",
   "Give someone a year of Readest Plus or Pro": "აჩუქეთ ვინმეს Readest Plus-ის ან Pro-ს ერთი წელი",
-  "From {{price}}": "{{price}}-დან"
+  "From {{price}}": "{{price}}-დან",
+  "One payment, no subscription": "ერთჯერადი გადახდა, გამოწერის გარეშე",
+  "Write the card after you pay": "ბარათი გადახდის შემდეგ დაწერეთ",
+  "Their year starts when they redeem it": "მათი წელი ბარათის გააქტიურებისას იწყება"
 }

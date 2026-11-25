@@ -3065,7 +3065,6 @@
   "Plan": "Abonnement",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "L'e-mail ne pourra plus être modifié. Si la personne se connecte avec « Masquer mon e-mail » d'Apple, utilisez plutôt le code.",
   "Recipient email": "E-mail du destinataire",
-  "Optional": "Facultatif",
   "Buy for {{price}}": "Acheter pour {{price}}",
   "Starts {{date}}": "Commence le {{date}}",
   "Ended": "Terminé",
@@ -3092,5 +3091,8 @@
   "Cards sent to your email appear here on their own": "Les cartes envoyées à votre adresse e-mail apparaissent ici d'elles-mêmes",
   "Gift Card": "Carte cadeau",
   "Give someone a year of Readest Plus or Pro": "Offrez un an de Readest Plus ou Pro",
-  "From {{price}}": "À partir de {{price}}"
+  "From {{price}}": "À partir de {{price}}",
+  "One payment, no subscription": "Un seul paiement, sans abonnement",
+  "Write the card after you pay": "Rédigez la carte après le paiement",
+  "Their year starts when they redeem it": "Son année commence à l’utilisation de la carte"
 }

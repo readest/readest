@@ -3302,7 +3302,6 @@
   "Plan": "الخطة",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "لا يمكن تغيير البريد الإلكتروني لاحقًا. إذا كان المستلم يسجّل الدخول باستخدام ميزة «إخفاء بريدي الإلكتروني» من Apple، فاستخدم الرمز بدلًا من ذلك.",
   "Recipient email": "البريد الإلكتروني للمستلم",
-  "Optional": "اختياري",
   "Buy for {{price}}": "شراء مقابل {{price}}",
   "Starts {{date}}": "تبدأ في {{date}}",
   "Ended": "انتهت",
@@ -3329,5 +3328,8 @@
   "Cards sent to your email appear here on their own": "تظهر هنا تلقائيًا البطاقات المرسلة إلى بريدك الإلكتروني",
   "Gift Card": "بطاقة هدية",
   "Give someone a year of Readest Plus or Pro": "أهدِ أحدهم سنة من Readest Plus أو Pro",
-  "From {{price}}": "ابتداءً من {{price}}"
+  "From {{price}}": "ابتداءً من {{price}}",
+  "One payment, no subscription": "دفعة واحدة، بلا اشتراك",
+  "Write the card after you pay": "اكتب البطاقة بعد الدفع",
+  "Their year starts when they redeem it": "تبدأ سنتهم عند استرداد البطاقة"
 }

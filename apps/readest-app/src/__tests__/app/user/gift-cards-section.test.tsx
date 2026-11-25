@@ -153,6 +153,11 @@ describe('GiftCardsSection', () => {
       expect(screen.queryByRole('heading', { name: 'Gift Card' })).toBeNull();
       expect(screen.queryByRole('heading', { name: 'Give a Gift' })).toBeNull();
       expect(screen.getByText('Give someone a year of Readest Plus or Pro')).toBeTruthy();
+      // Owner chose "buy, then write": nothing to fill in before Buy.
+      expect(screen.queryByRole('textbox')).toBeNull();
+      expect(screen.getByText('One payment, no subscription')).toBeTruthy();
+      expect(screen.getByText('Write the card after you pay')).toBeTruthy();
+      expect(screen.getByText('Their year starts when they redeem it')).toBeTruthy();
       expect(screen.queryByRole('textbox', { name: 'Gift code' })).toBeNull();
       expect(screen.queryByRole('region', { name: 'Received' })).toBeNull();
     });
@@ -180,10 +185,6 @@ describe('GiftCardsSection', () => {
     renderSection();
 
     fireEvent.click(screen.getByRole('radio', { name: /Readest Pro/ }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'To' }), { target: { value: 'Sam' } });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
-      target: { value: 'Enjoy the year' },
-    });
     fireEvent.click(await buyButton());
 
     await waitFor(() =>
@@ -191,11 +192,12 @@ describe('GiftCardsSection', () => {
         giftCardId: 'draft-1',
       }),
     );
+    // Written after paying: the card starts blank, signed by the buyer.
     expect(h.createGiftDraft).toHaveBeenCalledWith({
       tier: 'pro',
-      recipientName: 'Sam',
+      recipientName: '',
       senderName: 'Alex',
-      message: 'Enjoy the year',
+      message: '',
       recipientEmail: null,
     });
     expect(h.createGiftDraft.mock.invocationCallOrder[0]).toBeLessThan(
@@ -209,6 +211,49 @@ describe('GiftCardsSection', () => {
     expect(h.purchaseIAPProduct).not.toHaveBeenCalled();
     // The page is leaving for Stripe: a second tap must not make a second draft.
     expect(((await buyButton()) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  // Owner: "say what Plus or Pro includes".
+  it('shows what the picked plan includes', async () => {
+    renderSection();
+    await buyButton();
+
+    expect(screen.getByText('Unlimited AI Read Aloud Hours')).toBeTruthy();
+    expect(screen.getByText('Cloud Sync Storage · 5 GB')).toBeTruthy();
+    expect(screen.queryByText('Includes All Free Plan Benefits')).toBeNull();
+
+    fireEvent.click(screen.getByRole('radio', { name: /Readest Pro/ }));
+    expect(screen.getByText('Includes All Plus Plan Benefits')).toBeTruthy();
+    expect(screen.getByText('Cloud Sync Storage · 20 GB')).toBeTruthy();
+    expect(screen.queryByText('Priority Support')).toBeNull();
+  });
+
+  it('after paying, the card just bought opens for writing', async () => {
+    const older = sentCard({ id: 'old', code: 'OLDC-OLDC-OLDC-OLDC' });
+    const bought = sentCard({
+      id: 'new',
+      recipientName: '',
+      message: '',
+      code: 'NEWC-NEWC-NEWC-NEWC',
+      purchasedAt: '2026-11-25T10:00:00Z',
+    });
+    h.fetchGiftCards
+      .mockResolvedValueOnce(response({ sent: [older] }))
+      .mockResolvedValue(response({ sent: [older, bought] }));
+    h.purchaseIAPProduct.mockResolvedValue({ platform: 'ios', transactionId: 'txn-1' });
+    h.verifyGiftIAPPurchase.mockResolvedValue(undefined);
+    renderSection({ useIAP: true, prices: IAP_PRICES });
+
+    fireEvent.click(await buyButton());
+
+    const item = (code: string) => screen.getByText(code).closest('li') as HTMLElement;
+    await waitFor(() =>
+      expect(within(item('NEWC-NEWC-NEWC-NEWC')).getByRole('textbox', { name: 'To' })).toBeTruthy(),
+    );
+    expect(
+      item('NEWC-NEWC-NEWC-NEWC').querySelector('[data-tier]')?.getAttribute('data-side'),
+    ).toBe('back');
+    expect(within(item('OLDC-OLDC-OLDC-OLDC')).queryByRole('textbox')).toBeNull();
   });
 
   it('buying with IAP verifies with the draft id', async () => {
@@ -350,11 +395,13 @@ describe('GiftCardsSection', () => {
     await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(2));
   });
 
-  it('the composer blocks a 301st character', async () => {
+  it('the card editor blocks a 301st character', async () => {
+    h.fetchGiftCards.mockResolvedValue(response({ sent: [sentCard({ message: '' })] }));
     renderSection();
-    const message = (await screen.findByRole('textbox', {
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit message' }));
+    const message = within(sentRegion()).getByRole('textbox', {
       name: 'Message',
-    })) as HTMLTextAreaElement;
+    }) as HTMLTextAreaElement;
 
     fireEvent.change(message, { target: { value: 'a'.repeat(301) } });
 
@@ -362,7 +409,7 @@ describe('GiftCardsSection', () => {
     expect(screen.getByText('300 / 300')).toBeTruthy();
   });
 
-  it('the preview card shows the To and message placeholders until the buyer types', async () => {
+  it('the preview card shows the To and message placeholders, signed by the buyer', async () => {
     renderSection();
     await buyButton();
     const preview = () => document.querySelector('[data-tier]') as HTMLElement;
@@ -371,41 +418,28 @@ describe('GiftCardsSection', () => {
     expect(within(preview()).getByText('Write a few words for them')).toBeTruthy();
     // From is filled from the account, so its placeholder stays off the card.
     expect(within(preview()).queryByText('Your name')).toBeNull();
-
-    fireEvent.change(screen.getByRole('textbox', { name: 'To' }), { target: { value: 'Sam' } });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), {
-      target: { value: 'Enjoy the year' },
-    });
-    expect(within(preview()).queryByText('Their name')).toBeNull();
-    expect(within(preview()).queryByText('Write a few words for them')).toBeNull();
-    expect(within(preview()).getByText('Sam')).toBeTruthy();
-    expect(within(preview()).getByText('Enjoy the year')).toBeTruthy();
+    expect(within(preview()).getByText('Alex')).toBeTruthy();
   });
 
-  it('the preview turns to the bookplate while the buyer writes, and to the cover on a plan pick', async () => {
+  it('a plan pick shows the cover, and the buyer can turn the preview over', async () => {
     renderSection();
     await buyButton();
     const preview = () => document.querySelector('[data-tier]') as HTMLElement;
     expect(preview().getAttribute('data-side')).toBe('front');
 
-    fireEvent.focus(screen.getByRole('textbox', { name: 'Message' }));
+    fireEvent.click(within(preview()).getByRole('button', { name: 'Turn over' }));
     expect(preview().getAttribute('data-side')).toBe('back');
 
     fireEvent.click(screen.getByRole('radio', { name: /Readest Pro/ }));
     expect(preview().getAttribute('data-side')).toBe('front');
-
-    fireEvent.focus(screen.getByRole('textbox', { name: 'To' }));
-    expect(preview().getAttribute('data-side')).toBe('back');
-
-    // The buyer can still turn it over by hand.
-    fireEvent.click(within(preview()).getByRole('button', { name: 'Turn over' }));
-    expect(preview().getAttribute('data-side')).toBe('front');
   });
 
   it('the message counter reads left to right in an RTL layout', async () => {
+    h.fetchGiftCards.mockResolvedValue(response({ sent: [sentCard({ message: '' })] }));
     renderSection();
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit message' }));
 
-    expect((await screen.findByText('0 / 300')).getAttribute('dir')).toBe('ltr');
+    expect(within(sentRegion()).getByText('0 / 300').getAttribute('dir')).toBe('ltr');
   });
 
   it('a sent card shows the message being edited, and the saved one after', async () => {
@@ -445,6 +479,8 @@ describe('GiftCardsSection', () => {
     renderSection();
 
     fireEvent.click(await screen.findByRole('button', { name: 'Add recipient email' }));
+    // The email is only asked for here now, so the Hide My Email advice is too.
+    expect(within(sentRegion()).getByText(/Hide My Email, use the code instead/)).toBeTruthy();
     fireEvent.change(within(sentRegion()).getByRole('textbox', { name: 'Recipient email' }), {
       target: { value: 'sam@example.test' },
     });

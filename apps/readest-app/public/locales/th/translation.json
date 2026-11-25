@@ -2907,7 +2907,6 @@
   "Plan": "แผน",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "ไม่สามารถเปลี่ยนอีเมลได้ภายหลัง หากผู้รับเข้าสู่ระบบด้วย \"ซ่อนอีเมลของฉัน\" ของ Apple ให้ใช้โค้ดแทน",
   "Recipient email": "อีเมลผู้รับ",
-  "Optional": "ไม่บังคับ",
   "Buy for {{price}}": "ซื้อในราคา {{price}}",
   "Starts {{date}}": "เริ่ม {{date}}",
   "Ended": "สิ้นสุดแล้ว",
@@ -2934,5 +2933,8 @@
   "Cards sent to your email appear here on their own": "บัตรที่ส่งถึงอีเมลของคุณจะแสดงที่นี่โดยอัตโนมัติ",
   "Gift Card": "บัตรของขวัญ",
   "Give someone a year of Readest Plus or Pro": "มอบ Readest Plus หรือ Pro หนึ่งปีให้ใครสักคน",
-  "From {{price}}": "เริ่มต้น {{price}}"
+  "From {{price}}": "เริ่มต้น {{price}}",
+  "One payment, no subscription": "จ่ายครั้งเดียว ไม่ใช่การสมัครสมาชิก",
+  "Write the card after you pay": "เขียนการ์ดได้หลังชำระเงิน",
+  "Their year starts when they redeem it": "หนึ่งปีของผู้รับเริ่มเมื่อแลกบัตร"
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { IconType } from 'react-icons';
 import { MdContentCopy, MdEdit, MdLink, MdOutlineEmail } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -56,18 +56,25 @@ const EmailEditor: React.FC<{ onSave: (email: string) => Promise<void>; onCancel
           {_("Add {{email}} as the recipient? It can't be changed later.", { email: trimmed })}
         </p>
       ) : (
-        <input
-          type='email'
-          required
-          aria-label={_('Recipient email')}
-          placeholder={_('Recipient email')}
-          value={email}
-          autoComplete='off'
-          autoCapitalize='off'
-          spellCheck={false}
-          onChange={(event) => setEmail(event.target.value)}
-          className='input input-sm eink-bordered w-full'
-        />
+        <>
+          <input
+            type='email'
+            required
+            aria-label={_('Recipient email')}
+            placeholder={_('Recipient email')}
+            value={email}
+            autoComplete='off'
+            autoCapitalize='off'
+            spellCheck={false}
+            onChange={(event) => setEmail(event.target.value)}
+            className='input input-sm eink-bordered w-full'
+          />
+          <p className='text-base-content/70 text-xs leading-relaxed'>
+            {_(
+              "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.",
+            )}
+          </p>
+        </>
       )}
       <div className='flex justify-end gap-2'>
         <button type='button' onClick={onCancel} className='btn btn-ghost btn-sm'>
@@ -92,8 +99,9 @@ const EmailEditor: React.FC<{ onSave: (email: string) => Promise<void>; onCancel
   );
 };
 
-const SentGiftItem: React.FC<{ card: SentGiftCard; onUpdate: UpdateGift }> = ({
+const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: UpdateGift }> = ({
   card,
+  write,
   onUpdate,
 }) => {
   const _ = useTranslation();
@@ -101,6 +109,17 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; onUpdate: UpdateGift }> = ({
   const [face, setFace] = useState<GiftFaceText>(card);
   const [saving, setSaving] = useState(false);
   const [side, setSide] = useState<GiftCardSide>('front');
+  const item = useRef<HTMLLIElement>(null);
+
+  // Just paid for: open it on the bookplate, ready to write.
+  useEffect(() => {
+    if (!write) return;
+    setFace(card);
+    setEditing('message');
+    setSide('back');
+    item.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+    // Only when it becomes the card to write, not on every reload of it.
+  }, [write]);
   const open = card.status === 'unredeemed' || card.status === 'waiting';
   const code = open ? card.code : null;
 
@@ -141,7 +160,7 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; onUpdate: UpdateGift }> = ({
   };
 
   return (
-    <li className='flex flex-col gap-3'>
+    <li ref={item} className='flex scroll-mt-16 flex-col gap-3'>
       {/* The card face follows the message while it's edited. */}
       <GiftCard
         face={editing === 'message' ? { ...card, ...face } : card}
@@ -225,13 +244,15 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; onUpdate: UpdateGift }> = ({
 
 interface SentGiftListProps {
   cards: SentGiftCard[];
+  /** The card just bought, opened for writing. */
+  writeId?: string | null;
   onUpdate: UpdateGift;
 }
 
-const SentGiftList: React.FC<SentGiftListProps> = ({ cards, onUpdate }) => (
+const SentGiftList: React.FC<SentGiftListProps> = ({ cards, writeId, onUpdate }) => (
   <ul className='grid gap-8 sm:grid-cols-2'>
     {cards.map((card) => (
-      <SentGiftItem key={card.id} card={card} onUpdate={onUpdate} />
+      <SentGiftItem key={card.id} card={card} write={card.id === writeId} onUpdate={onUpdate} />
     ))}
   </ul>
 );

@@ -2986,7 +2986,6 @@
   "Plan": "Plan",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "E-posta daha sonra değiştirilemez. Alıcı Apple'ın E-postamı Gizle özelliğiyle giriş yapıyorsa bunun yerine kodu kullanın.",
   "Recipient email": "Alıcının e-postası",
-  "Optional": "İsteğe bağlı",
   "Buy for {{price}}": "{{price}} karşılığında satın al",
   "Starts {{date}}": "Başlangıç: {{date}}",
   "Ended": "Sona erdi",
@@ -3013,5 +3012,8 @@
   "Cards sent to your email appear here on their own": "E-posta adresinize gönderilen kartlar burada kendiliğinden görünür",
   "Gift Card": "Hediye Kartı",
   "Give someone a year of Readest Plus or Pro": "Birine bir yıllık Readest Plus veya Pro hediye edin",
-  "From {{price}}": "Başlangıç fiyatı {{price}}"
+  "From {{price}}": "Başlangıç fiyatı {{price}}",
+  "One payment, no subscription": "Tek ödeme, abonelik yok",
+  "Write the card after you pay": "Kartı ödemeden sonra yazın",
+  "Their year starts when they redeem it": "Bir yıllık süre kart kullanıldığında başlar"
 }

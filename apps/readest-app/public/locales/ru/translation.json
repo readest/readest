@@ -3144,7 +3144,6 @@
   "Plan": "План",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "Позже email изменить нельзя. Если получатель входит через функцию Apple «Скрыть e-mail», используйте код.",
   "Recipient email": "Email получателя",
-  "Optional": "Необязательно",
   "Buy for {{price}}": "Купить за {{price}}",
   "Starts {{date}}": "Начнётся {{date}}",
   "Ended": "Закончилась",
@@ -3171,5 +3170,8 @@
   "Cards sent to your email appear here on their own": "Карты, отправленные на вашу почту, появятся здесь сами",
   "Gift Card": "Подарочная карта",
   "Give someone a year of Readest Plus or Pro": "Подарите кому-нибудь год Readest Plus или Pro",
-  "From {{price}}": "От {{price}}"
+  "From {{price}}": "От {{price}}",
+  "One payment, no subscription": "Один платёж, без подписки",
+  "Write the card after you pay": "Открытку можно написать после оплаты",
+  "Their year starts when they redeem it": "Год начнётся, когда карту активируют"
 }

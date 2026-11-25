@@ -2907,7 +2907,6 @@
   "Plan": "Gói",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "Không thể thay đổi email sau này. Nếu họ đăng nhập bằng tính năng Ẩn Email của tôi của Apple, hãy dùng mã thay thế.",
   "Recipient email": "Email người nhận",
-  "Optional": "Tùy chọn",
   "Buy for {{price}}": "Mua với giá {{price}}",
   "Starts {{date}}": "Bắt đầu {{date}}",
   "Ended": "Đã kết thúc",
@@ -2934,5 +2933,8 @@
   "Cards sent to your email appear here on their own": "Thẻ được gửi tới email của bạn sẽ tự động hiện ở đây",
   "Gift Card": "Thẻ quà tặng",
   "Give someone a year of Readest Plus or Pro": "Tặng ai đó một năm Readest Plus hoặc Pro",
-  "From {{price}}": "Từ {{price}}"
+  "From {{price}}": "Từ {{price}}",
+  "One payment, no subscription": "Thanh toán một lần, không đăng ký",
+  "Write the card after you pay": "Viết thiệp sau khi thanh toán",
+  "Their year starts when they redeem it": "Một năm của họ bắt đầu khi đổi thẻ"
 }

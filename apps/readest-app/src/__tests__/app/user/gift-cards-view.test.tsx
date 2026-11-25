@@ -63,7 +63,7 @@ vi.mock('@/components/LegalLinks', () => ({ default: () => null }));
 vi.mock('@/components/Spinner', () => ({ default: () => null }));
 vi.mock('@/components/Toast', () => ({ Toast: () => null }));
 vi.mock('@/app/user/components/Header', () => ({ default: () => null }));
-vi.mock('@/app/user/components/UserInfo', () => ({ default: () => null }));
+vi.mock('@/app/user/components/UserInfo', () => ({ default: () => <div>account block</div> }));
 vi.mock('@/app/user/components/UsageStats', () => ({
   default: () => <div>usage stats</div>,
 }));
@@ -197,4 +197,16 @@ it('loads the gift prices once for the Gift Card tile and the buy view', async (
   );
   expect(mocks.fetchGiftPrices).toHaveBeenCalledTimes(1);
   expect(mocks.fetchGiftPrices).toHaveBeenCalledWith(true);
+});
+
+// Owner: "In gift card purchase page, we don't need the user avatar section".
+it.each([
+  ['the buy view', false, { section: 'gifts' }],
+  ['the redeem view', true, { section: 'redeem' }],
+  ['the plans', true, {}],
+] as const)('%s shows the account block: %s', (_name, shown, params) => {
+  mocks.params = new URLSearchParams(params);
+  render(<ProfilePage />);
+
+  expect(!!screen.queryByText('account block')).toBe(shown);
 });

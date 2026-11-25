@@ -2907,7 +2907,6 @@
   "Plan": "Paket",
   "The email can't be changed later. If they sign in with Apple's Hide My Email, use the code instead.": "Email tidak dapat diubah nanti. Jika penerima masuk dengan Sembunyikan Email Saya dari Apple, gunakan kode sebagai gantinya.",
   "Recipient email": "Email penerima",
-  "Optional": "Opsional",
   "Buy for {{price}}": "Beli seharga {{price}}",
   "Starts {{date}}": "Mulai {{date}}",
   "Ended": "Berakhir",
@@ -2934,5 +2933,8 @@
   "Cards sent to your email appear here on their own": "Kartu yang dikirim ke email Anda akan muncul di sini dengan sendirinya",
   "Gift Card": "Kartu Hadiah",
   "Give someone a year of Readest Plus or Pro": "Hadiahkan Readest Plus atau Pro selama setahun kepada seseorang",
-  "From {{price}}": "Mulai {{price}}"
+  "From {{price}}": "Mulai {{price}}",
+  "One payment, no subscription": "Sekali bayar, tanpa langganan",
+  "Write the card after you pay": "Tulis kartunya setelah membayar",
+  "Their year starts when they redeem it": "Satu tahunnya dimulai saat kartu ditukarkan"
 }
