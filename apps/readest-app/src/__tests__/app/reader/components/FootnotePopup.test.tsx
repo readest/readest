@@ -131,7 +131,8 @@ vi.mock('@/styles/fonts', () => ({
   mountCustomFont: vi.fn(),
 }));
 
-vi.mock('@/utils/sel', () => ({
+vi.mock('@/utils/sel', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/sel')>()),
   getPosition: () => ({ point: { x: 10, y: 10 }, dir: 'down' }),
   getPopupPosition: () => ({ point: { x: 10, y: 10 }, dir: 'down' }),
 }));
