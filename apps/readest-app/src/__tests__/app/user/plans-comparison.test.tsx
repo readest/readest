@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import PlansComparison from '@/app/user/components/PlansComparison';
-import { GiftTier } from '@/types/gift';
+import { GiftPrice, GiftTier } from '@/types/gift';
 import { AvailablePlan, PlanInterval, UserPlan } from '@/types/quota';
 import { getLocale } from '@/utils/misc';
 
@@ -168,6 +168,62 @@ describe('PlansComparison', () => {
       fireEvent.click(giftCard);
       expect(onGiftCard).toHaveBeenCalledTimes(1);
       expect(onSubscribe).not.toHaveBeenCalled();
+    });
+
+    const usd = (cents: number) =>
+      new Intl.NumberFormat(getLocale(), { style: 'currency', currency: 'usd' }).format(
+        cents / 100,
+      );
+    const lifetime = (props: Partial<Parameters<typeof PlansComparison>[0]> = {}) =>
+      render(
+        <PlansComparison
+          availablePlans={[...WITH_YEARLY, STORAGE, CUSTOMIZATION]}
+          userPlan='free'
+          onSubscribe={vi.fn()}
+          onGiftCard={vi.fn()}
+          {...props}
+        />,
+      );
+
+    // Owner: "Gift Card also has a price on it (starts from $49.99)".
+    it('starts from the lowest gift price', () => {
+      const GIFT_PRICES: GiftPrice[] = [
+        { tier: 'pro', productId: 'price_gift_pro', price: 9999, currency: 'usd' },
+        { tier: 'plus', productId: 'price_gift_plus', price: 4999, currency: 'usd' },
+      ];
+      lifetime({ giftPrices: GIFT_PRICES });
+
+      const giftCard = within(planCard('Lifetime Plan')).getByRole('button', {
+        name: /^Gift Card/,
+      });
+      expect(giftCard.textContent).toBe(`Gift CardFrom ${usd(4999)}`);
+    });
+
+    it('shows no price until the gift prices load', () => {
+      lifetime({ giftPrices: [] });
+
+      expect(
+        within(planCard('Lifetime Plan')).getByRole('button', { name: /^Gift Card/ }).textContent,
+      ).toBe('Gift Card');
+    });
+
+    // Owner: "Full Customization when unlocked, also has a price on it, which
+    // is used as the price anchor".
+    it('an unlocked Full Customization keeps its price', () => {
+      lifetime({ customizationPurchased: true });
+
+      const unlocked = within(planCard('Lifetime Plan')).getByText('Full Customization (Unlocked)');
+      expect(unlocked.parentElement!.textContent).toBe(`Full Customization (Unlocked)${usd(999)}`);
+    });
+
+    it.each([
+      ['unlocked', [STORAGE, CUSTOMIZATION], true, 'Full Customization (Unlocked)'],
+      ['coming soon', [STORAGE], false, 'Full Customization (Coming Soon)'],
+    ] as const)('sets Full Customization (%s) in the type of the other products', (_state, products, customizationPurchased, label) => {
+      lifetime({ availablePlans: [...WITH_YEARLY, ...products], customizationPurchased });
+
+      const card = within(planCard('Lifetime Plan'));
+      expect(card.getByText(label).className).toBe(card.getByText('1 GB Storage').className);
     });
 
     // The Gift Card view also lists the cards you bought, so it must stay

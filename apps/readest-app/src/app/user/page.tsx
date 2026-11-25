@@ -14,7 +14,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
 import { useAvailablePlans } from '@/hooks/useAvailablePlans';
 import type { PlanType } from '@/types/quota';
-import type { GiftCardsResponse } from '@/types/gift';
+import type { GiftCardsResponse, GiftPrice } from '@/types/gift';
 import { navigateBackFromProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -28,7 +28,7 @@ import {
   getSubscriptionSuccessUrl as getIAPSubscriptionSuccessUrl,
 } from '@/libs/payment/iap/client';
 import { isPurchaseProduct } from '@/libs/payment/iap/utils';
-import { claimGiftCards, fetchGiftCards } from '@/libs/payment/gift/client';
+import { claimGiftCards, fetchGiftCards, fetchGiftPrices } from '@/libs/payment/gift/client';
 import {
   createStripeCheckoutSession,
   redirectToStripeCheckout,
@@ -166,6 +166,24 @@ const ProfilePage = () => {
   }, [refresh, loadGiftInfo]);
 
   const { quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
+
+  // The Gift Card tile shows the lowest and the buy view sells at these, so
+  // they load once here. An IAP build sells gifts through its store only:
+  // nothing loads until the app service says which, never Stripe meanwhile.
+  const [giftPrices, setGiftPrices] = useState<GiftPrice[]>([]);
+  const giftsThroughIAP = appService?.hasIAP;
+  useEffect(() => {
+    if (giftsThroughIAP === undefined) return;
+    let stale = false;
+    fetchGiftPrices(giftsThroughIAP)
+      .then((next) => {
+        if (!stale) setGiftPrices(next);
+      })
+      .catch((error) => console.error('Failed to load gift prices:', error));
+    return () => {
+      stale = true;
+    };
+  }, [giftsThroughIAP]);
 
   const { availablePlans, iapAvailable } = useAvailablePlans({
     hasIAP: appService?.hasIAP || false,
@@ -459,6 +477,7 @@ const ProfilePage = () => {
                   <div className='flex flex-col gap-y-8 px-6'>
                     <GiftCardsSection
                       view={giftView}
+                      prices={giftPrices}
                       initialCode={giftCode}
                       stripeSessionId={
                         searchParams?.get('section') === 'gifts'
@@ -479,6 +498,7 @@ const ProfilePage = () => {
                         userPlan={userProfilePlan}
                         customizationPurchased={customizationPurchased}
                         gift={gift}
+                        giftPrices={giftPrices}
                         onSubscribe={buyThroughIAP ? handleIAPSubscribe : handleStripeSubscribe}
                         onGiftCard={handleGiftCard}
                       />

@@ -2933,5 +2933,6 @@
   "Redeem Gift Card": "ལེགས་སྐྱེས་ཤོག་བྱང་བེད་སྤྱོད།",
   "Cards sent to your email appear here on their own": "ཁྱེད་ཀྱི་གློག་འཕྲིན་དུ་བསྐུར་བའི་ཤོག་བྱང་རྣམས་འདིར་རང་བཞིན་གྱིས་མངོན།",
   "Gift Card": "ལེགས་སྐྱེས་ཤོག་བྱང་།",
-  "Give someone a year of Readest Plus or Pro": "མི་ཞིག་ལ་ Readest Plus ཡང་ན་ Pro ལོ་གཅིག་ལེགས་སྐྱེས་སུ་འབུལ།"
+  "Give someone a year of Readest Plus or Pro": "མི་ཞིག་ལ་ Readest Plus ཡང་ན་ Pro ལོ་གཅིག་ལེགས་སྐྱེས་སུ་འབུལ།",
+  "From {{price}}": "{{price}} ནས་འགོ་འཛུགས།"
 }

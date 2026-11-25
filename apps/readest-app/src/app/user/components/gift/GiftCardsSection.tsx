@@ -8,7 +8,6 @@ import { SectionTitle } from '@/components/settings/primitives';
 import {
   createGiftDraft,
   fetchGiftCards,
-  fetchGiftPrices,
   updateGiftCard,
   verifyGiftIAPPurchase,
 } from '@/libs/payment/gift/client';
@@ -50,6 +49,8 @@ export type GiftCardsView = 'give' | 'redeem';
 
 interface GiftCardsSectionProps {
   view: GiftCardsView;
+  /** Loaded by the page, which shows the lowest on the Gift Card tile. */
+  prices: GiftPrice[];
   initialCode?: string;
   stripeSessionId?: string;
   useIAP: boolean;
@@ -58,6 +59,7 @@ interface GiftCardsSectionProps {
 
 const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
   view,
+  prices,
   initialCode,
   stripeSessionId,
   useIAP,
@@ -66,13 +68,11 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
   const _ = useTranslation();
   const router = useAppRouter();
   const { user } = useAuth();
-  const giveId = useId();
   const receivedId = useId();
   const redeemId = useId();
   const sentId = useId();
   const redeemRef = useRef<HTMLElement>(null);
   const [cards, setCards] = useState<GiftCardsResponse | null>(null);
-  const [prices, setPrices] = useState<GiftPrice[]>([]);
   const [busy, setBusy] = useState(false);
   // Bumped after a purchase so the composer starts blank for the next gift.
   const [composerKey, setComposerKey] = useState(0);
@@ -126,22 +126,6 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
     void open();
     // Once on open: a returning checkout is checked before the first load.
   }, []);
-
-  useEffect(() => {
-    // Never keep one store's prices once the other is in use: a Stripe price
-    // id must not reach the store, nor a store id Stripe.
-    setPrices([]);
-    if (view !== 'give') return;
-    let stale = false;
-    fetchGiftPrices(useIAP)
-      .then((next) => {
-        if (!stale) setPrices(next);
-      })
-      .catch((error) => console.error('Failed to load gift prices:', error));
-    return () => {
-      stale = true;
-    };
-  }, [useIAP, view]);
 
   useEffect(() => {
     // A gift link lands here with its code filled in; bring the form into view.
@@ -247,17 +231,17 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
   const received = cards?.received ?? [];
   const sent = cards?.sent ?? [];
 
-  const header = (title: string, description: string) => (
-    <div>
-      <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{title}</h2>
-      <p className='text-base-content/70 text-sm leading-relaxed'>{description}</p>
-    </div>
+  const description = (text: string) => (
+    <p className='text-base-content/70 text-sm leading-relaxed'>{text}</p>
   );
 
   if (view === 'redeem') {
     return (
       <div className='flex flex-col gap-10'>
-        {header(_('Redeem Gift Card'), _('Cards sent to your email appear here on their own'))}
+        <div>
+          <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('Redeem Gift Card')}</h2>
+          {description(_('Cards sent to your email appear here on their own'))}
+        </div>
 
         <section ref={redeemRef} aria-labelledby={redeemId} className='flex flex-col gap-2'>
           <SectionTitle id={redeemId}>{_('Redeem a Code')}</SectionTitle>
@@ -276,10 +260,9 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
 
   return (
     <div className='flex flex-col gap-10'>
-      {header(_('Gift Card'), _('Give someone a year of Readest Plus or Pro'))}
-
-      <section aria-labelledby={giveId} className='flex flex-col gap-2'>
-        <SectionTitle id={giveId}>{_('Give a Gift')}</SectionTitle>
+      {/* No title: the Gift Card tile that opens this already says it. */}
+      <section className='flex flex-col gap-4'>
+        {description(_('Give someone a year of Readest Plus or Pro'))}
         <GiftComposer
           key={composerKey}
           prices={prices}

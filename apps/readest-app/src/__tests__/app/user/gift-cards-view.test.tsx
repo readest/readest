@@ -2,13 +2,14 @@
 // The account page opens the Gift Cards view from a Stripe return. An IAP
 // build sells gifts through its store only, even while the store is still
 // being checked: Stripe must never show up inside an App Store or Play build.
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import ProfilePage from '@/app/user/page';
 
 const STRIPE_RETURN = { section: 'gifts', session_id: 'cs_returning' };
 
 const mocks = vi.hoisted(() => ({
+  fetchGiftPrices: vi.fn().mockResolvedValue([]),
   router: { push: vi.fn(), replace: vi.fn(), back: vi.fn() },
   sectionProps: vi.fn(),
   plansProps: vi.fn(),
@@ -49,6 +50,7 @@ vi.mock('@/libs/payment/iap/client', () => ({}));
 vi.mock('@/libs/payment/stripe/client', () => ({}));
 vi.mock('@/libs/payment/gift/client', () => ({
   claimGiftCards: vi.fn().mockResolvedValue(0),
+  fetchGiftPrices: mocks.fetchGiftPrices,
   fetchGiftCards: vi.fn().mockResolvedValue({
     sent: [],
     received: [],
@@ -166,4 +168,33 @@ it.each([
   expect(mocks.sectionProps).toHaveBeenLastCalledWith(
     expect.objectContaining({ view, stripeSessionId: undefined }),
   );
+});
+
+// The Gift Card tile shows the lowest price and the buy view sells at these,
+// so the page loads them once, from the store on an IAP build.
+it('loads the gift prices once for the Gift Card tile and the buy view', async () => {
+  const PRICES = [
+    {
+      tier: 'plus',
+      productId: 'com.bilingify.readest.giftcard_plus.purchase',
+      price: 4999,
+      currency: 'USD',
+    },
+  ];
+  mocks.fetchGiftPrices.mockResolvedValueOnce(PRICES);
+  mocks.params = new URLSearchParams();
+  render(<ProfilePage />);
+
+  await waitFor(() =>
+    expect(mocks.plansProps).toHaveBeenLastCalledWith(
+      expect.objectContaining({ giftPrices: PRICES }),
+    ),
+  );
+  act(() => lastProps<{ onGiftCard: () => void }>(mocks.plansProps).onGiftCard());
+
+  expect(mocks.sectionProps).toHaveBeenLastCalledWith(
+    expect.objectContaining({ view: 'give', prices: PRICES, useIAP: true }),
+  );
+  expect(mocks.fetchGiftPrices).toHaveBeenCalledTimes(1);
+  expect(mocks.fetchGiftPrices).toHaveBeenCalledWith(true);
 });

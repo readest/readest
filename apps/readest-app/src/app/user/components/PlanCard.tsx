@@ -3,6 +3,7 @@ import { IoCheckmark } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getLocale } from '@/utils/misc';
 import { getPlanAccent, PlanDetails } from '../utils/plan';
+import { GiftPrice } from '@/types/gift';
 import { PlanInterval, PlanType } from '@/types/quota';
 import PlanActionButton from './PlanActionButton';
 import PurchaseCallToActions from './PurchaseCallToActions';
@@ -19,6 +20,7 @@ interface PlanCardProps {
   belowGift?: boolean;
   /** Defaults to false: an unknown state shows the buy button, never hides it. */
   customizationPurchased?: boolean;
+  giftPrices?: GiftPrice[];
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
   onGiftCard?: () => void;
 }
@@ -34,6 +36,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   giftUntil,
   giftOnly,
   belowGift,
+  giftPrices,
   onSubscribe,
   onGiftCard,
 }) => {
@@ -150,6 +153,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
               plan={plan}
               accent={accent}
               customizationPurchased={customizationPurchased}
+              giftPrices={giftPrices}
               onSubscribe={onSubscribe}
               onGiftCard={onGiftCard}
             />

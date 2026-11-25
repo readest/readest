@@ -93,14 +93,22 @@ const sentCard = (overrides: Partial<SentGiftCard> = {}): SentGiftCard => ({
 });
 
 const renderSection = (props: Partial<Parameters<typeof GiftCardsSection>[0]> = {}) =>
-  render(<GiftCardsSection view='give' useIAP={false} onPlanChanged={vi.fn()} {...props} />);
+  render(
+    <GiftCardsSection
+      view='give'
+      prices={STRIPE_PRICES}
+      useIAP={false}
+      onPlanChanged={vi.fn()}
+      {...props}
+    />,
+  );
 
 const buyButton = () => screen.findByRole('button', { name: /^Buy for / });
 const sentRegion = () => screen.getByRole('region', { name: 'Sent' });
 
 beforeEach(() => {
   h.fetchGiftCards.mockResolvedValue(response());
-  h.fetchGiftPrices.mockResolvedValue(STRIPE_PRICES);
+  h.fetchGiftPrices.mockResolvedValue([]);
   h.createGiftDraft.mockResolvedValue('draft-1');
   h.createStripeCheckoutSession.mockResolvedValue({
     sessionId: 'cs_test_1',
@@ -140,7 +148,11 @@ describe('GiftCardsSection', () => {
 
       expect(await buyButton()).toBeTruthy();
       expect(await screen.findByRole('region', { name: 'Sent' })).toBeTruthy();
-      expect(screen.getByRole('heading', { name: 'Give a Gift' })).toBeTruthy();
+      // The tile that opens it already says Gift Card (owner: "remove the
+      // Gift Card title and the Give a Gift title").
+      expect(screen.queryByRole('heading', { name: 'Gift Card' })).toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Give a Gift' })).toBeNull();
+      expect(screen.getByText('Give someone a year of Readest Plus or Pro')).toBeTruthy();
       expect(screen.queryByRole('textbox', { name: 'Gift code' })).toBeNull();
       expect(screen.queryByRole('region', { name: 'Received' })).toBeNull();
     });
@@ -153,14 +165,19 @@ describe('GiftCardsSection', () => {
       expect(screen.getByRole('textbox', { name: 'Gift code' })).toBeTruthy();
       expect(screen.queryByRole('region', { name: 'Sent' })).toBeNull();
       expect(screen.queryByRole('button', { name: /^Buy for / })).toBeNull();
-      // Nothing is sold here, so no prices are fetched.
-      expect(h.fetchGiftPrices).not.toHaveBeenCalled();
     });
+  });
+
+  // The page loads the prices once, for the Gift Card tile and this view.
+  it('sells at the prices the page passes in and fetches none of its own', async () => {
+    renderSection();
+
+    expect((await buyButton()).textContent).toContain('39.99');
+    expect(h.fetchGiftPrices).not.toHaveBeenCalled();
   });
 
   it('buying with Stripe creates a draft then checkout with its id', async () => {
     renderSection();
-    await waitFor(() => expect(h.fetchGiftPrices).toHaveBeenCalledWith(false));
 
     fireEvent.click(screen.getByRole('radio', { name: /Readest Pro/ }));
     fireEvent.change(screen.getByRole('textbox', { name: 'To' }), { target: { value: 'Sam' } });
@@ -201,12 +218,10 @@ describe('GiftCardsSection', () => {
       transactionId: 'txn-1',
       originalTransactionId: 'txn-1',
     };
-    h.fetchGiftPrices.mockResolvedValue(IAP_PRICES);
     h.purchaseIAPProduct.mockResolvedValue(purchase);
     h.verifyGiftIAPPurchase.mockResolvedValue(undefined);
 
-    renderSection({ useIAP: true });
-    await waitFor(() => expect(h.fetchGiftPrices).toHaveBeenCalledWith(true));
+    renderSection({ useIAP: true, prices: IAP_PRICES });
     fireEvent.click(await buyButton());
 
     await waitFor(() => expect(h.verifyGiftIAPPurchase).toHaveBeenCalledWith(purchase, 'draft-1'));
@@ -219,13 +234,11 @@ describe('GiftCardsSection', () => {
   });
 
   it('a failed verify on iOS says the payment was received, without Restore Purchase', async () => {
-    h.fetchGiftPrices.mockResolvedValue(IAP_PRICES);
     h.purchaseIAPProduct.mockResolvedValue({ platform: 'ios', transactionId: 'txn-1' });
     h.verifyGiftIAPPurchase.mockRejectedValue(new Error('gift_verify_failed'));
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    renderSection({ useIAP: true });
-    await waitFor(() => expect(h.fetchGiftPrices).toHaveBeenCalledWith(true));
+    renderSection({ useIAP: true, prices: IAP_PRICES });
     fireEvent.click(await buyButton());
 
     await waitFor(() =>
@@ -243,13 +256,11 @@ describe('GiftCardsSection', () => {
   });
 
   it('a failed verify on Android points at Restore Purchase', async () => {
-    h.fetchGiftPrices.mockResolvedValue(IAP_PRICES);
     h.purchaseIAPProduct.mockResolvedValue({ platform: 'android', purchaseToken: 'token-1' });
     h.verifyGiftIAPPurchase.mockRejectedValue(new Error('gift_verify_failed'));
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    renderSection({ useIAP: true });
-    await waitFor(() => expect(h.fetchGiftPrices).toHaveBeenCalledWith(true));
+    renderSection({ useIAP: true, prices: IAP_PRICES });
     fireEvent.click(await buyButton());
 
     await waitFor(() =>
@@ -267,13 +278,9 @@ describe('GiftCardsSection', () => {
   });
 
   it('an IAP build with no store products shows no price and never uses Stripe', async () => {
-    h.fetchGiftPrices.mockImplementation(async (useIAP: boolean) => (useIAP ? [] : STRIPE_PRICES));
-
-    renderSection({ useIAP: true });
-    await waitFor(() => expect(h.fetchGiftPrices).toHaveBeenCalledWith(true));
+    renderSection({ useIAP: true, prices: [] });
     await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalled());
 
-    expect(h.fetchGiftPrices).not.toHaveBeenCalledWith(false);
     expect(screen.queryByText(/\$39\.99|\$79\.99/)).toBeNull();
     const buy = screen.getByRole('button', { name: 'Buy' }) as HTMLButtonElement;
     expect(buy.disabled).toBe(true);

@@ -69,6 +69,7 @@ vi.mock('@/app/user/components/Checkout', () => ({ default: () => null }));
 vi.mock('@/app/user/components/gift/GiftCardsSection', () => ({ default: () => null }));
 vi.mock('@/libs/payment/gift/client', () => ({
   claimGiftCards: vi.fn().mockResolvedValue(0),
+  fetchGiftPrices: vi.fn().mockResolvedValue([]),
   fetchGiftCards: vi.fn().mockResolvedValue({
     sent: [],
     received: [],

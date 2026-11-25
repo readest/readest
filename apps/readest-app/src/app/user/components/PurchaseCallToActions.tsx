@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useTranslation } from '@/hooks/useTranslation';
+import { GiftPrice } from '@/types/gift';
 import { PlanType } from '@/types/quota';
 import { getLocale } from '@/utils/misc';
 import { PlanAccent, PlanDetails } from '../utils/plan';
@@ -9,35 +10,58 @@ interface PurchaseCallToActionsProps {
   accent: PlanAccent;
   /** Defaults to false: an unknown state shows the buy button, never hides it. */
   customizationPurchased?: boolean;
+  /** Empty until they load; the Gift Card tile then shows the lowest. */
+  giftPrices?: GiftPrice[];
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
   onGiftCard?: () => void;
 }
 
+// Every tile sets a name over a price, and a tile with no price keeps the same
+// height (min-h-13: p-2 plus a text-sm and a text-xs line).
+const tileClass = clsx(
+  'flex min-h-13 w-full flex-col items-center justify-center rounded-lg p-2 text-center',
+  'eink-bordered',
+);
+
 // Add-on tiles extend the Lifetime card, so they share its surface vocabulary
 // and lift one step on hover rather than recolouring (DESIGN.md 2.1 / 2.3).
 const productButtonClass = clsx(
-  'flex w-full flex-col items-center justify-center rounded-lg p-2',
-  'bg-base-200 hover:bg-base-300 eink-bordered transition-colors duration-150',
+  tileClass,
+  'bg-base-200 hover:bg-base-300 transition-colors duration-150',
   'focus-visible:ring-base-content/15 focus-visible:outline-hidden focus-visible:ring-2',
 );
 
 const tileTextClass = 'text-sm font-semibold';
+const tilePriceClass = 'text-xs font-bold opacity-80';
+
+const formatPrice = (price: number, currency: string) =>
+  new Intl.NumberFormat(getLocale(), { style: 'currency', currency }).format(price / 100);
 
 const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
   plan,
   accent,
   customizationPurchased = false,
+  giftPrices = [],
   onSubscribe,
   onGiftCard,
 }) => {
   const _ = useTranslation();
 
-  // One line where the other tiles have two, so held to the height of the
-  // Full Customization chip above it.
+  const lowestGiftPrice = giftPrices.reduce<GiftPrice | undefined>(
+    (lowest, price) => (!lowest || price.price < lowest.price ? price : lowest),
+    undefined,
+  );
   const giftCardButton = onGiftCard && (
     <div className='grid grid-cols-1 gap-2'>
-      <button onClick={onGiftCard} className={clsx(productButtonClass, 'min-h-12', accent.tile)}>
+      <button onClick={onGiftCard} className={clsx(productButtonClass, accent.tile)}>
         <span className={tileTextClass}>{_('Gift Card')}</span>
+        {lowestGiftPrice && (
+          <span className={tilePriceClass}>
+            {_('From {{price}}', {
+              price: formatPrice(lowestGiftPrice.price, lowestGiftPrice.currency),
+            })}
+          </span>
+        )}
       </button>
     </div>
   );
@@ -53,8 +77,22 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
     (product) => product.feature === 'customization',
   );
 
-  const formatProductPrice = (price: number, currency: string) =>
-    new Intl.NumberFormat(getLocale(), { style: 'currency', currency }).format(price / 100);
+  // Owned or not yet sold: the tier colour of the Current Plan chip, not a
+  // button, but set like the tiles beside it.
+  const statusTile = (label: string, price?: string) => (
+    <div className='grid grid-cols-1 gap-2'>
+      <div aria-disabled='true' className={clsx(tileClass, accent.current)}>
+        <span className={tileTextClass}>{label}</span>
+        {price && <span className={tilePriceClass}>{price}</span>}
+      </div>
+    </div>
+  );
+
+  // The price stays on an unlocked Full Customization as the anchor for the
+  // tiles around it.
+  const customization = customizationProducts[0];
+  const customizationPrice =
+    customization && formatPrice(customization.price, customization.currency);
 
   return (
     <div className='flex flex-col gap-4'>
@@ -67,30 +105,14 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
               className={clsx(productButtonClass, accent.tile)}
             >
               <span className={tileTextClass}>{_(product.name)}</span>
-              <span className='text-xs font-bold opacity-80'>
-                {formatProductPrice(product.price, product.currency)}
-              </span>
+              <span className={tilePriceClass}>{formatPrice(product.price, product.currency)}</span>
             </button>
           ))}
         </div>
       )}
 
       {customizationPurchased ? (
-        <div className='grid grid-cols-1 gap-2'>
-          {/* Owned: keep the tier colour and the button geometry, same chassis
-              as the Current Plan chip, so the card footers still line up. */}
-          <div
-            aria-disabled='true'
-            className={clsx(
-              'btn eink-bordered pointer-events-none h-12 min-h-12 w-full',
-              accent.current,
-            )}
-          >
-            <span className='text-xs leading-tight font-medium whitespace-normal'>
-              {_('Full Customization')} ({_('Unlocked')})
-            </span>
-          </div>
-        </div>
+        statusTile(`${_('Full Customization')} (${_('Unlocked')})`, customizationPrice)
       ) : customizationProducts.length > 0 ? (
         <div className='grid grid-cols-1 gap-2'>
           {customizationProducts.map((product) => (
@@ -100,31 +122,12 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
               className={clsx(productButtonClass, accent.tile)}
             >
               <span className={tileTextClass}>{_(product.name)}</span>
-              <span className='text-xs font-bold opacity-80'>
-                {formatProductPrice(product.price, product.currency)}
-              </span>
+              <span className={tilePriceClass}>{formatPrice(product.price, product.currency)}</span>
             </button>
           ))}
         </div>
       ) : (
-        <div className='grid grid-cols-1 gap-2'>
-          {/* Same chassis as the Current Plan button so the two cards' footers
-              line up whatever daisyUI sizes a button at. */}
-          {/* Same treatment as the Current Plan chip: a disabled <button> is
-              washed out to near-invisible grey, so this keeps the tier colour
-              and the button's geometry. */}
-          <div
-            aria-disabled='true'
-            className={clsx(
-              'btn eink-bordered pointer-events-none h-12 min-h-12 w-full',
-              accent.current,
-            )}
-          >
-            <span className='text-xs leading-tight font-medium whitespace-normal'>
-              {_('Full Customization')} ({_('Coming Soon')})
-            </span>
-          </div>
-        </div>
+        statusTile(`${_('Full Customization')} (${_('Coming Soon')})`)
       )}
 
       {giftCardButton}

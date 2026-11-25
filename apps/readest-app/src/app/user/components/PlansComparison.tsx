@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GiftTier } from '@/types/gift';
+import { GiftPrice, GiftTier } from '@/types/gift';
 import { AvailablePlan, PlanInterval, PlanType, UserPlan } from '@/types/quota';
 import { getPlanDetails, getSubscriptionIntervals, getYearlySavingsPercent } from '../utils/plan';
 import BillingIntervalToggle from './BillingIntervalToggle';
@@ -11,6 +11,7 @@ interface PlansComparisonProps {
   /** Defaults to false: an unknown state shows the buy button, never hides it. */
   customizationPurchased?: boolean;
   gift?: { plan: GiftTier; activeUntil: string; giftOnly: boolean };
+  giftPrices?: GiftPrice[];
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
   onGiftCard?: () => void;
 }
@@ -23,6 +24,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   customizationPurchased = false,
   userPlan,
   gift,
+  giftPrices,
   onSubscribe,
   onGiftCard,
 }) => {
@@ -70,6 +72,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
                 userPlan === 'purchase' ||
                 (!!gift?.giftOnly && (plan.plan === 'plus' || plan.plan === 'pro')))
             }
+            giftPrices={giftPrices}
             onSubscribe={onSubscribe}
             onGiftCard={onGiftCard}
           />

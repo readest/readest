@@ -74,6 +74,7 @@ vi.mock('@/app/user/components/gift/GiftCardsSection', () => ({ default: () => n
 vi.mock('@/libs/payment/gift/client', () => ({
   claimGiftCards: vi.fn(),
   fetchGiftCards: vi.fn(),
+  fetchGiftPrices: vi.fn().mockResolvedValue([]),
 }));
 
 afterEach(() => {
