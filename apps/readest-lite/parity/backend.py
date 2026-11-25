@@ -11,7 +11,7 @@ with when PARITY_BACKEND is DIR: that config, and the user signed in with a sess
 own (two apps sharing one would sign each other out when one rotates its refresh token).
 `down` stops it all and deletes the stack's data.
 """
-import base64, hashlib, hmac, json, os, secrets, shutil, signal, subprocess, sys, time, urllib.request
+import base64, hashlib, hmac, json, os, secrets, shutil, signal, subprocess, sys, time, urllib.request, http.client
 from io import BytesIO
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +28,7 @@ def jwt(payload, secret):
     return head + '.' + enc(hmac.new(secret.encode(), head.encode(), hashlib.sha256).digest())
 
 
-def request(method, url, body=None, headers=None, raw=None):
+def request(method, url, body=None, headers=None, raw=None, tries=5):
     data = raw if raw is not None else (json.dumps(body).encode() if body is not None else None)
     req = urllib.request.Request(url, data=data, method=method, headers={
         **({'Content-Type': 'application/json'} if body is not None else {}), **(headers or {})})
@@ -38,6 +38,13 @@ def request(method, url, body=None, headers=None, raw=None):
             return json.loads(text) if 'json' in res.headers.get('Content-Type', '') else text
     except urllib.error.HTTPError as e:
         raise RuntimeError(f'{method} {url.split("?")[0]}: {e.code} {e.read().decode(errors="replace")[:500]}') from None
+    except (urllib.error.URLError, ConnectionError, http.client.HTTPException):
+        # The dev server exits now and then (Next's security notice) and the loop restarts it:
+        # a request it was answering is dropped.
+        if tries <= 1:
+            raise
+        time.sleep(2)
+        return request(method, url, body, headers, raw, tries - 1)
 
 
 def wait(what, check, timeout):
@@ -97,6 +104,8 @@ def up(d, books):
     wait('S3', lambda: request('PUT', f"{S3}/{env['S3_BUCKET_NAME']}", raw=b'') is not None, 120)
     anon = {'apikey': env['ANON_KEY']}
     wait('GoTrue', lambda: request('GET', f'{KONG}/auth/v1/health', headers=anon), 300)
+    # PostgREST answers 503 until it has read the schema (the API's uploads and sync need it).
+    wait('PostgREST', lambda: request('GET', f'{KONG}/rest/v1/files?limit=0', headers=anon) is not None, 300)
 
     server_env = {**os.environ, 'SUPABASE_URL': KONG, 'NEXT_PUBLIC_SUPABASE_URL': KONG, 'SUPABASE_PUBLIC_URL': KONG,
                   'SUPABASE_ANON_KEY': env['ANON_KEY'], 'NEXT_PUBLIC_SUPABASE_ANON_KEY': env['ANON_KEY'],
