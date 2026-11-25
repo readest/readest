@@ -3126,6 +3126,8 @@
   "{{speed}} words/min": "{{speed}} besed/min",
   "Reading Speed": "Hitrost branja",
   "Reading Speed Today": "Današnja hitrost branja",
+  "p. {{page}}": "str. {{page}}",
+  "Copy with Citation": "Kopiraj z navedbo vira",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "Poišči besedilo v X-Ray po izbiri",
   "Jump to quote": "Skoči na navedek",

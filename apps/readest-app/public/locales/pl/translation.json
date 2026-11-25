@@ -3126,6 +3126,8 @@
   "{{speed}} words/min": "{{speed}} słów/min",
   "Reading Speed": "Szybkość czytania",
   "Reading Speed Today": "Dzisiejsza szybkość czytania",
+  "p. {{page}}": "s. {{page}}",
+  "Copy with Citation": "Kopiuj z podaniem źródła",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "Wyszukaj tekst w X-Ray po zaznaczeniu",
   "Jump to quote": "Przejdź do cytatu",

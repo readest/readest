@@ -2889,6 +2889,8 @@
   "{{speed}} words/min": "{{speed}} từ/phút",
   "Reading Speed": "Tốc độ đọc",
   "Reading Speed Today": "Tốc độ đọc hôm nay",
+  "p. {{page}}": "tr. {{page}}",
+  "Copy with Citation": "Sao chép kèm Nguồn trích dẫn",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "Tra cứu văn bản trong X-Ray sau khi chọn",
   "Jump to quote": "Đến trích dẫn",

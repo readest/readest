@@ -2889,6 +2889,8 @@
   "{{speed}} words/min": "{{speed}} 語/分",
   "Reading Speed": "読書速度",
   "Reading Speed Today": "今日の読書速度",
+  "p. {{page}}": "{{page}} ページ",
+  "Copy with Citation": "出典付きでコピー",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "選択後にテキストをX-Rayで調べる",
   "Jump to quote": "引用に移動",

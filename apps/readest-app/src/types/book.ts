@@ -543,6 +543,8 @@ export interface AnnotatorConfig {
   keepSelectionAfterLookup: boolean;
   annotationToolbarItems: AnnotationToolType[];
   copyToNotebook: boolean;
+  // Copy puts the book, chapter and page after the passage (#7926).
+  copyWithCitation: boolean;
   noteExportConfig: NoteExportConfig;
 }
 

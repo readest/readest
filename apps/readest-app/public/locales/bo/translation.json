@@ -2889,6 +2889,8 @@
   "{{speed}} words/min": "སྐར་མ་རེར་ཚིག་ {{speed}}",
   "Reading Speed": "ཀློག་པའི་མྱུར་ཚད།",
   "Reading Speed Today": "དེ་རིང་གི་ཀློག་པའི་མྱུར་ཚད།",
+  "p. {{page}}": "ཤོག་ལྷེ། {{page}}",
+  "Copy with Citation": "ཁུངས་དང་བཅས་པ་འདྲ་བཤུས་",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "བདམས་རྗེས་ X-Ray ནང་ཡི་གེ་འཚོལ།",
   "Jump to quote": "ལུང་འདྲེན་ལ་མཆོང་བ།",

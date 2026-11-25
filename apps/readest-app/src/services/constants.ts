@@ -613,6 +613,7 @@ export const DEFAULT_ANNOTATOR_CONFIG: AnnotatorConfig = {
   keepSelectionAfterLookup: false,
   annotationToolbarItems: DEFAULT_ANNOTATION_TOOLBAR_ITEMS,
   copyToNotebook: false,
+  copyWithCitation: false,
   noteExportConfig: DEFAULT_NOTE_EXPORT_CONFIG,
 };
 

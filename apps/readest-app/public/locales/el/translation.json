@@ -2968,6 +2968,8 @@
   "{{speed}} words/min": "{{speed}} λέξεις/λεπτό",
   "Reading Speed": "Ταχύτητα ανάγνωσης",
   "Reading Speed Today": "Ταχύτητα ανάγνωσης σήμερα",
+  "p. {{page}}": "σ. {{page}}",
+  "Copy with Citation": "Αντιγραφή με παραπομπή",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "Αναζήτηση κειμένου στο X-Ray μετά την επιλογή",
   "Jump to quote": "Μετάβαση σε παράθεση",

@@ -2968,6 +2968,8 @@
   "{{speed}} words/min": "{{speed}} واژه در دقیقه",
   "Reading Speed": "سرعت مطالعه",
   "Reading Speed Today": "سرعت مطالعهٔ امروز",
+  "p. {{page}}": "ص. {{page}}",
+  "Copy with Citation": "کپی همراه با منبع",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "جستجوی متن در X-Ray پس از انتخاب",
   "Jump to quote": "پرش به نقل‌قول",

@@ -3047,6 +3047,8 @@
   "{{speed}} words/min": "{{speed}} cuvinte/min",
   "Reading Speed": "Viteza de citire",
   "Reading Speed Today": "Viteza de citire de azi",
+  "p. {{page}}": "p. {{page}}",
+  "Copy with Citation": "Copiază cu sursa",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "Caută textul în X-Ray după selectare",
   "Jump to quote": "Salt la citat",

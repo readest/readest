@@ -3047,6 +3047,8 @@
   "{{speed}} words/min": "{{speed}} מילים לדקה",
   "Reading Speed": "מהירות קריאה",
   "Reading Speed Today": "מהירות הקריאה היום",
+  "p. {{page}}": "עמ' {{page}}",
+  "Copy with Citation": "העתק עם מקור",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "חיפוש טקסט ב-X-Ray לאחר בחירה",
   "Jump to quote": "מעבר לציטוט",

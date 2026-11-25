@@ -2968,6 +2968,8 @@
   "{{speed}} words/min": "{{speed}} ord/min",
   "Reading Speed": "Läshastighet",
   "Reading Speed Today": "Läshastighet i dag",
+  "p. {{page}}": "s. {{page}}",
+  "Copy with Citation": "Kopiera med källhänvisning",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "Slå upp text i X-Ray efter markering",
   "Jump to quote": "Hoppa till citat",

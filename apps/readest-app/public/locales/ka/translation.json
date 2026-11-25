@@ -2968,6 +2968,8 @@
   "{{speed}} words/min": "{{speed}} სიტყვა/წთ",
   "Reading Speed": "კითხვის სიჩქარე",
   "Reading Speed Today": "დღევანდელი კითხვის სიჩქარე",
+  "p. {{page}}": "გვ. {{page}}",
+  "Copy with Citation": "წყაროს მითითებით კოპირება",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "მონიშვნის შემდეგ ტექსტის ძიება X-Ray-ში",
   "Jump to quote": "ციტატაზე გადასვლა",

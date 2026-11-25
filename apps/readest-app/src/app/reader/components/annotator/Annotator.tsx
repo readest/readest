@@ -76,6 +76,7 @@ import { runSimpleCC } from '@/utils/simplecc';
 import { getWordCount, isSingleLookupTerm } from '@/utils/word';
 import { getIndexFromCfi } from '@/utils/cfi';
 import { writeTextToClipboard } from '@/utils/clipboard';
+import { formatCitation, getPublishedYear, getTocPathLabels } from '@/utils/citation';
 import { AnnotationLinkType, buildAnnotationUrl } from '@/utils/deeplink';
 import { DEFAULT_NOTE_EXPORT_CONFIG } from '@/services/constants';
 import { canShareText, shareSelectedText } from '@/utils/share';
@@ -1608,9 +1609,31 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     setShowProofreadPopup(false);
   };
 
+  // The book, chapter and printed page of the passage, for Copy with Citation.
+  // TOC CFIs exist only in reflowable EPUBs, so the chapter comes from the
+  // range. A footnote popup's range is not in the section document: it is
+  // cited by the chapter being read, without a page.
+  const getSelectionCitation = (sel: TextSelection) => {
+    const { book, bookDoc, isFixedLayout } = bookData;
+    const { tocItem, pageItem } = sel.popup
+      ? {}
+      : (view?.getProgressOf(sel.index, sel.range) ?? {});
+    const href = sel.popup ? getBookProgress(bookKey)?.sectionHref : tocItem?.href;
+    const page = sel.popup ? undefined : isFixedLayout ? String(sel.page) : pageItem?.label;
+    return formatCitation({
+      author: book?.author ?? '',
+      title: book?.title ?? '',
+      year: getPublishedYear(book?.metadata?.published),
+      chapters: href ? getTocPathLabels(bookDoc?.toc ?? [], href) : [],
+      page: page ? _('p. {{page}}', { page }) : undefined,
+    });
+  };
+
   const handleCopy = (dismissPopup = true) => {
     if (!selection || !selection.text) return;
-    const textToCopy = selection.text;
+    const textToCopy = viewSettings?.copyWithCitation
+      ? `${selection.text}\n\n${getSelectionCitation(selection)}`
+      : selection.text;
     setTimeout(() => {
       // Delay to ensure it won't be overridden by system clipboard actions
       void writeTextToClipboard(textToCopy);

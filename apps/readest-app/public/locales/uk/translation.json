@@ -3126,6 +3126,8 @@
   "{{speed}} words/min": "{{speed}} слів/хв",
   "Reading Speed": "Швидкість читання",
   "Reading Speed Today": "Швидкість читання сьогодні",
+  "p. {{page}}": "с. {{page}}",
+  "Copy with Citation": "Скопіювати з посиланням на джерело",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "Шукати текст у X-Ray після виділення",
   "Jump to quote": "Перейти до цитати",

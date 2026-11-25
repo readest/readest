@@ -2968,6 +2968,8 @@
   "{{speed}} words/min": "{{speed}} சொற்கள்/நிமிடம்",
   "Reading Speed": "வாசிப்பு வேகம்",
   "Reading Speed Today": "இன்றைய வாசிப்பு வேகம்",
+  "p. {{page}}": "ப. {{page}}",
+  "Copy with Citation": "மேற்கோள் மூலத்துடன் நகலெடு",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "தேர்வுக்குப் பிறகு X-Ray-இல் உரையைத் தேடுக",
   "Jump to quote": "மேற்கோளுக்குச் செல்லவும்",

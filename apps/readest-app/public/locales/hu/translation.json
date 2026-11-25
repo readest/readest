@@ -2968,6 +2968,8 @@
   "{{speed}} words/min": "{{speed}} szó/perc",
   "Reading Speed": "Olvasási sebesség",
   "Reading Speed Today": "Mai olvasási sebesség",
+  "p. {{page}}": "{{page}}. o.",
+  "Copy with Citation": "Másolás forrásmegjelöléssel",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "Szöveg keresése az X-Rayben kijelölés után",
   "Jump to quote": "Ugrás az idézethez",

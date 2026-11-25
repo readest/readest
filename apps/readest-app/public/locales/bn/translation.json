@@ -2968,6 +2968,8 @@
   "{{speed}} words/min": "{{speed}} শব্দ/মিনিট",
   "Reading Speed": "পড়ার গতি",
   "Reading Speed Today": "আজকের পড়ার গতি",
+  "p. {{page}}": "পৃ. {{page}}",
+  "Copy with Citation": "উৎসসহ কপি করুন",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "নির্বাচনের পর X-Ray-এ লেখা খুঁজুন",
   "Jump to quote": "উদ্ধৃতিতে যান",

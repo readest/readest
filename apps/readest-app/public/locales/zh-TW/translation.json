@@ -2889,6 +2889,8 @@
   "Pen Squeeze": "觸控筆輕捏",
   "Pen Slide Up": "觸控筆上滑",
   "Pen Slide Down": "觸控筆下滑",
+  "p. {{page}}": "第 {{page}} 頁",
+  "Copy with Citation": "複製時附帶引用來源",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "選取後在 X-Ray 中查找文字",
   "Jump to quote": "跳至引文",

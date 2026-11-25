@@ -2968,6 +2968,8 @@
   "{{speed}} words/min": "{{speed}} soʻz/daqiqa",
   "Reading Speed": "Oʻqish tezligi",
   "Reading Speed Today": "Bugungi oʻqish tezligi",
+  "p. {{page}}": "{{page}}-b.",
+  "Copy with Citation": "Manba bilan nusxalash",
   "X-Ray": "X-Ray",
   "Look up text in the X-Ray after selection": "Tanlangandan keyin matnni X-Ray’da qidirish",
   "Jump to quote": "Iqtibosga o‘tish",
