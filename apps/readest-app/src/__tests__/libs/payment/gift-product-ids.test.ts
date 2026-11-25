@@ -12,9 +12,11 @@ import {
 } from '@/libs/payment/iap/utils';
 
 describe('gift product ids', () => {
+  // The store products carry their length (owner chose "Add _1y to the IDs"),
+  // so a future half-year or two-year card gets its own id.
   it.each([
-    ['plus', 'com.bilingify.readest.giftcard_plus.purchase'],
-    ['pro', 'com.bilingify.readest.giftcard_pro.purchase'],
+    ['plus', 'com.bilingify.readest.giftcard_plus_1y.purchase'],
+    ['pro', 'com.bilingify.readest.giftcard_pro_1y.purchase'],
   ] as const)('%s', (tier, id) => {
     expect(GIFT_PRODUCT_IDS[tier]).toBe(id);
     expect(isGiftProduct(id)).toBe(true);

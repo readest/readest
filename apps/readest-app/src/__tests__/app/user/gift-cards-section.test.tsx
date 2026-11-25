@@ -64,13 +64,13 @@ const STRIPE_PRICES: GiftPrice[] = [
 const IAP_PRICES: GiftPrice[] = [
   {
     tier: 'plus',
-    productId: 'com.bilingify.readest.giftcard_plus.purchase',
+    productId: 'com.bilingify.readest.giftcard_plus_1y.purchase',
     price: 3999,
     currency: 'USD',
   },
   {
     tier: 'pro',
-    productId: 'com.bilingify.readest.giftcard_pro.purchase',
+    productId: 'com.bilingify.readest.giftcard_pro_1y.purchase',
     price: 7999,
     currency: 'USD',
   },
@@ -317,7 +317,7 @@ describe('GiftCardsSection', () => {
   it('buying with IAP verifies with the draft id', async () => {
     const purchase = {
       platform: 'ios',
-      productId: 'com.bilingify.readest.giftcard_plus.purchase',
+      productId: 'com.bilingify.readest.giftcard_plus_1y.purchase',
       transactionId: 'txn-1',
       originalTransactionId: 'txn-1',
     };
@@ -329,7 +329,7 @@ describe('GiftCardsSection', () => {
 
     await waitFor(() => expect(h.verifyGiftIAPPurchase).toHaveBeenCalledWith(purchase, 'draft-1'));
     expect(h.purchaseIAPProduct).toHaveBeenCalledWith(
-      'com.bilingify.readest.giftcard_plus.purchase',
+      'com.bilingify.readest.giftcard_plus_1y.purchase',
     );
     expect(h.createStripeCheckoutSession).not.toHaveBeenCalled();
     // The new card shows up in Sent without leaving the view.

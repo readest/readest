@@ -154,8 +154,8 @@ import { POST as stripeWebhookPost } from '@/app/api/stripe/webhook/route';
 
 const BUYER = 'buyer-1';
 const DRAFT_ID = '6f1c2d3e-4b5a-4c7d-8e9f-0a1b2c3d4e5f';
-const GIFT_PLUS = 'com.bilingify.readest.giftcard_plus.purchase';
-const GIFT_PRO = 'com.bilingify.readest.giftcard_pro.purchase';
+const GIFT_PLUS = 'com.bilingify.readest.giftcard_plus_1y.purchase';
+const GIFT_PRO = 'com.bilingify.readest.giftcard_pro_1y.purchase';
 const BUNDLE_ID = 'com.bilingify.readest';
 
 const stripeSession = ({

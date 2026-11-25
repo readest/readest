@@ -41,9 +41,11 @@ export const isPurchaseProduct = (productId: string): boolean => {
   return productId.includes('.purchase');
 };
 
+// The App Store and Play products, one year each; the length is in the id so
+// a card of another length can have its own.
 export const GIFT_PRODUCT_IDS: Record<GiftTier, string> = {
-  plus: 'com.bilingify.readest.giftcard_plus.purchase',
-  pro: 'com.bilingify.readest.giftcard_pro.purchase',
+  plus: 'com.bilingify.readest.giftcard_plus_1y.purchase',
+  pro: 'com.bilingify.readest.giftcard_pro_1y.purchase',
 };
 
 /**
