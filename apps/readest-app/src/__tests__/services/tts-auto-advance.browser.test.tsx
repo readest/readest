@@ -273,7 +273,10 @@ afterEach(async () => {
 });
 
 describe('TTS position after the reader reopens', () => {
-  it('restores the clock, lyric and highlight and advances from the same sentence after repeated reopens', async () => {
+  it.each([
+    'sentence',
+    'word',
+  ] as const)('restores the clock, lyric and %s highlight after repeated reopens', async (granularity) => {
     const viewSettings = getDefaultViewSettings({
       fs: {} as FileSystem,
       isMobile: false,
@@ -291,8 +294,13 @@ describe('TTS position after the reader reopens', () => {
     const client = makeMockTTSClient('edge');
     controller.ttsClient = {
       ...client,
-      getCapabilities: () => ({ ...client.getCapabilities(), mediaClock: true }),
+      getCapabilities: () => ({
+        ...client.getCapabilities(),
+        mediaClock: true,
+        wordBoundaries: granularity === 'word',
+      }),
     };
+    controller.setHighlightGranularity(granularity);
     try {
       await controller.initViewTTS(CH4_SECTION_INDEX);
       const timeline = (await controller.ensureTimeline())!;
@@ -305,6 +313,17 @@ describe('TTS position after the reader reopens', () => {
       expect(index).toBeGreaterThan(1);
       const ssml = controller.startFromRange(timeline.sentenceAt(index)!.range)!;
       controller.dispatchSpeakMark(parseSSMLMarks(ssml).marks[0]);
+      if (granularity === 'word') {
+        const words = timeline
+          .sentenceAt(index)!
+          .range.toString()
+          .match(/\p{L}+/gu)!
+          .slice(0, 2);
+        expect(words).toHaveLength(2);
+        controller.prepareSpeakWords(words);
+        controller.dispatchSpeakWord(0);
+        expect(controller.getCurrentHighlightCfi()).toBeTruthy();
+      }
       expect(controller.getCurrentLyricIndex()).toBe(index);
       const clock = controller.getPlaybackInfo();
       expect(clock?.position).toBeGreaterThan(0);
@@ -329,6 +348,13 @@ describe('TTS position after the reader reopens', () => {
         expect(draw.mock.calls.map(([key]) => key)).toContain('tts-highlight');
       }
 
+      if (granularity === 'word') {
+        const wordEvents = vi.fn();
+        controller.addEventListener('tts-highlight-word', wordEvents);
+        controller.dispatchSpeakWord(1);
+        expect(wordEvents).toHaveBeenCalledOnce();
+        expect(controller.getCurrentHighlightCfi()).not.toBe(cfi);
+      }
       controller.state = 'paused';
       await controller.forward(true);
       expect(controller.getCurrentLyricIndex()).toBe(index + 1);

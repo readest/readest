@@ -290,4 +290,28 @@ describe('TTSController detach/attach', () => {
     expect(controller.isViewAttached).toBe(true);
     expect(vi.mocked(newView.getCFI).mock.calls[0]?.[0]).toBe(1);
   });
+
+  test('waits for the new chapter iterator when attach begins during chapter initialization', async () => {
+    controller.detachView();
+    const oldRange = new Range();
+    mockTtsInstances[0]!.getLastRange.mockReturnValue(oldRange);
+    let releaseDoc!: (doc: Document) => void;
+    view.book.sections![1]!.createDocument = () =>
+      new Promise((resolve) => {
+        releaseDoc = resolve;
+      });
+    const advancing = controller.forward();
+    await flush();
+    expect(controller.getSectionIndex()).toBe(1);
+
+    const { view: newView } = makeView({ rendered: false });
+    const attaching = controller.attachView(newView, { bookKey: 'hash-pending-chapter' });
+    await flush();
+    expect(controller.isViewAttached).toBe(false);
+
+    releaseDoc(document.implementation.createHTMLDocument('next chapter'));
+    await Promise.all([advancing, attaching]);
+    expect(controller.view).toBe(newView);
+    expect(vi.mocked(newView.getCFI)).not.toHaveBeenCalledWith(1, oldRange);
+  });
 });

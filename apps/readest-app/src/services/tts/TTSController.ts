@@ -215,6 +215,7 @@ export class TTSController extends EventTarget {
   #currentSpeakPromise: Promise<void> | null = null;
 
   #ttsSectionIndex: number = -1;
+  #sectionInitialization: Promise<boolean> | null = null;
 
   // Virtual section timeline for position/duration/seek (Edge client only).
   // Built lazily OFF the playback critical path: enumerating a 2000-sentence
@@ -491,6 +492,12 @@ export class TTSController extends EventTarget {
   // would replay the previous paragraph.
   async attachView(view: FoliateView, bindings: TTSViewBindings): Promise<void> {
     const epoch = ++this.#attachEpoch;
+    // Section change announces its destination while that iterator is loading.
+    // Wait for the iterator so its range is never read with the next index.
+    while (this.#sectionInitialization) {
+      const ready = await this.#sectionInitialization.catch(() => false);
+      if (!ready || epoch !== this.#attachEpoch) return;
+    }
     const oldTts = this.#getTts();
     const sectionIndex = Math.max(this.#ttsSectionIndex, 0);
 
@@ -535,7 +542,11 @@ export class TTSController extends EventTarget {
     if (epoch !== this.#attachEpoch) return;
     // Playback can cross a chapter or rebuild its source during prep. The
     // prepared document and iterator must match the live cursor at the swap.
-    if (sectionIndex !== Math.max(this.#ttsSectionIndex, 0) || oldTts !== this.#getTts()) {
+    if (
+      this.#sectionInitialization ||
+      sectionIndex !== Math.max(this.#ttsSectionIndex, 0) ||
+      oldTts !== this.#getTts()
+    ) {
       return this.attachView(view, bindings);
     }
 
@@ -545,16 +556,17 @@ export class TTSController extends EventTarget {
     this.preprocessCallback = bindings.preprocessCallback;
     this.onSectionChange = bindings.onSectionChange;
     this.#attached = true;
-    this.#resetSpeakWords();
     this.#lastSetMark = null;
+    let lastWord: Range | null = null;
+    const anchorRange = (range: Range) =>
+      view.resolveCFI(view.getCFI(sectionIndex, range)).anchor(doc);
     const lastRange = oldTts?.getLastRange?.();
     if (lastRange) {
       try {
         // Re-derive the seed NOW: CFIs are valid from the old (content
         // identical) document, and from() needs a range anchored in the new
         // doc (compareBoundaryPoints throws cross-document).
-        const cfi = view.getCFI(sectionIndex, lastRange);
-        const anchored = view.resolveCFI(cfi).anchor(doc);
+        const anchored = anchorRange(lastRange);
         if (anchored) {
           const ssml = newTts.from(anchored);
           // Foliate's from() positions the block but clears its current mark.
@@ -566,7 +578,11 @@ export class TTSController extends EventTarget {
             this.#suppressMarkHighlight = true;
             try {
               const range = newTts.setMark(mark.name);
-              if (range) this.#lastSetMark = { name: mark.name, range };
+              if (range) {
+                this.#lastSetMark = { name: mark.name, range };
+                if (this.#lastSpeakWordRange)
+                  lastWord = anchorRange(this.#lastSpeakWordRange) ?? null;
+              }
             } finally {
               this.#suppressMarkHighlight = false;
             }
@@ -575,6 +591,21 @@ export class TTSController extends EventTarget {
       } catch (err) {
         console.warn('[TTS] attachView re-seed failed', err);
       }
+    }
+    const restoredRange = this.#lastSetMark?.range;
+    if (
+      restoredRange &&
+      this.#speakWordBaseRange &&
+      rangeTextExcludingInert(restoredRange) === rangeTextExcludingInert(this.#speakWordBaseRange)
+    ) {
+      // Offsets belong to the utterance already playing. Only its DOM ranges
+      // need to be rebuilt for the new document.
+      this.#speakWordBaseRange = restoredRange;
+      this.#speakWordRanges = [];
+      this.#lastSpeakWordRange = lastWord;
+    } else {
+      this.#resetSpeakWords();
+      this.#speakWordsArmed = !!restoredRange;
     }
     this.#tts = newTts;
     this.view.tts = newTts;
@@ -928,6 +959,16 @@ export class TTSController extends EventTarget {
   }
 
   async #initTTSForSection(sectionIndex: number): Promise<boolean> {
+    const initialization = this.#initializeTTSForSection(sectionIndex);
+    this.#sectionInitialization = initialization;
+    try {
+      return await initialization;
+    } finally {
+      if (this.#sectionInitialization === initialization) this.#sectionInitialization = null;
+    }
+  }
+
+  async #initializeTTSForSection(sectionIndex: number): Promise<boolean> {
     const sections = this.view.book.sections;
     if (!sections || sectionIndex < 0 || sectionIndex >= sections.length) {
       return false;
