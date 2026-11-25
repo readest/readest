@@ -2767,6 +2767,68 @@
     const [h, offset] = n.caret(this._id, x, y);
     return h == null ? null : new CaretPosition(wrapIn(h, ownerOf(this)), offset);
   };
+  // ---- Touch long press ----
+  // A finger held still (within the touch slop) for Chromium's long-press time selects the word
+  // under it, as the touch screens Readest runs on do natively (Readest opens its selection popup
+  // when the finger lifts), then gets a `contextmenu`; its release sends no click. The words are
+  // the page's Intl.Segmenter's, as Readest's own word selection's.
+  const LONG_PRESS_MS = 500;
+  const TOUCH_SLOP = 15;
+  let press = null;
+  function trackPress(type, init, target, doc) {
+    if (init.pointerType !== 'touch') return;
+    if (type === 'pointerdown') {
+      if (press) clearTimeout(press.timer);
+      const p = { doc, target, x: init.clientX, y: init.clientY, held: false };
+      p.timer = setTimeout(() => holdPress(p), LONG_PRESS_MS);
+      press = p;
+      return;
+    }
+    if (!press || press.held) return;
+    const moved =
+      type === 'pointermove' &&
+      Math.hypot(init.clientX - press.x, init.clientY - press.y) > TOUCH_SLOP;
+    if (moved || type === 'pointerup' || type === 'pointercancel') {
+      clearTimeout(press.timer);
+      press = null;
+    }
+  }
+  function holdPress(p) {
+    if (press !== p) return;
+    p.held = true;
+    const { doc, x, y } = p;
+    const word = wordAt(doc, x, y);
+    if (word) {
+      const sel = doc.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(word);
+      doc.dispatchEvent(new Event('selectionchange'));
+    }
+    const view = doc.defaultView ?? window;
+    const init = { bubbles: true, cancelable: true, composed: true, view, clientX: x, clientY: y };
+    p.target.dispatchEvent(new PointerEvent('contextmenu', { ...init, pointerType: 'touch' }));
+  }
+  function wordAt(doc, x, y) {
+    const Segmenter = globalThis.Intl?.Segmenter;
+    const at = Segmenter && doc.caretPositionFromPoint(x, y);
+    if (!at || at.offsetNode.nodeType !== 3) return null;
+    const { offsetNode: node, offset } = at;
+    for (const s of new Segmenter(undefined, { granularity: 'word' }).segment(node.data)) {
+      const end = s.index + s.segment.length;
+      if (!s.isWordLike || offset < s.index || offset > end) continue;
+      const r = doc.createRange();
+      r.setStart(node, s.index);
+      r.setEnd(node, end);
+      return r;
+    }
+    return null;
+  }
+  // The release of a long press: no click (nor its default action).
+  function pressClicked(type, init) {
+    if (type !== 'click' || init.pointerType !== 'touch' || !press?.held) return false;
+    press = null;
+    return true;
+  }
   Document.prototype.caretRangeFromPoint = function (x, y) {
     const p = this.caretPositionFromPoint(x, y);
     if (!p) return null;
@@ -3546,6 +3608,8 @@
       const view = doc.defaultView ?? window;
       path.push(view);
       const p = init.kind === 'pointer';
+      if (p && pressClicked(type, init)) return 1;
+      if (p && type.startsWith('pointer')) trackPress(type, init, path[0], doc);
       const touch = p && type.startsWith('touch');
       const cls = type.startsWith('pointer')
         ? PointerEvent
