@@ -280,6 +280,7 @@ const Notebook: React.FC = () => {
             </div>
           )}
           <NotebookHeader
+            bookKey={sideBarBookKey}
             activeTab={notebookActiveTab}
             isPinned={isNotebookPinned}
             isFullScreenMobile={isMobile && isFullHeightInMobile}
@@ -292,7 +293,7 @@ const Notebook: React.FC = () => {
             <AIAssistant key={activeConversationId ?? 'new'} bookKey={sideBarBookKey} />
           </div>
         ) : notebookActiveTab === 'dictionary' ? (
-          <DictionaryView bookKey={sideBarBookKey} />
+          <DictionaryView />
         ) : notebookActiveTab === 'xray' ? (
           <XRayView key={sideBarBookKey} bookKey={sideBarBookKey} />
         ) : (

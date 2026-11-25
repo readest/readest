@@ -25,6 +25,7 @@ describe('Notebook All notes action', () => {
   it('keeps Annotations navigation out of the header', () => {
     render(
       <NotebookHeader
+        bookKey='book-1'
         activeTab='notes'
         isPinned={false}
         handleClose={vi.fn()}
