@@ -26,13 +26,14 @@ const h = vi.hoisted(() => ({
   dispatchFootnote: (() => {}) as (detail: unknown) => void,
   onLinkClick: { current: null as ((event: Event) => void) | null },
   handlers: [] as EventTarget[],
+  mainView: { goTo: () => {}, renderer: new EventTarget() },
 }));
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ appService: { isMobile: false } }) }));
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
-    getView: () => ({ goTo: () => {} }),
+    getView: () => h.mainView,
     getViewSettings: () => h.viewSettings,
   }),
 }));
@@ -145,6 +146,7 @@ beforeEach(() => {
   h.fontFamily = 'serif';
   h.handlers.length = 0;
   h.onLinkClick.current = null;
+  h.mainView = { goTo: () => {}, renderer: new EventTarget() };
   // The book cell fills the test frame, with the note reference near its
   // top-left corner so a popup has room to open on either axis.
   cell = document.createElement('div');
@@ -163,6 +165,104 @@ afterEach(() => {
 });
 
 describe('footnote popup box (#5999)', () => {
+  test('refits an open footnote when the Notebook takes space from the book cell', async () => {
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />, { container: cell });
+    cell.appendChild(anchor);
+    openLinkedFootnote();
+    const popup = popupContainer();
+    const triangle = () => cell.querySelector('.popup-triangle-inner');
+    const originalWidth = popup.getBoundingClientRect().width;
+    expect(originalWidth).toBeGreaterThan(260);
+    expect(triangle()).not.toBeNull();
+
+    cell.style.width = '260px';
+    await waitFor(() => {
+      const popupRect = popup.getBoundingClientRect();
+      const cellRect = cell.getBoundingClientRect();
+      expect(popupRect.left).toBeGreaterThanOrEqual(cellRect.left);
+      expect(popupRect.right).toBeLessThanOrEqual(cellRect.right);
+    });
+    expect(popup.getAttribute('aria-hidden')).toBe('false');
+    // The page reflowed at the new width: the noteref is no longer where the
+    // arrow was measured.
+    expect(triangle()).toBeNull();
+
+    cell.style.width = '';
+    await waitFor(() => expect(popup.getBoundingClientRect().width).toBe(originalWidth));
+    expect(triangle()).not.toBeNull();
+  });
+
+  test('leaves the footnote in place when only the cell gets shorter (#6390)', async () => {
+    // The soft keyboard shortens the cell while a note is typed under the popup.
+    cell.style.height = '760px';
+    anchor.style.top = '610px';
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />, { container: cell });
+    cell.appendChild(anchor);
+    openLinkedFootnote();
+    const popup = popupContainer();
+    // Two frames run the resize observers; act flushes the renders they queue.
+    const settle = () =>
+      act(async () => {
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      });
+    await settle();
+    const before = popup.getBoundingClientRect().toJSON();
+
+    cell.style.height = '400px';
+    await settle();
+
+    expect(popup.getBoundingClientRect().toJSON()).toEqual(before);
+    expect(cell.querySelector('.popup-triangle-inner')?.getAttribute('data-direction')).toBe('up');
+  });
+
+  test('closes the footnote when a panel beside the cell takes the book elsewhere', () => {
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />, { container: cell });
+    cell.appendChild(anchor);
+    openLinkedFootnote();
+    const popup = popupContainer();
+    const relocate = (reason: string) =>
+      act(() => {
+        h.mainView.renderer.dispatchEvent(new CustomEvent('relocate', { detail: { reason } }));
+      });
+
+    // A pinned panel reflows the page around the noteref.
+    relocate('anchor');
+    expect(popup.getAttribute('aria-hidden')).toBe('false');
+
+    // A TOC entry, a booknote or a search result jumps the book.
+    relocate('navigation');
+    expect(popup.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  test('lets a reader use the pinned Notebook without dismissing the footnote', () => {
+    cell.style.position = 'absolute';
+    cell.style.width = '260px';
+    const notebookButton = document.createElement('button');
+    notebookButton.textContent = 'Unpin Notebook';
+    notebookButton.style.cssText = 'position:fixed;top:20px;left:270px;z-index:20;';
+    const onUnpin = vi.fn();
+    notebookButton.addEventListener('click', onUnpin);
+    document.body.appendChild(notebookButton);
+    try {
+      render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />, { container: cell });
+      cell.appendChild(anchor);
+      openLinkedFootnote();
+      const popup = popupContainer();
+
+      act(() => (document.elementFromPoint(280, 30) as HTMLElement | null)?.click());
+      expect(onUnpin).toHaveBeenCalledOnce();
+      expect(popup.getAttribute('aria-hidden')).toBe('false');
+
+      // The page, below the popup.
+      const below = popup.getBoundingClientRect().bottom + 20;
+      expect(below).toBeLessThan(cell.getBoundingClientRect().bottom);
+      act(() => (document.elementFromPoint(20, below) as HTMLElement | null)?.click());
+      expect(popup.getAttribute('aria-hidden')).toBe('true');
+    } finally {
+      notebookButton.remove();
+    }
+  });
+
   test('a short note leaves the popup with no scrollbars of its own', () => {
     render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
     act(() => {

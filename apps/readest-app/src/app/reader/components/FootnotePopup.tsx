@@ -201,6 +201,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   };
 
   const [popupBounds, setPopupBounds] = useState<PopupBounds | null>(null);
+  // The width of the bounds the anchor was measured in.
+  const anchorWidthRef = useRef(0);
   const [responsiveWidth, setResponsiveWidth] = useState(popupWidth);
   const [responsiveHeight, setResponsiveHeight] = useState(popupHeight);
   const sizeAdjustCountRef = useRef(0);
@@ -210,6 +212,37 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const contentSizeFrameRef = useRef<number | null>(null);
   const size18 = useResponsiveSize(18);
   const popupPadding = useResponsiveSize(10);
+
+  // A pinned panel resizes the book cell without resizing the window. Only a
+  // width change refits: the soft keyboard shortens the cell, and the popup
+  // stays put over a note being typed in it (#6390).
+  useEffect(() => {
+    if (!showPopup) return;
+    const cell = containerRef.current?.closest(`#gridcell-${bookKey}`);
+    if (!cell) return;
+    let { width } = cell.getBoundingClientRect();
+    const observer = new ResizeObserver(() => {
+      const rect = cell.getBoundingClientRect();
+      if (rect.width === width) return;
+      width = rect.width;
+      setPopupBounds(getPopupBounds(rect, gridInsetsRef.current));
+    });
+    observer.observe(cell);
+    return () => observer.disconnect();
+  }, [bookKey, showPopup]);
+
+  const width = popupBounds
+    ? Math.min(
+        responsiveWidth,
+        Math.max(0, popupBounds.rect.right - popupBounds.rect.left - 2 * popupPadding),
+      )
+    : responsiveWidth;
+  const height = popupBounds
+    ? Math.min(
+        responsiveHeight,
+        Math.max(0, popupBounds.rect.bottom - popupBounds.rect.top - 2 * popupPadding),
+      )
+    : responsiveHeight;
 
   // The cell less its safe-area insets, so the popup stays clear of the
   // Dynamic Island, a camera cutout and the home indicator (#7389). In cell
@@ -236,20 +269,20 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   // measured and at the position the 88px seed had placed it at -- in a
   // vertical book, where a long note measures 300-600px, that frame hung off
   // the right edge of the screen before snapping back a frame later.
-  const popupPosition = useMemo(() => {
+  const popupPlacement = useMemo(() => {
     if (!anchor || !popupBounds) return null;
     // The anchor is in cell coordinates; getPopupPosition works relative to the
     // bounds' origin, so shift there and back (a no-op off the Duo).
     const { rect, origin } = popupBounds;
-    const popupPos = getPopupPosition(
-      offsetPosition(anchor, { x: -origin.x, y: -origin.y }),
-      rect,
-      responsiveWidth,
-      responsiveHeight,
-      popupPadding,
-    );
-    return offsetPosition(popupPos, origin);
-  }, [anchor, popupBounds, responsiveWidth, responsiveHeight, popupPadding]);
+    const localAnchor = offsetPosition(anchor, { x: -origin.x, y: -origin.y });
+    const position = getPopupPosition(localAnchor, rect, width, height, popupPadding);
+    return {
+      position: offsetPosition(position, origin),
+      // At another width the page has reflowed and the noteref is no longer
+      // where the arrow was measured; it is again once a panel gives the space back.
+      triangle: rect.right - rect.left === anchorWidthRef.current ? anchor : undefined,
+    };
+  }, [anchor, popupBounds, width, height, popupPadding]);
 
   const getMaxHeight = useCallback(() => {
     const safe = getSafeArea();
@@ -716,6 +749,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     setPopupVertical(null);
     seedPopupSize(viewSettings.vertical);
     setPopupBounds(bounds);
+    anchorWidthRef.current = bounds.rect.right - bounds.rect.left;
     setTrianglePosition(triangPos);
     trianglePositionRef.current = triangPos;
 
@@ -816,6 +850,19 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     return () => eventDispatcher.off('paragraph-focus', onParagraphFocus);
   }, [bookKey, showPopup, handleDismissPopup]);
 
+  useEffect(() => {
+    const renderer = view?.renderer;
+    if (!showPopup || !renderer) return;
+    // A TOC entry, a booknote or a search result in a panel beside the cell
+    // takes the book away from the noteref. A reflow ('anchor') keeps it.
+    const onRelocate = (event: Event) => {
+      const { reason } = (event as CustomEvent<{ reason?: string }>).detail ?? {};
+      if (reason === 'navigation' || reason === 'selection') handleDismissPopup();
+    };
+    renderer.addEventListener('relocate', onRelocate);
+    return () => renderer.removeEventListener('relocate', onRelocate);
+  }, [view, showPopup, handleDismissPopup]);
+
   // Handle custom footnote popup event from iframe event
   const handleFootnotePopupEvent = (event: CustomEvent) => {
     const { element, footnote } = event.detail;
@@ -878,6 +925,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
       footnoteRef.current.replaceChildren(elem);
       setPopupBounds(bounds);
+      anchorWidthRef.current = bounds.rect.right - bounds.rect.left;
       setTrianglePosition(triangPos);
       trianglePositionRef.current = triangPos;
       setShowPopup(true);
@@ -1044,8 +1092,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
-      {/* Above Paragraph mode's z-40 backdrop, below the popup's z-[42] band. */}
-      {showPopup && <Overlay className='z-[41]' onDismiss={handleDismissPopup} />}
+      {/* Keep the dismiss layer above Paragraph mode but inside the book cell,
+          so a pinned panel beside the cell stays interactive. */}
+      {showPopup && <Overlay className='absolute! z-[41]' onDismiss={handleDismissPopup} />}
       {/* The note's text is selectable, so the selection toolbar and the range
           handles open against a selection that lives inside this popup — they
           have to draw over it, exactly as they do over the book page. That used
@@ -1072,10 +1121,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       >
         <Popup
           isOpen={showPopup}
-          width={responsiveWidth}
-          height={responsiveHeight}
-          position={showPopup ? popupPosition! : undefined}
-          trianglePosition={showPopup ? anchor! : undefined}
+          width={width}
+          height={height}
+          position={showPopup ? popupPlacement?.position : undefined}
+          trianglePosition={showPopup ? popupPlacement?.triangle : undefined}
           safeAreaInsets={gridInsets}
           // Keep the texture surface stationary while the note scrolls inside it.
           className='footnote-popup select-text pointer-events-auto overflow-clip'
