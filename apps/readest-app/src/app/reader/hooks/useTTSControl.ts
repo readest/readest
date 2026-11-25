@@ -1033,9 +1033,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         // Gesture-path audio unlocks, BEFORE any network/plugin await: WebKit
         // rejects AudioContext.resume() outside the user-gesture window, and
         // speak() itself only runs after preprocessing and preload fetches.
-        // The silent keep-alive element runs on ALL platforms — desktop
-        // Chromium only surfaces hardware media keys while an
-        // HTMLMediaElement is playing, and Edge playback no longer has one.
+        // The silent keep-alive element runs in browsers only (the apps'
+        // native media sessions replace it) — desktop Chromium only surfaces
+        // hardware media keys while an HTMLMediaElement is playing, and Edge
+        // playback no longer has one.
         unblockAudio();
         void ensureSharedAudioContext();
         // No use_background_audio here: on iOS the native-tts media session

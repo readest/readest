@@ -6,8 +6,8 @@
 // its listeners ride controller events, not React lifecycles — and is the
 // SOLE owner of media-session handlers from the moment a session starts.
 //
-// The silent keep-alive element lives here too: it unlocks WebAudio against
-// the iOS mute switch, hosts navigator.mediaSession on platforms where a
+// The silent keep-alive element lives here too: in browsers it unlocks
+// WebAudio against the iOS mute switch, hosts navigator.mediaSession where a
 // playing HTMLMediaElement is required (iOS lock screen, desktop Chromium
 // media keys), and must survive hook unmount for a detached session.
 
@@ -15,7 +15,6 @@ import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
 import { isTauriAppPlatform } from '@/services/environment';
-import { getOSPlatform } from '@/utils/misc';
 import { notifyCarPlayState } from './carPlaySession';
 import { SILENCE_DATA } from './TTSData';
 import { resumePlayback, type PlaybackSource } from '@/services/playback/playbackSource';
@@ -57,7 +56,14 @@ export const unblockAudio = (): void => {
   // Desktop Tauri: the plugin drives the OS media controls, so the element
   // has nothing to host, and on Windows it would register WebView2's own
   // media session next to the native one.
-  if (isTauriAppPlatform() && getOSPlatform() !== 'android') return;
+  //
+  // Android Tauri: the native media service owns media keys and audio focus,
+  // and wry turns off the WebView's gesture requirement for media. A playing
+  // element makes Chromium request transient audio focus for the WebView,
+  // which knocks the service into a ducked state; a navigation prompt then
+  // only ducks the WebView, and the speech talks over it instead of pausing
+  // (#7819).
+  if (isTauriAppPlatform()) return;
   if (unblockerAudio) return;
   unblockerAudio = document.createElement('audio');
   unblockerAudio.setAttribute('x-webkit-airplay', 'deny');

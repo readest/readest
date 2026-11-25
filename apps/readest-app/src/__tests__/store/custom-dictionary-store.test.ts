@@ -723,6 +723,7 @@ describe('customDictionaryStore — loadCustomDictionaries reconciliation', () =
       'imp-known',
       'builtin:system',
       'builtin:context',
+      'builtin:xray',
       'web:builtin:google',
       'web:builtin:urban',
       'web:builtin:merriam-webster',

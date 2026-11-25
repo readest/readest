@@ -106,7 +106,8 @@ export const generateChatText = async (
     abortSignal: AbortSignal;
     /** When provided, request SSE and publish the accumulated answer. */
     onText?: (text: string) => void | Promise<void>;
-    onProgress?: () => void;
+    /** Called with the type of each part streamed back. */
+    onProgress?: (type: string) => void;
   },
 ): Promise<string> => {
   if (config.type === 'apple-intelligence') return generateOnDeviceText(config, options);
@@ -137,7 +138,7 @@ export const generateChatText = async (
       }
       settings.abortSignal.throwIfAborted();
       if (part.type === 'abort') throw new DOMException('Aborted', 'AbortError');
-      onProgress?.();
+      onProgress?.(part.type);
       if (part.type === 'text-delta') {
         text += part.text;
         await onText(text);

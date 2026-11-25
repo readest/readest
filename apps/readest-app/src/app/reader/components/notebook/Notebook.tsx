@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import dynamic from 'next/dynamic';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { useSettingsStore } from '@/store/settingsStore';
@@ -29,6 +30,8 @@ import DictionaryView from './DictionaryView';
 import NotebookHeader from './Header';
 import NotebookEditor from './NotebookEditor';
 import NotebookTabNavigation from './NotebookTabNavigation';
+
+const XRayView = dynamic(() => import('./XRayView'), { ssr: false });
 
 const MIN_NOTEBOOK_WIDTH = 0.15;
 const MAX_NOTEBOOK_WIDTH = 0.45;
@@ -290,6 +293,8 @@ const Notebook: React.FC = () => {
           </div>
         ) : notebookActiveTab === 'dictionary' ? (
           <DictionaryView bookKey={sideBarBookKey} />
+        ) : notebookActiveTab === 'xray' ? (
+          <XRayView key={sideBarBookKey} bookKey={sideBarBookKey} />
         ) : (
           <NotebookEditor
             bookKey={sideBarBookKey}

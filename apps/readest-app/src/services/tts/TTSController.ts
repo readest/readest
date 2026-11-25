@@ -445,10 +445,7 @@ export class TTSController extends EventTarget {
   //     and the in-app player drifts out of sync until the app is foregrounded.
   //     See #5561. Only for PAUSED_KEEP_ALIVE_MS, though: the tone keeps the
   //     audio output open, so a session left paused stopped the device from
-  //     sleeping (#7546). The looping silent element from unblockAudio() goes
-  //     too: it holds an output of its own, and Android needs it for neither
-  //     media keys (the native session has them) nor autoplay (wry turns the
-  //     gesture requirement off). Play from the app still resumes after that.
+  //     sleeping (#7546). Play from the app still resumes after that.
   #syncAudioKeepAlive() {
     clearTimeout(this.#pausedKeepAliveTimer);
     const directSpeak = this.ttsClient.getCapabilities().mediaClock === false;
@@ -462,7 +459,6 @@ export class TTSController extends EventTarget {
       this.#pausedKeepAliveTimer = setTimeout(() => {
         if (!this.state.includes('paused')) return;
         stopAudioKeepAlive();
-        releaseUnblockAudio();
       }, PAUSED_KEEP_ALIVE_MS);
     }
   }

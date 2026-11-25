@@ -40,6 +40,7 @@ const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
     BUILTIN_PROVIDER_IDS.wiktionary,
     BUILTIN_PROVIDER_IDS.wikipedia,
     BUILTIN_PROVIDER_IDS.context,
+    BUILTIN_PROVIDER_IDS.xray,
     ...BUILTIN_WEB_ORDER,
   ],
   providerEnabled: {
@@ -52,6 +53,7 @@ const DEFAULT_DICTIONARY_SETTINGS: DictionarySettings = {
     // Opt-in: it needs an OpenAI-compatible custom translator and spends
     // the user's own API tokens on every lookup.
     [BUILTIN_PROVIDER_IDS.context]: false,
+    [BUILTIN_PROVIDER_IDS.xray]: false,
     [BUILTIN_WEB_SEARCH_IDS.google]: false,
     [BUILTIN_WEB_SEARCH_IDS.urban]: false,
     [BUILTIN_WEB_SEARCH_IDS.merriamWebster]: false,
@@ -134,7 +136,7 @@ interface DictionaryStoreState {
   setContextOptions(
     options: Pick<
       DictionarySettings,
-      'contextPromptId' | 'contextSystemPrompt' | 'contextMaxOutputTokens'
+      'contextPromptId' | 'contextSystemPrompt' | 'contextMaxOutputTokens' | 'xrayAutoUpdate'
     >,
   ): void;
 
@@ -692,6 +694,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         contextPromptId: persistedSettings.contextPromptId,
         contextSystemPrompt: persistedSettings.contextSystemPrompt,
         contextMaxOutputTokens: persistedSettings.contextMaxOutputTokens,
+        xrayAutoUpdate: persistedSettings.xrayAutoUpdate,
       };
       set({ dictionaries, settings: settingsMerged });
       return true;
