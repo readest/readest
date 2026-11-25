@@ -199,7 +199,7 @@ it('loads the gift prices once for the Gift Card tile and the buy view', async (
   const PRICES = [
     {
       tier: 'plus',
-      productId: 'com.bilingify.readest.giftcard_plus.purchase',
+      productId: 'com.bilingify.readest.giftcard_plus_1y.purchase',
       price: 4999,
       currency: 'USD',
     },

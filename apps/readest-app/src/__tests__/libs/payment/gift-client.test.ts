@@ -37,7 +37,7 @@ describe('gift client', () => {
   it('fetchGiftPrices(true) maps IAP products to tiers', async () => {
     mocks.fetchIAPProducts.mockResolvedValue([
       {
-        id: 'com.bilingify.readest.giftcard_pro.purchase',
+        id: 'com.bilingify.readest.giftcard_pro_1y.purchase',
         title: 'Pro',
         description: '',
         price: '$79.99',
@@ -48,7 +48,7 @@ describe('gift client', () => {
     expect(await fetchGiftPrices(true)).toEqual([
       {
         tier: 'pro',
-        productId: 'com.bilingify.readest.giftcard_pro.purchase',
+        productId: 'com.bilingify.readest.giftcard_pro_1y.purchase',
         price: 7999,
         currency: 'USD',
       },
