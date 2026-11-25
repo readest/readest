@@ -46,7 +46,10 @@ const mocks = vi.hoisted(() => ({
   checkSignInDeviceLimit: vi.fn(async (_token: string): Promise<unknown> => null),
   signOutSyncDevice: vi.fn(async (_token: string, _id: string): Promise<unknown> => null),
   onAuthStateChange: undefined as
-    | ((event: string, session: { access_token: string; user: object } | null) => void)
+    | ((
+        event: string,
+        session: { access_token: string; refresh_token: string; user: object } | null,
+      ) => void)
     | undefined,
 }));
 
@@ -119,7 +122,13 @@ vi.mock('@/app/auth/utils/nativeAuth', () => ({
 }));
 
 const signIn = () =>
-  act(() => mocks.onAuthStateChange?.('SIGNED_IN', { access_token: 'free-token', user: {} }));
+  act(() =>
+    mocks.onAuthStateChange?.('SIGNED_IN', {
+      access_token: 'free-token',
+      refresh_token: 'free-refresh',
+      user: {},
+    }),
+  );
 
 beforeEach(() => {
   localStorage.clear();
@@ -162,6 +171,9 @@ describe('AuthPage over the Free plan device limit', () => {
     await waitFor(() => expect(mocks.router.replace).toHaveBeenCalledWith('/library'));
     expect(mocks.signOutSyncDevice).toHaveBeenCalledWith('free-token', 'mac');
     expect(mocks.login).toHaveBeenCalledWith('free-token', {});
+    // The app never published the held session, so nothing else stored it,
+    // and an offline restart would find no refresh token and sign out.
+    expect(localStorage.getItem('refresh_token')).toBe('free-refresh');
   });
 
   it('signs this device out again on Cancel', async () => {

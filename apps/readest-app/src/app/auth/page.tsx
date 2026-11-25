@@ -320,6 +320,9 @@ export default function AuthPage() {
     pendingSignIn.current = false;
     setHeldSignIn(null);
     login(session.access_token, session.user);
+    // AuthProvider never published a sign-in that was held, so keep the
+    // refresh token here, which an offline launch needs to stay signed in.
+    localStorage.setItem('refresh_token', session.refresh_token);
     const redirectTo = new URLSearchParams(window.location.search).get('redirect');
     const lastRedirectAtKey = 'lastRedirectAt';
     const lastRedirectAt = parseInt(localStorage.getItem(lastRedirectAtKey) || '0', 10);
