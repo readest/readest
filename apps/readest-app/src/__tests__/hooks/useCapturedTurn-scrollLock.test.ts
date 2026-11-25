@@ -46,6 +46,7 @@ const h = vi.hoisted(() => ({
   format: 'EPUB',
   pageRect: null as DOMRect | null,
   overlay: null as SVGSVGElement | null,
+  bookFonts: undefined as FontFaceSet | undefined,
   setHoveredBookKey: vi.fn(),
   setViewSettings: vi.fn(),
   settingsDialogOpen: false,
@@ -83,7 +84,11 @@ const h = vi.hoisted(() => ({
       return [
         {
           index: 0,
-          doc: { getSelection: () => h.selection, defaultView: { frameElement } },
+          doc: {
+            getSelection: () => h.selection,
+            defaultView: { frameElement },
+            fonts: h.bookFonts,
+          },
           overlayer: h.overlay && { element: h.overlay },
         },
       ];
@@ -178,6 +183,11 @@ vi.mock('@/app/reader/utils/capturedTurn', () => ({
 
 import { useCapturedTurn } from '@/app/reader/hooks/useCapturedTurn';
 import { dispatchTouchInterceptors } from '@/app/reader/hooks/useTouchInterceptor';
+import {
+  beginLayeredTurnTouch,
+  cancelLayeredTurnTouch,
+  endLayeredTurnTouch,
+} from '@/app/reader/utils/iframeEventHandlers';
 import { eventDispatcher } from '@/utils/event';
 
 const makeView = () =>
@@ -253,6 +263,7 @@ beforeEach(() => {
   h.viewSettings.zoomMode = 'fit-page';
   h.pageRect = null;
   h.overlay = null;
+  h.bookFonts = undefined;
 });
 
 afterEach(() => {
@@ -265,6 +276,85 @@ afterEach(() => {
 });
 
 describe('useCapturedTurn scroll-lock gate', () => {
+  test('invalidates native sheets when fonts settle without a relocation', async () => {
+    vi.resetModules();
+    const { useCapturedTurn: useFreshCapturedTurn } = await import(
+      '@/app/reader/hooks/useCapturedTurn'
+    );
+    const { NativePageTurn } = await import('@/app/reader/utils/nativePageTurn');
+    h.android = true;
+    h.renderer.getPageTurnKey = () => 'same-page';
+    const fonts = new EventTarget() as FontFaceSet;
+    h.bookFonts = fonts;
+    const invalidate = vi.spyOn(NativePageTurn.prototype, 'invalidateNativePages');
+    const { unmount } = renderHook(() => useFreshCapturedTurn('book-1', { current: makeView() }));
+    try {
+      invalidate.mockClear();
+      act(() => fonts.dispatchEvent(new Event('loadingdone')));
+      expect(invalidate).toHaveBeenCalledOnce();
+    } finally {
+      unmount();
+      invalidate.mockRestore();
+    }
+  });
+
+  test('drops a prepared capture on font reflow only for still-rendered documents', () => {
+    const firstFonts = new EventTarget() as FontFaceSet;
+    const nextFonts = new EventTarget() as FontFaceSet;
+    h.bookFonts = firstFonts;
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    act(() => firstFonts.dispatchEvent(new Event('loadingdone')));
+    expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
+
+    h.bookFonts = nextFonts;
+    act(() => h.renderer.dispatchEvent(new Event('stabilized')));
+    h.controller.invalidatePreparedCapture.mockClear();
+    act(() => firstFonts.dispatchEvent(new Event('loadingdone')));
+    expect(h.controller.invalidatePreparedCapture).not.toHaveBeenCalled();
+    act(() => nextFonts.dispatchEvent(new Event('loadingdone')));
+    expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
+
+    unmount();
+    h.controller.invalidatePreparedCapture.mockClear();
+    act(() => nextFonts.dispatchEvent(new Event('loadingdone')));
+    expect(h.controller.invalidatePreparedCapture).not.toHaveBeenCalled();
+  });
+
+  // A font that settled between touch-down and the native turn start took the
+  // prepared surface from the gesture, and the swipe turned no page.
+  test('defers font invalidation under a finger until the touch ends', async () => {
+    vi.useFakeTimers();
+    const fonts = new EventTarget() as FontFaceSet;
+    h.bookFonts = fonts;
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      beginLayeredTurnTouch('book-1');
+      dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+      h.controller.invalidatePreparedCapture.mockClear();
+      h.controller.prepareCapture.mockClear();
+
+      act(() => fonts.dispatchEvent(new Event('loadingdone')));
+      expect(h.controller.invalidatePreparedCapture).not.toHaveBeenCalled();
+
+      endLayeredTurnTouch('book-1');
+      dispatchTouchInterceptors('book-1', detail('end', 0, 0, 16, 150));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
+      expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+      expect(h.controller.invalidatePreparedCapture.mock.invocationCallOrder[0]).toBeLessThan(
+        h.controller.prepareCapture.mock.invocationCallOrder[0]!,
+      );
+    } finally {
+      cancelLayeredTurnTouch('book-1');
+      unmount();
+    }
+  });
+
   test.each(
     (['Android', 'iOS'] as const).flatMap((platform) =>
       (['native curl', 'slide', 'fixed curl', 'curl without preview'] as const).map(

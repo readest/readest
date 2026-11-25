@@ -449,14 +449,31 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const androidSelectionHandlerHeight = 0;
 
   // The keyboard a popup's text field raises can shorten the window, and the
-  // popup stays a popup (#7570): place it again against the new size.
-  const [windowResizes, setWindowResizes] = useState(0);
+  // popup stays a popup (#7570): place it again against the new size. A pinned
+  // panel resizes the book cell without resizing the window.
+  const [resizes, setResizes] = useState(0);
   useEffect(() => {
     if (!showingPopup) return;
-    const onResize = () => setWindowResizes((count) => count + 1);
+    const onResize = () => setResizes((count) => count + 1);
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [showingPopup]);
+    const cell = document.querySelector(`#gridcell-${bookKey}`);
+    let frame = 0;
+    // A frame later, once a footnote popup holding the selection has moved to
+    // fit the cell too.
+    const observer =
+      cell && typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(onResize);
+          })
+        : null;
+    if (cell) observer?.observe(cell);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      observer?.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [bookKey, showingPopup]);
 
   // Reposition popups on scroll without dismissing them
   const repositionPopups = useCallback(() => {
@@ -517,7 +534,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     annotPopupWidth,
     annotPopupHeight,
     footnotePopupDir,
-    windowResizes,
+    resizes,
   ]);
 
   useEffect(() => {

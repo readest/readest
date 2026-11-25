@@ -1,11 +1,24 @@
 import { render, waitFor } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
+import { EPUB } from 'foliate-js/epub.js';
 import FoliateViewer from '@/app/reader/components/FoliateViewer';
 
-const { readerState, openGate, bookDataState } = vi.hoisted(() => {
+type CustomFontStub = {
+  id: string;
+  path: string;
+  loaded?: boolean;
+  unavailable?: boolean;
+  blobUrl?: string;
+};
+
+const { readerState, openGate, bookDataState, fontState } = vi.hoisted(() => {
   return {
     bookDataState: { bookData: null as unknown },
+    fontState: {
+      availableFonts: [] as CustomFontStub[],
+      loadFont: async (_env: unknown, _id: string) => ({}) as { blobUrl?: string },
+    },
     openGate: { pending: null as Promise<void> | null, started: false },
     readerState: {
       setProgress: vi.fn(),
@@ -35,7 +48,11 @@ vi.mock('@/store/themeStore', () => {
   return { useThemeStore: Object.assign(useThemeStore, { getState: () => state }) };
 });
 vi.mock('@/store/customFontStore', () => ({
-  useCustomFontStore: () => ({ getLoadedFonts: () => [], getAvailableFonts: () => [] }),
+  useCustomFontStore: () => ({
+    getLoadedFonts: () => [],
+    getAvailableFonts: () => fontState.availableFonts,
+    loadFont: (env: unknown, id: string) => fontState.loadFont(env, id),
+  }),
 }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({}) }));
 vi.mock('next/navigation', () => ({ useSearchParams: () => null }));
@@ -192,4 +209,110 @@ it('leaves the type of a non-section resource alone apart from normalizing it', 
   const blob = new Blob(['font']);
   const { type } = await transform('application/vnd.ms-opentype', 'OPS/font.otf', blob);
   expect(type).toBe('application/vnd.ms-opentype');
+});
+
+// #7899: a stylesheet names `fonts/Bookerly.ttf` but the EPUB doesn't ship it.
+// The user imported a custom font with that file name, so it stands in. When
+// the custom font isn't loaded yet, foliate must wait for it rather than fall
+// back to the missing file on the first load.
+const FONT_BOOK: Record<string, string> = {
+  'META-INF/container.xml': `<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles><rootfile full-path="OPS/book.opf" media-type="application/oebps-package+xml"/></rootfiles>
+</container>`,
+  'OPS/book.opf': `<?xml version="1.0"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>Fonts</dc:title><dc:identifier id="id">urn:uuid:7899</dc:identifier>
+  </metadata>
+  <manifest>
+    <item id="c1" href="chapter.xhtml" media-type="application/xhtml+xml"/>
+    <item id="css" href="style.css" media-type="text/css"/>
+  </manifest>
+  <spine><itemref idref="c1"/></spine>
+</package>`,
+  'OPS/chapter.xhtml': `<?xml version="1.0"?>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+  <link rel="stylesheet" type="text/css" href="style.css"/>
+</head><body><p>Text</p></body></html>`,
+  'OPS/style.css': `@font-face { font-family: B; src: url(fonts/Bookerly.ttf); } p { color: red; }`,
+};
+
+// Opens FONT_BOOK in the viewer and returns the text of its first section's
+// stylesheet, as foliate built it on the first load.
+async function loadFontBookStylesheet(
+  loadFont: (id: string) => Promise<{ blobUrl?: string }>,
+  fonts: CustomFontStub[] = [{ id: 'bookerly', path: 'custom/Bookerly.ttf', loaded: false }],
+) {
+  const files = FONT_BOOK;
+  const book = new EPUB({
+    entries: Object.keys(files).map((filename) => ({ filename })),
+    loadText: async (name: string) => files[name] ?? null,
+    loadBlob: async (name: string) => (files[name] == null ? null : new Blob([files[name]!])),
+    getSize: (name: string) => files[name]?.length ?? 0,
+    sha1: undefined,
+  });
+  await book.init();
+
+  fontState.availableFonts = fonts;
+  fontState.loadFont = (_env, id) => loadFont(id);
+  // jsdom has no object URLs; keep each blob so the stylesheet can be read back.
+  const blobs = new Map<string, Blob>();
+  const originalCreate = URL.createObjectURL;
+  const originalRevoke = URL.revokeObjectURL;
+  URL.createObjectURL = (blob: Blob) => {
+    const url = `blob:test/${blobs.size}`;
+    blobs.set(url, blob);
+    return url;
+  };
+  URL.revokeObjectURL = () => {};
+  try {
+    openGate.pending = null;
+    const { props } = setup();
+    const addListener = vi.spyOn(book.transformTarget!, 'addEventListener');
+    render(<FoliateViewer {...props} bookDoc={book as unknown as typeof props.bookDoc} />);
+    await waitFor(() => expect(addListener).toHaveBeenCalledWith('load', expect.any(Function)));
+
+    const section = book.sections![0] as unknown as { loadContent: () => Promise<string> };
+    const html = await section.loadContent();
+    const cssUrl = new DOMParser()
+      .parseFromString(html, 'application/xhtml+xml')
+      .querySelector('link')!
+      .getAttribute('href')!;
+    return await blobs.get(cssUrl)!.text();
+  } finally {
+    URL.createObjectURL = originalCreate;
+    URL.revokeObjectURL = originalRevoke;
+    fontState.availableFonts = [];
+  }
+}
+
+it('uses a same-named custom font that is not loaded yet on the first load', async () => {
+  const css = await loadFontBookStylesheet(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    return { blobUrl: 'blob:custom-bookerly' };
+  });
+  expect(css).toContain('url("blob:custom-bookerly")');
+});
+
+it('still loads the chapter when the custom font file cannot be read', async () => {
+  const css = await loadFontBookStylesheet(async () => {
+    throw new Error('Font file not found');
+  });
+  expect(css).toContain('p { color: red; }');
+});
+
+// A cloud-only font has no file on disk yet, so it can't stand in; a loaded
+// font with the same file name can.
+it('prefers a loaded same-named custom font over a cloud-only one', async () => {
+  const fonts = [
+    { id: 'remote', path: 'remote/Bookerly.ttf', unavailable: true },
+    { id: 'local', path: 'local/bookerly.ttf', loaded: true, blobUrl: 'blob:local-bookerly' },
+  ];
+  const css = await loadFontBookStylesheet(async (id) => {
+    const font = fonts.find((font) => font.id === id)!;
+    if (!font.blobUrl) throw new Error('File not found');
+    return font;
+  }, fonts);
+  expect(css).toContain('url("blob:local-bookerly")');
 });

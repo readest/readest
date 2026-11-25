@@ -8,14 +8,19 @@ import { FoliateView, wrappedFoliateView } from '@/types/view';
 import type { Book, BookConfig, PageInfo, ViewSettings } from '@/types/book';
 import type { FileSystem } from '@/types/system';
 import type { TTSClient, TTSMessageEvent } from '@/services/tts/TTSClient';
+import { TTSController } from '@/services/tts/TTSController';
 import type { SystemSettings } from '@/types/settings';
 import { getDefaultViewSettings } from '@/services/settingsService';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
+import { parseSSMLMarks } from '@/utils/ssml';
+import { DIALOGUE_SPAN_CLASS, manageDialogueHighlight } from '@/utils/dialogueHighlight';
 import { useTTSControl } from '@/app/reader/hooks/useTTSControl';
 import { useParagraphMode } from '@/app/reader/hooks/useParagraphMode';
+import { createTTSNodeFilter } from '@/services/tts/nodeFilter';
+import type { Overlayer } from 'foliate-js/overlayer.js';
 
 // ---------------------------------------------------------------------------
 // Mock ONLY the speech client. Everything else is real: the foliate
@@ -267,6 +272,232 @@ afterEach(async () => {
   document.querySelectorAll('foliate-view').forEach((el) => el.parentElement?.remove());
   useBookDataStore.setState(() => ({ booksData: {} }));
   useReaderStore.setState(() => ({ viewStates: {} }));
+});
+
+// #7882: closing the book keeps Read Aloud going headless, and reopening it
+// attaches a new view. The sentence read is mid-paragraph, so a reattach that
+// forgets it starts the paragraph (or the chapter) over.
+//
+// With Dialogue Highlighting on, a sentence that opens with a quote starts in
+// the quote's cfi-skip span. Its CFI reads back as the end of the text before
+// the span, which sorts before the sentence, so the reopen seeded the sentence
+// before it.
+const opensInDialogueSpan = (range: Range) => {
+  const span = range.startContainer.parentElement;
+  return (
+    range.startOffset === 0 &&
+    !!span?.classList.contains(DIALOGUE_SPAN_CLASS) &&
+    !!span.previousSibling?.textContent?.trim()
+  );
+};
+
+describe('TTS position after the reader reopens', () => {
+  it.each([
+    ['sentence', 'plain text'],
+    ['word', 'plain text'],
+    ['sentence', 'a dialogue quote'],
+    ['word', 'a dialogue quote'],
+  ] as const)('restores the clock, lyric and %s highlight after repeated reopens of a sentence opening with %s', async (granularity, opening) => {
+    const viewSettings = getDefaultViewSettings({
+      fs: {} as FileSystem,
+      isMobile: false,
+      isEink: false,
+      isAppDataSandbox: false,
+    });
+    const dialogue = opening === 'a dialogue quote';
+    const openChapter = async () => {
+      const { view } = createView(viewSettings);
+      await view.open(bookDoc);
+      await view.renderer.goTo({ index: CH4_SECTION_INDEX });
+      if (dialogue) {
+        const { doc } = view.renderer.getContents().find((c) => c.index === CH4_SECTION_INDEX)!;
+        manageDialogueHighlight(doc, { ...viewSettings, dialogueHighlight: true });
+      }
+      return view;
+    };
+    let view = await openChapter();
+    const controller = new TTSController(null, view);
+    const client = makeMockTTSClient('edge');
+    controller.ttsClient = {
+      ...client,
+      getCapabilities: () => ({
+        ...client.getCapabilities(),
+        mediaClock: true,
+        wordBoundaries: granularity === 'word',
+      }),
+    };
+    controller.setHighlightGranularity(granularity);
+    try {
+      await controller.initViewTTS(CH4_SECTION_INDEX);
+      const timeline = (await controller.ensureTimeline())!;
+      const index = Array.from({ length: timeline.length }, (_, i) => i).find(
+        (i) =>
+          i > 1 &&
+          timeline.sentenceAt(i - 1)?.blockIndex === timeline.sentenceAt(i)?.blockIndex &&
+          timeline.sentenceAt(i + 1)?.blockIndex === timeline.sentenceAt(i)?.blockIndex &&
+          opensInDialogueSpan(timeline.sentenceAt(i)!.range) === dialogue,
+      )!;
+      expect(index).toBeGreaterThan(1);
+      const ssml = controller.startFromRange(timeline.sentenceAt(index)!.range)!;
+      controller.dispatchSpeakMark(parseSSMLMarks(ssml).marks[0]);
+      if (granularity === 'word') {
+        const words = timeline
+          .sentenceAt(index)!
+          .range.toString()
+          .match(/\p{L}+/gu)!
+          .slice(0, 2);
+        expect(words).toHaveLength(2);
+        controller.prepareSpeakWords(words);
+        controller.dispatchSpeakWord(0);
+        expect(controller.getCurrentHighlightCfi()).toBeTruthy();
+      }
+      expect(controller.getCurrentLyricIndex()).toBe(index);
+      const clock = controller.getPlaybackInfo();
+      expect(clock?.position).toBeGreaterThan(0);
+      const cfi = controller.getCurrentPlaybackCfi();
+      expect(cfi).toBeTruthy();
+
+      for (const state of ['paused', 'playing', 'playing'] as const) {
+        controller.state = state;
+        controller.detachView();
+        view.close();
+        view.parentElement?.remove();
+        view = await openChapter();
+        const overlayer = view.renderer.getContents().find((c) => c.index === CH4_SECTION_INDEX)!
+          .overlayer as Overlayer;
+        const draw = vi.spyOn(overlayer, 'add');
+        await controller.attachView(view, { bookKey: BOOK_KEY });
+        await controller.ensureTimeline();
+
+        expect(controller.getCurrentLyricIndex()).toBe(index);
+        expect(controller.getPlaybackInfo()).toEqual(clock);
+        expect(controller.getCurrentPlaybackCfi()).toBe(cfi);
+        expect(draw.mock.calls.map(([key]) => key)).toContain('tts-highlight');
+      }
+      // The paragraph's look-ahead can still fire after a reopen. It steps the
+      // new iterator, and must put the sentence back (#6850).
+      await controller.preloadNextSSML();
+      expect(controller.getCurrentLyricIndex()).toBe(index);
+
+      if (granularity === 'word') {
+        const wordEvents = vi.fn();
+        controller.addEventListener('tts-highlight-word', wordEvents);
+        controller.dispatchSpeakWord(1);
+        expect(wordEvents).toHaveBeenCalledOnce();
+        expect(controller.getCurrentHighlightCfi()).not.toBe(cfi);
+      }
+      controller.state = 'paused';
+      await controller.forward(true);
+      expect(controller.getCurrentLyricIndex()).toBe(index + 1);
+    } finally {
+      await controller.shutdown();
+      view.close();
+    }
+  });
+});
+
+// The same read-back placed the A-B repeat's start, and Read Aloud started
+// again from its saved location, on the sentence before one opening a quote.
+describe('TTS from a saved sentence that opens with a dialogue quote', () => {
+  const dialogueSettings = (): ViewSettings => ({
+    ...getDefaultViewSettings({
+      fs: {} as FileSystem,
+      isMobile: false,
+      isEink: false,
+      isAppDataSandbox: false,
+    }),
+    dialogueHighlight: true,
+  });
+
+  // Ch4 open with its quotes wrapped, and its first sentence that opens a
+  // quote after other text of the same paragraph.
+  const openDialogueSentence = async (viewSettings: ViewSettings) => {
+    const { view } = createView(viewSettings);
+    await view.open(bookDoc);
+    await view.renderer.goTo({ index: CH4_SECTION_INDEX });
+    const { doc } = view.renderer.getContents().find((c) => c.index === CH4_SECTION_INDEX)!;
+    manageDialogueHighlight(doc, viewSettings);
+    const { getSentences } = await import('foliate-js/tts.js');
+    const { textWalker } = await import('foliate-js/text-walker.js');
+    const sentences = [...getSentences(doc, textWalker, createTTSNodeFilter())];
+    const index = sentences.findIndex(
+      ({ range, blockIndex }, i) =>
+        i > 0 && sentences[i - 1]!.blockIndex === blockIndex && opensInDialogueSpan(range),
+    );
+    expect(index).toBeGreaterThan(0);
+    return { view, index, range: sentences[index]!.range };
+  };
+
+  it('A-B repeat marks and goes back to that sentence', async () => {
+    const viewSettings = dialogueSettings();
+    const { view, index, range } = await openDialogueSentence(viewSettings);
+    const controller = new TTSController(null, view);
+    const client = makeMockTTSClient('edge');
+    const spoken: string[] = [];
+    controller.ttsClient = {
+      ...client,
+      speak: (ssml, signal, preload) => {
+        if (!preload) spoken.push(ssml);
+        return client.speak(ssml, signal, preload);
+      },
+      getCapabilities: () => ({ ...client.getCapabilities(), mediaClock: true }),
+    };
+    controller.setParagraphGap(0);
+    try {
+      await controller.initViewTTS(CH4_SECTION_INDEX);
+      await controller.ensureTimeline();
+      const ssml = controller.startFromRange(range)!;
+      controller.dispatchSpeakMark(parseSSMLMarks(ssml).marks[0]);
+      expect(controller.getCurrentLyricIndex()).toBe(index);
+
+      // A and B on the same sentence: it repeats.
+      controller.toggleLoopPoint();
+      controller.toggleLoopPoint();
+      expect(controller.getLyricLoopRange()).toEqual({ start: index, end: index });
+
+      await controller.speak(ssml);
+      const deadline = Date.now() + 5000;
+      while (spoken.length < 2 && Date.now() < deadline) await sleep(20);
+      expect(spoken.length).toBeGreaterThanOrEqual(2);
+      expect(parseSSMLMarks(spoken[1]!).marks[0]?.text).toBe(
+        parseSSMLMarks(spoken[0]!).marks[0]?.text,
+      );
+    } finally {
+      await controller.shutdown();
+      view.close();
+    }
+  });
+
+  it('Read Aloud starts again on that sentence', async () => {
+    const viewSettings = dialogueSettings();
+    const { view, range } = await openDialogueSentence(viewSettings);
+    const cfi = view.getCFI(CH4_SECTION_INDEX, range);
+    seedStores(view, viewSettings);
+    wireRelocate(view);
+    await view.goTo(cfi);
+    await sleep(50);
+    viewSettings.ttsLocation = cfi;
+    // Keep the first sentence sounding while it is checked.
+    speakDelayMs = 5000;
+    const { result, unmount } = renderHook(() => useTTSControl({ bookKey: BOOK_KEY }));
+    try {
+      await act(async () => {
+        await eventDispatcher.dispatch('tts-speak', { bookKey: BOOK_KEY });
+      });
+      await act(async () => {
+        const deadline = Date.now() + 5000;
+        while (!result.current.getController()?.getSpokenSentence() && Date.now() < deadline) {
+          await sleep(20);
+        }
+      });
+      expect(result.current.getController()?.getSpokenSentence()?.text).toBe(
+        range.toString().trim(),
+      );
+    } finally {
+      speakDelayMs = 25;
+      unmount();
+    }
+  }, 30000);
 });
 
 describe('TTS auto-advance across a chapter boundary (browser e2e)', () => {

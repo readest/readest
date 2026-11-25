@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo, useId } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isOPDSCatalog, getPublication, getFeed, getOpenSearch } from 'foliate-js/opds.js';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -125,6 +125,7 @@ export default function BrowserPage() {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [showAddCatalog, setShowAddCatalog] = useState(false);
   const [newCatalogName, setNewCatalogName] = useState('');
+  const catalogNameId = useId();
 
   const searchParams = useSearchParams();
   const catalogUrl = searchParams?.get('url') || '';
@@ -1199,6 +1200,8 @@ export default function BrowserPage() {
     setShowAddCatalog(false);
   }, [newCatalogName, state.currentURL, catalog, envConfig, _]);
 
+  const isWebPwa = appService?.appPlatform === 'web' && appService.hasSafeAreaInset;
+
   return (
     <div
       className={clsx(
@@ -1207,7 +1210,7 @@ export default function BrowserPage() {
       )}
     >
       <div
-        className='relative top-0 z-40 w-full'
+        className={clsx('top-0 z-40 w-full', isWebPwa ? 'bg-base-100 sticky' : 'relative')}
         style={{
           paddingTop: `${safeAreaInsets?.top || 0}px`,
           // Clear iPhone Duo's side status strip (#6307).
@@ -1301,10 +1304,14 @@ export default function BrowserPage() {
       >
         <div className='flex flex-col gap-4 pt-2'>
           <div className='flex flex-col'>
-            <label className='flex select-none items-center justify-between px-1 py-2'>
+            <label
+              htmlFor={catalogNameId}
+              className='flex select-none items-center justify-between px-1 py-2'
+            >
               <span className='text-sm font-medium text-sm'>{_('Catalog Name')}</span>
             </label>
             <input
+              id={catalogNameId}
               type='text'
               value={newCatalogName}
               onChange={(e) => setNewCatalogName(e.target.value)}

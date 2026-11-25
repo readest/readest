@@ -336,7 +336,7 @@ vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
     word: string;
     onDismiss: () => void;
     position: { point: { y: number } };
-    trianglePosition: { point: { y: number } };
+    trianglePosition: { point: { x: number; y: number } };
     popupHeight: number;
     contextOnly?: boolean;
     onPin?: (lookup: { word: string; lang?: string }) => void;
@@ -348,6 +348,7 @@ vi.mock('@/app/reader/components/annotator/DictionaryPopup', () => ({
       data-word={word.trim()}
       data-top={position.point.y}
       data-height={popupHeight}
+      data-triangle-x={trianglePosition.point.x}
       data-triangle-y={trianglePosition.point.y}
     >
       <button type='button' data-testid='dictionary-dismiss' onClick={onDismiss} />
@@ -849,6 +850,61 @@ describe('the instant dictionary hands the selection back when it closes', () =>
       delete (Range.prototype as { getClientRects?: unknown }).getClientRects;
       gridCell.remove();
       setViewport(innerWidth, innerHeight);
+    }
+  });
+
+  test('places the popup again when a pinned panel narrows the cell', async () => {
+    const observers: ResizeObserverCallback[] = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          observers.push(callback);
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const { innerWidth, innerHeight } = window;
+    Object.defineProperty(window, 'innerWidth', { value: 1180, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 820, configurable: true });
+    // The window keeps its size; the cell narrows, and the word reflows with it.
+    let cellWidth = 1180;
+    let gridCell = document.querySelector<HTMLElement>('#gridcell-book-1');
+    if (!gridCell) {
+      gridCell = document.createElement('div');
+      gridCell.id = 'gridcell-book-1';
+      document.body.append(gridCell);
+    }
+    gridCell.getBoundingClientRect = () => new DOMRect(0, 0, cellWidth, 820);
+    Object.defineProperty(Range.prototype, 'getClientRects', {
+      configurable: true,
+      value: () => [new DOMRect(cellWidth - 200, 300, 100, 20)],
+    });
+    h.realPopupGeometry = true;
+    try {
+      render(
+        <Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />,
+      );
+      await selectWord();
+      const popup = screen.getByTestId('dictionary-surface');
+      expect(Number(popup.dataset['triangleX'])).toBe(1030);
+
+      cellWidth = 600;
+      await act(async () => {
+        for (const callback of observers) callback([], {} as ResizeObserver);
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      });
+
+      expect(screen.getByTestId('dictionary-surface')).toBe(popup);
+      expect(Number(popup.dataset['triangleX']), 'popup anchor').toBe(450);
+    } finally {
+      h.realPopupGeometry = false;
+      delete (Range.prototype as { getClientRects?: unknown }).getClientRects;
+      gridCell.remove();
+      Object.defineProperty(window, 'innerWidth', { value: innerWidth, configurable: true });
+      Object.defineProperty(window, 'innerHeight', { value: innerHeight, configurable: true });
+      vi.unstubAllGlobals();
     }
   });
 

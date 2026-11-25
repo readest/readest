@@ -590,6 +590,9 @@ export interface SystemSettings {
   /** Ordered list of unique metadata sort criteria (highest priority first) with per-criterion direction. */
   librarySortOrder?: LibrarySortCriterion[];
   libraryGroupBy: LibraryGroupByType;
+  /** Whether the View menu's Group by... and Sort by... sections open expanded (#7893). */
+  libraryGroupByExpanded: boolean;
+  librarySortByExpanded: boolean;
   libraryCoverFit: LibraryCoverFitType;
   libraryAutoColumns: boolean;
   libraryColumns: number;

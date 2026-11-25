@@ -1232,13 +1232,22 @@ const getRubyStyles = (viewSettings: ViewSettings) => {
   }
   /* Keep each glossed word as a single line-level unit and center it under its
      hint (#7880): Chromium 128+ makes <ruby> line-breakable, which splits words
-     and hints across lines under overflow-wrap: break-word, and default
-     ruby-align: space-around stretches narrow bases with diacritics when the
-     hint is wider. */
+     and hints across lines under overflow-wrap: break-word. */
   ruby.wl-gloss {
     cursor: help;
     white-space: nowrap;
     ruby-align: center;
+  }
+  /* Chromium centers a word under a wider hint by moving the last glyph of the
+     word's first letter right. When that letter is a base and a combining mark
+     (Bitter draws ī as ı + U+0304), the mark leaves its base behind (#7880). An
+     empty box ahead of the word takes that space instead. Legacy WebKit, which
+     has no ruby-align, would lose the hint's overhang into the space before
+     the word, so it is left out. */
+  @supports (ruby-align: center) {
+    ruby.wl-gloss::before {
+      content: '';
+    }
   }
   ruby.wl-gloss > rt {
     font-size: ${fontSize}em;

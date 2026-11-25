@@ -201,6 +201,40 @@ describe('bookshelf layouts from the View menu', () => {
       expect(order?.find((c) => c.by === 'author')?.ascending).toBe(false);
     });
   });
+  // #7893: both sections open collapsed, and each one reopens as the user left it.
+  it('opens Group by and Sort by collapsed, then remembers each one', async () => {
+    const section = (label: string) =>
+      screen.getByRole('listitem', { name: label }).querySelector('details')!;
+    const toggle = (label: string) => fireEvent.click(screen.getByRole('button', { name: label }));
+
+    const { unmount } = render(<ViewMenu />);
+    expect(section('Group by...').open).toBe(false);
+    expect(section('Sort by...').open).toBe(false);
+
+    toggle('Sort by...');
+    await waitFor(() =>
+      expect(useSettingsStore.getState().settings.librarySortByExpanded).toBe(true),
+    );
+    expect(useSettingsStore.getState().settings.libraryGroupByExpanded).toBe(false);
+    unmount();
+
+    const second = render(<ViewMenu />);
+    expect(section('Group by...').open).toBe(false);
+    expect(section('Sort by...').open).toBe(true);
+
+    toggle('Group by...');
+    toggle('Sort by...');
+    await waitFor(() => {
+      const { settings } = useSettingsStore.getState();
+      expect(settings.libraryGroupByExpanded).toBe(true);
+      expect(settings.librarySortByExpanded).toBe(false);
+    });
+    second.unmount();
+
+    render(<ViewMenu />);
+    expect(section('Group by...').open).toBe(true);
+    expect(section('Sort by...').open).toBe(false);
+  });
   it('keeps shelf visibility and cover visibility in Bookshelves settings', () => {
     render(<ViewMenu />);
     expect(screen.getByText('Bookshelves')).toBeTruthy();

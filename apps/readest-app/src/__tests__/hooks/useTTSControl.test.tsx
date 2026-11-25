@@ -21,7 +21,11 @@ vi.mock('@/store/themeStore', () => ({
 
 const mockView = {
   isConnected: true,
-  book: { primaryLanguage: 'en', sections: [{ id: 0 }] },
+  book: {
+    primaryLanguage: 'en',
+    sections: [{ id: 0 }],
+    rendition: undefined as { layout: string } | undefined,
+  },
   renderer: {
     getContents: () => [{ index: 0, doc: document as unknown as Document }],
     scrollToAnchor: vi.fn(),
@@ -30,7 +34,8 @@ const mockView = {
     nextSection: vi.fn(),
     start: 0,
     end: 0,
-    sideProp: 'height',
+    containerPosition: 0,
+    sideProp: 'height' as 'height' | 'width',
     next: vi.fn(),
     goTo: vi.fn(),
   },
@@ -66,6 +71,9 @@ const mockViewSettings = {
   ttsMediaMetadata: 'sentence',
   translationEnabled: false,
   ttsReadAloudText: 'source',
+  showHeader: false,
+  marginTopPx: 0,
+  scrollingOverlap: 0,
 };
 
 const mockBookData = {
@@ -1211,6 +1219,173 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
     handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
 
     expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(wordRange);
+  });
+
+  // In scrolled mode the view follows the voice by scrolling the text being
+  // read to three lines below the top, so the lines just read stay on screen
+  // above it, instead of to the very top (#7895).
+  describe('in scrolled mode (#7895)', () => {
+    let before: HTMLParagraphElement;
+    let para: HTMLParagraphElement;
+
+    beforeEach(() => {
+      mockView.renderer.scrolled = true;
+      // The visible part of the section: 500px to 976px.
+      mockView.renderer.start = 500;
+      mockView.renderer.end = 976;
+      mockView.renderer.containerPosition = 1000;
+      before = document.createElement('p');
+      before.textContent = 'So she was considering, in her own mind.';
+      para = document.createElement('p');
+      para.style.lineHeight = '20px';
+      para.textContent = 'Alice was beginning to get very tired of sitting by her sister.';
+      document.body.append(before, para);
+    });
+
+    afterEach(() => {
+      before.remove();
+      para.remove();
+      mockView.book.rendition = undefined;
+      mockViewSettings.showHeader = false;
+      mockViewSettings.marginTopPx = 0;
+      mockView.renderer.sideProp = 'height';
+      mockView.renderer.start = 0;
+      mockView.renderer.end = 0;
+      mockView.renderer.containerPosition = 0;
+    });
+
+    const textAt = (top: number, height: number) => {
+      const range = document.createRange();
+      range.setStart(para.firstChild!, 0);
+      range.setEnd(para.firstChild!, 5);
+      range.getBoundingClientRect = () => ({ x: 40, y: top, width: 300, height }) as DOMRect;
+      return range;
+    };
+
+    it('scrolls a sentence that runs past the bottom to three lines below the top', async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => textAt(950, 40) });
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+
+      // The sentence's top (950) lands 3 lines (3 x 20px) below the top (500).
+      expect(mockView.renderer.containerPosition).toBe(1000 + 950 - 500 - 60);
+      expect(mockView.renderer.scrollToAnchor).not.toHaveBeenCalled();
+    });
+
+    it('scrolls a spoken word that reaches the bottom to three lines below the top', async () => {
+      const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+      mockProgress.range = null;
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => textAt(966, 20) });
+
+      handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+      expect(mockView.renderer.containerPosition).toBe(1000 + 966 - 500 - 60);
+      expect(mockView.renderer.scrollToAnchor).not.toHaveBeenCalled();
+    });
+
+    it('holds still while the spoken word is on screen, whatever the last relocate saw', async () => {
+      const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+      // A relocate lags a scroll, so the visible range can still end before
+      // a word the view already shows.
+      const stale = document.createRange();
+      stale.selectNodeContents(before);
+      mockProgress.range = stale;
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => textAt(600, 20) });
+
+      handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+      expect(mockView.renderer.containerPosition).toBe(1000);
+      expect(mockView.renderer.scrollToAnchor).not.toHaveBeenCalled();
+    });
+
+    it('leaves vertical text to foliate, which scrolls it sideways', async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockView.renderer.sideProp = 'width';
+      const range = textAt(0, 0);
+      range.getBoundingClientRect = () => ({ x: 950, y: 40, width: 40, height: 300 }) as DOMRect;
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => range });
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+
+      expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(range);
+      expect(mockView.renderer.containerPosition).toBe(1000);
+    });
+
+    // The out-of-view check counts a header-sized band at the top as hidden.
+    // Text landing inside it would be followed again on every line.
+    it('lands below the header band when that is taller than three lines', async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockViewSettings.showHeader = true;
+      mockViewSettings.marginTopPx = 144;
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => textAt(950, 40) });
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+
+      expect(mockView.renderer.containerPosition).toBe(1000 + 950 - 500 - 144);
+    });
+
+    it('keeps the word on screen in a view shorter than six lines', async () => {
+      const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+      mockView.renderer.end = 700;
+      para.style.lineHeight = '80px';
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => textAt(700, 80) });
+
+      handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+      // Three 80px lines don't fit in 200px: the word lands halfway down.
+      expect(mockView.renderer.containerPosition).toBe(1000 + 700 - 500 - 100);
+    });
+
+    it('keeps a short view clear of the header band when the word fits below it', async () => {
+      const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+      mockView.renderer.end = 700;
+      mockViewSettings.showHeader = true;
+      mockViewSettings.marginTopPx = 120;
+      para.style.lineHeight = '80px';
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => textAt(700, 20) });
+
+      handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+      expect(mockView.renderer.containerPosition).toBe(1000 + 700 - 500 - 120);
+    });
+
+    // A fixed-layout page measures its text from the page, while the renderer
+    // counts from the book's start.
+    it('leaves fixed-layout pages to foliate', async () => {
+      mockView.book.rendition = { layout: 'pre-paginated' };
+      const markHandler = await setupAndCaptureHighlightHandler();
+      const sentence = textAt(950, 40);
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => sentence });
+      await act(async () => {
+        markHandler(
+          new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }),
+        );
+      });
+      expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(sentence);
+
+      const controller = ttsControllerInstances[0] as {
+        addEventListener: { mock: { calls: [string, (e: Event) => void][] } };
+      };
+      const wordHandler = controller.addEventListener.mock.calls.find(
+        ([name]) => name === 'tts-highlight-word',
+      )![1];
+      const stale = document.createRange();
+      stale.selectNodeContents(before);
+      mockProgress.range = stale;
+      const word = textAt(966, 20);
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => word });
+      wordHandler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+      expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(word);
+      expect(mockView.renderer.containerPosition).toBe(1000);
+    });
   });
 
   // Following the voice focuses the spoken text inside the book's iframe and

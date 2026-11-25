@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 
 import type { Book } from '@/types/book';
 
@@ -15,6 +15,7 @@ import type { Book } from '@/types/book';
 
 const h = vi.hoisted(() => ({
   onDownload: null as null | ((href: string, type?: string) => Promise<unknown>),
+  onAddCatalog: null as null | (() => void),
   runFileLibrarySyncPass: vi.fn(async () => null),
 }));
 
@@ -65,7 +66,12 @@ vi.mock('@/app/opds/components/PublicationView', () => ({
 }));
 vi.mock('@/app/opds/components/FeedView', () => ({ FeedView: () => null }));
 vi.mock('@/app/opds/components/SearchView', () => ({ SearchView: () => null }));
-vi.mock('@/app/opds/components/Navigation', () => ({ Navigation: () => null }));
+vi.mock('@/app/opds/components/Navigation', () => ({
+  Navigation: (props: { onAddCatalog: typeof h.onAddCatalog }) => {
+    h.onAddCatalog = props.onAddCatalog;
+    return null;
+  },
+}));
 
 vi.mock('@/app/opds/utils/opdsReq', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/app/opds/utils/opdsReq')>()),
@@ -131,5 +137,20 @@ describe('OPDS download → library.json sync (#7464)', () => {
       await vi.advanceTimersByTimeAsync(5_000);
     });
     expect(h.runFileLibrarySyncPass).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('OPDS add-catalog dialog', () => {
+  // The Catalog Name label named nothing and the field has no placeholder, so
+  // a screen reader announced a text field with no name at all (#7911).
+  it('names the catalog name field by its label', async () => {
+    render(<BrowserPage />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    act(() => h.onAddCatalog!());
+
+    const input = screen.getByLabelText<HTMLInputElement>('Catalog Name');
+    expect(input.value).toBe('New Catalog');
   });
 });

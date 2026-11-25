@@ -140,7 +140,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         {shouldInjectRuntimeConfig ? (
-          <Script src='/runtime-config.js' strategy='beforeInteractive' />
+          <>
+            <meta name='theme-color' content='#ffffff' />
+            <Script src='/runtime-config.js' strategy='beforeInteractive' />
+          </>
         ) : null}
         {shouldInjectDevHmrPatch ? (
           <script dangerouslySetInnerHTML={{ __html: devHmrPatchScript }} />

@@ -8,6 +8,8 @@ import { getEnabledCustomTTSServices } from '@/store/customTTSStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useBookProgress } from '@/store/readerProgressStore';
 import { useProofreadStore } from '@/store/proofreadStore';
+import { FoliateView } from '@/types/view';
+import { ViewSettings } from '@/types/book';
 import { TransformContext } from '@/services/transformers/types';
 import { proofreadTransformer } from '@/services/transformers/proofread';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -23,7 +25,7 @@ import { scaleGapForRate } from '@/services/tts/gap';
 import { eventDispatcher } from '@/utils/event';
 import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
-import { isCfiInLocation } from '@/utils/cfi';
+import { isCfiInLocation, startInNextText } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
 import { getPDFSpeechLang } from '@/utils/lang';
 import { estimateTTSTime } from '@/utils/ttsTime';
@@ -68,6 +70,59 @@ const isRendered = (range: Range) =>
   Array.from(range.getClientRects()).some(
     (r) => r.width > 0 && r.height > 0 && r.x >= 0 && r.y >= 0,
   );
+
+// In scrolled mode, the text the view follows lands this many lines below the
+// top, so the lines just read stay on screen above it (#7895).
+const SCROLLED_FOLLOW_CONTEXT_LINES = 3;
+
+const lineHeightAt = (range: Range) => {
+  const node = range.startContainer;
+  const el = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+  const style = el && el.ownerDocument.defaultView?.getComputedStyle(el);
+  if (!style) return 0;
+  // A 'normal' line height has no px value; browsers draw it at about 1.2em.
+  return parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2;
+};
+
+// Whether the scrolled view places followed text itself. Vertical text scrolls
+// sideways, and a fixed-layout page measures its text from the page while the
+// renderer counts from the book's start: foliate places both, as before.
+const placesScrolledFollow = (view: FoliateView) =>
+  view.renderer.scrolled &&
+  view.renderer.sideProp === 'height' &&
+  view.book.rendition?.layout !== 'pre-paginated';
+
+// Scroll once the text reaches an edge of the view. Measured, not compared
+// with the last relocate's visible range: a scroll relocates only after a
+// debounce, and a word spoken meanwhile must not scroll again.
+const followInScrolledView = (view: FoliateView, range: Range, viewSettings: ViewSettings) => {
+  const rect = range.getBoundingClientRect();
+  const { start, end, sideProp } = view.renderer;
+  const rangeTop = rect[sideProp === 'height' ? 'y' : 'x'];
+  const rangeBottom = rangeTop + rect[sideProp === 'height' ? 'height' : 'width'];
+
+  const headerScrollOverlap = viewSettings.showHeader ? viewSettings.marginTopPx : 0;
+  const footerScrollOverlap = viewSettings.showFooter ? viewSettings.marginBottomPx : 0;
+  // Overlap only applies to fixed-layout scrolling (see viewPagination).
+  const scrollingOverlap =
+    view.book.rendition?.layout === 'pre-paginated' ? viewSettings.scrollingOverlap : 0;
+  const outOfView =
+    rangeBottom > end - footerScrollOverlap - scrollingOverlap ||
+    rangeTop < start + headerScrollOverlap + scrollingOverlap;
+  if (!outOfView) return;
+  if (!placesScrolledFollow(view)) {
+    view.renderer.scrollToAnchor?.(range);
+    return;
+  }
+  // At most halfway down, or in a short view the text would stay below it.
+  // Never inside the header band the check above counts as hidden: text
+  // landing there would be followed again on every line.
+  const context = Math.max(
+    Math.min(SCROLLED_FOLLOW_CONTEXT_LINES * lineHeightAt(range), (end - start) / 2),
+    headerScrollOverlap,
+  );
+  view.renderer.containerPosition += rangeTop - start - context;
+};
 
 export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProps) => {
   const _ = useTranslation();
@@ -572,24 +627,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
             : range;
         followSentenceAcrossPages(followRange);
       } else {
-        const rect = range.getBoundingClientRect();
-        const { start, end, sideProp } = view.renderer;
-        const rangeTop = rect[sideProp === 'height' ? 'y' : 'x'];
-        const rangeBottom = rangeTop + rect[sideProp === 'height' ? 'height' : 'width'];
-
-        const showHeader = viewSettings.showHeader;
-        const showFooter = viewSettings.showFooter;
-        const headerScrollOverlap = showHeader ? viewSettings.marginTopPx : 0;
-        const footerScrollOverlap = showFooter ? viewSettings.marginBottomPx : 0;
-        // Overlap only applies to fixed-layout scrolling (see viewPagination).
-        const scrollingOverlap =
-          view.book.rendition?.layout === 'pre-paginated' ? viewSettings.scrollingOverlap : 0;
-        const outOfView =
-          rangeBottom > end - footerScrollOverlap - scrollingOverlap ||
-          rangeTop < start + headerScrollOverlap + scrollingOverlap;
-        if (outOfView) {
-          view.renderer.scrollToAnchor?.(range);
-        }
+        followInScrolledView(view, range, viewSettings);
       }
     };
 
@@ -617,8 +655,14 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       if (hlContents.some(({ doc }) => (doc.getSelection()?.toString().length ?? 0) > 0)) return;
 
       const wordRange = anchor(doc);
+      if (!wordRange || !isRendered(wordRange)) return;
+      if (placesScrolledFollow(view)) {
+        const viewSettings = getViewSettings(bookKey);
+        if (viewSettings) followInScrolledView(view, wordRange, viewSettings);
+        return;
+      }
       const visibleRange = getProgress(bookKey)?.range as Range | undefined;
-      if (!wordRange || !visibleRange || !isRendered(wordRange)) return;
+      if (!visibleRange) return;
 
       try {
         const ahead = wordRange.compareBoundaryPoints(Range.END_TO_START, visibleRange) > 0;
@@ -955,7 +999,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           const { index, anchor } = view.resolveCFI(ttsCfi);
           const { doc } = view.renderer.getContents().find((x) => x.index === index) || {};
           if (doc) {
-            ttsFromRange = anchor(doc);
+            const anchored = anchor(doc);
+            ttsFromRange = anchored && startInNextText(anchored);
             ttsFromIndex = index;
           }
         }

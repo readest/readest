@@ -399,10 +399,13 @@ export default function AuthPage() {
     </div>
   ) : (
     <div className='bg-base-100 flex min-h-screen flex-col items-center overflow-y-auto px-6 pb-12 pt-20'>
+      {appService?.appPlatform === 'web' && appService.hasSafeAreaInset && (
+        <div className='bg-base-100 fixed inset-x-0 top-0 z-10 h-20' />
+      )}
       <button
         aria-label={_('Go Back')}
         onClick={handleGoBack}
-        className='btn btn-ghost fixed start-6 top-6 h-8 min-h-8 w-8 p-0'
+        className='btn btn-ghost fixed start-6 top-6 z-20 h-8 min-h-8 w-8 p-0'
       >
         <IoArrowBack className='text-base-content' />
       </button>

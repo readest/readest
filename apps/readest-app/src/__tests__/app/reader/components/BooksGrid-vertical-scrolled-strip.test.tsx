@@ -19,6 +19,7 @@ const h = vi.hoisted(() => {
     showStickyProgressBar: false,
     solidScrolledFooter: false,
     doubleBorder: false,
+    hideScrollbar: false,
     columnGapPx: 24,
     gapPercent: 5,
   };
@@ -81,13 +82,16 @@ const { default: BooksGrid } = await import('@/app/reader/components/BooksGrid')
 
 afterEach(cleanup);
 
-const leftStripWidth = () => {
+const strips = () => {
   const { container } = render(
     <BooksGrid bookKeys={['book-1']} onCloseBook={vi.fn()} onGoToLibrary={vi.fn()} />,
   );
-  const strip = container.querySelector<HTMLElement>('.bg-base-100.absolute.left-0.top-0.h-full');
-  return strip?.style.width;
+  return {
+    left: container.querySelector<HTMLElement>('.bg-base-100.absolute.left-0.top-0.h-full'),
+    right: container.querySelector<HTMLElement>('.bg-base-100.absolute.right-0.top-0.h-full'),
+  };
 };
+const leftStripWidth = () => strips().left?.style.width;
 
 describe('BooksGrid vertical scrolled left strip at a 0px margin', () => {
   it('leaves the text uncovered when the footer floats (Solid Footer off)', () => {
@@ -98,5 +102,31 @@ describe('BooksGrid vertical scrolled left strip at a 0px margin', () => {
   it('covers the 16px band reserved for a solid footer', () => {
     h.viewSettings.solidScrolledFooter = true;
     expect(leftStripWidth()).toBe('calc(16px)');
+  });
+});
+
+// The horizontal scrollbar runs along the bottom of the whole page area, so
+// full-height strips covered both of its ends, and with them the thumb at a
+// section's start or end (#7912). Text stops at the bottom margin
+// (gridInsets.bottom + 1.5x the margin), so the strips can stop there too.
+describe('BooksGrid vertical scrolled strips and the horizontal scrollbar (#7912)', () => {
+  afterEach(() => {
+    h.viewSettings.hideScrollbar = false;
+    h.viewSettings.showHeader = false;
+  });
+
+  it('stop at the text bottom while the scrollbar shows', () => {
+    h.viewSettings.showHeader = true;
+    const { left, right } = strips();
+    expect(left?.style.height).toBe('calc(100% - 24px)');
+    expect(right?.style.height).toBe('calc(100% - 24px)');
+  });
+
+  it('keep the full height with Hide Scrollbar on', () => {
+    h.viewSettings.hideScrollbar = true;
+    h.viewSettings.showHeader = true;
+    const { left, right } = strips();
+    expect(left?.style.height).toBe('calc(100%)');
+    expect(right?.style.height).toBe('calc(100%)');
   });
 });
