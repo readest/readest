@@ -3042,5 +3042,9 @@
   "The answer is incomplete: {{message}}": "A resposta está incompleta: {{message}}",
   "Pen Squeeze": "Aperto na caneta",
   "Pen Slide Up": "Deslizar para cima na caneta",
-  "Pen Slide Down": "Deslizar para baixo na caneta"
+  "Pen Slide Down": "Deslizar para baixo na caneta",
+  "{{speed}} characters/min": "{{speed}} caracteres/min",
+  "{{speed}} words/min": "{{speed}} palavras/min",
+  "Reading Speed": "Velocidade de leitura",
+  "Reading Speed Today": "Velocidade de leitura de hoje"
 }

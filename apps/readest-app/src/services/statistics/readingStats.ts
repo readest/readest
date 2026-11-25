@@ -1,3 +1,5 @@
+import type { ReadingSpeed, ReadingSpeedSample, ReadingSpeedUnit } from '@/types/statistics';
+
 /** Minimum reading in a day for it to count toward a streak. */
 const MIN_STREAK_SECONDS = 60;
 
@@ -17,6 +19,34 @@ const addDays = (date: Date, days: number) => {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
+};
+
+/** Split intervals at local midnight and sum counts and time independently for each unit. */
+export const getDailyReadingSpeeds = (
+  samples: ReadingSpeedSample[],
+  startMs: number,
+  endMs: number,
+): Map<string, ReadingSpeed[]> => {
+  const days = new Map<string, Map<ReadingSpeedUnit, ReadingSpeed>>();
+  for (const sample of samples) {
+    const end = Math.min(endMs, sample.startTimeMs + sample.durationMs);
+    let start = Math.max(startMs, sample.startTimeMs);
+    while (start < end) {
+      const date = new Date(start);
+      const key = toDateKey(date);
+      const midnight = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1).getTime();
+      const until = Math.min(end, midnight);
+      const durationMs = until - start;
+      const units = days.get(key) ?? new Map<ReadingSpeedUnit, ReadingSpeed>();
+      const entry = units.get(sample.unit) ?? { unit: sample.unit, count: 0, durationMs: 0 };
+      entry.count += (sample.count * durationMs) / sample.durationMs;
+      entry.durationMs += durationMs;
+      units.set(sample.unit, entry);
+      days.set(key, units);
+      start = until;
+    }
+  }
+  return new Map([...days].map(([key, units]) => [key, [...units.values()]]));
 };
 
 /** Folds quarter-hour totals into seconds read on each local day. */

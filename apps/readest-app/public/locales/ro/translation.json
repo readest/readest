@@ -3042,5 +3042,9 @@
   "The answer is incomplete: {{message}}": "Răspunsul este incomplet: {{message}}",
   "Pen Squeeze": "Strângerea creionului",
   "Pen Slide Up": "Glisare în sus cu creionul",
-  "Pen Slide Down": "Glisare în jos cu creionul"
+  "Pen Slide Down": "Glisare în jos cu creionul",
+  "{{speed}} characters/min": "{{speed}} caractere/min",
+  "{{speed}} words/min": "{{speed}} cuvinte/min",
+  "Reading Speed": "Viteza de citire",
+  "Reading Speed Today": "Viteza de citire de azi"
 }

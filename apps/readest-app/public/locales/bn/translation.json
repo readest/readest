@@ -2963,5 +2963,9 @@
   "The answer is incomplete: {{message}}": "উত্তরটি অসম্পূর্ণ: {{message}}",
   "Pen Squeeze": "পেন স্কুইজ",
   "Pen Slide Up": "পেন উপরে স্লাইড",
-  "Pen Slide Down": "পেন নিচে স্লাইড"
+  "Pen Slide Down": "পেন নিচে স্লাইড",
+  "{{speed}} characters/min": "{{speed}} অক্ষর/মিনিট",
+  "{{speed}} words/min": "{{speed}} শব্দ/মিনিট",
+  "Reading Speed": "পড়ার গতি",
+  "Reading Speed Today": "আজকের পড়ার গতি"
 }

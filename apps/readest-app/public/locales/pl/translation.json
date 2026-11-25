@@ -3121,5 +3121,9 @@
   "The answer is incomplete: {{message}}": "Odpowiedź jest niepełna: {{message}}",
   "Pen Squeeze": "Ściśnięcie rysika",
   "Pen Slide Up": "Przesunięcie rysika w górę",
-  "Pen Slide Down": "Przesunięcie rysika w dół"
+  "Pen Slide Down": "Przesunięcie rysika w dół",
+  "{{speed}} characters/min": "{{speed}} znaków/min",
+  "{{speed}} words/min": "{{speed}} słów/min",
+  "Reading Speed": "Szybkość czytania",
+  "Reading Speed Today": "Dzisiejsza szybkość czytania"
 }

@@ -2963,5 +2963,9 @@
   "The answer is incomplete: {{message}}": "Het antwoord is onvolledig: {{message}}",
   "Pen Squeeze": "Pen knijpen",
   "Pen Slide Up": "Pen omhoog schuiven",
-  "Pen Slide Down": "Pen omlaag schuiven"
+  "Pen Slide Down": "Pen omlaag schuiven",
+  "{{speed}} characters/min": "{{speed}} tekens/min",
+  "{{speed}} words/min": "{{speed}} woorden/min",
+  "Reading Speed": "Leessnelheid",
+  "Reading Speed Today": "Leessnelheid vandaag"
 }

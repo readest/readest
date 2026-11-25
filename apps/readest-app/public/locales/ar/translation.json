@@ -3279,5 +3279,9 @@
   "The answer is incomplete: {{message}}": "الإجابة غير مكتملة: {{message}}",
   "Pen Squeeze": "ضغط القلم",
   "Pen Slide Up": "انزلاق القلم لأعلى",
-  "Pen Slide Down": "انزلاق القلم لأسفل"
+  "Pen Slide Down": "انزلاق القلم لأسفل",
+  "{{speed}} characters/min": "{{speed}} حرف/دقيقة",
+  "{{speed}} words/min": "{{speed}} كلمة/دقيقة",
+  "Reading Speed": "سرعة القراءة",
+  "Reading Speed Today": "سرعة القراءة اليوم"
 }
