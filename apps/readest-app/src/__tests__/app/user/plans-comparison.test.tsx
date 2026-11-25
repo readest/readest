@@ -197,6 +197,23 @@ describe('PlansComparison', () => {
       expect(card.getAllByRole('button').at(-1)).toBe(giftCard);
     });
 
+    // Owner: "the unlocked full customization has darker color for other
+    // clickable products, this is counterintuitive".
+    it.each([
+      ['unlocked', [STORAGE, CUSTOMIZATION], true, 'Full Customization (Unlocked)'],
+      ['coming soon', [STORAGE], false, 'Full Customization (Coming Soon)'],
+    ] as const)('a Full Customization tile you cannot tap (%s) is quieter than the ones you can', (_state, products, customizationPurchased, label) => {
+      lifetime({ availablePlans: [...WITH_YEARLY, ...products], customizationPurchased });
+
+      const card = within(planCard('Lifetime Plan'));
+      const status = card.getByText(label).parentElement!;
+      const buyable = card.getByText('1 GB Storage').closest('button')!;
+      // The tiles you can tap carry the tier's fill; this one carries none.
+      expect(buyable.className).toMatch(/bg-emerald-/);
+      expect(status.className).not.toMatch(/bg-emerald-/);
+      expect(status.className).toContain('text-base-content/60');
+    });
+
     // Owner: "Gift Card also has a price on it (starts from $49.99)".
     it('starts from the lowest gift price', () => {
       const GIFT_PRICES: GiftPrice[] = [

@@ -77,11 +77,16 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
     (product) => product.feature === 'customization',
   );
 
-  // Owned or not yet sold: the tier colour of the Current Plan chip, not a
-  // button, but set like the tiles beside it.
+  // Owned or not yet sold: set like the tiles beside it but quieter, an
+  // outline with muted text and no fill, so it never looks more tappable than
+  // the tiles that are (owner: "the unlocked full customization has darker
+  // color for other clickable products, this is counterintuitive").
   const statusTile = (label: string, price?: string) => (
     <div className='grid grid-cols-1 gap-2'>
-      <div aria-disabled='true' className={clsx(tileClass, accent.current)}>
+      <div
+        aria-disabled='true'
+        className={clsx(tileClass, 'border-base-content/15 text-base-content/60 border')}
+      >
         <span className={tileTextClass}>{label}</span>
         {price && <span className={tilePriceClass}>{price}</span>}
       </div>
