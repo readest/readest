@@ -165,6 +165,7 @@ afterEach(() => {
 describe('footnote popup box (#5999)', () => {
   test('refits an open footnote when the Notebook takes space from the book cell', async () => {
     render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />, { container: cell });
+    cell.appendChild(anchor);
     openLinkedFootnote();
     const popup = popupContainer();
     const originalWidth = popup.getBoundingClientRect().width;
@@ -181,6 +182,28 @@ describe('footnote popup box (#5999)', () => {
 
     cell.style.width = '';
     await waitFor(() => expect(popup.getBoundingClientRect().width).toBe(originalWidth));
+  });
+
+  test('keeps an upward footnote visible when its anchor moves outside the resized cell', async () => {
+    cell.style.height = '760px';
+    anchor.style.top = '610px';
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />, { container: cell });
+    cell.appendChild(anchor);
+    openLinkedFootnote();
+    const popup = popupContainer();
+    const triangle = () => cell.querySelector('.popup-triangle-inner');
+    expect(triangle()?.getAttribute('data-direction')).toBe('up');
+    expect(popup.getBoundingClientRect().bottom).toBeGreaterThan(400);
+
+    cell.style.height = '400px';
+    await waitFor(() => {
+      expect(popup.getBoundingClientRect().bottom).toBeLessThanOrEqual(400);
+      expect(triangle()).toBeNull();
+    });
+    expect(popup.getAttribute('aria-hidden')).toBe('false');
+
+    cell.style.height = '760px';
+    await waitFor(() => expect(triangle()?.getAttribute('data-direction')).toBe('up'));
   });
 
   test('lets a reader use the pinned Notebook without dismissing the footnote', () => {

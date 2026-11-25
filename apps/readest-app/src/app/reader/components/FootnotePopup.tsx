@@ -24,7 +24,7 @@ import {
   getThemeCode,
   keepTextAlignment,
 } from '@/utils/style';
-import { getPopupPosition, getPosition, Position } from '@/utils/sel';
+import { getPopupPosition, getPosition, isPointInRect, Position } from '@/utils/sel';
 import { getPopupBounds, offsetPosition, PopupBounds } from '@/utils/insets';
 import { Insets } from '@/types/misc';
 import { FootnoteHandler } from 'foliate-js/footnotes.js';
@@ -261,19 +261,23 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   // measured and at the position the 88px seed had placed it at -- in a
   // vertical book, where a long note measures 300-600px, that frame hung off
   // the right edge of the screen before snapping back a frame later.
-  const popupPosition = useMemo(() => {
+  const popupPlacement = useMemo(() => {
     if (!anchor || !popupBounds) return null;
     // The anchor is in cell coordinates; getPopupPosition works relative to the
     // bounds' origin, so shift there and back (a no-op off the Duo).
     const { rect, origin } = popupBounds;
-    const popupPos = getPopupPosition(
-      offsetPosition(anchor, { x: -origin.x, y: -origin.y }),
-      rect,
-      width,
-      height,
-      popupPadding,
+    const localAnchor = offsetPosition(anchor, { x: -origin.x, y: -origin.y });
+    const position = getPopupPosition(localAnchor, rect, width, height, popupPadding);
+    const anchorIsVisible = isPointInRect(
+      localAnchor.point,
+      { left: 0, top: 0, right: rect.right - rect.left, bottom: rect.bottom - rect.top },
+      0,
     );
-    return offsetPosition(popupPos, origin);
+    return {
+      position: offsetPosition(position, origin),
+      // An off-cell anchor appears again when a panel gives the book its space back.
+      triangle: anchorIsVisible ? anchor : undefined,
+    };
   }, [anchor, popupBounds, width, height, popupPadding]);
 
   const getMaxHeight = useCallback(() => {
@@ -1100,8 +1104,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
           isOpen={showPopup}
           width={width}
           height={height}
-          position={showPopup ? popupPosition! : undefined}
-          trianglePosition={showPopup ? anchor! : undefined}
+          position={showPopup ? popupPlacement?.position : undefined}
+          trianglePosition={showPopup ? popupPlacement?.triangle : undefined}
           safeAreaInsets={gridInsets}
           // Keep the texture surface stationary while the note scrolls inside it.
           className='footnote-popup select-text pointer-events-auto overflow-clip'
