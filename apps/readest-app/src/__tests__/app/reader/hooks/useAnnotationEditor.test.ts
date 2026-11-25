@@ -10,12 +10,26 @@ import type { TextSelection } from '@/utils/sel';
 // corner auto page-turn. This locks that contract: a commit applies the given
 // range's CFI/text; a drag does not persist.
 
-const h = vi.hoisted(() => ({
-  view: { getCFI: vi.fn(() => 'new-cfi'), addAnnotation: vi.fn() },
-  updateBooknotes: vi.fn(() => ({})),
-  saveConfig: vi.fn(),
-  annotations: [] as BookNote[],
-}));
+const h = vi.hoisted(() => {
+  const state = {
+    // Rendered sections, for the copies of a global highlight.
+    sections: [] as unknown[],
+    view: {
+      getCFI: vi.fn((_index: number, _range: Range) => 'new-cfi'),
+      addAnnotation: vi.fn(),
+      renderer: { getContents: () => state.sections },
+      // The reader's draw-annotation listener paints what it is handed.
+      dispatchEvent: (event: CustomEvent<{ draw: () => void }>) => {
+        event.detail.draw();
+        return true;
+      },
+    },
+    updateBooknotes: vi.fn(() => ({})),
+    saveConfig: vi.fn(),
+    annotations: [] as BookNote[],
+  };
+  return state;
+});
 
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({ envConfig: {} }) }));
 vi.mock('@/store/settingsStore', () => ({ useSettingsStore: () => ({ settings: {} }) }));
@@ -43,6 +57,7 @@ vi.mock('@/app/reader/utils/annotatorUtil', async () => {
 import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { eventDispatcher } from '@/utils/event';
 import { removeBookNoteOverlays } from '@/app/reader/utils/annotatorUtil';
+import { expandAllRenderedSections } from '@/app/reader/utils/globalAnnotations';
 import { useAnnotationEditor } from '@/app/reader/hooks/useAnnotationEditor';
 
 const annotation = {
@@ -79,6 +94,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.view.getCFI.mockReset().mockReturnValue('new-cfi');
   h.view.addAnnotation.mockReset();
+  h.sections = [];
   h.annotations = [{ ...annotation }];
 });
 
@@ -144,22 +160,30 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
 
   // The popup's overlays live in its own view, out of reach of the main views
   // the editor repaints, so the popup is told to redraw the moving range.
-  test('a footnote popup drag asks the popup to redraw the preview', async () => {
+  test('a footnote popup follows the drag and restores the saved range when the editor closes', async () => {
     const onPreview = vi.fn();
     eventDispatcher.on('footnote-annotation-preview', onPreview);
-    const { result } = setup(annotation, undefined, {
-      popup: true,
-      getPopupCfi: () => 'popup-cfi',
-    });
+    try {
+      const { result, unmount } = setup(annotation, undefined, {
+        popup: true,
+        getPopupCfi: () => 'popup-cfi',
+      });
+      await result.current.applyAnnotationRange(range, 2, false, true);
+      expect(onPreview).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          detail: { key: 'book-1', note: expect.objectContaining({ id: 'a1', cfi: 'popup-cfi' }) },
+        }),
+      );
 
-    await result.current.applyAnnotationRange(range, 2, false, true);
-    eventDispatcher.off('footnote-annotation-preview', onPreview);
-
-    expect(onPreview).toHaveBeenCalledWith(
-      expect.objectContaining({
-        detail: { key: 'book-1', note: expect.objectContaining({ id: 'a1', cfi: 'popup-cfi' }) },
-      }),
-    );
+      unmount();
+      expect(onPreview).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          detail: { key: 'book-1', note: expect.objectContaining({ id: 'a1', cfi: 'old-cfi' }) },
+        }),
+      );
+    } finally {
+      eventDispatcher.off('footnote-annotation-preview', onPreview);
+    }
   });
 
   test('a drag (isDragging) updates the preview but does not persist', async () => {
@@ -189,7 +213,7 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
     );
     h.view.getCFI.mockReturnValueOnce('stale-cfi').mockReturnValueOnce('committed-cfi');
     const pending = Promise.withResolvers<string>();
-    const { result, setSelection } = setup(
+    const { result, setSelection, unmount } = setup(
       noted,
       vi.fn().mockReturnValueOnce(pending.promise).mockResolvedValue('committed text'),
     );
@@ -206,12 +230,73 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
     expect(setSelection).toHaveBeenCalledWith(
       expect.objectContaining({ cfi: 'committed-cfi', text: 'committed text' }),
     );
+    unmount();
     expect(overlays).toEqual(new Set(['committed-cfi', `${NOTE_PREFIX}committed-cfi`]));
 
     // Deleting the saved record must also remove everything painted for it.
     // A late preview used to leave its stale CFI outside this cleanup (#6141).
     removeBookNoteOverlays(h.view as unknown as FoliateView, h.annotations[0]!);
     expect(overlays.size).toBe(0);
+  });
+
+  test('restores the saved highlight when the range editor closes during a drag', async () => {
+    const noted = { ...annotation, note: 'my note' } as BookNote;
+    h.annotations = [{ ...noted }];
+    const overlays = new Set([noted.cfi, `${NOTE_PREFIX}${noted.cfi}`]);
+    h.view.addAnnotation.mockImplementation(
+      (note: BookNote & { value?: string }, remove = false) => {
+        const value = note.value ?? note.cfi;
+        if (remove) overlays.delete(value);
+        else overlays.add(value);
+      },
+    );
+    h.view.getCFI.mockReturnValueOnce('preview-cfi').mockReturnValueOnce('late-preview-cfi');
+    const pending = Promise.withResolvers<string>();
+    const { result, unmount } = setup(
+      noted,
+      vi.fn().mockResolvedValueOnce('edited text').mockReturnValueOnce(pending.promise),
+    );
+    await result.current.applyAnnotationRange(range, 2, false, true);
+    expect(overlays).toEqual(new Set(['preview-cfi', `${NOTE_PREFIX}preview-cfi`]));
+
+    const latePreview = result.current.applyAnnotationRange(range, 2, false, true);
+    unmount();
+    pending.resolve('late text');
+    await latePreview;
+
+    expect(overlays).toEqual(new Set([noted.cfi, `${NOTE_PREFIX}${noted.cfi}`]));
+    expect(h.updateBooknotes).not.toHaveBeenCalled();
+    removeBookNoteOverlays(h.view as unknown as FoliateView, h.annotations[0]!);
+    expect(overlays.size).toBe(0);
+  });
+
+  test('repaints the copies of a global highlight when the range editor closes during a drag', async () => {
+    const global = { ...annotation, global: true } as BookNote;
+    h.annotations = [{ ...global }];
+    // A section where the highlighted text also appears a second time.
+    const doc = document.implementation.createHTMLDocument('section');
+    doc.body.innerHTML = '<p>old gap old</p>';
+    const painted = new Set<string>();
+    const overlayer = {
+      add: (value: string) => painted.add(value),
+      remove: (value: string) => painted.delete(value),
+    };
+    h.sections = [{ index: 2, doc, overlayer }];
+    // Each expansion pass meets the saved anchor first, then its copy.
+    let occurrence = 0;
+    h.view.getCFI.mockImplementation((_index, r) =>
+      r === range ? 'preview-cfi' : occurrence++ % 2 === 0 ? 'old-cfi' : 'copy-cfi',
+    );
+    expandAllRenderedSections(h.view as unknown as FoliateView, global);
+    const copies = [...painted];
+    expect(copies).toHaveLength(1);
+
+    const { result, unmount } = setup(global);
+    await result.current.applyAnnotationRange(range, 2, false, true);
+    expect(painted.size).toBe(0);
+    unmount();
+
+    expect([...painted]).toEqual(copies);
   });
 
   test('an older drag cannot rewind a newer preview', async () => {
