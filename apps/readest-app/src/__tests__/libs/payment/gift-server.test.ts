@@ -428,6 +428,19 @@ describe('activateGiftCard once the card is live', () => {
 });
 
 describe('updateSentGiftCard', () => {
+  // Review (CodeRabbit): the email is saved (and locked) before the claim, so
+  // a failed claim must not answer the save with an error; the cron's email
+  // sweep claims it within minutes.
+  it('adding an email returns the saved card when the claim fails', async () => {
+    const card = await activateGiftCard(stripePayment());
+    h.claimError = new Error('claim failed');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(
+      updateSentGiftCard('buyer-1', card.id, { recipientEmail: 'sam@example.com' }),
+    ).resolves.toMatchObject({ recipientEmail: 'sam@example.com' });
+  });
+
   it('email can be set once', async () => {
     const card = await activateGiftCard(stripePayment());
 

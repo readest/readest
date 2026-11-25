@@ -178,11 +178,10 @@ const activate = async ({
  * reference: the buyer's draft when there is one, otherwise a card with an
  * empty message for the buyer to fill in.
  */
-export const activateGiftCard = async (payment: GiftPayment): Promise<GiftCardRow> => {
-  const card = await activate(payment);
-  // The card is live and paid for. Handing it to its recipient must not fail
-  // the payment call (Play refunds a purchase left unconsumed); the cron's
-  // email sweep claims it later.
+// Handing a card to its recipient never fails the call that made or saved
+// it: the payment (Play refunds a purchase left unconsumed) or the email
+// already stands, and the cron's email sweep claims the card later.
+const claimOrKeep = async (card: GiftCardRow): Promise<GiftCardRow> => {
   try {
     return await claimForRecipient(card);
   } catch (error) {
@@ -190,6 +189,9 @@ export const activateGiftCard = async (payment: GiftPayment): Promise<GiftCardRo
     return card;
   }
 };
+
+export const activateGiftCard = async (payment: GiftPayment): Promise<GiftCardRow> =>
+  claimOrKeep(await activate(payment));
 
 const sentStatus = (card: GiftCardRow): SentGiftStatus => {
   if (card.status === 'refunded') return 'refunded';
@@ -261,7 +263,7 @@ export const updateSentGiftCard = async (
       .is('recipient_email', null)
       .select(),
   );
-  if (added) return toSentGiftCard(await claimForRecipient(added));
+  if (added) return toSentGiftCard(await claimOrKeep(added));
   const unchanged = firstRow(await editable(face).eq('recipient_email', email).select());
   return unchanged ? toSentGiftCard(unchanged) : 'email_locked';
 };
