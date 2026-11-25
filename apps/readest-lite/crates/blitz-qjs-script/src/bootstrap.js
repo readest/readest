@@ -489,7 +489,8 @@
     }
     get parentNode() {
       const p = n.parent(this._id);
-      return p == null ? null : wrapIn(p, ownerOf(this));
+      if (p == null) return this._frag ?? null;
+      return wrapIn(p, ownerOf(this));
     }
     get parentElement() {
       const p = this.parentNode;
@@ -513,11 +514,13 @@
     }
     get nextSibling() {
       const c = n.sibling(this._id, 1);
-      return c == null ? null : wrapIn(c, ownerOf(this));
+      if (c == null) return this._frag ? fragSibling(this, 1) : null;
+      return wrapIn(c, ownerOf(this));
     }
     get previousSibling() {
       const c = n.sibling(this._id, -1);
-      return c == null || shadowIds.has(c) ? null : wrapIn(c, ownerOf(this));
+      if (c == null) return this._frag ? fragSibling(this, -1) : null;
+      return shadowIds.has(c) ? null : wrapIn(c, ownerOf(this));
     }
     // Shadow-including: shadow trees are in the native tree under their hosts.
     get isConnected() {
@@ -574,6 +577,7 @@
           });
         return c;
       }
+      leaveFragment(c);
       const was = n.connected(c._id);
       const moved = defs.size > 0 && c.nodeType === 1 && was;
       if (liveIterators.size && c.parentNode) preRemove(c);
@@ -610,6 +614,7 @@
       return c;
     }
     removeChild(c) {
+      if (c._frag) return c._frag.removeChild(c);
       if (liveIterators.size) preRemove(c);
       const removed = removal(c);
       const was = n.connected(c._id);
@@ -625,6 +630,7 @@
       return oc;
     }
     remove() {
+      if (this._frag) return void this._frag.removeChild(this);
       if (liveIterators.size && this.parentNode) preRemove(this);
       const removed = removal(this);
       const was = n.connected(this._id);
@@ -706,9 +712,29 @@
       return this.nodeType === 3 ? '#text' : '#comment';
     }
   }
-  class Text extends CharacterData {}
+  class Text extends CharacterData {
+    // The text after `offset` goes into a text node of its own, inserted after this one.
+    splitText(offset) {
+      if (offset > this.length) throw domError('The offset is past the node', 'IndexSizeError');
+      const tail = docOf(this).createTextNode(this.data.slice(offset));
+      this.parentNode?.insertBefore(tail, this.nextSibling);
+      this.data = this.data.slice(0, offset);
+      return tail;
+    }
+  }
   class Comment extends CharacterData {}
 
+  // A fragment's children are native nodes with no parent: the fragment lists them (`_kids`) and
+  // each knows it (`_frag`), for its parentNode and siblings.
+  function leaveFragment(c) {
+    if (c._frag) c._frag.removeChild(c);
+  }
+  function fragSibling(node, step) {
+    if (n.parent(node._id) != null) return null;
+    const kids = node._frag._kids;
+    const i = kids.indexOf(node);
+    return i < 0 ? null : (kids[i + step] ?? null);
+  }
   class DocumentFragment extends Node {
     constructor() {
       super(-1);
@@ -733,20 +759,61 @@
       return this._kids[this._kids.length - 1] || null;
     }
     insertBefore(c, ref) {
+      if (c instanceof DocumentFragment) {
+        for (const k of c._kids.slice()) this.insertBefore(k, ref);
+        return c;
+      }
       if (liveIterators.size && c.parentNode) preRemove(c);
       const removed = removal(c);
       const was = n.connected(c._id);
       n.remove(c._id);
       if (was) loosen(c._id);
       if (removed) queueMutation(...removed);
+      leaveFragment(c);
       const i = ref ? this._kids.indexOf(ref) : -1;
       if (i < 0) this._kids.push(c);
       else this._kids.splice(i, 0, c);
+      c._frag = this;
       return c;
     }
     removeChild(c) {
       this._kids = this._kids.filter((k) => k !== c);
+      if (c._frag === this) c._frag = null;
       return c;
+    }
+    get textContent() {
+      return this._kids.map((k) => (k.nodeType === 8 ? '' : k.textContent)).join('');
+    }
+    set textContent(v) {
+      for (const k of this._kids.slice()) this.removeChild(k);
+      const text = v == null ? '' : String(v);
+      if (text) this.appendChild(document.createTextNode(text));
+    }
+    get children() {
+      return withItem(this._kids.filter((k) => k.nodeType === 1));
+    }
+    get childElementCount() {
+      return this.children.length;
+    }
+    get firstElementChild() {
+      return this.children[0] ?? null;
+    }
+    get lastElementChild() {
+      return this.children.at(-1) ?? null;
+    }
+    querySelectorAll(s) {
+      const out = [];
+      for (const k of this.children) {
+        if (k.matches(s)) out.push(k);
+        out.push(...k.querySelectorAll(s));
+      }
+      return withItem(out);
+    }
+    querySelector(s) {
+      return this.querySelectorAll(s)[0] ?? null;
+    }
+    getElementById(id) {
+      return this.querySelector('#' + CSS.escape(String(id)));
     }
     get ownerDocument() {
       return document;
@@ -1107,8 +1174,7 @@
       );
     }
     matches(s) {
-      const p = this.parentNode || this.ownerDocument;
-      return p.querySelectorAll(s).includes(this);
+      return n.matches(this._id, s);
     }
     closest(s) {
       for (let e = this; e && e.nodeType === 1; e = e.parentNode) if (e.matches(s)) return e;
@@ -1265,6 +1331,44 @@
       this.append(...nodes);
     }
   }
+  // A fragment's append, prepend and replaceChildren are an element's, over its own insertBefore.
+  for (const m of ['append', 'prepend', 'replaceChildren'])
+    DocumentFragment.prototype[m] = Element.prototype[m];
+  // ChildNode (DOM): `nodes` (strings become text) go before, after or in place of this node, at
+  // the nearest sibling not among them.
+  function childNodes(self, nodes) {
+    const f = docOf(self).createDocumentFragment();
+    for (const c of nodes) f.appendChild(typeof c === 'string' ? docOf(self).createTextNode(c) : c);
+    return f;
+  }
+  const siblingNotIn = (node, nodes, step) => {
+    let s = step > 0 ? node.nextSibling : node.previousSibling;
+    while (s && nodes.includes(s)) s = step > 0 ? s.nextSibling : s.previousSibling;
+    return s;
+  };
+  const childNode = {
+    before(...nodes) {
+      const p = this.parentNode;
+      if (!p) return;
+      const prev = siblingNotIn(this, nodes, -1);
+      p.insertBefore(childNodes(this, nodes), prev ? prev.nextSibling : p.firstChild);
+    },
+    after(...nodes) {
+      const p = this.parentNode;
+      if (!p) return;
+      const next = siblingNotIn(this, nodes, 1);
+      p.insertBefore(childNodes(this, nodes), next);
+    },
+    replaceWith(...nodes) {
+      const p = this.parentNode;
+      if (!p) return;
+      const next = siblingNotIn(this, nodes, 1);
+      const f = childNodes(this, nodes);
+      if (this.parentNode === p) p.removeChild(this);
+      p.insertBefore(f, next);
+    },
+  };
+  for (const cls of [Element, CharacterData]) Object.assign(cls.prototype, childNode);
   class HTMLElement extends Element {
     // Only a defined custom element class constructs (`new`, createElement or an upgrade). An
     // upgrade hands it the existing wrapper, which becomes the class's object.
@@ -1361,6 +1465,7 @@
         configurable: true,
       });
   };
+  reflect(HTMLElement, ['lang', 'dir']);
   class HTMLInputElement extends HTMLElement {
     get value() {
       return this.getAttribute('value') || '';
@@ -1871,16 +1976,35 @@
   };
   // A lone text or comment node from another document becomes a copy in `doc`, which its
   // wrapper takes over (the DOM adopts it; Blitz nodes can't change documents).
+  // A node of another document moves into `doc` (DOM's adopt): out of its parent there, its tree
+  // made again in `doc` natively, each of its nodes' wrappers pointed at its copy (so the objects,
+  // their listeners and the references JS holds stay the same).
   function adopt(c, doc) {
     const t = c.nodeType;
-    if ((t !== 3 && t !== 8) || c.parentNode || docOf(c) === doc) return false;
-    const copy = t === 3 ? n.createText(doc._id, c.data) : n.createComment(doc._id, c.data);
-    if (c._owner) c._owner._nodes.delete(c._id);
-    else if (!wrappers.delete(c._id)) loose.delete(c._id);
-    c._id = copy;
-    c._owner = doc._nodes ? doc : undefined;
-    if (doc._nodes) doc._nodes.set(copy, c);
-    else keep(copy, c);
+    if ((t !== 1 && t !== 3 && t !== 8) || docOf(c) === doc) return false;
+    c.parentNode?.removeChild(c);
+    const make = (node) => {
+      const k = node.nodeType;
+      let copy;
+      if (k === 3) copy = n.createText(doc._id, node.data);
+      else if (k === 8) copy = n.createComment(doc._id, node.data);
+      else if (k === 1) {
+        copy = n.createElement(doc._id, node.namespaceURI ?? '', node.localName);
+        for (const a of node.getAttributeNames()) n.setAttr(copy, a, node.getAttribute(a));
+        for (const child of node.childNodes) {
+          const id = make(child);
+          if (id != null) n.insert(copy, id, null);
+        }
+      } else return null;
+      if (node._owner) node._owner._nodes.delete(node._id);
+      else if (!wrappers.delete(node._id)) loose.delete(node._id);
+      node._id = copy;
+      node._owner = doc._nodes ? doc : undefined;
+      if (doc._nodes) doc._nodes.set(copy, node);
+      else keep(copy, node);
+      return copy;
+    };
+    make(c);
     return true;
   }
 
@@ -2274,7 +2398,95 @@
     getBoundingClientRect() {
       return unionRect(this.getClientRects());
     }
+    cloneContents() {
+      return rangeContents(this, false);
+    }
+    extractContents() {
+      return rangeContents(this, true);
+    }
+    deleteContents() {
+      rangeContents(this, true);
+    }
+    // DOM Standard: at the start, splitting a text node there.
+    insertNode(node) {
+      const { startContainer: sc, startOffset: so } = this;
+      const k = sc.nodeType;
+      if (k === 7 || k === 8 || (k === 3 && !sc.parentNode) || sc === node)
+        throw domError('The node cannot be inserted there', 'HierarchyRequestError');
+      let ref = k === 3 ? sc : (sc.childNodes[so] ?? null);
+      const parent = ref ? ref.parentNode : sc;
+      if (k === 3) ref = sc.splitText(so);
+      if (node === ref) ref = ref.nextSibling;
+      node.parentNode?.removeChild(node);
+      const at = ref ? indexOf(ref) : nodeLength(parent);
+      const end = at + (node.nodeType === 11 ? node.childNodes.length : 1);
+      parent.insertBefore(node, ref);
+      if (this.collapsed) this.setEnd(parent, end);
+    }
     detach() {}
+  }
+  const isCharData = (node) => node.nodeType === 3 || node.nodeType === 8;
+  // DOM Standard: clone the contents of `range` (or, extracting, move them) into a fragment. The
+  // elements partly in it are cloned without their children, which get what of them is in it.
+  function rangeContents(range, extract) {
+    const { startContainer: sc, startOffset: so, endContainer: ec, endOffset: eo } = range;
+    const frag = docOf(sc).createDocumentFragment();
+    if (range.collapsed) return frag;
+    if (sc === ec && isCharData(sc)) {
+      const c = sc.cloneNode(false);
+      c.data = sc.data.slice(so, eo);
+      frag.appendChild(c);
+      if (extract) {
+        sc.data = sc.data.slice(0, so) + sc.data.slice(eo);
+        range.collapse(true);
+      }
+      return frag;
+    }
+    const common = range.commonAncestorContainer;
+    const childOf = (node) => {
+      while (node.parentNode !== common) node = node.parentNode;
+      return node;
+    };
+    const first = sc.contains(ec) ? null : childOf(sc);
+    const last = ec.contains(sc) ? null : childOf(ec);
+    const kids = Array.from(common.childNodes);
+    const from = first ? kids.indexOf(first) + 1 : so;
+    const contained = kids.slice(from, last ? kids.indexOf(last) : eo);
+    if (contained.some((c) => c.nodeType === 10))
+      throw domError('A doctype cannot be in a fragment', 'HierarchyRequestError');
+    // Where an extracted range collapses: after the start's ancestor that stays.
+    let at = [sc, so];
+    if (extract && first) {
+      let ref = sc;
+      while (ref.parentNode && !ref.parentNode.contains(ec)) ref = ref.parentNode;
+      at = [ref.parentNode, indexOf(ref) + 1];
+    }
+    const part = (node, start, end) => {
+      const c = node.cloneNode(false);
+      frag.appendChild(c);
+      const sub = new Range();
+      sub.setStart(...start);
+      sub.setEnd(...end);
+      c.appendChild(rangeContents(sub, extract));
+    };
+    if (first && isCharData(first)) {
+      const c = sc.cloneNode(false);
+      c.data = sc.data.slice(so);
+      frag.appendChild(c);
+      if (extract) sc.data = sc.data.slice(0, so);
+    } else if (first) part(first, [sc, so], [first, nodeLength(first)]);
+    for (const c of contained) frag.appendChild(extract ? c : c.cloneNode(true));
+    if (last && isCharData(last)) {
+      const c = ec.cloneNode(false);
+      c.data = ec.data.slice(0, eo);
+      frag.appendChild(c);
+      if (extract) ec.data = ec.data.slice(eo);
+    } else if (last) part(last, [last, 0], [ec, eo]);
+    if (extract) {
+      range.setStart(...at);
+      range.collapse(true);
+    }
+    return frag;
   }
   Object.assign(Range, { START_TO_START: 0, START_TO_END: 1, END_TO_END: 2, END_TO_START: 3 });
   Document.prototype.createRange = function () {
@@ -2537,6 +2749,30 @@
   }
   Document.prototype.getSelection = function () {
     return (this._selection ??= new Selection());
+  };
+
+  // CSSOM View: the caret nearest a point in this document's viewport, in the text under it.
+  class CaretPosition {
+    constructor(node, offset) {
+      this.offsetNode = node;
+      this.offset = offset;
+    }
+    getClientRect() {
+      const r = docOf(this.offsetNode).createRange();
+      r.setStart(this.offsetNode, this.offset);
+      return r.getBoundingClientRect();
+    }
+  }
+  Document.prototype.caretPositionFromPoint = function (x, y) {
+    const [h, offset] = n.caret(this._id, x, y);
+    return h == null ? null : new CaretPosition(wrapIn(h, ownerOf(this)), offset);
+  };
+  Document.prototype.caretRangeFromPoint = function (x, y) {
+    const p = this.caretPositionFromPoint(x, y);
+    if (!p) return null;
+    const r = this.createRange();
+    r.setStart(p.offsetNode, p.offset);
+    return r;
   };
 
   // ---- Shadow roots ----

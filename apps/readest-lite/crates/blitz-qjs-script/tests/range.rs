@@ -217,3 +217,81 @@ fn selection_holds_a_range_per_document() {
         ]
     );
 }
+
+// Readest reads a selection's text from `cloneContents()` (getTextFromRange), and its paragraph
+// mode, vocabulary sentences and instant highlights clone a range's contents too.
+#[test]
+fn a_ranges_contents_are_cloned_or_moved_into_a_fragment() {
+    let (logs, errors) = run("
+        const html = (f) => { const d = document.createElement('div'); d.append(f); return d.innerHTML; };
+        const r = document.createRange();
+        r.setStart(t1, 1);
+        r.setEnd(t1, 3);
+        console.log(html(r.cloneContents()), '|', $('p1').innerHTML);
+        // across paragraphs: the elements partly in the range are cloned without what is outside
+        r.setStart(t1, 2);
+        r.setEnd($('p2').firstChild, 2);
+        console.log(html(r.cloneContents()));
+        const w = document.createTreeWalker(r.cloneContents(), NodeFilter.SHOW_TEXT);
+        const texts = [];
+        for (let n; (n = w.nextNode()); ) texts.push(n.data);
+        console.log(JSON.stringify(texts));
+        console.log($('a').innerHTML);
+        // extracting moves them out and leaves the range collapsed where they were
+        console.log(html(r.extractContents()));
+        console.log($('a').innerHTML, r.collapsed, r.startContainer === $('a'), r.startOffset);
+    ");
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(
+        logs,
+        [
+            "ne | one <b id=\"b\">two</b> three",
+            "<p id=\"p1\">e <b id=\"b\">two</b> three</p><!--c--><p id=\"p2\">fo</p>",
+            "[\"e \",\"two\",\" three\",\"fo\"]",
+            "<p id=\"p1\">one <b id=\"b\">two</b> three</p><!--c--><p id=\"p2\">four</p>",
+            "<p id=\"p1\">e <b id=\"b\">two</b> three</p><!--c--><p id=\"p2\">fo</p>",
+            "<p id=\"p1\">on</p><p id=\"p2\">ur</p> true true 1",
+        ]
+    );
+}
+
+#[test]
+fn delete_contents_removes_what_the_range_selects() {
+    let (logs, errors) = run("
+        const r = document.createRange();
+        r.setStart(t1, 1);
+        r.setEnd(t3, 2);
+        r.deleteContents();
+        console.log($('p1').innerHTML, r.collapsed, r.startContainer === $('p1'), r.startOffset);
+    ");
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(logs, ["ohree true true 1"]);
+}
+
+// Word Lens puts a ruby around a word: extractContents(), then insertNode() of the ruby holding it.
+#[test]
+fn insert_node_splits_the_text_at_the_range_start() {
+    let (logs, errors) = run("
+        const r = document.createRange();
+        r.setStart(t3, 3);
+        r.insertNode(document.createElement('i'));
+        console.log($('p1').innerHTML, r.startContainer === t3, r.startOffset, r.endContainer === $('p1'), r.endOffset);
+        r.setStart(bt, 0);
+        r.setEnd(bt, 3);
+        const ruby = document.createElement('ruby');
+        ruby.append(r.extractContents());
+        r.insertNode(ruby);
+        console.log($('b').innerHTML, r.toString());
+        const tail = t1.splitText(2);
+        console.log(t1.data, tail.data, tail.previousSibling === t1);
+    ");
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(
+        logs,
+        [
+            "one <b id=\"b\">two</b> th<i></i>ree true 3 true 4",
+            "<ruby>two</ruby> two",
+            "on e  true",
+        ]
+    );
+}

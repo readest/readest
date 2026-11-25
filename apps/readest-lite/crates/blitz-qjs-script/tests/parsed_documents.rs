@@ -57,9 +57,42 @@ fn a_lone_text_node_is_adopted() {
         const t = document.createTextNode('  ');
         d.body.insertBefore(t, d.body.firstChild);
         console.log(t.ownerDocument === d, t.parentNode === d.body, JSON.stringify(d.body.innerHTML));
-        try { d.body.append(document.getElementById('x')); } catch (e) { console.log(e.name); }",
+        d.body.append(document.getElementById('x'));
+        console.log(d.body.lastChild.id, d.body.lastChild.ownerDocument === d, document.getElementById('x'));",
     );
-    assert_eq!(out, ["true true \"  <p>x</p>\"", "WrongDocumentError"]);
+    assert_eq!(out, ["true true \"  <p>x</p>\"", "x true null"]);
+}
+
+// Readest's Wiktionary lookup parses an edition's page with DOMParser and moves the section it
+// wants into the page: the moved nodes are the same objects, now in the page, with their tree.
+#[test]
+fn an_element_from_a_parsed_document_is_adopted_with_its_tree() {
+    let mut doc = page();
+    let out = logs(
+        &mut doc,
+        "const d = __blitzParseHTML('<div id=\"r\"><h2>Deutsch</h2><ol><li>Raum <a href=\"/wiki/x\">x</a></li></ol></div>');
+        const root = d.getElementById('r');
+        const li = d.querySelector('li');
+        let clicks = 0;
+        li.addEventListener('click', () => clicks++);
+        const kids = Array.from(root.children);
+        const sec = document.createElement('section');
+        document.body.append(sec);
+        kids.forEach((el) => sec.append(el));
+        console.log(sec.innerHTML, root.children.length);
+        console.log(kids[0].ownerDocument === document, kids[1].parentNode === sec, sec.querySelector('li') === li, li.ownerDocument === document);
+        li.click();
+        const a = sec.querySelector('a');
+        console.log(clicks, li.textContent, a.getAttribute('href'), a.closest('section') === sec);",
+    );
+    assert_eq!(
+        out,
+        [
+            "<h2>Deutsch</h2><ol><li>Raum <a href=\"/wiki/x\">x</a></li></ol> 0",
+            "true true true true",
+            "1 Raum x /wiki/x true",
+        ]
+    );
 }
 
 #[test]

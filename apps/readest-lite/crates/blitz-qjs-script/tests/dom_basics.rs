@@ -349,3 +349,103 @@ fn class_list() {
         ]
     );
 }
+
+// A fragment's children are its children for walks over it (Readest reads a selection's text
+// with a TreeWalker over `range.cloneContents()`): their parent is the fragment, their siblings
+// are each other, until they leave it.
+#[test]
+fn a_fragments_children_link_to_it_and_each_other() {
+    let html = "<!DOCTYPE html><html><body></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "const f = document.createDocumentFragment();
+        const [a, b, c] = [document.createElement('i'), document.createTextNode('x'), document.createElement('b')];
+        for (const k of [a, b, c]) f.appendChild(k);
+        console.log(a.parentNode === f, a.nextSibling === b, c.previousSibling === b, c.nextSibling, a.previousSibling);
+        b.remove();
+        console.log(a.nextSibling === c, f.childNodes.length, b.parentNode, b.nextSibling);
+        document.body.appendChild(a);
+        console.log(a.parentNode === document.body, f.firstChild === c, c.previousSibling, a.nextSibling);
+        document.body.appendChild(f);
+        console.log(c.parentNode === document.body, a.nextSibling === c, f.childNodes.length);",
+        "test",
+    );
+    let logs = doc.take_messages();
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(
+        logs,
+        [
+            "log: true true true null null",
+            "log: true 2 null null",
+            "log: true true null null",
+            "log: true true 0",
+        ]
+    );
+}
+
+// Readest's vocabulary reads a range's text with `fragment.querySelectorAll('rt, rp')` removed
+// and then `fragment.textContent`.
+#[test]
+fn a_fragment_is_queried_and_read_as_a_parent_node() {
+    let html = "<!DOCTYPE html><html><body></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "const f = document.createDocumentFragment();
+        const p = document.createElement('p');
+        p.innerHTML = 'a<rt>x</rt>b';
+        f.append(p, 'c', document.createComment('z'));
+        console.log(f.querySelectorAll('rt').length, f.querySelector('p') === p, f.querySelector('i'), f.textContent);
+        console.log(f.children.length, f.childElementCount, f.firstElementChild === p, f.lastElementChild === p);
+        f.querySelectorAll('rt, rp').forEach((el) => el.remove());
+        console.log(f.textContent);
+        f.textContent = 'd';
+        console.log(f.childNodes.length, f.firstChild.data);",
+        "test",
+    );
+    let logs = doc.take_messages();
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(
+        logs,
+        [
+            "log: 1 true null axbc",
+            "log: 1 1 true true",
+            "log: abc",
+            "log: 1 d"
+        ]
+    );
+}
+
+// Readest's Wiktionary lookup unwraps links with `link.replaceWith(...link.childNodes)` and marks
+// the section it shows with `lang` and `dir`.
+#[test]
+fn nodes_go_before_after_or_in_place_of_a_child() {
+    let html = "<!DOCTYPE html><html><body><p id='p'><a id='a'>x<b>y</b></a><i id='i'>z</i></p></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "const [p, a, i] = ['p', 'a', 'i'].map((id) => document.getElementById(id));
+        a.replaceWith(...Array.from(a.childNodes));
+        console.log(p.innerHTML, a.parentNode);
+        i.before('1', document.createElement('u'));
+        i.after('2');
+        console.log(p.innerHTML);
+        // a node among its own replacements keeps its place among them
+        i.replaceWith(i, 'w');
+        console.log(p.innerHTML);
+        const s = document.createElement('section');
+        s.lang = 'de';
+        s.dir = 'rtl';
+        console.log(s.lang, s.dir, s.outerHTML);",
+        "test",
+    );
+    let logs = doc.take_messages();
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(
+        logs,
+        [
+            "log: x<b>y</b><i id=\"i\">z</i> null",
+            "log: x<b>y</b>1<u></u><i id=\"i\">z</i>2",
+            "log: x<b>y</b>1<u></u><i id=\"i\">z</i>w2",
+            "log: de rtl <section lang=\"de\" dir=\"rtl\"></section>",
+        ]
+    );
+}

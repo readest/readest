@@ -782,6 +782,14 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         .flatten()
     });
     let d = docs.clone();
+    // Whether element `h` matches selector `sel` (false for a selector that does not parse).
+    op!("matches", move |h: f64, sel: String| -> bool {
+        d.with(h, |doc, n, _| {
+            doc.matches_selector(n, &sel).unwrap_or(false)
+        })
+        .unwrap_or(false)
+    });
+    let d = docs.clone();
     op!("queryAll", move |scope: f64, sel: String| -> Vec<f64> {
         d.with(scope, |doc, scope, tag| {
             doc.query_selector_all_in(scope, &sel).ok().map(|v| {
@@ -911,6 +919,24 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
             let (a, b) = (byte(start), byte(end));
             flat(doc.text_rects(n, a, b))
         })
+        .unwrap_or_default()
+    });
+    let d = docs.clone();
+    // CSSOM View's caretPositionFromPoint in the document of `h`, at (x, y) in its viewport:
+    // [text node, UTF-16 offset], or nothing off text.
+    op!("caret", move |h: f64, x: f64, y: f64| -> Vec<f64> {
+        d.resolve(h, "caret");
+        d.with(h, |doc, _, tag| {
+            let (node, at) = doc.caret_position_from_point(x as f32, y as f32)?;
+            let NodeData::Text(t) = &doc.get_node(node)?.data else {
+                return None;
+            };
+            Some(vec![
+                d.enc(tag, node),
+                t.content[..at].encode_utf16().count() as f64,
+            ])
+        })
+        .flatten()
         .unwrap_or_default()
     });
     let d = docs.clone();

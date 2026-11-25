@@ -1134,7 +1134,66 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3527,36 @@
+@@ -2661,6 +3244,58 @@
+         Some((inline_root.id, byte_offset))
+     }
+ 
++    /// CSSOM View's `caretPositionFromPoint`: the text node under viewport point (x, y) and the
++    /// byte offset in its content of the caret nearest the point. A caret between two text nodes
++    /// is at the end of the first. None off text, and on generated text (`::before`, `::after`,
++    /// a floated `::first-letter`).
++    pub fn caret_position_from_point(&self, x: f32, y: f32) -> Option<(NodeId, usize)> {
++        let (root, at) = self.find_text_position(x, y)?;
++        let text = self.get_node(root)?.element_data()?.inline_layout_data.as_deref()?;
++        // A pseudo-element's box is not among its parent's children.
++        let in_dom = |mut id: NodeId| {
++            while let Some(p) = self.nodes[id].parent {
++                if !self.nodes[p].children.contains(&id) {
++                    return false;
++                }
++                id = p;
++            }
++            true
++        };
++        let texts = || {
++            text.text_nodes
++                .iter()
++                .filter(|t| matches!(self.nodes[t.0].data, NodeData::Text(_)) && in_dom(t.0))
++        };
++        let &(node_id, from, _) = texts()
++            .find(|t| t.1 <= at && at <= t.2)
++            .or_else(|| texts().filter(|t| t.1 <= at).last())?;
++        let node = &self.nodes[node_id];
++        let NodeData::Text(data) = &node.data else {
++            return None;
++        };
++        let collapse = node
++            .parent
++            .and_then(|p| self.get_node(p)?.primary_styles())
++            .is_none_or(|s| {
++                s.get_inherited_text().white_space_collapse
++                    == style::computed_values::white_space_collapse::T::Collapse
++            });
++        // A floated (or otherwise not inline) `::first-letter` box holds part of this text, laid
++        // out apart from the rest (text_rects).
++        let skip = crate::layout::inline::first_letter_skip(&self.nodes, node_id).filter(|&(b, _)| {
++            !self.nodes[b].display_style().is_some_and(|d| {
++                d.outside() == style::values::specified::box_::DisplayOutside::Inline
++                    && d.inside() == style::values::specified::box_::DisplayInside::Flow
++            })
++        });
++        let Some((_, skip)) = skip else {
++            return Some((node_id, dom_offset(&data.content, at, &text.text, from, collapse)));
++        };
++        let rest = [&data.content[..skip.start], &data.content[skip.end..]].concat();
++        let offset = dom_offset(&rest, at, &text.text, from, collapse);
++        Some((node_id, if offset < skip.start { offset } else { offset + skip.len() }))
++    }
++
+     /// Set the text selection range (creates a new selection from anchor to focus)
+     pub fn set_text_selection(
+         &mut self,
+@@ -2944,6 +3579,66 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1168,10 +1227,40 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +    from + li
 +}
 +
++/// The inverse of `laid_out_offset`: the last byte offset in `content` laid out at or before
++/// `at`, so a caret after a run of collapsed white space is after all of it.
++fn dom_offset(content: &str, at: usize, text: &str, from: usize, collapse: bool) -> usize {
++    let space = |c: char| matches!(c, ' ' | '\t' | '\n' | '\r' | '\u{c}');
++    let laid = &text[from.min(text.len())..];
++    let mut li = 0;
++    if collapse && laid.starts_with(' ') && !content.starts_with(space) {
++        li = 1;
++    }
++    let mut in_space = false;
++    let mut last = 0;
++    for (i, c) in content.char_indices() {
++        if from + li > at {
++            return last;
++        }
++        last = i;
++        let next = laid[li..].chars().next();
++        if collapse && space(c) {
++            if !in_space && next.is_some_and(space) {
++                li += 1;
++            }
++            in_space = true;
++            continue;
++        }
++        in_space = false;
++        li += next.map_or(0, char::len_utf8);
++    }
++    if from + li > at { last } else { content.len() }
++}
++
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4121,58 @@
+@@ -3508,6 +4203,58 @@
  }
  
  #[cfg(test)]
@@ -1230,7 +1319,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4446,7 @@
+@@ -3781,3 +4528,7 @@
          );
      }
  }

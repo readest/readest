@@ -39,7 +39,10 @@ fn content_document_is_the_iframes_own() {
         const s = d.createElement('span');
         d.body.append(s, 'tail');
         console.log(s.ownerDocument === d, d.body.lastChild.data, d.querySelectorAll('span').length, document.querySelectorAll('span').length);
-        try { d.body.appendChild(document.createElement('b')); } catch (e) { console.log(e.name); }
+        // a node of the page moves into the iframe's document (adopted)
+        const b = document.createElement('b');
+        d.body.appendChild(b);
+        console.log(b.ownerDocument === d, d.querySelectorAll('b').length, document.querySelectorAll('b').length);
         // foliate-js's paginator focuses the section's window after each turn
         w.focus(); w.blur(); window.focus();
         console.log(typeof w.focus, typeof window.blur);
@@ -53,7 +56,7 @@ fn content_document_is_the_iframes_own() {
             "true true true true 300 200",
             "50px 50 50px",
             "true tail 1 0",
-            "WrongDocumentError",
+            "true 1 0",
             "function function",
         ]
     );

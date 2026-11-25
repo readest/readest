@@ -285,6 +285,12 @@
   inline root's text, so its client rect is a zero-width box where its line ends, after the text
   before it, with that text's top and height (at the line's start on a line holding nothing
   else), as in Chromium. Every `<br>` was an empty box at its paragraph's start.
+- `blitz-dom` document: `caret_position_from_point` (CSSOM View's `caretPositionFromPoint`) maps
+  a point to the text node under it and the byte offset of the caret nearest it, through the
+  inline root's text (`find_text_position`) and back to the node's own text, counting the white
+  space the line collapsed (`dom_offset`, the inverse of `laid_out_offset`) and a floated
+  `::first-letter`. Generated text (`::before`, `::after`) has no caret. Readest selects the word
+  under a double tap with it.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 
