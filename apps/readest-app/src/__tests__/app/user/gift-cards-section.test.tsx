@@ -366,6 +366,82 @@ describe('GiftCardsSection', () => {
     expect(h.router.replace).toHaveBeenCalledWith('/user?section=gifts');
   });
 
+  // Review (CodeRabbit): a failed check must not drop the session, or a reload
+  // can't check it again.
+  it('keeps the session in the URL when the payment check fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    window.history.replaceState(null, '', '/user?section=gifts&session_id=cs_returning');
+
+    renderSection({ stripeSessionId: 'cs_returning' });
+
+    await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(1));
+    expect(h.router.replace).not.toHaveBeenCalled();
+  });
+
+  it('still clears the session once the check answers, paid or not', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ session: {} }), { status: 200 })),
+    );
+    window.history.replaceState(null, '', '/user?section=gifts&session_id=cs_returning');
+
+    renderSection({ stripeSessionId: 'cs_returning' });
+
+    await waitFor(() => expect(h.router.replace).toHaveBeenCalledWith('/user?section=gifts'));
+  });
+
+  // Review (CodeRabbit): an older, slower load must not overwrite a newer one.
+  it('shows the newest load when two overlap', async () => {
+    const given: ReceivedGiftCard = {
+      id: 'card-2',
+      tier: 'pro',
+      recipientName: 'Alex',
+      senderName: 'Sam',
+      message: 'For you',
+      startsAt: '2026-11-21T10:00:00Z',
+      endsAt: '2027-11-21T10:00:00Z',
+    };
+    let finishOpen!: (value: GiftCardsResponse) => void;
+    h.fetchGiftCards
+      .mockImplementationOnce(
+        () =>
+          new Promise<GiftCardsResponse>((resolve) => {
+            finishOpen = resolve;
+          }),
+      )
+      .mockResolvedValue(response({ received: [given] }));
+    h.redeemGiftCode.mockResolvedValue(given);
+    renderSection({ view: 'redeem', initialCode: 'ABCD-EFGH-JKMN-PQRS' });
+
+    // The opening load hangs; the redemption's reload answers first.
+    fireEvent.click(await screen.findByRole('button', { name: 'Redeem' }));
+    expect(await screen.findByRole('region', { name: 'Received' })).toBeTruthy();
+
+    // The opening load, older, lands last.
+    finishOpen(response());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.getByRole('region', { name: 'Received' })).toBeTruthy();
+  });
+
+  // Review (CodeRabbit): with no plan known from opening, a redemption must
+  // still refresh the page's plan.
+  it('refreshes the plan after a redemption when the first load failed', async () => {
+    h.fetchGiftCards
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(response({ giftPlan: 'plus', giftActiveUntil: '2027-11-26T00:00:00Z' }));
+    h.redeemGiftCode.mockResolvedValue(null);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onPlanChanged = vi.fn();
+    renderSection({ view: 'redeem', initialCode: 'ABCD-EFGH-JKMN-PQRS', onPlanChanged });
+
+    await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(1));
+    fireEvent.click(await screen.findByRole('button', { name: 'Redeem' }));
+
+    await waitFor(() => expect(h.fetchGiftCards).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(onPlanChanged).toHaveBeenCalledTimes(1));
+  });
+
   it('redeem shows the shared error for a bad code', async () => {
     h.redeemGiftCode.mockRejectedValue(new Error('invalid_or_used'));
     const onPlanChanged = vi.fn();

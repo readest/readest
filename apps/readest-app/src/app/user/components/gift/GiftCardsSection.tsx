@@ -34,8 +34,9 @@ import RedeemGiftForm from './RedeemGiftForm';
 import SentGiftList from './SentGiftList';
 
 // The call the subscription success page makes: it records the payment and
-// activates the card, so it doesn't wait on the webhook. True once paid.
-const checkStripeSession = async (sessionId: string): Promise<boolean> => {
+// activates the card, so it doesn't wait on the webhook. True once paid, null
+// when the check itself failed.
+const checkStripeSession = async (sessionId: string): Promise<boolean | null> => {
   try {
     const token = await getAccessToken();
     const response = await fetch(`${getAPIBaseUrl()}/stripe/check`, {
@@ -47,7 +48,7 @@ const checkStripeSession = async (sessionId: string): Promise<boolean> => {
     return session?.payment_status === 'paid';
   } catch (error) {
     console.error('Failed to check the checkout session:', error);
-    return false;
+    return null;
   }
 };
 
@@ -97,9 +98,14 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
     [],
   );
 
+  // Only the newest load updates the page: an older, slower one landing last
+  // would put back what a save or a redemption had just changed.
+  const loads = useRef(0);
   const load = useCallback(async (): Promise<GiftCardsResponse | null> => {
+    const mine = ++loads.current;
     try {
       const next = await fetchGiftCards();
+      if (mine !== loads.current) return next;
       const state = `${next.giftPlan}:${next.giftActiveUntil}`;
       if (giftState.current !== null && giftState.current !== state) onPlanChanged();
       giftState.current = state;
@@ -133,11 +139,15 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
     const open = async () => {
       let paid = false;
       if (stripeSessionId) {
-        paid = await checkStripeSession(stripeSessionId);
-        // Checked once: reopening the view must not check and announce it again.
-        const params = new URLSearchParams(window.location.search);
-        params.delete('session_id');
-        router.replace(`${window.location.pathname}?${params}`);
+        const checked = await checkStripeSession(stripeSessionId);
+        paid = checked === true;
+        // Checked once: reopening the view must not check and announce it
+        // again. A check that failed keeps the session, so a reload retries.
+        if (checked !== null) {
+          const params = new URLSearchParams(window.location.search);
+          params.delete('session_id');
+          router.replace(`${window.location.pathname}?${params}`);
+        }
       }
       await finishPurchase(paid);
     };
@@ -205,10 +215,18 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
     }
   };
 
+  // `load` refreshes the page's plan only against a plan it saw before; when
+  // the first load failed there is none, so a redemption refreshes it here.
+  const handleRedeemed = async () => {
+    const known = giftState.current !== null;
+    await load();
+    if (!known) onPlanChanged();
+  };
+
   const handleCheckoutSuccess = useCallback(
     async (sessionId: string) => {
       setCheckout(null);
-      await finishPurchase(await checkStripeSession(sessionId));
+      await finishPurchase((await checkStripeSession(sessionId)) === true);
     },
     [finishPurchase],
   );
@@ -263,7 +281,7 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
 
         <section ref={redeemRef} aria-labelledby={redeemId} className='flex flex-col gap-2'>
           <SectionTitle id={redeemId}>{_('Redeem a Code')}</SectionTitle>
-          <RedeemGiftForm initialCode={initialCode} onRedeemed={load} />
+          <RedeemGiftForm initialCode={initialCode} onRedeemed={handleRedeemed} />
         </section>
 
         {received.length > 0 && (
