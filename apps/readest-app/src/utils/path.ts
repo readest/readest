@@ -2,13 +2,14 @@ import { join } from '@tauri-apps/api/path';
 import { isContentURI, isFileURI, isValidURL } from './misc';
 
 export const getFilename = (fileOrUri: string) => {
-  if (isValidURL(fileOrUri) || isContentURI(fileOrUri) || isFileURI(fileOrUri)) {
+  const isUri = isValidURL(fileOrUri) || isContentURI(fileOrUri) || isFileURI(fileOrUri);
+  if (isUri) {
     fileOrUri = decodeURI(fileOrUri);
   }
   const normalizedPath = fileOrUri.replace(/\\/g, '/');
   const parts = normalizedPath.split('/');
   const lastPart = parts.pop()!;
-  return lastPart.split('?')[0]!;
+  return isUri ? lastPart.split('?')[0]! : lastPart;
 };
 
 export const getPathFilename = (path: string) => {

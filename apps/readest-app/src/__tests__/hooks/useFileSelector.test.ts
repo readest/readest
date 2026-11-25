@@ -146,6 +146,15 @@ describe('useFileSelector under gamescope (SteamOS Gaming Mode, #3049)', () => {
     dispatchSpy.mockRestore();
   });
 
+  test('preserves a literal question mark in a local book filename', async () => {
+    const path = '/home/user/books/Who is there?.epub';
+    const { appService } = makeAppService('linux', [path]);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    const result = await select({ type: 'books', multiple: true });
+    expect(result.files).toEqual([{ path, name: 'Who is there?.epub' }]);
+  });
+
   test('non-Linux platforms never probe the environment', async () => {
     const { appService } = makeAppService('android', ['content://media/external/file/42']);
     const { selectFiles: select } = useFileSelector(appService, _);

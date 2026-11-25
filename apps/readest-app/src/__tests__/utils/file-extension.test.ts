@@ -13,6 +13,11 @@ describe('getFileExtension', () => {
     expect(getFileExtension('/home/user/books/book.EPUB')).toBe('epub');
   });
 
+  test('keeps literal question marks in filenames and ignores query strings on URLs', () => {
+    expect(getFileExtension('Who is there?.epub')).toBe('epub');
+    expect(getFileExtension('https://example.org/book.epub?download=1')).toBe('epub');
+  });
+
   test('looks past a duplicate marker appended after the extension', () => {
     expect(getFileExtension('The_Amazing_Traveling.epub (1)')).toBe('epub');
     expect(getFileExtension('The_Amazing_Traveling.epub(2)')).toBe('epub');

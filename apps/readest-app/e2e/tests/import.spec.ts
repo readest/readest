@@ -3,6 +3,26 @@ import { SAMPLE_EPUB, SAMPLE_TXT } from '../fixtures/books';
 import { LibraryPage } from '../pages/LibraryPage';
 
 test.describe('Book import', () => {
+  test('shows a failed book filename with its literal question mark', async ({ page }) => {
+    const library = new LibraryPage(page);
+    await library.goto();
+    await expect(library.emptyState).toBeVisible();
+
+    await library.container.evaluate((element) => {
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(new File(['invalid EPUB'], 'Who is there?.epub'));
+      dataTransfer.items.add(new File(['another invalid EPUB'], 'Atlas.epub'));
+      element.dispatchEvent(
+        new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }),
+      );
+    });
+
+    const dialog = page.getByRole('dialog', { name: 'Failed to import 2 books' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('Who is there?.epub', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('This book format is not supported')).toHaveCount(0);
+  });
+
   test('imports a plain-text file and surfaces it in the bookshelf', async ({ page }) => {
     const library = new LibraryPage(page);
     await library.goto();
