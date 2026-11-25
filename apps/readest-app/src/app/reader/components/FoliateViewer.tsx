@@ -1100,7 +1100,7 @@ const FoliateViewer: React.FC<{
           isScript: boolean;
           type: string;
           href: string;
-          url?: string;
+          url?: Promise<string | undefined>;
           allow?: boolean;
         }>;
         if (detail.isScript) {
@@ -1108,18 +1108,17 @@ const FoliateViewer: React.FC<{
         }
         if (isFontType(detail.type) && detail.href?.startsWith('fonts/')) {
           const fontFileName = detail.href.split('/').pop()?.toLowerCase();
-          getAvailableFonts().forEach(async (font) => {
-            const customFontFileName = font.path.split('/').pop()?.toLowerCase();
-            if (fontFileName && fontFileName === customFontFileName) {
-              if (!font.loaded) {
-                const loadedFont = await loadFont(envConfig, font.id);
-                font.blobUrl = loadedFont?.blobUrl;
-              }
-              if (font.blobUrl) {
-                detail.url = font.blobUrl;
-              }
-            }
-          });
+          const font = getAvailableFonts().find(
+            (font) => font.path.split('/').pop()?.toLowerCase() === fontFileName,
+          );
+          // foliate reads `detail.url` as soon as this handler returns, then
+          // returns it from its async loadItem, so it waits for the promise.
+          if (font) {
+            detail.url = loadFont(envConfig, font.id).then(
+              (font) => font.blobUrl,
+              () => undefined,
+            );
+          }
         }
       };
       const viewWidth = appService?.isMobile ? screen.width : window.innerWidth;
