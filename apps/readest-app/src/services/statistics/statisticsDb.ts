@@ -402,6 +402,13 @@ export class StatisticsDb {
         const id = await this.upsertBook(target);
         for (const e of events) await this.insertPageEvent(id, e);
         await this.recomputeBookTotals(id);
+        // A sample both hold at the same moment stays once, like a page event.
+        await this.db.execute(
+          `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms)
+           SELECT start_time_ms, ?, unit, count, duration_ms FROM readest_reading_speed
+           WHERE book_md5 = ? ON CONFLICT DO NOTHING`,
+          [target.bookMd5, source],
+        );
         await this.deleteEventsBefore(source, Number.MAX_SAFE_INTEGER);
         await this.db.execute('COMMIT');
       } catch (err) {
@@ -411,8 +418,15 @@ export class StatisticsDb {
     });
   }
 
-  /** Delete a book's events that started before `before`; drop its row once none are left. */
+  /**
+   * Delete a book's events and speed samples that started before `before`;
+   * drop its row once no events are left.
+   */
   private async deleteEventsBefore(md5: string, before: number): Promise<void> {
+    await this.db.execute(
+      `DELETE FROM readest_reading_speed WHERE book_md5 = ? AND start_time_ms < ?`,
+      [md5, Math.min(before * 1000, Number.MAX_SAFE_INTEGER)],
+    );
     const rows = await this.db.select<BookRow>(`SELECT id FROM book WHERE md5 = ?`, [md5]);
     for (const { id } of rows) {
       await this.db.execute(`DELETE FROM page_stat_data WHERE id_book = ? AND start_time < ?`, [
