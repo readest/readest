@@ -4056,7 +4056,6 @@ dependencies = [
  "tauri-plugin-persisted-scope",
  "tauri-plugin-turso",
  "tauri-runtime-blitz",
- "ureq",
  "url",
 ]
 

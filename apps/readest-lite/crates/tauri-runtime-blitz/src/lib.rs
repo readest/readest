@@ -16,6 +16,8 @@ mod frame;
 mod net;
 mod webview;
 
+pub use net::http_agent;
+
 use blitz_qjs_script::eline;
 
 use tauri_runtime::{

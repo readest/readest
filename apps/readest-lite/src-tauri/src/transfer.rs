@@ -7,24 +7,14 @@ use std::{
     fs::File,
     io::{BufWriter, Read, Write},
     path::{Component, Path, PathBuf},
-    sync::LazyLock,
     time::{Duration, Instant},
 };
 
 use serde::Serialize;
 use tauri::{AppHandle, Manager, Runtime, ipc::Channel};
 use tauri_plugin_fs::FsExt;
-
-/// The timeouts of the runtime's `fetch` (tauri-runtime-blitz's net.rs): a stalled server fails
-/// the download, a long one is fine.
-static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
-    ureq::Agent::config_builder()
-        .http_status_as_error(false)
-        .timeout_connect(Some(Duration::from_secs(30)))
-        .timeout_recv_response(Some(Duration::from_secs(60)))
-        .build()
-        .into()
-});
+// The client of the runtime's `fetch`: a stalled network fails the download, a long one is fine.
+use tauri_runtime_blitz::http_agent;
 
 /// What Readest's `tauriDownload` hands its progress handler.
 #[derive(Clone, Serialize)]
@@ -89,11 +79,11 @@ fn download(
     let response = match body {
         Some(body) => headers
             .iter()
-            .fold(AGENT.post(url), |r, (k, v)| r.header(k, v))
+            .fold(http_agent().post(url), |r, (k, v)| r.header(k, v))
             .send(body),
         None => headers
             .iter()
-            .fold(AGENT.get(url), |r, (k, v)| r.header(k, v))
+            .fold(http_agent().get(url), |r, (k, v)| r.header(k, v))
             .call(),
     }
     .map_err(|e| e.to_string())?;
