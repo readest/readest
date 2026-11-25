@@ -533,6 +533,11 @@ export class TTSController extends EventTarget {
 
     // A detach (new view closed) or a newer attach superseded this one.
     if (epoch !== this.#attachEpoch) return;
+    // Playback can cross a chapter or rebuild its source during prep. The
+    // prepared document and iterator must match the live cursor at the swap.
+    if (sectionIndex !== Math.max(this.#ttsSectionIndex, 0) || oldTts !== this.#getTts()) {
+      return this.attachView(view, bindings);
+    }
 
     // Synchronous swap.
     this.view = view;
@@ -540,6 +545,8 @@ export class TTSController extends EventTarget {
     this.preprocessCallback = bindings.preprocessCallback;
     this.onSectionChange = bindings.onSectionChange;
     this.#attached = true;
+    this.#resetSpeakWords();
+    this.#lastSetMark = null;
     const lastRange = oldTts?.getLastRange?.();
     if (lastRange) {
       try {
@@ -548,7 +555,23 @@ export class TTSController extends EventTarget {
         // doc (compareBoundaryPoints throws cross-document).
         const cfi = view.getCFI(sectionIndex, lastRange);
         const anchored = view.resolveCFI(cfi).anchor(doc);
-        if (anchored) newTts.from(anchored); // position the iterator; discard SSML
+        if (anchored) {
+          const ssml = newTts.from(anchored);
+          // Foliate's from() positions the block but clears its current mark.
+          // Restore the mark from the seeded SSML so clock, highlight and the
+          // next attach can all find the sentence that is already playing.
+          // Recorded narration's from() already restores its own mark.
+          const mark = !narration && ssml ? parseSSMLMarks(ssml).marks[0] : undefined;
+          if (mark) {
+            this.#suppressMarkHighlight = true;
+            try {
+              const range = newTts.setMark(mark.name);
+              if (range) this.#lastSetMark = { name: mark.name, range };
+            } finally {
+              this.#suppressMarkHighlight = false;
+            }
+          }
+        }
       } catch (err) {
         console.warn('[TTS] attachView re-seed failed', err);
       }
@@ -2895,6 +2918,7 @@ export class TTSController extends EventTarget {
   }
 
   async shutdown() {
+    this.#attachEpoch++;
     stopAudioKeepAlive();
     await this.stop();
     // A controller replaced by a newer session leaves that session's text

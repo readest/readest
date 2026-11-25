@@ -270,4 +270,24 @@ describe('TTSController detach/attach', () => {
     const staleInstance = mockTtsInstances[1];
     if (staleInstance) expect(staleInstance.from).not.toHaveBeenCalled();
   });
+
+  test('prepares the new chapter if playback crosses a chapter during attach', async () => {
+    controller.detachView();
+    mockTtsInstances[0]!.getLastRange.mockReturnValue(new Range());
+    let releaseDoc!: (doc: Document) => void;
+    const gated = new Promise<Document>((resolve) => {
+      releaseDoc = resolve;
+    });
+    const { view: newView } = makeView({ createDocument: () => gated, rendered: false });
+    const attaching = controller.attachView(newView, { bookKey: 'hash-chapter-race' });
+    await flush();
+
+    await controller.forward();
+    expect(controller.getSectionIndex()).toBe(1);
+    releaseDoc(document.implementation.createHTMLDocument('previous chapter'));
+    await attaching;
+
+    expect(controller.isViewAttached).toBe(true);
+    expect(vi.mocked(newView.getCFI).mock.calls[0]?.[0]).toBe(1);
+  });
 });
