@@ -234,6 +234,27 @@ describe('ReadingStatsDialog', () => {
     expect(screen.getByText('240 characters/min')).toBeTruthy();
   });
 
+  it('shows no speed for today once the dialog stays open past midnight', async () => {
+    vi.useFakeTimers({ now: new Date('2026-11-07T23:59:00'), toFake: ['Date'] });
+    db.open.mockResolvedValue({
+      getQuarterHourDurations: async () => [],
+      getBookQuarterHourDurations: async () => [],
+      getReadingTotals: async () => ({ seconds: 0, books: 0, pages: 0 }),
+      getReadingSpeedSamples: async () => [
+        { unit: 'characters', count: 300, durationMs: 30_000, startTimeMs: Date.now() - 30_000 },
+      ],
+      getReadingSpeedTotals: async () => [{ unit: 'characters', count: 300, durationMs: 30_000 }],
+    });
+    await openDialog();
+    expect(await screen.findAllByText('600 characters/min')).toHaveLength(2);
+    vi.setSystemTime(new Date('2026-11-08T00:01:00'));
+    // the calendar and back re-renders the overview without reloading it
+    fireEvent.click(screen.getByRole('button', { name: 'Reading Calendar' }));
+    await screen.findByRole('group', { name: 'Reading Calendar' });
+    fireEvent.click(screen.getByRole('button', { name: 'Reading Statistics' }));
+    expect(screen.getAllByText('600 characters/min')).toHaveLength(1);
+  });
+
   it("pulls the account's stats from other devices, then shows them", async () => {
     let pulled = false;
     sync.user = { id: 'u' };

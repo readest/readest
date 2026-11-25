@@ -37,7 +37,8 @@ interface ReadingStats {
   db: StatisticsDb;
   daily: Map<string, number>;
   totals: { seconds: number; books: number; pages: number };
-  todaySpeed: ReadingSpeed[];
+  /** Speeds by date key, for the day the statistics were read. */
+  dailySpeed: Map<string, ReadingSpeed[]>;
   totalSpeed: ReadingSpeed[];
 }
 
@@ -51,8 +52,8 @@ const readStats = async (db: StatisticsDb): Promise<ReadingStats> => {
     db.getReadingSpeedSamples(dayStart, dayEnd),
     db.getReadingSpeedTotals(),
   ]);
-  const todaySpeed = getDailyReadingSpeeds(samples, dayStart, dayEnd).get(toDateKey(today)) ?? [];
-  return { db, daily: getDailySeconds(quarters), totals, todaySpeed, totalSpeed };
+  const dailySpeed = getDailyReadingSpeeds(samples, dayStart, dayEnd);
+  return { db, daily: getDailySeconds(quarters), totals, dailySpeed, totalSpeed };
 };
 
 /** A sub-page of the dialog, or null for the statistics themselves. */
@@ -233,7 +234,7 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
         </SettingsRow>
         <SettingsRow label={_('Reading Speed Today')} className={speedRow}>
           <span dir='auto' className='ms-auto text-end tabular-nums'>
-            {speed(stats.todaySpeed)}
+            {speed(stats.dailySpeed.get(toDateKey(new Date())) ?? [])}
           </span>
         </SettingsRow>
         <SettingsRow label={_('Current Streak')}>
