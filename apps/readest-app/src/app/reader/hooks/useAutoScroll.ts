@@ -235,10 +235,14 @@ export const useAutoScroll = (
   const togglePause = () => {
     const scroller = scrollerRef.current!;
     if (!scroller.active) return;
-    // A wipe pauses where it is: the next page above the line, the page being
-    // read below it.
-    if (scroller.paused) scroller.resume();
-    else scroller.pause();
+    // A paused wipe shows the page being read, live, so any word on it can be
+    // looked up or highlighted; play wipes on from where the line was.
+    if (scroller.paused) {
+      scroller.resume();
+    } else {
+      scroller.pause();
+      void wiperRef.current?.suspend();
+    }
     setPaused(scroller.paused);
   };
 

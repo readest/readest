@@ -369,9 +369,10 @@ describe('useAutoScroll in paginated mode', () => {
     expect(result.current.active).toBe(true);
   });
 
-  // Xiaomi: a pause turned back and dropped the copy, so the page being read
-  // showed above the line too, until the next tap brought the wipe back.
-  test('a tap pauses and play resumes with the next page still above the line', async () => {
+  // A pause shows the page being read, live, so its text can be selected
+  // (maintainer's call after #7869, which held the copy and took every press):
+  // it turns back under the copy and drops it. Play wipes the next page in again.
+  test('a tap pauses on the page being read and play wipes the next page in again', async () => {
     const { result } = renderWipe();
     await reveal();
 
@@ -380,16 +381,16 @@ describe('useAutoScroll in paginated mode', () => {
       await vi.advanceTimersByTimeAsync(100);
     });
     expect(result.current.paused).toBe(true);
-    expect(renderer.prev).not.toHaveBeenCalled();
-    expect(copy()).not.toBeNull();
+    expect(renderer.prev).toHaveBeenCalledOnce();
+    expect(copy()).toBeNull();
 
+    // The tap that plays lands on the book.
     await act(async () => {
-      click();
-      await vi.advanceTimersByTimeAsync(100);
+      eventDispatcher.dispatchSync('iframe-single-click');
+      await vi.advanceTimersByTimeAsync(200);
     });
     expect(result.current.paused).toBe(false);
-    expect(renderer.prev).not.toHaveBeenCalled();
-    expect(renderer.next).toHaveBeenCalledOnce();
+    expect(renderer.next).toHaveBeenCalledTimes(2);
     expect(copy()).not.toBeNull();
   });
 
