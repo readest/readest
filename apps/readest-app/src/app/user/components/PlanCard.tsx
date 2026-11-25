@@ -3,6 +3,7 @@ import { IoCheckmark } from 'react-icons/io5';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getLocale } from '@/utils/misc';
 import { getPlanAccent, PlanDetails } from '../utils/plan';
+import { GiftPrice } from '@/types/gift';
 import { PlanInterval, PlanType } from '@/types/quota';
 import PlanActionButton from './PlanActionButton';
 import PurchaseCallToActions from './PurchaseCallToActions';
@@ -14,9 +15,14 @@ interface PlanCardProps {
   recommended?: boolean;
   upgradable?: boolean;
   canSwitchInterval?: boolean;
+  giftUntil?: string;
+  giftOnly?: boolean;
+  belowGift?: boolean;
   /** Defaults to false: an unknown state shows the buy button, never hides it. */
   customizationPurchased?: boolean;
+  giftPrices?: GiftPrice[];
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
+  onGiftCard?: () => void;
 }
 
 const PlanCard: React.FC<PlanCardProps> = ({
@@ -27,7 +33,12 @@ const PlanCard: React.FC<PlanCardProps> = ({
   customizationPurchased = false,
   upgradable,
   canSwitchInterval,
+  giftUntil,
+  giftOnly,
+  belowGift,
+  giftPrices,
   onSubscribe,
+  onGiftCard,
 }) => {
   const _ = useTranslation();
   const { price, currency } = plan;
@@ -142,7 +153,9 @@ const PlanCard: React.FC<PlanCardProps> = ({
               plan={plan}
               accent={accent}
               customizationPurchased={customizationPurchased}
+              giftPrices={giftPrices}
               onSubscribe={onSubscribe}
+              onGiftCard={onGiftCard}
             />
           ) : (
             <PlanActionButton
@@ -152,6 +165,9 @@ const PlanCard: React.FC<PlanCardProps> = ({
               canSwitchInterval={canSwitchInterval}
               upgradable={upgradable}
               isUserPlan={isUserPlan}
+              giftUntil={giftUntil}
+              giftOnly={giftOnly}
+              belowGift={belowGift}
               onSubscribe={onSubscribe}
             />
           )}

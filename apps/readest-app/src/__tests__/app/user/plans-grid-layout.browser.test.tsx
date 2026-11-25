@@ -163,3 +163,18 @@ describe('plans grid layout', () => {
     );
   });
 });
+
+// Review (CodeRabbit): e-ink keeps text at full ink (DESIGN.md); the theme's
+// e-ink rules flatten colours, not opacity, so the tile prices must not fade.
+describe('On-Demand Purchase prices on e-ink', () => {
+  afterEach(() => document.documentElement.removeAttribute('data-eink'));
+
+  it('draws the prices at full opacity on e-ink, softened elsewhere', () => {
+    renderGrid();
+    const price = () => screen.getByText('$1.99');
+    expect(Number(getComputedStyle(price()).opacity)).toBeLessThan(1);
+
+    document.documentElement.setAttribute('data-eink', 'true');
+    expect(getComputedStyle(price()).opacity).toBe('1');
+  });
+});

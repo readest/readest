@@ -1,11 +1,16 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { z } from 'zod';
 import { getStripe } from '@/libs/payment/stripe/server';
 import { validateUserAndToken } from '@/utils/access';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 
 const CHECKOUT_ERROR = 'Error creating checkout session';
 const STRIPE_CHECKOUT_ERROR = 'Stripe rejected the checkout request';
+
+// `gift_cards.id` is a uuid. Any other id would be paid for and then fail every
+// webhook retry, with no card made, so it is refused before a session exists.
+const giftCardIdSchema = z.string().uuid().optional();
 
 export async function POST(request: NextRequest) {
   const {
@@ -14,6 +19,11 @@ export async function POST(request: NextRequest) {
     embedded = true,
     metadata = {},
   } = await request.json();
+
+  const giftCardId = giftCardIdSchema.safeParse(metadata?.giftCardId);
+  if (!giftCardId.success) {
+    return NextResponse.json({ error: 'Invalid gift card id' }, { status: 400 });
+  }
 
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
   if (!user || !token) {
@@ -52,8 +62,13 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getStripe();
-    const successUrl = `${request.headers.get('origin')}/user/subscription/success?payment=stripe&session_id={CHECKOUT_SESSION_ID}`;
-    const returnUrl = `${request.headers.get('origin')}/user`;
+    const origin = request.headers.get('origin');
+    // A gift purchase returns to the buyer's gift cards, not the plan pages.
+    const isGift = giftCardId.data !== undefined;
+    const successUrl = isGift
+      ? `${origin}/user?section=gifts&session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/user/subscription/success?payment=stripe&session_id={CHECKOUT_SESSION_ID}`;
+    const returnUrl = isGift ? `${origin}/user?section=gifts` : `${origin}/user`;
     const session = await stripe.checkout.sessions.create({
       ui_mode: embedded ? 'embedded_page' : 'hosted_page',
       customer: customerId,

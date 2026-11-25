@@ -558,6 +558,12 @@ const controlPanelItems = [
     section: 'Annotation Tools',
   },
   {
+    id: 'settings.control.copyWithCitation',
+    labelKey: _('Copy with Citation'),
+    keywords: ['copy', 'citation', 'cite', 'reference', 'source', 'quote'],
+    section: 'Annotation Tools',
+  },
+  {
     id: 'settings.control.pagingAnimation',
     labelKey: _('Paging Animation'),
     keywords: ['paging', 'animation', 'transition', 'effect'],

@@ -2,7 +2,10 @@ import { GooglePaymentData } from '@/types/payment';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { updateUserStorage } from '@/libs/payment/storage';
 import { resolveUserPlan } from '@/libs/payment/entitlements';
+import { activateGiftCard } from '@/libs/payment/gift/server';
 import {
+  giftTierForProduct,
+  isTestPurchaseInProduction,
   isEntitledStatus,
   isStoragePurchase,
   mapProductIdToProductName,
@@ -120,7 +123,11 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
   }
 }
 
-export async function createOrUpdatePayment(userId: string, purchase: VerifiedPurchase) {
+export async function createOrUpdatePayment(
+  userId: string,
+  purchase: VerifiedPurchase,
+  giftCardId?: string,
+) {
   try {
     const supabase = createSupabaseAdminClient();
     const { data: existingPayment } = await supabase
@@ -155,6 +162,21 @@ export async function createOrUpdatePayment(userId: string, purchase: VerifiedPu
     }
 
     await updateUserStorage(userId);
+
+    // A restore re-verify carries no draft and makes a card the buyer fills
+    // in later.
+    const giftTier = giftTierForProduct(purchase.productId);
+    if (giftTier && purchase.status === 'active') {
+      await activateGiftCard({
+        buyerId: userId,
+        tier: giftTier,
+        provider: 'google',
+        column: 'google_purchase_token',
+        paymentRef: purchase.purchaseToken,
+        giftCardId,
+        ...(isTestPurchaseInProduction(purchase.environment) && { test: true }),
+      });
+    }
     return data;
   } catch (error) {
     console.error('Failed to update user payment:', error);
@@ -166,6 +188,7 @@ export async function processPurchaseData(
   user: { id: string; email?: string | undefined },
   verifyParams: VerifyPurchaseParams,
   verificationResult: VerificationResult,
+  giftCardId?: string,
 ): Promise<VerifiedPurchase> {
   const { orderId, purchaseToken, productId, packageName } = verifyParams;
   const purchaseData = verificationResult.purchaseData!;
@@ -245,7 +268,7 @@ export async function processPurchaseData(
   if (isSubscription) {
     await createOrUpdateSubscription(user.id, purchase);
   } else {
-    await createOrUpdatePayment(user.id, purchase);
+    await createOrUpdatePayment(user.id, purchase, giftCardId);
   }
 
   return purchase;

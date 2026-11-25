@@ -10,6 +10,9 @@ preview_urls = true
 # Reading-statistics compaction (POST /api/stats/compact via worker.ts
 # scheduled()). Every 10 minutes; each run does bounded work (mostly I/O wait,
 # well inside the default CPU limit) and returns.
+# The same trigger also POSTs /api/gift/reconcile (gift cards). Its guard is the
+# GIFT_RECONCILE_TOKEN secret (`wrangler secret put GIFT_RECONCILE_TOKEN`);
+# unset, the route answers 503 and the cron logs it.
 [triggers]
 crons = ["*/10 * * * *"]
 

@@ -51,6 +51,18 @@ export async function POST(request: NextRequest) {
         }
         break;
 
+      // A bank debit (ACH, SEPA) is still processing when its checkout
+      // completes, so nothing was granted then. This fires once the money
+      // arrives, and recording the payment again re-reads the intent.
+      case 'checkout.session.async_payment_succeeded': {
+        const paidSession = event.data.object;
+        const paidUserId = paidSession.metadata?.['userId'];
+        if (paidUserId && paidSession.mode === 'payment') {
+          await handleSuccessfulPayment(paidSession, paidUserId);
+        }
+        break;
+      }
+
       // A renewal, a retry, or a failed payment: re-read the subscription
       // from Stripe rather than guess its status from the event.
       case 'invoice.paid':

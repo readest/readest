@@ -2,7 +2,10 @@ import { ApplePaymentData } from '@/types/payment';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { updateUserStorage } from '@/libs/payment/storage';
 import { resolveUserPlan } from '@/libs/payment/entitlements';
+import { activateGiftCard, revokeGiftCardForPayment } from '@/libs/payment/gift/server';
 import {
+  giftTierForProduct,
+  isTestPurchaseInProduction,
   isEntitledStatus,
   isStoragePurchase,
   mapProductIdToProductName,
@@ -95,7 +98,11 @@ export async function createOrUpdateSubscription(userId: string, purchase: Verif
   }
 }
 
-export async function createOrUpdatePayment(userId: string, purchase: VerifiedPurchase) {
+export async function createOrUpdatePayment(
+  userId: string,
+  purchase: VerifiedPurchase,
+  giftCardId?: string,
+) {
   try {
     const supabase = createSupabaseAdminClient();
 
@@ -143,6 +150,28 @@ export async function createOrUpdatePayment(userId: string, purchase: VerifiedPu
     }
 
     await updateUserStorage(userId);
+
+    // The client's verify carries the buyer's draft; ONE_TIME_CHARGE and a
+    // restore re-verify don't, and make a card the buyer fills in later. A
+    // card follows its payment, as with Stripe: one Apple now reports revoked
+    // takes back a card already made (a no-op when there is none).
+    const giftTier = giftTierForProduct(purchase.productId);
+    if (giftTier && purchase.revocationDate) {
+      await revokeGiftCardForPayment(
+        'apple_original_transaction_id',
+        purchase.originalTransactionId,
+      );
+    } else if (giftTier && purchase.status === 'active') {
+      await activateGiftCard({
+        buyerId: userId,
+        tier: giftTier,
+        provider: 'apple',
+        column: 'apple_original_transaction_id',
+        paymentRef: purchase.originalTransactionId,
+        giftCardId,
+        ...(isTestPurchaseInProduction(purchase.environment) && { test: true }),
+      });
+    }
   } catch (error) {
     console.error('Failed to update user payment:', error);
     throw error;
@@ -152,6 +181,7 @@ export async function createOrUpdatePayment(userId: string, purchase: VerifiedPu
 export async function processPurchaseData(
   user: { id: string; email?: string | undefined },
   verificationResult: VerificationResult,
+  giftCardId?: string,
 ): Promise<VerifiedPurchase> {
   const transaction = verificationResult.transaction!;
 
@@ -185,7 +215,7 @@ export async function processPurchaseData(
   if (purchase.planType === 'subscription') {
     await createOrUpdateSubscription(user.id, purchase);
   } else if (purchase.planType === 'purchase') {
-    await createOrUpdatePayment(user.id, purchase);
+    await createOrUpdatePayment(user.id, purchase, giftCardId);
   }
 
   return purchase;

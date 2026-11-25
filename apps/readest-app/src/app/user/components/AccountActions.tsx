@@ -115,6 +115,7 @@ interface AccountActionsProps {
   userPlan: UserPlan;
   customizationPurchased: boolean;
   iapAvailable: boolean;
+  giftOnly?: boolean;
   onLogout: () => void;
   onResetPassword: () => void;
   onUpdateEmail: () => void;
@@ -125,6 +126,7 @@ interface AccountActionsProps {
   onManageStorage?: () => void;
   onManageSharedLinks?: () => void;
   onManageSync?: () => void;
+  onRedeemGiftCard?: () => void;
 }
 
 const AccountActions: React.FC<AccountActionsProps> = ({
@@ -133,6 +135,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
   userPlan,
   customizationPurchased,
   iapAvailable,
+  giftOnly = false,
   onLogout,
   onResetPassword,
   onUpdateEmail,
@@ -143,6 +146,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
   onManageStorage,
   onManageSharedLinks,
   onManageSync,
+  onRedeemGiftCard,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -202,7 +206,8 @@ const AccountActions: React.FC<AccountActionsProps> = ({
             {_('Restore Purchase')}
           </button>
         ) : (
-          userPlan !== 'free' && (
+          userPlan !== 'free' &&
+          !giftOnly && (
             <button
               onClick={onManageSubscription}
               className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
@@ -210,6 +215,14 @@ const AccountActions: React.FC<AccountActionsProps> = ({
               {_('Manage Subscription')}
             </button>
           )
+        )}
+        {onRedeemGiftCard && (
+          <button
+            onClick={onRedeemGiftCard}
+            className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
+          >
+            {_('Redeem Gift Card')}
+          </button>
         )}
         {onManageSync && (
           <button

@@ -8,6 +8,7 @@ import { processPurchaseData, VerifiedPurchase } from '@/libs/payment/iap/apple/
 const iapVerificationSchema = z.object({
   transactionId: z.string().min(1, 'Transaction ID is required'),
   originalTransactionId: z.string().min(1, 'Original Transaction ID is required'),
+  giftCardId: z.string().uuid().optional(),
 });
 
 export async function POST(request: Request) {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
   }
-  const { originalTransactionId } = validatedInput!;
+  const { originalTransactionId, giftCardId } = validatedInput!;
 
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
   if (!user || !token) {
@@ -55,7 +56,11 @@ export async function POST(request: Request) {
     });
 
     try {
-      const purchase: VerifiedPurchase = await processPurchaseData(user, verificationResult);
+      const purchase: VerifiedPurchase = await processPurchaseData(
+        user,
+        verificationResult,
+        giftCardId,
+      );
       return NextResponse.json({
         purchase,
         error: null,

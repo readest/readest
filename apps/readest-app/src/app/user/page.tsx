@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
@@ -14,6 +14,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
 import { useAvailablePlans } from '@/hooks/useAvailablePlans';
 import type { PlanType } from '@/types/quota';
+import type { GiftCardsResponse, GiftPrice } from '@/types/gift';
 import { navigateBackFromProfile } from '@/utils/nav';
 import { eventDispatcher } from '@/utils/event';
 import { isTauriAppPlatform } from '@/services/environment';
@@ -27,6 +28,7 @@ import {
   getSubscriptionSuccessUrl as getIAPSubscriptionSuccessUrl,
 } from '@/libs/payment/iap/client';
 import { isPurchaseProduct } from '@/libs/payment/iap/utils';
+import { claimGiftCards, fetchGiftCards, fetchGiftPrices } from '@/libs/payment/gift/client';
 import {
   createStripeCheckoutSession,
   redirectToStripeCheckout,
@@ -49,6 +51,9 @@ import SharedLinksSection from './components/SharedLinksSection';
 import { SyncPassphraseSection } from './components/SyncPassphraseSection';
 import { SyncCategoriesSection } from './components/SyncCategoriesSection';
 import Checkout from './components/Checkout';
+import GiftCardsSection, { GiftCardsView } from './components/gift/GiftCardsSection';
+
+type GiftInfo = Pick<GiftCardsResponse, 'giftPlan' | 'giftActiveUntil' | 'giftOnly'>;
 
 type CheckoutState = {
   clientSecret: string;
@@ -71,6 +76,15 @@ const ProfilePage = () => {
   const [showSyncManager, setShowSyncManager] = useState(
     () => searchParams?.get('section') === 'sync',
   );
+  // Read once: the code is taken out of the URL as soon as the page opens.
+  const [giftCode] = useState(() => searchParams?.get('gift') || undefined);
+  // A gift link opens redeeming; a returning gift checkout opens buying.
+  const [giftView, setGiftView] = useState<GiftCardsView | null>(() => {
+    const section = searchParams?.get('section');
+    if (giftCode || section === 'redeem') return 'redeem';
+    return section === 'gifts' ? 'give' : null;
+  });
+  const [giftInfo, setGiftInfo] = useState<GiftInfo | null>(null);
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({
     clientSecret: '',
     sessionId: '',
@@ -97,17 +111,86 @@ const ProfilePage = () => {
     if (isAuthenticated || signingOut) return;
 
     const timer = setTimeout(() => {
-      const redirect = searchParams?.get('redirect') || '/library';
+      // A gift link comes back here after sign-in, with its code.
+      const redirect = giftCode
+        ? `/user?gift=${encodeURIComponent(giftCode)}`
+        : searchParams?.get('redirect') || '/library';
       // Replace, so leaving the login page goes back to the opener (#7567).
       router.replace(`/auth?redirect=${encodeURIComponent(redirect)}`);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [mounted, user, token, appService, router, searchParams, signingOut]);
+  }, [mounted, user, token, appService, router, searchParams, signingOut, giftCode]);
+
+  useEffect(() => {
+    if (!giftCode) return;
+    // Keep the code out of the URL, history and analytics. A reload opens the
+    // redeem view without it; the redeem form keeps the code it was given.
+    const params = new URLSearchParams(window.location.search);
+    params.delete('gift');
+    params.set('section', 'redeem');
+    router.replace(`${window.location.pathname}?${params}`);
+    // Once on open.
+  }, []);
 
   useTheme({ systemUIVisible: false });
 
+  // Only the newest load sets the status: an older answer landing last would
+  // put back a stale "gift only" and send a gift holder to the portal.
+  const giftLoads = useRef(0);
+  const loadGiftInfo = useCallback(async (): Promise<GiftInfo | null> => {
+    const mine = ++giftLoads.current;
+    try {
+      const { giftPlan, giftActiveUntil, giftOnly } = await fetchGiftCards();
+      const info = { giftPlan, giftActiveUntil, giftOnly };
+      if (mine === giftLoads.current) setGiftInfo(info);
+      return info;
+    } catch (error) {
+      console.error('Failed to load gift cards:', error);
+      return null;
+    }
+  }, []);
+
+  // Claim gifts sent to this account's email, then learn whether a gift is
+  // what sets the plan, for the plan cards and Manage Subscription.
+  const signedIn = !!(user && token);
+  useEffect(() => {
+    if (!signedIn) return;
+    const claimThenLoad = async () => {
+      try {
+        if ((await claimGiftCards()) > 0) await refresh();
+      } catch (error) {
+        console.error('Failed to claim gift cards:', error);
+      }
+      await loadGiftInfo();
+    };
+    void claimThenLoad();
+  }, [signedIn, refresh, loadGiftInfo]);
+
+  const handleGiftPlanChanged = useCallback(() => {
+    void refresh();
+    void loadGiftInfo();
+  }, [refresh, loadGiftInfo]);
+
   const { quotas, userProfilePlan = 'free', customizationPurchased } = useQuotaStats();
+
+  // The Gift Card tile shows the lowest and the buy view sells at these, so
+  // they load once here. An IAP build sells gifts through its store only:
+  // nothing loads until the app service says which, never Stripe meanwhile.
+  const [giftPrices, setGiftPrices] = useState<GiftPrice[]>([]);
+  const giftsThroughIAP = appService?.hasIAP;
+  useEffect(() => {
+    if (giftsThroughIAP === undefined) return;
+    let stale = false;
+    fetchGiftPrices(giftsThroughIAP)
+      .then((next) => {
+        if (!stale) setGiftPrices(next);
+      })
+      .catch((error) => console.error('Failed to load gift prices:', error));
+    return () => {
+      stale = true;
+    };
+  }, [giftsThroughIAP]);
 
   const { availablePlans, iapAvailable } = useAvailablePlans({
     hasIAP: appService?.hasIAP || false,
@@ -132,6 +215,8 @@ const ProfilePage = () => {
       setShowSharedLinksManager(false);
     } else if (showSyncManager) {
       setShowSyncManager(false);
+    } else if (giftView) {
+      setGiftView(null);
     } else {
       // A book stays open beneath while this page sits over it (#6607).
       const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
@@ -144,8 +229,22 @@ const ProfilePage = () => {
 
     // Someone who already holds a subscription changes plan or billing period
     // in the billing portal. Opening a second checkout session would leave the
-    // old subscription running alongside the new one and bill them twice.
-    if (shouldUseBillingPortal(userProfilePlan, planType)) {
+    // old subscription running alongside the new one and bill them twice. A
+    // plan a gift alone sets has no subscription to change, so until the gift
+    // status is known the page asks for it rather than guess.
+    let giftOnly = giftInfo?.giftOnly;
+    if (!giftInfo && shouldUseBillingPortal(userProfilePlan, planType)) {
+      const info = await loadGiftInfo();
+      if (!info) {
+        eventDispatcher.dispatch('toast', {
+          type: 'info',
+          message: _('Failed to load gift cards'),
+        });
+        return;
+      }
+      giftOnly = info.giftOnly;
+    }
+    if (shouldUseBillingPortal(userProfilePlan, planType, giftOnly)) {
       await openStripePortal('subscription_update');
       return;
     }
@@ -298,6 +397,12 @@ const ProfilePage = () => {
   const handleManageSync = () => {
     setShowSyncManager(true);
   };
+  const handleGiftCard = () => {
+    setGiftView('give');
+  };
+  const handleRedeemGiftCard = () => {
+    setGiftView('redeem');
+  };
 
   if (!mounted) {
     return null;
@@ -320,6 +425,15 @@ const ProfilePage = () => {
   const userEmail = user?.email || '';
   const userPlanDetails =
     getPlanDetails(userProfilePlan, availablePlans) || getPlanDetails('free', availablePlans);
+  const buyThroughIAP = appService.hasIAP && iapAvailable;
+  const gift =
+    giftInfo && giftInfo.giftPlan !== 'free' && giftInfo.giftActiveUntil
+      ? {
+          plan: giftInfo.giftPlan,
+          activeUntil: giftInfo.giftActiveUntil,
+          giftOnly: giftInfo.giftOnly,
+        }
+      : undefined;
 
   return (
     <div
@@ -353,18 +467,23 @@ const ProfilePage = () => {
           ) : (
             <div className='sm:bg-base-200 overflow-hidden rounded-lg sm:p-6 sm:shadow-md'>
               <div className='flex flex-col gap-y-8'>
-                <div className='flex flex-col gap-y-8 px-6'>
-                  <UserInfo
-                    avatarUrl={avatarUrl}
-                    userFullName={userFullName}
-                    userEmail={userEmail}
-                    planDetails={userPlanDetails}
-                  />
+                {/* The gift buy page sells to whoever opens it; their own account
+                    isn't part of that. */}
+                {giftView !== 'give' && (
+                  <div className='flex flex-col gap-y-8 px-6'>
+                    <UserInfo
+                      avatarUrl={avatarUrl}
+                      userFullName={userFullName}
+                      userEmail={userEmail}
+                      planDetails={userPlanDetails}
+                    />
 
-                  {!showStorageManager && !showSharedLinksManager && !showSyncManager && (
-                    <UsageStats quotas={quotas} />
-                  )}
-                </div>
+                    {!showStorageManager &&
+                      !showSharedLinksManager &&
+                      !showSyncManager &&
+                      !giftView && <UsageStats quotas={quotas} />}
+                  </div>
+                )}
 
                 {showStorageManager ? (
                   <div className='flex flex-col gap-y-8 px-6'>
@@ -379,6 +498,28 @@ const ProfilePage = () => {
                     <SyncCategoriesSection />
                     <SyncPassphraseSection />
                   </div>
+                ) : giftView ? (
+                  // Without the account block above it, the buy page clears the
+                  // fixed header itself (64px on phones, 84px under macOS
+                  // traffic lights).
+                  <div
+                    className={clsx('flex flex-col gap-y-8 px-6', giftView === 'give' && 'pt-12')}
+                  >
+                    <GiftCardsSection
+                      view={giftView}
+                      prices={giftPrices}
+                      initialCode={giftCode}
+                      stripeSessionId={
+                        searchParams?.get('section') === 'gifts'
+                          ? searchParams.get('session_id') || undefined
+                          : undefined
+                      }
+                      // An IAP build sells gifts through its store only: store
+                      // prices or none, never Stripe while the store loads.
+                      useIAP={appService.hasIAP}
+                      onPlanChanged={handleGiftPlanChanged}
+                    />
+                  </div>
                 ) : (
                   <>
                     <div className='flex flex-col gap-y-8 px-2 sm:px-6'>
@@ -386,11 +527,10 @@ const ProfilePage = () => {
                         availablePlans={availablePlans}
                         userPlan={userProfilePlan}
                         customizationPurchased={customizationPurchased}
-                        onSubscribe={
-                          appService.hasIAP && iapAvailable
-                            ? handleIAPSubscribe
-                            : handleStripeSubscribe
-                        }
+                        gift={gift}
+                        giftPrices={giftPrices}
+                        onSubscribe={buyThroughIAP ? handleIAPSubscribe : handleStripeSubscribe}
+                        onGiftCard={handleGiftCard}
                       />
                     </div>
                     <div className='flex flex-col gap-y-8 px-6'>
@@ -400,6 +540,7 @@ const ProfilePage = () => {
                         userPlan={userProfilePlan}
                         customizationPurchased={customizationPurchased}
                         iapAvailable={iapAvailable}
+                        giftOnly={giftInfo?.giftOnly}
                         onLogout={handleLogout}
                         onResetPassword={handleResetPassword}
                         onUpdateEmail={handleUpdateEmail}
@@ -410,12 +551,14 @@ const ProfilePage = () => {
                         onManageStorage={handleManageStorage}
                         onManageSharedLinks={handleManageSharedLinks}
                         onManageSync={handleManageSync}
+                        onRedeemGiftCard={handleRedeemGiftCard}
                       />
                     </div>
                   </>
                 )}
 
-                <LegalLinks />
+                {/* The account page already carries them; the buy page ends at Buy. */}
+                {giftView !== 'give' && <LegalLinks />}
               </div>
             </div>
           )}

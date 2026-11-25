@@ -412,5 +412,9 @@ describe('yearly billing', () => {
       expect(shouldUseBillingPortal('plus', 'purchase')).toBe(false);
       expect(shouldUseBillingPortal('pro', 'purchase')).toBe(false);
     });
+
+    it('never routes a gift-only holder through the portal: they have no subscription', () => {
+      expect(shouldUseBillingPortal('plus', 'subscription', true)).toBe(false);
+    });
   });
 });
