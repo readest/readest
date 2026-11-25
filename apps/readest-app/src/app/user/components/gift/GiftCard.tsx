@@ -252,12 +252,26 @@ const GiftCard: React.FC<GiftCardProps> = ({
   // never runs into the signature and its ellipsis shows.
   const messageArea = useRef<HTMLDivElement>(null);
   const [lines, setLines] = useState<number>();
+
+  // A clamped paragraph still reports its whole height as scrollHeight. Run
+  // after the line count settles and on every resize: a narrower card can wrap
+  // onto a line more while the count stays the same.
+  const fit = useRef(() => {});
+  fit.current = () => {
+    const text = messageArea.current?.querySelector('p');
+    if (!text || lines === undefined || sizeIndex === SIZE_STEPS.length - 1) return;
+    if (text.scrollHeight > text.clientHeight + 1) {
+      setStep({ message: shown.message, by: by + 1 });
+    }
+  };
+
   useLayoutEffect(() => {
     const area = messageArea.current;
     if (!area || typeof ResizeObserver === 'undefined') return;
     const measure = () => {
       const lineHeight = parseFloat(getComputedStyle(area).lineHeight);
       if (lineHeight > 0) setLines(Math.max(1, Math.floor(area.clientHeight / lineHeight)));
+      fit.current();
     };
     measure();
     const observer = new ResizeObserver(measure);
@@ -265,14 +279,7 @@ const GiftCard: React.FC<GiftCardProps> = ({
     return () => observer.disconnect();
   }, [size]);
 
-  // A clamped paragraph still reports its whole height as scrollHeight.
-  useLayoutEffect(() => {
-    const text = messageArea.current?.querySelector('p');
-    if (!text || lines === undefined || sizeIndex === SIZE_STEPS.length - 1) return;
-    if (text.scrollHeight > text.clientHeight + 1) {
-      setStep({ message: shown.message, by: by + 1 });
-    }
-  }, [lines, sizeIndex, by, shown.message]);
+  useLayoutEffect(() => fit.current(), [lines, sizeIndex, by, shown.message]);
 
   return (
     <div

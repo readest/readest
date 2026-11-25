@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import GiftCard, {
   messageSize,
@@ -132,6 +132,43 @@ describe('GiftCard', () => {
 
     rerender(<GiftCard face={face({ message: '新年快乐，多读书' })} />);
     expect(screen.getByText('新年快乐，多读书').className).not.toContain('italic');
+  });
+
+  // Review (CodeRabbit): a narrower card can wrap the message onto one line
+  // more while holding the same number of lines; the fit check reruns on any
+  // resize, not only when that number changes.
+  it('steps the message down when a resize makes it overflow at the same line count', () => {
+    let resized = () => {};
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          resized = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    vi.spyOn(window, 'getComputedStyle').mockImplementation(
+      () => ({ lineHeight: '15px', getPropertyValue: () => '' }) as unknown as CSSStyleDeclaration,
+    );
+    const LONG = 'word '.repeat(60).trim();
+    render(<GiftCard face={face({ message: LONG })} side='back' />);
+    const text = screen.getByText(LONG);
+    const area = text.parentElement!;
+    const size = (px: number) => ({ configurable: true, get: () => px });
+    Object.defineProperty(area, 'clientHeight', size(105));
+    Object.defineProperty(text, 'clientHeight', size(105));
+    Object.defineProperty(text, 'scrollHeight', size(105));
+    act(() => resized());
+    expect(area.className).toContain('text-[max(11px,3cqw)]');
+
+    // Narrower: still 7 lines of room, but the message now needs 8.
+    Object.defineProperty(text, 'scrollHeight', size(120));
+    act(() => resized());
+
+    expect(area.className).toContain('text-[max(10px,2.7cqw)]');
+    vi.unstubAllGlobals();
   });
 
   it('writes the year in Roman numerals', () => {

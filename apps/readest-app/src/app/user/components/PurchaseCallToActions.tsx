@@ -32,7 +32,8 @@ const productButtonClass = clsx(
 );
 
 const tileTextClass = 'text-sm font-semibold';
-const tilePriceClass = 'text-xs font-bold opacity-80';
+// E-ink keeps text at full ink: its rules flatten colours, not opacity.
+const tilePriceClass = 'text-xs font-bold not-eink:opacity-80';
 
 const formatPrice = (price: number, currency: string) =>
   new Intl.NumberFormat(getLocale(), { style: 'currency', currency }).format(price / 100);
