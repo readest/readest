@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "Toll összenyomás",
   "Pen Slide Up": "Toll csúsztatás felfelé",
   "Pen Slide Down": "Toll csúsztatás lefelé",
-  "Gift Cards": "Ajándékkártyák",
   "Gift card": "Ajándékkártya",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 év",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "Az ajándékkártya megvásárlása sikertelen",
   "Failed to update the gift card": "Az ajándékkártya frissítése sikertelen",
   "Give a Gift": "Ajándékozz",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Ajándékozz valakinek egy évnyi Readest Plus vagy Pro csomagot, vagy váltsd be a kapott kártyát",
   "Received": "Kapott",
   "Redeem a Code": "Kód beváltása",
   "Sent": "Küldött",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "Ajándék, eddig: {{date}}",
   "Ex dono": "Ex dono",
   "Turn over": "Kártya megfordítása",
-  "Turn the card over to read the message": "Fordítsa meg a kártyát az üzenet elolvasásához"
+  "Turn the card over to read the message": "Fordítsa meg a kártyát az üzenet elolvasásához",
+  "Redeem Gift Card": "Ajándékkártya beváltása",
+  "Cards sent to your email appear here on their own": "Az e-mail-címedre küldött kártyák maguktól megjelennek itt",
+  "Gift Card": "Ajándékkártya",
+  "Give someone a year of Readest Plus or Pro": "Ajándékozz valakinek egy évnyi Readest Plus vagy Pro csomagot"
 }

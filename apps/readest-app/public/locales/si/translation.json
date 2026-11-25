@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "පෑන තද කිරීම",
   "Pen Slide Up": "පෑන ඉහළට ලිස්සීම",
   "Pen Slide Down": "පෑන පහළට ලිස්සීම",
-  "Gift Cards": "තෑගි කාඩ්පත්",
   "Gift card": "තෑගි කාඩ්පත",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "වසර 1",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "තෑගි කාඩ්පත මිලදී ගැනීමට අසමත් විය",
   "Failed to update the gift card": "තෑගි කාඩ්පත යාවත්කාලීන කිරීමට අසමත් විය",
   "Give a Gift": "තෑග්ගක් දෙන්න",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "කෙනෙකුට Readest Plus හෝ Pro වසරක් තෑගි කරන්න, නැතහොත් ඔබට ලැබුණු කාඩ්පතක් මුදාගන්න",
   "Received": "ලැබුණු",
   "Redeem a Code": "කේතයක් මුදාගන්න",
   "Sent": "යැවූ",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "තෑග්ග, {{date}} දක්වා",
   "Ex dono": "තිළිණයකි",
   "Turn over": "කාඩ්පත පෙරළන්න",
-  "Turn the card over to read the message": "පණිවිඩය කියවීමට කාඩ්පත පෙරළන්න"
+  "Turn the card over to read the message": "පණිවිඩය කියවීමට කාඩ්පත පෙරළන්න",
+  "Redeem Gift Card": "තෑගි කාඩ්පත මුදාගන්න",
+  "Cards sent to your email appear here on their own": "ඔබගේ ඊමේල් වෙත යවන ලද කාඩ්පත් ස්වයංක්‍රීයව මෙහි දිස් වේ",
+  "Gift Card": "තෑගි කාඩ්පත",
+  "Give someone a year of Readest Plus or Pro": "කෙනෙකුට Readest Plus හෝ Pro වසරක් තෑගි කරන්න"
 }

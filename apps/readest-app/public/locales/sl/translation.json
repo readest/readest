@@ -3122,7 +3122,6 @@
   "Pen Squeeze": "Stisk pisala",
   "Pen Slide Up": "Drsenje navzgor s pisalom",
   "Pen Slide Down": "Drsenje navzdol s pisalom",
-  "Gift Cards": "Darilne kartice",
   "Gift card": "Darilna kartica",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 leto",
@@ -3135,7 +3134,6 @@
   "Failed to buy the gift card": "Darilne kartice ni bilo mogoče kupiti",
   "Failed to update the gift card": "Darilne kartice ni bilo mogoče posodobiti",
   "Give a Gift": "Podari darilo",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Podarite komu leto paketa Readest Plus ali Pro ali unovčite prejeto kartico",
   "Received": "Prejete",
   "Redeem a Code": "Unovči kodo",
   "Sent": "Poslane",
@@ -3168,5 +3166,9 @@
   "Gift, until {{date}}": "Darilo, do {{date}}",
   "Ex dono": "Ex dono",
   "Turn over": "Obrni kartico",
-  "Turn the card over to read the message": "Obrnite kartico, da preberete sporočilo"
+  "Turn the card over to read the message": "Obrnite kartico, da preberete sporočilo",
+  "Redeem Gift Card": "Unovči darilno kartico",
+  "Cards sent to your email appear here on their own": "Kartice, poslane na vaš e-poštni naslov, se tukaj prikažejo samodejno",
+  "Gift Card": "Darilna kartica",
+  "Give someone a year of Readest Plus or Pro": "Podarite komu leto paketa Readest Plus ali Pro"
 }

@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "Pennans klämning",
   "Pen Slide Up": "Pennans glid uppåt",
   "Pen Slide Down": "Pennans glid nedåt",
-  "Gift Cards": "Presentkort",
   "Gift card": "Presentkort",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 år",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "Det gick inte att köpa presentkortet",
   "Failed to update the gift card": "Det gick inte att uppdatera presentkortet",
   "Give a Gift": "Ge en present",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Ge någon ett år av Readest Plus eller Pro, eller lös in ett kort du fått",
   "Received": "Mottagna",
   "Redeem a Code": "Lös in en kod",
   "Sent": "Skickade",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "Present, till {{date}}",
   "Ex dono": "Ex dono",
   "Turn over": "Vänd på kortet",
-  "Turn the card over to read the message": "Vänd på kortet för att läsa meddelandet"
+  "Turn the card over to read the message": "Vänd på kortet för att läsa meddelandet",
+  "Redeem Gift Card": "Lös in presentkort",
+  "Cards sent to your email appear here on their own": "Kort som skickats till din e-post dyker upp här av sig själva",
+  "Gift Card": "Presentkort",
+  "Give someone a year of Readest Plus or Pro": "Ge någon ett år av Readest Plus eller Pro"
 }

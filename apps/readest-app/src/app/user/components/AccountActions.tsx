@@ -126,7 +126,7 @@ interface AccountActionsProps {
   onManageStorage?: () => void;
   onManageSharedLinks?: () => void;
   onManageSync?: () => void;
-  onManageGiftCards?: () => void;
+  onRedeemGiftCard?: () => void;
 }
 
 const AccountActions: React.FC<AccountActionsProps> = ({
@@ -146,7 +146,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({
   onManageStorage,
   onManageSharedLinks,
   onManageSync,
-  onManageGiftCards,
+  onRedeemGiftCard,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -216,12 +216,12 @@ const AccountActions: React.FC<AccountActionsProps> = ({
             </button>
           )
         )}
-        {onManageGiftCards && (
+        {onRedeemGiftCard && (
           <button
-            onClick={onManageGiftCards}
+            onClick={onRedeemGiftCard}
             className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
           >
-            {_('Gift Cards')}
+            {_('Redeem Gift Card')}
           </button>
         )}
         {onManageSync && (

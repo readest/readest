@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "பேனா அழுத்துதல்",
   "Pen Slide Up": "பேனா மேலே சறுக்கல்",
   "Pen Slide Down": "பேனா கீழே சறுக்கல்",
-  "Gift Cards": "பரிசு அட்டைகள்",
   "Gift card": "பரிசு அட்டை",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 ஆண்டு",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "பரிசு அட்டையை வாங்க முடியவில்லை",
   "Failed to update the gift card": "பரிசு அட்டையைப் புதுப்பிக்க முடியவில்லை",
   "Give a Gift": "பரிசளிக்கவும்",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "ஒருவருக்கு ஓராண்டு Readest Plus அல்லது Pro-வைப் பரிசளிக்கவும், அல்லது உங்களுக்குக் கிடைத்த அட்டையைப் பயன்படுத்தவும்",
   "Received": "பெற்றவை",
   "Redeem a Code": "குறியீட்டைப் பயன்படுத்தவும்",
   "Sent": "அனுப்பியவை",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "பரிசு, {{date}} வரை",
   "Ex dono": "அன்புப் பரிசு",
   "Turn over": "அட்டையைத் திருப்பு",
-  "Turn the card over to read the message": "செய்தியைப் படிக்க அட்டையைத் திருப்புங்கள்"
+  "Turn the card over to read the message": "செய்தியைப் படிக்க அட்டையைத் திருப்புங்கள்",
+  "Redeem Gift Card": "பரிசு அட்டையைப் பயன்படுத்தவும்",
+  "Cards sent to your email appear here on their own": "உங்கள் மின்னஞ்சலுக்கு அனுப்பப்பட்ட அட்டைகள் தானாகவே இங்கே தோன்றும்",
+  "Gift Card": "பரிசு அட்டை",
+  "Give someone a year of Readest Plus or Pro": "ஒருவருக்கு ஓராண்டு Readest Plus அல்லது Pro-வைப் பரிசளிக்கவும்"
 }

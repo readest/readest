@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GiftCardsSection from '@/app/user/components/gift/GiftCardsSection';
-import type { GiftCardsResponse, GiftPrice, SentGiftCard } from '@/types/gift';
+import type { GiftCardsResponse, GiftPrice, ReceivedGiftCard, SentGiftCard } from '@/types/gift';
 
 const h = vi.hoisted(() => ({
   fetchGiftCards: vi.fn(),
@@ -93,7 +93,7 @@ const sentCard = (overrides: Partial<SentGiftCard> = {}): SentGiftCard => ({
 });
 
 const renderSection = (props: Partial<Parameters<typeof GiftCardsSection>[0]> = {}) =>
-  render(<GiftCardsSection useIAP={false} onPlanChanged={vi.fn()} {...props} />);
+  render(<GiftCardsSection view='give' useIAP={false} onPlanChanged={vi.fn()} {...props} />);
 
 const buyButton = () => screen.findByRole('button', { name: /^Buy for / });
 const sentRegion = () => screen.getByRole('region', { name: 'Sent' });
@@ -118,6 +118,46 @@ afterEach(() => {
 });
 
 describe('GiftCardsSection', () => {
+  describe('views', () => {
+    const receivedCard: ReceivedGiftCard = {
+      id: 'card-2',
+      tier: 'pro',
+      recipientName: 'Alex',
+      senderName: 'Sam',
+      message: 'For you',
+      startsAt: '2026-11-21T10:00:00Z',
+      endsAt: '2027-11-21T10:00:00Z',
+    };
+
+    beforeEach(() => {
+      h.fetchGiftCards.mockResolvedValue(
+        response({ sent: [sentCard()], received: [receivedCard] }),
+      );
+    });
+
+    it('the give view holds the composer and the cards you bought', async () => {
+      renderSection({ view: 'give' });
+
+      expect(await buyButton()).toBeTruthy();
+      expect(await screen.findByRole('region', { name: 'Sent' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Give a Gift' })).toBeTruthy();
+      expect(screen.queryByRole('textbox', { name: 'Gift code' })).toBeNull();
+      expect(screen.queryByRole('region', { name: 'Received' })).toBeNull();
+    });
+
+    it('the redeem view holds the redeem form and the cards you were given', async () => {
+      renderSection({ view: 'redeem' });
+
+      expect(await screen.findByRole('region', { name: 'Received' })).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Redeem Gift Card' })).toBeTruthy();
+      expect(screen.getByRole('textbox', { name: 'Gift code' })).toBeTruthy();
+      expect(screen.queryByRole('region', { name: 'Sent' })).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Buy for / })).toBeNull();
+      // Nothing is sold here, so no prices are fetched.
+      expect(h.fetchGiftPrices).not.toHaveBeenCalled();
+    });
+  });
+
   it('buying with Stripe creates a draft then checkout with its id', async () => {
     renderSection();
     await waitFor(() => expect(h.fetchGiftPrices).toHaveBeenCalledWith(false));
@@ -274,7 +314,7 @@ describe('GiftCardsSection', () => {
   it('redeem shows the shared error for a bad code', async () => {
     h.redeemGiftCode.mockRejectedValue(new Error('invalid_or_used'));
     const onPlanChanged = vi.fn();
-    renderSection({ initialCode: 'ABCD-EFGH-JKMN-PQRS', onPlanChanged });
+    renderSection({ view: 'redeem', initialCode: 'ABCD-EFGH-JKMN-PQRS', onPlanChanged });
 
     const input = (await screen.findByRole('textbox', { name: 'Gift code' })) as HTMLInputElement;
     expect(input.value).toBe('ABCD-EFGH-JKMN-PQRS');
@@ -288,7 +328,7 @@ describe('GiftCardsSection', () => {
   it('a redeem that returns no card still counts as redeemed', async () => {
     h.redeemGiftCode.mockResolvedValue(null);
     const onPlanChanged = vi.fn();
-    renderSection({ initialCode: 'ABCD-EFGH-JKMN-PQRS', onPlanChanged });
+    renderSection({ view: 'redeem', initialCode: 'ABCD-EFGH-JKMN-PQRS', onPlanChanged });
 
     await screen.findByRole('textbox', { name: 'Gift code' });
     fireEvent.click(screen.getByRole('button', { name: 'Redeem' }));

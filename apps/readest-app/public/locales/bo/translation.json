@@ -2885,7 +2885,6 @@
   "Pen Squeeze": "པེན་ བཙིར་བ།",
   "Pen Slide Up": "པེན་ གོང་དུ་བཤུད་པ།",
   "Pen Slide Down": "པེན་ འོག་ཏུ་བཤུད་པ།",
-  "Gift Cards": "ལེགས་སྐྱེས་ཤོག་བྱང་།",
   "Gift card": "ལེགས་སྐྱེས་ཤོག་བྱང་།",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "ལོ་གཅིག",
@@ -2898,7 +2897,6 @@
   "Failed to buy the gift card": "ལེགས་སྐྱེས་ཤོག་བྱང་ཉོ་མ་ཐུབ།",
   "Failed to update the gift card": "ལེགས་སྐྱེས་ཤོག་བྱང་གསར་བསྒྱུར་བྱས་མ་ཐུབ།",
   "Give a Gift": "ལེགས་སྐྱེས་འབུལ།",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "མི་ཞིག་ལ་ Readest Plus ཡང་ན་ Pro ལོ་གཅིག་ལེགས་སྐྱེས་སུ་འབུལ། ཡང་ན་ཁྱེད་ལ་ཐོབ་པའི་ཤོག་བྱང་བེད་སྤྱོད།",
   "Received": "ཐོབ་པ།",
   "Redeem a Code": "ཨང་རྟགས་བེད་སྤྱོད།",
   "Sent": "བཏང་ཟིན།",
@@ -2931,5 +2929,9 @@
   "Gift, until {{date}}": "ལེགས་སྐྱེས། {{date}} བར།",
   "Ex dono": "ལེགས་སྐྱེས།",
   "Turn over": "ཤོག་བྱང་སློག་པ།",
-  "Turn the card over to read the message": "འཕྲིན་ཡིག་ཀློག་པར་ཤོག་བྱང་སློག་རོགས།"
+  "Turn the card over to read the message": "འཕྲིན་ཡིག་ཀློག་པར་ཤོག་བྱང་སློག་རོགས།",
+  "Redeem Gift Card": "ལེགས་སྐྱེས་ཤོག་བྱང་བེད་སྤྱོད།",
+  "Cards sent to your email appear here on their own": "ཁྱེད་ཀྱི་གློག་འཕྲིན་དུ་བསྐུར་བའི་ཤོག་བྱང་རྣམས་འདིར་རང་བཞིན་གྱིས་མངོན།",
+  "Gift Card": "ལེགས་སྐྱེས་ཤོག་བྱང་།",
+  "Give someone a year of Readest Plus or Pro": "མི་ཞིག་ལ་ Readest Plus ཡང་ན་ Pro ལོ་གཅིག་ལེགས་སྐྱེས་སུ་འབུལ།"
 }

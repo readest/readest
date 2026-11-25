@@ -132,6 +132,62 @@ describe('PlansComparison', () => {
     expect(lifetimeCard.textContent).not.toContain('billed yearly');
   });
 
+  describe('the Gift Card button', () => {
+    const product = (productId: string, price: number, productName: string): AvailablePlan => ({
+      ...plan('purchase', 'lifetime', price, productId),
+      productName,
+    });
+    const STORAGE = product('price_storage_1gb', 199, '1 GB Storage');
+    const CUSTOMIZATION = product('price_customization', 999, 'Full Customization');
+
+    it.each([
+      ['for sale', [STORAGE, CUSTOMIZATION], false],
+      ['owned', [STORAGE, CUSTOMIZATION], true],
+      ['coming soon', [STORAGE], false],
+    ] as const)('follows Full Customization (%s) in the Lifetime card and opens the gift view', (_state, products, customizationPurchased) => {
+      const onGiftCard = vi.fn();
+      const onSubscribe = vi.fn();
+      render(
+        <PlansComparison
+          availablePlans={[...WITH_YEARLY, ...products]}
+          userPlan='free'
+          customizationPurchased={customizationPurchased}
+          onSubscribe={onSubscribe}
+          onGiftCard={onGiftCard}
+        />,
+      );
+
+      const card = within(planCard('Lifetime Plan'));
+      const customization = card.getByText(/^Full Customization/);
+      const giftCard = card.getByRole('button', { name: 'Gift Card' });
+      expect(
+        customization.compareDocumentPosition(giftCard) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(card.getAllByRole('button').at(-1)).toBe(giftCard);
+
+      fireEvent.click(giftCard);
+      expect(onGiftCard).toHaveBeenCalledTimes(1);
+      expect(onSubscribe).not.toHaveBeenCalled();
+    });
+
+    // The Gift Card view also lists the cards you bought, so it must stay
+    // reachable while the one-time products are missing.
+    it('shows with no one-time products loaded', () => {
+      render(
+        <PlansComparison
+          availablePlans={WITH_YEARLY}
+          userPlan='free'
+          onSubscribe={vi.fn()}
+          onGiftCard={vi.fn()}
+        />,
+      );
+
+      expect(
+        within(planCard('Lifetime Plan')).getByRole('button', { name: 'Gift Card' }),
+      ).toBeTruthy();
+    });
+  });
+
   describe('gift holders', () => {
     const GIFT_UNTIL = '2027-06-15T12:00:00.000Z';
     const gift = (giftOnly: boolean, tier: GiftTier = 'plus') => ({

@@ -2,7 +2,7 @@
 // The account page opens the Gift Cards view from a Stripe return. An IAP
 // build sells gifts through its store only, even while the store is still
 // being checked: Stripe must never show up inside an App Store or Play build.
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import ProfilePage from '@/app/user/page';
 
@@ -11,6 +11,8 @@ const STRIPE_RETURN = { section: 'gifts', session_id: 'cs_returning' };
 const mocks = vi.hoisted(() => ({
   router: { push: vi.fn(), replace: vi.fn(), back: vi.fn() },
   sectionProps: vi.fn(),
+  plansProps: vi.fn(),
+  accountProps: vi.fn(),
   params: new URLSearchParams(),
 }));
 
@@ -63,7 +65,18 @@ vi.mock('@/app/user/components/UserInfo', () => ({ default: () => null }));
 vi.mock('@/app/user/components/UsageStats', () => ({
   default: () => <div>usage stats</div>,
 }));
-vi.mock('@/app/user/components/PlansComparison', () => ({ default: () => null }));
+vi.mock('@/app/user/components/PlansComparison', () => ({
+  default: (props: Record<string, unknown>) => {
+    mocks.plansProps(props);
+    return null;
+  },
+}));
+vi.mock('@/app/user/components/AccountActions', () => ({
+  default: (props: Record<string, unknown>) => {
+    mocks.accountProps(props);
+    return null;
+  },
+}));
 vi.mock('@/app/user/components/StorageManager', () => ({ default: () => null }));
 vi.mock('@/app/user/components/SharedLinksSection', () => ({ default: () => null }));
 vi.mock('@/app/user/components/SyncPassphraseSection', () => ({
@@ -95,7 +108,7 @@ it('opens the Gift Cards view from a Stripe return and sells through the store o
   expect(screen.getByText('gift cards view')).toBeTruthy();
   expect(screen.queryByText('usage stats')).toBeNull();
   expect(mocks.sectionProps).toHaveBeenLastCalledWith(
-    expect.objectContaining({ useIAP: true, stripeSessionId: 'cs_returning' }),
+    expect.objectContaining({ view: 'give', useIAP: true, stripeSessionId: 'cs_returning' }),
   );
 });
 
@@ -113,9 +126,44 @@ it('takes a gift link code out of the URL and keeps it in the redeem form', () =
   const { rerender } = render(<ProfilePage />);
   rerender(<ProfilePage />);
 
-  expect(mocks.router.replace).toHaveBeenCalledWith('/user?section=gifts');
+  expect(mocks.router.replace).toHaveBeenCalledWith('/user?section=redeem');
   expect(screen.getByText('gift cards view')).toBeTruthy();
   expect(mocks.sectionProps).toHaveBeenLastCalledWith(
-    expect.objectContaining({ initialCode: CODE }),
+    expect.objectContaining({ view: 'redeem', initialCode: CODE }),
+  );
+});
+
+it('reopens the redeem view on a reload after a gift link', () => {
+  mocks.params = new URLSearchParams({ section: 'redeem' });
+  render(<ProfilePage />);
+
+  expect(mocks.sectionProps).toHaveBeenLastCalledWith(
+    expect.objectContaining({ view: 'redeem', stripeSessionId: undefined }),
+  );
+});
+
+const lastProps = <T,>(fn: ReturnType<typeof vi.fn>) => fn.mock.lastCall?.[0] as T;
+
+it.each([
+  [
+    'the Gift Card tile',
+    'give',
+    () => lastProps<{ onGiftCard: () => void }>(mocks.plansProps).onGiftCard(),
+  ],
+  [
+    'Redeem Gift Card',
+    'redeem',
+    () => lastProps<{ onRedeemGiftCard: () => void }>(mocks.accountProps).onRedeemGiftCard(),
+  ],
+] as const)('%s opens the %s view', (_name, view, open) => {
+  mocks.params = new URLSearchParams();
+  render(<ProfilePage />);
+  expect(screen.queryByText('gift cards view')).toBeNull();
+
+  act(() => open());
+
+  expect(screen.getByText('gift cards view')).toBeTruthy();
+  expect(mocks.sectionProps).toHaveBeenLastCalledWith(
+    expect.objectContaining({ view, stripeSessionId: undefined }),
   );
 });

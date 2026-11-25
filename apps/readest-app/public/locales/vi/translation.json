@@ -2885,7 +2885,6 @@
   "Pen Squeeze": "Bóp bút",
   "Pen Slide Up": "Vuốt lên bút",
   "Pen Slide Down": "Vuốt xuống bút",
-  "Gift Cards": "Thẻ quà tặng",
   "Gift card": "Thẻ quà tặng",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 năm",
@@ -2898,7 +2897,6 @@
   "Failed to buy the gift card": "Không mua được thẻ quà tặng",
   "Failed to update the gift card": "Không cập nhật được thẻ quà tặng",
   "Give a Gift": "Tặng quà",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Tặng ai đó một năm Readest Plus hoặc Pro, hoặc đổi thẻ bạn được tặng",
   "Received": "Đã nhận",
   "Redeem a Code": "Đổi mã",
   "Sent": "Đã gửi",
@@ -2931,5 +2929,9 @@
   "Gift, until {{date}}": "Quà tặng, đến {{date}}",
   "Ex dono": "Kính tặng",
   "Turn over": "Lật thẻ",
-  "Turn the card over to read the message": "Lật thẻ để đọc lời nhắn"
+  "Turn the card over to read the message": "Lật thẻ để đọc lời nhắn",
+  "Redeem Gift Card": "Đổi thẻ quà tặng",
+  "Cards sent to your email appear here on their own": "Thẻ được gửi tới email của bạn sẽ tự động hiện ở đây",
+  "Gift Card": "Thẻ quà tặng",
+  "Give someone a year of Readest Plus or Pro": "Tặng ai đó một năm Readest Plus hoặc Pro"
 }

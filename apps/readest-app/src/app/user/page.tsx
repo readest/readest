@@ -51,7 +51,7 @@ import SharedLinksSection from './components/SharedLinksSection';
 import { SyncPassphraseSection } from './components/SyncPassphraseSection';
 import { SyncCategoriesSection } from './components/SyncCategoriesSection';
 import Checkout from './components/Checkout';
-import GiftCardsSection from './components/gift/GiftCardsSection';
+import GiftCardsSection, { GiftCardsView } from './components/gift/GiftCardsSection';
 
 type GiftInfo = Pick<GiftCardsResponse, 'giftPlan' | 'giftActiveUntil' | 'giftOnly'>;
 
@@ -78,9 +78,12 @@ const ProfilePage = () => {
   );
   // Read once: the code is taken out of the URL as soon as the page opens.
   const [giftCode] = useState(() => searchParams?.get('gift') || undefined);
-  const [showGiftCards, setShowGiftCards] = useState(
-    () => searchParams?.get('section') === 'gifts' || !!giftCode,
-  );
+  // A gift link opens redeeming; a returning gift checkout opens buying.
+  const [giftView, setGiftView] = useState<GiftCardsView | null>(() => {
+    const section = searchParams?.get('section');
+    if (giftCode || section === 'redeem') return 'redeem';
+    return section === 'gifts' ? 'give' : null;
+  });
   const [giftInfo, setGiftInfo] = useState<GiftInfo | null>(null);
   const [checkoutState, setCheckoutState] = useState<CheckoutState>({
     clientSecret: '',
@@ -122,10 +125,10 @@ const ProfilePage = () => {
   useEffect(() => {
     if (!giftCode) return;
     // Keep the code out of the URL, history and analytics. A reload opens the
-    // Gift Cards view without it; the redeem form keeps the code it was given.
+    // redeem view without it; the redeem form keeps the code it was given.
     const params = new URLSearchParams(window.location.search);
     params.delete('gift');
-    params.set('section', 'gifts');
+    params.set('section', 'redeem');
     router.replace(`${window.location.pathname}?${params}`);
     // Once on open.
   }, []);
@@ -187,8 +190,8 @@ const ProfilePage = () => {
       setShowSharedLinksManager(false);
     } else if (showSyncManager) {
       setShowSyncManager(false);
-    } else if (showGiftCards) {
-      setShowGiftCards(false);
+    } else if (giftView) {
+      setGiftView(null);
     } else {
       // A book stays open beneath while this page sits over it (#6607).
       const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
@@ -355,8 +358,11 @@ const ProfilePage = () => {
   const handleManageSync = () => {
     setShowSyncManager(true);
   };
-  const handleManageGiftCards = () => {
-    setShowGiftCards(true);
+  const handleGiftCard = () => {
+    setGiftView('give');
+  };
+  const handleRedeemGiftCard = () => {
+    setGiftView('redeem');
   };
 
   if (!mounted) {
@@ -433,7 +439,7 @@ const ProfilePage = () => {
                   {!showStorageManager &&
                     !showSharedLinksManager &&
                     !showSyncManager &&
-                    !showGiftCards && <UsageStats quotas={quotas} />}
+                    !giftView && <UsageStats quotas={quotas} />}
                 </div>
 
                 {showStorageManager ? (
@@ -449,9 +455,10 @@ const ProfilePage = () => {
                     <SyncCategoriesSection />
                     <SyncPassphraseSection />
                   </div>
-                ) : showGiftCards ? (
+                ) : giftView ? (
                   <div className='flex flex-col gap-y-8 px-6'>
                     <GiftCardsSection
+                      view={giftView}
                       initialCode={giftCode}
                       stripeSessionId={
                         searchParams?.get('section') === 'gifts'
@@ -473,6 +480,7 @@ const ProfilePage = () => {
                         customizationPurchased={customizationPurchased}
                         gift={gift}
                         onSubscribe={buyThroughIAP ? handleIAPSubscribe : handleStripeSubscribe}
+                        onGiftCard={handleGiftCard}
                       />
                     </div>
                     <div className='flex flex-col gap-y-8 px-6'>
@@ -493,7 +501,7 @@ const ProfilePage = () => {
                         onManageStorage={handleManageStorage}
                         onManageSharedLinks={handleManageSharedLinks}
                         onManageSync={handleManageSync}
-                        onManageGiftCards={handleManageGiftCards}
+                        onRedeemGiftCard={handleRedeemGiftCard}
                       />
                     </div>
                   </>

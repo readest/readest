@@ -3043,7 +3043,6 @@
   "Pen Squeeze": "Pression du stylet",
   "Pen Slide Up": "Glissement du stylet vers le haut",
   "Pen Slide Down": "Glissement du stylet vers le bas",
-  "Gift Cards": "Cartes cadeaux",
   "Gift card": "Carte cadeau",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 an",
@@ -3056,7 +3055,6 @@
   "Failed to buy the gift card": "Échec de l'achat de la carte cadeau",
   "Failed to update the gift card": "Échec de la mise à jour de la carte cadeau",
   "Give a Gift": "Offrir un cadeau",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Offrez un an de Readest Plus ou Pro, ou utilisez une carte qu'on vous a offerte",
   "Received": "Reçues",
   "Redeem a Code": "Utiliser un code",
   "Sent": "Envoyées",
@@ -3089,5 +3087,9 @@
   "Gift, until {{date}}": "Cadeau, jusqu'au {{date}}",
   "Ex dono": "Ex dono",
   "Turn over": "Retourner la carte",
-  "Turn the card over to read the message": "Retournez la carte pour lire le message"
+  "Turn the card over to read the message": "Retournez la carte pour lire le message",
+  "Redeem Gift Card": "Utiliser une carte cadeau",
+  "Cards sent to your email appear here on their own": "Les cartes envoyées à votre adresse e-mail apparaissent ici d'elles-mêmes",
+  "Gift Card": "Carte cadeau",
+  "Give someone a year of Readest Plus or Pro": "Offrez un an de Readest Plus ou Pro"
 }

@@ -2885,7 +2885,6 @@
   "Pen Squeeze": "บีบปากกา",
   "Pen Slide Up": "เลื่อนขึ้นบนปากกา",
   "Pen Slide Down": "เลื่อนลงบนปากกา",
-  "Gift Cards": "บัตรของขวัญ",
   "Gift card": "บัตรของขวัญ",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 ปี",
@@ -2898,7 +2897,6 @@
   "Failed to buy the gift card": "ซื้อบัตรของขวัญไม่สำเร็จ",
   "Failed to update the gift card": "อัปเดตบัตรของขวัญไม่สำเร็จ",
   "Give a Gift": "มอบของขวัญ",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "มอบ Readest Plus หรือ Pro หนึ่งปีให้ใครสักคน หรือแลกบัตรที่คุณได้รับ",
   "Received": "ที่ได้รับ",
   "Redeem a Code": "แลกโค้ด",
   "Sent": "ที่ส่งแล้ว",
@@ -2931,5 +2929,9 @@
   "Gift, until {{date}}": "ของขวัญ ถึง {{date}}",
   "Ex dono": "ด้วยรัก",
   "Turn over": "พลิกบัตร",
-  "Turn the card over to read the message": "พลิกบัตรเพื่ออ่านข้อความ"
+  "Turn the card over to read the message": "พลิกบัตรเพื่ออ่านข้อความ",
+  "Redeem Gift Card": "แลกบัตรของขวัญ",
+  "Cards sent to your email appear here on their own": "บัตรที่ส่งถึงอีเมลของคุณจะแสดงที่นี่โดยอัตโนมัติ",
+  "Gift Card": "บัตรของขวัญ",
+  "Give someone a year of Readest Plus or Pro": "มอบ Readest Plus หรือ Pro หนึ่งปีให้ใครสักคน"
 }

@@ -3280,7 +3280,6 @@
   "Pen Squeeze": "ضغط القلم",
   "Pen Slide Up": "انزلاق القلم لأعلى",
   "Pen Slide Down": "انزلاق القلم لأسفل",
-  "Gift Cards": "بطاقات الهدايا",
   "Gift card": "بطاقة هدية",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "سنة واحدة",
@@ -3293,7 +3292,6 @@
   "Failed to buy the gift card": "فشل في شراء بطاقة الهدية",
   "Failed to update the gift card": "فشل في تحديث بطاقة الهدية",
   "Give a Gift": "قدّم هدية",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "أهدِ أحدهم سنة من Readest Plus أو Pro، أو استرد بطاقة أُهديت إليك",
   "Received": "المستلمة",
   "Redeem a Code": "استرداد رمز",
   "Sent": "المُرسلة",
@@ -3326,5 +3324,9 @@
   "Gift, until {{date}}": "هدية، حتى {{date}}",
   "Ex dono": "إهداء",
   "Turn over": "اقلب البطاقة",
-  "Turn the card over to read the message": "اقلب البطاقة لقراءة الرسالة"
+  "Turn the card over to read the message": "اقلب البطاقة لقراءة الرسالة",
+  "Redeem Gift Card": "استرداد بطاقة هدية",
+  "Cards sent to your email appear here on their own": "تظهر هنا تلقائيًا البطاقات المرسلة إلى بريدك الإلكتروني",
+  "Gift Card": "بطاقة هدية",
+  "Give someone a year of Readest Plus or Pro": "أهدِ أحدهم سنة من Readest Plus أو Pro"
 }

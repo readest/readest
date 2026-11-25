@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "पेन स्क्वीज़",
   "Pen Slide Up": "पेन ऊपर स्लाइड",
   "Pen Slide Down": "पेन नीचे स्लाइड",
-  "Gift Cards": "गिफ़्ट कार्ड",
   "Gift card": "गिफ़्ट कार्ड",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 वर्ष",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "गिफ़्ट कार्ड खरीदने में विफल",
   "Failed to update the gift card": "गिफ़्ट कार्ड अपडेट करने में विफल",
   "Give a Gift": "उपहार दें",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "किसी को Readest Plus या Pro का एक वर्ष उपहार में दें, या आपको मिला कार्ड रिडीम करें",
   "Received": "प्राप्त",
   "Redeem a Code": "कोड रिडीम करें",
   "Sent": "भेजे गए",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "उपहार, {{date}} तक",
   "Ex dono": "सप्रेम भेंट",
   "Turn over": "कार्ड पलटें",
-  "Turn the card over to read the message": "संदेश पढ़ने के लिए कार्ड पलटें"
+  "Turn the card over to read the message": "संदेश पढ़ने के लिए कार्ड पलटें",
+  "Redeem Gift Card": "गिफ़्ट कार्ड रिडीम करें",
+  "Cards sent to your email appear here on their own": "आपके ईमेल पर भेजे गए कार्ड यहाँ अपने आप दिखाई देते हैं",
+  "Gift Card": "गिफ़्ट कार्ड",
+  "Give someone a year of Readest Plus or Pro": "किसी को Readest Plus या Pro का एक वर्ष उपहार में दें"
 }

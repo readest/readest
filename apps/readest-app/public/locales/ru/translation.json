@@ -3122,7 +3122,6 @@
   "Pen Squeeze": "Сжатие стилуса",
   "Pen Slide Up": "Скольжение стилуса вверх",
   "Pen Slide Down": "Скольжение стилуса вниз",
-  "Gift Cards": "Подарочные карты",
   "Gift card": "Подарочная карта",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 год",
@@ -3135,7 +3134,6 @@
   "Failed to buy the gift card": "Не удалось купить подарочную карту",
   "Failed to update the gift card": "Не удалось обновить подарочную карту",
   "Give a Gift": "Сделать подарок",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Подарите кому-нибудь год Readest Plus или Pro либо активируйте полученную карту",
   "Received": "Полученные",
   "Redeem a Code": "Активировать код",
   "Sent": "Отправленные",
@@ -3168,5 +3166,9 @@
   "Gift, until {{date}}": "Подарок, до {{date}}",
   "Ex dono": "В дар",
   "Turn over": "Перевернуть карту",
-  "Turn the card over to read the message": "Переверните карту, чтобы прочитать сообщение"
+  "Turn the card over to read the message": "Переверните карту, чтобы прочитать сообщение",
+  "Redeem Gift Card": "Активировать подарочную карту",
+  "Cards sent to your email appear here on their own": "Карты, отправленные на вашу почту, появятся здесь сами",
+  "Gift Card": "Подарочная карта",
+  "Give someone a year of Readest Plus or Pro": "Подарите кому-нибудь год Readest Plus или Pro"
 }

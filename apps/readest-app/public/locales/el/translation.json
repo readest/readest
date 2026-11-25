@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "Πίεση στυλό",
   "Pen Slide Up": "Ολίσθηση στυλό προς τα πάνω",
   "Pen Slide Down": "Ολίσθηση στυλό προς τα κάτω",
-  "Gift Cards": "Δωροκάρτες",
   "Gift card": "Δωροκάρτα",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 έτος",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "Η αγορά της δωροκάρτας απέτυχε",
   "Failed to update the gift card": "Η ενημέρωση της δωροκάρτας απέτυχε",
   "Give a Gift": "Κάντε ένα δώρο",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Χαρίστε σε κάποιον ένα έτος Readest Plus ή Pro, ή εξαργυρώστε μια κάρτα που σας χάρισαν",
   "Received": "Ληφθείσες",
   "Redeem a Code": "Εξαργύρωση κωδικού",
   "Sent": "Απεσταλμένες",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "Δώρο, έως {{date}}",
   "Ex dono": "Δώρο",
   "Turn over": "Αναποδογύρισμα κάρτας",
-  "Turn the card over to read the message": "Γυρίστε την κάρτα για να διαβάσετε το μήνυμα"
+  "Turn the card over to read the message": "Γυρίστε την κάρτα για να διαβάσετε το μήνυμα",
+  "Redeem Gift Card": "Εξαργύρωση δωροκάρτας",
+  "Cards sent to your email appear here on their own": "Οι κάρτες που στάλθηκαν στο email σας εμφανίζονται εδώ αυτόματα",
+  "Gift Card": "Δωροκάρτα",
+  "Give someone a year of Readest Plus or Pro": "Χαρίστε σε κάποιον ένα έτος Readest Plus ή Pro"
 }

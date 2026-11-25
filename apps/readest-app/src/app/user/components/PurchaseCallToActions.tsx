@@ -10,6 +10,7 @@ interface PurchaseCallToActionsProps {
   /** Defaults to false: an unknown state shows the buy button, never hides it. */
   customizationPurchased?: boolean;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
+  onGiftCard?: () => void;
 }
 
 // Add-on tiles extend the Lifetime card, so they share its surface vocabulary
@@ -27,11 +28,24 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
   accent,
   customizationPurchased = false,
   onSubscribe,
+  onGiftCard,
 }) => {
   const _ = useTranslation();
 
+  // One line where the other tiles have two, so held to the height of the
+  // Full Customization chip above it.
+  const giftCardButton = onGiftCard && (
+    <div className='grid grid-cols-1 gap-2'>
+      <button onClick={onGiftCard} className={clsx(productButtonClass, 'min-h-12', accent.tile)}>
+        <span className={tileTextClass}>{_('Gift Card')}</span>
+      </button>
+    </div>
+  );
+
+  // Gift cards are not among these products, and the Gift Card view lists the
+  // cards you bought, so the button stays when the products are missing.
   if (!plan.products || plan.products.length === 0) {
-    return null;
+    return giftCardButton || null;
   }
 
   const storageProducts = plan.products.filter((product) => product.feature === 'storage');
@@ -112,6 +126,8 @@ const PurchaseCallToActions: React.FC<PurchaseCallToActionsProps> = ({
           </div>
         </div>
       )}
+
+      {giftCardButton}
     </div>
   );
 };

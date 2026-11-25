@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "კალმის მოჭერა",
   "Pen Slide Up": "კალმის ზემოთ სრიალი",
   "Pen Slide Down": "კალმის ქვემოთ სრიალი",
-  "Gift Cards": "სასაჩუქრე ბარათები",
   "Gift card": "სასაჩუქრე ბარათი",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 წელი",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "სასაჩუქრე ბარათის ყიდვა ვერ მოხერხდა",
   "Failed to update the gift card": "სასაჩუქრე ბარათის განახლება ვერ მოხერხდა",
   "Give a Gift": "აჩუქეთ საჩუქარი",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "აჩუქეთ ვინმეს Readest Plus-ის ან Pro-ს ერთი წელი, ან გამოიყენეთ თქვენთვის ნაჩუქარი ბარათი",
   "Received": "მიღებული",
   "Redeem a Code": "კოდის გააქტიურება",
   "Sent": "გაგზავნილი",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "საჩუქარი, {{date}}-მდე",
   "Ex dono": "საჩუქრად",
   "Turn over": "ბარათის გადაბრუნება",
-  "Turn the card over to read the message": "შეტყობინების წასაკითხად გადააბრუნეთ ბარათი"
+  "Turn the card over to read the message": "შეტყობინების წასაკითხად გადააბრუნეთ ბარათი",
+  "Redeem Gift Card": "სასაჩუქრე ბარათის გააქტიურება",
+  "Cards sent to your email appear here on their own": "თქვენს ელფოსტაზე გამოგზავნილი ბარათები აქ ავტომატურად გამოჩნდება",
+  "Gift Card": "სასაჩუქრე ბარათი",
+  "Give someone a year of Readest Plus or Pro": "აჩუქეთ ვინმეს Readest Plus-ის ან Pro-ს ერთი წელი"
 }

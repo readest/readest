@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "فشردن قلم",
   "Pen Slide Up": "لغزش قلم به بالا",
   "Pen Slide Down": "لغزش قلم به پایین",
-  "Gift Cards": "کارت‌های هدیه",
   "Gift card": "کارت هدیه",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "یک سال",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "خرید کارت هدیه ناموفق بود",
   "Failed to update the gift card": "به‌روزرسانی کارت هدیه ناموفق بود",
   "Give a Gift": "هدیه بدهید",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "یک سال Readest Plus یا Pro به کسی هدیه دهید، یا کارتی را که هدیه گرفته‌اید فعال کنید",
   "Received": "دریافتی",
   "Redeem a Code": "فعال‌سازی کد",
   "Sent": "ارسالی",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "هدیه، تا {{date}}",
   "Ex dono": "اهدایی",
   "Turn over": "برگرداندن کارت",
-  "Turn the card over to read the message": "برای خواندن پیام، کارت را برگردانید"
+  "Turn the card over to read the message": "برای خواندن پیام، کارت را برگردانید",
+  "Redeem Gift Card": "فعال‌سازی کارت هدیه",
+  "Cards sent to your email appear here on their own": "کارت‌هایی که به ایمیل شما فرستاده شده‌اند خودبه‌خود اینجا نمایش داده می‌شوند",
+  "Gift Card": "کارت هدیه",
+  "Give someone a year of Readest Plus or Pro": "یک سال Readest Plus یا Pro به کسی هدیه دهید"
 }

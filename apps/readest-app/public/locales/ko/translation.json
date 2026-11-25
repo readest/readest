@@ -2885,7 +2885,6 @@
   "Pen Squeeze": "펜 스퀴즈",
   "Pen Slide Up": "펜 위 슬라이드",
   "Pen Slide Down": "펜 아래 슬라이드",
-  "Gift Cards": "기프트 카드",
   "Gift card": "기프트 카드",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1년",
@@ -2898,7 +2897,6 @@
   "Failed to buy the gift card": "기프트 카드를 구매하지 못했습니다",
   "Failed to update the gift card": "기프트 카드를 업데이트하지 못했습니다",
   "Give a Gift": "선물하기",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "소중한 사람에게 Readest Plus 또는 Pro 1년 이용권을 선물하거나, 받은 카드를 사용하세요",
   "Received": "받은 선물",
   "Redeem a Code": "코드 사용하기",
   "Sent": "보낸 선물",
@@ -2931,5 +2929,9 @@
   "Gift, until {{date}}": "선물, {{date}}까지",
   "Ex dono": "증정",
   "Turn over": "카드 뒤집기",
-  "Turn the card over to read the message": "카드를 뒤집으면 메시지를 읽을 수 있어요"
+  "Turn the card over to read the message": "카드를 뒤집으면 메시지를 읽을 수 있어요",
+  "Redeem Gift Card": "기프트 카드 사용하기",
+  "Cards sent to your email appear here on their own": "내 이메일로 전송된 카드는 여기에 자동으로 표시됩니다",
+  "Gift Card": "기프트 카드",
+  "Give someone a year of Readest Plus or Pro": "소중한 사람에게 Readest Plus 또는 Pro 1년 이용권을 선물하세요"
 }

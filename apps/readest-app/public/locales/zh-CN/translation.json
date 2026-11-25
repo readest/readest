@@ -2885,7 +2885,6 @@
   "Pen Squeeze": "触控笔轻捏",
   "Pen Slide Up": "触控笔上滑",
   "Pen Slide Down": "触控笔下滑",
-  "Gift Cards": "礼品卡",
   "Gift card": "礼品卡",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 年",
@@ -2898,7 +2897,6 @@
   "Failed to buy the gift card": "购买礼品卡失败",
   "Failed to update the gift card": "更新礼品卡失败",
   "Give a Gift": "赠送礼物",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "送给他人一年的 Readest Plus 或 Pro，或兑换您收到的礼品卡",
   "Received": "收到的",
   "Redeem a Code": "兑换礼品码",
   "Sent": "送出的",
@@ -2931,5 +2929,9 @@
   "Gift, until {{date}}": "礼品，有效期至 {{date}}",
   "Ex dono": "敬赠",
   "Turn over": "翻转卡片",
-  "Turn the card over to read the message": "翻转卡片，查看留言"
+  "Turn the card over to read the message": "翻转卡片，查看留言",
+  "Redeem Gift Card": "兑换礼品卡",
+  "Cards sent to your email appear here on their own": "发送到您邮箱的礼品卡会自动显示在这里",
+  "Gift Card": "礼品卡",
+  "Give someone a year of Readest Plus or Pro": "送给他人一年的 Readest Plus 或 Pro"
 }

@@ -45,7 +45,11 @@ const checkStripeSession = async (sessionId: string): Promise<boolean> => {
   }
 };
 
+/** Buying and the cards you bought, or redeeming and the cards you were given. */
+export type GiftCardsView = 'give' | 'redeem';
+
 interface GiftCardsSectionProps {
+  view: GiftCardsView;
   initialCode?: string;
   stripeSessionId?: string;
   useIAP: boolean;
@@ -53,6 +57,7 @@ interface GiftCardsSectionProps {
 }
 
 const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
+  view,
   initialCode,
   stripeSessionId,
   useIAP,
@@ -126,6 +131,7 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
     // Never keep one store's prices once the other is in use: a Stripe price
     // id must not reach the store, nor a store id Stripe.
     setPrices([]);
+    if (view !== 'give') return;
     let stale = false;
     fetchGiftPrices(useIAP)
       .then((next) => {
@@ -135,7 +141,7 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
     return () => {
       stale = true;
     };
-  }, [useIAP]);
+  }, [useIAP, view]);
 
   useEffect(() => {
     // A gift link lands here with its code filled in; bring the form into view.
@@ -241,14 +247,36 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
   const received = cards?.received ?? [];
   const sent = cards?.sent ?? [];
 
+  const header = (title: string, description: string) => (
+    <div>
+      <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{title}</h2>
+      <p className='text-base-content/70 text-sm leading-relaxed'>{description}</p>
+    </div>
+  );
+
+  if (view === 'redeem') {
+    return (
+      <div className='flex flex-col gap-10'>
+        {header(_('Redeem Gift Card'), _('Cards sent to your email appear here on their own'))}
+
+        <section ref={redeemRef} aria-labelledby={redeemId} className='flex flex-col gap-2'>
+          <SectionTitle id={redeemId}>{_('Redeem a Code')}</SectionTitle>
+          <RedeemGiftForm initialCode={initialCode} onRedeemed={load} />
+        </section>
+
+        {received.length > 0 && (
+          <section aria-labelledby={receivedId} className='flex flex-col gap-2'>
+            <SectionTitle id={receivedId}>{_('Received')}</SectionTitle>
+            <ReceivedGiftList cards={received} now={new Date()} />
+          </section>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className='flex flex-col gap-10'>
-      <div>
-        <h2 className='mb-1.5 text-lg font-semibold tracking-tight'>{_('Gift Cards')}</h2>
-        <p className='text-base-content/70 text-sm leading-relaxed'>
-          {_('Give someone a year of Readest Plus or Pro, or redeem a card you were given')}
-        </p>
-      </div>
+      {header(_('Gift Card'), _('Give someone a year of Readest Plus or Pro'))}
 
       <section aria-labelledby={giveId} className='flex flex-col gap-2'>
         <SectionTitle id={giveId}>{_('Give a Gift')}</SectionTitle>
@@ -259,18 +287,6 @@ const GiftCardsSection: React.FC<GiftCardsSectionProps> = ({
           busy={busy}
           onBuy={handleBuy}
         />
-      </section>
-
-      {received.length > 0 && (
-        <section aria-labelledby={receivedId} className='flex flex-col gap-2'>
-          <SectionTitle id={receivedId}>{_('Received')}</SectionTitle>
-          <ReceivedGiftList cards={received} now={new Date()} />
-        </section>
-      )}
-
-      <section ref={redeemRef} aria-labelledby={redeemId} className='flex flex-col gap-2'>
-        <SectionTitle id={redeemId}>{_('Redeem a Code')}</SectionTitle>
-        <RedeemGiftForm initialCode={initialCode} onRedeemed={load} />
       </section>
 
       {sent.length > 0 && (

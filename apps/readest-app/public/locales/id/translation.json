@@ -2885,7 +2885,6 @@
   "Pen Squeeze": "Picit pena",
   "Pen Slide Up": "Geser pena ke atas",
   "Pen Slide Down": "Geser pena ke bawah",
-  "Gift Cards": "Kartu Hadiah",
   "Gift card": "Kartu hadiah",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 tahun",
@@ -2898,7 +2897,6 @@
   "Failed to buy the gift card": "Gagal membeli kartu hadiah",
   "Failed to update the gift card": "Gagal memperbarui kartu hadiah",
   "Give a Gift": "Beri Hadiah",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Hadiahkan Readest Plus atau Pro selama setahun kepada seseorang, atau tukarkan kartu yang Anda terima",
   "Received": "Diterima",
   "Redeem a Code": "Tukarkan Kode",
   "Sent": "Terkirim",
@@ -2931,5 +2929,9 @@
   "Gift, until {{date}}": "Hadiah, hingga {{date}}",
   "Ex dono": "Hadiah dari",
   "Turn over": "Balik kartu",
-  "Turn the card over to read the message": "Balik kartu untuk membaca pesannya"
+  "Turn the card over to read the message": "Balik kartu untuk membaca pesannya",
+  "Redeem Gift Card": "Tukarkan Kartu Hadiah",
+  "Cards sent to your email appear here on their own": "Kartu yang dikirim ke email Anda akan muncul di sini dengan sendirinya",
+  "Gift Card": "Kartu Hadiah",
+  "Give someone a year of Readest Plus or Pro": "Hadiahkan Readest Plus atau Pro selama setahun kepada seseorang"
 }

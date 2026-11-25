@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "Kalem sıkma",
   "Pen Slide Up": "Kalemde yukarı kaydırma",
   "Pen Slide Down": "Kalemde aşağı kaydırma",
-  "Gift Cards": "Hediye Kartları",
   "Gift card": "Hediye kartı",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 yıl",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "Hediye kartı satın alınamadı",
   "Failed to update the gift card": "Hediye kartı güncellenemedi",
   "Give a Gift": "Hediye Et",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Birine bir yıllık Readest Plus veya Pro hediye edin ya da size verilen bir kartı kullanın",
   "Received": "Alınan",
   "Redeem a Code": "Kod Kullan",
   "Sent": "Gönderilen",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "Hediye, {{date}} tarihine kadar",
   "Ex dono": "Armağan",
   "Turn over": "Kartı çevir",
-  "Turn the card over to read the message": "Mesajı okumak için kartı çevirin"
+  "Turn the card over to read the message": "Mesajı okumak için kartı çevirin",
+  "Redeem Gift Card": "Hediye Kartı Kullan",
+  "Cards sent to your email appear here on their own": "E-posta adresinize gönderilen kartlar burada kendiliğinden görünür",
+  "Gift Card": "Hediye Kartı",
+  "Give someone a year of Readest Plus or Pro": "Birine bir yıllık Readest Plus veya Pro hediye edin"
 }

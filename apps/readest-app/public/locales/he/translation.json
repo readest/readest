@@ -3043,7 +3043,6 @@
   "Pen Squeeze": "לחיצה על העט",
   "Pen Slide Up": "החלקת העט למעלה",
   "Pen Slide Down": "החלקת העט למטה",
-  "Gift Cards": "כרטיסי מתנה",
   "Gift card": "כרטיס מתנה",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "שנה אחת",
@@ -3056,7 +3055,6 @@
   "Failed to buy the gift card": "רכישת כרטיס המתנה נכשלה",
   "Failed to update the gift card": "עדכון כרטיס המתנה נכשל",
   "Give a Gift": "תן מתנה",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "תן למישהו שנה של Readest Plus או Pro, או ממש כרטיס שקיבלת",
   "Received": "התקבלו",
   "Redeem a Code": "מימוש קוד",
   "Sent": "נשלחו",
@@ -3089,5 +3087,9 @@
   "Gift, until {{date}}": "מתנה, עד {{date}}",
   "Ex dono": "שי",
   "Turn over": "הפיכת הכרטיס",
-  "Turn the card over to read the message": "הפכו את הכרטיס כדי לקרוא את ההודעה"
+  "Turn the card over to read the message": "הפכו את הכרטיס כדי לקרוא את ההודעה",
+  "Redeem Gift Card": "מימוש כרטיס מתנה",
+  "Cards sent to your email appear here on their own": "כרטיסים שנשלחו לכתובת הדוא״ל שלך מופיעים כאן מעצמם",
+  "Gift Card": "כרטיס מתנה",
+  "Give someone a year of Readest Plus or Pro": "תן למישהו שנה של Readest Plus או Pro"
 }

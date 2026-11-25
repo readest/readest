@@ -20,6 +20,7 @@ interface PlanCardProps {
   /** Defaults to false: an unknown state shows the buy button, never hides it. */
   customizationPurchased?: boolean;
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
+  onGiftCard?: () => void;
 }
 
 const PlanCard: React.FC<PlanCardProps> = ({
@@ -34,6 +35,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
   giftOnly,
   belowGift,
   onSubscribe,
+  onGiftCard,
 }) => {
   const _ = useTranslation();
   const { price, currency } = plan;
@@ -149,6 +151,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
               accent={accent}
               customizationPurchased={customizationPurchased}
               onSubscribe={onSubscribe}
+              onGiftCard={onGiftCard}
             />
           ) : (
             <PlanActionButton

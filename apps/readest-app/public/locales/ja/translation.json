@@ -2885,7 +2885,6 @@
   "Pen Squeeze": "ペンのスクイーズ",
   "Pen Slide Up": "ペンの上スライド",
   "Pen Slide Down": "ペンの下スライド",
-  "Gift Cards": "ギフトカード",
   "Gift card": "ギフトカード",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1年間",
@@ -2898,7 +2897,6 @@
   "Failed to buy the gift card": "ギフトカードの購入に失敗しました",
   "Failed to update the gift card": "ギフトカードの更新に失敗しました",
   "Give a Gift": "ギフトを贈る",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Readest Plus または Pro の1年分を大切な人に贈ったり、受け取ったカードを利用したりできます",
   "Received": "受け取った",
   "Redeem a Code": "コードを利用する",
   "Sent": "贈った",
@@ -2931,5 +2929,9 @@
   "Gift, until {{date}}": "ギフト、{{date}} まで",
   "Ex dono": "謹呈",
   "Turn over": "カードを裏返す",
-  "Turn the card over to read the message": "カードを裏返すとメッセージが読めます"
+  "Turn the card over to read the message": "カードを裏返すとメッセージが読めます",
+  "Redeem Gift Card": "ギフトカードを利用する",
+  "Cards sent to your email appear here on their own": "あなたのメールアドレス宛てのカードは、ここに自動で表示されます",
+  "Gift Card": "ギフトカード",
+  "Give someone a year of Readest Plus or Pro": "Readest Plus または Pro の1年分を大切な人に贈りましょう"
 }

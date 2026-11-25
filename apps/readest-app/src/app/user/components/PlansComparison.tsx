@@ -12,6 +12,7 @@ interface PlansComparisonProps {
   customizationPurchased?: boolean;
   gift?: { plan: GiftTier; activeUntil: string; giftOnly: boolean };
   onSubscribe: (priceId?: string, planType?: PlanType) => void;
+  onGiftCard?: () => void;
 }
 
 const PLAN_ORDER: UserPlan[] = ['free', 'plus', 'pro', 'purchase'];
@@ -23,6 +24,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
   userPlan,
   gift,
   onSubscribe,
+  onGiftCard,
 }) => {
   const [interval, setInterval] = useState<PlanInterval>('month');
 
@@ -69,6 +71,7 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
                 (!!gift?.giftOnly && (plan.plan === 'plus' || plan.plan === 'pro')))
             }
             onSubscribe={onSubscribe}
+            onGiftCard={onGiftCard}
           />
         ))}
       </div>

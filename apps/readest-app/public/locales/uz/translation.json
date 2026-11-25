@@ -2964,7 +2964,6 @@
   "Pen Squeeze": "Qalamni qisish",
   "Pen Slide Up": "Qalamda yuqoriga surish",
   "Pen Slide Down": "Qalamda pastga surish",
-  "Gift Cards": "Sovg'a kartalari",
   "Gift card": "Sovg'a kartasi",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 yil",
@@ -2977,7 +2976,6 @@
   "Failed to buy the gift card": "Sovg'a kartasini sotib olib bo'lmadi",
   "Failed to update the gift card": "Sovg'a kartasini yangilab bo'lmadi",
   "Give a Gift": "Sovg'a qilish",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Kimgadir bir yillik Readest Plus yoki Pro sovg'a qiling yoki sizga berilgan kartani faollashtiring",
   "Received": "Olingan",
   "Redeem a Code": "Kodni faollashtirish",
   "Sent": "Yuborilgan",
@@ -3010,5 +3008,9 @@
   "Gift, until {{date}}": "Sovg'a, {{date}} gacha",
   "Ex dono": "Sovg'a",
   "Turn over": "Kartani aylantirish",
-  "Turn the card over to read the message": "Xabarni o‘qish uchun kartani aylantiring"
+  "Turn the card over to read the message": "Xabarni o‘qish uchun kartani aylantiring",
+  "Redeem Gift Card": "Sovg'a kartasini faollashtirish",
+  "Cards sent to your email appear here on their own": "Elektron pochtangizga yuborilgan kartalar bu yerda o'z-o'zidan paydo bo'ladi",
+  "Gift Card": "Sovg'a kartasi",
+  "Give someone a year of Readest Plus or Pro": "Kimgadir bir yillik Readest Plus yoki Pro sovg'a qiling"
 }

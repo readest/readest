@@ -3122,7 +3122,6 @@
   "Pen Squeeze": "Стискання стилуса",
   "Pen Slide Up": "Свайп вгору по стилусу",
   "Pen Slide Down": "Свайп вниз по стилусу",
-  "Gift Cards": "Подарункові картки",
   "Gift card": "Подарункова картка",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 рік",
@@ -3135,7 +3134,6 @@
   "Failed to buy the gift card": "Не вдалося купити подарункову картку",
   "Failed to update the gift card": "Не вдалося оновити подарункову картку",
   "Give a Gift": "Зробити подарунок",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Подаруйте комусь рік Readest Plus або Pro чи активуйте отриману картку",
   "Received": "Отримані",
   "Redeem a Code": "Активувати код",
   "Sent": "Надіслані",
@@ -3168,5 +3166,9 @@
   "Gift, until {{date}}": "Подарунок, до {{date}}",
   "Ex dono": "У дарунок",
   "Turn over": "Перевернути картку",
-  "Turn the card over to read the message": "Переверніть картку, щоб прочитати повідомлення"
+  "Turn the card over to read the message": "Переверніть картку, щоб прочитати повідомлення",
+  "Redeem Gift Card": "Активувати подарункову картку",
+  "Cards sent to your email appear here on their own": "Картки, надіслані на вашу пошту, з’являться тут самі",
+  "Gift Card": "Подарункова картка",
+  "Give someone a year of Readest Plus or Pro": "Подаруйте комусь рік Readest Plus або Pro"
 }

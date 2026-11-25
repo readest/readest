@@ -3043,7 +3043,6 @@
   "Pen Squeeze": "Strângerea creionului",
   "Pen Slide Up": "Glisare în sus cu creionul",
   "Pen Slide Down": "Glisare în jos cu creionul",
-  "Gift Cards": "Carduri cadou",
   "Gift card": "Card cadou",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 an",
@@ -3056,7 +3055,6 @@
   "Failed to buy the gift card": "Cumpărarea cardului cadou a eșuat",
   "Failed to update the gift card": "Actualizarea cardului cadou a eșuat",
   "Give a Gift": "Oferiți un cadou",
-  "Give someone a year of Readest Plus or Pro, or redeem a card you were given": "Oferiți cuiva un an de Readest Plus sau Pro sau valorificați un card primit",
   "Received": "Primite",
   "Redeem a Code": "Valorificați un cod",
   "Sent": "Trimise",
@@ -3089,5 +3087,9 @@
   "Gift, until {{date}}": "Cadou, până la {{date}}",
   "Ex dono": "Ex dono",
   "Turn over": "Întoarce cardul",
-  "Turn the card over to read the message": "Întoarce cardul pentru a citi mesajul"
+  "Turn the card over to read the message": "Întoarce cardul pentru a citi mesajul",
+  "Redeem Gift Card": "Valorificați un card cadou",
+  "Cards sent to your email appear here on their own": "Cardurile trimise pe adresa dvs. de e-mail apar aici automat",
+  "Gift Card": "Card cadou",
+  "Give someone a year of Readest Plus or Pro": "Oferiți cuiva un an de Readest Plus sau Pro"
 }
