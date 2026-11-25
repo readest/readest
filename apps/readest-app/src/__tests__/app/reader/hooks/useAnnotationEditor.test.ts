@@ -197,7 +197,7 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
     );
     h.view.getCFI.mockReturnValueOnce('stale-cfi').mockReturnValueOnce('committed-cfi');
     const pending = Promise.withResolvers<string>();
-    const { result, setSelection } = setup(
+    const { result, setSelection, unmount } = setup(
       noted,
       vi.fn().mockReturnValueOnce(pending.promise).mockResolvedValue('committed text'),
     );
@@ -214,6 +214,7 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
     expect(setSelection).toHaveBeenCalledWith(
       expect.objectContaining({ cfi: 'committed-cfi', text: 'committed text' }),
     );
+    unmount();
     expect(overlays).toEqual(new Set(['committed-cfi', `${NOTE_PREFIX}committed-cfi`]));
 
     // Deleting the saved record must also remove everything painted for it.
