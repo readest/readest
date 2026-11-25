@@ -121,7 +121,7 @@ page.on('console', (m) => {
 });
 await page.addInitScript({ content: fs.readFileSync(path.join(here, 'ipc-log.js'), 'utf8') });
 if (process.env.PARITY_BACKEND) {
-  const init = spawnSync('python3', [path.join(here, 'backend.py'), 'init', process.env.PARITY_BACKEND], { encoding: 'utf8' });
+  const init = spawnSync('python3', [path.join(here, 'backend.py'), 'init', process.env.PARITY_BACKEND, 'cef'], { encoding: 'utf8' });
   if (init.status !== 0) throw new Error(`backend.py init: ${init.stderr}`);
   await page.addInitScript({ content: init.stdout });
 }

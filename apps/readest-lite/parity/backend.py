@@ -1,14 +1,15 @@
-"""backend.py up DIR [BOOK...] | init DIR | down DIR: a local Readest server for behavior runs.
+"""backend.py up DIR [BOOK...] | init DIR APP | down DIR: a local Readest server for behavior runs.
 
 `up` starts the repo's self-host stack (docker/compose.yaml: Postgres, GoTrue, PostgREST, Kong on
 :8000) under the compose project readest-parity, S3 storage on :9000 (SeaweedFS, open to any
 request: quay.io refuses MinIO's image here and Docker Hub no longer has it), and readest-app's dev
-server on :3210 against them. It signs up one user and uploads each BOOK with a cover, as another device would:
-the book and the cover through /api/storage/upload, the book's row through /api/sync. DIR gets a
-copy of docker/, the dev server's log, and backend.json (the runtime config that points an app at
-this server, and the books). `init DIR` prints the script run_lite.py and run_cef.mjs start an app
-with when PARITY_BACKEND is DIR: that config, and the user signed in with a session of the app's
-own (two apps sharing one would sign each other out when one rotates its refresh token).
+server on :3210 against them. It signs up a user per app (APP: lite, cef) and uploads each BOOK with
+a cover to each, as another device would: the book and the cover through /api/storage/upload, the
+book's row through /api/sync. Each app has its own account, so what one run syncs (the progress of
+the book it opened) doesn't change the library the other pulls. DIR gets a copy of docker/, the dev
+server's log, and backend.json (the runtime config that points an app at this server, and the
+books). `init DIR APP` prints the script run_lite.py and run_cef.mjs start an app with when
+PARITY_BACKEND is DIR: that config, and APP's user signed in with a session of its own.
 `down` stops it all and deletes the stack's data.
 """
 import base64, hashlib, hmac, json, os, secrets, shutil, signal, subprocess, sys, time, urllib.request, http.client
@@ -19,7 +20,7 @@ repo = os.path.abspath(f'{here}/../../..')
 app_dir = f'{repo}/apps/readest-app'
 PROJECT, KONG, API, S3 = 'readest-parity', 'http://localhost:8000', 'http://localhost:3210', 'http://localhost:9000'
 S3_CONTAINER = f'{PROJECT}-s3'
-EMAIL, PASSWORD = 'parity@example.com', 'parity-password-1'
+EMAILS, PASSWORD = {'lite': 'parity-lite@example.com', 'cef': 'parity-cef@example.com'}, 'parity-password-1'
 
 
 def jwt(payload, secret):
@@ -130,31 +131,33 @@ def up(d, books):
             return True  # the route answered (401 without a token)
     wait('dev server', answers, 600)
 
-    session = request('POST', f'{KONG}/auth/v1/signup', {'email': EMAIL, 'password': PASSWORD}, anon)
-    session.setdefault('expires_at', int(time.time()) + session['expires_in'])
-    auth = {'Authorization': f"Bearer {session['access_token']}"}
-
     seeded, now = [], int(time.time() * 1000)
-    for k, path in enumerate(books):
-        h, ext = partial_md5(path), os.path.splitext(path)[1].lstrip('.').lower()
-        title = os.path.splitext(os.path.basename(path))[0]
-        files = [(f'Readest/Books/{h}/{h}.{ext}', open(path, 'rb').read()), (f'Readest/Books/{h}/cover.png', cover_png(title))]
-        for name, data in files:
-            res = request('POST', f'{API}/api/storage/upload', {'fileName': name, 'fileSize': len(data), 'bookHash': h}, auth)
-            request('PUT', res['uploadUrl'], raw=data)
-        book = dict(hash=h, format={'epub': 'EPUB', 'pdf': 'PDF'}[ext], title=title, author='Parity',
-                    createdAt=now + k, updatedAt=now + k, uploadedAt=now + k)
-        request('POST', f'{API}/api/sync', {'books': [book]}, auth)
-        seeded.append(dict(hash=h, title=title))
+    for email in EMAILS.values():
+        session = request('POST', f'{KONG}/auth/v1/signup', {'email': email, 'password': PASSWORD}, anon)
+        auth = {'Authorization': f"Bearer {session['access_token']}"}
+        seeded = []
+        for k, path in enumerate(books):
+            h, ext = partial_md5(path), os.path.splitext(path)[1].lstrip('.').lower()
+            title = os.path.splitext(os.path.basename(path))[0]
+            files = [(f'Readest/Books/{h}/{h}.{ext}', open(path, 'rb').read()),
+                     (f'Readest/Books/{h}/cover.png', cover_png(title))]
+            for name, data in files:
+                res = request('POST', f'{API}/api/storage/upload',
+                              {'fileName': name, 'fileSize': len(data), 'bookHash': h}, auth)
+                request('PUT', res['uploadUrl'], raw=data)
+            book = dict(hash=h, format={'epub': 'EPUB', 'pdf': 'PDF'}[ext], title=title, author='Parity',
+                        createdAt=now + k, updatedAt=now + k, uploadedAt=now + k)
+            request('POST', f'{API}/api/sync', {'books': [book]}, auth)
+            seeded.append(dict(hash=h, title=title))
     json.dump(dict(runtime=dict(supabaseUrl=KONG, supabaseAnonKey=env['ANON_KEY'], apiBaseUrl=API,
                                 objectStorageType='s3', selfHosted=True), books=seeded),
               open(f'{d}/backend.json', 'w'), indent=1)
-    print(f'backend up: {len(seeded)} books for {EMAIL} -> {d}/backend.json')
+    print(f"backend up: {len(seeded)} books for each of {', '.join(EMAILS.values())} -> {d}/backend.json")
 
 
-def init(d):
+def init(d, app):
     runtime = json.load(open(f'{d}/backend.json'))['runtime']
-    s = request('POST', f'{KONG}/auth/v1/token?grant_type=password', {'email': EMAIL, 'password': PASSWORD},
+    s = request('POST', f'{KONG}/auth/v1/token?grant_type=password', {'email': EMAILS[app], 'password': PASSWORD},
                 {'apikey': runtime['supabaseAnonKey']})
     s.setdefault('expires_at', int(time.time()) + s['expires_in'])
     # supabase-js keeps the session under sb-<first host label>-auth-token; AuthContext keeps the rest.
@@ -183,4 +186,4 @@ def down(d):
 
 if __name__ == '__main__':
     cmd, d = sys.argv[1], os.path.abspath(sys.argv[2])
-    {'up': lambda: up(d, sys.argv[3:]), 'init': lambda: init(d), 'down': lambda: down(d)}[cmd]()
+    {'up': lambda: up(d, sys.argv[3:]), 'init': lambda: init(d, sys.argv[3]), 'down': lambda: down(d)}[cmd]()

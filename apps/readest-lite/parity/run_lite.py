@@ -62,7 +62,7 @@ hooks = """
 init = f'{out}/init.js'
 probe = open(scenario['probe']).read() if scenario.get('probe') else ''
 backend = os.environ.get('PARITY_BACKEND')
-backend_js = subprocess.run([sys.executable, f'{here}/backend.py', 'init', backend], check=True,
+backend_js = subprocess.run([sys.executable, f'{here}/backend.py', 'init', backend, 'lite'], check=True,
                             capture_output=True, text=True).stdout if backend else ''
 open(init, 'w').write(backend_js + open(f'{here}/ipc-log.js').read() + open(f'{here}/capture.js').read()
                      + open(f'{here}/text-steps.js').read() + probe + hooks
