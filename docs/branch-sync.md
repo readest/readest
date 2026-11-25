@@ -1,126 +1,43 @@
-# 分支与上游同步流程
+# 上游同步与发布
 
-本文记录 Gratis Readest 的分支职责，以及把 Readest 上游更新合并到本地功能分支的推荐流程。
+## 主线与发布
 
-## 分支职责
+- `main` 是 Gratis 产品主线，包含品牌、数据目录、更新地址、签名和 Linux CEF/Arch 打包定制。
+- 上游来源固定为 `readest/readest:main`；同步保留 Git merge 历史。
+- `gratis` 是旧发布分支，仅供历史参考；新 nightly 和正式版均从 `main` 构建。
+- GitHub Actions 每天检查上游并建立机器人 PR。分类器仅允许已知应用源码、翻译资源和 `docs/` 路径在完整 PR 检查通过后自动合并；根目录 `README.md`、构建/依赖/工作流/权限/签名相关文件及所有未知路径均须人工审查。路径未明确列入自动范围时按敏感变更处理。
 
-- `main`：尽量保持为 fork 的上游同步分支，不放 nightly、签名密钥和发布渠道等临时定制。
-- `feature/*`：功能开发、上游同步后的冲突处理和测试分支。
-- `gratis`：经过测试后用于 nightly 或正式发布的 Gratis 分支。
-- `origin/main`：通过 GitHub Sync fork 更新的上游跟踪分支，不直接在此分支开发。
+## 必要 GitHub 配置
 
-不要直接在 `gratis` 上合并 `origin/main`。先在同步分支或功能分支完成合并和测试，再合入 `gratis`。
+在仓库设置中安装专用 GitHub App，并创建 Actions secrets：
 
-## GitHub Sync fork
+- `UPSTREAM_SYNC_APP_ID`
+- `UPSTREAM_SYNC_APP_PRIVATE_KEY`
 
-GitHub Sync fork 只更新 fork 的 `origin/main`，不会自动更新
-`feature/*` 或 `gratis`。流程如下：
+再创建 Actions repository variable：
 
-1. 在 GitHub fork 页面点击 **Sync fork**，更新远程 `main`。
-2. 本地获取更新：
+- `UPSTREAM_SYNC_CANDIDATE_REPOSITORY`：一个**公开的 Gratis 仓库 fork**，格式为 `owner/repository`，不能是产品仓库本身。它只用于保存待测同步分支；GitHub App 必须安装到产品仓库和这个 fork 所属账号，并授予候选仓库 Contents: read/write。候选 fork 不得保存任何签名/发布 secrets，默认 `GITHUB_TOKEN` 权限应为只读。
 
-   ```bash
-   git fetch origin main
-   ```
+产品仓库 App 权限为 Contents: read/write、Pull requests: read/write、Checks: read、Administration: read。同步流程先在无写凭据 job 中使用 `main` 上的可信 classifier 计算候选；有凭据 job 只做 Git/GitHub 操作，不执行候选代码。同步分支推到候选 fork，再以 fork PR 送入产品仓库。请保持 GitHub 对 fork PR 的 secrets 和写权限 token 禁用；PR checks 以 base 版本 workflow 运行，fork PR 不获得仓库 secrets 或写权限 token。
 
-3. 在功能分支上创建临时同步分支：
+配置经典 branch protection 保护 `main`：要求 PR、`PR checks / Required CI` 成功且分支必须与最新 base 同步；审批数设为 0，避免阻断普通源码的 CI 后自动合并。启用管理员规则，禁止强推和删除；同步 App 不得绕过规则。敏感 PR 由 classifier 停止自动合并，仍须维护者人工审查。workflow 会通过 branch-protection API 在创建 PR 前及合并前检查保护状态；缺少严格 Required CI/PR 规则时会失败关闭。手动启动 Nightly 或 Release 时，选择 `main`。
 
-   ```bash
-   git switch feature/gratis-foundation
-   git status --short
-   git switch -c sync/main-YYYYMMDD
-   git merge --no-ff origin/main
-   ```
+## 每夜版
 
-## 合并前检查
+- `main` 有新提交时及每天 22:00 UTC（台湾时间 06:00）构建。
+- 版本计算和所有平台工作固定在同一完整 commit SHA。
+- 提供 Android、Linux x86_64/aarch64、Windows x86_64/aarch64 和 Linux x86_64 pacman 套件。Actions artifacts 保留 14 天；每夜版沿用现有 Android 与 Tauri 签名密钥。
+- Arch 套件可由 pacman 安装，但没有 pacman OpenPGP 签章；nightly 套件与 stable 套件互斥。
 
-开始合并前必须确认工作区干净：
+## 正式版
 
-```bash
-git status --short
-```
+- 每天 23:30 UTC 检查上游最新的正式 release。只有该 tag 的提交已合入 `main`，且 `main` 中的 app 版本精确匹配该 tag 时，才为它创建 Gratis draft release。
+- Release job 固定源码 SHA 和 fork tag；建置、签名、updater manifest 与资产验证全数成功后才公开 Release 并设为 Latest。失败会留下 draft，不会把不完整的更新 manifest 推给现有用户。
+- 首次启用只追上游当前最新正式版本，不自动补发历史版本。GitHub tag 使用 `gratis-vX.Y.Z`。
+- 稳定发布包含 Android、Linux x86_64/aarch64、Windows x86_64/aarch64 与 Linux x86_64 Arch 包。macOS 尚未纳入，因为仓库没有可确认可用的 Apple 签章/公证配置；R2 不是发布前提。
 
-`.gradle`、`target`、`.next`、`node_modules` 和 Android 生成目录是构建产物，不应作为源码提交。检查生成目录时使用：
+## 人工处理
 
-```bash
-git status --ignored
-git check-ignore -v path/to/generated-file
-```
-
-不要用 `git checkout .` 或 `git reset --hard` 清理不明变更。先确认目标路径，再只清理明确的生成目录。
-
-## 冲突处理
-
-查看冲突文件：
-
-```bash
-git status
-git diff --name-only --diff-filter=U
-```
-
-处理原则：
-
-- 普通业务代码和依赖更新优先采用上游版本。
-- `appConfig.ts` 中的 Gratis 品牌、数据目录、更新地址和产品策略要保留。
-- `nightly.yml`、`release.yml` 中的 Gratis 包名、签名、Artifact 或发布地址要逐项检查，不能盲目整文件覆盖。
-- 不要把 `.gradle`、`target` 等生成物加入暂存区。
-
-处理完成后检查：
-
-```bash
-git diff --check
-git diff --cached --check
-git add path/to/resolved-file
-```
-
-如果合并尚未提交且决定放弃：
-
-```bash
-git merge --abort
-```
-
-## 测试与合入
-
-在同步分支完成测试后，把同步分支快进回功能分支：
-
-```bash
-source /home/moran/.nvm/nvm.sh
-nvm use 22.23.1
-
-pnpm --filter @readest/readest-app lint
-pnpm --filter @readest/readest-app test --run
-
-git switch feature/gratis-foundation
-git merge --ff-only sync/main-YYYYMMDD
-git push origin feature/gratis-foundation
-```
-
-功能在分支上验证通过后，再合入发布分支：
-
-```bash
-git fetch origin gratis
-git switch gratis
-git merge --no-ff feature/gratis-foundation
-git push origin gratis
-```
-
-如果功能分支已经推送到 GitHub，优先通过 Pull Request 合入 `gratis`，这样可以保留 CI 检查和审查记录。
-
-## 为什么会出现大量变更
-
-合并几十个上游提交时，`git status` 可能显示数百个文件。这些通常是上游提交、子模块指针或生成目录的结果，不等同于需要手工修改的代码。
-
-确认当前合并规模可以使用：
-
-```bash
-git rev-list --left-right --count HEAD...origin/main
-git diff --stat HEAD...origin/main
-```
-
-如果大量文件来自一次尚未完成的合并，先检查是否存在 `MERGE_HEAD`：
-
-```bash
-git rev-parse -q --verify MERGE_HEAD
-```
-
-确认是误操作时，在得到确认后使用 `git merge --abort`，不要逐个删除上游文件。
+- 同步 PR 遇到冲突、敏感文件或 required CI 失败时，不会自动合并；先人工审查、解决并重新验证，再合并。
+- 查看近期运行：Actions → Sync upstream、Nightly Readest、Release Gratis Readest。Stable release 建置失败时，确认该 tag 对应草稿和资产后再重跑；不要移动或覆盖已发布 tag。
+- `.gradle`、`target`、`.next`、`node_modules` 和 Android 生成目录是构建产物，不要暂存提交。处理合并时先检查 `git status` 和 `git diff --name-only --diff-filter=U`；不要用 `git reset --hard` 或整体覆盖文件来消除冲突。

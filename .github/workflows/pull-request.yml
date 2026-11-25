@@ -515,3 +515,24 @@ jobs:
         if: steps.changes.outputs.tauri == 'true'
         working-directory: apps/readest-app
         run: xvfb-run pnpm test:pr:tauri
+
+  required_ci:
+    name: Required CI
+    if: github.event_name == 'pull_request' && always()
+    needs:
+      - gate
+      - nix_flake_check
+      - rust_lint
+      - koplugin_rust_lint
+      - build_web_app
+      - test_web_app
+      - test_web_browser
+      - test_extensions
+      - build_tauri_app
+    runs-on: ubuntu-latest
+    steps:
+      - name: require every check to pass
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 -c 'import json,os,sys; r=json.loads(os.environ["RESULTS"]); bad={k:v["result"] for k,v in r.items() if v["result"] != "success"}; print(json.dumps(bad,indent=2)); sys.exit(bool(bad))'

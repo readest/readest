@@ -1,0 +1,372 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '15 22 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.prepare.outputs.changed }}
+      base: ${{ steps.prepare.outputs.base }}
+      upstream: ${{ steps.prepare.outputs.upstream }}
+      head: ${{ steps.prepare.outputs.head }}
+      branch: ${{ steps.prepare.outputs.branch }}
+      kind: ${{ steps.prepare.outputs.kind }}
+      candidate_repository: ${{ steps.prepare.outputs.candidate_repository }}
+      candidate_owner: ${{ steps.prepare.outputs.candidate_owner }}
+      candidate_name: ${{ steps.prepare.outputs.candidate_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: prepare and classify without write credentials
+        id: prepare
+        env:
+          UPSTREAM_SYNC_CANDIDATE_REPOSITORY: ${{ vars.UPSTREAM_SYNC_CANDIDATE_REPOSITORY }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git fetch https://github.com/readest/readest.git refs/heads/main
+          base=$(git rev-parse origin/main)
+          upstream=$(git rev-parse FETCH_HEAD)
+          if git merge-base --is-ancestor "$upstream" "$base"; then
+            echo "No upstream commits to merge."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          candidate_repository=${UPSTREAM_SYNC_CANDIDATE_REPOSITORY:?Set repository variable UPSTREAM_SYNC_CANDIDATE_REPOSITORY to a public fork of this repository.}
+          [[ "$candidate_repository" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || {
+            echo "::error::UPSTREAM_SYNC_CANDIDATE_REPOSITORY must be owner/repository."
+            exit 1
+          }
+          candidate_owner=${candidate_repository%%/*}
+          candidate_name=${candidate_repository#*/}
+          branch="sync/upstream-${upstream:0:12}-${base:0:8}"
+
+          # Run only the classifier and tests committed on the trusted base.
+          for path in \
+            .github/scripts/classify-upstream-sync.py \
+            .github/scripts/test-classify-upstream-sync.py \
+            .github/scripts/validate-upstream-merge.py \
+            .github/scripts/test-validate-upstream-merge.py; do
+            git show "$base:$path" > "$RUNNER_TEMP/${path##*/}"
+          done
+          python3 "$RUNNER_TEMP/test-classify-upstream-sync.py"
+          python3 "$RUNNER_TEMP/test-validate-upstream-merge.py"
+
+          git switch --detach "$base"
+          base_time=$(git show -s --format=%ct "$base")
+          upstream_time=$(git show -s --format=%ct "$upstream")
+          if [ "$base_time" -ge "$upstream_time" ]; then
+            merge_time=$((base_time + 1))
+          else
+            merge_time=$((upstream_time + 1))
+          fi
+          if ! git merge --no-commit --no-ff --no-edit "$upstream"; then
+            git merge --abort || true
+            echo "::error::Upstream merge conflicts; automatic sync stopped."
+            exit 1
+          fi
+          tree=$(git write-tree)
+          message="Merge readest/readest main at $upstream"
+          head=$(printf '%s\n' "$message" | \
+            GIT_AUTHOR_DATE="@$merge_time +0000" \
+            GIT_COMMITTER_DATE="@$merge_time +0000" \
+            git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit-tree "$tree" -p "$base" -p "$upstream")
+          git reset --hard "$head"
+          python3 "$RUNNER_TEMP/validate-upstream-merge.py" "$base" "$upstream" "$head"
+
+          classification=$(python3 "$RUNNER_TEMP/classify-upstream-sync.py" "$base" "$head")
+          kind=${classification%%$'\n'*}
+          [[ "$kind" == automatic || "$kind" == sensitive ]] || {
+            echo "::error::Classifier returned an invalid result."
+            exit 1
+          }
+
+          {
+            echo "changed=true"
+            echo "base=$base"
+            echo "upstream=$upstream"
+            echo "head=$head"
+            echo "branch=$branch"
+            echo "kind=$kind"
+            echo "candidate_repository=$candidate_repository"
+            echo "candidate_owner=$candidate_owner"
+            echo "candidate_name=$candidate_name"
+          } >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      pr: ${{ steps.publish.outputs.pr }}
+      head: ${{ steps.publish.outputs.head }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: reproduce candidate before requesting credentials
+        env:
+          EXPECTED_BASE: ${{ needs.prepare.outputs.base }}
+          EXPECTED_UPSTREAM: ${{ needs.prepare.outputs.upstream }}
+          EXPECTED_HEAD: ${{ needs.prepare.outputs.head }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          [ "$(git rev-parse origin/main)" = "$EXPECTED_BASE" ] || {
+            echo "::error::main advanced during preparation; retry sync."
+            exit 1
+          }
+          git fetch https://github.com/readest/readest.git refs/heads/main
+          [ "$(git rev-parse FETCH_HEAD)" = "$EXPECTED_UPSTREAM" ] || {
+            echo "::error::Upstream advanced during preparation; retry sync."
+            exit 1
+          }
+
+          git switch --detach "$EXPECTED_BASE"
+          base_time=$(git show -s --format=%ct "$EXPECTED_BASE")
+          upstream_time=$(git show -s --format=%ct "$EXPECTED_UPSTREAM")
+          if [ "$base_time" -ge "$upstream_time" ]; then
+            merge_time=$((base_time + 1))
+          else
+            merge_time=$((upstream_time + 1))
+          fi
+          if ! git merge --no-commit --no-ff --no-edit "$EXPECTED_UPSTREAM"; then
+            git merge --abort || true
+            echo "::error::Upstream merge now conflicts; automatic sync stopped."
+            exit 1
+          fi
+          tree=$(git write-tree)
+          message="Merge readest/readest main at $EXPECTED_UPSTREAM"
+          head=$(printf '%s\n' "$message" | \
+            GIT_AUTHOR_DATE="@$merge_time +0000" \
+            GIT_COMMITTER_DATE="@$merge_time +0000" \
+            git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit-tree "$tree" -p "$EXPECTED_BASE" -p "$EXPECTED_UPSTREAM")
+          git reset --hard "$head"
+          [ "$head" = "$EXPECTED_HEAD" ] || {
+            echo "::error::Candidate merge was not reproducible; refusing privileged operations."
+            exit 1
+          }
+          python3 .github/scripts/validate-upstream-merge.py "$EXPECTED_BASE" "$EXPECTED_UPSTREAM" "$head"
+
+      - id: target-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          app-id: ${{ secrets.UPSTREAM_SYNC_APP_ID }}
+          private-key: ${{ secrets.UPSTREAM_SYNC_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-checks: read
+          permission-administration: read
+
+      - name: verify candidate fork and strict main protection
+        env:
+          GH_TOKEN: ${{ steps.target-token.outputs.token }}
+          CANDIDATE_REPOSITORY: ${{ needs.prepare.outputs.candidate_repository }}
+        run: |
+          set -euo pipefail
+          candidate=$(gh api "repos/$CANDIDATE_REPOSITORY")
+          jq -e --arg target "$GITHUB_REPOSITORY" \
+            '.fork == true and .private == false and .parent.full_name == $target' \
+            <<< "$candidate" >/dev/null || {
+              echo "::error::Candidate repository must be a public fork of $GITHUB_REPOSITORY."
+              exit 1
+            }
+
+          protection=$(gh api "repos/$GITHUB_REPOSITORY/branches/main/protection")
+          jq -e '
+            .required_status_checks.strict == true
+            and (
+              ((.required_status_checks.contexts // [])
+                | any(. == "Required CI" or . == "PR checks / Required CI"))
+              or ((.required_status_checks.checks // [])
+                | any(.context == "Required CI" or .context == "PR checks / Required CI"))
+            )
+            and .required_pull_request_reviews != null
+            and .required_pull_request_reviews.required_approving_review_count == 0
+            and .enforce_admins.enabled == true
+            and (.allow_force_pushes.enabled // false) == false
+            and (.allow_deletions.enabled // false) == false
+          ' <<< "$protection" >/dev/null || {
+            echo "::error::main must require PRs and strict Required CI, enforce the rules, require zero approvals for auto-merge, and forbid force-push/deletion."
+            exit 1
+          }
+
+      - id: candidate-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          app-id: ${{ secrets.UPSTREAM_SYNC_APP_ID }}
+          private-key: ${{ secrets.UPSTREAM_SYNC_APP_PRIVATE_KEY }}
+          owner: ${{ needs.prepare.outputs.candidate_owner }}
+          repositories: ${{ needs.prepare.outputs.candidate_name }}
+          permission-contents: write
+
+      - name: create or verify candidate branch and PR
+        id: publish
+        env:
+          GH_TOKEN: ${{ steps.target-token.outputs.token }}
+          CANDIDATE_TOKEN: ${{ steps.candidate-token.outputs.token }}
+          CANDIDATE_REPOSITORY: ${{ needs.prepare.outputs.candidate_repository }}
+          CANDIDATE_OWNER: ${{ needs.prepare.outputs.candidate_owner }}
+          UPSTREAM: ${{ needs.prepare.outputs.upstream }}
+          EXPECTED_BASE: ${{ needs.prepare.outputs.base }}
+          EXPECTED_HEAD: ${{ needs.prepare.outputs.head }}
+          BRANCH: ${{ needs.prepare.outputs.branch }}
+          KIND: ${{ needs.prepare.outputs.kind }}
+        run: |
+          set -euo pipefail
+          remote="https://github.com/$CANDIDATE_REPOSITORY.git"
+          existing=$(git ls-remote "$remote" "refs/heads/$BRANCH" | cut -f1)
+          if [ -n "$existing" ]; then
+            git fetch "$remote" "refs/heads/$BRANCH"
+            existing=$(git rev-parse FETCH_HEAD)
+            python3 .github/scripts/validate-upstream-merge.py "$EXPECTED_BASE" "$UPSTREAM" "$existing"
+            head=$existing
+          else
+            auth=$(printf 'x-access-token:%s' "$CANDIDATE_TOKEN" | base64 -w0)
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" \
+              push "$remote" "$EXPECTED_HEAD:refs/heads/$BRANCH"
+            head=$EXPECTED_HEAD
+          fi
+
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main \
+            --head "$CANDIDATE_OWNER:$BRANCH" --json number --jq '.[0].number // empty')
+          if [ -z "$pr" ]; then
+            body=$(printf 'Automated merge of readest/readest main at %s.\n\nCandidate merge commit: %s.\nClassification: %s.' "$UPSTREAM" "$head" "$KIND")
+            if [ "$KIND" = sensitive ]; then
+              body+=$'\n\nAutomatic merge is disabled. A maintainer must review the changed paths and merge this PR manually.'
+            else
+              body+=$'\n\nThe PR will auto-merge only after the complete required CI check passes.'
+            fi
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$CANDIDATE_OWNER:$BRANCH" \
+              --title "chore(sync): merge upstream ${UPSTREAM:0:12}" --body "$body"
+            pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main \
+              --head "$CANDIDATE_OWNER:$BRANCH" --json number --jq '.[0].number')
+          fi
+
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+
+      - name: require maintainer review for sensitive changes
+        if: needs.prepare.outputs.kind == 'sensitive'
+        run: echo 'Sensitive build, workflow, dependency, or signing changes were opened as a fork PR and will not be auto-merged.' >> "$GITHUB_STEP_SUMMARY"
+
+  wait-for-ci:
+    needs: [prepare, publish]
+    if: needs.prepare.outputs.changed == 'true' && needs.prepare.outputs.kind == 'automatic'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      checks: read
+      pull-requests: read
+    steps:
+      - name: wait for required CI without write credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.publish.outputs.pr }}
+        run: |
+          set -euo pipefail
+          gh pr checks "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --watch --fail-fast
+          state=$(gh pr checks "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json name,state \
+            --jq '[.[] | select(.name == "Required CI") | .state] | last // "MISSING"')
+          [ "$state" = SUCCESS ] || {
+            echo "::error::Required CI did not report success ($state)."
+            exit 1
+          }
+
+  merge:
+    needs: [prepare, publish, wait-for-ci]
+    if: needs.prepare.outputs.changed == 'true' && needs.prepare.outputs.kind == 'automatic'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: target-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          app-id: ${{ secrets.UPSTREAM_SYNC_APP_ID }}
+          private-key: ${{ secrets.UPSTREAM_SYNC_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-checks: read
+          permission-administration: read
+
+      - name: verify protection and merge unchanged tested candidate
+        env:
+          GH_TOKEN: ${{ steps.target-token.outputs.token }}
+          PR_NUMBER: ${{ needs.publish.outputs.pr }}
+          EXPECTED_BASE: ${{ needs.prepare.outputs.base }}
+          EXPECTED_HEAD: ${{ needs.publish.outputs.head }}
+        run: |
+          set -euo pipefail
+          protection=$(gh api "repos/$GITHUB_REPOSITORY/branches/main/protection")
+          jq -e '
+            .required_status_checks.strict == true
+            and (
+              ((.required_status_checks.contexts // [])
+                | any(. == "Required CI" or . == "PR checks / Required CI"))
+              or ((.required_status_checks.checks // [])
+                | any(.context == "Required CI" or .context == "PR checks / Required CI"))
+            )
+            and .required_pull_request_reviews != null
+            and .required_pull_request_reviews.required_approving_review_count == 0
+            and .enforce_admins.enabled == true
+            and (.allow_force_pushes.enabled // false) == false
+            and (.allow_deletions.enabled // false) == false
+          ' <<< "$protection" >/dev/null || {
+            echo "::error::main protection changed; refusing automatic merge."
+            exit 1
+          }
+
+          git fetch origin main
+          [ "$(git rev-parse origin/main)" = "$EXPECTED_BASE" ] || {
+            echo '::error::main advanced during validation; retry sync.'
+            exit 1
+          }
+          current=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --json baseRefOid,headRefOid,state --jq '[.baseRefOid,.headRefOid,.state] | @tsv')
+          expected="$(printf '%s\t%s\tOPEN' "$EXPECTED_BASE" "$EXPECTED_HEAD")"
+          [ "$current" = "$expected" ] || {
+            echo '::error::PR changed after validation; refusing to merge.'
+            exit 1
+          }
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --merge \
+            --match-head-commit "$EXPECTED_HEAD"

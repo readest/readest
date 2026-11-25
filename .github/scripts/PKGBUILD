@@ -1,14 +1,19 @@
-pkgname=gratis-readest-nightly
-pkgver=${NIGHTLY_VERSION/-/.r}
+pkgname=${PKG_NAME:-gratis-readest-nightly}
+pkgver=${PACKAGE_VERSION:-${NIGHTLY_VERSION/-/.r}}
 pkgrel=${GITHUB_RUN_NUMBER:-1}.${GITHUB_RUN_ATTEMPT:-1}
-pkgdesc='Gratis Readest nightly ebook reader'
+pkgdesc=${PKG_DESCRIPTION:-'Gratis Readest nightly ebook reader'}
 arch=('x86_64')
 license=('GPL-3.0-only')
 depends=('gtk3' 'webkit2gtk-4.1' 'nss' 'nspr' 'alsa-lib' 'libpulse' 'speech-dispatcher' 'libxkbcommon' 'libxkbcommon-x11' 'libx11' 'libxcomposite' 'libxdamage' 'libxext' 'libxfixes' 'libxrandr' 'libxcb' 'libxcursor' 'libxi' 'libglvnd' 'mesa' 'at-spi2-core' 'libcups' 'dbus' 'expat' 'systemd-libs')
+if [[ "$pkgname" == 'gratis-readest-nightly' ]]; then
+  conflicts=('gratis-readest')
+else
+  conflicts=('gratis-readest-nightly')
+fi
 options=('!strip' '!debug')
 source=('readest.deb')
 noextract=('readest.deb')
-sha256sums=('SKIP')
+sha256sums=("${DEB_SHA256:-SKIP}")
 
 package() {
   local payload

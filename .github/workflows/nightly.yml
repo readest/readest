@@ -9,6 +9,8 @@
 name: Nightly Readest
 
 on:
+  push:
+    branches: [main]
   schedule:
     - cron: '0 22 * * *' # 22:00 UTC = 06:00 GMT+8
   workflow_dispatch:
@@ -24,23 +26,22 @@ concurrency:
 
 jobs:
   compute-version:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       nightly_version: ${{ steps.v.outputs.nightly_version }}
+      source_sha: ${{ steps.v.outputs.source_sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # A scheduled run uses the repository's default branch here; a
-          # manually dispatched run must build the branch it was dispatched
-          # from, otherwise the version stamp and frontend source can come
-          # from different trees (e.g. the Popup black-corner fix).
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - id: v
         run: |
           BASE=$(node -p "require('./apps/readest-app/package.json').version")
           STAMP=$(TZ=Asia/Shanghai date +%Y%m%d%H)
           echo "nightly_version=${BASE}-${STAMP}" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: compute-version
@@ -82,7 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ needs.compute-version.outputs.source_sha }}
           persist-credentials: false
 
       - name: initialize git submodules
@@ -568,10 +569,11 @@ jobs:
           work=$(mktemp -d "$RUNNER_TEMP/arch-package.XXXXXX")
           cp .github/scripts/PKGBUILD "$work/PKGBUILD"
           cp "${debs[0]}" "$work/readest.deb"
-          sha256sum "$work/readest.deb"
+          deb_sha=$(sha256sum "$work/readest.deb" | cut -d' ' -f1)
+          echo "Debian source SHA-256: $deb_sha"
           docker run --rm \
             -v "$work:/work" -w /work \
-            -e NIGHTLY_VERSION -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT \
+            -e NIGHTLY_VERSION -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e DEB_SHA256="$deb_sha" \
             -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
             archlinux@sha256:bddb91b7a73f31ed6be307fc8ec75e5dd59ff8ccf6c5a1bbb8205f14702c6b4a \
             bash -euo pipefail -c '

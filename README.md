@@ -6,7 +6,8 @@ Gratis Readest 是一个基于 [Readest 上游项目](https://github.com/readest
 
 - 保留原版登录能力。
 - WebDAV、S3、Google Drive 和 OneDrive 不要求 Readest 账号或 Premium。
-- 关闭 Readest Cloud 和 telemetry。
+- 默认隐藏 Integrations 页面中的 Readest Cloud 入口；登录页仍保留明确的启用选项，选择后可使用 Readest Cloud 同步。
+- 关闭 telemetry。
 - 使用独立的 `GratisReadest` 本地数据目录。
 - 保持远程同步目录与上游兼容。
 

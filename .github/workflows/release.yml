@@ -1,178 +1,133 @@
-name: Release Readest
+name: Release Gratis Readest
 
 on:
+  schedule:
+    - cron: '30 23 * * *'
   workflow_dispatch:
-  release:
-    types: [published]
 
-permissions: read-all
+permissions:
+  contents: read
+
+concurrency:
+  group: gratis-stable-release
+  cancel-in-progress: false
 
 jobs:
   get-release:
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    outputs:
-      release_id: ${{ steps.get-release.outputs.release_id }}
-      release_tag: ${{ steps.get-release.outputs.release_tag }}
-      release_title: ${{ steps.get-release.outputs.release_title }}
-      release_url: ${{ steps.get-release.outputs.release_url }}
-      release_note: ${{ steps.get-release-notes.outputs.release_note }}
-      release_version: ${{ steps.get-release-notes.outputs.release_version }}
-
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: setup node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
-      - name: get version
-        run: echo "PACKAGE_VERSION=$(node -p "require('./apps/readest-app/package.json').version")" >> $GITHUB_ENV
-      - name: get release
-        id: get-release
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
-        with:
-          retries: 3
-          script: |
-            const { data } = await github.rest.repos.getLatestRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            })
-            core.setOutput('release_id', data.id);
-            core.setOutput('release_tag', data.tag_name);
-            core.setOutput('release_title', data.name);
-            core.setOutput('release_url', data.html_url);
-      - name: get release notes
-        id: get-release-notes
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
-        with:
-          script: |
-            const fs = require('fs');
-            const version = require('./apps/readest-app/package.json').version;
-            const releaseNotesFileContent = fs.readFileSync('./apps/readest-app/release-notes.json', 'utf8');
-            const releaseNotes = JSON.parse(releaseNotesFileContent).releases[version] || {};
-            const notes = releaseNotes.notes || [];
-            const releaseNote = notes.map((note, index) => `${index + 1}. ${note}`).join(' ');
-            console.log('Formatted release note:', releaseNote);
-            core.setOutput('release_version', version);
-            core.setOutput('release_note', releaseNote);
-
-  update-release:
+    if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: get-release
-
+    outputs:
+      release_ready: ${{ steps.prepare.outputs.release_ready }}
+      release_id: ${{ steps.prepare.outputs.release_id }}
+      release_tag: ${{ steps.prepare.outputs.release_tag }}
+      release_title: ${{ steps.prepare.outputs.release_title }}
+      release_url: ${{ steps.prepare.outputs.release_url }}
+      release_note: ${{ steps.prepare.outputs.release_note }}
+      release_version: ${{ steps.prepare.outputs.release_version }}
+      source_sha: ${{ steps.prepare.outputs.source_sha }}
     steps:
-      - name: update release
-        id: update-release
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
-        env:
-          release_id: ${{ needs.get-release.outputs.release_id }}
-          release_tag: ${{ needs.get-release.outputs.release_tag }}
-          release_note: ${{ needs.get-release.outputs.release_note }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          retries: 3
-          script: |
-            const { data } = await github.rest.repos.generateReleaseNotes({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: process.env.release_tag,
-            })
-            const notes = process.env.release_note.split(/\d+\.\s/).filter(Boolean);
-            const formattedNotes = notes.map(note => `* ${note.trim()}`).join("\n");
-            const body = `## Release Highlights\n${formattedNotes}\n\n${data.body}`;
-            core.setOutput('release_description', body);
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
 
-            await github.rest.repos.updateRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: process.env.release_id,
-              body: body,
-              draft: false,
-              prerelease: false
-            })
-      - name: send release description to Discord
-        id: update-discord
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
-        env:
-          discord_webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          release_tag: ${{ needs.get-release.outputs.release_tag }}
-          release_title: ${{ needs.get-release.outputs.release_title }}
-          release_url: ${{ needs.get-release.outputs.release_url }}
-          release_description: ${{ steps.update-release.outputs.release_description }}
+      - name: setup node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
-          script: |
-            let payload = process.env.release_description;
+          node-version: 24
 
-            // Replace @username with markdown link
-            payload = payload.replace(
-              /(?<![/@\w])@((?!-)(?!.*?--)[a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,37})(?![.\w/-])(?!.*\])/g,
-              (match, name) => `[@${name}](https://github.com/${name})`
-            );
+      - name: resolve upstream release and prepare draft
+        id: prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          upstream_release=$(gh api repos/readest/readest/releases/latest)
+          upstream_tag=$(jq -r '.tag_name' <<<"$upstream_release")
+          [[ "$upstream_tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "::error::unsupported upstream tag: $upstream_tag"; exit 1; }
+          version=${BASH_REMATCH[1]}
+          current_version=$(node -p "require('./apps/readest-app/package.json').version")
+          if [ "$current_version" != "$version" ]; then
+            echo "No release: main version $current_version does not match latest upstream release $version."
+            echo 'release_ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-            // Convert PR, issue, and changelog links to markdown format
-            // Extract existing markdown links and replace them with placeholders
-            const markdownLinks = [];
-            const textWithoutMarkdownLinks = payload.replace(/\[.*?\]\(.*?\)/g, (link) => {
-                markdownLinks.push(link);
-                return `__MARKDOWN_LINK_PLACEHOLDER_${markdownLinks.length - 1}__`;
-            });
+          git fetch https://github.com/readest/readest.git "refs/tags/$upstream_tag"
+          upstream_sha=$(git rev-parse 'FETCH_HEAD^{commit}')
+          source_sha=$(git rev-parse HEAD)
+          if ! git merge-base --is-ancestor "$upstream_sha" "$source_sha"; then
+            echo "No release: upstream release commit $upstream_sha is not merged into main."
+            echo 'release_ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-            // Convert standalone PR, issue, and changelog URLs to markdown format
-            let processedText = textWithoutMarkdownLinks
-                .replace(/https:\/\/github\.com\/([\w-]+)\/([\w-]+)\/pull\/(\d+)/g, (match, owner, repo, prNumber) => `[#${prNumber}](${match})`)
-                .replace(/https:\/\/github\.com\/([\w-]+)\/([\w-]+)\/issues\/(\d+)/g, (match, owner, repo, issueNumber) => `[#${issueNumber}](${match})`)
-                .replace(/https:\/\/github\.com\/([\w-]+)\/([\w-]+)\/compare\/([v\w.-]+)\.\.\.([v\w.-]+)/g, (match, owner, repo, fromVersion, toVersion) => `[${fromVersion}...${toVersion}](${match})`);
+          release_tag="gratis-$upstream_tag"
+          releases=$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100")
+          existing=$(jq -c --arg tag "$release_tag" '[.[] | select(.tag_name == $tag)] | first // empty' <<<"$releases")
+          if [ -n "$existing" ] && [ "$(jq -r '.draft' <<<"$existing")" = false ]; then
+            echo "Release $release_tag is already published."
+            echo 'release_ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-            // Reinsert the original markdown links
-            payload = processedText.replace(/__MARKDOWN_LINK_PLACEHOLDER_(\d+)__/g, (match, index) => markdownLinks[parseInt(index, 10)]);
-            
-            // Enforce Discord's max lengths
-            const embedTitle = (process.env.release_title || process.env.release_tag || '').substring(0, 256);
-            const embedUrl = process.env.release_url;
-            const embedDescription = (payload || '').substring(0, 4096);
+          if [ -n "$existing" ]; then
+            source_sha=$(gh api "repos/${GITHUB_REPOSITORY}/commits/$release_tag" --jq .sha)
+            [ "$(jq -r '.draft' <<<"$existing")" = true ] || { echo '::error::existing release is not a draft'; exit 1; }
+            [ "$(git show "$source_sha:apps/readest-app/package.json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))')" = "$version" ] \
+              || { echo '::error::draft tag version does not match its source commit'; exit 1; }
+            git fetch https://github.com/readest/readest.git "refs/tags/$upstream_tag"
+            upstream_sha=$(git rev-parse 'FETCH_HEAD^{commit}')
+            git merge-base --is-ancestor "$upstream_sha" "$source_sha"
+            release_id=$(jq -r '.id' <<<"$existing")
+            release_url=$(jq -r '.html_url' <<<"$existing")
+            release_title=$(jq -r '.name' <<<"$existing")
+            release_note=$(jq -r '.body // ""' <<<"$existing")
+          else
+            tag_ref=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/$release_tag" --jq '.object.sha' 2>/dev/null || true)
+            if [ -n "$tag_ref" ]; then
+              tagged_sha=$(gh api "repos/${GITHUB_REPOSITORY}/commits/$release_tag" --jq .sha)
+              [ "$tagged_sha" = "$source_sha" ] || { echo '::error::release tag already points at another commit'; exit 1; }
+            fi
+            notes=$(node -e 'const x=require("./apps/readest-app/release-notes.json").releases[process.argv[1]]||{}; console.log((x.notes||[]).map((n,i)=>`${i+1}. ${n}`).join("\n"))' "$version")
+            release_title="Gratis Readest $version"
+            release_note=$(printf 'Follows Readest %s at %s.\n\n%s' "$upstream_tag" "$upstream_sha" "$notes")
+            release_url=$(gh release create "$release_tag" --draft --title "$release_title" --notes "$release_note" --target "$source_sha")
+            release_id=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/$release_tag" --jq .id)
+            jq -n --arg version "$version" --arg pub_date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              '{version:$version,pub_date:$pub_date,notes:"Gratis Readest release",platforms:{}}' > latest.json
+            gh release upload "$release_tag" latest.json --clobber
+          fi
 
-            let attempt = 0;
-            while (attempt <= 3) {
-                try {
-                    const response = await fetch(`${process.env.discord_webhook}?wait=true`, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            embeds: [{
-                                title: embedTitle,
-                                url: embedUrl,
-                                description: embedDescription
-                            }]
-                        }),
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                    if (response.status === 429) {
-                        // Rate limited, get retry-after
-                        const retryAfter = parseInt(response.headers.get('retry-after') || '1', 10);
-                        core.warning(`Rate limited by Discord. Retrying after ${retryAfter} seconds (attempt ${attempt + 1}/3)`);
-                        await new Promise(res => setTimeout(res, retryAfter * 1000));
-                        attempt++;
-                        continue;
-                    }
-                    const data = await response.json();
-                    if (!response.ok) {
-                        core.setFailed(`Discord webhook error: ${JSON.stringify(data)}`);
-                    } else {
-                        core.info(JSON.stringify(data));
-                    }
-                    break;
-                } catch (err) {
-                    core.setFailed(err.message);
-                    break;
-                }
-            }
+          echo "release_ready=true" >> "$GITHUB_OUTPUT"
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+          echo "release_title=$release_title" >> "$GITHUB_OUTPUT"
+          echo "release_url=$release_url" >> "$GITHUB_OUTPUT"
+          delimiter="RELEASE_NOTE_$(openssl rand -hex 8)"
+          {
+            echo "release_note<<$delimiter"
+            printf '%s\n' "$release_note"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+          echo "release_version=$version" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
 
   build-koreader-plugin:
     needs: get-release
+    if: needs.get-release.outputs.release_ready == 'true'
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.get-release.outputs.source_sha }}
+          persist-credentials: false
 
       - name: Build LocalSend helper binaries for KOReader (static musl armv7 + arm64)
         run: |
@@ -214,11 +169,15 @@ jobs:
 
   build-calibre-plugin:
     needs: get-release
+    if: needs.get-release.outputs.release_ready == 'true'
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.get-release.outputs.source_sha }}
+          persist-credentials: false
 
       - name: create calibre plugin zip
         env:
@@ -241,11 +200,15 @@ jobs:
 
   build-crosspoint-plugin:
     needs: get-release
+    if: needs.get-release.outputs.release_ready == 'true'
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.get-release.outputs.source_sha }}
+          persist-credentials: false
 
       - name: create CrossPoint plugin zip
         env:
@@ -277,11 +240,15 @@ jobs:
 
   build-browser-extension:
     needs: get-release
+    if: needs.get-release.outputs.release_ready == 'true'
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.get-release.outputs.source_sha }}
+          persist-credentials: false
 
       - name: setup pnpm
         uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
@@ -309,6 +276,7 @@ jobs:
 
   build-tauri:
     needs: get-release
+    if: needs.get-release.outputs.release_ready == 'true'
     permissions:
       contents: write
       # Required by actions/attest-build-provenance: id-token mints the Sigstore
@@ -344,14 +312,6 @@ jobs:
             release: linux
             arch: aarch64
             rust_target: aarch64-unknown-linux-gnu
-          - os: macos-latest
-            release: macos
-            arch: aarch64
-            rust_target: x86_64-apple-darwin,aarch64-apple-darwin
-            # --config layers the iCloud overlay (Developer ID provisioning
-            # profile + entitlements) onto the direct-distribution build; see
-            # src-tauri/tauri.macos-nonestore.conf.json.
-            args: '--target universal-apple-darwin --config src-tauri/tauri.macos-nonestore.conf.json'
           - os: windows-latest
             release: windows
             arch: x86_64
@@ -364,11 +324,13 @@ jobs:
             args: '--target aarch64-pc-windows-msvc --bundles nsis'
 
     runs-on: ${{ matrix.config.os }}
-    # An Android build is capped at 90 below; the job backstop leaves room for
-    # setup and signing on top of that.
-    timeout-minutes: ${{ matrix.config.release == 'android' && 110 || 90 }}
+    # Leave room for setup and signing after the long Android builds.
+    timeout-minutes: ${{ matrix.config.release == 'android' && 150 || 90 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.get-release.outputs.source_sha }}
+          persist-credentials: false
 
       - name: initialize git submodules
         run: git submodule update --init --recursive
@@ -503,7 +465,7 @@ jobs:
 
       - name: build and upload Android apk
         if: matrix.config.release == 'android'
-        timeout-minutes: 90
+        timeout-minutes: 120
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/28.2.13676358
@@ -564,12 +526,6 @@ jobs:
           NO_STRIP: ${{ matrix.config.release == 'linux' && 'true' || '' }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           NODE_OPTIONS: '--max-old-space-size=8192'
         with:
           projectPath: apps/readest-app
@@ -582,6 +538,53 @@ jobs:
           releaseBody: ${{ needs.get-release.outputs.release_note }}
           args: ${{ matrix.config.release == 'linux' && format('--verbose {0}', matrix.config.args || '') || matrix.config.args || '' }}
           retryAttempts: 2
+
+      - name: build and upload Arch package
+        if: matrix.config.release == 'linux' && matrix.config.arch == 'x86_64'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_VERSION: ${{ needs.get-release.outputs.release_version }}
+          PKG_NAME: gratis-readest
+          PKG_DESCRIPTION: 'Gratis Readest ebook reader'
+          RELEASE_TAG: ${{ needs.get-release.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mapfile -t debs < <(find target/release/bundle/deb -maxdepth 1 -type f -name '*.deb' -print)
+          [ "${#debs[@]}" -eq 1 ] || { echo '::error::expected one Debian package'; exit 1; }
+          work=$(mktemp -d "$RUNNER_TEMP/arch-package.XXXXXX")
+          cp .github/scripts/PKGBUILD "$work/PKGBUILD"
+          cp "${debs[0]}" "$work/readest.deb"
+          deb_sha=$(sha256sum "$work/readest.deb" | cut -d' ' -f1)
+          echo "Debian source SHA-256: $deb_sha"
+          docker run --rm \
+            -v "$work:/work" -w /work \
+            -e PACKAGE_VERSION -e PKG_NAME -e PKG_DESCRIPTION -e GITHUB_RUN_NUMBER -e GITHUB_RUN_ATTEMPT -e DEB_SHA256="$deb_sha" \
+            -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+            archlinux@sha256:bddb91b7a73f31ed6be307fc8ec75e5dd59ff8ccf6c5a1bbb8205f14702c6b4a \
+            bash -euo pipefail -c '
+              pacman -Syu --noconfirm --needed base-devel
+              getent group "$HOST_GID" >/dev/null || groupadd -g "$HOST_GID" builder
+              useradd -m -u "$HOST_UID" -g "$HOST_GID" builder
+              runuser -u builder -- makepkg --nodeps --noconfirm
+              mapfile -t packages < <(find /work -maxdepth 1 -name "*.pkg.tar.zst" -type f)
+              [ "${#packages[@]}" -eq 1 ]
+              pacman -U --noconfirm "${packages[0]}"
+              pacman -Qi gratis-readest
+              cef=$(find /usr -name libcef.so -type f -print -quit)
+              [ -n "$cef" ]
+              ldd "$cef" | tee /tmp/cef-ldd
+              ! grep -q "not found" /tmp/cef-ldd
+            '
+          mapfile -t packages < <(find "$work" -maxdepth 1 -name '*.pkg.tar.zst' -type f)
+          [ "${#packages[@]}" -eq 1 ] || { echo '::error::expected one Arch package'; exit 1; }
+          cp "${packages[0]}" "$GITHUB_WORKSPACE/"
+          gh release upload "$RELEASE_TAG" "$GITHUB_WORKSPACE/$(basename "${packages[0]}")" --clobber
+
+      - name: attest Arch package
+        if: matrix.config.release == 'linux' && matrix.config.arch == 'x86_64'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: gratis-readest-*.pkg.tar.zst
 
       # quick-sharun skips what it cannot find without failing; catch that
       # before it ships.
@@ -611,25 +614,12 @@ jobs:
           [ -e "${lib%/lib}/bin/00-no-userns-prompt.hook" ] \
             || { echo "::error::the no-userns-prompt hook is missing from the AppImage bundle"; exit 1; }
 
-      # Attest the freshly built desktop bundles (installers, AppImage, dmg,
-      # updater archives + their .sig). tauri-action reports their on-disk paths
-      # as a JSON array; fromJSON('"\n"') yields a real newline to join them into
-      # the newline-delimited list subject-path expects.
+      # Attest desktop bundles produced by the Tauri build.
       - name: attest desktop bundles
         if: matrix.config.release != 'android' && steps.tauri.outputs.artifactPaths != ''
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: ${{ join(fromJSON(steps.tauri.outputs.artifactPaths), fromJSON('"\n"')) }}
-
-      - name: upload release notes to GitHub release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # Runs on every leg; Windows would default to pwsh, which cannot run
-        # the retry script.
-        shell: bash
-        run: |
-          echo "Uploading release notes to GitHub release"
-          .github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} apps/readest-app/release-notes.json --clobber
 
       - name: build and upload portable binaries (Windows only)
         if: matrix.config.os == 'windows-latest'
@@ -686,101 +676,140 @@ jobs:
         with:
           subject-path: Readest_*-portable.exe
 
-      - name: download and update latest.json for Windows portable release
-        if: matrix.config.os == 'windows-latest'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          # Use -f so curl fails on HTTP errors instead of writing the 404 body
-          # ("Not Found") into latest.json and clobbering the release asset with
-          # invalid JSON, which then breaks tauri-action's updater merge on every
-          # subsequent build.
-          if ! curl -fsSL --retry 5 --retry-all-errors https://github.com/Moranjianghe/gratis-readest/releases/latest/download/latest.json -o latest.json; then
-            echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
-            exit 1
-          fi
-          if ! jq empty latest.json 2>/dev/null; then
-            echo "::error::Existing latest.json is not valid JSON; aborting."
-            exit 1
-          fi
-
-          version=${{ needs.get-release.outputs.release_version }}
-          arch=${{ matrix.config.arch }}
-
-          if [ "$arch" = "x86_64" ]; then
-            bin_file="Readest_${version}_x64-portable.exe"
-            platform_key="windows-x86_64-portable"
-          elif [ "$arch" = "aarch64" ]; then
-            bin_file="Readest_${version}_arm64-portable.exe"
-            platform_key="windows-aarch64-portable"
-          else
-            echo "Unknown architecture: $arch"
-            exit 1
-          fi
-
-          portable_url="https://github.com/Moranjianghe/gratis-readest/releases/download/${{ needs.get-release.outputs.release_tag }}/$bin_file"
-          portable_sig=$(cat $bin_file.sig)
-
-          jq --arg url "$portable_url" \
-              --arg sig "$portable_sig" \
-              --arg key "$platform_key" \
-              '.platforms[$key] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
-
-          echo "Uploading updated latest.json to GitHub release"
-          .github/scripts/retry.sh gh release upload ${{ needs.get-release.outputs.release_tag }} latest.json --clobber
-
-  # Runs once after every build leg, so the three Android legs (and the
-  # desktop legs that also rewrite latest.json) never race on the asset.
+  # Merge mobile, portable Windows, and Linux AppImage updater entries once all builds finish.
   update-android-latest-json:
     needs: [get-release, build-tauri]
-    if: ${{ !cancelled() }}
+    if: needs.get-release.outputs.release_ready == 'true' && needs.build-tauri.result == 'success'
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.get-release.outputs.source_sha }}
           sparse-checkout: .github/scripts
+          persist-credentials: false
 
-      - name: download and update latest.json for Android release
+      - name: assemble Android and portable updater entries
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.get-release.outputs.release_tag }}
+          RELEASE_ID: ${{ needs.get-release.outputs.release_id }}
+          RELEASE_VERSION: ${{ needs.get-release.outputs.release_version }}
         run: |
           set -euo pipefail
-          # Use -f so curl fails on HTTP errors instead of writing the 404 body
-          # ("Not Found") into latest.json and clobbering the release asset with
-          # invalid JSON, which then breaks tauri-action's updater merge on every
-          # subsequent build.
-          if ! curl -fsSL --retry 5 --retry-all-errors "https://github.com/${GH_REPO}/releases/latest/download/latest.json" -o latest.json; then
-            echo "::error::Failed to download existing latest.json; aborting to avoid clobbering the release asset."
-            exit 1
-          fi
-          if ! jq empty latest.json 2>/dev/null; then
-            echo "::error::Existing latest.json is not valid JSON; aborting."
-            exit 1
-          fi
-
-          tag=${{ needs.get-release.outputs.release_tag }}
-          version=${{ needs.get-release.outputs.release_version }}
-          .github/scripts/retry.sh gh release download "$tag" --pattern "Readest_${version}_*.apk.sig" --clobber
+          gh release download "$RELEASE_TAG" --pattern latest.json --clobber
+          jq -e --arg version "$RELEASE_VERSION" '.version == $version and (.platforms | type == "object")' latest.json >/dev/null
+          gh release download "$RELEASE_TAG" --pattern '*.sig' --clobber
 
           for arch in arm64 armv7 legacy; do
-            apk=Readest_${version}_${arch}.apk
-            # A separate assignment so a missing .sig fails the step (set -e).
-            sig=$(cat ${apk}.sig)
-            jq --arg url "https://github.com/${GH_REPO}/releases/download/${tag}/${apk}" \
-                --arg sig "$sig" \
-                --arg key "android-${arch}" \
-                '.platforms[$key] = {signature: $sig, url: $url}' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
+            apk="Readest_${RELEASE_VERSION}_${arch}.apk"
+            sig=$(cat "${apk}.sig")
+            jq --arg url "https://github.com/${GH_REPO}/releases/download/${RELEASE_TAG}/${apk}" \
+              --arg sig "$sig" --arg key "android-${arch}" \
+              '.platforms[$key] = {signature:$sig,url:$url}' latest.json > latest.tmp
+            mv latest.tmp latest.json
           done
-          # Clients released before the per-ABI split look up android-universal
-          # on every non-arm64 device; most of those are armv7.
-          jq '.platforms["android-universal"] = .platforms["android-armv7"]' latest.json > tmp.$$.json && mv tmp.$$.json latest.json
+          jq '.platforms["android-universal"] = .platforms["android-armv7"]' latest.json > latest.tmp
+          mv latest.tmp latest.json
 
-          echo "Uploading updated latest.json to GitHub release"
-          .github/scripts/retry.sh gh release upload "$tag" latest.json --clobber
+          for arch in x64 arm64; do
+            if [ "$arch" = x64 ]; then key=windows-x86_64-portable; else key=windows-aarch64-portable; fi
+            binary="Readest_${RELEASE_VERSION}_${arch}-portable.exe"
+            sig=$(cat "${binary}.sig")
+            jq --arg url "https://github.com/${GH_REPO}/releases/download/${RELEASE_TAG}/${binary}" \
+              --arg sig "$sig" --arg key "$key" \
+              '.platforms[$key] = {signature:$sig,url:$url}' latest.json > latest.tmp
+            mv latest.tmp latest.json
+          done
+
+          mapfile -t assets < <(gh api --paginate "repos/${GH_REPO}/releases/${RELEASE_ID}/assets" --jq '.[].name')
+          for arch in amd64 aarch64; do
+            suffix="_${arch}.AppImage"
+            matches=()
+            for asset in "${assets[@]}"; do
+              if [[ "$asset" == *"$suffix" ]]; then matches+=("$asset"); fi
+            done
+            [ "${#matches[@]}" -eq 1 ] || { echo "::error::expected one ${arch} AppImage"; exit 1; }
+            name=${matches[0]}
+            if [ "$arch" = amd64 ]; then key=linux-x86_64-appimage; else key=linux-aarch64-appimage; fi
+            jq --arg url "https://github.com/${GH_REPO}/releases/download/${RELEASE_TAG}/${name}" --arg key "$key" \
+              '.platforms[$key] = {url:$url}' latest.json > latest.tmp
+            mv latest.tmp latest.json
+          done
+
+          gh release upload "$RELEASE_TAG" latest.json --clobber
+  finalize-release:
+    needs:
+      - get-release
+      - build-koreader-plugin
+      - build-calibre-plugin
+      - build-crosspoint-plugin
+      - build-browser-extension
+      - build-tauri
+      - update-android-latest-json
+    if: needs.get-release.outputs.release_ready == 'true'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.get-release.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: upload release notes asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.get-release.outputs.release_tag }}
+        run: gh release upload "$RELEASE_TAG" apps/readest-app/release-notes.json --clobber
+
+      - name: verify draft assets and updater manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.get-release.outputs.release_id }}
+          RELEASE_TAG: ${{ needs.get-release.outputs.release_tag }}
+          RELEASE_VERSION: ${{ needs.get-release.outputs.release_version }}
+        run: |
+          set -euo pipefail
+          gh release download "$RELEASE_TAG" --pattern latest.json --clobber
+          jq -e --arg version "$RELEASE_VERSION" '
+            .version == $version and
+            (.platforms | type == "object") and
+            (.platforms as $p |
+              all(["android-arm64", "android-armv7", "android-legacy", "android-universal", "windows-x86_64", "windows-aarch64", "windows-x86_64-portable", "windows-aarch64-portable", "linux-x86_64-appimage", "linux-aarch64-appimage"][]; . as $key | ($p[$key].url | type == "string")) and
+              all(["android-arm64", "android-armv7", "android-legacy", "android-universal", "windows-x86_64", "windows-aarch64", "windows-x86_64-portable", "windows-aarch64-portable"][]; . as $key | ($p[$key].signature | type == "string")))
+          ' latest.json >/dev/null
+
+          mapfile -t assets < <(gh api --paginate "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets" --jq '.[].name')
+          require_asset() {
+            printf '%s\n' "${assets[@]}" | grep -Fxq "$1" || { echo "::error::missing release asset: $1"; exit 1; }
+          }
+          require_asset "release-notes.json"
+          for arch in arm64 armv7 legacy; do
+            require_asset "Readest_${RELEASE_VERSION}_${arch}.apk"
+            require_asset "Readest_${RELEASE_VERSION}_${arch}.apk.sig"
+          done
+          for arch in x64 arm64; do
+            require_asset "Gratis Readest_${RELEASE_VERSION}_${arch}-setup.exe"
+            require_asset "Gratis Readest_${RELEASE_VERSION}_${arch}-setup.exe.sig"
+            require_asset "Readest_${RELEASE_VERSION}_${arch}-portable.exe"
+            require_asset "Readest_${RELEASE_VERSION}_${arch}-portable.exe.sig"
+          done
+          mapfile -t arch_packages < <(printf '%s\n' "${assets[@]}" | grep -E "^gratis-readest-${RELEASE_VERSION}-.*-x86_64\\.pkg\\.tar\\.zst$" || true)
+          [ "${#arch_packages[@]}" -eq 1 ] || { echo '::error::expected exactly one stable Arch package'; exit 1; }
+          appimages=$(printf '%s\n' "${assets[@]}" | grep -Ec '\.AppImage$' || true)
+          debs=$(printf '%s\n' "${assets[@]}" | grep -Ec '\.deb$' || true)
+          rpms=$(printf '%s\n' "${assets[@]}" | grep -Ec '\.rpm$' || true)
+          [ "$appimages" -ge 2 ] && [ "$debs" -ge 2 ] && [ "$rpms" -ge 2 ] \
+            || { echo '::error::Linux x86_64/aarch64 bundles are incomplete'; exit 1; }
+
+      - name: publish validated release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.get-release.outputs.release_tag }}
+        run: gh release edit "$RELEASE_TAG" --draft=false --prerelease=false --latest
 
   upload-to-r2:
     needs: [get-release, build-tauri, update-android-latest-json]

@@ -21,7 +21,9 @@ Gratis Readest is intended to be a local-first fork of Readest:
 - Original Supabase login/authentication remains available for users who need
   Readest account features.
 - PostHog telemetry is disabled for this distribution.
-- Readest Cloud UI is hidden, while the upstream sync-core semantics remain
+- The Readest Cloud provider row is hidden from Integrations. The login page
+  intentionally retains an explicit opt-in that can enable Readest Cloud sync;
+  this is expected behavior, not a bug. The upstream sync-core semantics remain
   intact for easier future upstream merges.
 - WebDAV, S3, Google Drive, and OneDrive remain available with their own
   provider credentials and do not require a Readest Premium plan.
@@ -44,13 +46,14 @@ APP_UPDATE_BASE_URL = 'https://github.com/Moranjianghe/gratis-readest/releases/l
 APP_NIGHTLY_UPDATES_ENABLED = false
 ```
 
-The `APP_READEST_CLOUD_ENABLED` switch is reserved for future distribution
-policy work. Do not use it to globally alter `isReadestCloudEnabled()` or the
-sync-core provider contract: doing that previously caused dozens of upstream
-sync tests to fail. The UI switch keeps Readest Cloud unavailable while
-preserving the original login implementation. WebDAV and other third-party
-providers are controlled separately by `APP_CLOUD_SYNC_REQUIRES_PREMIUM`,
-which is currently `false`.
+`APP_READEST_CLOUD_ENABLED` controls whether the Readest Cloud provider row is
+shown in Integrations. It does not globally disable the provider: the login page
+intentionally keeps its explicit opt-in, and selecting it may enable Readest
+Cloud sync. This is expected product behavior, not a bug. Do not use this UI
+switch to alter `isReadestCloudEnabled()` or the sync-core provider contract;
+doing that previously caused dozens of upstream sync tests to fail. WebDAV and
+other third-party providers are controlled separately by
+`APP_CLOUD_SYNC_REQUIRES_PREMIUM`, which is currently `false`.
 
 ## Updates and Signing
 
