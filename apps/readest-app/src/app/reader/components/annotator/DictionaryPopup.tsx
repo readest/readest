@@ -23,6 +23,8 @@ interface DictionaryPopupProps {
   capture?: VocabularyCapture;
   /** Ask the AI context dictionary alone (the Context Dictionary tool, #7497). */
   contextOnly?: boolean;
+  /** Ask the X-Ray alone (the X-Ray tool). */
+  xrayOnly?: boolean;
   position: Position;
   trianglePosition: Position;
   popupWidth: number;
@@ -137,6 +139,7 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   selection,
   capture,
   contextOnly,
+  xrayOnly,
   position,
   trianglePosition,
   popupWidth,
@@ -145,9 +148,9 @@ const DictionaryPopup: React.FC<DictionaryPopupProps> = ({
   onManage,
   onPin,
 }) => {
-  const state = useDictionaryResults({ word, lang, selection, capture, contextOnly });
+  const state = useDictionaryResults({ word, lang, selection, capture, contextOnly, xrayOnly });
   const handlePin = () =>
-    onPin?.(lookupToPin({ word, lang, selection, capture, contextOnly }, state));
+    onPin?.(lookupToPin({ word, lang, selection, capture, contextOnly, xrayOnly }, state));
   const { box, gripProps, moveProps } = usePopupBox(useResponsiveSize(10));
   return (
     <Popup

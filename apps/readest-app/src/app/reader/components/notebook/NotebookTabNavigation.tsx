@@ -4,6 +4,8 @@ import React from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
+import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { NotebookTab } from '@/store/notebookStore';
 import { getNotebookTabs } from './notebookTabs';
 
@@ -21,8 +23,15 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
   const { settings } = useSettingsStore();
   const aiEnabled = settings?.aiSettings?.enabled ?? false;
 
-  // The Dictionary tab keeps the latest lookup beside the notes (#7730).
-  const tabs: NotebookTab[] = aiEnabled ? ['notes', 'ai', 'dictionary'] : ['notes', 'dictionary'];
+  // The Dictionary tab keeps the latest lookup beside the notes (#7730). The
+  // X-Ray tab is there once the X-Ray is on or was pinned.
+  const xrayEnabled = useCustomDictionaryStore(
+    (s) => s.settings.providerEnabled[BUILTIN_PROVIDER_IDS.xray],
+  );
+  const tabs: NotebookTab[] = ['notes'];
+  if (aiEnabled) tabs.push('ai');
+  tabs.push('dictionary');
+  if (xrayEnabled || activeTab === 'xray') tabs.push('xray');
   const tabInfo = getNotebookTabs(_);
   const getTabLabel = (tab: NotebookTab) => tabInfo[tab].label;
   const getTabIcon = (tab: NotebookTab) => {

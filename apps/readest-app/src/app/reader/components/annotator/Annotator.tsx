@@ -34,6 +34,7 @@ import {
 import { buildSelectionContext } from '@/services/dictionaries/contextDictionary';
 import { getContextTranslator } from '@/services/dictionaries/providers/contextProvider';
 import type { DictionarySelectionContext } from '@/services/dictionaries/types';
+import { setXRayLookup, useXRayStore } from '@/services/xray/xrayService';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
 import { useDeviceControlStore } from '@/store/deviceStore';
@@ -48,6 +49,7 @@ import { usePageboundSync } from '../../hooks/usePageboundSync';
 import { useNotionSync } from '../../hooks/useNotionSync';
 import { useObsidianSync } from '../../hooks/useObsidianSync';
 import { useTextSelector } from '../../hooks/useTextSelector';
+import { useXRayAutoUpdate } from '../../hooks/useXRayAutoUpdate';
 import { useSaveBooknoteNoteText } from '../../hooks/useSaveBooknoteNoteText';
 import { placeToolbar, Point, Position, Rect, TextSelection } from '@/utils/sel';
 import {
@@ -167,6 +169,7 @@ const PositionFollowers: React.FC<{
 }> = ({ bookKey, annotationIndex, contentEpoch }) => {
   const getView = useReaderStore((s) => s.getView);
   const progress = useBookProgress(bookKey);
+  useXRayAutoUpdate(bookKey, progress?.location);
   useBookOrbitNotesSync(bookKey);
   useGrimmoryNotesSync(bookKey);
   useHardcoverSync(bookKey);
@@ -284,6 +287,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const [dictionaryInSheet, setDictionaryInSheet] = useState(false);
   // Set by the Context Dictionary tool: the lookup asks the AI alone (#7497).
   const [dictionaryContextOnly, setDictionaryContextOnly] = useState(false);
+  // Set by the X-Ray tool: the lookup asks the X-Ray alone.
+  const [dictionaryXRayOnly, setDictionaryXRayOnly] = useState(false);
   const [showDeepLPopup, setShowDeepLPopup] = useState(false);
   const [showProofreadPopup, setShowProofreadPopup] = useState(false);
   const [trianglePosition, setTrianglePosition] = useState<Position>();
@@ -591,6 +596,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     selection?.range
       ? {
           ...buildSelectionContext(selection.range),
+          bookKey,
           bookTitle: bookData.book?.title,
           bookAuthor: bookData.book?.author,
           targetLang: viewSettings.translateTargetLang,
@@ -2171,8 +2177,23 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     void suppressNativeSelectionHandles();
     setDictionaryInSheet(isSheetViewport());
     setDictionaryContextOnly(contextOnly);
+    setDictionaryXRayOnly(false);
     setShowDictionaryPopup(true);
     return false;
+  };
+
+  // Looks the name up in the X-Ray alone: in its Notebook tab while that is on
+  // screen, else in the dictionary popup.
+  const handleXRay = () => {
+    if (!selection?.text) return;
+    setXRayLookup(selection.text);
+    if (useXRayStore.getState().isDocked) return;
+    setShowAnnotPopup(false);
+    void suppressNativeSelectionHandles();
+    setDictionaryInSheet(isSheetViewport());
+    setDictionaryContextOnly(false);
+    setDictionaryXRayOnly(true);
+    setShowDictionaryPopup(true);
   };
 
   // Pin to Notebook in the popup: the lookup moves into the Dictionary tab of a
@@ -2180,18 +2201,19 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // From the instant dictionary that is the toolbar only with
   // keepSelectionAfterLookup, as for its later lookups into the tab (#6454).
   const handlePinDictionary = (lookup: UseDictionaryResultsArgs) => {
-    useDictionaryDockStore.getState().setLookup(lookup);
+    const tab = lookup.xrayOnly ? 'xray' : 'dictionary';
+    if (!lookup.xrayOnly) useDictionaryDockStore.getState().setLookup(lookup);
     // The Notebook shows the book the sidebar is on.
     useSidebarStore.getState().setSideBarBookKey(bookKey);
     const { setNotebookActiveTab, setNotebookPin, setNotebookVisible } =
       useNotebookStore.getState();
-    setNotebookActiveTab('dictionary');
+    setNotebookActiveTab(tab);
     setNotebookPin(true);
     setNotebookVisible(true);
     void saveSysSettings(envConfig, 'globalReadSettings', {
       ...settings.globalReadSettings,
       isNotebookPinned: true,
-      notebookActiveTab: 'dictionary',
+      notebookActiveTab: tab,
     });
     handleDismissPopupShowToolbar();
   };
@@ -2896,6 +2918,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           // Premium, like the Context Dictionary switch in Manage Dictionaries.
           disabled: !isCustomTranslatorAllowed(token) || !getContextTranslator(),
         };
+      case 'xray':
+        return {
+          tooltipText: _(label),
+          Icon,
+          onClick: handleXRay,
+          disabled: !isCustomTranslatorAllowed(token) || !getContextTranslator(),
+        };
       case 'translate':
         return { tooltipText: _(label), Icon, onClick: handleTranslation };
       case 'tts':
@@ -3001,8 +3030,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
                 word={selection?.text as string}
                 lang={bookData.bookDoc?.metadata.language as string}
                 selection={dictionarySelection}
-                capture={dictionaryCapture}
+                // A name looked up in the X-Ray is not vocabulary.
+                capture={dictionaryXRayOnly ? undefined : dictionaryCapture}
                 contextOnly={dictionaryContextOnly}
+                xrayOnly={dictionaryXRayOnly}
                 onDismiss={handleDismissPopupShowToolbar}
                 onManage={onManage}
                 // The Notebook pins beside the page from 640 px wide, as on a
@@ -3017,12 +3048,13 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
               word={selection?.text as string}
               lang={bookData.bookDoc?.metadata.language as string}
               selection={dictionarySelection}
-              capture={dictionaryCapture}
+              capture={dictionaryXRayOnly ? undefined : dictionaryCapture}
               position={dictPopupPosition}
               trianglePosition={trianglePosition}
               popupWidth={dictPopupWidth}
               popupHeight={dictPopupHeight}
               contextOnly={dictionaryContextOnly}
+              xrayOnly={dictionaryXRayOnly}
               onDismiss={handleDismissPopupShowToolbar}
               onManage={onManage}
               onPin={handlePinDictionary}

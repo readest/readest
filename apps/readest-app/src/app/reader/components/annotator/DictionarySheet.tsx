@@ -21,6 +21,8 @@ interface DictionarySheetProps {
   capture?: VocabularyCapture;
   /** Ask the AI context dictionary alone (the Context Dictionary tool, #7497). */
   contextOnly?: boolean;
+  /** Ask the X-Ray alone (the X-Ray tool). */
+  xrayOnly?: boolean;
   onDismiss: () => void;
   onManage?: () => void;
   /** Move the lookup into the Notebook's Dictionary tab; omit to hide the pin. */
@@ -33,13 +35,14 @@ const DictionarySheet: React.FC<DictionarySheetProps> = ({
   selection,
   capture,
   contextOnly,
+  xrayOnly,
   onDismiss,
   onManage,
   onPin,
 }) => {
-  const state = useDictionaryResults({ word, lang, selection, capture, contextOnly });
+  const state = useDictionaryResults({ word, lang, selection, capture, contextOnly, xrayOnly });
   const handlePin = () =>
-    onPin?.(lookupToPin({ word, lang, selection, capture, contextOnly }, state));
+    onPin?.(lookupToPin({ word, lang, selection, capture, contextOnly, xrayOnly }, state));
   return (
     <Dialog
       isOpen

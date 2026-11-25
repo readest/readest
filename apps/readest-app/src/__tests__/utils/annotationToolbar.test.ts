@@ -64,6 +64,7 @@ describe('annotationToolbar helpers', () => {
       'search',
       'dictionary',
       'contextdictionary',
+      'xray',
       'vocabulary',
       'translate',
       'tts',

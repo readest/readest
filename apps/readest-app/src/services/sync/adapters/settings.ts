@@ -59,6 +59,7 @@ export const SETTINGS_WHITELIST = [
   'dictionarySettings.contextPromptId',
   'dictionarySettings.contextSystemPrompt',
   'dictionarySettings.contextMaxOutputTokens',
+  'dictionarySettings.xrayAutoUpdate',
   // Anki card profiles (#7849): deck and note type names, the same on every
   // device that shares an AnkiWeb collection.
   'ankiProfiles',
@@ -143,6 +144,7 @@ export const SETTINGS_DICTIONARY_FIELDS = [
   'dictionarySettings.contextPromptId',
   'dictionarySettings.contextSystemPrompt',
   'dictionarySettings.contextMaxOutputTokens',
+  'dictionarySettings.xrayAutoUpdate',
 ] as const;
 
 /**

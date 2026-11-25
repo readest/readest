@@ -34,11 +34,16 @@ it.each([
   ['notes', 'Notebook'],
   ['ai', 'AI Assistant'],
   ['dictionary', 'Dictionary'],
+  ['xray', 'X-Ray'],
 ] as const)('titles the header for the %s tab "%s"', (tab, title) => {
   expect(titleOf(renderHeader(tab))).toBe(title);
 });
 
-it.each(['ai', 'dictionary'] as const)("shows the %s tab's own icon in the header", (tab) => {
+it.each([
+  'ai',
+  'dictionary',
+  'xray',
+] as const)("shows the %s tab's own icon in the header", (tab) => {
   const header = renderHeader(tab);
   const { container } = render(<NotebookTabNavigation activeTab={tab} onTabChange={vi.fn()} />);
   const tabIcon = container.querySelector('[aria-pressed="true"] svg')?.innerHTML;

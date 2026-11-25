@@ -1,5 +1,5 @@
 import type { IconType } from 'react-icons';
-import { LuBookA } from 'react-icons/lu';
+import { LuBookA, LuScanSearch } from 'react-icons/lu';
 import { PiNotePencil, PiRobot } from 'react-icons/pi';
 import { RiQuillPenLine } from 'react-icons/ri';
 
@@ -19,4 +19,5 @@ export const getNotebookTabs = (_: TranslationFunc): Record<NotebookTab, Noteboo
   notes: { label: _('Notes'), icon: PiNotePencil, title: _('Notebook'), titleIcon: RiQuillPenLine },
   ai: { label: _('AI'), icon: PiRobot, title: _('AI Assistant'), titleIcon: PiRobot },
   dictionary: { label: _('Dictionary'), icon: LuBookA, title: _('Dictionary'), titleIcon: LuBookA },
+  xray: { label: _('X-Ray'), icon: LuScanSearch, title: _('X-Ray'), titleIcon: LuScanSearch },
 });
