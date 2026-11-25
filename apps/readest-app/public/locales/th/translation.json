@@ -2889,6 +2889,8 @@
   "{{speed}} words/min": "{{speed}} คำ/นาที",
   "Reading Speed": "ความเร็วในการอ่าน",
   "Reading Speed Today": "ความเร็วในการอ่านวันนี้",
+  "p. {{page}}": "หน้า {{page}}",
+  "Copy with Citation": "คัดลอกพร้อมแหล่งอ้างอิง",
   "Gift card": "บัตรของขวัญ",
   "Readest {{plan}}": "Readest {{plan}}",
   "1 year": "1 ปี",
