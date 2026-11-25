@@ -15,6 +15,7 @@ const iapVerificationSchema = z.object({
   productId: z.string().min(1, 'Product ID is required'),
   orderId: z.string().min(1, 'Order ID is required'),
   purchaseToken: z.string().min(1, 'Purchase token is required'),
+  giftCardId: z.string().uuid().optional(),
 });
 
 export async function POST(request: Request) {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       );
     }
   }
-  const { orderId, purchaseToken, productId, packageName } = validatedInput!;
+  const { orderId, purchaseToken, productId, packageName, giftCardId } = validatedInput!;
 
   const { user, token } = await validateUserAndToken(request.headers.get('authorization'));
   if (!user || !token) {
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
 
     let purchase: VerifiedPurchase;
     try {
-      purchase = await processPurchaseData(user, verifyParams, verificationResult);
+      purchase = await processPurchaseData(user, verifyParams, verificationResult, giftCardId);
       if (verificationResult.purchaseType === 'product') {
         const productData = verificationResult.purchaseData as ProductPurchase;
         if (productData.purchaseState === 0) {

@@ -10,6 +10,8 @@ interface CheckoutProps {
   clientSecret: string;
   sessionId: string;
   planName?: string;
+  /** Replaces the plan heading, for purchases that aren't a plan. */
+  title?: string;
   className?: string;
   onSuccess?: (sessionId: string) => void;
 }
@@ -18,6 +20,7 @@ const Checkout: React.FC<CheckoutProps> = ({
   clientSecret,
   sessionId,
   planName,
+  title,
   onSuccess,
   className = '',
 }) => {
@@ -35,9 +38,10 @@ const Checkout: React.FC<CheckoutProps> = ({
     <div className={clsx('w-full', className)}>
       <div className='mb-4 flex items-center justify-center'>
         <h3 className='text-center text-lg font-semibold'>
-          {planName
-            ? _('Upgrade to {{plan}}', { plan: _(planName) })
-            : _('Complete Your Subscription')}
+          {title ??
+            (planName
+              ? _('Upgrade to {{plan}}', { plan: _(planName) })
+              : _('Complete Your Subscription'))}
         </h3>
       </div>
 

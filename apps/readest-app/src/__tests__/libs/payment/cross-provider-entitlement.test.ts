@@ -24,6 +24,8 @@ const db = vi.hoisted(() => ({
   apple: [] as Array<{ product_id: string; status: string }>,
   existingStripeSubscription: null as unknown,
   existingGoogleSubscription: null as unknown,
+  gifts: [] as Array<{ id: string; tier: string; days: number; redeemed_at: string }>,
+  giftError: null as { message: string } | null,
 }));
 
 vi.mock('stripe', () => {
@@ -92,6 +94,19 @@ vi.mock('@/utils/supabase', () => ({
       if (table === 'apple_iap_subscriptions') {
         return iapTable(db.apple, null);
       }
+      if (table === 'gift_cards') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () =>
+                Promise.resolve({
+                  data: db.giftError ? null : db.gifts,
+                  error: db.giftError,
+                }),
+            }),
+          }),
+        };
+      }
       throw new Error(`unexpected table: ${table}`);
     },
   }),
@@ -142,6 +157,8 @@ beforeEach(() => {
   db.apple = [];
   db.existingStripeSubscription = null;
   db.existingGoogleSubscription = null;
+  db.gifts = [];
+  db.giftError = null;
   process.env['STRIPE_SECRET_KEY_DEV'] = 'sk_test_dummy';
 });
 
@@ -210,6 +227,56 @@ describe('resolveUserPlan', () => {
 
     expect(await resolveUserPlan('user-1')).toBe('pro');
     expect(stripeMocks.subscriptionsList).not.toHaveBeenCalled();
+  });
+});
+
+describe('gifts in resolveUserPlan', () => {
+  const NOW = new Date('2026-11-23T00:00:00Z');
+  const gift = (tier: string, redeemedAt: string) => ({
+    id: `g-${tier}-${redeemedAt}`,
+    tier,
+    days: 365,
+    redeemed_at: redeemedAt,
+  });
+
+  it('keeps Plus from an active gift when the Stripe subscription is deleted', async () => {
+    db.existingStripeSubscription = { id: 1 };
+    // The handler resolves the plan at the real now, so the gift is redeemed
+    // relative to it: a fixed date would end the gift a year later.
+    db.gifts = [gift('plus', new Date(Date.now() - 30 * 86_400_000).toISOString())];
+    stripeMocks.subscriptionsRetrieve.mockResolvedValue(
+      makeStripeSub('sub_plus', 'plus', 'canceled'),
+    );
+    stripeMocks.subscriptionsList.mockResolvedValue({
+      data: [{ id: 'sub_plus', status: 'canceled' }],
+    });
+
+    await stripeCreateOrUpdateSubscription('user-1', 'cus_1', 'sub_plus');
+
+    expect(db.planUpdates.at(-1)?.['plan']).toBe('plus');
+  });
+
+  it('lets a Pro gift beat a paid Plus subscription', async () => {
+    stripeHas('plus');
+    db.gifts = [gift('pro', '2026-10-01T00:00:00Z')];
+
+    expect(await resolveUserPlan('user-1', { now: NOW })).toBe('pro');
+  });
+
+  it('adds nothing for a gift that ended before now', async () => {
+    stripeHas(null);
+    db.gifts = [gift('pro', '2025-01-01T00:00:00Z')];
+
+    expect(await resolveUserPlan('user-1', { now: NOW })).toBe('free');
+  });
+
+  it('throws rather than downgrading when the gift read fails', async () => {
+    stripeHas(null);
+    db.giftError = { message: 'gift read failed' };
+
+    await expect(resolveUserPlan('user-1', { now: NOW })).rejects.toMatchObject({
+      message: 'gift read failed',
+    });
   });
 });
 

@@ -1,9 +1,11 @@
 import Stripe from 'stripe';
 import { UserPlan } from '@/types/quota';
+import { GiftTier } from '@/types/gift';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { PaymentStatus, StripePaymentData, StripeProductMetadata } from '@/types/payment';
 import { updateUserStorage } from '../storage';
 import { resolveUserPlan } from '../entitlements';
+import { activateGiftCard, revokeGiftCardForPayment } from '../gift/server';
 
 let stripe: Stripe | null;
 
@@ -150,9 +152,10 @@ export const createOrUpdatePayment = async (
   // Without this, re-running this for a refunded session restores the
   // entitlement.
   const refunded = (paymentIntent.latest_charge as Stripe.Charge | null)?.refunded;
+  const status: PaymentStatus = refunded ? 'refunded' : (paymentIntent.status as PaymentStatus);
   const lineItem = session.line_items?.data[0];
   const product = lineItem?.price?.product as Stripe.Product & {
-    metadata: { plan: UserPlan; storageGB: string };
+    metadata: { plan: UserPlan; storageGB: string; gift?: GiftTier };
   };
   const productMetadata = product?.metadata;
 
@@ -165,7 +168,7 @@ export const createOrUpdatePayment = async (
       stripe_payment_intent_id: paymentIntent.id,
       amount: paymentIntent.amount,
       currency: paymentIntent.currency,
-      status: refunded ? 'refunded' : (paymentIntent.status as PaymentStatus),
+      status,
       payment_method: paymentIntent.payment_method as string | null,
       product_id: product?.id,
       storage_gb: productMetadata?.storageGB ? parseInt(productMetadata.storageGB) : 0,
@@ -181,6 +184,25 @@ export const createOrUpdatePayment = async (
       throw error;
     }
     await updateUserStorage(userId);
+
+    // A gift card follows its payment: active only while it is paid for. The
+    // webhook and `/api/stripe/check` both land here, and activation is
+    // idempotent on the payment intent.
+    const gift = productMetadata?.gift;
+    if (gift === 'plus' || gift === 'pro') {
+      if (refunded) {
+        await revokeGiftCardForPayment('stripe_payment_intent_id', paymentIntent.id);
+      } else if (COMPLETED_PAYMENT_STATUSES.includes(status)) {
+        await activateGiftCard({
+          buyerId: userId,
+          tier: gift,
+          provider: 'stripe',
+          column: 'stripe_payment_intent_id',
+          paymentRef: paymentIntent.id,
+          giftCardId: session.metadata?.['giftCardId'],
+        });
+      }
+    }
   } catch (error) {
     console.error('Error creating or updating payment:', error);
     throw error;

@@ -45,6 +45,7 @@ export const fetchStripePlans = async () => {
 export const createStripeCheckoutSession = async (
   productId: string,
   planType: PlanType = 'subscription',
+  metadata?: Record<string, string>,
 ): Promise<StripeCheckoutResponse> => {
   const token = await getAccessToken();
   const isEmbeddedCheckout = isTauriAppPlatform();
@@ -55,7 +56,7 @@ export const createStripeCheckoutSession = async (
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ priceId: productId, planType, embedded: isEmbeddedCheckout }),
+    body: JSON.stringify({ priceId: productId, planType, embedded: isEmbeddedCheckout, metadata }),
   });
 
   if (!response.ok) {

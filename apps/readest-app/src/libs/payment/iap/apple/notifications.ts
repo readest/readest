@@ -13,9 +13,10 @@ import {
 import { PlanType } from '@/types/quota';
 import { createSupabaseAdminClient } from '@/utils/supabase';
 import { IAPStatus } from '../types';
-import { mapProductIdToProductName } from '../utils';
+import { isGiftProduct, mapProductIdToProductName } from '../utils';
 import { markPaymentRefunded } from '../payments';
 import { VerifiedPurchase, createOrUpdatePayment, createOrUpdateSubscription } from './server';
+import { appleVerifierEnvironment, getAppleIAPVerifier } from './verifier';
 
 export interface AppleNotificationResult {
   handled: boolean;
@@ -143,10 +144,27 @@ export async function handleAppleNotification(
         revocationReason: null,
       };
 
+      // A gift card is value its buyer can hand on, so it follows Apple's
+      // current state, not this notification's: a REFUND that came before any
+      // payment row found nothing to revoke, and a retry of this charge must
+      // not activate a card for it. Only where the verifier can see the
+      // transaction, as it reads one environment.
+      if (
+        isGiftProduct(transaction.productId) &&
+        purchase.environment === appleVerifierEnvironment()
+      ) {
+        const live = await getAppleIAPVerifier().verifyTransaction(
+          transaction.originalTransactionId,
+        );
+        if (!live.success) throw new Error(live.error || 'apple_verify_failed');
+        purchase.status = live.status ?? purchase.status;
+        purchase.revocationDate = live.revocationDate?.toISOString() ?? null;
+      }
+
       // Upsert on apple_original_transaction_id, so a notification that races
       // or retries against the client flow is deduped rather than doubled.
       await createOrUpdatePayment(userId, purchase);
-      return { handled: true, status: 'active', notificationType };
+      return { handled: true, status: purchase.status, notificationType };
     }
 
     // Any other one-time event is recorded by the client verification flow;

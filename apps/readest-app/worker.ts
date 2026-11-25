@@ -15,6 +15,7 @@ import { default as handler } from './.open-next/worker.js';
 
 interface CompactEnv {
   STATS_COMPACT_TOKEN?: string;
+  GIFT_RECONCILE_TOKEN?: string;
 }
 
 interface ExecutionContextLike {
@@ -22,6 +23,7 @@ interface ExecutionContextLike {
 }
 
 const COMPACT_URL = 'https://web.readest.com/api/stats/compact';
+const GIFT_RECONCILE_URL = 'https://web.readest.com/api/gift/reconcile';
 
 export default {
   fetch: handler.fetch,
@@ -41,6 +43,21 @@ export default {
         })
         .catch((e: unknown) => {
           console.error('stats compact cron: failed', e instanceof Error ? e.message : e);
+        }),
+    );
+    // Gift cards: claim for confirmed emails, sync plans at gift boundaries.
+    const giftReq = new Request(GIFT_RECONCILE_URL, {
+      method: 'POST',
+      headers: { 'x-gift-token': env.GIFT_RECONCILE_TOKEN ?? '' },
+    });
+    ctx.waitUntil(
+      handler
+        .fetch(giftReq, env, ctx)
+        .then((res: Response) => {
+          if (!res.ok) console.warn('gift reconcile cron: status', res.status);
+        })
+        .catch((e: unknown) => {
+          console.error('gift reconcile cron: failed', e instanceof Error ? e.message : e);
         }),
     );
   },

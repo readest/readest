@@ -16,6 +16,7 @@ vi.mock('@/libs/payment/stripe/server', () => ({
 }));
 
 import { GET } from '@/app/api/stripe/plans/route';
+import { GET as getGiftPrices } from '@/app/api/gift/prices/route';
 
 type PriceFixture = {
   id: string;
@@ -42,6 +43,27 @@ const price = (
     metadata: { plan },
   } as Partial<Stripe.Product>,
 });
+
+// Gift cards are one-time prices on products marked `metadata.gift` and no
+// `metadata.plan`.
+const giftPrice = (id: string, gift: string, unit_amount: number, active = true): PriceFixture => ({
+  id,
+  unit_amount,
+  currency: 'usd',
+  recurring: null,
+  product: {
+    id: `prod_gift_${gift}`,
+    active,
+    name: `Gift ${gift}`,
+    metadata: { gift },
+  } as Partial<Stripe.Product>,
+});
+
+const giftPrices = [
+  giftPrice('price_gift_plus', 'plus', 3999),
+  giftPrice('price_gift_pro', 'pro', 7999),
+  giftPrice('price_gift_pro_archived', 'pro', 6999, false),
+];
 
 // The order Stripe itself returns: most recently created first, so the newly
 // added yearly prices come before the long-lived monthly ones.
@@ -103,5 +125,35 @@ describe('GET /api/stripe/plans', () => {
 
     const yearly = plans.find((p: { productId: string }) => p.productId === 'price_year_plus');
     expect(yearly.interval).toBe('year');
+  });
+
+  it('leaves gift products out of the plan list', async () => {
+    listMock.mockResolvedValue({ data: [...giftPrices, ...newestFirst] });
+
+    const plans = await GET().then((res) => res.json());
+
+    expect(plans.map((p: { productId: string }) => p.productId)).toEqual([
+      'price_month_plus',
+      'price_month_pro',
+      'price_year_plus',
+      'price_year_pro',
+      'price_storage_1gb',
+    ]);
+  });
+});
+
+describe('GET /api/gift/prices', () => {
+  it('returns { tier, productId, price, currency } only for gift products', async () => {
+    listMock.mockResolvedValue({ data: [...newestFirst, ...giftPrices] });
+
+    const res = await getGiftPrices();
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual([
+      { tier: 'plus', productId: 'price_gift_plus', price: 3999, currency: 'usd' },
+      { tier: 'pro', productId: 'price_gift_pro', price: 7999, currency: 'usd' },
+    ]);
+    const params = listMock.mock.calls[0]![0] as Stripe.PriceListParams;
+    expect(params).toMatchObject({ active: true, limit: 100 });
   });
 });

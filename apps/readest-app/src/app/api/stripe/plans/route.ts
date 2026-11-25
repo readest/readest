@@ -34,8 +34,9 @@ export async function GET() {
 
     const plans = prices.data
       .filter((price) => {
-        const product = price.product as Stripe.Product;
-        return product.active === true;
+        const product = price.product as Stripe.Product & { metadata: StripeProductMetadata };
+        // Gift cards are sold from /api/gift/prices, never as a plan.
+        return product.active === true && !product.metadata.gift;
       })
       // Array.prototype.sort is stable, so prices sharing an interval keep the
       // order Stripe returned them in.
