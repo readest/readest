@@ -505,7 +505,7 @@ const GiftCard: React.FC<GiftCardProps> = ({
             <div className='mt-[0.6cqw] flex items-baseline justify-between gap-[3cqw]'>
               <span
                 aria-hidden='true'
-                className='shrink-0 text-[max(7px,2.2cqw)] uppercase tracking-[0.22em] text-(--gift-ink) opacity-80'
+                className='shrink-0 text-[max(7px,2.2cqw)] uppercase tracking-[0.22em] text-(--gift-ink) not-eink:opacity-80'
               >
                 {`Readest · ${roman}`}
               </span>

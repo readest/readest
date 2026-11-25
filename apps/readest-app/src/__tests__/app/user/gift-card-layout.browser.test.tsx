@@ -150,3 +150,24 @@ describe('gift card layout', () => {
     style.remove();
   });
 });
+
+// Review (CodeRabbit): e-ink keeps text at full ink (DESIGN.md); its rules
+// flatten colours, not opacity.
+describe('gift card on e-ink', () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-eink');
+    cleanup();
+  });
+
+  it("draws the bookplate's imprint at full opacity on e-ink, softened elsewhere", async () => {
+    await renderCard(390, 'Enjoy the year');
+    const imprint = () =>
+      screen.getByText(
+        (_, el) => /^Readest · M/.test(el?.textContent ?? '') && el?.tagName === 'SPAN',
+      );
+    expect(Number(getComputedStyle(imprint()).opacity)).toBeLessThan(1);
+
+    document.documentElement.setAttribute('data-eink', 'true');
+    expect(getComputedStyle(imprint()).opacity).toBe('1');
+  });
+});

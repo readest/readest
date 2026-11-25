@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppRouter } from '@/hooks/useAppRouter';
 import { useEnv } from '@/context/EnvContext';
@@ -135,11 +135,15 @@ const ProfilePage = () => {
 
   useTheme({ systemUIVisible: false });
 
+  // Only the newest load sets the status: an older answer landing last would
+  // put back a stale "gift only" and send a gift holder to the portal.
+  const giftLoads = useRef(0);
   const loadGiftInfo = useCallback(async (): Promise<GiftInfo | null> => {
+    const mine = ++giftLoads.current;
     try {
       const { giftPlan, giftActiveUntil, giftOnly } = await fetchGiftCards();
       const info = { giftPlan, giftActiveUntil, giftOnly };
-      setGiftInfo(info);
+      if (mine === giftLoads.current) setGiftInfo(info);
       return info;
     } catch (error) {
       console.error('Failed to load gift cards:', error);

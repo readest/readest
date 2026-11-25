@@ -78,7 +78,13 @@ vi.mock('@/libs/payment/gift/client', () => ({
 vi.mock('@/components/LegalLinks', () => ({ default: () => <div>legal links</div> }));
 vi.mock('@/components/Spinner', () => ({ default: () => null }));
 vi.mock('@/components/Toast', () => ({ Toast: () => null }));
-vi.mock('@/app/user/components/Header', () => ({ default: () => null }));
+vi.mock('@/app/user/components/Header', () => ({
+  default: ({ onGoBack }: { onGoBack: () => void }) => (
+    <button type='button' onClick={onGoBack}>
+      back
+    </button>
+  ),
+}));
 vi.mock('@/app/user/components/UserInfo', () => ({ default: () => <div>account block</div> }));
 vi.mock('@/app/user/components/UsageStats', () => ({
   default: () => <div>usage stats</div>,
@@ -279,6 +285,58 @@ it('asks for the gift status before sending a plan holder to the billing portal'
   });
 
   expect(mocks.fetchGiftCards).toHaveBeenCalledTimes(2);
+  expect(mocks.createStripePortalSession).not.toHaveBeenCalled();
+  expect(mocks.createStripeCheckoutSession).toHaveBeenCalledWith('price_month_pro', 'subscription');
+});
+
+// Review (CodeRabbit): an older gift-status answer landing after a newer one
+// must not put back a stale "gift only" and send a gift holder to the portal.
+it('keeps the newest gift status when two loads overlap', async () => {
+  mocks.params = new URLSearchParams({ section: 'redeem' });
+  mocks.profilePlan = 'plus';
+  let finishOpening!: (value: unknown) => void;
+  mocks.fetchGiftCards
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishOpening = resolve;
+        }),
+    )
+    .mockResolvedValueOnce({
+      sent: [],
+      received: [],
+      giftPlan: 'plus',
+      giftActiveUntil: '2027-11-26T00:00:00Z',
+      giftOnly: true,
+    });
+  mocks.createStripeCheckoutSession.mockResolvedValue({ url: 'https://checkout.stripe.test' });
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  render(<ProfilePage />);
+  await waitFor(() => expect(mocks.fetchGiftCards).toHaveBeenCalledTimes(1));
+
+  // A redemption: the page reloads the gift status, and the newer answer lands first.
+  await act(async () =>
+    lastProps<{ onPlanChanged: () => void }>(mocks.sectionProps).onPlanChanged(),
+  );
+  await waitFor(() => expect(mocks.fetchGiftCards).toHaveBeenCalledTimes(2));
+  // The opening load, from before the redemption, lands last.
+  await act(async () =>
+    finishOpening({
+      sent: [],
+      received: [],
+      giftPlan: 'free',
+      giftActiveUntil: null,
+      giftOnly: false,
+    }),
+  );
+
+  await act(async () => screen.getByRole('button', { name: 'back' }).click());
+  await act(async () => {
+    await lastProps<{ onSubscribe: (id: string) => Promise<void> }>(mocks.plansProps).onSubscribe(
+      'price_month_pro',
+    );
+  });
+
   expect(mocks.createStripePortalSession).not.toHaveBeenCalled();
   expect(mocks.createStripeCheckoutSession).toHaveBeenCalledWith('price_month_pro', 'subscription');
 });

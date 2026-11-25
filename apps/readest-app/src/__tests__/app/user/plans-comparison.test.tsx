@@ -110,6 +110,20 @@ describe('PlansComparison', () => {
     expect(onSubscribe).toHaveBeenCalledWith('price_year_plus');
   });
 
+  // Review (CodeRabbit): an Upgrade button needs a product to subscribe to.
+  it('offers no Upgrade for a tier whose product has not loaded', () => {
+    render(
+      <PlansComparison
+        availablePlans={[plan('plus', 'month', 499, 'price_month_plus')]}
+        userPlan='free'
+        onSubscribe={vi.fn()}
+      />,
+    );
+
+    expect(within(planCard('Plus Plan')).getByText('Upgrade to Plus Plan')).toBeTruthy();
+    expect(within(planCard('Pro Plan')).queryByText('Upgrade to Pro Plan')).toBeNull();
+  });
+
   it('offers no period switch when only monthly is sold', () => {
     render(<PlansComparison availablePlans={MONTHLY_ONLY} userPlan='plus' onSubscribe={vi.fn()} />);
 

@@ -65,15 +65,14 @@ const PlansComparison: React.FC<PlansComparisonProps> = ({
               PLAN_ORDER.indexOf(plan.plan) > 0 &&
               PLAN_ORDER.indexOf(plan.plan) < PLAN_ORDER.indexOf(gift.plan)
             }
-            // A gift-only holder can subscribe to any tier, below their gift
-            // too, once that tier has a product to subscribe to.
+            // Only with a product to subscribe to. A gift-only holder can
+            // subscribe to any tier, below their gift too.
             upgradable={
               index > 0 &&
+              !!plan.productId &&
               (index > userPlanIndex ||
                 userPlan === 'purchase' ||
-                (!!gift?.giftOnly &&
-                  (plan.plan === 'plus' || plan.plan === 'pro') &&
-                  !!plan.productId))
+                (!!gift?.giftOnly && (plan.plan === 'plus' || plan.plan === 'pro')))
             }
             giftPrices={giftPrices}
             onSubscribe={onSubscribe}
