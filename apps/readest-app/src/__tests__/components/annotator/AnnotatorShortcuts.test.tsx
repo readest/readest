@@ -19,6 +19,7 @@ const h = vi.hoisted(() => ({
   updateBooknotes: vi.fn(),
   view: null as unknown,
   writeTextToClipboard: vi.fn(),
+  isFixedLayout: false,
 }));
 
 const settings = {
@@ -87,7 +88,7 @@ vi.mock('@/store/bookDataStore', () => {
           { id: 2, label: 'Notes', href: 'notes.xhtml', index: 1 },
         ],
       },
-      isFixedLayout: false,
+      isFixedLayout: h.isFixedLayout,
     }),
     updateBooknotes: h.updateBooknotes,
   };
@@ -255,6 +256,7 @@ describe('Annotator popup shortcuts', () => {
     h.config.booknotes = [];
     h.viewSettings.copyToNotebook = false;
     h.viewSettings.copyWithCitation = false;
+    h.isFixedLayout = false;
     h.updateBooknotes.mockImplementation(() => h.config);
     useNotebookDocumentStore.getState().reset();
     vi.clearAllMocks();
@@ -351,6 +353,24 @@ describe('Annotator popup shortcuts', () => {
   // names the chapter being read and no page.
   test('cites a footnote popup selection by the chapter being read', async () => {
     h.viewSettings.copyWithCitation = true;
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectPopupText('epubcfi(/6/4!/4/2)');
+
+    await act(async () => {
+      h.actions?.['onCopySelection']?.();
+    });
+
+    await vi.waitFor(() => expect(h.writeTextToClipboard).toHaveBeenCalledOnce());
+    expect(h.writeTextToClipboard).toHaveBeenCalledWith(
+      'selected text\n\n— Dan Heath, Upstream (2020), Chapter 9',
+    );
+  });
+
+  // A popup selection's page is the reading page, not the footnote's, in a
+  // fixed-layout book too.
+  test('cites a footnote popup selection without a page in a fixed-layout book', async () => {
+    h.viewSettings.copyWithCitation = true;
+    h.isFixedLayout = true;
     render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
     await selectPopupText('epubcfi(/6/4!/4/2)');
 

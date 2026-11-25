@@ -1613,7 +1613,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       ? {}
       : (view?.getProgressOf(sel.index, sel.range) ?? {});
     const href = sel.popup ? getBookProgress(bookKey)?.sectionHref : tocItem?.href;
-    const page = isFixedLayout ? String(sel.page) : pageItem?.label;
+    const page = sel.popup ? undefined : isFixedLayout ? String(sel.page) : pageItem?.label;
     return formatCitation({
       author: book?.author ?? '',
       title: book?.title ?? '',
