@@ -131,4 +131,28 @@ describe('Paginator resize keeps the reading position (browser)', () => {
     await resizeTo(...PORTRAIT);
     expect(paginator.page).toBe(pageBefore);
   }, 30000);
+
+  it('keeps the first scrolled reading position when a pinned panel narrows the book', async () => {
+    paginator = createPaginator(940, 510);
+    paginator.setAttribute('flow', 'scrolled');
+    paginator.setAttribute('no-continuous-scroll', '');
+    paginator.open(book);
+    const sections = book.sections!;
+    const index = sections.reduce(
+      (best, section, i) => ((section.size ?? 0) > (sections[best]!.size ?? 0) ? i : best),
+      0,
+    );
+    // This navigation reports a position but leaves scrollTop at zero.
+    await paginator.goTo({ index, anchor: 0 });
+    await sleep(SCROLL_DEBOUNCE_SETTLE_MS);
+
+    const scroller = paginator.shadowRoot!.getElementById('container')!;
+    expect(scroller.scrollTop).toBe(0);
+    scroller.scrollTop = 1100;
+    await sleep(SCROLL_DEBOUNCE_SETTLE_MS);
+    expect(scroller.scrollTop).toBe(1100);
+
+    await resizeTo(590, 510);
+    expect(scroller.scrollTop).toBeGreaterThan(1000);
+  }, 10000);
 });
