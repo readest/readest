@@ -6,6 +6,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { transformTTSSectionDocument } from './transformDoc';
 import { filterSSMLWithLang, parseSSMLMarks, truncateSSMLAfterMark } from '@/utils/ssml';
 import * as CFI from 'foliate-js/epubcfi.js';
+import { startInNextText } from '@/utils/cfi';
 import { Overlayer } from 'foliate-js/overlayer.js';
 import { adjacentChunkAnchor } from 'foliate-js/section-chunks.js';
 import {
@@ -548,7 +549,7 @@ export class TTSController extends EventTarget {
         // doc (compareBoundaryPoints throws cross-document).
         const cfi = view.getCFI(sectionIndex, lastRange);
         const anchored = view.resolveCFI(cfi).anchor(doc);
-        const ssml = anchored ? newTts.from(anchored) : undefined;
+        const ssml = anchored ? newTts.from(startInNextText(anchored)) : undefined;
         // foliate's from() positions the iterator but forgets the sentence
         // being read: a paused reopen showed no highlight, lyric line or clock,
         // and the next reopen had no seed and restarted the chapter (#7882).
@@ -2232,7 +2233,7 @@ export class TTSController extends EventTarget {
     if (!start || !end || section < start.sectionIndex || section > end.sectionIndex) return null;
     const lineOf = (cfi: string) => {
       const range = this.view.resolveCFI(cfi).anchor(this.#ttsDoc!);
-      return range ? timeline.indexOfRange(range) : -1;
+      return range ? timeline.indexOfRange(startInNextText(range)) : -1;
     };
     const first = start.sectionIndex < section ? 0 : lineOf(start.cfi);
     const last = end.sectionIndex > section ? timeline.length - 1 : lineOf(end.cfi);
@@ -2256,7 +2257,7 @@ export class TTSController extends EventTarget {
     const { sectionIndex, cfi } = this.#loopA!;
     if (sectionIndex !== this.#ttsSectionIndex) await this.#initTTSForSection(sectionIndex);
     const range = this.view.resolveCFI(cfi).anchor(this.#ttsDoc!);
-    await this.#handleNavigationWithSSML(this.#getTts()?.from(range), isPlaying);
+    await this.#handleNavigationWithSSML(this.#getTts()?.from(startInNextText(range)), isPlaying);
     if (!isPlaying) this.reapplyCurrentHighlight();
   }
 

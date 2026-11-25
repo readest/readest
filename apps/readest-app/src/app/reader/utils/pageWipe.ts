@@ -194,6 +194,20 @@ export class PageWiper {
     });
   }
 
+  /**
+   * Pause: put the page being read back in full, live, so its text can be
+   * selected, and hide the line until the wipe goes on from where it was.
+   */
+  suspend() {
+    return this.#enqueue(async () => {
+      try {
+        await this.#revert();
+      } finally {
+        this.#host.drawEdge(null);
+      }
+    });
+  }
+
   /** The reader moved elsewhere: the next wipe starts at the top of that page. */
   reset() {
     this.#generation++;

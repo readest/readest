@@ -23,7 +23,7 @@ import { scaleGapForRate } from '@/services/tts/gap';
 import { eventDispatcher } from '@/utils/event';
 import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
-import { isCfiInLocation } from '@/utils/cfi';
+import { isCfiInLocation, startInNextText } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
 import { getPDFSpeechLang } from '@/utils/lang';
 import { estimateTTSTime } from '@/utils/ttsTime';
@@ -955,7 +955,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           const { index, anchor } = view.resolveCFI(ttsCfi);
           const { doc } = view.renderer.getContents().find((x) => x.index === index) || {};
           if (doc) {
-            ttsFromRange = anchor(doc);
+            const anchored = anchor(doc);
+            ttsFromRange = anchored && startInNextText(anchored);
             ttsFromIndex = index;
           }
         }

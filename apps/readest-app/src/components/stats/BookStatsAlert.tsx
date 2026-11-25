@@ -82,7 +82,8 @@ const BookStatsAlert: React.FC<BookStatsAlertProps> = ({ db, action, onClose, on
           title={
             many
               ? _('Merge {{count}} entries into “{{target}}”?', {
-                  count: sources.length,
+                  // the target too, so it counts the entries ticked as the picker does
+                  count: sources.length + 1,
                   target: target.title,
                 })
               : _('Merge “{{source}}” into “{{target}}”?', {
