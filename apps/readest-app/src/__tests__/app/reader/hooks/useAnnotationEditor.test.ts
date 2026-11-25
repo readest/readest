@@ -144,22 +144,30 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
 
   // The popup's overlays live in its own view, out of reach of the main views
   // the editor repaints, so the popup is told to redraw the moving range.
-  test('a footnote popup drag asks the popup to redraw the preview', async () => {
+  test('a footnote popup follows the drag and restores the saved range when the editor closes', async () => {
     const onPreview = vi.fn();
     eventDispatcher.on('footnote-annotation-preview', onPreview);
-    const { result } = setup(annotation, undefined, {
-      popup: true,
-      getPopupCfi: () => 'popup-cfi',
-    });
+    try {
+      const { result, unmount } = setup(annotation, undefined, {
+        popup: true,
+        getPopupCfi: () => 'popup-cfi',
+      });
+      await result.current.applyAnnotationRange(range, 2, false, true);
+      expect(onPreview).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          detail: { key: 'book-1', note: expect.objectContaining({ id: 'a1', cfi: 'popup-cfi' }) },
+        }),
+      );
 
-    await result.current.applyAnnotationRange(range, 2, false, true);
-    eventDispatcher.off('footnote-annotation-preview', onPreview);
-
-    expect(onPreview).toHaveBeenCalledWith(
-      expect.objectContaining({
-        detail: { key: 'book-1', note: expect.objectContaining({ id: 'a1', cfi: 'popup-cfi' }) },
-      }),
-    );
+      unmount();
+      expect(onPreview).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          detail: { key: 'book-1', note: expect.objectContaining({ id: 'a1', cfi: 'old-cfi' }) },
+        }),
+      );
+    } finally {
+      eventDispatcher.off('footnote-annotation-preview', onPreview);
+    }
   });
 
   test('a drag (isDragging) updates the preview but does not persist', async () => {
@@ -210,6 +218,37 @@ describe('useAnnotationEditor applyAnnotationRange', () => {
 
     // Deleting the saved record must also remove everything painted for it.
     // A late preview used to leave its stale CFI outside this cleanup (#6141).
+    removeBookNoteOverlays(h.view as unknown as FoliateView, h.annotations[0]!);
+    expect(overlays.size).toBe(0);
+  });
+
+  test('restores the saved highlight when the range editor closes during a drag', async () => {
+    const noted = { ...annotation, note: 'my note' } as BookNote;
+    h.annotations = [{ ...noted }];
+    const overlays = new Set([noted.cfi, `${NOTE_PREFIX}${noted.cfi}`]);
+    h.view.addAnnotation.mockImplementation(
+      (note: BookNote & { value?: string }, remove = false) => {
+        const value = note.value ?? note.cfi;
+        if (remove) overlays.delete(value);
+        else overlays.add(value);
+      },
+    );
+    h.view.getCFI.mockReturnValueOnce('preview-cfi').mockReturnValueOnce('late-preview-cfi');
+    const pending = Promise.withResolvers<string>();
+    const { result, unmount } = setup(
+      noted,
+      vi.fn().mockResolvedValueOnce('edited text').mockReturnValueOnce(pending.promise),
+    );
+    await result.current.applyAnnotationRange(range, 2, false, true);
+    expect(overlays).toEqual(new Set(['preview-cfi', `${NOTE_PREFIX}preview-cfi`]));
+
+    const latePreview = result.current.applyAnnotationRange(range, 2, false, true);
+    unmount();
+    pending.resolve('late text');
+    await latePreview;
+
+    expect(overlays).toEqual(new Set([noted.cfi, `${NOTE_PREFIX}${noted.cfi}`]));
+    expect(h.updateBooknotes).not.toHaveBeenCalled();
     removeBookNoteOverlays(h.view as unknown as FoliateView, h.annotations[0]!);
     expect(overlays.size).toBe(0);
   });

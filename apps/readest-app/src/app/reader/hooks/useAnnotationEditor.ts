@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BookNote } from '@/types/book';
-import { NOTE_PREFIX } from '@/types/view';
+import { FoliateView, NOTE_PREFIX } from '@/types/view';
 import { TextSelection } from '@/utils/sel';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
@@ -13,6 +13,11 @@ import {
   HandlePositions,
   removeBookNoteOverlays,
 } from '../utils/annotatorUtil';
+
+const drawAnnotation = (view: FoliateView | null, note: BookNote) => {
+  if (note.style) view?.addAnnotation(note);
+  if (note.note?.trim()) view?.addAnnotation({ ...note, value: `${NOTE_PREFIX}${note.cfi}` });
+};
 
 interface UseAnnotationEditorProps {
   bookKey: string;
@@ -38,8 +43,31 @@ export const useAnnotationEditor = ({
 
   const view = getView(bookKey);
   const editingAnnotationRef = useRef(annotation);
+  const previewRef = useRef<{ note: BookNote; popup?: boolean } | null>(null);
   const rangeRequestRef = useRef(0);
   const [handlePositions, setHandlePositions] = useState<HandlePositions | null>(null);
+
+  useEffect(() => {
+    return () => {
+      // A dismiss can unmount the editor before pointer-up commits the range.
+      rangeRequestRef.current++;
+      const preview = previewRef.current;
+      previewRef.current = null;
+      if (!preview) return;
+
+      const saved = getConfig(bookKey)?.booknotes?.find(
+        (note) => note.id === preview.note.id && !note.deletedAt,
+      );
+      const views = getViewsById(bookKey.split('-')[0]!);
+      for (const view of views) {
+        removeBookNoteOverlays(view, preview.note);
+        if (saved) drawAnnotation(view, saved);
+      }
+      if (preview.popup && saved) {
+        void eventDispatcher.dispatch('footnote-annotation-preview', { key: bookKey, note: saved });
+      }
+    };
+  }, [bookKey, getConfig, getViewsById]);
 
   const getHandlePositionsFromRange = useCallback(
     (range: Range, isVertical: boolean): HandlePositions | null =>
@@ -102,7 +130,6 @@ export const useAnnotationEditor = ({
           // a resize). Tear that range down too, or it outlives the record as an
           // untappable ghost once the highlight is deleted (#6141).
           const views = getViewsById(bookKey.split('-')[0]!);
-          const hasNote = !!existingAnnotation.note?.trim();
           const previous = editingAnnotationRef.current;
           views.forEach((v) => {
             removeBookNoteOverlays(v, previous);
@@ -110,12 +137,7 @@ export const useAnnotationEditor = ({
               removeBookNoteOverlays(v, existingAnnotation);
             }
           });
-          views.forEach((v) => v?.addAnnotation(updatedAnnotation));
-          if (hasNote) {
-            views.forEach((v) =>
-              v?.addAnnotation({ ...updatedAnnotation, value: `${NOTE_PREFIX}${newCfi}` }),
-            );
-          }
+          views.forEach((v) => drawAnnotation(v, updatedAnnotation));
           // The footnote popup draws its overlays in its own view.
           if (selection.popup) {
             eventDispatcher.dispatch('footnote-annotation-preview', {
@@ -124,6 +146,9 @@ export const useAnnotationEditor = ({
             });
           }
           editingAnnotationRef.current = updatedAnnotation;
+          previewRef.current = isDragging
+            ? { note: updatedAnnotation, popup: selection.popup }
+            : null;
 
           if (!isDragging) {
             annotations[existingIndex] = updatedAnnotation;
