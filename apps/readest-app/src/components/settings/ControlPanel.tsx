@@ -801,7 +801,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         )}
         <SettingsSwitchRow
           label={_('Keep Screen Awake')}
-          description={_('Only while reading')}
           checked={screenWakeLock}
           onChange={() => setScreenWakeLock(!screenWakeLock)}
           data-setting-id='settings.control.screenWakeLock'
@@ -809,7 +808,6 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         {!appService?.isMobile && (
           <SettingsSwitchRow
             label={_('Auto-hide Cursor')}
-            description={_('After a moment of inactivity')}
             checked={autohideCursor}
             onChange={() => setAutohideCursor(!autohideCursor)}
             data-setting-id='settings.control.autohideCursor'
@@ -817,14 +815,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
         )}
         <SettingsSwitchRow
           label={_('Reverse Mouse Wheel')}
-          description={_('Scroll up for the next page')}
           checked={reverseWheelPaging}
           onChange={() => setReverseWheelPaging(!reverseWheelPaging)}
           data-setting-id='settings.control.reverseWheelPaging'
         />
         <SettingsSwitchRow
           label={_('Gamepad Support')}
-          description={_('Navigate with a connected controller')}
           checked={gamepadEnabled}
           onChange={() => setGamepadEnabled(!gamepadEnabled)}
           data-setting-id='settings.control.gamepadEnabled'
