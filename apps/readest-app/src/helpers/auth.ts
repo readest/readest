@@ -1,5 +1,6 @@
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
+import { checkSignInDeviceLimit } from '@/libs/syncDevices';
 
 interface UseAuthCallbackOptions {
   accessToken?: string | null;
@@ -11,6 +12,8 @@ interface UseAuthCallbackOptions {
   error?: string | null;
   errorCode?: string | null;
   errorDescription?: string | null;
+  /** Over the Free plan's device limit. Goes to /auth, which lists the devices. */
+  onDeviceLimit?: () => void;
 }
 
 export interface OAuthCallbackParams {
@@ -48,6 +51,7 @@ export function handleAuthCallback({
   type,
   next = '/',
   error,
+  onDeviceLimit = () => navigate('/auth'),
 }: UseAuthCallbackOptions) {
   async function finalizeSession() {
     if (error) {
@@ -56,6 +60,12 @@ export function handleAuthCallback({
     }
 
     if (!accessToken || !refreshToken) {
+      // On web, supabase-js takes the tokens from the URL and clears it first.
+      const { data } = await supabase.auth.getSession();
+      if (data.session && (await checkSignInDeviceLimit(data.session.access_token))) {
+        onDeviceLimit();
+        return;
+      }
       navigate('/library');
       return;
     }
@@ -75,6 +85,10 @@ export function handleAuthCallback({
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
+      if (await checkSignInDeviceLimit(accessToken)) {
+        onDeviceLimit();
+        return;
+      }
       login(accessToken, user);
       if (type === 'recovery') {
         navigate('/auth/recovery');

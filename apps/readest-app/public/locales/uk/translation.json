@@ -3198,5 +3198,15 @@
   "Clear X-Ray": "Очистити X-Ray",
   "Clear the X-Ray of this book?": "Очистити X-Ray цієї книги?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Збирає персонажів, місця та події, про які ви вже прочитали, без спойлерів, за допомогою ШІ-перекладача вище.",
-  "Update While Reading": "Оновлювати під час читання"
+  "Update While Reading": "Оновлювати під час читання",
+  "Device limit reached": "Досягнуто ліміту пристроїв",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "Безкоштовний план синхронізує до {{limit}} пристроїв. Вийдіть з одного з них, щоб увійти на цьому пристрої.",
+  "Failed to sign out the device. Please try again later.": "Не вдалося вийти з пристрою. Спробуйте пізніше.",
+  "Devices": "Пристрої",
+  "The devices signed in to your account. Sign out of one you no longer use.": "Пристрої, на яких виконано вхід у ваш обліковий запис. Вийдіть з того, яким більше не користуєтеся.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "Безкоштовний план синхронізує до {{limit}} пристроїв. Вийдіть з того, яким більше не користуєтеся, щоб увійти на іншому.",
+  "{{client}} on {{os}}": "{{client}} на {{os}}",
+  "Unknown device": "Невідомий пристрій",
+  "Last active {{date}}": "Остання активність: {{date}}",
+  "Sign out {{device}}": "Вийти з {{device}}"
 }

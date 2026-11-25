@@ -5,14 +5,21 @@ import type { User, AuthError } from '@supabase/supabase-js';
 // Mock supabase before importing the module under test
 const mockSetSession = vi.fn();
 const mockGetUser = vi.fn();
+const mockGetSession = vi.fn();
+const mockCheckDeviceLimit = vi.fn();
 
 vi.mock('@/utils/supabase', () => ({
   supabase: {
     auth: {
       setSession: (...args: unknown[]) => mockSetSession(...args),
       getUser: () => mockGetUser(),
+      getSession: () => mockGetSession(),
     },
   },
+}));
+
+vi.mock('@/libs/syncDevices', () => ({
+  checkSignInDeviceLimit: (token: string) => mockCheckDeviceLimit(token),
 }));
 
 import { handleAuthCallback, parseOAuthCallbackUrl } from '@/helpers/auth';
@@ -82,6 +89,10 @@ describe('handleAuthCallback', () => {
     mockNavigate = vi.fn<(path: string) => void>();
     mockSetSession.mockReset();
     mockGetUser.mockReset();
+    mockCheckDeviceLimit.mockReset();
+    mockGetSession.mockReset();
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    mockCheckDeviceLimit.mockResolvedValue(null);
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -285,5 +296,64 @@ describe('handleAuthCallback', () => {
         refresh_token: 'my-refresh-token',
       });
     });
+  });
+
+  // A Free plan signed in on three other devices: /auth lists them to sign
+  // one out, so this device is not signed in yet.
+  it('sends a sign-in over the device limit to /auth without signing in', async () => {
+    mockSetSession.mockResolvedValue({ error: null });
+    mockGetUser.mockResolvedValue({ data: { user: fakeUser } });
+    mockCheckDeviceLimit.mockResolvedValue({ devices: [], limit: 3, blocked: true });
+
+    handleAuthCallback({
+      accessToken: 'free-token',
+      refreshToken: 'refresh',
+      login: mockLogin,
+      navigate: mockNavigate,
+      next: '/reader',
+    });
+
+    await vi.waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/auth');
+    });
+    expect(mockCheckDeviceLimit).toHaveBeenCalledWith('free-token');
+    expect(mockLogin).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalledWith('/reader');
+  });
+
+  it('hands a sign-in over the device limit to onDeviceLimit when given', async () => {
+    mockSetSession.mockResolvedValue({ error: null });
+    mockGetUser.mockResolvedValue({ data: { user: fakeUser } });
+    mockCheckDeviceLimit.mockResolvedValue({ devices: [], limit: 3, blocked: true });
+    const onDeviceLimit = vi.fn();
+
+    handleAuthCallback({
+      accessToken: 'free-token',
+      refreshToken: 'refresh',
+      login: mockLogin,
+      navigate: mockNavigate,
+      onDeviceLimit,
+    });
+
+    await vi.waitFor(() => {
+      expect(onDeviceLimit).toHaveBeenCalledTimes(1);
+    });
+    expect(mockLogin).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  // On web, supabase-js reads the tokens from the callback URL and clears it
+  // before this runs, so the session is all that is left to check.
+  it('holds a sign-in whose tokens supabase-js already took from the URL', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { access_token: 'url-token' } } });
+    mockCheckDeviceLimit.mockResolvedValue({ devices: [], limit: 3, blocked: true });
+
+    handleAuthCallback({ login: mockLogin, navigate: mockNavigate });
+
+    await vi.waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/auth');
+    });
+    expect(mockCheckDeviceLimit).toHaveBeenCalledWith('url-token');
+    expect(mockNavigate).not.toHaveBeenCalledWith('/library');
   });
 });

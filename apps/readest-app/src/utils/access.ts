@@ -198,6 +198,18 @@ export const isSelfHosted = (): boolean =>
 export const isCustomizationAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isSelfHosted() || customizationPurchased || PREMIUM_PLANS.includes(plan);
 
+export const FREE_PLAN_DEVICE_LIMIT = 3;
+
+/**
+ * How many devices the account may sign in to sync on: three on the Free
+ * plan, or null for no limit, which is every other plan, any purchase and a
+ * self-hosted deployment.
+ */
+export const getDeviceLimit = (token: string): number | null =>
+  isSelfHosted() || getUserProfilePlan(token) !== 'free' || getCustomizationPurchased(token)
+    ? null
+    : FREE_PLAN_DEVICE_LIMIT;
+
 /**
  * Custom translators (the user's own OpenAI-compatible LLM or DeepL key) are a
  * premium feature. Requests go straight from the device, so this is a

@@ -3040,5 +3040,15 @@
   "Clear X-Ray": "X-Ray wissen",
   "Clear the X-Ray of this book?": "X-Ray van dit boek wissen?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Verzamelt de personages, plaatsen en gebeurtenissen waarover je hebt gelezen, zonder spoilers, met de AI-vertaler hierboven.",
-  "Update While Reading": "Bijwerken tijdens het lezen"
+  "Update While Reading": "Bijwerken tijdens het lezen",
+  "Device limit reached": "Apparaatlimiet bereikt",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "Het gratis abonnement synchroniseert op maximaal {{limit}} apparaten. Log uit op een van die apparaten om op dit apparaat in te loggen.",
+  "Failed to sign out the device. Please try again later.": "Kan het apparaat niet uitloggen. Probeer het later opnieuw.",
+  "Devices": "Apparaten",
+  "The devices signed in to your account. Sign out of one you no longer use.": "De apparaten die bij je account zijn ingelogd. Log een apparaat uit dat je niet meer gebruikt.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "Het gratis abonnement synchroniseert op maximaal {{limit}} apparaten. Log een apparaat uit dat je niet meer gebruikt om op een ander in te loggen.",
+  "{{client}} on {{os}}": "{{client}} op {{os}}",
+  "Unknown device": "Onbekend apparaat",
+  "Last active {{date}}": "Laatst actief op {{date}}",
+  "Sign out {{device}}": "{{device}} uitloggen"
 }

@@ -3040,5 +3040,15 @@
   "Clear X-Ray": "X-Ray মুছুন",
   "Clear the X-Ray of this book?": "এই বইয়ের X-Ray মুছবেন?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "আপনি যেসব চরিত্র, স্থান ও ঘটনার কথা পড়েছেন, উপরের AI অনুবাদক ব্যবহার করে স্পয়লার ছাড়াই সেগুলো সংগ্রহ করে।",
-  "Update While Reading": "পড়ার সময় আপডেট করুন"
+  "Update While Reading": "পড়ার সময় আপডেট করুন",
+  "Device limit reached": "ডিভাইসের সীমা পূর্ণ হয়েছে",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "ফ্রি প্ল্যান সর্বোচ্চ {{limit}}টি ডিভাইসে সিঙ্ক করে। এই ডিভাইসে সাইন ইন করতে সেগুলোর একটি থেকে সাইন আউট করুন।",
+  "Failed to sign out the device. Please try again later.": "ডিভাইসটি সাইন আউট করা যায়নি। অনুগ্রহ করে পরে আবার চেষ্টা করুন।",
+  "Devices": "ডিভাইস",
+  "The devices signed in to your account. Sign out of one you no longer use.": "আপনার অ্যাকাউন্টে সাইন ইন করা ডিভাইসগুলো। যে ডিভাইস আর ব্যবহার করেন না সেটি সাইন আউট করুন।",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "ফ্রি প্ল্যান সর্বোচ্চ {{limit}}টি ডিভাইসে সিঙ্ক করে। অন্য ডিভাইসে সাইন ইন করতে যে ডিভাইস আর ব্যবহার করেন না সেটি সাইন আউট করুন।",
+  "{{client}} on {{os}}": "{{os}}-এ {{client}}",
+  "Unknown device": "অজানা ডিভাইস",
+  "Last active {{date}}": "সর্বশেষ সক্রিয়: {{date}}",
+  "Sign out {{device}}": "{{device}} সাইন আউট করুন"
 }

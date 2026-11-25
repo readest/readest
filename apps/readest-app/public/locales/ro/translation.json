@@ -3119,5 +3119,15 @@
   "Clear X-Ray": "Șterge X-Ray",
   "Clear the X-Ray of this book?": "Ștergeți X-Ray-ul acestei cărți?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Adună personajele, locurile și evenimentele despre care ați citit, fără spoilere, cu traducătorul AI de mai sus.",
-  "Update While Reading": "Actualizare în timpul citirii"
+  "Update While Reading": "Actualizare în timpul citirii",
+  "Device limit reached": "Limita de dispozitive a fost atinsă",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "Abonamentul gratuit sincronizează pe cel mult {{limit}} dispozitive. Deconectează-te de pe unul dintre ele pentru a te conecta pe acest dispozitiv.",
+  "Failed to sign out the device. Please try again later.": "Dispozitivul nu a putut fi deconectat. Încearcă din nou mai târziu.",
+  "Devices": "Dispozitive",
+  "The devices signed in to your account. Sign out of one you no longer use.": "Dispozitivele conectate la contul tău. Deconectează un dispozitiv pe care nu îl mai folosești.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "Abonamentul gratuit sincronizează pe cel mult {{limit}} dispozitive. Deconectează un dispozitiv pe care nu îl mai folosești pentru a te conecta pe altul.",
+  "{{client}} on {{os}}": "{{client}} pe {{os}}",
+  "Unknown device": "Dispozitiv necunoscut",
+  "Last active {{date}}": "Ultima activitate: {{date}}",
+  "Sign out {{device}}": "Deconectează {{device}}"
 }

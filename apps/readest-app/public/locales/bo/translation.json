@@ -2961,5 +2961,15 @@
   "Clear X-Ray": "X-Ray གཙང་སེལ།",
   "Clear the X-Ray of this book?": "དེབ་འདིའི་ X-Ray གཙང་སེལ་བྱེད་དམ།",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "གོང་གི་ AI སྒྱུར་བཅོས་ཆས་བེད་སྤྱད་ནས། ཁྱེད་ཀྱིས་བཀླགས་ཟིན་པའི་མི་སྣ་དང་ས་ཆ། བྱུང་བ་རྣམས་མཇུག་འབྲས་མི་བསྟན་པར་བསྡུ་རུབ་བྱེད།",
-  "Update While Reading": "ཀློག་སྐབས་གསར་སྒྱུར་བྱེད།"
+  "Update While Reading": "ཀློག་སྐབས་གསར་སྒྱུར་བྱེད།",
+  "Device limit reached": "སྒྲིག་ཆས་ཀྱི་ཚད་ལ་སླེབས་ཟིན།",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "རིན་མེད་ཐུམ་སྒྲིལ་གྱིས་སྒྲིག་ཆས་ {{limit}} ཡན་ལ་མཉམ་འགྲིག་བྱེད། སྒྲིག་ཆས་འདིར་ནང་འཛུལ་བྱེད་པར་དེའི་ནང་གི་གཅིག་ནས་ཕྱིར་བུད་རོགས།",
+  "Failed to sign out the device. Please try again later.": "སྒྲིག་ཆས་ཕྱིར་བུད་མ་ཐུབ། རྗེས་སུ་ཡང་བསྐྱར་ཚོད་ལྟ་བྱེད་རོགས།",
+  "Devices": "སྒྲིག་ཆས།",
+  "The devices signed in to your account. Sign out of one you no longer use.": "ཁྱེད་ཀྱི་ཐོ་ཁོངས་སུ་ནང་འཛུལ་བྱས་པའི་སྒྲིག་ཆས། ད་ནས་བེད་སྤྱོད་མི་བྱེད་པའི་སྒྲིག་ཆས་ནས་ཕྱིར་བུད་རོགས།",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "རིན་མེད་ཐུམ་སྒྲིལ་གྱིས་སྒྲིག་ཆས་ {{limit}} ཡན་ལ་མཉམ་འགྲིག་བྱེད། སྒྲིག་ཆས་གཞན་ཞིག་ལ་ནང་འཛུལ་བྱེད་པར་ད་ནས་བེད་སྤྱོད་མི་བྱེད་པའི་སྒྲིག་ཆས་ནས་ཕྱིར་བུད་རོགས།",
+  "{{client}} on {{os}}": "{{os}} སྟེང་གི་ {{client}}",
+  "Unknown device": "ངོ་མི་ཤེས་པའི་སྒྲིག་ཆས།",
+  "Last active {{date}}": "མཐའ་མའི་བྱ་འགུལ། {{date}}",
+  "Sign out {{device}}": "{{device}} ཕྱིར་བུད།"
 }

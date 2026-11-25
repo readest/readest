@@ -3040,5 +3040,15 @@
   "Clear X-Ray": "X-Ray-ის გასუფთავება",
   "Clear the X-Ray of this book?": "გასუფთავდეს ამ წიგნის X-Ray?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "ზემოთ მითითებული AI მთარგმნელით, სპოილერების გარეშე აგროვებს პერსონაჟებს, ადგილებსა და მოვლენებს, რომელთა შესახებაც უკვე წაიკითხეთ.",
-  "Update While Reading": "განახლება კითხვისას"
+  "Update While Reading": "განახლება კითხვისას",
+  "Device limit reached": "მიღწეულია მოწყობილობების ლიმიტი",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "უფასო გეგმა სინქრონიზაციას ახდენს მაქსიმუმ {{limit}} მოწყობილობაზე. ამ მოწყობილობაზე შესასვლელად გამოდით ერთ-ერთი მათგანიდან.",
+  "Failed to sign out the device. Please try again later.": "მოწყობილობიდან გამოსვლა ვერ მოხერხდა. სცადეთ მოგვიანებით.",
+  "Devices": "მოწყობილობები",
+  "The devices signed in to your account. Sign out of one you no longer use.": "თქვენს ანგარიშში შესული მოწყობილობები. გამოდით იმ მოწყობილობიდან, რომელსაც აღარ იყენებთ.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "უფასო გეგმა სინქრონიზაციას ახდენს მაქსიმუმ {{limit}} მოწყობილობაზე. სხვა მოწყობილობაზე შესასვლელად გამოდით იმ მოწყობილობიდან, რომელსაც აღარ იყენებთ.",
+  "{{client}} on {{os}}": "{{client}} ({{os}})",
+  "Unknown device": "უცნობი მოწყობილობა",
+  "Last active {{date}}": "ბოლო აქტივობა: {{date}}",
+  "Sign out {{device}}": "{{device}}-დან გამოსვლა"
 }

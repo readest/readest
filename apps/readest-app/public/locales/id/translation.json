@@ -2961,5 +2961,15 @@
   "Clear X-Ray": "Hapus X-Ray",
   "Clear the X-Ray of this book?": "Hapus X-Ray buku ini?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Mengumpulkan tokoh, tempat, dan peristiwa yang sudah Anda baca, tanpa spoiler, dengan Penerjemah AI di atas.",
-  "Update While Reading": "Perbarui Saat Membaca"
+  "Update While Reading": "Perbarui Saat Membaca",
+  "Device limit reached": "Batas perangkat tercapai",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "Paket Gratis menyinkronkan hingga {{limit}} perangkat. Keluar dari salah satunya untuk masuk di perangkat ini.",
+  "Failed to sign out the device. Please try again later.": "Gagal mengeluarkan perangkat. Silakan coba lagi nanti.",
+  "Devices": "Perangkat",
+  "The devices signed in to your account. Sign out of one you no longer use.": "Perangkat yang masuk ke akun Anda. Keluarkan perangkat yang tidak lagi Anda gunakan.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "Paket Gratis menyinkronkan hingga {{limit}} perangkat. Keluarkan perangkat yang tidak lagi Anda gunakan untuk masuk di perangkat lain.",
+  "{{client}} on {{os}}": "{{client}} di {{os}}",
+  "Unknown device": "Perangkat tidak dikenal",
+  "Last active {{date}}": "Terakhir aktif {{date}}",
+  "Sign out {{device}}": "Keluarkan {{device}}"
 }

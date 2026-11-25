@@ -2961,5 +2961,15 @@
   "Clear X-Ray": "ล้าง X-Ray",
   "Clear the X-Ray of this book?": "ล้าง X-Ray ของหนังสือเล่มนี้หรือไม่",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "รวบรวมตัวละคร สถานที่ และเหตุการณ์ที่คุณอ่านมาแล้วโดยไม่สปอยล์ ด้วยตัวแปล AI ด้านบน",
-  "Update While Reading": "อัปเดตขณะอ่าน"
+  "Update While Reading": "อัปเดตขณะอ่าน",
+  "Device limit reached": "ถึงขีดจำกัดจำนวนอุปกรณ์แล้ว",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "แผนฟรีซิงค์ได้สูงสุด {{limit}} อุปกรณ์ ออกจากระบบในอุปกรณ์เครื่องใดเครื่องหนึ่งเพื่อลงชื่อเข้าใช้ในอุปกรณ์นี้",
+  "Failed to sign out the device. Please try again later.": "ไม่สามารถออกจากระบบอุปกรณ์ได้ โปรดลองอีกครั้งในภายหลัง",
+  "Devices": "อุปกรณ์",
+  "The devices signed in to your account. Sign out of one you no longer use.": "อุปกรณ์ที่ลงชื่อเข้าใช้บัญชีของคุณ ออกจากระบบอุปกรณ์ที่คุณไม่ได้ใช้แล้ว",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "แผนฟรีซิงค์ได้สูงสุด {{limit}} อุปกรณ์ ออกจากระบบอุปกรณ์ที่คุณไม่ได้ใช้แล้วเพื่อลงชื่อเข้าใช้ในอุปกรณ์อื่น",
+  "{{client}} on {{os}}": "{{client}} บน {{os}}",
+  "Unknown device": "อุปกรณ์ที่ไม่รู้จัก",
+  "Last active {{date}}": "ใช้งานล่าสุด {{date}}",
+  "Sign out {{device}}": "ออกจากระบบ {{device}}"
 }

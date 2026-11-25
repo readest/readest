@@ -3040,5 +3040,15 @@
   "Clear X-Ray": "Rensa X-Ray",
   "Clear the X-Ray of this book?": "Rensa X-Ray för den här boken?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Samlar de personer, platser och händelser du har läst om, utan spoilers, med AI-översättaren ovan.",
-  "Update While Reading": "Uppdatera vid läsning"
+  "Update While Reading": "Uppdatera vid läsning",
+  "Device limit reached": "Gränsen för enheter är nådd",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "Gratisplanen synkar på upp till {{limit}} enheter. Logga ut från en av dem för att logga in på den här enheten.",
+  "Failed to sign out the device. Please try again later.": "Det gick inte att logga ut enheten. Försök igen senare.",
+  "Devices": "Enheter",
+  "The devices signed in to your account. Sign out of one you no longer use.": "Enheterna som är inloggade på ditt konto. Logga ut en enhet som du inte längre använder.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "Gratisplanen synkar på upp till {{limit}} enheter. Logga ut en enhet som du inte längre använder för att logga in på en annan.",
+  "{{client}} on {{os}}": "{{client}} på {{os}}",
+  "Unknown device": "Okänd enhet",
+  "Last active {{date}}": "Senast aktiv {{date}}",
+  "Sign out {{device}}": "Logga ut {{device}}"
 }

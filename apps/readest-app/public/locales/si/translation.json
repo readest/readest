@@ -3040,5 +3040,15 @@
   "Clear X-Ray": "X-Ray හිස් කරන්න",
   "Clear the X-Ray of this book?": "මෙම පොතේ X-Ray හිස් කරන්නද?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "ඉහත AI පරිවර්තකය භාවිතයෙන්, ඔබ කියවා ඇති චරිත, ස්ථාන සහ සිදුවීම් කතාව හෙළි නොකර එක් කරයි.",
-  "Update While Reading": "කියවන අතරතුර යාවත්කාලීන කරන්න"
+  "Update While Reading": "කියවන අතරතුර යාවත්කාලීන කරන්න",
+  "Device limit reached": "උපාංග සීමාවට ළඟා විය",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "නොමිලේ සැලැස්ම උපරිම උපාංග {{limit}} ක සමමුහුර්ත කරයි. මෙම උපාංගයට පුරනය වීමට ඒවායින් එකකින් ඉවත් වන්න.",
+  "Failed to sign out the device. Please try again later.": "උපාංගය ඉවත් කිරීමට නොහැකි විය. කරුණාකර පසුව නැවත උත්සාහ කරන්න.",
+  "Devices": "උපාංග",
+  "The devices signed in to your account. Sign out of one you no longer use.": "ඔබගේ ගිණුමට පුරනය වී ඇති උපාංග. ඔබ තවදුරටත් භාවිත නොකරන උපාංගයකින් ඉවත් වන්න.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "නොමිලේ සැලැස්ම උපරිම උපාංග {{limit}} ක සමමුහුර්ත කරයි. වෙනත් උපාංගයකට පුරනය වීමට, ඔබ තවදුරටත් භාවිත නොකරන උපාංගයකින් ඉවත් වන්න.",
+  "{{client}} on {{os}}": "{{os}} හි {{client}}",
+  "Unknown device": "නොදන්නා උපාංගය",
+  "Last active {{date}}": "අවසන් වරට සක්‍රිය: {{date}}",
+  "Sign out {{device}}": "{{device}} ඉවත් කරන්න"
 }
