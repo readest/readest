@@ -32,10 +32,6 @@ export const getViewInsets = (viewSettings: ViewSettings) => {
  * the classic [topInset, topInset + margin] strip below the safe area; below
  * that it keeps a 16px readable height and lifts into the notch, reaching the
  * screen top at the negative-margin limit (#5303).
- *
- * Vertical writing turns it on its side: given the side inset and side margin,
- * `top`/`height` are the side header's and footer's offset from the cell edge
- * and width, matching FoliateViewer's 16px side floor (#7912).
  */
 export const getHeaderBandGeometry = (topInset: number, marginTopPx: number) => {
   const minHeight = 16;
@@ -44,6 +40,19 @@ export const getHeaderBandGeometry = (topInset: number, marginTopPx: number) => 
   // inset downward and make SectionInfo incorrectly enable its z-10 layer (#6242).
   const top = Math.max(0, topInset + Math.min(marginTopPx - minHeight, 0));
   return { top, height, bottom: top + height };
+};
+
+/**
+ * Where the vertical side header (right) and footer (left) sit: the 32px of the
+ * side margin next to the text, as Double Border lays them out, or the whole
+ * margin when it is narrower (#7912). The margin is the header band turned on
+ * its side, so the text edge keeps FoliateViewer's 16px side floor and a wide
+ * margin never pulls the chrome into the side safe area.
+ */
+export const getVerticalChromeBand = (sideInset: number, sideMarginPx: number) => {
+  const band = getHeaderBandGeometry(sideInset, sideMarginPx);
+  const width = Math.min(band.height, 32);
+  return { offset: band.bottom - width, width };
 };
 
 /**
