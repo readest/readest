@@ -171,3 +171,33 @@ export function getCfiSpinePrefix(cfi: string | null | undefined): string | null
   const bang = inner.indexOf('!');
   return bang === -1 ? inner : inner.slice(0, bang);
 }
+
+// The nearest ancestor a CFI indexes a node in: a cfi-skip wrapper takes no
+// step of its own, so its text shares one chunk with the text around it.
+const cfiParent = (node: Node): Element | null => {
+  let parent = node.parentElement;
+  while (parent?.hasAttribute('cfi-skip')) parent = parent.parentElement;
+  return parent;
+};
+
+/**
+ * A CFI offset where two text nodes of one chunk meet reads back as the end of
+ * the first node. That happens where a cfi-skip wrapper opens, such as the
+ * quote spans of Dialogue Highlighting. The spot holds the same text, but it
+ * sorts before whatever starts in the second node, so a TTS from() seeded with
+ * it picks the sentence before one that opens with a quote. Move such a start
+ * into the next text node; any other range comes back unchanged.
+ */
+export function startInNextText(range: Range): Range {
+  const node = range.startContainer;
+  if (node.nodeType !== Node.TEXT_NODE || range.startOffset < (node as Text).length) return range;
+  const doc = node.ownerDocument!;
+  const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_TEXT);
+  walker.currentNode = node;
+  let next = walker.nextNode();
+  while (next && !(next as Text).length) next = walker.nextNode();
+  if (!next || cfiParent(next) !== cfiParent(node)) return range;
+  const moved = range.cloneRange();
+  moved.setStart(next, 0);
+  return moved;
+}
