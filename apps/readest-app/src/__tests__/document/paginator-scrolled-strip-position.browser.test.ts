@@ -392,6 +392,41 @@ describe('Scrolled strip keeps the reading position (browser)', () => {
     expect(moved, 'chapter 3 head moved when chapter 3 grew').toBeLessThanOrEqual(1);
   });
 
+  // The chapter can also expand for another reason, a late image, before its
+  // iframe takes the new width. The re-anchor waits for the rewrap at that width.
+  it('keeps the late re-anchor through an expand before the iframe takes its width', async () => {
+    open(false, false);
+    withoutScrollAnchoring();
+    await paginator.goTo({ index: 2, anchor: 0.3 });
+    await settle();
+    const doc = paginator.getContents().find((c) => c.index === 2)!.doc;
+    const range = doc.createRange();
+    range.setStart(doc.getElementById('p30')!.firstChild!, 0);
+    await paginator.scrollToAnchor!(range);
+    await frames(2);
+    const before = position(2, 'p30', false);
+
+    const frame = viewElement(2).querySelector('iframe')!;
+    const rect = frame.getBoundingClientRect.bind(frame);
+    frame.getBoundingClientRect = () => {
+      const r = rect();
+      return new DOMRect(r.x, r.y, r.width + 100, r.height);
+    };
+    paginator.style.height = '560px';
+    await frames(3);
+    await growAtEnd(2);
+
+    // The iframe takes its width, and the chapter rewraps above the text in view.
+    Reflect.deleteProperty(frame, 'getBoundingClientRect');
+    doc.defaultView!.dispatchEvent(new Event('resize'));
+    const block = doc.createElement('div');
+    block.style.height = '300px';
+    doc.body.prepend(block);
+    await frames(3);
+    const moved = Math.abs(position(2, 'p30', false) - before);
+    expect(moved, 'text in view moved when chapter 2 rewrapped').toBeLessThanOrEqual(1);
+  });
+
   // A body capped at the column width may not rewrap when the iframe takes its
   // new width, and then the chapter doesn't expand for it.
   it('forgets the late re-anchor once the iframe took its width without the chapter expanding', async () => {
