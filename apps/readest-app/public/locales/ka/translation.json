@@ -2963,5 +2963,9 @@
   "The answer is incomplete: {{message}}": "პასუხი არასრულია: {{message}}",
   "Pen Squeeze": "კალმის მოჭერა",
   "Pen Slide Up": "კალმის ზემოთ სრიალი",
-  "Pen Slide Down": "კალმის ქვემოთ სრიალი"
+  "Pen Slide Down": "კალმის ქვემოთ სრიალი",
+  "{{speed}} characters/min": "{{speed}} სიმბოლო/წთ",
+  "{{speed}} words/min": "{{speed}} სიტყვა/წთ",
+  "Reading Speed": "კითხვის სიჩქარე",
+  "Reading Speed Today": "დღევანდელი კითხვის სიჩქარე"
 }

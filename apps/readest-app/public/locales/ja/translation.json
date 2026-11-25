@@ -2884,5 +2884,9 @@
   "The answer is incomplete: {{message}}": "回答が途中で終了しました：{{message}}",
   "Pen Squeeze": "ペンのスクイーズ",
   "Pen Slide Up": "ペンの上スライド",
-  "Pen Slide Down": "ペンの下スライド"
+  "Pen Slide Down": "ペンの下スライド",
+  "{{speed}} characters/min": "{{speed}} 文字/分",
+  "{{speed}} words/min": "{{speed}} 語/分",
+  "Reading Speed": "読書速度",
+  "Reading Speed Today": "今日の読書速度"
 }

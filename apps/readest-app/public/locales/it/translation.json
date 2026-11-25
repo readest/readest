@@ -3042,5 +3042,9 @@
   "The answer is incomplete: {{message}}": "La risposta è incompleta: {{message}}",
   "Pen Squeeze": "Pressione della penna",
   "Pen Slide Up": "Scorrimento della penna verso l'alto",
-  "Pen Slide Down": "Scorrimento della penna verso il basso"
+  "Pen Slide Down": "Scorrimento della penna verso il basso",
+  "{{speed}} characters/min": "{{speed}} caratteri/min",
+  "{{speed}} words/min": "{{speed}} parole/min",
+  "Reading Speed": "Velocità di lettura",
+  "Reading Speed Today": "Velocità di lettura di oggi"
 }

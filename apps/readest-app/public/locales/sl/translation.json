@@ -3121,5 +3121,9 @@
   "The answer is incomplete: {{message}}": "Odgovor je nepopoln: {{message}}",
   "Pen Squeeze": "Stisk pisala",
   "Pen Slide Up": "Drsenje navzgor s pisalom",
-  "Pen Slide Down": "Drsenje navzdol s pisalom"
+  "Pen Slide Down": "Drsenje navzdol s pisalom",
+  "{{speed}} characters/min": "{{speed}} znakov/min",
+  "{{speed}} words/min": "{{speed}} besed/min",
+  "Reading Speed": "Hitrost branja",
+  "Reading Speed Today": "Današnja hitrost branja"
 }

@@ -2963,5 +2963,9 @@
   "The answer is incomplete: {{message}}": "Svaret är ofullständigt: {{message}}",
   "Pen Squeeze": "Pennans klämning",
   "Pen Slide Up": "Pennans glid uppåt",
-  "Pen Slide Down": "Pennans glid nedåt"
+  "Pen Slide Down": "Pennans glid nedåt",
+  "{{speed}} characters/min": "{{speed}} tecken/min",
+  "{{speed}} words/min": "{{speed}} ord/min",
+  "Reading Speed": "Läshastighet",
+  "Reading Speed Today": "Läshastighet i dag"
 }

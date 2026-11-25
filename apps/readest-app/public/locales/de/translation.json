@@ -2963,5 +2963,9 @@
   "The answer is incomplete: {{message}}": "Die Antwort ist unvollständig: {{message}}",
   "Pen Squeeze": "Stift zusammendrücken",
   "Pen Slide Up": "Am Stift nach oben wischen",
-  "Pen Slide Down": "Am Stift nach unten wischen"
+  "Pen Slide Down": "Am Stift nach unten wischen",
+  "{{speed}} characters/min": "{{speed}} Zeichen/Min.",
+  "{{speed}} words/min": "{{speed}} Wörter/Min.",
+  "Reading Speed": "Lesetempo",
+  "Reading Speed Today": "Lesetempo heute"
 }

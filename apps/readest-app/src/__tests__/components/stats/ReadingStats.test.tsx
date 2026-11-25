@@ -195,6 +195,10 @@ describe('arrow keys inside a Dialog', () => {
 });
 
 describe('ReadingStatsDialog', () => {
+  const emptySpeeds = {
+    getReadingSpeedSamples: async () => [],
+    getReadingSpeedTotals: async () => [],
+  };
   const openDialog = async () => {
     const { default: ReadingStatsDialog, setReadingStatsDialogVisible } = await import(
       '@/components/stats/ReadingStatsDialog'
@@ -205,6 +209,7 @@ describe('ReadingStatsDialog', () => {
 
   it('formats all-time counts with the app locale', async () => {
     db.open.mockResolvedValue({
+      ...emptySpeeds,
       getQuarterHourDurations: async () => [],
       getBookQuarterHourDurations: async () => [],
       getReadingTotals: async () => ({ seconds: 0, books: 1234, pages: 56789 }),
@@ -214,6 +219,42 @@ describe('ReadingStatsDialog', () => {
     expect(screen.getByText('1.234')).toBeTruthy();
   });
 
+  it('shows today’s and all-time reading speeds', async () => {
+    vi.useFakeTimers({ now: new Date('2026-11-07T12:00:00'), toFake: ['Date'] });
+    db.open.mockResolvedValue({
+      getQuarterHourDurations: async () => [],
+      getReadingTotals: async () => ({ seconds: 0, books: 0, pages: 0 }),
+      getReadingSpeedSamples: async () => [
+        { unit: 'characters', count: 300, durationMs: 60_000, startTimeMs: Date.now() - 60_000 },
+      ],
+      getReadingSpeedTotals: async () => [{ unit: 'characters', count: 480, durationMs: 120_000 }],
+    });
+    await openDialog();
+    expect(await screen.findByText('300 characters/min')).toBeTruthy();
+    expect(screen.getByText('240 characters/min')).toBeTruthy();
+  });
+
+  it('shows no speed for today once the dialog stays open past midnight', async () => {
+    vi.useFakeTimers({ now: new Date('2026-11-07T23:59:00'), toFake: ['Date'] });
+    db.open.mockResolvedValue({
+      getQuarterHourDurations: async () => [],
+      getBookQuarterHourDurations: async () => [],
+      getReadingTotals: async () => ({ seconds: 0, books: 0, pages: 0 }),
+      getReadingSpeedSamples: async () => [
+        { unit: 'characters', count: 300, durationMs: 30_000, startTimeMs: Date.now() - 30_000 },
+      ],
+      getReadingSpeedTotals: async () => [{ unit: 'characters', count: 300, durationMs: 30_000 }],
+    });
+    await openDialog();
+    expect(await screen.findAllByText('600 characters/min')).toHaveLength(2);
+    vi.setSystemTime(new Date('2026-11-08T00:01:00'));
+    // the calendar and back re-renders the overview without reloading it
+    fireEvent.click(screen.getByRole('button', { name: 'Reading Calendar' }));
+    await screen.findByRole('group', { name: 'Reading Calendar' });
+    fireEvent.click(screen.getByRole('button', { name: 'Reading Statistics' }));
+    expect(screen.getAllByText('600 characters/min')).toHaveLength(1);
+  });
+
   it("pulls the account's stats from other devices, then shows them", async () => {
     let pulled = false;
     sync.user = { id: 'u' };
@@ -221,6 +262,7 @@ describe('ReadingStatsDialog', () => {
       pulled = true;
     });
     db.open.mockResolvedValue({
+      ...emptySpeeds,
       getQuarterHourDurations: async () => [],
       getBookQuarterHourDurations: async () => [],
       getReadingTotals: async () => ({ seconds: 0, books: pulled ? 40 : 3, pages: 0 }),
@@ -241,6 +283,7 @@ describe('ReadingStatsDialog', () => {
   it('opens the calendar from a compact entry below the heatmap and returns to statistics', async () => {
     const calendarQuery = vi.fn(async () => []);
     db.open.mockResolvedValue({
+      ...emptySpeeds,
       getQuarterHourDurations: async () => [],
       getBookQuarterHourDurations: calendarQuery,
       getReadingTotals: async () => ({ seconds: 0, books: 0, pages: 0 }),
@@ -264,6 +307,7 @@ describe('ReadingStatsDialog', () => {
   });
   it('goes back to statistics, not out of the dialog, when closed from the calendar', async () => {
     db.open.mockResolvedValue({
+      ...emptySpeeds,
       getQuarterHourDurations: async () => [],
       getBookQuarterHourDurations: async () => [],
       getReadingTotals: async () => ({ seconds: 0, books: 0, pages: 0 }),

@@ -2963,5 +2963,9 @@
   "The answer is incomplete: {{message}}": "பதில் முழுமையடையவில்லை: {{message}}",
   "Pen Squeeze": "பேனா அழுத்துதல்",
   "Pen Slide Up": "பேனா மேலே சறுக்கல்",
-  "Pen Slide Down": "பேனா கீழே சறுக்கல்"
+  "Pen Slide Down": "பேனா கீழே சறுக்கல்",
+  "{{speed}} characters/min": "{{speed}} எழுத்துகள்/நிமிடம்",
+  "{{speed}} words/min": "{{speed}} சொற்கள்/நிமிடம்",
+  "Reading Speed": "வாசிப்பு வேகம்",
+  "Reading Speed Today": "இன்றைய வாசிப்பு வேகம்"
 }
