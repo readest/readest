@@ -27,6 +27,12 @@ export interface StripeProductMetadata {
    * `/api/stripe/plans` leaves gift products out.
    */
   gift?: GiftTier;
+  /**
+   * A gift card's length, like `storageGB` for a storage pack. Every product
+   * says "365" and nothing reads it yet: a card takes `gift_cards.days`'
+   * default of 365, and the card prints "1 year".
+   */
+  giftDays?: string;
 }
 
 export interface BasePaymentData {
