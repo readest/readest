@@ -244,6 +244,41 @@ describe('AuthPage over the Free plan device limit', () => {
     expect(mocks.router.replace).not.toHaveBeenCalled();
   });
 
+  it('drops a device check when the session ends while it runs', async () => {
+    let finish = (_value: unknown) => {};
+    mocks.checkSignInDeviceLimit.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    signIn();
+
+    act(() => mocks.onAuthStateChange?.('SIGNED_OUT', null));
+    await act(async () => finish(null));
+
+    expect(screen.getByText('sign-in form')).toBeTruthy();
+    expect(mocks.login).not.toHaveBeenCalled();
+    expect(mocks.router.replace).not.toHaveBeenCalled();
+  });
+
+  it('signs in only the newer session when one replaces it during the check', async () => {
+    const answers: Record<string, (value: unknown) => void> = {};
+    mocks.checkSignInDeviceLimit.mockImplementation(
+      (token) => new Promise((resolve) => (answers[token] = resolve)),
+    );
+    signIn();
+    act(() =>
+      mocks.onAuthStateChange?.('TOKEN_REFRESHED', {
+        access_token: 'refreshed-token',
+        refresh_token: 'refreshed-refresh',
+        user: {},
+      }),
+    );
+
+    await act(async () => answers['free-token']!(null));
+    expect(mocks.login).not.toHaveBeenCalled();
+    await act(async () => answers['refreshed-token']!(null));
+
+    expect(mocks.login).toHaveBeenCalledTimes(1);
+    expect(mocks.login).toHaveBeenCalledWith('refreshed-token', {});
+  });
+
   it('abandons a sign-in whose device check is still running on Go Back', async () => {
     let finish = (_value: unknown) => {};
     mocks.checkSignInDeviceLimit.mockReturnValue(new Promise((resolve) => (finish = resolve)));
@@ -289,6 +324,18 @@ describe('AuthPage over the Free plan device limit', () => {
 
     await waitFor(() => expect(mocks.router.replace).toHaveBeenCalledWith('/library'));
     expect(mocks.router.replace).not.toHaveBeenCalledWith('/auth/recovery');
+  });
+
+  it('opens the recovery form when a device is signed out before the link check answers', async () => {
+    mocks.checkSignInDeviceLimit.mockImplementation(async (token) =>
+      token === 'free-token' ? BLOCKED : new Promise(() => {}),
+    );
+    mocks.signOutSyncDevice.mockResolvedValue({ ...BLOCKED, blocked: false });
+    await openDeepLink('recovery');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out Chrome on macOS' }));
+
+    await waitFor(() => expect(mocks.router.replace).toHaveBeenCalledWith('/auth/recovery'));
   });
 
   // The link's own device check runs after the page's, so it can answer
