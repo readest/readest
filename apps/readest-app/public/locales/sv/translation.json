@@ -2967,5 +2967,7 @@
   "{{speed}} characters/min": "{{speed}} tecken/min",
   "{{speed}} words/min": "{{speed}} ord/min",
   "Reading Speed": "Läshastighet",
-  "Reading Speed Today": "Läshastighet i dag"
+  "Reading Speed Today": "Läshastighet i dag",
+  "p. {{page}}": "s. {{page}}",
+  "Copy with Citation": "Kopiera med källhänvisning"
 }

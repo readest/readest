@@ -2888,5 +2888,7 @@
   "{{speed}} characters/min": "{{speed}} ตัวอักษร/นาที",
   "{{speed}} words/min": "{{speed}} คำ/นาที",
   "Reading Speed": "ความเร็วในการอ่าน",
-  "Reading Speed Today": "ความเร็วในการอ่านวันนี้"
+  "Reading Speed Today": "ความเร็วในการอ่านวันนี้",
+  "p. {{page}}": "หน้า {{page}}",
+  "Copy with Citation": "คัดลอกพร้อมแหล่งอ้างอิง"
 }

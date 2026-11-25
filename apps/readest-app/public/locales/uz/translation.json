@@ -2967,5 +2967,7 @@
   "{{speed}} characters/min": "{{speed}} belgi/daqiqa",
   "{{speed}} words/min": "{{speed}} soʻz/daqiqa",
   "Reading Speed": "Oʻqish tezligi",
-  "Reading Speed Today": "Bugungi oʻqish tezligi"
+  "Reading Speed Today": "Bugungi oʻqish tezligi",
+  "p. {{page}}": "{{page}}-b.",
+  "Copy with Citation": "Manba bilan nusxalash"
 }

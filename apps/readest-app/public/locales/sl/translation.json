@@ -3125,5 +3125,7 @@
   "{{speed}} characters/min": "{{speed}} znakov/min",
   "{{speed}} words/min": "{{speed}} besed/min",
   "Reading Speed": "Hitrost branja",
-  "Reading Speed Today": "Današnja hitrost branja"
+  "Reading Speed Today": "Današnja hitrost branja",
+  "p. {{page}}": "str. {{page}}",
+  "Copy with Citation": "Kopiraj z navedbo vira"
 }

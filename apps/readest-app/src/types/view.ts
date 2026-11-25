@@ -1,4 +1,4 @@
-import { BookDoc } from '@/libs/document';
+import { BookDoc, TOCItem } from '@/libs/document';
 import { BookNote, BookSearchConfig, BookSearchResult } from '@/types/book';
 import { TTSGranularity } from '@/services/tts';
 import { TTS } from 'foliate-js/tts.js';
@@ -119,6 +119,11 @@ export interface FoliateView extends HTMLElement {
   goLeft: () => void;
   goRight: () => void;
   getCFI: (index: number, range?: Range) => string;
+  // The TOC entry and the book's printed page (page-list) a range is in.
+  getProgressOf: (
+    index: number,
+    range: Range,
+  ) => { tocItem?: TOCItem | null; pageItem?: TOCItem | null };
   getCFIProgress: (cfi: string) => Promise<{
     fraction: number;
     section: { current: number; total: number };

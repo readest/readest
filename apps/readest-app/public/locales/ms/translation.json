@@ -2888,5 +2888,7 @@
   "{{speed}} characters/min": "{{speed}} aksara/min",
   "{{speed}} words/min": "{{speed}} perkataan/min",
   "Reading Speed": "Kelajuan Membaca",
-  "Reading Speed Today": "Kelajuan Membaca Hari Ini"
+  "Reading Speed Today": "Kelajuan Membaca Hari Ini",
+  "p. {{page}}": "hlm. {{page}}",
+  "Copy with Citation": "Salin dengan Sumber"
 }

@@ -2967,5 +2967,7 @@
   "{{speed}} characters/min": "{{speed}} χαρακτήρες/λεπτό",
   "{{speed}} words/min": "{{speed}} λέξεις/λεπτό",
   "Reading Speed": "Ταχύτητα ανάγνωσης",
-  "Reading Speed Today": "Ταχύτητα ανάγνωσης σήμερα"
+  "Reading Speed Today": "Ταχύτητα ανάγνωσης σήμερα",
+  "p. {{page}}": "σ. {{page}}",
+  "Copy with Citation": "Αντιγραφή με παραπομπή"
 }

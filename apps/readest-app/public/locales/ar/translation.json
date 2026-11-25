@@ -3283,5 +3283,7 @@
   "{{speed}} characters/min": "{{speed}} حرف/دقيقة",
   "{{speed}} words/min": "{{speed}} كلمة/دقيقة",
   "Reading Speed": "سرعة القراءة",
-  "Reading Speed Today": "سرعة القراءة اليوم"
+  "Reading Speed Today": "سرعة القراءة اليوم",
+  "p. {{page}}": "ص. {{page}}",
+  "Copy with Citation": "نسخ مع المرجع"
 }

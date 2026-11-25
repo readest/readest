@@ -3125,5 +3125,7 @@
   "{{speed}} characters/min": "{{speed}} символів/хв",
   "{{speed}} words/min": "{{speed}} слів/хв",
   "Reading Speed": "Швидкість читання",
-  "Reading Speed Today": "Швидкість читання сьогодні"
+  "Reading Speed Today": "Швидкість читання сьогодні",
+  "p. {{page}}": "с. {{page}}",
+  "Copy with Citation": "Скопіювати з посиланням на джерело"
 }

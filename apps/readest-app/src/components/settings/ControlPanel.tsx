@@ -74,6 +74,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     viewSettings.keepSelectionAfterLookup,
   );
   const [copyToNotebook, setCopyToNotebook] = useState(viewSettings.copyToNotebook);
+  const [copyWithCitation, setCopyWithCitation] = useState(viewSettings.copyWithCitation);
   const [showToolbarCustomizer, setShowToolbarCustomizer] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [animated, setAnimated] = useState(viewSettings.animated);
@@ -202,6 +203,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       enableAnnotationQuickActions: setEnableAnnotationQuickActions,
       keepSelectionAfterLookup: setKeepSelectionAfterLookup,
       copyToNotebook: setCopyToNotebook,
+      copyWithCitation: setCopyWithCitation,
     });
     saveViewSettings(
       envConfig,
@@ -478,6 +480,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [copyToNotebook]);
 
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'copyWithCitation', copyWithCitation, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [copyWithCitation]);
+
   const toggleAutoCheckUpdates = () => {
     const newValue = !isAutoCheckUpdates;
     saveSysSettings(envConfig, 'autoCheckUpdates', newValue);
@@ -694,6 +701,12 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
           checked={copyToNotebook}
           onChange={() => setCopyToNotebook(!copyToNotebook)}
           data-setting-id='settings.control.copyToNotebook'
+        />
+        <SettingsSwitchRow
+          label={_('Copy with Citation')}
+          checked={copyWithCitation}
+          onChange={() => setCopyWithCitation(!copyWithCitation)}
+          data-setting-id='settings.control.copyWithCitation'
         />
         <NavigationRow
           title={_('Customize Toolbar')}

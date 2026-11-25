@@ -2888,5 +2888,7 @@
   "The answer is incomplete: {{message}}": "回答不完整：{{message}}",
   "Pen Squeeze": "觸控筆輕捏",
   "Pen Slide Up": "觸控筆上滑",
-  "Pen Slide Down": "觸控筆下滑"
+  "Pen Slide Down": "觸控筆下滑",
+  "p. {{page}}": "第 {{page}} 頁",
+  "Copy with Citation": "複製時附帶引用來源"
 }
