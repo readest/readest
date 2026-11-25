@@ -1,6 +1,7 @@
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import type { ReadingSpeed } from '@/types/statistics';
 
+/** Each unit's speed as a localized list that breaks between units, never inside one. */
 export const formatReadingSpeed = (speeds: ReadingSpeed[], locale: string, _: TranslationFunc) => {
   const labels = speeds
     .filter(({ count, durationMs }) => count > 0 && durationMs > 0)
@@ -11,5 +12,16 @@ export const formatReadingSpeed = (speeds: ReadingSpeed[], locale: string, _: Tr
         ? _('{{speed}} characters/min', { speed })
         : _('{{speed}} words/min', { speed });
     });
-  return new Intl.ListFormat(locale, { type: 'unit' }).format(labels);
+  if (!labels.length) return null;
+  return new Intl.ListFormat(locale, { type: 'unit' })
+    .formatToParts(labels)
+    .map(({ type, value }, i) =>
+      type === 'element' ? (
+        <span key={i} className='whitespace-nowrap'>
+          {value}
+        </span>
+      ) : (
+        value
+      ),
+    );
 };

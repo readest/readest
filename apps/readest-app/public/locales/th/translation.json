@@ -2884,5 +2884,9 @@
   "The answer is incomplete: {{message}}": "คำตอบไม่สมบูรณ์: {{message}}",
   "Pen Squeeze": "บีบปากกา",
   "Pen Slide Up": "เลื่อนขึ้นบนปากกา",
-  "Pen Slide Down": "เลื่อนลงบนปากกา"
+  "Pen Slide Down": "เลื่อนลงบนปากกา",
+  "{{speed}} characters/min": "{{speed}} ตัวอักษร/นาที",
+  "{{speed}} words/min": "{{speed}} คำ/นาที",
+  "Reading Speed": "ความเร็วในการอ่าน",
+  "Reading Speed Today": "ความเร็วในการอ่านวันนี้"
 }

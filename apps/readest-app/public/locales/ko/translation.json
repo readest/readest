@@ -2884,5 +2884,9 @@
   "The answer is incomplete: {{message}}": "답변이 완료되지 않았습니다: {{message}}",
   "Pen Squeeze": "펜 스퀴즈",
   "Pen Slide Up": "펜 위 슬라이드",
-  "Pen Slide Down": "펜 아래 슬라이드"
+  "Pen Slide Down": "펜 아래 슬라이드",
+  "{{speed}} characters/min": "분당 {{speed}}자",
+  "{{speed}} words/min": "분당 {{speed}}단어",
+  "Reading Speed": "독서 속도",
+  "Reading Speed Today": "오늘의 독서 속도"
 }

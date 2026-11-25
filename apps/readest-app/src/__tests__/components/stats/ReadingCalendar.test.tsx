@@ -80,8 +80,10 @@ describe('ReadingCalendar', () => {
       { startTimeMs, count: 70, durationMs: 30_000, unit: 'words' },
     ]);
     const { container } = render(<ReadingCalendar db={db} daily={daily} />);
-    expect(await screen.findByText('300 characters/min, 140 words/min')).toBeTruthy();
-    expect(screen.getByRole('status').textContent).toContain('Reading Speed');
+    await screen.findByText('300 characters/min');
+    expect(screen.getByRole('status').textContent).toContain(
+      'Reading Speed300 characters/min, 140 words/min',
+    );
     expect(screen.queryByText('No reading activity on this day')).toBeNull();
     fireEvent.click(container.querySelector('[data-calendar-date="2026-11-06"]')!);
     expect(screen.queryByText('Reading Speed')).toBeNull();

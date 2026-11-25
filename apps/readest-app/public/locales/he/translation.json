@@ -3042,5 +3042,9 @@
   "The answer is incomplete: {{message}}": "התשובה אינה שלמה: {{message}}",
   "Pen Squeeze": "לחיצה על העט",
   "Pen Slide Up": "החלקת העט למעלה",
-  "Pen Slide Down": "החלקת העט למטה"
+  "Pen Slide Down": "החלקת העט למטה",
+  "{{speed}} characters/min": "{{speed}} תווים לדקה",
+  "{{speed}} words/min": "{{speed}} מילים לדקה",
+  "Reading Speed": "מהירות קריאה",
+  "Reading Speed Today": "מהירות הקריאה היום"
 }

@@ -5,10 +5,17 @@ import ReadingStatsDialog, {
   setReadingStatsDialogVisible,
 } from '@/components/stats/ReadingStatsDialog';
 import { toDateKey } from '@/services/statistics/readingStats';
+import de from '../../../../public/locales/de/translation.json';
+import el from '../../../../public/locales/el/translation.json';
+import ka from '../../../../public/locales/ka/translation.json';
+import ta from '../../../../public/locales/ta/translation.json';
 
+const translations = vi.hoisted(() => ({ current: {} as Record<string, string> }));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, params?: Record<string, string | number>) =>
-    key.replace(/\{\{(\w+)\}\}/g, (_, name: string) => String(params?.[name] ?? '')),
+    (translations.current[key] ?? key).replace(/\{\{(\w+)\}\}/g, (_, name: string) =>
+      String(params?.[name] ?? ''),
+    ),
 }));
 vi.mock('@/context/EnvContext', () => ({
   useEnv: () => ({ appService: { hasSafeAreaInset: true }, envConfig: {} }),
@@ -75,8 +82,60 @@ await import('@/styles/globals.css');
 
 afterEach(() => {
   cleanup();
+  translations.current = {};
   for (const attr of ['data-theme', 'data-eink', 'dir'])
     document.documentElement.removeAttribute(attr);
+});
+
+/** How many lines `text` takes inside `root`, across however many text nodes. */
+const linesOf = (root: Element, text: string) => {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) nodes.push(node as Text);
+  const start = nodes
+    .map((n) => n.data)
+    .join('')
+    .indexOf(text);
+  if (start < 0) throw new Error(`"${text}" not found`);
+  const range = document.createRange();
+  let offset = 0;
+  for (const node of nodes) {
+    const next = offset + node.data.length;
+    if (start >= offset && start < next) range.setStart(node, start - offset);
+    if (start + text.length > offset && start + text.length <= next)
+      range.setEnd(node, start + text.length - offset);
+    offset = next;
+  }
+  return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size;
+};
+
+describe('reading speed rows in the statistics dialog', () => {
+  // The longest labels and units shipped: at 360px neither fits beside the
+  // other, and the label is clamped to two lines.
+  it.each([
+    ['de', de],
+    ['el', el],
+    ['ka', ka],
+    ['ta', ta],
+  ])('keeps labels whole and each unit on one line at 360px (%s)', async (_lang, strings) => {
+    translations.current = strings as Record<string, string>;
+    await page.viewport(360, 900);
+    render(<ReadingStatsDialog />);
+    act(() => setReadingStatsDialogVisible(true));
+    for (const key of ['Reading Speed Today', 'Reading Speed']) {
+      const label = await screen.findByText(translations.current[key]!);
+      const row = label.parentElement!.parentElement!;
+      expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth + 1);
+      expect(label.scrollHeight).toBeLessThanOrEqual(label.clientHeight + 1);
+      expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth + 1);
+      for (const [unit, speed] of [
+        ['{{speed}} characters/min', '350'],
+        ['{{speed}} words/min', '180'],
+      ] as const) {
+        expect(linesOf(row, translations.current[unit]!.replace('{{speed}}', speed))).toBe(1);
+      }
+    }
+  });
 });
 
 describe('reading calendar in the statistics dialog', () => {

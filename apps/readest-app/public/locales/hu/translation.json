@@ -2963,5 +2963,9 @@
   "The answer is incomplete: {{message}}": "A válasz hiányos: {{message}}",
   "Pen Squeeze": "Toll összenyomás",
   "Pen Slide Up": "Toll csúsztatás felfelé",
-  "Pen Slide Down": "Toll csúsztatás lefelé"
+  "Pen Slide Down": "Toll csúsztatás lefelé",
+  "{{speed}} characters/min": "{{speed}} karakter/perc",
+  "{{speed}} words/min": "{{speed}} szó/perc",
+  "Reading Speed": "Olvasási sebesség",
+  "Reading Speed Today": "Mai olvasási sebesség"
 }

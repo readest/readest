@@ -140,7 +140,10 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
   const streaks = getStreaks(daily);
   const time = (seconds: number) => formatDuration(Math.floor(seconds / 60), _);
   const days = (count: number) => _('{{count}} days', { count });
-  const speed = (speeds: ReadingSpeed[]) => formatReadingSpeed(speeds, getLocale(), _) || '—';
+  const speed = (speeds: ReadingSpeed[]) => formatReadingSpeed(speeds, getLocale(), _) ?? '—';
+  // A speed rarely fits beside its label on a phone: it then moves below the
+  // label instead of squeezing it, since long words can't break (#7892).
+  const speedRow = 'flex-wrap py-3';
 
   if (page === 'calendar') {
     return (
@@ -228,8 +231,8 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
         <SettingsRow label={_('Today')}>
           <span className='tabular-nums'>{time(daily.get(toDateKey(new Date())) ?? 0)}</span>
         </SettingsRow>
-        <SettingsRow label={_('Reading Speed Today')}>
-          <span dir='auto' className='text-end tabular-nums'>
+        <SettingsRow label={_('Reading Speed Today')} className={speedRow}>
+          <span dir='auto' className='ms-auto text-end tabular-nums'>
             {speed(stats.todaySpeed)}
           </span>
         </SettingsRow>
@@ -244,8 +247,8 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
         <SettingsRow label={_('Reading Time')}>
           <span className='tabular-nums'>{time(totals.seconds)}</span>
         </SettingsRow>
-        <SettingsRow label={_('Reading Speed')}>
-          <span dir='auto' className='text-end tabular-nums'>
+        <SettingsRow label={_('Reading Speed')} className={speedRow}>
+          <span dir='auto' className='ms-auto text-end tabular-nums'>
             {speed(stats.totalSpeed)}
           </span>
         </SettingsRow>
