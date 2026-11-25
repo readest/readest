@@ -377,6 +377,19 @@ describe('Stripe delayed payments', () => {
     );
   });
 
+  // Review (CodeRabbit): the webhook itself must answer the failure, or
+  // Stripe takes a 200 and never retries.
+  it('a failed gift activation answers the webhook 500, after the payment is written', async () => {
+    hooks.sessionsRetrieve.mockResolvedValue(stripeSession());
+    hooks.activateGiftCard.mockRejectedValue(new Error('gift card belongs to another buyer'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const res = await asyncPaymentSucceeded();
+
+    expect(res.status).toBe(500);
+    expect(hooks.paymentWrites[0]).toMatchObject({ stripe_payment_intent_id: 'pi_1' });
+  });
+
   it('async_payment_succeeded for a storage session records the payment', async () => {
     hooks.sessionsRetrieve.mockResolvedValue(
       stripeSession({ productMetadata: { plan: 'purchase', storageGB: '5' } }),

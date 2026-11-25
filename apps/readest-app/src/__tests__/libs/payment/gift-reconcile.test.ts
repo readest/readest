@@ -25,6 +25,7 @@ vi.mock('@/libs/payment/gift/claim', () => ({
 }));
 
 import { RECONCILE_PAGE_SIZE, reconcileGiftCards } from '@/libs/payment/gift/reconcile';
+import { revokeGiftCardForPayment } from '@/libs/payment/gift/server';
 
 const NOW = new Date('2026-12-01T12:00:00Z');
 const HOUR = 3_600_000;
@@ -157,6 +158,25 @@ describe('reconcileGiftCards', () => {
     await reconcileGiftCards(NOW);
 
     expect(h.synced).toEqual([]);
+  });
+
+  // Review (CodeRabbit): a refund whose recipient sync failed long ago is
+  // retried by the provider; its redelivery re-stamps the card (the guard
+  // trigger), which brings the recipient back into the cron's window.
+  it('a redelivered refund brings its recipient back into the window', async () => {
+    claimed('refunded-friend', 100 * DAY, {
+      status: 'refunded',
+      stripe_payment_intent_id: 'pi_old',
+      updated_at: ago(30 * DAY),
+    });
+    h.db!.clock = () => ago(10 * 60_000);
+    h.failFor = 'refunded-friend';
+    await expect(revokeGiftCardForPayment('stripe_payment_intent_id', 'pi_old')).rejects.toThrow();
+    h.failFor = null;
+
+    await reconcileGiftCards(NOW);
+
+    expect(h.synced).toEqual(['refunded-friend']);
   });
 
   it("one failing recipient doesn't stop the rest", async () => {

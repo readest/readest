@@ -157,6 +157,9 @@ class Query {
         if (duplicate) return { data: null, error: duplicate };
       }
       for (const row of out) Object.assign(row, this.values);
+      // gift_cards_guard (migration 034) stamps updated_at on every update,
+      // a repeat of the same values included.
+      if (this.table === 'gift_cards') for (const row of out) row['updated_at'] = this.db.clock();
     } else if (this.op === 'delete') {
       out = rows.filter(matches);
       this.db.tables[this.table] = rows.filter((row) => !out.includes(row));
@@ -211,6 +214,8 @@ export class GiftDb {
   sweepClaims: string[] = [];
   /** PostgREST's `max-rows`, as Supabase sets it. */
   maxRows = 1000;
+  /** The database's now(), for what its triggers stamp. */
+  clock = (): string => new Date().toISOString();
   private seq = 0;
   private specs: Record<string, TableSpec>;
 

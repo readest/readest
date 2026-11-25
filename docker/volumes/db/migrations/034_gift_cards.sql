@@ -68,13 +68,15 @@ CREATE TRIGGER gift_cards_guard BEFORE UPDATE ON public.gift_cards
   FOR EACH ROW EXECUTE FUNCTION public.gift_cards_guard();
 
 -- Id of the confirmed auth user with this email, for claiming at purchase.
+-- Cards hold lowercase emails; accounts made before GoTrue lowercased them
+-- may not, so the account side is lowered too.
 CREATE OR REPLACE FUNCTION public.gift_user_id_for_email(p_email text) RETURNS uuid
 LANGUAGE sql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
   SELECT u.id FROM auth.users u
-  WHERE u.email = lower(trim(p_email)) AND u.email_confirmed_at IS NOT NULL
+  WHERE lower(u.email) = lower(trim(p_email)) AND u.email_confirmed_at IS NOT NULL
   LIMIT 1;
 $$;
 
@@ -90,7 +92,7 @@ AS $$
   WHERE g.status = 'active'
     AND NOT g.test
     AND g.redeemed_at IS NULL
-    AND g.recipient_email = u.email
+    AND g.recipient_email = lower(u.email)
     AND u.email_confirmed_at IS NOT NULL
   RETURNING g.redeemed_by;
 $$;

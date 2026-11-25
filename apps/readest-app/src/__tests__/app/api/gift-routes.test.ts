@@ -68,6 +68,7 @@ beforeEach(() => {
   h.claimByCode = null;
   h.testCode = false;
   h.claimForEmail = 0;
+  h.claimedEmailArgs = [];
   delete process.env['GIFT_RECONCILE_TOKEN'];
 });
 afterEach(() => {
