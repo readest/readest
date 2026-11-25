@@ -84,6 +84,14 @@ const lineHeightAt = (range: Range) => {
   return parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2;
 };
 
+// Whether the scrolled view places followed text itself. Vertical text scrolls
+// sideways, and a fixed-layout page measures its text from the page while the
+// renderer counts from the book's start: foliate places both, as before.
+const placesScrolledFollow = (view: FoliateView) =>
+  view.renderer.scrolled &&
+  view.renderer.sideProp === 'height' &&
+  view.book.rendition?.layout !== 'pre-paginated';
+
 // Scroll once the text reaches an edge of the view. Measured, not compared
 // with the last relocate's visible range: a scroll relocates only after a
 // debounce, and a word spoken meanwhile must not scroll again.
@@ -102,13 +110,17 @@ const followInScrolledView = (view: FoliateView, range: Range, viewSettings: Vie
     rangeBottom > end - footerScrollOverlap - scrollingOverlap ||
     rangeTop < start + headerScrollOverlap + scrollingOverlap;
   if (!outOfView) return;
-  // Vertical text scrolls sideways, and foliate places it.
-  if (sideProp !== 'height') {
+  if (!placesScrolledFollow(view)) {
     view.renderer.scrollToAnchor?.(range);
     return;
   }
-  view.renderer.containerPosition +=
-    rangeTop - start - SCROLLED_FOLLOW_CONTEXT_LINES * lineHeightAt(range);
+  // Below the header band the check above counts as hidden, too: text landing
+  // inside it would be followed again on every line.
+  const context = Math.max(
+    SCROLLED_FOLLOW_CONTEXT_LINES * lineHeightAt(range),
+    headerScrollOverlap,
+  );
+  view.renderer.containerPosition += rangeTop - start - context;
 };
 
 export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProps) => {
@@ -643,7 +655,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
       const wordRange = anchor(doc);
       if (!wordRange || !isRendered(wordRange)) return;
-      if (view.renderer.scrolled && view.renderer.sideProp === 'height') {
+      if (placesScrolledFollow(view)) {
         const viewSettings = getViewSettings(bookKey);
         if (viewSettings) followInScrolledView(view, wordRange, viewSettings);
         return;

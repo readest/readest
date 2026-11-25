@@ -21,7 +21,11 @@ vi.mock('@/store/themeStore', () => ({
 
 const mockView = {
   isConnected: true,
-  book: { primaryLanguage: 'en', sections: [{ id: 0 }] },
+  book: {
+    primaryLanguage: 'en',
+    sections: [{ id: 0 }],
+    rendition: undefined as { layout: string } | undefined,
+  },
   renderer: {
     getContents: () => [{ index: 0, doc: document as unknown as Document }],
     scrollToAnchor: vi.fn(),
@@ -67,6 +71,9 @@ const mockViewSettings = {
   ttsMediaMetadata: 'sentence',
   translationEnabled: false,
   ttsReadAloudText: 'source',
+  showHeader: false,
+  marginTopPx: 0,
+  scrollingOverlap: 0,
 };
 
 const mockBookData = {
@@ -1238,6 +1245,9 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
     afterEach(() => {
       before.remove();
       para.remove();
+      mockView.book.rendition = undefined;
+      mockViewSettings.showHeader = false;
+      mockViewSettings.marginTopPx = 0;
       mockView.renderer.sideProp = 'height';
       mockView.renderer.start = 0;
       mockView.renderer.end = 0;
@@ -1303,6 +1313,52 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
       });
 
       expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(range);
+      expect(mockView.renderer.containerPosition).toBe(1000);
+    });
+
+    // The out-of-view check counts a header-sized band at the top as hidden.
+    // Text landing inside it would be followed again on every line.
+    it('lands below the header band when that is taller than three lines', async () => {
+      const handler = await setupAndCaptureHighlightHandler();
+      mockViewSettings.showHeader = true;
+      mockViewSettings.marginTopPx = 144;
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => textAt(950, 40) });
+
+      await act(async () => {
+        handler(new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+      });
+
+      expect(mockView.renderer.containerPosition).toBe(1000 + 950 - 500 - 144);
+    });
+
+    // A fixed-layout page measures its text from the page, while the renderer
+    // counts from the book's start.
+    it('leaves fixed-layout pages to foliate', async () => {
+      mockView.book.rendition = { layout: 'pre-paginated' };
+      const markHandler = await setupAndCaptureHighlightHandler();
+      const sentence = textAt(950, 40);
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => sentence });
+      await act(async () => {
+        markHandler(
+          new CustomEvent('tts-highlight-mark', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }),
+        );
+      });
+      expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(sentence);
+
+      const controller = ttsControllerInstances[0] as {
+        addEventListener: { mock: { calls: [string, (e: Event) => void][] } };
+      };
+      const wordHandler = controller.addEventListener.mock.calls.find(
+        ([name]) => name === 'tts-highlight-word',
+      )![1];
+      const stale = document.createRange();
+      stale.selectNodeContents(before);
+      mockProgress.range = stale;
+      const word = textAt(966, 20);
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => word });
+      wordHandler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+      expect(mockView.renderer.scrollToAnchor).toHaveBeenCalledWith(word);
       expect(mockView.renderer.containerPosition).toBe(1000);
     });
   });
