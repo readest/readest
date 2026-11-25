@@ -148,6 +148,40 @@ const openAtChapter2 = async (vertical: boolean) => {
 const moves = (samples: { at: number }[], from: number) =>
   samples.map((s) => s.at - from).filter((d) => d !== 0);
 
+// WebKit on iOS 16 has no scroll anchoring at all (readest#7896).
+const withoutScrollAnchoring = () => {
+  const style = document.createElement('style');
+  style.textContent = '#container, #container * { overflow-anchor: none !important; }';
+  paginator.shadowRoot!.appendChild(style);
+};
+
+// Resizes the reader while a chapter's iframe still reports its old width, as
+// WebKit on iOS 16 does. Only the height changes, so the chapter doesn't
+// expand, and the paginator keeps its anchor for the chapter's next expand.
+const resizeWithStaleFrame = async (index: number) => {
+  const frame = viewElement(index).querySelector('iframe')!;
+  const rect = frame.getBoundingClientRect.bind(frame);
+  frame.getBoundingClientRect = () => {
+    const r = rect();
+    return new DOMRect(r.x, r.y, r.width + 100, r.height);
+  };
+  paginator.style.height = '560px';
+  await frames(3);
+  Reflect.deleteProperty(frame, 'getBoundingClientRect');
+};
+
+// A late image or font at the end of a chapter.
+const growAtEnd = async (index: number) => {
+  const height = () => viewElement(index).getBoundingClientRect().height;
+  const heightBefore = height();
+  const doc = paginator.getContents().find((c) => c.index === index)!.doc;
+  const block = doc.createElement('div');
+  block.style.height = '500px';
+  doc.body.append(block);
+  await waitFor(() => height() >= heightBefore + 500, `chapter ${index} to grow in the strip`);
+  await frames(2);
+};
+
 beforeAll(async () => {
   await import('foliate-js/paginator.js');
 });
@@ -276,10 +310,12 @@ describe('Scrolled strip keeps the reading position (browser)', () => {
   // A chapter before the one being read grows after it rendered (a late image
   // or font). The text in view must not move.
   it.each([
-    ['vertical', true],
-    ['horizontal', false],
-  ])('keeps the %s text in view still when an earlier chapter grows', async (_, vertical) => {
+    ['vertical', true, true],
+    ['horizontal', false, true],
+    ['horizontal', false, false],
+  ])('keeps the %s text in view still when an earlier chapter grows (scroll anchoring: %s)', async (_, vertical, anchoring) => {
     open(vertical, vertical);
+    if (!anchoring) withoutScrollAnchoring();
     await paginator.goTo({ index: 2, anchor: 0.3 });
     await settle();
     expect(loaded()).toContain(1);
@@ -299,5 +335,114 @@ describe('Scrolled strip keeps the reading position (browser)', () => {
     // offset doesn't, so the text can end up 1 px off.
     const moved = Math.abs(position(2, 'p30', vertical) - before);
     expect(moved, 'text in view moved when chapter 1 grew').toBeLessThanOrEqual(1);
+  });
+
+  // The same chapter shrinking back with the reader at the strip end: the
+  // browser clamps the offset to the shorter strip, which already moved it.
+  it.each([
+    ['vertical', true],
+    ['horizontal', false],
+  ])('keeps the %s text in view still when an earlier chapter shrinks at the strip end', async (_, vertical) => {
+    open(vertical, vertical);
+    if (!vertical) withoutScrollAnchoring();
+    await paginator.goTo({ index: 3, anchor: 0 });
+    await settle();
+    expect(loaded()).toContain(2);
+
+    const side = vertical ? 'width' : 'height';
+    const size = () => viewElement(2).getBoundingClientRect()[side];
+    const doc = paginator.getContents().find((c) => c.index === 2)!.doc;
+    const block = doc.createElement('div');
+    block.style[side] = '500px';
+    const sizeBefore = size();
+    doc.body.prepend(block);
+    await waitFor(() => size() >= sizeBefore + 500, 'chapter 2 to grow in the strip');
+    await frames(2);
+
+    const c = container();
+    if (vertical) c.scrollLeft = -(c.scrollWidth - c.clientWidth);
+    else c.scrollTop = c.scrollHeight - c.clientHeight;
+    await frames(2);
+    expect(paginator.primaryIndex).toBe(3);
+    const before = position(3, 'p79', vertical);
+    block.remove();
+    await waitFor(() => size() <= sizeBefore + 1, 'chapter 2 to shrink in the strip');
+    await frames(2);
+    const moved = Math.abs(position(3, 'p79', vertical) - before);
+    expect(moved, 'text at the strip end moved when chapter 2 shrank').toBeLessThanOrEqual(1);
+  });
+
+  // WebKit on iOS 16 gives the iframes a resized reader's width only after the
+  // paginator re-rendered, so it anchors again when the chapter being read
+  // expands (readest#7896). A jump or a scroll made before that expand moved
+  // the reader on, and the expand must leave it.
+  it('keeps a jump to another chapter when a late expand follows a resize', async () => {
+    open(false, false);
+    await paginator.goTo({ index: 2, anchor: 0.5 });
+    await settle();
+    expect(loaded()).toContain(3);
+    await resizeWithStaleFrame(2);
+
+    await paginator.goTo({ index: 3, anchor: 0 });
+    await settle();
+    expect(paginator.primaryIndex).toBe(3);
+    const before = position(3, 'head', false);
+    await growAtEnd(3);
+    const moved = Math.abs(position(3, 'head', false) - before);
+    expect(moved, 'chapter 3 head moved when chapter 3 grew').toBeLessThanOrEqual(1);
+  });
+
+  // The chapter can also expand for another reason, a late image, before its
+  // iframe takes the new width. The re-anchor waits for the rewrap at that width.
+  it('keeps the late re-anchor through an expand before the iframe takes its width', async () => {
+    open(false, false);
+    withoutScrollAnchoring();
+    await paginator.goTo({ index: 2, anchor: 0.3 });
+    await settle();
+    const doc = paginator.getContents().find((c) => c.index === 2)!.doc;
+    const range = doc.createRange();
+    range.setStart(doc.getElementById('p30')!.firstChild!, 0);
+    await paginator.scrollToAnchor!(range);
+    await frames(2);
+    const before = position(2, 'p30', false);
+
+    const frame = viewElement(2).querySelector('iframe')!;
+    const rect = frame.getBoundingClientRect.bind(frame);
+    frame.getBoundingClientRect = () => {
+      const r = rect();
+      return new DOMRect(r.x, r.y, r.width + 100, r.height);
+    };
+    paginator.style.height = '560px';
+    await frames(3);
+    await growAtEnd(2);
+
+    // The iframe takes its width, and the chapter rewraps above the text in view.
+    Reflect.deleteProperty(frame, 'getBoundingClientRect');
+    doc.defaultView!.dispatchEvent(new Event('resize'));
+    const block = doc.createElement('div');
+    block.style.height = '300px';
+    doc.body.prepend(block);
+    await frames(3);
+    const moved = Math.abs(position(2, 'p30', false) - before);
+    expect(moved, 'text in view moved when chapter 2 rewrapped').toBeLessThanOrEqual(1);
+  });
+
+  // A body capped at the column width may not rewrap when the iframe takes its
+  // new width, and then the chapter doesn't expand for it.
+  it('forgets the late re-anchor once the iframe took its width without the chapter expanding', async () => {
+    open(false, false);
+    await paginator.goTo({ index: 2, anchor: 0.3 });
+    await settle();
+    await resizeWithStaleFrame(2);
+    const doc = paginator.getContents().find((c) => c.index === 2)!.doc;
+    doc.defaultView!.dispatchEvent(new Event('resize'));
+    await frames(3);
+
+    // Chapter 2 grows later, while a scroll's relocate is still waiting.
+    scrollTo(scrollStart(false) + 300, false);
+    const before = position(2, 'p40', false);
+    await growAtEnd(2);
+    const moved = Math.abs(position(2, 'p40', false) - before);
+    expect(moved, 'text in view moved when chapter 2 grew').toBeLessThanOrEqual(1);
   });
 });
