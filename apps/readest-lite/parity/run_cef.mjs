@@ -63,12 +63,13 @@ Object.assign(env, { HOME: path.resolve(`${out}/home`), READEST_CDP_PORT: String
 // device px. (Emulation.setDeviceMetricsOverride's scale snaps them to CSS px instead.)
 env.GDK_SCALE = String(scale);
 delete env.GDK_DPI_SCALE;
-// Offline, as Readest Lite is (it fetches nothing over the network): every http(s) request goes
-// to a closed port, so web fonts fall back in both apps and the engines are compared alike.
+// Offline but for the hosts a scenario lists as `online` (a dictionary's): every other http(s)
+// request goes to a closed port, so web fonts fall back in both apps (Readest Lite loads none)
+// and the engines are compared alike.
 for (const k of ['http_proxy', 'https_proxy', 'all_proxy', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY']) {
   env[k] = 'http://127.0.0.1:9';
 }
-env.no_proxy = env.NO_PROXY = '127.0.0.1,localhost';
+env.no_proxy = env.NO_PROXY = ['127.0.0.1', 'localhost', ...(scenario.online ?? [])].join(',');
 // The scenario's `fonts` directory is the only one fontconfig sees (Readest Lite takes it as
 // BLITZ_FONTS); the system's rules still apply, so Chromium's default "Times New Roman" and
 // "Arial" find that directory's serif and sans-serif faces.
@@ -232,12 +233,22 @@ for (const s of steps) {
   if (s.startsWith('wait:')) { await sleep(Number(s.slice(5))); continue; }
   if (i === 0) await capture(0);
   i++;
+  // `2x:` before a target: a double click (Lite: a double tap); `hold:`, a finger held on it
+  // 700 ms (a long press).
+  const t = s.replace(/^(2x|hold):/, '');
+  const hold = async (x, y) => {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    await sleep(700);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  };
+  const click = (x, y) =>
+    t === s ? page.mouse.click(x, y) : s.startsWith('hold:') ? hold(x, y) : page.mouse.dblclick(x, y);
   if (s.startsWith('key:')) await page.keyboard.press(s.slice(4));
-  else if (/^\d+(\.\d+)?,\d+(\.\d+)?$/.test(s)) { const [x, y] = s.split(',').map(Number); await page.mouse.click(x, y); }
+  else if (/^\d+(\.\d+)?,\d+(\.\d+)?$/.test(t)) { const [x, y] = t.split(',').map(Number); await click(x, y); }
   else {
-    if (s.startsWith('[data-parity-text=')) await evaluate(() => globalThis.__parityTag?.());
-    const box = await page.locator(s).first().boundingBox({ timeout: 5000 }).catch(() => null);
-    if (box) await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    if (t.startsWith('[data-parity-text=')) await evaluate(() => globalThis.__parityTag?.());
+    const box = await page.locator(t).first().boundingBox({ timeout: 5000 }).catch(() => null);
+    if (box) await click(box.x + box.width / 2, box.y + box.height / 2);
     else console.error(`step ${i}: ${s} not found`);
   }
   await sleep(delay);

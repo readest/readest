@@ -11,7 +11,9 @@
 //! Output is headless: frames are painted with cairo and, with `BLITZ_TAURI_OUT=DIR`, written as
 //! PGM files. `BLITZ_TAURI_TAPS="x,y;#sel"` taps CSS-pixel points or the centre of the first
 //! element matching a selector, or press `key:Name` (e.g. `key:ArrowRight`), one per painted
-//! frame (`BLITZ_TAURI_TAP_MS` apart, default 800); `wait:MS` holds the next one back MS ms more.
+//! frame (`BLITZ_TAURI_TAP_MS` apart, default 800); `wait:MS` holds the next one back MS ms more;
+//! `2x:` before a target taps it twice at once (a double tap) and `hold:` holds a finger on it for
+//! `HOLD_MS` (a long press, which selects a word in a book).
 //! With `BLITZ_TAURI_TAP_IDLE_MS=Q` the next one goes as soon as nothing has painted for Q ms and
 //! no JS timer is due within Q; those delays become its latest time.
 
@@ -642,16 +644,35 @@ impl BlitzWebview {
             self.dirty = true;
             cause(&mut self.causes, 'k');
             self.input = true;
-        } else if tap_due && let Some(target) = self.taps.pop_front() {
-            let point = match target
-                .split_once(',')
-                .and_then(|(x, y)| Some((x.trim().parse().ok()?, y.trim().parse().ok()?)))
-            {
+        } else if self.next_tap.is_some_and(|t| t <= now)
+            && let Some((x, y)) = self
+                .taps
+                .front()
+                .and_then(|t| t.strip_prefix("release:"))
+                .and_then(point_of)
+        {
+            // The end of a `hold:`, not an input of its own.
+            send_pointer(doc, &self.pointers, x, y, Touch::Up);
+            self.taps.pop_front();
+            self.next_tap = None;
+            self.dirty = true;
+            cause(&mut self.causes, 'k');
+            self.input = true;
+        } else if tap_due && let Some(step) = self.taps.pop_front() {
+            // The finger goes down `n` times; 0: once, lifted HOLD_MS later.
+            let (target, n) = if let Some(t) = step.strip_prefix("2x:") {
+                (t, 2)
+            } else if let Some(t) = step.strip_prefix("hold:") {
+                (t, 0)
+            } else {
+                (step.as_str(), 1)
+            };
+            let point = match point_of(target) {
                 Some(p) => Some(p),
                 None => {
                     let mut d = doc.inner_mut();
                     d.resolve(blitz_qjs_script::animation_time());
-                    let id = d.query_selector(&target).ok().flatten();
+                    let id = d.query_selector(target).ok().flatten();
                     id.and_then(|id| d.get_client_bounding_rect(id))
                         .map(|r| ((r.x + r.width / 2.0) as f32, (r.y + r.height / 2.0) as f32))
                 }
@@ -667,15 +688,21 @@ impl BlitzWebview {
             let unix0 = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map_or(0, |d| d.as_millis());
-            for touch in [Touch::Down, Touch::Up] {
-                send_pointer(doc, &self.pointers, x, y, touch);
+            for _ in 0..n {
+                for touch in [Touch::Down, Touch::Up] {
+                    send_pointer(doc, &self.pointers, x, y, touch);
+                }
+            }
+            if n == 0 {
+                send_pointer(doc, &self.pointers, x, y, Touch::Down);
+                self.taps.push_front(format!("release:{x},{y}"));
             }
             eline!(
-                "{{\"label\": \"tap\", \"t_ms\": {t0:.1}, \"unix_ms\": {}, \"handler_ms\": {:.1}, \"target\": \"{target}\", \"x\": {x:.0}, \"y\": {y:.0}}}",
+                "{{\"label\": \"tap\", \"t_ms\": {t0:.1}, \"unix_ms\": {}, \"handler_ms\": {:.1}, \"target\": \"{step}\", \"x\": {x:.0}, \"y\": {y:.0}}}",
                 unix0,
                 t_ms() - t0
             );
-            self.next_tap = None;
+            self.next_tap = (n == 0).then(|| Instant::now() + Duration::from_millis(HOLD_MS));
             self.dirty = true;
             cause(&mut self.causes, 'k');
             self.input = true;
@@ -993,6 +1020,15 @@ enum Touch {
 }
 
 /// A primary pointer down, moved or up at CSS pixels `x`, `y` (a finger, as on a touch screen).
+/// How long a scripted `hold:` keeps its finger down: past Chromium's long-press time (500 ms).
+const HOLD_MS: u64 = 700;
+
+/// A scripted input's `x,y` point, in CSS px.
+fn point_of(s: &str) -> Option<(f32, f32)> {
+    let (x, y) = s.split_once(',')?;
+    Some((x.trim().parse().ok()?, y.trim().parse().ok()?))
+}
+
 fn send_pointer(
     doc: &mut QjsDocument,
     pointers: &Arc<atomic_refcell::AtomicRefCell<Vec<BlitzPointerEvent>>>,

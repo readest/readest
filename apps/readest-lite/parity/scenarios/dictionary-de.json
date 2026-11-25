@@ -1,0 +1,11 @@
+{
+  "name": "dictionary-de",
+  "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/verwandlung-de.epub",
+  "size": [536, 724],
+  "scale": 2,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "online": ["wiktionary.org", "wikipedia.org"],
+  "capture_ms": 8000,
+  "step_ms": 10000,
+  "steps": ["wait:15000", "2x:155,320", "[aria-label=\"Dictionary\"]", "key:Escape"]
+}

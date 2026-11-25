@@ -29,9 +29,12 @@ scale = scenario.get('scale', 1)  # device px per CSS px (the Kindle Voyage: 536
 # Step 0 is captured at the first input, before its handlers run; step i 'delay' ms after input i.
 hooks = """
 (() => {
-  let n = 0;
+  let n = 0, last = -Infinity;
   const emit = (i) => console.log('PARITY ' + JSON.stringify(__parityCapture(i)));
   const onInput = () => {
+    // The two taps of a double tap (`2x:`) are one step.
+    if (performance.now() - last < 300) return;
+    last = performance.now();
     if (n === 0) emit(0);
     const i = ++n;
     setTimeout(() => emit(i), %d);
