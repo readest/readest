@@ -1331,6 +1331,18 @@ describe('useTTSControl handleHighlightMark cross-section navigation', () => {
       expect(mockView.renderer.containerPosition).toBe(1000 + 950 - 500 - 144);
     });
 
+    it('keeps the word on screen in a view shorter than six lines', async () => {
+      const handler = await setupAndCaptureHighlightHandler('tts-highlight-word');
+      mockView.renderer.end = 700;
+      para.style.lineHeight = '80px';
+      mockView.resolveCFI.mockReturnValue({ index: 0, anchor: () => textAt(700, 80) });
+
+      handler(new CustomEvent('tts-highlight-word', { detail: { cfi: 'epubcfi(/6/4!/4/2)' } }));
+
+      // Three 80px lines don't fit in 200px: the word lands halfway down.
+      expect(mockView.renderer.containerPosition).toBe(1000 + 700 - 500 - 100);
+    });
+
     // A fixed-layout page measures its text from the page, while the renderer
     // counts from the book's start.
     it('leaves fixed-layout pages to foliate', async () => {
