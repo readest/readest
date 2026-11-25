@@ -183,6 +183,11 @@ vi.mock('@/app/reader/utils/capturedTurn', () => ({
 
 import { useCapturedTurn } from '@/app/reader/hooks/useCapturedTurn';
 import { dispatchTouchInterceptors } from '@/app/reader/hooks/useTouchInterceptor';
+import {
+  beginLayeredTurnTouch,
+  cancelLayeredTurnTouch,
+  endLayeredTurnTouch,
+} from '@/app/reader/utils/iframeEventHandlers';
 import { eventDispatcher } from '@/utils/event';
 
 const makeView = () =>
@@ -287,8 +292,6 @@ describe('useCapturedTurn scroll-lock gate', () => {
       invalidate.mockClear();
       act(() => fonts.dispatchEvent(new Event('loadingdone')));
       expect(invalidate).toHaveBeenCalledOnce();
-      act(() => fonts.dispatchEvent(new Event('loadingerror')));
-      expect(invalidate).toHaveBeenCalledTimes(2);
     } finally {
       unmount();
       invalidate.mockRestore();
@@ -315,6 +318,41 @@ describe('useCapturedTurn scroll-lock gate', () => {
     h.controller.invalidatePreparedCapture.mockClear();
     act(() => nextFonts.dispatchEvent(new Event('loadingdone')));
     expect(h.controller.invalidatePreparedCapture).not.toHaveBeenCalled();
+  });
+
+  // A font that settled between touch-down and the native turn start took the
+  // prepared surface from the gesture, and the swipe turned no page.
+  test('defers font invalidation under a finger until the touch ends', async () => {
+    vi.useFakeTimers();
+    const fonts = new EventTarget() as FontFaceSet;
+    h.bookFonts = fonts;
+    const { unmount } = renderHook(() => useCapturedTurn('book-1', { current: makeView() }));
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      beginLayeredTurnTouch('book-1');
+      dispatchTouchInterceptors('book-1', detail('start', 0, 0, 0, 150));
+      h.controller.invalidatePreparedCapture.mockClear();
+      h.controller.prepareCapture.mockClear();
+
+      act(() => fonts.dispatchEvent(new Event('loadingdone')));
+      expect(h.controller.invalidatePreparedCapture).not.toHaveBeenCalled();
+
+      endLayeredTurnTouch('book-1');
+      dispatchTouchInterceptors('book-1', detail('end', 0, 0, 16, 150));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+      expect(h.controller.invalidatePreparedCapture).toHaveBeenCalledOnce();
+      expect(h.controller.prepareCapture).toHaveBeenCalledOnce();
+      expect(h.controller.invalidatePreparedCapture.mock.invocationCallOrder[0]).toBeLessThan(
+        h.controller.prepareCapture.mock.invocationCallOrder[0]!,
+      );
+    } finally {
+      cancelLayeredTurnTouch('book-1');
+      unmount();
+    }
   });
 
   test.each(

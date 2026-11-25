@@ -602,6 +602,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     let preparePaintRaf = 0;
     let prepareNotBefore = 0;
     let cleanedUp = false;
+    let fontsSettledUnderTouch = false;
     const cancelPreparedCaptureSchedule = () => {
       if (prepareTimer !== null) clearTimeout(prepareTimer);
       if (prepareRaf) cancelAnimationFrame(prepareRaf);
@@ -642,6 +643,11 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
           if (isLayeredTurnTouchActive(bookKey)) {
             schedulePreparedCapture(PREPARED_CAPTURE_DELAY_MS);
             return;
+          }
+          if (fontsSettledUnderTouch) {
+            fontsSettledUnderTouch = false;
+            invalidatePagePixels();
+            controller.invalidatePreparedCapture();
           }
           const appService = getInitializedAppService();
           if (!appService?.isMobileApp && !appService?.isMacOSApp) return;
@@ -723,8 +729,15 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
     });
     // An embedded font can change the page's pixels without changing its key,
     // capture rectangle, or current location. Drop the old sheet on settlement.
+    // Under a finger that would take the surface its turn is about to use and
+    // swallow the swipe, so the first capture after the touch drops it instead.
+    // `loadingdone` also fires when a font fails to load.
     const fontObservers = new Map<FontFaceSet, AbortController>();
     const handleBookFontsSettled = () => {
+      if (isLayeredTurnTouchActive(bookKey)) {
+        fontsSettledUnderTouch = true;
+        return;
+      }
       invalidatePagePixels();
       invalidateAndSchedulePreparedCapture();
     };
@@ -739,7 +752,6 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
             const observer = new AbortController();
             const { signal } = observer;
             fonts.addEventListener('loadingdone', handleBookFontsSettled, { signal });
-            fonts.addEventListener('loadingerror', handleBookFontsSettled, { signal });
             fontObservers.set(fonts, observer);
           }
         }
