@@ -163,6 +163,51 @@ afterEach(() => {
 });
 
 describe('footnote popup box (#5999)', () => {
+  test('refits an open footnote when the Notebook takes space from the book cell', async () => {
+    render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />, { container: cell });
+    openLinkedFootnote();
+    const popup = popupContainer();
+    const originalWidth = popup.getBoundingClientRect().width;
+    expect(originalWidth).toBeGreaterThan(260);
+
+    cell.style.width = '260px';
+    await waitFor(() => {
+      const popupRect = popup.getBoundingClientRect();
+      const cellRect = cell.getBoundingClientRect();
+      expect(popupRect.left).toBeGreaterThanOrEqual(cellRect.left);
+      expect(popupRect.right).toBeLessThanOrEqual(cellRect.right);
+    });
+    expect(popup.getAttribute('aria-hidden')).toBe('false');
+
+    cell.style.width = '';
+    await waitFor(() => expect(popup.getBoundingClientRect().width).toBe(originalWidth));
+  });
+
+  test('lets a reader use the pinned Notebook without dismissing the footnote', () => {
+    cell.style.position = 'absolute';
+    cell.style.width = '260px';
+    const notebookButton = document.createElement('button');
+    notebookButton.textContent = 'Unpin Notebook';
+    notebookButton.style.cssText = 'position:fixed;top:20px;left:270px;z-index:20;';
+    const onUnpin = vi.fn();
+    notebookButton.addEventListener('click', onUnpin);
+    document.body.appendChild(notebookButton);
+    try {
+      render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />, { container: cell });
+      openLinkedFootnote();
+      const popup = popupContainer();
+
+      act(() => (document.elementFromPoint(280, 30) as HTMLElement | null)?.click());
+      expect(onUnpin).toHaveBeenCalledOnce();
+      expect(popup.getAttribute('aria-hidden')).toBe('false');
+
+      act(() => (document.elementFromPoint(20, 400) as HTMLElement | null)?.click());
+      expect(popup.getAttribute('aria-hidden')).toBe('true');
+    } finally {
+      notebookButton.remove();
+    }
+  });
+
   test('a short note leaves the popup with no scrollbars of its own', () => {
     render(<FootnotePopup bookKey='book-1' bookDoc={{} as BookDoc} />);
     act(() => {

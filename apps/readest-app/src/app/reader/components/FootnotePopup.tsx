@@ -211,6 +211,31 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
   const size18 = useResponsiveSize(18);
   const popupPadding = useResponsiveSize(10);
 
+  // A pinned panel resizes the book cell without resizing the window.
+  useEffect(() => {
+    if (!showPopup) return;
+    const cell = containerRef.current?.closest(`#gridcell-${bookKey}`);
+    if (!cell) return;
+    const observer = new ResizeObserver(() => {
+      setPopupBounds(getPopupBounds(cell.getBoundingClientRect(), gridInsetsRef.current));
+    });
+    observer.observe(cell);
+    return () => observer.disconnect();
+  }, [bookKey, showPopup, gridInsets.top, gridInsets.right, gridInsets.bottom, gridInsets.left]);
+
+  const width = popupBounds
+    ? Math.min(
+        responsiveWidth,
+        Math.max(0, popupBounds.rect.right - popupBounds.rect.left - 2 * popupPadding),
+      )
+    : responsiveWidth;
+  const height = popupBounds
+    ? Math.min(
+        responsiveHeight,
+        Math.max(0, popupBounds.rect.bottom - popupBounds.rect.top - 2 * popupPadding),
+      )
+    : responsiveHeight;
+
   // The cell less its safe-area insets, so the popup stays clear of the
   // Dynamic Island, a camera cutout and the home indicator (#7389). In cell
   // coordinates, like the triangle point: measured from the window, a pinned
@@ -244,12 +269,12 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     const popupPos = getPopupPosition(
       offsetPosition(anchor, { x: -origin.x, y: -origin.y }),
       rect,
-      responsiveWidth,
-      responsiveHeight,
+      width,
+      height,
       popupPadding,
     );
     return offsetPosition(popupPos, origin);
-  }, [anchor, popupBounds, responsiveWidth, responsiveHeight, popupPadding]);
+  }, [anchor, popupBounds, width, height, popupPadding]);
 
   const getMaxHeight = useCallback(() => {
     const safe = getSafeArea();
@@ -1044,8 +1069,9 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
 
   return (
     <div ref={containerRef} role='toolbar' tabIndex={-1}>
-      {/* Above Paragraph mode's z-40 backdrop, below the popup's z-[42] band. */}
-      {showPopup && <Overlay className='z-[41]' onDismiss={handleDismissPopup} />}
+      {/* Keep the dismiss layer above Paragraph mode but inside the book cell,
+          so a pinned panel beside the cell stays interactive. */}
+      {showPopup && <Overlay className='absolute! z-[41]' onDismiss={handleDismissPopup} />}
       {/* The note's text is selectable, so the selection toolbar and the range
           handles open against a selection that lives inside this popup — they
           have to draw over it, exactly as they do over the book page. That used
@@ -1072,8 +1098,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       >
         <Popup
           isOpen={showPopup}
-          width={responsiveWidth}
-          height={responsiveHeight}
+          width={width}
+          height={height}
           position={showPopup ? popupPosition! : undefined}
           trianglePosition={showPopup ? anchor! : undefined}
           safeAreaInsets={gridInsets}
