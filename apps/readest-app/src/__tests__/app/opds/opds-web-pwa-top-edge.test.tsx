@@ -56,6 +56,7 @@ describe('OPDS header box at the top edge (#7887)', () => {
     h.appService = { appPlatform: 'web', hasSafeAreaInset: true, hasRoundedWindow: false };
     render(<BrowserPage />);
     expect(headerBox().contains('sticky')).toBe(true);
+    expect(headerBox().contains('top-0')).toBe(true);
     expect(headerBox().contains('bg-base-100')).toBe(true);
   });
 
