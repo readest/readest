@@ -548,7 +548,19 @@ export class TTSController extends EventTarget {
         // doc (compareBoundaryPoints throws cross-document).
         const cfi = view.getCFI(sectionIndex, lastRange);
         const anchored = view.resolveCFI(cfi).anchor(doc);
-        if (anchored) newTts.from(anchored); // position the iterator; discard SSML
+        const ssml = anchored ? newTts.from(anchored) : undefined;
+        // foliate's from() positions the iterator but forgets the sentence
+        // being read: a paused reopen showed no highlight, lyric line or clock,
+        // and the next reopen had no seed and restarted the chapter (#7882).
+        // Put the sentence back; reapplyCurrentHighlight below draws it.
+        // Narration's from() keeps its own mark.
+        const mark = ssml && !narration ? parseSSMLMarks(ssml).marks[0] : undefined;
+        if (mark) {
+          this.#suppressMarkHighlight = true;
+          const range = newTts.setMark(mark.name);
+          this.#suppressMarkHighlight = false;
+          if (range) this.#lastSetMark = { name: mark.name, range };
+        }
       } catch (err) {
         console.warn('[TTS] attachView re-seed failed', err);
       }
