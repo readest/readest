@@ -411,14 +411,18 @@ describe('activateGiftCard once the card is live', () => {
     expect(db().planWrites()).toEqual([]);
   });
 
-  it("a refund revokes the card when the recipient's plan sync fails", async () => {
+  // Review (CodeRabbit): a sync that fails here is retried by the provider,
+  // which redelivers a refund that answers 500 for days; each redelivery
+  // re-stamps the card and reopens the cron's window. Swallowing it left the
+  // cron two hours, then nothing.
+  it("a refund revokes the card, then fails the call when the recipient's plan sync fails", async () => {
     const card = await activateGiftCard(stripePayment());
     await claimGiftCardByCode(card.code, 'friend-2');
     h.resolveError = new Error('stripe unavailable');
 
-    await expect(
-      revokeGiftCardForPayment('stripe_payment_intent_id', 'pi_1'),
-    ).resolves.toBeUndefined();
+    await expect(revokeGiftCardForPayment('stripe_payment_intent_id', 'pi_1')).rejects.toThrow(
+      'stripe unavailable',
+    );
     expect(db().card(card.id)?.status).toBe('refunded');
   });
 });

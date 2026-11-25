@@ -279,13 +279,12 @@ export const revokeGiftCardForPayment = async (
   if (error) throw error;
   const recipient = ((data ?? []) as Pick<GiftCardRow, 'redeemed_by'>[])[0]?.redeemed_by;
   if (!recipient) return;
-  // The card is refunded either way; the cron re-syncs recipients of cards
-  // refunded since its last runs.
-  try {
-    await syncUserPlan(recipient);
-  } catch (error) {
-    console.error('Gift refund: plan sync failed', { column, value }, error);
-  }
+  // The card is refunded either way. A failed sync fails the call: every
+  // caller is a refund webhook or a refunded checkout, whose provider
+  // redelivers for days, and each redelivery re-stamps the card and reopens
+  // the cron's window. Logging it instead left the cron two hours, then
+  // nothing.
+  await syncUserPlan(recipient);
 };
 
 /** The cards a user sent and received, and where their gifts stand at `now`. */
