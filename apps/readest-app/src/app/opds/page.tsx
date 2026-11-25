@@ -1199,6 +1199,8 @@ export default function BrowserPage() {
     setShowAddCatalog(false);
   }, [newCatalogName, state.currentURL, catalog, envConfig, _]);
 
+  const isWebPwa = appService?.appPlatform === 'web' && appService.hasSafeAreaInset;
+
   return (
     <div
       className={clsx(
@@ -1207,7 +1209,7 @@ export default function BrowserPage() {
       )}
     >
       <div
-        className='relative top-0 z-40 w-full'
+        className={clsx('top-0 z-40 w-full', isWebPwa ? 'bg-base-100 sticky' : 'relative')}
         style={{
           paddingTop: `${safeAreaInsets?.top || 0}px`,
           // Clear iPhone Duo's side status strip (#6307).
