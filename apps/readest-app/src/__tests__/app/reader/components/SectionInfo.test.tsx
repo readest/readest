@@ -291,3 +291,30 @@ describe('SectionInfo vertical safe-area and 0px margin floor (#7389)', () => {
     expect(info.style.width).toBe('16px');
   });
 });
+
+// The vertical title band is the right margin: from the safe-area edge to the
+// text's right edge, which FoliateViewer puts max(16, contentInsets.right) in
+// from the cell's right.
+describe('SectionInfo vertical band at large side margins (#7912)', () => {
+  const renderVertical = (gridRight: number, contentRight: number) =>
+    render(
+      <SectionInfo
+        {...baseProps}
+        isVertical
+        gridInsets={{ top: 0, right: gridRight, bottom: 0, left: 0 }}
+        contentInsets={{ top: 16, right: contentRight, bottom: 16, left: 0 }}
+      />,
+    ).container.querySelector('.sectioninfo') as HTMLElement;
+
+  it('fills the 144px right margin instead of sitting over the text', () => {
+    const info = renderVertical(0, 144);
+    expect(info.style.right).toBe('calc(0px)');
+    expect(info.style.width).toBe('144px');
+  });
+
+  it('sits between a right safe-area inset and the text', () => {
+    const info = renderVertical(47, 63);
+    expect(info.style.right).toBe('calc(47px)');
+    expect(info.style.width).toBe('16px');
+  });
+});

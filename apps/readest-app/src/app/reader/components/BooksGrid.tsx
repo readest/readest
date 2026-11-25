@@ -210,6 +210,12 @@ const BookCellInner: React.FC<BookCellProps> = ({
   );
   const showHeader = viewSettings.showHeader;
   const showFooter = viewSettings.showFooter;
+  // Vertical scrolled mode: the side strips stop where the text does, so they
+  // leave the horizontal scrollbar's ends (and the thumb there) visible (#7912).
+  const sideStripHeight =
+    viewSettings.vertical && viewSettings.scrolled && !viewSettings.hideScrollbar
+      ? `calc(100% - ${gridInsets.bottom + viewInsets.bottom * 1.5}px)`
+      : 'calc(100%)';
 
   return (
     <div
@@ -258,7 +264,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
                 className='bg-base-100 absolute left-0 top-0 h-full'
                 style={{
                   width: `calc(${Math.max(footerReservesBand(viewSettings) ? 16 : 0, contentInsets.left) + (viewSettings.doubleBorder ? 32 : 0)}px)`,
-                  height: `calc(100%)`,
+                  height: sideStripHeight,
                 }}
               />
             )}
@@ -267,7 +273,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
                 className='bg-base-100 absolute right-0 top-0 h-full'
                 style={{
                   width: `calc(${Math.max(showHeader ? 16 : 0, contentInsets.right) + (viewSettings.doubleBorder ? 32 : 0)}px)`,
-                  height: `calc(100%)`,
+                  height: sideStripHeight,
                 }}
               />
             )}

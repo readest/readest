@@ -32,6 +32,10 @@ export const getViewInsets = (viewSettings: ViewSettings) => {
  * the classic [topInset, topInset + margin] strip below the safe area; below
  * that it keeps a 16px readable height and lifts into the notch, reaching the
  * screen top at the negative-margin limit (#5303).
+ *
+ * Vertical writing turns it on its side: given the side inset and side margin,
+ * `top`/`height` are the side header's and footer's offset from the cell edge
+ * and width, matching FoliateViewer's 16px side floor (#7912).
  */
 export const getHeaderBandGeometry = (topInset: number, marginTopPx: number) => {
   const minHeight = 16;
