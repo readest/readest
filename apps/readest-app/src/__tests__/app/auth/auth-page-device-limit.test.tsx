@@ -45,6 +45,8 @@ const mocks = vi.hoisted(() => ({
   hasDeviceLimit: vi.fn((_token: string) => true),
   checkSignInDeviceLimit: vi.fn(async (_token: string): Promise<unknown> => null),
   signOutSyncDevice: vi.fn(async (_token: string, _id: string): Promise<unknown> => null),
+  isTauri: vi.fn(() => false),
+  onOpenUrl: vi.fn(async (_handler: (urls: string[]) => void) => {}),
   onAuthStateChange: undefined as
     | ((
         event: string,
@@ -59,7 +61,7 @@ vi.mock('@/libs/syncDevices', () => ({
   signOutSyncDevice: mocks.signOutSyncDevice,
 }));
 vi.mock('@/services/environment', () => ({
-  isTauriAppPlatform: () => false,
+  isTauriAppPlatform: mocks.isTauri,
   getBaseUrl: () => 'https://web.readest.com',
 }));
 vi.mock('@/store/readerStore', () => ({
@@ -76,6 +78,8 @@ vi.mock('@/utils/supabase', () => ({
         return { data: { subscription: { unsubscribe: vi.fn() } } };
       },
       signOut: mocks.signOut,
+      setSession: vi.fn(async () => ({ error: null })),
+      getUser: vi.fn(async () => ({ data: { user: {} } })),
     },
   },
 }));
@@ -105,7 +109,7 @@ vi.mock('@/hooks/useTranslation', () => ({
 vi.mock('next/navigation', () => ({ useRouter: () => mocks.router }));
 vi.mock('@/app/auth/components/AuthPanel', () => ({ default: () => <p>sign-in form</p> }));
 vi.mock('@/components/WindowButtons', () => ({ default: () => null }));
-vi.mock('@tauri-apps/plugin-deep-link', () => ({ onOpenUrl: vi.fn() }));
+vi.mock('@tauri-apps/plugin-deep-link', () => ({ onOpenUrl: mocks.onOpenUrl }));
 vi.mock('@fabianlars/tauri-plugin-oauth', () => ({
   start: vi.fn(),
   cancel: vi.fn(),
@@ -113,7 +117,7 @@ vi.mock('@fabianlars/tauri-plugin-oauth', () => ({
   onInvalidUrl: vi.fn(),
 }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn() }));
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => 'false') }));
 vi.mock('@tauri-apps/api/window', () => ({ getCurrentWindow: () => ({ listen: vi.fn() }) }));
 vi.mock('@/app/auth/utils/appleIdAuth', () => ({ getAppleIdAuth: vi.fn() }));
 vi.mock('@/app/auth/utils/nativeAuth', () => ({
@@ -130,8 +134,25 @@ const signIn = () =>
     }),
   );
 
+// The app opens a sign-in link as a deep link (Tauri), handled on this page.
+const openDeepLink = async (type: string) => {
+  cleanup();
+  mocks.isTauri.mockReturnValue(true);
+  render(<AuthPage />);
+  await waitFor(() => expect(mocks.onOpenUrl).toHaveBeenCalled());
+  const token = `${btoa('{"alg":"none"}')}.${btoa('{"sub":"user-1"}')}.sig`;
+  const handler = mocks.onOpenUrl.mock.calls[0]![0];
+  act(() =>
+    handler([`readest://auth-callback#access_token=${token}&refresh_token=r&type=${type}`]),
+  );
+  signIn();
+  await waitFor(() => expect(mocks.checkSignInDeviceLimit).toHaveBeenCalledWith(token));
+  await act(async () => {});
+};
+
 beforeEach(() => {
   localStorage.clear();
+  mocks.isTauri.mockReturnValue(false);
   window.history.replaceState(null, '', '/auth');
   mocks.hasDeviceLimit.mockReturnValue(true);
   mocks.checkSignInDeviceLimit.mockResolvedValue(BLOCKED);
@@ -200,6 +221,29 @@ describe('AuthPage over the Free plan device limit', () => {
     expect(mocks.router.replace).not.toHaveBeenCalled();
   });
 
+  // A refresh while the list is open starts another check; Cancel ends the
+  // session before it answers, even when it answers with an error (null).
+  it('drops a device check that answers after Cancel', async () => {
+    signIn();
+    await screen.findByText('Chrome on macOS');
+    let finish = (_value: unknown) => {};
+    mocks.checkSignInDeviceLimit.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    act(() =>
+      mocks.onAuthStateChange?.('TOKEN_REFRESHED', {
+        access_token: 'refreshed-token',
+        refresh_token: 'refreshed-refresh',
+        user: {},
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await act(async () => finish(null));
+
+    expect(screen.getByText('sign-in form')).toBeTruthy();
+    expect(mocks.login).not.toHaveBeenCalled();
+    expect(mocks.router.replace).not.toHaveBeenCalled();
+  });
+
   it('abandons a sign-in whose device check is still running on Go Back', async () => {
     let finish = (_value: unknown) => {};
     mocks.checkSignInDeviceLimit.mockReturnValue(new Promise((resolve) => (finish = resolve)));
@@ -224,6 +268,27 @@ describe('AuthPage over the Free plan device limit', () => {
     await waitFor(() => expect(mocks.router.back).toHaveBeenCalled());
     expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' });
     expect(mocks.login).not.toHaveBeenCalled();
+  });
+
+  it('opens the recovery form once a held password reset link is let in', async () => {
+    mocks.signOutSyncDevice.mockResolvedValue({ ...BLOCKED, blocked: false });
+    await openDeepLink('recovery');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out Chrome on macOS' }));
+
+    await waitFor(() => expect(mocks.router.replace).toHaveBeenCalledWith('/auth/recovery'));
+    expect(mocks.router.replace).toHaveBeenCalledTimes(1);
+  });
+
+  it('forgets a cancelled reset link when signing in again', async () => {
+    await openDeepLink('recovery');
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    mocks.checkSignInDeviceLimit.mockResolvedValue(null);
+
+    signIn();
+
+    await waitFor(() => expect(mocks.router.replace).toHaveBeenCalledWith('/library'));
+    expect(mocks.router.replace).not.toHaveBeenCalledWith('/auth/recovery');
   });
 
   it('signs in at once under the limit', async () => {

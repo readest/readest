@@ -73,6 +73,9 @@ export default function AuthPage() {
   // check or sign-out that answers afterwards can't sign in or hold the
   // session they ended.
   const abandonedSignIns = useRef(0);
+  // Where a held deep-link sign-in goes once let in, as the callback would
+  // have gone under the limit: the recovery form for a password reset link.
+  const heldDestination = useRef<string | null>(null);
 
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -206,7 +209,9 @@ export default function AuthPage() {
         login,
         navigate: router.push,
         // This page hears the session too, and lists the devices.
-        onDeviceLimit: () => {},
+        onDeviceLimit: (destination) => {
+          heldDestination.current = destination;
+        },
       });
     }
   };
@@ -259,6 +264,7 @@ export default function AuthPage() {
   const abandonSignIn = () => {
     abandonedSignIns.current += 1;
     pendingSignIn.current = false;
+    heldDestination.current = null;
     setHeldSignIn(null);
     void supabase.auth.signOut({ scope: 'local' });
   };
@@ -317,6 +323,8 @@ export default function AuthPage() {
   }, []);
 
   const finishSignIn = (session: Session) => {
+    const destination = heldDestination.current;
+    heldDestination.current = null;
     pendingSignIn.current = false;
     setHeldSignIn(null);
     login(session.access_token, session.user);
@@ -331,7 +339,9 @@ export default function AuthPage() {
     if (now - lastRedirectAt > 3000) {
       signedInAndLeft.current = true;
       // Same as handleGoBack: never leave /auth on the history stack.
-      if (redirectTo && isReaderBeneath()) {
+      if (destination) {
+        router.replace(destination);
+      } else if (redirectTo && isReaderBeneath()) {
         router.back();
       } else {
         router.replace(redirectTo ?? '/library');
