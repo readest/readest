@@ -2375,10 +2375,10 @@ describe('TTSController', () => {
       expect(startKeepAlive).toHaveBeenCalled();
     });
 
-    // The tone and the looping silent element each keep an audio output open,
-    // so a session left paused held one open for good and kept a sleeping BOOX
-    // from suspending (#7546). Transport still reaches the page for as long as
-    // Media3 keeps a paused player in the foreground.
+    // The tone keeps an audio output open, so a session left paused held one
+    // open for good and kept a sleeping BOOX from suspending (#7546).
+    // Transport still reaches the page for as long as Media3 keeps a paused
+    // player in the foreground.
     test.each([
       ['native', false],
       ['Edge', true],
@@ -2393,14 +2393,11 @@ describe('TTSController', () => {
         await c.pause();
         expect(startKeepAlive).toHaveBeenCalled();
         stopKeepAlive.mockClear();
-        releaseUnblock.mockClear();
 
         await vi.advanceTimersByTimeAsync(10 * 60 * 1000 - 1);
         expect(stopKeepAlive).not.toHaveBeenCalled();
-        expect(releaseUnblock).not.toHaveBeenCalled();
         await vi.advanceTimersByTimeAsync(1);
         expect(stopKeepAlive).toHaveBeenCalled();
-        expect(releaseUnblock).toHaveBeenCalled();
         expect(c.state).toContain('paused');
       } finally {
         vi.useRealTimers();
@@ -2420,11 +2417,9 @@ describe('TTSController', () => {
         await vi.advanceTimersByTimeAsync(0);
         expect(c.state).toBe('playing');
         stopKeepAlive.mockClear();
-        releaseUnblock.mockClear();
 
         await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
         expect(stopKeepAlive).not.toHaveBeenCalled();
-        expect(releaseUnblock).not.toHaveBeenCalled();
       } finally {
         vi.useRealTimers();
       }
@@ -2448,11 +2443,9 @@ describe('TTSController', () => {
         await vi.advanceTimersByTimeAsync(0);
         expect(c.state).toBe('forward-paused');
         stopKeepAlive.mockClear();
-        releaseUnblock.mockClear();
 
         await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
         expect(stopKeepAlive).toHaveBeenCalled();
-        expect(releaseUnblock).toHaveBeenCalled();
       } finally {
         vi.useRealTimers();
       }
