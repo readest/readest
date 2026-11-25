@@ -4,7 +4,10 @@ import ReadingCalendar from '@/components/stats/ReadingCalendar';
 import type { StatisticsDb } from '@/services/statistics/statisticsDb';
 import type { BookQuarterHourDuration } from '@/services/statistics/readingStats';
 
-vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (key: string) => key }));
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => (key: string, values?: { speed?: string }) =>
+    values?.speed ? key.replace('{{speed}}', values.speed) : key,
+}));
 const locale = vi.hoisted(() => ({ value: 'en-US' }));
 vi.mock('@/utils/misc', () => ({ getLocale: () => locale.value }));
 vi.mock('@/store/libraryStore', () => ({
@@ -31,8 +34,8 @@ const daily = new Map([
   ['2026-11-07', 120],
 ]);
 const query = vi.fn<StatisticsDb['getBookQuarterHourDurations']>();
-// The component only consumes the query; the real SQL is tested separately.
-const db = { getBookQuarterHourDurations: query };
+const speedQuery = vi.fn<StatisticsDb['getReadingSpeedSamples']>();
+const db = { getBookQuarterHourDurations: query, getReadingSpeedSamples: speedQuery };
 
 const pointer = (element: Element, type: string, options: PointerEventInit = {}) => {
   const event = new MouseEvent(type, { bubbles: true, cancelable: true, ...options });
@@ -61,6 +64,7 @@ const wheel = (element: Element, options: WheelEventInit, timeStamp: number) => 
 beforeEach(() => {
   vi.useFakeTimers({ now: new Date('2026-11-07T12:00:00'), toFake: ['Date'] });
   query.mockReset().mockResolvedValue([]);
+  speedQuery.mockReset().mockResolvedValue([]);
 });
 afterEach(() => {
   cleanup();
@@ -69,6 +73,22 @@ afterEach(() => {
 });
 
 describe('ReadingCalendar', () => {
+  it('shows both speed units on the day read and does not invent data on other days', async () => {
+    const startTimeMs = new Date('2026-11-07T10:00:00').getTime();
+    speedQuery.mockResolvedValue([
+      { startTimeMs, count: 300, durationMs: 60_000, unit: 'characters' },
+      { startTimeMs, count: 70, durationMs: 30_000, unit: 'words' },
+    ]);
+    const { container } = render(<ReadingCalendar db={db} daily={daily} />);
+    await screen.findByText('300 characters/min');
+    expect(screen.getByRole('status').textContent).toContain(
+      'Reading Speed300 characters/min, 140 words/min',
+    );
+    expect(screen.queryByText('No reading activity on this day')).toBeNull();
+    fireEvent.click(container.querySelector('[data-calendar-date="2026-11-06"]')!);
+    expect(screen.queryByText('Reading Speed')).toBeNull();
+  });
+
   it('does not carry rejected keyboard focus into a later date activation', async () => {
     const { container } = render(<ReadingCalendar db={db} daily={daily} />);
     await screen.findByText('No reading activity on this day');

@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getBookProgress, useBookProgress } from '@/store/readerProgressStore';
+import { useReaderStore } from '@/store/readerStore';
 import { useBookDataStore } from '@/store/bookDataStore';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { StatisticsDb } from '@/services/statistics/statisticsDb';
 import { TrackerCore, type FlushedEvent } from '@/services/statistics/trackerCore';
+import { ReadingSpeedTracker } from '@/services/statistics/readingSpeed';
 import { getBookHashFromKey, ttsSessionManager } from '@/services/tts/TTSSessionManager';
 import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
 import { SyncClient } from '@/libs/sync';
@@ -19,6 +21,8 @@ import { pushStats, pullStats } from '@/services/statistics/statsSync';
 import { isSyncCategoryEnabled } from '@/services/sync/syncCategories';
 import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
+import type { BookProgress } from '@/types/book';
+import { getBookLangCode } from '@/utils/book';
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
@@ -37,6 +41,7 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
   const getBookData = useBookDataStore((s) => s.getBookData);
   const { user } = useAuth();
   const coreRef = useRef(new TrackerCore(DEFAULT_STATS_TRACKING_CONFIG));
+  const [speedTracker] = useState(() => new ReadingSpeedTracker());
   const dbRef = useRef<StatisticsDb | null>(null);
   const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,6 +62,7 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
   const title = book?.title ?? '';
   // Book.author is the single-string author field; upsertBook takes authors: string.
   const authors = book?.author ?? '';
+  const bookLanguage = getBookLangCode(bookData?.bookDoc?.metadata?.language);
 
   const syncEnabled = () => !!user && isSyncCategoryEnabled('stats');
 
@@ -149,6 +155,7 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
 
   const armIdle = () => {
     if (idleRef.current) clearTimeout(idleRef.current);
+    // The speed tracker keeps timing: it judges a long page by its pace.
     idleRef.current = setTimeout(
       () => void persist(coreRef.current.onIdle(nowSec())),
       DEFAULT_STATS_TRACKING_CONFIG.idleTimeoutSeconds * 1000,
@@ -161,10 +168,22 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
     armIdle();
   };
 
+  const trackSpeed = (position: BookProgress | null) => {
+    if (!appService || !bookMd5 || document.visibilityState === 'hidden') return;
+    const scrolled = !!useReaderStore.getState().getViewSettings(bookKey)?.scrolled;
+    const sample = speedTracker.onPosition(position, Date.now(), scrolled, bookLanguage);
+    if (sample) {
+      runBestEffort(
+        StatisticsDb.open(appService).then((db) => db.insertReadingSpeed(bookMd5, sample)),
+      );
+    }
+  };
+
   // Page changes drive the tracker.
   useEffect(() => {
     if (ttsPlayingRef.current) return;
     openPageAt(progress?.pageinfo);
+    trackSpeed(progress);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress?.pageinfo]);
 
@@ -182,9 +201,12 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
       ttsPlayingRef.current = playing;
       if (playing) {
         if (idleRef.current) clearTimeout(idleRef.current);
+        speedTracker.reset();
         void persist(coreRef.current.onIdle(nowSec()));
       } else {
-        openPageAt(getBookProgress(bookKey)?.pageinfo);
+        const position = getBookProgress(bookKey);
+        openPageAt(position?.pageinfo);
+        trackSpeed(position);
       }
     };
     eventDispatcher.on('tts-playback-state', onPlaybackState);
@@ -197,7 +219,10 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
     const onVis = () => {
       if (document.visibilityState === 'hidden') {
         if (idleRef.current) clearTimeout(idleRef.current);
+        speedTracker.reset();
         void persist(coreRef.current.onHide(nowSec()));
+      } else if (!ttsPlayingRef.current) {
+        trackSpeed(getBookProgress(bookKey));
       }
     };
     document.addEventListener('visibilitychange', onVis);
@@ -210,6 +235,7 @@ export default function ReadingStatsTracker({ bookKey }: { bookKey: string }) {
     return () => {
       if (idleRef.current) clearTimeout(idleRef.current);
       if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+      speedTracker.reset();
       runBestEffort(
         persist(coreRef.current.onClose(nowSec())).then(() => {
           if (dbRef.current) pushToAllTargets(dbRef.current, true);

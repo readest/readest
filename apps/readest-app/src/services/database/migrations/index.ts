@@ -209,6 +209,19 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
         );
       `,
     },
+    {
+      name: '2026111901_statistics_reading_speed',
+      sql: `
+        CREATE TABLE IF NOT EXISTS readest_reading_speed (
+          start_time_ms integer NOT NULL,
+          book_md5 text NOT NULL,
+          unit text NOT NULL CHECK (unit IN ('characters', 'words')),
+          count integer NOT NULL CHECK (count > 0),
+          duration_ms integer NOT NULL CHECK (duration_ms > 0),
+          PRIMARY KEY (start_time_ms, book_md5, unit)
+        );
+      `,
+    },
   ],
   // Per-book search index/cache: one search.db in each book's directory
   // (beside cover.png), holding extracted section text so library full-text

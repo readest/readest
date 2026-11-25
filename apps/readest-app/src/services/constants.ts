@@ -264,6 +264,8 @@ export const DEFAULT_SYSTEM_SETTINGS: Partial<SystemSettings> = {
   libraryThenSortBy: 'none',
   libraryThenSortAscending: true,
   libraryGroupBy: LibraryGroupByType.Group,
+  libraryGroupByExpanded: false,
+  librarySortByExpanded: false,
   libraryCoverFit: 'crop',
   libraryAutoColumns: true,
   libraryColumns: 6,

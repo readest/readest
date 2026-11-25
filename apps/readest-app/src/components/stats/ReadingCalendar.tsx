@@ -5,19 +5,22 @@ import BookCover from '@/components/BookCover';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useLibraryStore } from '@/store/libraryStore';
 import type { Book } from '@/types/book';
+import type { ReadingSpeed } from '@/types/statistics';
 import type { StatisticsDb } from '@/services/statistics/statisticsDb';
 import {
   type BookReading,
   getCalendarDays,
   getDailyBookReadings,
+  getDailyReadingSpeeds,
   toDateKey,
 } from '@/services/statistics/readingStats';
 import { formatDuration } from '@/utils/duration';
 import { getLocale } from '@/utils/misc';
 import { createWheelGestureDetector } from '@/app/reader/utils/wheelGesture';
+import { formatReadingSpeed } from './formatReadingSpeed';
 
 interface ReadingCalendarProps {
-  db: Pick<StatisticsDb, 'getBookQuarterHourDurations'>;
+  db: Pick<StatisticsDb, 'getBookQuarterHourDurations' | 'getReadingSpeedSamples'>;
   /** A new map also refreshes the calendar after the account's stats are pulled. */
   daily: Map<string, number>;
 }
@@ -36,6 +39,7 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({ db, daily }) => {
   const [result, setResult] = useState<{
     month: string;
     days: Map<string, BookReading[]>;
+    speeds: Map<string, ReadingSpeed[]>;
   } | null>(null);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -123,10 +127,20 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({ db, daily }) => {
     setResult(null);
     setFailed(false);
     const start = new Date(`${month}-01T00:00:00`);
-    const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
-    db.getBookQuarterHourDurations(start.getTime() / 1000, end.getTime() / 1000)
-      .then((quarters) => {
-        if (!cancelled) setResult({ month, days: getDailyBookReadings(quarters) });
+    const startMs = start.getTime();
+    const endMs = new Date(start.getFullYear(), start.getMonth() + 1, 1).getTime();
+    Promise.all([
+      db.getBookQuarterHourDurations(startMs / 1000, endMs / 1000),
+      db.getReadingSpeedSamples(startMs, endMs),
+    ])
+      .then(([quarters, samples]) => {
+        if (!cancelled) {
+          setResult({
+            month,
+            days: getDailyBookReadings(quarters),
+            speeds: getDailyReadingSpeeds(samples, startMs, endMs),
+          });
+        }
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -148,6 +162,8 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({ db, daily }) => {
   const loading = !failed && result?.month !== month;
   const readings = result?.month === month ? result.days : new Map<string, BookReading[]>();
   const selectedBooks = readings.get(selected) ?? [];
+  const selectedSpeed = result?.month === month ? (result.speeds.get(selected) ?? []) : [];
+  const speed = formatReadingSpeed(selectedSpeed, locale, _);
   const time = (seconds: number) => formatDuration(Math.floor(seconds / 60), _);
   const formatDay = (key: string) =>
     new Date(`${key}T00:00:00`).toLocaleDateString(locale, {
@@ -463,13 +479,21 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({ db, daily }) => {
           </div>
         ) : (
           <>
-            <p role='status' className='text-base-content/70 mt-1 text-sm'>
+            <div role='status' className='text-base-content/70 mt-1 text-sm'>
               {loading
                 ? _('Loading')
                 : selectedBooks.length
                   ? time(selectedBooks.reduce((sum, book) => sum + book.seconds, 0))
-                  : _('No reading activity on this day')}
-            </p>
+                  : !speed && _('No reading activity on this day')}
+              {!!speed && (
+                <p className='flex flex-wrap gap-x-2'>
+                  <span>{_('Reading Speed')}</span>
+                  <span dir='auto' className='tabular-nums'>
+                    {speed}
+                  </span>
+                </p>
+              )}
+            </div>
             {!loading && selectedBooks.length > 0 && (
               <ul className='mt-3 flex flex-col gap-3'>
                 {selectedBooks.map((reading) => (

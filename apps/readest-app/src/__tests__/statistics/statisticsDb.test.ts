@@ -32,6 +32,7 @@ describe('statistics migration', () => {
     expect(names).toContain('readest_page_ext');
     expect(names).toContain('readest_book_ext');
     expect(names).toContain('readest_stat_sync_state');
+    expect(names).toContain('readest_reading_speed');
   });
 
   it('is idempotent when the page_stat view already exists (READEST-13)', async () => {
@@ -48,6 +49,20 @@ describe('statistics migration', () => {
       `SELECT name FROM sqlite_master WHERE type = 'view'`,
     );
     expect(views.map((v) => v.name)).toContain('page_stat');
+  });
+
+  it('preserves legacy page statistics when adding the reading speed table', async () => {
+    const existing = await NodeDatabaseService.open(':memory:');
+    const migrations = getMigrations('statistics');
+    await migrate(existing, migrations.slice(0, 1));
+    const stats = StatisticsDb.from(existing);
+    const book = await stats.upsertBook({ bookMd5: 'legacy', title: 'Legacy', authors: '' });
+    await stats.insertPageEvent(book, { page: 1, startTime: 1000, duration: 30, totalPages: 10 });
+
+    await migrate(existing, migrations);
+
+    expect(await stats.getReadingTotals()).toEqual({ books: 1, pages: 1, seconds: 30 });
+    expect(await stats.getReadingSpeedTotals()).toEqual([]);
   });
 
   it('seeds the numbers helper table 1..1000', async () => {
@@ -80,6 +95,52 @@ describe('StatisticsDb', () => {
   let stats: StatisticsDb;
   beforeEach(async () => {
     stats = StatisticsDb.from(await freshStatsDb());
+  });
+
+  it('keeps local speed samples idempotent and queries intervals that start before the boundary', async () => {
+    const sample = { unit: 'words' as const, count: 30, startTimeMs: 50_000, durationMs: 20_000 };
+    await stats.insertReadingSpeed('m1', sample);
+    await stats.insertReadingSpeed('m1', sample);
+    await stats.insertReadingSpeed('m2', { ...sample, unit: 'characters', count: 80 });
+    expect(await stats.getReadingSpeedSamples(60_000, 90_000)).toHaveLength(2);
+    expect(await stats.getReadingSpeedSamples(70_000, 90_000)).toEqual([]);
+    expect(await stats.getReadingSpeedTotals()).toEqual([
+      { unit: 'characters', count: 80, durationMs: 20_000 },
+      { unit: 'words', count: 30, durationMs: 20_000 },
+    ]);
+    expect(await stats.getReadingTotals()).toEqual({ seconds: 0, books: 0, pages: 0 });
+  });
+
+  it('keeps a local speed write when an overlapping sync transaction rolls back', async () => {
+    const db = await freshStatsDb();
+    const shared = StatisticsDb.from(db);
+    let insideTransaction!: () => void;
+    let failPull!: (error: Error) => void;
+    const pullStarted = new Promise<void>((resolve) => {
+      insideTransaction = resolve;
+    });
+    const pullFailure = new Promise<never>((_, reject) => {
+      failPull = reject;
+    });
+    const execute = vi.spyOn(db, 'execute');
+    vi.spyOn(db, 'select').mockImplementationOnce(() => {
+      insideTransaction();
+      return pullFailure;
+    });
+    const pull = expect(
+      shared.applyRemoteEvents([{ bookMd5: 'remote', title: 'Remote', authors: '' }], []),
+    ).rejects.toThrow('sync failed');
+    await pullStarted;
+
+    const sample = { unit: 'words' as const, count: 30, startTimeMs: 50_000, durationMs: 20_000 };
+    const write = shared.insertReadingSpeed('local', sample);
+    // If the insert bypasses the transaction queue, let it finish before rollback.
+    if (execute.mock.calls.some(([sql]) => sql.includes('INSERT INTO readest_reading_speed'))) {
+      await write;
+    }
+    failPull(new Error('sync failed'));
+    await Promise.all([pull, write]);
+    expect(await shared.getReadingSpeedSamples(0, 100_000)).toEqual([sample]);
   });
 
   it('upserts a book by md5 and returns a stable id_book', async () => {

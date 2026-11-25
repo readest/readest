@@ -4,7 +4,11 @@ import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { eventDispatcher } from '@/utils/event';
-import { getHeaderBandGeometry, getMarginalInlinePadding } from '@/utils/insets';
+import {
+  getHeaderBandGeometry,
+  getMarginalInlinePadding,
+  getVerticalChromeBand,
+} from '@/utils/insets';
 
 interface SectionInfoProps {
   bookKey: string;
@@ -40,6 +44,7 @@ const HintInfo: React.FC<SectionInfoProps> = ({
   // follows the top margin exactly as SectionInfo does — a fixed 44px strip
   // dropped it below the title on any smaller margin.
   const band = getHeaderBandGeometry(topInset, contentInsets.top - gridInsets.top);
+  const sideBand = getVerticalChromeBand(gridInsets.right, contentInsets.right - gridInsets.right);
 
   const [hintMessage, setHintMessage] = React.useState<string | null>(null);
   const hintTimeout = useRef(2000);
@@ -100,8 +105,8 @@ const HintInfo: React.FC<SectionInfoProps> = ({
                 bottom: `${gridInsets.bottom + (contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
                 right: showDoubleBorder
                   ? `calc(${contentInsets.right}px)`
-                  : `calc(${Math.max(0, Math.max(16, contentInsets.right) - 32)}px)`,
-                width: showDoubleBorder ? '30px' : `${Math.max(16, contentInsets.right)}px`,
+                  : `calc(${sideBand.offset}px)`,
+                width: showDoubleBorder ? '30px' : `${sideBand.width}px`,
               }
             : {
                 top: `${band.top}px`,

@@ -33,7 +33,7 @@ import StatusInfo from './StatusInfo.tsx';
 import StickyProgressBar from './StickyProgressBar.tsx';
 import { convertPagesToTimeRemainingMinutes } from '@/app/library/utils/libraryUtils.ts';
 import { formatDuration } from '@/utils/duration';
-import { getMarginalInlinePadding } from '@/utils/insets';
+import { getMarginalInlinePadding, getVerticalChromeBand } from '@/utils/insets';
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { getChapterScreensVersion, subscribeChapterScreens } from '@/utils/chapterScreens';
 import { getScreenPageInfo, usesScreenPages } from '../utils/screenPages';
@@ -335,6 +335,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const fontSize = getChromeFontSize(viewSettings, isEink);
   const showStatusInfo = hasTimeInfo || hasBatteryInfo;
 
+  const sideBand = getVerticalChromeBand(gridInsets.left, contentInsets.left - gridInsets.left);
+
   // The text is centered in the marginBottomPx strip, so on phones with rounded
   // screen corners a small bottom margin drops its ends into the corner arc.
   // Pull them inward just enough to clear it; the book layout is untouched.
@@ -388,8 +390,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               bottom: `${gridInsets.bottom + (contentInsets.bottom - gridInsets.bottom) * 1.5}px`,
               left: showDoubleBorder
                 ? `calc(${contentInsets.left}px)`
-                : `calc(${Math.max(0, Math.max(16, contentInsets.left) - 32)}px)`,
-              width: showDoubleBorder ? '32px' : `${Math.max(16, contentInsets.left)}px`,
+                : `calc(${sideBand.offset}px)`,
+              width: showDoubleBorder ? '32px' : `${sideBand.width}px`,
             }
           : {
               ...(isIPhoneDuo

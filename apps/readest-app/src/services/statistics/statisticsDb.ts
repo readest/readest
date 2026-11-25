@@ -1,7 +1,13 @@
 import type { AppService } from '@/types/system';
 import type { DatabaseService, DatabaseRow } from '@/types/database';
-import { DEFAULT_STATS_TRACKING_CONFIG } from '@/types/statistics';
-import type { BookStats, PageStatEvent, StatBook } from '@/types/statistics';
+import { DEFAULT_STATS_TRACKING_CONFIG, MAX_READING_SPEED_SAMPLE_MS } from '@/types/statistics';
+import type {
+  BookStats,
+  PageStatEvent,
+  ReadingSpeed,
+  ReadingSpeedSample,
+  StatBook,
+} from '@/types/statistics';
 import type { BookQuarterHourDuration } from './readingStats';
 
 interface BookRow extends DatabaseRow {
@@ -236,6 +242,34 @@ export class StatisticsDb {
     return rows[0] ?? { seconds: 0, books: 0, pages: 0 };
   }
 
+  // Local samples extend the stats DB without changing KOReader page events or
+  // the sync protocol. Queued so the write can't land inside a pull's open BEGIN.
+  async insertReadingSpeed(bookMd5: string, sample: ReadingSpeedSample): Promise<void> {
+    await this.exclusive(async () => {
+      await this.db.execute(
+        `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms)
+         VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+        [sample.startTimeMs, bookMd5, sample.unit, sample.count, sample.durationMs],
+      );
+    });
+  }
+
+  async getReadingSpeedSamples(startMs: number, endMs: number): Promise<ReadingSpeedSample[]> {
+    return this.db.select<ReadingSpeedSample>(
+      `SELECT start_time_ms AS startTimeMs, unit, count, duration_ms AS durationMs
+       FROM readest_reading_speed
+       WHERE start_time_ms >= ? AND start_time_ms < ? AND start_time_ms + duration_ms > ?`,
+      [startMs - MAX_READING_SPEED_SAMPLE_MS, endMs, startMs],
+    );
+  }
+
+  async getReadingSpeedTotals(): Promise<ReadingSpeed[]> {
+    return this.db.select<ReadingSpeed>(
+      `SELECT unit, SUM(count) AS count, SUM(duration_ms) AS durationMs
+       FROM readest_reading_speed GROUP BY unit ORDER BY unit`,
+    );
+  }
+
   async getBookByMd5(md5: string): Promise<BookRow | null> {
     const rows = await this.db.select<BookRow>(`SELECT * FROM book WHERE md5 = ? LIMIT 1`, [md5]);
     return rows[0] ?? null;
@@ -368,6 +402,13 @@ export class StatisticsDb {
         const id = await this.upsertBook(target);
         for (const e of events) await this.insertPageEvent(id, e);
         await this.recomputeBookTotals(id);
+        // A sample both hold at the same moment stays once, like a page event.
+        await this.db.execute(
+          `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms)
+           SELECT start_time_ms, ?, unit, count, duration_ms FROM readest_reading_speed
+           WHERE book_md5 = ? ON CONFLICT DO NOTHING`,
+          [target.bookMd5, source],
+        );
         await this.deleteEventsBefore(source, Number.MAX_SAFE_INTEGER);
         await this.db.execute('COMMIT');
       } catch (err) {
@@ -377,8 +418,15 @@ export class StatisticsDb {
     });
   }
 
-  /** Delete a book's events that started before `before`; drop its row once none are left. */
+  /**
+   * Delete a book's events and speed samples that started before `before`;
+   * drop its row once no events are left.
+   */
   private async deleteEventsBefore(md5: string, before: number): Promise<void> {
+    await this.db.execute(
+      `DELETE FROM readest_reading_speed WHERE book_md5 = ? AND start_time_ms < ?`,
+      [md5, Math.min(before * 1000, Number.MAX_SAFE_INTEGER)],
+    );
     const rows = await this.db.select<BookRow>(`SELECT id FROM book WHERE md5 = ?`, [md5]);
     for (const { id } of rows) {
       await this.db.execute(`DELETE FROM page_stat_data WHERE id_book = ? AND start_time < ?`, [
