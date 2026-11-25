@@ -2967,5 +2967,7 @@
   "{{speed}} characters/min": "{{speed}} სიმბოლო/წთ",
   "{{speed}} words/min": "{{speed}} სიტყვა/წთ",
   "Reading Speed": "კითხვის სიჩქარე",
-  "Reading Speed Today": "დღევანდელი კითხვის სიჩქარე"
+  "Reading Speed Today": "დღევანდელი კითხვის სიჩქარე",
+  "p. {{page}}": "გვ. {{page}}",
+  "Copy with Citation": "წყაროს მითითებით კოპირება"
 }

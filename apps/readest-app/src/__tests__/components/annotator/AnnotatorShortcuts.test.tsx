@@ -11,12 +11,14 @@ const h = vi.hoisted(() => ({
     annotationToolbarItems: [] as string[],
     noteExportConfig: {},
     copyToNotebook: false,
+    copyWithCitation: false,
     rtl: false,
     vertical: false,
   },
   saveConfig: vi.fn(),
   updateBooknotes: vi.fn(),
   view: null as unknown,
+  writeTextToClipboard: vi.fn(),
 }));
 
 const settings = {
@@ -39,7 +41,8 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (value: string) => value,
+  useTranslation: () => (value: string, options?: Record<string, unknown>) =>
+    value.replace(/{{(\w+)}}/g, (_match, key: string) => String(options?.[key] ?? '')),
 }));
 
 vi.mock('@/hooks/useResponsiveSize', () => ({
@@ -68,8 +71,22 @@ vi.mock('@/store/bookDataStore', () => {
     setConfig: vi.fn(),
     saveConfig: h.saveConfig,
     getBookData: () => ({
-      book: { format: 'EPUB', primaryLanguage: 'en' },
-      bookDoc: { metadata: { language: 'en' } },
+      book: {
+        format: 'EPUB',
+        primaryLanguage: 'en',
+        title: 'Upstream',
+        author: 'Dan Heath',
+        metadata: { published: '2020-03-03' },
+      },
+      bookDoc: {
+        metadata: { language: 'en' },
+        // No CFIs: only reflowable EPUBs get TOC CFIs baked, PDFs and the
+        // other formats don't.
+        toc: [
+          { id: 1, label: 'Chapter 9', href: 'ch9.xhtml', index: 0 },
+          { id: 2, label: 'Notes', href: 'notes.xhtml', index: 1 },
+        ],
+      },
       isFixedLayout: false,
     }),
     updateBooknotes: h.updateBooknotes,
@@ -95,7 +112,7 @@ vi.mock('@/store/readerStore', () => {
 });
 
 vi.mock('@/store/readerProgressStore', () => ({
-  getBookProgress: () => ({ page: 1 }),
+  getBookProgress: () => ({ page: 1, sectionHref: 'ch9.xhtml' }),
   useBookProgress: () => ({ page: 1, sectionHref: 'chapter.xhtml' }),
 }));
 
@@ -165,6 +182,8 @@ vi.mock('@/app/reader/hooks/useTextSelector', () => ({
   }),
 }));
 
+vi.mock('@/utils/clipboard', () => ({ writeTextToClipboard: h.writeTextToClipboard }));
+
 vi.mock('@/services/transformService', () => ({
   transformContent: ({ content }: { content: string }) => Promise.resolve(content),
 }));
@@ -216,6 +235,7 @@ const selectMainViewText = async (text = 'the river rounded a steep shoulder of 
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     getCFI: () => 'epubcfi(/6/2!/4/2)',
+    getProgressOf: () => ({ tocItem: { href: 'ch9.xhtml' }, pageItem: { label: '152' } }),
     deselect: vi.fn(),
   };
   await act(async () => {
@@ -234,6 +254,7 @@ describe('Annotator popup shortcuts', () => {
     h.view = null;
     h.config.booknotes = [];
     h.viewSettings.copyToNotebook = false;
+    h.viewSettings.copyWithCitation = false;
     h.updateBooknotes.mockImplementation(() => h.config);
     useNotebookDocumentStore.getState().reset();
     vi.clearAllMocks();
@@ -299,6 +320,62 @@ describe('Annotator popup shortcuts', () => {
     expect(handled).toBe(true);
     expect(speaks).toHaveLength(1);
     expect(speaks[0]!.oneTime).toBe(true);
+  });
+
+  // #7926: with Copy with Citation on, Copy puts the book, chapter and the
+  // printed page after the passage. The Notebook excerpt stays the passage.
+  test('copies the passage with its citation when Copy with Citation is on', async () => {
+    h.viewSettings.copyWithCitation = true;
+    h.viewSettings.copyToNotebook = true;
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectMainViewText('Getting short-term measures right is frustratingly complex.');
+
+    await act(async () => {
+      h.actions?.['onCopySelection']?.();
+    });
+
+    await vi.waitFor(() => expect(h.writeTextToClipboard).toHaveBeenCalledOnce());
+    expect(h.writeTextToClipboard).toHaveBeenCalledWith(
+      'Getting short-term measures right is frustratingly complex.\n\n' +
+        '— Dan Heath, Upstream (2020), Chapter 9, p. 152',
+    );
+    expect(h.config.booknotes).toEqual([
+      expect.objectContaining({
+        type: 'excerpt',
+        text: 'Getting short-term measures right is frustratingly complex.',
+      }),
+    ]);
+  });
+
+  // A footnote popup's range is not in the section document: the citation
+  // names the chapter being read and no page.
+  test('cites a footnote popup selection by the chapter being read', async () => {
+    h.viewSettings.copyWithCitation = true;
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectPopupText('epubcfi(/6/4!/4/2)');
+
+    await act(async () => {
+      h.actions?.['onCopySelection']?.();
+    });
+
+    await vi.waitFor(() => expect(h.writeTextToClipboard).toHaveBeenCalledOnce());
+    expect(h.writeTextToClipboard).toHaveBeenCalledWith(
+      'selected text\n\n— Dan Heath, Upstream (2020), Chapter 9',
+    );
+  });
+
+  test('copies only the passage when Copy with Citation is off', async () => {
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    await selectMainViewText('Getting short-term measures right is frustratingly complex.');
+
+    await act(async () => {
+      h.actions?.['onCopySelection']?.();
+    });
+
+    await vi.waitFor(() => expect(h.writeTextToClipboard).toHaveBeenCalledOnce());
+    expect(h.writeTextToClipboard).toHaveBeenCalledWith(
+      'Getting short-term measures right is frustratingly complex.',
+    );
   });
 
   test('stores copied excerpts without inserting them into the Notebook editor', async () => {

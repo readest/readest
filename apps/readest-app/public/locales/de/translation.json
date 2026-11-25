@@ -2967,5 +2967,7 @@
   "{{speed}} characters/min": "{{speed}} Zeichen/Min.",
   "{{speed}} words/min": "{{speed}} Wörter/Min.",
   "Reading Speed": "Lesetempo",
-  "Reading Speed Today": "Lesetempo heute"
+  "Reading Speed Today": "Lesetempo heute",
+  "p. {{page}}": "S. {{page}}",
+  "Copy with Citation": "Mit Quellenangabe kopieren"
 }

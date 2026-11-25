@@ -2967,5 +2967,7 @@
   "{{speed}} characters/min": "{{speed}} tekens/min",
   "{{speed}} words/min": "{{speed}} woorden/min",
   "Reading Speed": "Leessnelheid",
-  "Reading Speed Today": "Leessnelheid vandaag"
+  "Reading Speed Today": "Leessnelheid vandaag",
+  "p. {{page}}": "p. {{page}}",
+  "Copy with Citation": "Kopiëren met bronvermelding"
 }

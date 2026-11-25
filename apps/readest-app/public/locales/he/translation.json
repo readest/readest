@@ -3046,5 +3046,7 @@
   "{{speed}} characters/min": "{{speed}} תווים לדקה",
   "{{speed}} words/min": "{{speed}} מילים לדקה",
   "Reading Speed": "מהירות קריאה",
-  "Reading Speed Today": "מהירות הקריאה היום"
+  "Reading Speed Today": "מהירות הקריאה היום",
+  "p. {{page}}": "עמ' {{page}}",
+  "Copy with Citation": "העתק עם מקור"
 }

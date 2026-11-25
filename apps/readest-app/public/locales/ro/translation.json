@@ -3046,5 +3046,7 @@
   "{{speed}} characters/min": "{{speed}} caractere/min",
   "{{speed}} words/min": "{{speed}} cuvinte/min",
   "Reading Speed": "Viteza de citire",
-  "Reading Speed Today": "Viteza de citire de azi"
+  "Reading Speed Today": "Viteza de citire de azi",
+  "p. {{page}}": "p. {{page}}",
+  "Copy with Citation": "Copiază cu sursa"
 }
