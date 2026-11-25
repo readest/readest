@@ -440,7 +440,7 @@ describe('findScrollableBox', () => {
 
 describe('applyTableTouchScroll', () => {
   it('attaches capture-phase touch and wheel listeners once per document', () => {
-    document.documentElement.removeAttribute('data-readest-table-touch-scroll');
+    document.documentElement.removeAttribute('data-readest-scroll-wrapper-touch-scroll');
     const addSpy = vi.spyOn(document, 'addEventListener');
     applyTableTouchScroll(document);
     applyTableTouchScroll(document);
