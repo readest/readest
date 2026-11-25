@@ -55,6 +55,26 @@ describe('FailedImportsDialog', () => {
     expect(screen.getByText('File is corrupted')).toBeTruthy();
   });
 
+  it('lists failed filenames in natural order and keeps each error with its file', () => {
+    const failedImports = [
+      { filename: 'Book 10.epub', errorMessage: 'File is corrupted' },
+      { filename: 'Book 2.epub', errorMessage: 'File does not exist' },
+      { filename: 'Atlas.epub', errorMessage: 'Unsupported format' },
+    ];
+    render(<FailedImportsDialog failedImports={failedImports} onClose={vi.fn()} />);
+
+    expect(screen.getAllByRole('listitem').map((row) => row.textContent)).toEqual([
+      'Atlas.epubUnsupported format',
+      'Book 2.epubFile does not exist',
+      'Book 10.epubFile is corrupted',
+    ]);
+    expect(failedImports.map(({ filename }) => filename)).toEqual([
+      'Book 10.epub',
+      'Book 2.epub',
+      'Atlas.epub',
+    ]);
+  });
+
   it('invokes onClose when the OK button is clicked', () => {
     const onClose = vi.fn();
     render(
