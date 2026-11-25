@@ -25,8 +25,13 @@ const chapter = (i: number) =>
 // Sections whose load waits until released, to land a preload after a jump.
 let held: Record<number, Promise<void>> = {};
 const requested: number[] = [];
+// Loads taken and released per section: an EPUB counts its resources.
+const taken: number[] = [];
+const released: number[] = [];
 
 const open = () => {
+  taken.length = 0;
+  released.length = 0;
   paginator = document.createElement('foliate-paginator') as Paginator;
   Object.assign(paginator.style, {
     width: '800px',
@@ -45,10 +50,14 @@ const open = () => {
       size: html.length,
       load: async () => {
         requested.push(i);
+        taken[i] = (taken[i] ?? 0) + 1;
         await held[i];
         const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
         urls.push(url);
         return url;
+      },
+      unload: () => {
+        released[i] = (released[i] ?? 0) + 1;
       },
     };
   });
@@ -152,5 +161,10 @@ describe('Scrolled mode: going to a chapter that is not loaded', () => {
     const holes = strip.slice(1).filter((index, i) => index !== strip[i]! + 1);
     expect(strip, 'chapters in the strip').toContain(4);
     expect(holes, `chapters in the strip: ${strip.join(',')}`).toEqual([]);
+    // Each chapter still holds one load while in the strip, none once out of it.
+    const stillHeld = Array.from({ length: 8 }, (_, i) => (taken[i] ?? 0) - (released[i] ?? 0));
+    expect(stillHeld, 'loads still held per chapter').toEqual(
+      Array.from({ length: 8 }, (_, i) => (strip.includes(i) ? 1 : 0)),
+    );
   });
 });
