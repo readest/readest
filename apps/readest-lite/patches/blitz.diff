@@ -3532,7 +3532,15 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
      }
  
      pub fn set_sub_document(&mut self, node_id: NodeId, sub_document: Box<dyn Document>) {
-@@ -744,6 +781,7 @@
+@@ -710,6 +747,7 @@
+                 *attr,
+                 local_name!("type")
+                     | local_name!("value")
++                    | local_name!("placeholder")
+                     | local_name!("checked")
+                     | local_name!("width")
+                     | local_name!("height")
+@@ -744,6 +782,7 @@
          }
          // Mark ancestors dirty so the style traversal visits this subtree.
          node.mark_ancestors_dirty();
@@ -3540,7 +3548,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
      }
  
      /// Restyle an in-document element whose child list changed, `changed` being the position
-@@ -751,6 +789,8 @@
+@@ -751,6 +790,8 @@
      /// children are styled by the traversal regardless; the element and its other children
      /// only need restyling where its selector flags record a selector that depends on them.
      fn restyle_for_child_list_change(&mut self, parent_id: NodeId, changed: Range<usize>) {
@@ -3549,7 +3557,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          let parent = &self.doc.nodes[parent_id];
          let flags = parent.selector_flags().get();
          let mut hint = RestyleHint::empty();
-@@ -1174,7 +1214,17 @@
+@@ -1174,7 +1215,17 @@
          let mut ops = mem::take(&mut self.eager_op_queue);
          for op in ops.drain(0..) {
              match op {
@@ -3568,7 +3576,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
                  SpecialOp::LoadIframe(node_id) => self.load_iframe(node_id),
                  SpecialOp::LoadStylesheet(node_id) => self.load_linked_stylesheet(node_id),
                  SpecialOp::UnloadStylesheet(node_id) => self.unload_stylesheet(node_id),
-@@ -1338,10 +1388,37 @@
+@@ -1338,10 +1389,37 @@
              "style" => {
                  self.style_nodes.insert(node_id);
              }
@@ -3606,7 +3614,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
      fn load_linked_stylesheet(&mut self, target_id: NodeId) {
          let node = &self.doc.nodes[target_id];
  
-@@ -1420,6 +1497,10 @@
+@@ -1420,6 +1498,10 @@
      }
  
      fn load_image(&mut self, target_id: NodeId) {
@@ -3617,7 +3625,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
          let node = &self.doc.nodes[target_id];
          if let Some(raw_src) = node.attr(local_name!("src")) {
              if !raw_src.is_empty()
-@@ -1436,6 +1517,7 @@
+@@ -1436,6 +1518,7 @@
                          SpecialElementData::Image(Box::new(cached_image.clone()));
                      node.clear_layout_cache();
                      node.insert_damage(ALL_DAMAGE);
@@ -3625,7 +3633,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
                      return;
                  }
  
-@@ -1465,6 +1547,9 @@
+@@ -1465,6 +1548,9 @@
                          ImageHandler::new(ImageType::Image),
                      ),
                  );
@@ -3635,7 +3643,7 @@ diff -ruN blitz/packages/blitz-dom/src/mutator.rs blitz/packages/blitz-dom/src/m
              }
          }
      }
-@@ -3084,3 +3169,14 @@
+@@ -3084,3 +3170,14 @@
          );
      }
  }

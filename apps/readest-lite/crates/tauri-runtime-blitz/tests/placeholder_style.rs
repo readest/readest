@@ -2,6 +2,8 @@
 //! drawn at half the input's text colour when no rule applies. readest-app's e-ink mode makes
 //! placeholders solid ink (`[data-eink='true'] [class*='placeholder']::placeholder`); Blitz matched
 //! no `::placeholder` rule, so the library's search box kept a half-tone placeholder on the Kindle.
+//! A placeholder set again by script is drawn with its new text: the library's search box kept
+//! its first one ("Search Books...") after readest-app set "Search in 3 books...".
 
 use anyrender::PaintScene as _;
 use blitz_dom::{Document as _, DocumentConfig};
@@ -17,6 +19,16 @@ fn darkest(body: &str) -> (u8, u8, u8) {
 
 /// As [`darkest`], painted once more after `script` runs, when there is one.
 fn darkest_after(body: &str, script: Option<&str>) -> (u8, u8, u8) {
+    paint(&mut doc_after(body, script))
+}
+
+/// The pixels cairo paints for `body` on white (200x60), after `script` runs when there is one.
+fn pixels_after(body: &str, script: Option<&str>) -> Vec<u8> {
+    render(&mut doc_after(body, script)).data().unwrap().to_vec()
+}
+
+/// `body` laid out at 200x60, painted and then changed by `script`, when there is one.
+fn doc_after(body: &str, script: Option<&str>) -> QjsDocument {
     let html = format!("<!DOCTYPE html><html><body style='margin:0'>{body}</body></html>");
     let config = DocumentConfig {
         viewport: Some(Viewport::new(200, 60, 1.0, ColorScheme::Light)),
@@ -25,24 +37,15 @@ fn darkest_after(body: &str, script: Option<&str>) -> (u8, u8, u8) {
     let mut doc = QjsDocument::from_html(&html, config);
     doc.inner_mut().resolve(0.0);
     if let Some(script) = script {
-        paint(&mut doc);
+        render(&mut doc);
         doc.eval(script, "test");
         doc.inner_mut().resolve(0.0);
     }
-    paint(&mut doc)
+    doc
 }
 
 fn paint(doc: &mut QjsDocument) -> (u8, u8, u8) {
-    let mut surface = cairo::ImageSurface::create(cairo::Format::Rgb24, 200, 60).unwrap();
-    let mut caches = anyrender_cairo::Caches::new();
-    {
-        let cr = cairo::Context::new(&surface).unwrap();
-        let mut scene = anyrender_cairo::CairoScene::new(cr, &mut caches);
-        let all = Rect::new(0.0, 0.0, 200.0, 60.0);
-        scene.fill(Fill::NonZero, Default::default(), Color::WHITE, None, &all);
-        paint_scene(&mut scene, &mut doc.inner_mut(), 1.0, 200, 60, 0, 0);
-    }
-    surface.flush();
+    let mut surface = render(doc);
     let stride = surface.stride() as usize;
     let data = surface.data().unwrap();
     let mut best = (255, 255, 255);
@@ -55,6 +58,20 @@ fn paint(doc: &mut QjsDocument) -> (u8, u8, u8) {
         }
     }
     best
+}
+
+fn render(doc: &mut QjsDocument) -> cairo::ImageSurface {
+    let mut surface = cairo::ImageSurface::create(cairo::Format::Rgb24, 200, 60).unwrap();
+    let mut caches = anyrender_cairo::Caches::new();
+    {
+        let cr = cairo::Context::new(&surface).unwrap();
+        let mut scene = anyrender_cairo::CairoScene::new(cr, &mut caches);
+        let all = Rect::new(0.0, 0.0, 200.0, 60.0);
+        scene.fill(Fill::NonZero, Default::default(), Color::WHITE, None, &all);
+        paint_scene(&mut scene, &mut doc.inner_mut(), 1.0, 200, 60, 0, 0);
+    }
+    surface.flush();
+    surface
 }
 
 const INPUT: &str = "<input placeholder='Search' class='search' \
@@ -91,4 +108,14 @@ fn a_placeholder_follows_a_rule_that_starts_to_match() {
     );
     let script = "document.getElementById('root').setAttribute('data-eink', 'true')";
     assert_eq!(darkest_after(&body, Some(script)), (0, 0, 255));
+}
+
+#[test]
+fn a_placeholder_set_again_is_drawn_with_its_new_text() {
+    let before = INPUT.replace("'Search'", "'Ab'");
+    let script = "document.querySelector('input').placeholder = 'Search'";
+    assert!(
+        pixels_after(&before, Some(script)) == pixels_after(INPUT, None),
+        "the input still shows its first placeholder"
+    );
 }

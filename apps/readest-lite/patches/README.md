@@ -12,7 +12,9 @@
   `blitz-paint` render): a second text editor holds the placeholder, drawn while the input is
   empty in the colour of the page's `::placeholder` rules (`blitz-dom` document
   `placeholder_color`, computed when painted), or at half alpha when none applies. Readest's
-  search box showed nothing without it, and its e-ink mode makes placeholders solid ink.
+  search box showed nothing without it, and its e-ink mode makes placeholders solid ink. A
+  `placeholder` set again rebuilds the input's box (`blitz-dom` mutator), so its new text is
+  drawn: the library's search box kept "Search Books..." once it read "Search in 3 books...".
 - `blitz-dom` node/serialize: `currentColor` in inline SVG is serialized as `rgba()`, so SVG
   icons take their CSS colour instead of black.
 - `blitz-paint` render/box_shadow: fully transparent inset shadows are skipped. daisyUI's
