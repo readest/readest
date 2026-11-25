@@ -1,9 +1,10 @@
 // run_cef.mjs SCENARIO OUT BINARY: play a parity scenario on Readest desktop (Linux CEF, release).
 //
-// Writes OUT/captures.jsonl (capture.js per step), OUT/timing.json and OUT/step-NNN.png (the
-// viewport when the step was captured). The app runs under a scratch HOME in OUT/home and a
-// private D-Bus session, with its DevTools endpoint on a local port, on its own Xvfb display at
-// the scenario's device scale (GDK_SCALE), its window sized to the scenario's size.
+// Writes OUT/captures.jsonl (capture.js per step), OUT/timing.json, OUT/ipc.json (every Tauri
+// command called, and how it ended: ipc-log.js) and OUT/step-NNN.png (the viewport when the step
+// was captured). The app runs under a scratch HOME in OUT/home and a private D-Bus session, with
+// its DevTools endpoint on a local port, on its own Xvfb display at the scenario's device scale
+// (GDK_SCALE), its window sized to the scenario's size.
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -88,6 +89,13 @@ await page.waitForLoadState('load');
 // file it was started with to the page (OPEN_WITH_FILES): the restart below drops what it handed
 // the first start. (CEF serves the app's pages itself, so they can't be swapped for Readest Lite's
 // dist/: compare a Readest built from the same readest-app export.)
+// Every Tauri command the page calls, and how it ended (ipc-log.js; run_lite.py logs the same).
+const ipc = [];
+page.on('console', (m) => {
+  const t = m.text();
+  if (t.startsWith('PARITY-IPC ')) ipc.push(JSON.parse(t.slice('PARITY-IPC '.length)));
+});
+await page.addInitScript({ content: fs.readFileSync(path.join(here, 'ipc-log.js'), 'utf8') });
 await page.addInitScript({
   content: `window.__READEST_SINGLE_WINDOW = true;${scenario.eink ? ' window.__READEST_IS_EINK = true;' : ''}` +
     (scenario.book ? ` window.OPEN_WITH_FILES = ${JSON.stringify([path.resolve(scenario.book)])};` : ''),
@@ -210,6 +218,7 @@ const timing = ((await evaluate(() => globalThis.__parityTiming)) ?? []).map((e,
 }));
 fs.writeFileSync(`${out}/captures.jsonl`, captures.map((c) => JSON.stringify(c)).join('\n') + '\n');
 fs.writeFileSync(`${out}/timing.json`, JSON.stringify(timing, null, 1));
+fs.writeFileSync(`${out}/ipc.json`, JSON.stringify(ipc, null, 1));
 console.log(`cef: ${captures.length}/${inputs.length + 1} captures -> ${out}`);
 await browser.close().catch(() => {});
 kill();

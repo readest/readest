@@ -5,7 +5,9 @@ every element present in both runs has its border box within TOLERANCE_PX (defau
 width and height, with no element present in only one of them. Two known differences are not
 judged: elements inside an <svg> (Blitz paints inline SVG as one image, so they have no boxes of
 their own; the <svg> box itself is compared), and where an element empty in both (0x0) sits. The pixel diff (grayscale,
-|delta| > 32) is reported, not judged. Writes REPORT_DIR/report.html and REPORT_DIR/summary.json.
+|delta| > 32) is reported, not judged. A Tauri command Lite doesn't have (ipc.json of the runs) fails
+the run unless commands-missing.json lists it. Writes REPORT_DIR/report.html, REPORT_DIR/summary.json
+and REPORT_DIR/ipc.json.
 """
 import html, json, os, re, sys
 import numpy as np
@@ -70,6 +72,25 @@ for a, b in zip(lite, cef):
     rows.append((i, a, b, ok, loc_ok, moved, only_lite, only_cef, pix, img if pix is not None else None))
 json.dump(summary, open(f'{rep}/summary.json', 'w'), indent=1)
 
+# Tauri commands (ipc-log.js): one Lite doesn't have ("not found", "not allowed by ACL") while
+# Readest's call of it didn't fail fails the run, unless commands-missing.json lists it. Other
+# errors that only Lite hit are reported.
+def load_ipc(d):
+    return json.load(open(f'{d}/ipc.json')) if os.path.exists(f'{d}/ipc.json') else []
+ipc_lite, ipc_cef = load_ipc(lite_dir), load_ipc(cef_dir)
+known = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'commands-missing.json')))
+listed = lambda c: any(c.startswith(k[:-1]) if k.endswith('*') else c == k for k in known)
+cef_failed = {x['cmd'] for x in ipc_cef if not x['ok']}
+absent = sorted({x['cmd'] for x in ipc_lite if not x['ok'] and x['cmd'] not in cef_failed
+                 and re.search(r'not found|not allowed by ACL', x['error'] or '')})
+unlisted = [c for c in absent if not listed(c)]
+lite_errors = {}
+for x in ipc_lite:
+    if not x['ok'] and x['cmd'] not in absent and x['cmd'] not in cef_failed:
+        lite_errors.setdefault(x['cmd'], x['error'])
+json.dump(dict(lite_calls=len(ipc_lite), readest_calls=len(ipc_cef), not_in_lite=absent, not_listed=unlisted,
+               errors_only_in_lite=lite_errors), open(f'{rep}/ipc.json', 'w'), indent=1)
+
 e = html.escape
 out = ['<!doctype html><meta charset=utf-8><title>Readest Lite parity</title><style>'
        'body{font:14px system-ui;margin:24px;max-width:1500px}table{border-collapse:collapse}'
@@ -90,6 +111,14 @@ for s in summary:
                f"<td>{s['pixel_diff_pct']}%</td><td>{s['lite_first_frame_ms']} / {s['lite_handler_ms']} ms</td>"
                f"<td>{s['cef_frame_ms']} ms</td></tr>")
 out.append('</table>')
+out.append(f'<h2>Commands: <span class={"bad" if unlisted else "ok"}>{"FAIL" if unlisted else "pass"}</span></h2>'
+           f'<p>Lite called {len(ipc_lite)} Tauri commands, Readest {len(ipc_cef)}. A command Lite doesn\'t have '
+           'fails the run unless commands-missing.json lists it.</p><ul>'
+           + ''.join(f"<li class={'bad' if c in unlisted else ''}><code>{e(c)}</code>{' (not listed)' if c in unlisted else ''}</li>"
+                     for c in absent) + '</ul>')
+if lite_errors:
+    out.append('<details><summary>Errors only Lite hit</summary><ul>'
+               + ''.join(f'<li><code>{e(c)}</code>: {e(str(err))}</li>' for c, err in lite_errors.items()) + '</ul></details>')
 for i, a, b, ok, loc_ok, moved, only_lite, only_cef, pix, img in rows:
     out.append(f"<h2 id=s{i}>Step {i}: <span class={'ok' if ok else 'bad'}>{'pass' if ok else 'FAIL'}</span></h2>")
     out.append(f"<p>Lite location <code>{e(json.dumps(a['loc']))}</code><br>Readest location <code>{e(json.dumps(b['loc']))}</code></p>")
@@ -107,3 +136,7 @@ for i, a, b, ok, loc_ok, moved, only_lite, only_cef, pix, img in rows:
 open(f'{rep}/report.html', 'w').write('\n'.join(out))
 passed = sum(s['ok'] for s in summary)
 print(f'{passed}/{len(summary)} steps pass -> {rep}/report.html')
+print(f'commands: Lite lacks {len(absent)} it was asked for, {len(unlisted)} not in commands-missing.json'
+      + ''.join(f'\n  not listed: {c}' for c in unlisted)
+      + (f'; {len(lite_errors)} other errors only in Lite' if lite_errors else ''))
+sys.exit(1 if unlisted else 0)

@@ -1,8 +1,9 @@
 """run_lite.py SCENARIO OUT BINARY: play a parity scenario on Readest Lite (release build).
 
 Writes OUT/captures.jsonl (capture.js per step), OUT/timing.json (per step: handler time and the
-latency of the first and last frame) and OUT/step-NNN.pgm (the frame shown when the step was
-captured). Runs under a scratch HOME in OUT/home and a private D-Bus session.
+latency of the first and last frame), OUT/ipc.json (every Tauri command called, and how it ended:
+ipc-log.js) and OUT/step-NNN.pgm (the frame shown when the step was captured). Runs under a
+scratch HOME in OUT/home and a private D-Bus session.
 """
 import json, os, re, shutil, signal, subprocess, sys, threading, time
 
@@ -54,7 +55,8 @@ hooks = """
 """ % (delay, len(input_steps), scenario.get('settle_ms', 8000))
 init = f'{out}/init.js'
 probe = open(scenario['probe']).read() if scenario.get('probe') else ''
-open(init, 'w').write(open(f'{here}/capture.js').read() + open(f'{here}/text-steps.js').read() + probe + hooks
+open(init, 'w').write(open(f'{here}/ipc-log.js').read() + open(f'{here}/capture.js').read()
+                     + open(f'{here}/text-steps.js').read() + probe + hooks
                      + f'\n__parityTexts({json.dumps(texts)});\n')
 
 env = {k: v for k, v in os.environ.items() if k != 'DBUS_SESSION_BUS_ADDRESS'
@@ -81,11 +83,13 @@ signal.signal(signal.SIGTERM, lambda *_: (stop(), sys.exit(1)))
 signal.signal(signal.SIGINT, lambda *_: (stop(), sys.exit(1)))
 watchdog = threading.Timer(scenario.get('timeout_s', 90 + 5 * len(steps)), stop)
 watchdog.start()
-captures, inputs, frames, log = [], [], [], open(f'{out}/stderr.log', 'w')
+captures, inputs, frames, ipc, log = [], [], [], [], open(f'{out}/stderr.log', 'w')
 try:
     for line in proc.stderr:
         log.write(line)
-        if 'PARITY ' in line:
+        if 'PARITY-IPC ' in line:  # ipc-log.js: a command the page called, and how it ended
+            ipc.append(json.loads(line.split('PARITY-IPC ', 1)[1]))
+        elif 'PARITY ' in line:
             captures.append(json.loads(line.split('PARITY ', 1)[1]))
             if len(captures) == len(input_steps) + 1: break
         elif line.startswith('{'):
@@ -121,6 +125,7 @@ for i in range(len(input_steps) + 1):
                            frames=len(seg), layout_ms=sum(f['layout_ms'] for f in seg),
                            paint_ms=round(sum(f['paint_ms'] for f in seg), 1)))
 json.dump(timing, open(f'{out}/timing.json', 'w'), indent=1)
+json.dump(ipc, open(f'{out}/ipc.json', 'w'), indent=1)
 if not os.environ.get('PARITY_KEEP_FRAMES'):  # every frame, to see what each turn showed
     shutil.rmtree(frames_dir, ignore_errors=True)  # the app may still be writing one
 print(f'lite: {len(captures)}/{len(input_steps) + 1} captures, {len(frames)} frames -> {out}')

@@ -3,7 +3,8 @@
 # QuickJS bytecode next to every script (`<file>.js.qjsc`), which tauri-runtime-blitz loads instead
 # of compiling the source (QuickJS bytecode depends on the QuickJS version, not the CPU). Its stacks
 # read `/_next/static/chunks/<file>.js:line:col`; the source maps that resolve them go to dist-maps/.
-# SKIP_APP_BUILD=1 reuses an existing apps/readest-app/out.
+# SKIP_APP_BUILD=1 reuses an existing apps/readest-app/out. It fails on a Tauri command the bundle
+# calls that Lite lacks and parity/commands-missing.json does not list.
 set -e
 cd "$(dirname "$0")/.."
 [ -n "$SKIP_APP_BUILD" ] || pnpm --filter @readest/readest-app build
@@ -12,3 +13,6 @@ mkdir dist
 rsync -a --exclude '*.map' ../readest-app/out/ dist/
 rsync -a --include '*/' --include '*.map' --exclude '*' --prune-empty-dirs ../readest-app/out/ dist-maps/
 cargo run --release -p blitz-qjs-script --bin qjs-precompile -- dist
+# Each Tauri command this bundle calls that Readest answers on Linux and Lite doesn't must be in
+# parity/commands-missing.json, with why (parity/commands.py).
+python3 parity/commands.py
