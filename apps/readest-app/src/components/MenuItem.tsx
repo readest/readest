@@ -21,6 +21,7 @@ interface MenuItemProps {
   children?: React.ReactNode;
   siblings?: React.ReactNode;
   detailsOpen?: boolean;
+  onDetailsToggle?: (open: boolean) => void;
   onClick?: () => void;
   setIsDropdownOpen?: (isOpen: boolean) => void;
 }
@@ -41,6 +42,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   children,
   siblings,
   detailsOpen = false,
+  onDetailsToggle,
   onClick,
   setIsDropdownOpen,
 }) => {
@@ -114,7 +116,10 @@ const MenuItem: React.FC<MenuItemProps> = ({
           <details
             className='w-full min-w-0'
             open={detailsOpen}
-            onToggle={(e) => setIsDetailsOpen(e.currentTarget.open)}
+            onToggle={(e) => {
+              setIsDetailsOpen(e.currentTarget.open);
+              onDetailsToggle?.(e.currentTarget.open);
+            }}
           >
             <summary
               role='button'

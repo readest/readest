@@ -271,7 +271,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
       {/* Group By - Collapsible */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem label={_('Group by...')} detailsOpen={true} buttonClass='py-1!'>
+      <MenuItem
+        label={_('Group by...')}
+        detailsOpen={settings.libraryGroupByExpanded}
+        onDetailsToggle={(open) => saveSysSettings(envConfig, 'libraryGroupByExpanded', open)}
+        buttonClass='py-1!'
+      >
         <ul className='ms-0 flex flex-col ps-0 before:hidden'>
           {groupByOptions.map((option) => (
             <MenuItem
@@ -288,7 +293,12 @@ const ViewMenu: React.FC<ViewMenuProps> = ({ setIsDropdownOpen }) => {
 
       {/* Sort By - Unified Priority List */}
       <hr aria-hidden='true' className='border-base-200 my-1' />
-      <MenuItem label={_('Sort by...')} detailsOpen={false} buttonClass='py-1!'>
+      <MenuItem
+        label={_('Sort by...')}
+        detailsOpen={settings.librarySortByExpanded}
+        onDetailsToggle={(open) => saveSysSettings(envConfig, 'librarySortByExpanded', open)}
+        buttonClass='py-1!'
+      >
         <div className='ms-0 flex flex-col ps-0 before:hidden'>
           <MenuItem
             label={_(BOOKSHELF_SORT_LABELS[LibrarySortByType.Custom])}
