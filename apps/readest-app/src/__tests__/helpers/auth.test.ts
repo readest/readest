@@ -376,4 +376,17 @@ describe('handleAuthCallback', () => {
     expect(mockCheckDeviceLimit).toHaveBeenCalledWith('url-token');
     expect(mockNavigate).not.toHaveBeenCalledWith('/library');
   });
+
+  // AuthProvider signs in only on the server's answer, so the callback signs
+  // in itself, as it does with tokens, also when the check can't run.
+  it('signs in a session supabase-js already took from the URL', async () => {
+    const user = { id: 'user-1' };
+    mockGetSession.mockResolvedValue({ data: { session: { access_token: 'url-token', user } } });
+    mockCheckDeviceLimit.mockResolvedValue(null);
+
+    handleAuthCallback({ login: mockLogin, navigate: mockNavigate });
+
+    await vi.waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/library'));
+    expect(mockLogin).toHaveBeenCalledWith('url-token', user);
+  });
 });

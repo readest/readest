@@ -69,6 +69,7 @@ export function handleAuthCallback({
         onDeviceLimit('/library');
         return;
       }
+      if (data.session) login(data.session.access_token, data.session.user);
       navigate('/library');
       return;
     }
