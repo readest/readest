@@ -439,6 +439,7 @@ const TTSPlayerSheet = ({
       : loopState === 'a'
         ? _('Set Repeat End (B)')
         : _('Clear A-B Repeat');
+  const arrowButtonClass = '@max-[360px]:p-1.5 rounded-full p-2';
   const modeButtonClass = (active: boolean) =>
     clsx(
       'flex h-9 min-w-9 items-center justify-center rounded-full px-1.5',
@@ -607,7 +608,17 @@ const TTSPlayerSheet = ({
               </span>
             )
           )}
-          <div dir='ltr' className='flex w-full items-center justify-between'>
+          {/* With its two mode buttons the row needs about 355 px at phone icon
+              sizes. A 360 px phone, or the desktop card dragged to its minimum,
+              leaves it 328 px, so below 360 px the transport closes up instead
+              of overhanging. The audiobook transport has room as it is. */}
+          <div
+            dir='ltr'
+            className={clsx(
+              'flex w-full items-center justify-between',
+              !audioTransport && '@container',
+            )}
+          >
             {/* Sentence-by-sentence and A-B repeat step by sentence, which a
                 paired audiobook does not have. */}
             {!audioTransport && (
@@ -631,10 +642,10 @@ const TTSPlayerSheet = ({
                 <TbArrowBarToRight size={iconSize18} />
               </button>
             )}
-            <div className='flex flex-1 items-center justify-center gap-1'>
+            <div className='@max-[360px]:gap-0.5 flex flex-1 items-center justify-center gap-1'>
               <button
                 type='button'
-                className='rounded-full p-2'
+                className={arrowButtonClass}
                 title={prevLargeLabel}
                 aria-label={prevLargeLabel}
                 onClick={() => onBackward(false)}
@@ -648,7 +659,7 @@ const TTSPlayerSheet = ({
               </button>
               <button
                 type='button'
-                className='rounded-full p-2'
+                className={arrowButtonClass}
                 title={prevSmallLabel}
                 aria-label={prevSmallLabel}
                 onClick={() => onBackward(true)}
@@ -662,7 +673,7 @@ const TTSPlayerSheet = ({
               </button>
               <button
                 type='button'
-                className='btn btn-contrast btn-circle relative mx-2 h-14 min-h-14 w-14'
+                className='btn btn-contrast btn-circle @max-[360px]:mx-1 relative mx-2 h-14 min-h-14 w-14'
                 aria-label={isPlaying ? _('Pause') : _('Play')}
                 aria-busy={buffering}
                 onClick={onTogglePlay}
@@ -679,7 +690,7 @@ const TTSPlayerSheet = ({
               </button>
               <button
                 type='button'
-                className='rounded-full p-2'
+                className={arrowButtonClass}
                 title={nextSmallLabel}
                 aria-label={nextSmallLabel}
                 onClick={() => onForward(true)}
@@ -693,7 +704,7 @@ const TTSPlayerSheet = ({
               </button>
               <button
                 type='button'
-                className='rounded-full p-2'
+                className={arrowButtonClass}
                 title={nextLargeLabel}
                 aria-label={nextLargeLabel}
                 onClick={() => onForward(false)}
@@ -714,7 +725,7 @@ const TTSPlayerSheet = ({
                 aria-label={loopLabel}
                 onClick={onToggleLoop}
               >
-                <span className='text-sm font-semibold'>
+                <span className='whitespace-nowrap text-sm font-semibold'>
                   A-<span className={clsx(loopState === 'a' && 'opacity-40')}>B</span>
                 </span>
               </button>
