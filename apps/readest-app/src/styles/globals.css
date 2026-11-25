@@ -1059,6 +1059,13 @@
     }
   }
 
+  /* An e-ink panel shows only a couple of frames a second, so a fill sliding
+     from one value to the next only smears. It jumps instead; the updater also
+     holds its readout back on e-ink (EINK_PROGRESS_INTERVAL_MS). */
+  [data-eink='true'] .progress::-webkit-progress-value {
+    transition: none;
+  }
+
   /* Hide the horizontal scrollbar on the virtualized OPDS group carousels. */
   .no-scrollbar {
     scrollbar-width: none;
