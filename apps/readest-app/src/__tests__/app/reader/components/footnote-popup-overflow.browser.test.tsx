@@ -200,10 +200,11 @@ describe('footnote popup box (#5999)', () => {
     cell.appendChild(anchor);
     openLinkedFootnote();
     const popup = popupContainer();
-    const settle = async () => {
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    };
+    // Two frames run the resize observers; act flushes the renders they queue.
+    const settle = () =>
+      act(async () => {
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      });
     await settle();
     const before = popup.getBoundingClientRect().toJSON();
 
