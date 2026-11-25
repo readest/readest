@@ -234,6 +234,14 @@
   sub-document's container isn't focused this way. With nothing focused, key events go to the
   body, not the root element. Readest's dialogs and dropdown toggles stop the Escape aimed at
   them; Lite sent every key to the root, where the window's handlers saw it too.
+- `blitz-dom` stylo, document, events/driver, node: `:focus-visible` matches a focus that shows
+  (`ElementState::FOCUSRING`), as Chromium decides it: after a key press without Alt, Ctrl or
+  Meta (which also shows the focus already there), not after a pointer press; a text input's
+  focus always shows. It never matched, so Readest's focus rings (the dropdown toggle that gets
+  the focus back after Escape) were missing. `blitz-dom` default.css gives it Chromium's
+  `outline: auto 1px #101010`, and `blitz-paint` render/border paints `auto` as Chromium's ring
+  (at least 2px, centred on the border box's edge, corners rounded); render paints the outline
+  over the element's own box (CSS 2 Appendix E), not under it.
 - `blitz-dom` document, mutator, net, node/element: an `<img>` records whether its image arrived
   or failed (`take_image_loads`, for its `load` and `error` events), reports whether it is still
   loading (`image_loading`) and its natural size (`ImageData::natural_size`). A failed fetch is

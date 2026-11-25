@@ -245,6 +245,18 @@ diff -ruN blitz/packages/blitz-dom/assets/default.css blitz/packages/blitz-dom/a
  input[type="file"] {
      border: none;
      padding: 0;
+@@ -851,6 +876,11 @@
+     user-select: none;
+ }
+ 
++/* Chromium's focus ring (-webkit-focus-ring-color is rgb(16, 16, 16)). */
++:focus-visible {
++    outline: auto 1px #101010;
++}
++
+ iframe:focus-visible,
+ body:focus-visible,
+ html:focus-visible {
 diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/document.rs
 --- blitz/packages/blitz-dom/src/document.rs
 +++ blitz/packages/blitz-dom/src/document.rs
@@ -270,7 +282,17 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          #[cfg(feature = "writing-mode")]
          {
              style_config::set_pref!("layout.css.writing-mode.enabled", true);
-@@ -357,6 +363,9 @@
+@@ -349,6 +355,9 @@
+     pub(crate) last_client_pointer_position: Option<taffy::Point<f32>>,
+     /// The node which is currently focussed (if any)
+     pub(crate) focus_node_id: Option<NodeId>,
++    /// Whether a focus shows (`:focus-visible`), as Chromium decides it: after a key press, not
++    /// after a pointer press. A text input shows its focus either way.
++    pub(crate) focus_ring_shown: bool,
+     /// The node which is currently active (if any)
+     pub(crate) active_node_id: Option<NodeId>,
+     /// The node which recieved a mousedown event (if any)
+@@ -357,6 +366,9 @@
      pub(crate) last_mousedown_time: Option<Instant>,
      /// The position where mousedown occurred (for selection drags and double-click detection)
      pub(crate) mousedown_position: taffy::Point<f32>,
@@ -280,7 +302,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// How many clicks have been made in quick succession
      pub(crate) click_count: u16,
      /// Whether we're currently in a text selection drag (moved 2px+ from mousedown)
-@@ -379,6 +388,8 @@
+@@ -379,6 +391,8 @@
      pub(crate) has_canvas: bool,
      /// Whether there are subdocuments that are animating (so we should re-render every frame)
      pub(crate) subdoc_is_animating: bool,
@@ -289,7 +311,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
      /// Map of id attribute values to node IDs for fast lookups.
      /// May contain multiple nodes for the same id: `get_element_by_id`
-@@ -394,6 +405,8 @@
+@@ -394,6 +408,8 @@
      pub(crate) controls_to_form: HashMap<NodeId, NodeId>,
      /// Nodes that contain sub documents
      pub(crate) sub_document_nodes: HashSet<NodeId>,
@@ -298,7 +320,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Load state (abort controller and in-flight request id) for each
      /// `<iframe>` element whose sub-document is loaded automatically
      pub(crate) iframe_loads: HashMap<NodeId, crate::iframe::IframeLoad>,
-@@ -410,7 +423,8 @@
+@@ -410,7 +426,8 @@
      pub(crate) pending_resource_deallocations: Vec<anyrender::ResourceId>,
  
      /// Cache of loaded images, keyed by URL. Allows reusing images across multiple
@@ -308,7 +330,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub(crate) image_cache: HashMap<String, ImageData>,
  
      /// Tracks in-flight image requests. When an image is being fetched, additional
-@@ -418,6 +432,10 @@
+@@ -418,6 +435,10 @@
      /// Value is a list of (node_id, image_type) pairs waiting for the image.
      pub(crate) pending_images: HashMap<String, Vec<(NodeId, ImageType)>>,
  
@@ -319,7 +341,12 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Nodes whose `background-image`/`mask-image` layers need flushing to
      /// dedicated storage on the node because their style changed (populated by
      /// the style traversal and by pseudo-element box construction).
-@@ -563,8 +581,10 @@
+@@ -559,12 +580,15 @@
+             hover_node_is_text: false,
+             last_client_pointer_position: None,
+             focus_node_id: None,
++            focus_ring_shown: true,
+             active_node_id: None,
              mousedown_node_id: None,
              has_active_animations: false,
              subdoc_is_animating: false,
@@ -330,7 +357,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              iframe_loads: HashMap::new(),
  
              #[cfg(feature = "custom-widget")]
-@@ -576,6 +596,7 @@
+@@ -576,6 +600,7 @@
              deferred_construction_nodes: Vec::new(),
              image_cache: HashMap::new(),
              pending_images: HashMap::new(),
@@ -338,7 +365,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              pending_style_image_nodes: Vec::new(),
              pending_critical_resources: HashSet::new(),
              controls_to_form: HashMap::new(),
-@@ -590,6 +611,7 @@
+@@ -590,6 +615,7 @@
              devtools_title: None,
              last_mousedown_time: None,
              mousedown_position: taffy::Point::ZERO,
@@ -346,7 +373,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              click_count: 0,
              drag_mode: DragMode::None,
              hovered_scrollbar: None,
-@@ -840,7 +862,8 @@
+@@ -840,7 +866,8 @@
          self.shell_provider.request_redraw();
      }
  
@@ -356,7 +383,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          let node = &mut self.nodes[node_id];
          let did_change = node.element_data_mut().unwrap().set_style_property(
              name,
-@@ -851,9 +874,11 @@
+@@ -851,9 +878,11 @@
          if did_change {
              node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
          }
@@ -369,7 +396,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          let node = &mut self.nodes[node_id];
          let did_change = node.element_data_mut().unwrap().remove_style_property(
              name,
-@@ -863,6 +888,7 @@
+@@ -863,6 +892,7 @@
          if did_change {
              node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
          }
@@ -377,7 +404,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      pub fn sub_document_node_ids(&self) -> Vec<NodeId> {
-@@ -1093,6 +1119,9 @@
+@@ -1093,6 +1123,9 @@
              if let Some(before) = node.before() {
                  self.drop_node_ignoring_parent_with(before, on_drop);
              }
@@ -387,7 +414,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              if let Some(after) = node.after() {
                  self.drop_node_ignoring_parent_with(after, on_drop);
              }
-@@ -1124,6 +1153,20 @@
+@@ -1124,6 +1157,20 @@
          for nested_id in nested {
              self.deallocate_anonymous_block(nested_id);
          }
@@ -408,7 +435,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          self.remove_node_from_tree(anon_id);
      }
-@@ -1397,7 +1440,13 @@
+@@ -1397,7 +1444,13 @@
                          "Resource load failed"
                      );
                      #[cfg(not(feature = "tracing"))]
@@ -423,7 +450,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
                  } else {
                      #[cfg(feature = "tracing")]
                      tracing::warn!(error = err.as_str(), "Resource load failed (no url)");
-@@ -1493,6 +1542,35 @@
+@@ -1493,6 +1546,35 @@
          }
      }
  
@@ -459,7 +486,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Cache a loaded image and apply it to all nodes waiting on it
      /// (`<img>` elements, `background-image` layers and `mask-image` layers).
      fn apply_loaded_image(&mut self, url: &str, image: ImageData) {
-@@ -1526,6 +1604,7 @@
+@@ -1526,6 +1608,7 @@
                      // Clear layout cache
                      node.clear_layout_cache();
                      node.insert_damage(ALL_DAMAGE);
@@ -467,7 +494,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
                  }
                  ImageType::Background(idx) | ImageType::Mask(idx) => {
                      let layer_image = node.element_data_mut().and_then(|el| {
-@@ -1684,6 +1763,62 @@
+@@ -1684,6 +1767,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -530,7 +557,51 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -2049,13 +2184,21 @@
+@@ -1810,6 +1949,27 @@
+         }
+     }
+ 
++    /// A key press (`shown`) or a pointer press: whether a focus shows from now on. A key press
++    /// also shows the focus already there.
++    pub(crate) fn set_focus_ring_shown(&mut self, shown: bool) {
++        self.focus_ring_shown = shown;
++        let Some(id) = self.focus_node_id.filter(|_| shown) else {
++            return;
++        };
++        let has_ring = self.nodes[id]
++            .element_data()
++            .is_some_and(|element| element.element_state.contains(ElementState::FOCUSRING));
++        if !has_ring {
++            self.snapshot_node_and(id, ElementState::FOCUSRING, |node| {
++                if let Some(element) = node.element_data_mut() {
++                    element.element_state.insert(ElementState::FOCUSRING);
++                }
++                node.mark_ancestors_dirty();
++            });
++            self.shell_provider.request_redraw();
++        }
++    }
++
+     pub fn set_mousedown_node_id(&mut self, node_id: Option<NodeId>) {
+         self.mousedown_node_id = node_id.and_then(|id| self.nearest_non_anonymous_ancestor(id));
+     }
+@@ -1838,10 +1998,14 @@
+         }
+ 
+         // Focus the new node
++        let ring = self.focus_ring_shown
++            || self.nodes[focus_node_id]
++                .element_data()
++                .is_some_and(|element| element.text_input_data().is_some());
+         self.snapshot_node_and(
+             focus_node_id,
+             ElementState::FOCUS | ElementState::FOCUSRING,
+-            |node| node.focus(shell_provider),
++            |node| node.focus(shell_provider, ring),
+         );
+ 
+         // Update :focus-within on the ancestor chains (shared prefix stays)
+@@ -2049,13 +2213,21 @@
          }
  
          self.hover_node_id = hover_node_id;
@@ -555,7 +626,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn clear_hover(&mut self) -> bool {
          // The pointer is no longer over the document, so stop re-resolving
          // hover state against it.
-@@ -2073,9 +2216,7 @@
+@@ -2073,9 +2245,7 @@
  
          self.hover_node_id = None;
          self.hover_node_is_text = false;
@@ -566,7 +637,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          true
      }
-@@ -2333,6 +2474,56 @@
+@@ -2333,6 +2503,56 @@
          self.stylist.device()
      }
  
@@ -623,7 +694,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn get_cursor(&self) -> Option<CursorIcon> {
          // Prefer the precise hit node: `cursor` and `user-select` may be set on
          // a pseudo-element or resolved on an anonymous box, and text hits carry
-@@ -2440,6 +2631,40 @@
+@@ -2440,6 +2660,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -664,7 +735,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2672,27 @@
+@@ -2447,17 +2701,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -702,7 +773,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2763,7 @@
+@@ -2528,7 +2792,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -711,7 +782,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2778,339 @@
+@@ -2543,20 +2807,339 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -1063,7 +1134,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2944,6 +3498,36 @@
+@@ -2944,6 +3527,36 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1100,7 +1171,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4092,58 @@
+@@ -3508,6 +4121,58 @@
  }
  
  #[cfg(test)]
@@ -1159,7 +1230,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4417,7 @@
+@@ -3781,3 +4446,7 @@
          );
      }
  }
@@ -1170,7 +1241,31 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 diff -ruN blitz/packages/blitz-dom/src/events/driver.rs blitz/packages/blitz-dom/src/events/driver.rs
 --- blitz/packages/blitz-dom/src/events/driver.rs
 +++ blitz/packages/blitz-dom/src/events/driver.rs
-@@ -227,10 +227,27 @@
+@@ -4,6 +4,7 @@
+     UiEvent,
+ };
+ use blitz_traits::node_id::NodeId;
++use keyboard_types::Modifiers;
+ use std::collections::VecDeque;
+ 
+ pub trait EventHandler {
+@@ -188,6 +189,15 @@
+                 let mut doc = self.doc.inner_mut();
+                 doc.active_node();
+                 doc.set_mousedown_node_id(hover_node_id);
++                doc.set_focus_ring_shown(false);
++            }
++            // As Chromium: a key with Alt, Ctrl or Meta (a shortcut) is not keyboard navigation.
++            UiEvent::KeyDown(event)
++                if !event
++                    .modifiers
++                    .intersects(Modifiers::ALT | Modifiers::CONTROL | Modifiers::META) =>
++            {
++                self.doc.inner_mut().set_focus_ring_shown(true);
+             }
+             UiEvent::PointerUp(event) => {
+                 hover_node_id = self.handle_pointer_move(event);
+@@ -227,10 +237,27 @@
              UiEvent::Paste(_) => focussed_node_id,
              UiEvent::AppleStandardKeybinding(_) => focussed_node_id,
          };
@@ -1202,7 +1297,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/driver.rs blitz/packages/blitz-dom
              return;
          };
  
-@@ -347,8 +364,13 @@
+@@ -347,8 +374,13 @@
                      event_state = self.run_handler_event(&mut mouse_event, event_state);
                  }
              } else if data.is_finger() || data.is_pen() {
@@ -3824,7 +3919,22 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      pub fn set_restyle_hint(&mut self, hint: RestyleHint) {
          if let Some(stylo_element_data) = self.try_stylo_element_data_mut() {
              if let Some(mut element_data) = stylo_element_data.get_mut() {
-@@ -998,6 +1028,11 @@
+@@ -759,10 +789,11 @@
+             .is_some_and(|data| data.element_state.contains(ElementState::FOCUS_WITHIN))
+     }
+ 
+-    pub fn focus(&mut self, shell_provider: Arc<dyn ShellProvider>) {
++    /// Focus this node; `ring`: whether the focus shows (`:focus-visible`).
++    pub fn focus(&mut self, shell_provider: Arc<dyn ShellProvider>, ring: bool) {
+         if let Some(data) = self.element_data_mut() {
+-            data.element_state
+-                .insert(ElementState::FOCUS | ElementState::FOCUSRING);
++            data.element_state.insert(ElementState::FOCUS);
++            data.element_state.set(ElementState::FOCUSRING, ring);
+         }
+         self.mark_ancestors_dirty();
+ 
+@@ -998,6 +1029,11 @@
  // }
  
  impl Node {
@@ -3836,7 +3946,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      pub fn tree(&self) -> &crate::NodeTree {
          unsafe { &*self.tree }
      }
-@@ -1175,9 +1210,13 @@
+@@ -1175,9 +1211,13 @@
              if el.is_button_input() {
                  flags |= stylo_taffy::StyleFlags::IS_BUTTON_INPUT;
              }
@@ -3853,7 +3963,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          }
  
          #[cfg(feature = "writing-mode")]
-@@ -1421,6 +1460,66 @@
+@@ -1421,6 +1461,66 @@
          self.hit_inner(x, y, scale, &mut None)
      }
  
@@ -3920,7 +4030,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// [`hit`](Self::hit), also resolving the innermost overlay scrollbar
      /// thumb under the point into `scrollbar` during the same descent (so
      /// thumb hit-testing shares the exact coordinate handling — transforms
-@@ -1460,6 +1559,19 @@
+@@ -1460,6 +1560,19 @@
              y = (p.y / scale) as f32;
          }
  
@@ -3940,7 +4050,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          let size = self.final_layout().size;
          let matches_self = !(x < self.scroll_offset().x as f32
              || x > size.width + self.scroll_offset().x as f32
-@@ -1523,6 +1635,16 @@
+@@ -1523,6 +1636,16 @@
              return None;
          }
  
@@ -3957,7 +4067,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          // Descendants overwrite, so the innermost scroll container's thumb
          // wins. Thumb coords are border-box relative (unscrolled).
          if matches_self
-@@ -1567,7 +1689,9 @@
+@@ -1567,7 +1690,9 @@
          }
  
          // Call `.hit()` on each child in turn. If any return `Some` then return that value. Else return `Some(self.id).
@@ -3968,7 +4078,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
              let Some(child) = self.tree().get(*child_id) else {
                  continue;
              };
-@@ -1613,7 +1737,7 @@
+@@ -1613,7 +1738,7 @@
          }
  
          // Inline children
@@ -3977,7 +4087,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
              let x = x - content_box_offset.x;
              let y = y - content_box_offset.y;
              let element_data = &self.element_data().unwrap();
-@@ -1655,6 +1779,61 @@
+@@ -1655,6 +1780,61 @@
          None
      }
  
@@ -4039,7 +4149,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      /// Find the inline root ancestor of this node (or self if this is an inline root).
      /// Returns None if no inline root ancestor exists.
      pub fn inline_root_ancestor(&self) -> Option<&Node> {
-@@ -1787,103 +1966,24 @@
+@@ -1787,103 +1967,24 @@
      ///
      /// Returns `None` for nodes that have their own layout box.
      pub fn inline_fragment_boxes(&self) -> Option<impl Iterator<Item = taffy::Rect<f32>> + '_> {
@@ -4153,7 +4263,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`: the offset of this node's border box from the
-@@ -1962,6 +2062,15 @@
+@@ -1962,6 +2063,15 @@
  
      fn cssom_scroll_size(&self) -> taffy::Size<f32> {
          let layout = self.final_layout();
@@ -4169,7 +4279,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          if self.primary_styles().is_none() {
              return taffy::Size {
                  width: self.client_width() + layout.scroll_width(),
-@@ -2211,3 +2320,97 @@
+@@ -2211,3 +2321,97 @@
          );
      }
  }
@@ -4798,6 +4908,15 @@ diff -ruN blitz/packages/blitz-dom/src/scrolling.rs blitz/packages/blitz-dom/src
 diff -ruN blitz/packages/blitz-dom/src/stylo.rs blitz/packages/blitz-dom/src/stylo.rs
 --- blitz/packages/blitz-dom/src/stylo.rs
 +++ blitz/packages/blitz-dom/src/stylo.rs
+@@ -510,7 +510,7 @@
+             NonTSPseudoClass::FocusWithin => {
+                 self.element_state().contains(ElementState::FOCUS_WITHIN)
+             }
+-            NonTSPseudoClass::FocusVisible => false,
++            NonTSPseudoClass::FocusVisible => self.element_state().contains(ElementState::FOCUSRING),
+             NonTSPseudoClass::Fullscreen => false,
+             NonTSPseudoClass::Hover => self.element_state().contains(ElementState::HOVER),
+             NonTSPseudoClass::Indeterminate => false,
 @@ -1509,7 +1509,8 @@
  ) {
      let before_node_id = el.before();
@@ -5977,6 +6096,34 @@ diff -ruN blitz/packages/blitz-paint/src/render/border.rs blitz/packages/blitz-p
              let (color, edge_style) = match edge {
                  Edge::Top => (&border.border_top_color, border.border_top_style),
                  Edge::Right => (&border.border_right_color, border.border_right_style),
+@@ -609,7 +614,26 @@
+             .as_srgb_color();
+ 
+         let style = match outline.outline_style {
+-            OutlineStyle::Auto => return,
++            OutlineStyle::Auto => {
++                // Chromium's focus ring: as wide as the outline but at least 2px, centred on the
++                // border box's edge, its corners rounded at least as much as it is wide.
++                let w = outline.outline_width.0.to_f64_px().max(2.0) * self.scale;
++                let r = &self.frame.border_radii;
++                let [tl, tr, br, bl] = [r.top_left, r.top_right, r.bottom_right, r.bottom_left]
++                    .map(|c| c.x.max(w));
++                let rect = self.frame.border_box;
++                let ring = |d: f64| {
++                    kurbo::RoundedRect::from_rect(
++                        rect.inflate(d, d),
++                        kurbo::RoundedRectRadii::new(tl + d, tr + d, br + d, bl + d),
++                    )
++                    .to_path(0.1)
++                };
++                let mut path = ring(w / 2.0);
++                path.extend(ring(-w / 2.0));
++                scene.fill(Fill::EvenOdd, self.transform, color, None, &path);
++                return;
++            }
+             OutlineStyle::BorderStyle(style) => style,
+         };
+ 
 diff -ruN blitz/packages/blitz-paint/src/render/box_shadow.rs blitz/packages/blitz-paint/src/render/box_shadow.rs
 --- blitz/packages/blitz-paint/src/render/box_shadow.rs
 +++ blitz/packages/blitz-paint/src/render/box_shadow.rs
@@ -6431,7 +6578,15 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let has_clip_path = clip_path_shape.is_some();
          let default_clip = cx.frame.border_box_path();
          let mut clip_path_for_layer = clip_path_shape.unwrap_or(default_clip);
-@@ -601,6 +634,10 @@
+@@ -585,7 +618,6 @@
+ 
+         let paints_own_box = !node.is_inline_with_only_block_children();
+ 
+-        cx.draw_outline(scene);
+         if paints_own_box {
+             cx.draw_outset_box_shadow(scene);
+         }
+@@ -601,6 +633,10 @@
              None,
              None,
              |scene| {
@@ -6442,7 +6597,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  // If the element has a CSS `mask`, then push an isolation layer for the
                  // masked content. The mask is applied when the layer is popped below.
                  let mask_layer_pushed = cx.maybe_push_css_mask_layer(scene);
-@@ -642,14 +679,28 @@
+@@ -642,14 +678,28 @@
                      filter,
                      backdrop_filter,
                      |scene| {
@@ -6474,7 +6629,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                          }
                          cx.stroke_devtools(scene);
  
-@@ -683,12 +734,12 @@
+@@ -683,12 +733,12 @@
                                  cx.draw_svg(scene);
                                  #[cfg(feature = "custom-widget")]
                                  cx.draw_custom_widget(scene);
@@ -6489,7 +6644,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                              },
                          );
  
-@@ -699,6 +750,12 @@
+@@ -699,6 +749,12 @@
                              cx.transform = unscrolled_transform;
                              cx.draw_scrollbars(scene);
                          }
@@ -6502,7 +6657,18 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      },
                  );
  
-@@ -794,8 +851,13 @@
+@@ -708,6 +764,10 @@
+             },
+         );
+ 
++        // The outline goes over what the element painted (CSS 2 Appendix E): Chromium's focus
++        // ring (`outline-style: auto`) covers the border box's edge.
++        cx.draw_outline(scene);
++
+         self.layer_manager
+             .maybe_pop_layer(scene, blend_layer_pushed);
+         self.layer_manager
+@@ -794,8 +854,13 @@
  
  /// The transform from an SVG's rendered tree to a viewport of the given size.
  #[cfg(feature = "svg")]
@@ -6518,7 +6684,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      Affine::new([t.sx, t.ky, t.kx, t.sy, t.tx, t.ty].map(f64::from))
  }
  
-@@ -836,6 +898,43 @@
+@@ -836,6 +901,43 @@
      custom_widget_scene: Option<&'a Scene>,
  }
  
@@ -6562,7 +6728,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
  /// Converts parley BoundingBox into peniko Rect
  fn convert_rect(rect: &parley::BoundingBox) -> kurbo::Rect {
      peniko::kurbo::Rect::new(rect.x0, rect.y0, rect.x1, rect.y1)
-@@ -1076,6 +1175,37 @@
+@@ -1076,6 +1178,37 @@
                  };
              }
  
@@ -6600,7 +6766,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
-@@ -1152,6 +1282,63 @@
+@@ -1152,6 +1285,63 @@
          }
      }
  
@@ -6664,7 +6830,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn draw_children(
          &self,
          scene: &mut impl PaintScene,
-@@ -1183,7 +1370,9 @@
+@@ -1183,7 +1373,9 @@
                  // the viewport and do not scroll with it, so cancel out the viewport
                  // scroll (applied in `paint_scene`). A fixed box contained by a
                  // transformed ancestor scrolls with it like any out-of-flow box.
@@ -6675,7 +6841,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  let child_transform = if child.taffy_position() == taffy::Position::Fixed
                      && Some(self.node.id) == self.context.root_element_id
                  {
-@@ -1193,6 +1382,15 @@
+@@ -1193,6 +1385,15 @@
                          y: scroll.y * self.scale,
                      })
                  } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
@@ -6691,7 +6857,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      parent_style_transform.pre_translate(kurbo::Vec2 {
                          x: offset.x as f64 * self.scale,
                          y: offset.y as f64 * self.scale,
-@@ -1200,7 +1398,37 @@
+@@ -1200,7 +1401,37 @@
                  } else {
                      parent_style_transform
                  };
@@ -6730,7 +6896,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              }
          }
  
-@@ -1269,7 +1497,7 @@
+@@ -1269,7 +1500,7 @@
          let x = x + x_offset.px() as f64;
          let y = y + y_offset.px() as f64;
  
@@ -6739,7 +6905,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let transform = (self.transform * viewport).then_translate(Vec2 { x, y });
  
          self.with_replaced_content_clip(
-@@ -1377,7 +1605,8 @@
+@@ -1377,7 +1608,8 @@
          }
      }
  
@@ -6749,7 +6915,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          if let Some(sub_doc) = self.element.sub_doc_data().map(|doc| doc.inner()) {
              let scale = self.scale;
              let width = self.frame.content_box.width() as u32;
-@@ -1389,7 +1618,7 @@
+@@ -1389,7 +1621,7 @@
              let initial_y = translation.y + self.frame.content_box.origin().y;
              // let transform = self.transform.then_translate(Vec2 { x, y });
  
@@ -6758,7 +6924,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  &sub_doc,
                  scale,
                  width,
-@@ -1398,6 +1627,15 @@
+@@ -1398,6 +1630,15 @@
                  initial_y,
                  self.custom_widget_scenes,
              );
