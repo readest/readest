@@ -39,6 +39,7 @@ const claimCards = async (
     .update({ redeemed_by: userId, redeemed_at: new Date().toISOString() })
     .eq(column, value)
     .eq('status', 'active')
+    .eq('test', false)
     .is('redeemed_at', null)
     .select();
   if (error) throw error;
@@ -61,6 +62,17 @@ export const claimGiftCardByCode = async (
   userId: string,
 ): Promise<GiftCardRow | null> =>
   (await claimCards(userId, 'code', normalizeGiftCode(code)))[0] ?? null;
+
+/** Whether a code is a test card's, which no one can claim. */
+export const isTestGiftCode = async (code: string): Promise<boolean> => {
+  const { data, error } = await createSupabaseAdminClient()
+    .from('gift_cards')
+    .select('id')
+    .eq('code', normalizeGiftCode(code))
+    .eq('test', true);
+  if (error) throw error;
+  return (data ?? []).length > 0;
+};
 
 /** Claim every unclaimed card addressed to this (confirmed) email. */
 export const claimGiftCardsForEmail = async (userId: string, email: string): Promise<number> =>

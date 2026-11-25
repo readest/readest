@@ -2941,5 +2941,7 @@
   "One payment, no subscription": "ཐེངས་གཅིག་རིན་སྤྲོད། མུ་མཐུད་མཁོ་མངགས་མེད།",
   "Write the card after you pay": "རིན་སྤྲད་རྗེས་བྱང་བུ་འབྲི་ཆོག",
   "Their year starts when they redeem it": "ཁོ་ཚོའི་ལོ་གཅིག་དེ་བྱང་བུ་བེད་སྤྱོད་བྱེད་དུས་འགོ་འཛུགས།",
-  "The gift of reading": "ཀློག་པའི་ལེགས་འབུལ།"
+  "The gift of reading": "ཀློག་པའི་ལེགས་འབུལ།",
+  "This is a test card and can't be redeemed.": "འདི་ནི་ཚོད་ལྟའི་བྱང་བུ་ཡིན་པས་བེད་སྤྱོད་བྱེད་མི་ཐུབ།",
+  "Test card, can't be redeemed": "ཚོད་ལྟའི་བྱང་བུ། བེད་སྤྱོད་བྱེད་མི་ཐུབ།"
 }

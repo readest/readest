@@ -237,6 +237,7 @@ export class GiftDb {
             message: null,
             recipient_email: null,
             provider: null,
+            test: false,
             stripe_payment_intent_id: null,
             apple_original_transaction_id: null,
             google_purchase_token: null,

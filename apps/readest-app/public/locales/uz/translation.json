@@ -3020,5 +3020,7 @@
   "One payment, no subscription": "Bir martalik to‘lov, obunasiz",
   "Write the card after you pay": "Kartani to‘lovdan keyin yozing",
   "Their year starts when they redeem it": "Ularning yili karta faollashtirilganda boshlanadi",
-  "The gift of reading": "Kitobxonlik sovg‘asi"
+  "The gift of reading": "Kitobxonlik sovg‘asi",
+  "This is a test card and can't be redeemed.": "Bu sinov kartasi, uni faollashtirib bo‘lmaydi.",
+  "Test card, can't be redeemed": "Sinov kartasi, faollashtirib bo‘lmaydi"
 }

@@ -3020,5 +3020,7 @@
   "One payment, no subscription": "ერთჯერადი გადახდა, გამოწერის გარეშე",
   "Write the card after you pay": "ბარათი გადახდის შემდეგ დაწერეთ",
   "Their year starts when they redeem it": "მათი წელი ბარათის გააქტიურებისას იწყება",
-  "The gift of reading": "კითხვის საჩუქარი"
+  "The gift of reading": "კითხვის საჩუქარი",
+  "This is a test card and can't be redeemed.": "ეს სატესტო ბარათია და მისი გააქტიურება შეუძლებელია.",
+  "Test card, can't be redeemed": "სატესტო ბარათი, ვერ გააქტიურდება"
 }

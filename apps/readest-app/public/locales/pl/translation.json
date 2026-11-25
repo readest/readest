@@ -3178,5 +3178,7 @@
   "One payment, no subscription": "Jedna płatność, bez subskrypcji",
   "Write the card after you pay": "Kartkę napiszesz po zapłacie",
   "Their year starts when they redeem it": "Rok zaczyna się od zrealizowania karty",
-  "The gift of reading": "Podaruj radość czytania"
+  "The gift of reading": "Podaruj radość czytania",
+  "This is a test card and can't be redeemed.": "To jest karta testowa i nie można jej zrealizować.",
+  "Test card, can't be redeemed": "Karta testowa, nie można jej zrealizować"
 }

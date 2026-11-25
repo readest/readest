@@ -3020,5 +3020,7 @@
   "One payment, no subscription": "En betalning, ingen prenumeration",
   "Write the card after you pay": "Skriv kortet efter att du betalat",
   "Their year starts when they redeem it": "Deras år börjar när de löser in kortet",
-  "The gift of reading": "Ge bort läsglädje"
+  "The gift of reading": "Ge bort läsglädje",
+  "This is a test card and can't be redeemed.": "Det här är ett testkort och kan inte lösas in.",
+  "Test card, can't be redeemed": "Testkort, kan inte lösas in"
 }

@@ -2941,5 +2941,7 @@
   "One payment, no subscription": "一次付款，非訂閱",
   "Write the card after you pay": "付款後再寫賀卡",
   "Their year starts when they redeem it": "一年從對方兌換時算起",
-  "The gift of reading": "送一份閱讀的禮物"
+  "The gift of reading": "送一份閱讀的禮物",
+  "This is a test card and can't be redeemed.": "這是測試卡，無法兌換。",
+  "Test card, can't be redeemed": "測試卡，無法兌換"
 }

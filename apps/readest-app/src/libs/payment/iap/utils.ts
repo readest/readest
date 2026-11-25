@@ -46,6 +46,15 @@ export const GIFT_PRODUCT_IDS: Record<GiftTier, string> = {
   pro: 'com.bilingify.readest.giftcard_pro.purchase',
 };
 
+/**
+ * A store purchase nobody paid for, reaching the live server: Apple sends
+ * sandbox (TestFlight, App Review) notifications to the production endpoint,
+ * and a Play license tester's purchase is free. A gift bought this way is a
+ * test card. Elsewhere sandbox is how development buys, and stays real.
+ */
+export const isTestPurchaseInProduction = (environment: string): boolean =>
+  environment === 'sandbox' && process.env.NODE_ENV === 'production';
+
 export const isGiftProduct = (productId: string): boolean =>
   Object.values(GIFT_PRODUCT_IDS).includes(productId);
 

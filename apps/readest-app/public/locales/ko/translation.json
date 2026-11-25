@@ -2941,5 +2941,7 @@
   "One payment, no subscription": "한 번 결제, 구독 없음",
   "Write the card after you pay": "카드는 결제 후에 작성하세요",
   "Their year starts when they redeem it": "1년은 받는 분이 사용할 때 시작됩니다",
-  "The gift of reading": "독서를 선물하세요"
+  "The gift of reading": "독서를 선물하세요",
+  "This is a test card and can't be redeemed.": "테스트 카드라서 사용할 수 없습니다.",
+  "Test card, can't be redeemed": "테스트 카드, 사용할 수 없음"
 }

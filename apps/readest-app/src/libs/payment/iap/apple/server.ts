@@ -5,6 +5,7 @@ import { resolveUserPlan } from '@/libs/payment/entitlements';
 import { activateGiftCard, revokeGiftCardForPayment } from '@/libs/payment/gift/server';
 import {
   giftTierForProduct,
+  isTestPurchaseInProduction,
   isEntitledStatus,
   isStoragePurchase,
   mapProductIdToProductName,
@@ -168,6 +169,7 @@ export async function createOrUpdatePayment(
         column: 'apple_original_transaction_id',
         paymentRef: purchase.originalTransactionId,
         giftCardId,
+        ...(isTestPurchaseInProduction(purchase.environment) && { test: true }),
       });
     }
   } catch (error) {

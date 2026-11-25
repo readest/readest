@@ -3336,5 +3336,7 @@
   "One payment, no subscription": "دفعة واحدة، بلا اشتراك",
   "Write the card after you pay": "اكتب البطاقة بعد الدفع",
   "Their year starts when they redeem it": "تبدأ سنتهم عند استرداد البطاقة",
-  "The gift of reading": "هدية القراءة"
+  "The gift of reading": "هدية القراءة",
+  "This is a test card and can't be redeemed.": "هذه بطاقة تجريبية ولا يمكن استردادها.",
+  "Test card, can't be redeemed": "بطاقة تجريبية، لا يمكن استردادها"
 }

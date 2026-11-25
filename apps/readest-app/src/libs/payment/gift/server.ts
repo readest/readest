@@ -109,6 +109,8 @@ interface GiftPayment {
   column: GiftPaymentColumn;
   paymentRef: string;
   giftCardId?: string;
+  /** Bought in a store's sandbox, so paid for by no one: never claimable. */
+  test?: boolean;
 }
 
 const activate = async ({
@@ -118,6 +120,7 @@ const activate = async ({
   column,
   paymentRef,
   giftCardId,
+  test = false,
 }: GiftPayment): Promise<GiftCardRow> => {
   const supabase = createSupabaseAdminClient();
   // One payment is reported from several places (the webhook, the client's
@@ -151,6 +154,7 @@ const activate = async ({
       status: 'active',
       provider,
       tier,
+      test,
       [column]: paymentRef,
       purchased_at: new Date().toISOString(),
     };
@@ -216,6 +220,7 @@ export const toSentGiftCard = (card: GiftCardRow): SentGiftCard => ({
   ...cardFace(card),
   id: card.id,
   status: sentStatus(card),
+  test: card.test,
   recipientEmail: card.recipient_email,
   code: card.redeemed_at ? null : formatGiftCode(card.code),
   purchasedAt: card.purchased_at ?? card.created_at,

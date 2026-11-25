@@ -27,10 +27,13 @@ const RedeemGiftForm: React.FC<RedeemGiftFormProps> = ({ initialCode = '', onRed
       onRedeemed();
     } catch (err) {
       // One message for invalid and used codes: the server can't tell them apart either.
+      const reason = err instanceof Error ? err.message : '';
       setError(
-        err instanceof Error && err.message === 'invalid_or_used'
+        reason === 'invalid_or_used'
           ? _('This code is invalid or has already been used.')
-          : _('Could not redeem the code. Please try again.'),
+          : reason === 'test_card'
+            ? _("This is a test card and can't be redeemed.")
+            : _('Could not redeem the code. Please try again.'),
       );
     } finally {
       setBusy(false);

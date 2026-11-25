@@ -5,6 +5,7 @@ import { resolveUserPlan } from '@/libs/payment/entitlements';
 import { activateGiftCard } from '@/libs/payment/gift/server';
 import {
   giftTierForProduct,
+  isTestPurchaseInProduction,
   isEntitledStatus,
   isStoragePurchase,
   mapProductIdToProductName,
@@ -173,6 +174,7 @@ export async function createOrUpdatePayment(
         column: 'google_purchase_token',
         paymentRef: purchase.purchaseToken,
         giftCardId,
+        ...(isTestPurchaseInProduction(purchase.environment) && { test: true }),
       });
     }
     return data;

@@ -3178,5 +3178,7 @@
   "One payment, no subscription": "Enkratno plačilo, brez naročnine",
   "Write the card after you pay": "Kartico napišete po plačilu",
   "Their year starts when they redeem it": "Njihovo leto se začne, ko kartico unovčijo",
-  "The gift of reading": "Darilo branja"
+  "The gift of reading": "Darilo branja",
+  "This is a test card and can't be redeemed.": "To je testna kartica in je ni mogoče unovčiti.",
+  "Test card, can't be redeemed": "Testna kartica, ni je mogoče unovčiti"
 }

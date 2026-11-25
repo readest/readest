@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateUserAndToken } from '@/utils/access';
-import { claimGiftCardByCode } from '@/libs/payment/gift/claim';
+import { claimGiftCardByCode, isTestGiftCode } from '@/libs/payment/gift/claim';
 import { listGiftCards } from '@/libs/payment/gift/server';
 
 export async function POST(request: Request) {
@@ -14,7 +14,12 @@ export async function POST(request: Request) {
   if (typeof body?.code !== 'string') return invalid();
   try {
     const claimed = await claimGiftCardByCode(body.code, user.id);
-    if (!claimed) return invalid();
+    if (!claimed) {
+      if (await isTestGiftCode(body.code)) {
+        return NextResponse.json({ error: 'test_card' }, { status: 404 });
+      }
+      return invalid();
+    }
     // The claim is committed. If the listing fails (a gift holder's listing
     // calls Stripe), answer success without the card: an error would make the
     // retry say "invalid or already used".

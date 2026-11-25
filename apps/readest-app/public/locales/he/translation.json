@@ -3099,5 +3099,7 @@
   "One payment, no subscription": "תשלום אחד, ללא מנוי",
   "Write the card after you pay": "כותבים את הכרטיס אחרי התשלום",
   "Their year starts when they redeem it": "השנה מתחילה כשהכרטיס ממומש",
-  "The gift of reading": "מתנה של קריאה"
+  "The gift of reading": "מתנה של קריאה",
+  "This is a test card and can't be redeemed.": "זהו כרטיס בדיקה ולא ניתן לממש אותו.",
+  "Test card, can't be redeemed": "כרטיס בדיקה, לא ניתן למימוש"
 }

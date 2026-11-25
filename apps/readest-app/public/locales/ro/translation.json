@@ -3099,5 +3099,7 @@
   "One payment, no subscription": "O singură plată, fără abonament",
   "Write the card after you pay": "Scrieți felicitarea după plată",
   "Their year starts when they redeem it": "Anul începe când cardul este folosit",
-  "The gift of reading": "Darul lecturii"
+  "The gift of reading": "Darul lecturii",
+  "This is a test card and can't be redeemed.": "Acesta este un card de test și nu poate fi folosit.",
+  "Test card, can't be redeemed": "Card de test, nu poate fi folosit"
 }

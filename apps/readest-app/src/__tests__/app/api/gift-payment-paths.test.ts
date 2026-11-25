@@ -643,6 +643,21 @@ describe('App Store gift charges against a refund', () => {
     await expect(handleAppleNotification('payload')).rejects.toThrow('sync failed');
   });
 
+  // Owner chose "test cards": App Store Connect sends sandbox notifications
+  // to this production endpoint, and a TestFlight purchase is free.
+  it('a sandbox gift charge on the production server makes a test card', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    charge();
+    hooks.decodeNotificationPayload.mockResolvedValue({
+      notificationType: NotificationType.OneTimeCharge,
+      data: { bundleId: BUNDLE_ID, environment: 'Sandbox', signedTransactionInfo: 'SIGNED_TX' },
+    });
+
+    await handleAppleNotification('payload');
+
+    expect(hooks.activateGiftCard).toHaveBeenCalledWith(expect.objectContaining({ test: true }));
+  });
+
   it('a gift charge whose live check fails throws, so Apple retries', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     charge();
@@ -654,6 +669,20 @@ describe('App Store gift charges against a refund', () => {
 });
 
 describe('Google Play gift payments', () => {
+  it('a Play license-tester gift purchase on the production server makes a test card', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const verification = googleVerification();
+    hooks.verifyPurchase.mockResolvedValue({
+      ...verification,
+      purchaseData: { ...verification.purchaseData, purchaseType: 0 },
+    });
+
+    await googleVerify({ giftCardId: DRAFT_ID });
+
+    vi.unstubAllEnvs();
+    expect(hooks.activateGiftCard).toHaveBeenCalledWith(expect.objectContaining({ test: true }));
+  });
+
   it('Google verify activates and consumes a gift product', async () => {
     hooks.verifyPurchase.mockResolvedValue(googleVerification());
 

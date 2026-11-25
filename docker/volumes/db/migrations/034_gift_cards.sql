@@ -29,11 +29,16 @@ CREATE TABLE IF NOT EXISTS public.gift_cards (
   apple_original_transaction_id text UNIQUE,
   google_purchase_token text UNIQUE,
   purchased_at timestamp with time zone,
+  -- Bought in Apple's sandbox or by a Play license tester, so paid for by no
+  -- one: it shows to its buyer but is never claimed, by code or by email.
+  test boolean NOT NULL DEFAULT false,
   redeemed_by uuid REFERENCES auth.users (id) ON DELETE SET NULL,
   redeemed_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
+-- A table made before the column existed (self-hosted runs re-apply this).
+ALTER TABLE public.gift_cards ADD COLUMN IF NOT EXISTS test boolean NOT NULL DEFAULT false;
 CREATE INDEX IF NOT EXISTS idx_gift_cards_buyer_id ON public.gift_cards (buyer_id);
 CREATE INDEX IF NOT EXISTS idx_gift_cards_redeemed_by ON public.gift_cards (redeemed_by);
 CREATE INDEX IF NOT EXISTS idx_gift_cards_unredeemed_email ON public.gift_cards (recipient_email)
@@ -83,6 +88,7 @@ AS $$
   SET redeemed_by = u.id, redeemed_at = now()
   FROM auth.users u
   WHERE g.status = 'active'
+    AND NOT g.test
     AND g.redeemed_at IS NULL
     AND g.recipient_email = u.email
     AND u.email_confirmed_at IS NOT NULL

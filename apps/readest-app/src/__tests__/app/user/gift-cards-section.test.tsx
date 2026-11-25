@@ -92,6 +92,7 @@ const sentCard = (overrides: Partial<SentGiftCard> = {}): SentGiftCard => ({
   senderName: 'Alex',
   message: 'Enjoy the year',
   status: 'unredeemed',
+  test: false,
   recipientEmail: null,
   code: 'ABCD-EFGH-JKMN-PQRS',
   purchasedAt: '2026-11-20T10:00:00Z',
@@ -635,6 +636,29 @@ describe('GiftCardsSection', () => {
       ).toBeNull(),
     );
     expect(within(sentRegion()).getByText('Waiting for sam@example.test to sign up')).toBeTruthy();
+  });
+
+  // Owner chose "test cards": a gift bought in a store's sandbox shows, but
+  // no one can claim it.
+  it("a test card says it can't be redeemed and offers no email", async () => {
+    h.fetchGiftCards.mockResolvedValue(response({ sent: [sentCard({ test: true })] }));
+    renderSection();
+
+    expect(
+      await within(await screen.findByRole('region', { name: 'Sent' })).findByText(
+        "Test card, can't be redeemed",
+      ),
+    ).toBeTruthy();
+    expect(within(sentRegion()).queryByRole('button', { name: 'Add recipient email' })).toBeNull();
+  });
+
+  it('redeeming a test card says so', async () => {
+    h.redeemGiftCode.mockRejectedValue(new Error('test_card'));
+    renderSection({ view: 'redeem', initialCode: 'ABCD-EFGH-JKMN-PQRS' });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Redeem' }));
+
+    expect(await screen.findByText("This is a test card and can't be redeemed.")).toBeTruthy();
   });
 
   it('sent cards show the code only while unredeemed', async () => {

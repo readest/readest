@@ -427,6 +427,29 @@ describe('activateGiftCard once the card is live', () => {
   });
 });
 
+// Owner chose "test cards": a gift bought in Apple's sandbox or by a Play
+// license tester reaches production for free, so it shows in Sent but no one
+// can claim it.
+describe('test cards', () => {
+  it('a test purchase makes a test card that no code or email can claim', async () => {
+    const card = await activateGiftCard({ ...stripePayment(), test: true });
+    expect(card.test).toBe(true);
+    expect(card.status).toBe('active');
+
+    expect(await claimGiftCardByCode(card.code, 'friend-1')).toBeNull();
+    await updateSentGiftCard('buyer-1', card.id, { recipientEmail: 'sam@example.com' });
+
+    expect(db().card(card.id)?.redeemed_at).toBeNull();
+    expect(toSentGiftCard(db().card(card.id)!)).toMatchObject({ test: true });
+  });
+
+  it('a real purchase makes a card that claims as before', async () => {
+    const card = await activateGiftCard(stripePayment());
+    expect(card.test).toBe(false);
+    expect(await claimGiftCardByCode(card.code, 'friend-1')).not.toBeNull();
+  });
+});
+
 describe('updateSentGiftCard', () => {
   // Review (CodeRabbit): the email is saved (and locked) before the claim, so
   // a failed claim must not answer the save with an error; the cron's email
@@ -588,6 +611,7 @@ describe('listGiftCards', () => {
         'redeemedAt',
         'senderName',
         'status',
+        'test',
         'tier',
       ].sort(),
     );

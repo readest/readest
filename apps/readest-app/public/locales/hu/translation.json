@@ -3020,5 +3020,7 @@
   "One payment, no subscription": "Egyszeri fizetés, nincs előfizetés",
   "Write the card after you pay": "A kártyát a fizetés után írhatja meg",
   "Their year starts when they redeem it": "Az év a kártya beváltásakor kezdődik",
-  "The gift of reading": "Az olvasás ajándéka"
+  "The gift of reading": "Az olvasás ajándéka",
+  "This is a test card and can't be redeemed.": "Ez egy tesztkártya, nem váltható be.",
+  "Test card, can't be redeemed": "Tesztkártya, nem váltható be"
 }

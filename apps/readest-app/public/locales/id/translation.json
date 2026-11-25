@@ -2941,5 +2941,7 @@
   "One payment, no subscription": "Sekali bayar, tanpa langganan",
   "Write the card after you pay": "Tulis kartunya setelah membayar",
   "Their year starts when they redeem it": "Satu tahunnya dimulai saat kartu ditukarkan",
-  "The gift of reading": "Hadiah membaca"
+  "The gift of reading": "Hadiah membaca",
+  "This is a test card and can't be redeemed.": "Ini kartu uji dan tidak dapat ditukarkan.",
+  "Test card, can't be redeemed": "Kartu uji, tidak dapat ditukarkan"
 }

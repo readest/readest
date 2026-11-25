@@ -3178,5 +3178,7 @@
   "One payment, no subscription": "Один платіж, без підписки",
   "Write the card after you pay": "Напишіть листівку після оплати",
   "Their year starts when they redeem it": "Рік починається, коли картку активують",
-  "The gift of reading": "Подаруйте читання"
+  "The gift of reading": "Подаруйте читання",
+  "This is a test card and can't be redeemed.": "Це тестова картка, її не можна активувати.",
+  "Test card, can't be redeemed": "Тестова картка, не активується"
 }

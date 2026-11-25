@@ -7,6 +7,7 @@ const h = vi.hoisted(() => ({
   account: { email: 'a@b.co', email_confirmed_at: '2026-01-01' as string | null },
   update: 'ok' as 'ok' | 'not_found' | 'email_locked',
   claimByCode: null as unknown,
+  testCode: false,
   claimForEmail: 0,
   claimedEmailArgs: [] as unknown[],
   listFails: false,
@@ -34,6 +35,7 @@ vi.mock('@/libs/payment/gift/server', () => ({
 
 vi.mock('@/libs/payment/gift/claim', () => ({
   claimGiftCardByCode: async () => h.claimByCode,
+  isTestGiftCode: async () => h.testCode,
   claimGiftCardsForEmail: async (...args: unknown[]) => {
     h.claimedEmailArgs = args;
     return h.claimForEmail;
@@ -64,6 +66,7 @@ beforeEach(() => {
   h.account = { email: 'a@b.co', email_confirmed_at: '2026-01-01' };
   h.update = 'ok';
   h.claimByCode = null;
+  h.testCode = false;
   h.claimForEmail = 0;
   delete process.env['GIFT_RECONCILE_TOKEN'];
 });
@@ -120,6 +123,14 @@ describe('gift routes', () => {
     h.claimForEmail = 2;
     expect(await (await claim(req('POST'))).json()).toEqual({ claimed: 2 });
     expect(h.claimedEmailArgs).toEqual(['u1', 'a@b.co']);
+  });
+
+  it('redeem says a test card is a test card', async () => {
+    h.claimByCode = null;
+    h.testCode = true;
+    const res = await redeem(req('POST', { code: 'TEST' }));
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'test_card' });
   });
 
   it('redeem 404 shares one body for invalid and used codes', async () => {

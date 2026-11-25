@@ -3020,5 +3020,7 @@
   "One payment, no subscription": "Einmalzahlung, kein Abo",
   "Write the card after you pay": "Die Karte schreiben Sie nach dem Kauf",
   "Their year starts when they redeem it": "Ihr Jahr beginnt mit dem Einlösen",
-  "The gift of reading": "Das Geschenk des Lesens"
+  "The gift of reading": "Das Geschenk des Lesens",
+  "This is a test card and can't be redeemed.": "Dies ist eine Testkarte und kann nicht eingelöst werden.",
+  "Test card, can't be redeemed": "Testkarte, nicht einlösbar"
 }

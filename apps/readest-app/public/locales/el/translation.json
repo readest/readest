@@ -3020,5 +3020,7 @@
   "One payment, no subscription": "Μία πληρωμή, χωρίς συνδρομή",
   "Write the card after you pay": "Γράψτε την κάρτα μετά την πληρωμή",
   "Their year starts when they redeem it": "Η χρονιά του ξεκινά όταν την εξαργυρώσει",
-  "The gift of reading": "Το δώρο της ανάγνωσης"
+  "The gift of reading": "Το δώρο της ανάγνωσης",
+  "This is a test card and can't be redeemed.": "Αυτή είναι δοκιμαστική κάρτα και δεν μπορεί να εξαργυρωθεί.",
+  "Test card, can't be redeemed": "Δοκιμαστική κάρτα, δεν εξαργυρώνεται"
 }

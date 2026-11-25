@@ -3020,5 +3020,7 @@
   "One payment, no subscription": "Tek ödeme, abonelik yok",
   "Write the card after you pay": "Kartı ödemeden sonra yazın",
   "Their year starts when they redeem it": "Bir yıllık süre kart kullanıldığında başlar",
-  "The gift of reading": "Okuma keyfini hediye edin"
+  "The gift of reading": "Okuma keyfini hediye edin",
+  "This is a test card and can't be redeemed.": "Bu bir test kartıdır ve kullanılamaz.",
+  "Test card, can't be redeemed": "Test kartı, kullanılamaz"
 }

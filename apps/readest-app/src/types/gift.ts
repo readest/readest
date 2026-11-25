@@ -25,6 +25,7 @@ export interface GiftCardRow {
   apple_original_transaction_id: string | null;
   google_purchase_token: string | null;
   purchased_at: string | null;
+  test: boolean;
   redeemed_by: string | null;
   redeemed_at: string | null;
   created_at: string;
@@ -43,6 +44,8 @@ export type SentGiftStatus = 'unredeemed' | 'waiting' | 'redeemed' | 'refunded';
 export interface SentGiftCard extends GiftCardFace {
   id: string;
   status: SentGiftStatus;
+  /** Bought in a store's sandbox: shown, never claimed. */
+  test: boolean;
   recipientEmail: string | null;
   code: string | null;
   purchasedAt: string;

@@ -2941,5 +2941,7 @@
   "One payment, no subscription": "จ่ายครั้งเดียว ไม่ใช่การสมัครสมาชิก",
   "Write the card after you pay": "เขียนการ์ดได้หลังชำระเงิน",
   "Their year starts when they redeem it": "หนึ่งปีของผู้รับเริ่มเมื่อแลกบัตร",
-  "The gift of reading": "ของขวัญแห่งการอ่าน"
+  "The gift of reading": "ของขวัญแห่งการอ่าน",
+  "This is a test card and can't be redeemed.": "นี่คือบัตรทดสอบและไม่สามารถแลกได้",
+  "Test card, can't be redeemed": "บัตรทดสอบ แลกไม่ได้"
 }

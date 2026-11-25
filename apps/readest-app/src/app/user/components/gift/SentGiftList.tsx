@@ -170,7 +170,10 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: Upd
       />
       <div className='flex flex-col gap-2 px-1'>
         <div className='flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1'>
-          <span className='min-w-0 break-words font-medium'>{status}</span>
+          <span className='min-w-0 break-words font-medium'>
+            {/* Bought in a store's sandbox: shown, never claimed. */}
+            {card.test && card.status === 'unredeemed' ? _("Test card, can't be redeemed") : status}
+          </span>
           {code && (
             <code dir='ltr' className='select-all font-mono text-[0.9em] tracking-wider'>
               {code}
@@ -194,7 +197,7 @@ const SentGiftItem: React.FC<{ card: SentGiftCard; write: boolean; onUpdate: Upd
                 onClick={() => copy(getGiftRedeemLink(code))}
               />
             )}
-            {card.status === 'unredeemed' && (
+            {card.status === 'unredeemed' && !card.test && (
               <ActionButton
                 icon={MdOutlineEmail}
                 label={_('Add recipient email')}

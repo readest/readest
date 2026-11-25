@@ -2941,5 +2941,7 @@
   "One payment, no subscription": "1回払い、サブスクリプションなし",
   "Write the card after you pay": "カードは支払い後に書けます",
   "Their year starts when they redeem it": "1年間は相手が引き換えた時から始まります",
-  "The gift of reading": "読書を贈ろう"
+  "The gift of reading": "読書を贈ろう",
+  "This is a test card and can't be redeemed.": "これはテストカードのため引き換えできません。",
+  "Test card, can't be redeemed": "テストカード（引き換え不可）"
 }
