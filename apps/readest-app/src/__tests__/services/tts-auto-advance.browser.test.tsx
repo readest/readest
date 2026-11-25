@@ -272,6 +272,9 @@ afterEach(async () => {
   useReaderStore.setState(() => ({ viewStates: {} }));
 });
 
+// #7882: closing the book keeps Read Aloud going headless, and reopening it
+// attaches a new view. The sentence read is mid-paragraph, so a reattach that
+// forgets it starts the paragraph (or the chapter) over.
 describe('TTS position after the reader reopens', () => {
   it.each([
     'sentence',
@@ -347,6 +350,10 @@ describe('TTS position after the reader reopens', () => {
         expect(controller.getCurrentPlaybackCfi()).toBe(cfi);
         expect(draw.mock.calls.map(([key]) => key)).toContain('tts-highlight');
       }
+      // The paragraph's look-ahead can still fire after a reopen. It steps the
+      // new iterator, and must put the sentence back (#6850).
+      await controller.preloadNextSSML();
+      expect(controller.getCurrentLyricIndex()).toBe(index);
 
       if (granularity === 'word') {
         const wordEvents = vi.fn();

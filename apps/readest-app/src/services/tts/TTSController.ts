@@ -215,7 +215,6 @@ export class TTSController extends EventTarget {
   #currentSpeakPromise: Promise<void> | null = null;
 
   #ttsSectionIndex: number = -1;
-  #sectionInitialization: Promise<boolean> | null = null;
 
   // Virtual section timeline for position/duration/seek (Edge client only).
   // Built lazily OFF the playback critical path: enumerating a 2000-sentence
@@ -492,12 +491,6 @@ export class TTSController extends EventTarget {
   // would replay the previous paragraph.
   async attachView(view: FoliateView, bindings: TTSViewBindings): Promise<void> {
     const epoch = ++this.#attachEpoch;
-    // Section change announces its destination while that iterator is loading.
-    // Wait for the iterator so its range is never read with the next index.
-    while (this.#sectionInitialization) {
-      const ready = await this.#sectionInitialization.catch(() => false);
-      if (!ready || epoch !== this.#attachEpoch) return;
-    }
     const oldTts = this.#getTts();
     const sectionIndex = Math.max(this.#ttsSectionIndex, 0);
 
@@ -540,15 +533,6 @@ export class TTSController extends EventTarget {
 
     // A detach (new view closed) or a newer attach superseded this one.
     if (epoch !== this.#attachEpoch) return;
-    // Playback can cross a chapter or rebuild its source during prep. The
-    // prepared document and iterator must match the live cursor at the swap.
-    if (
-      this.#sectionInitialization ||
-      sectionIndex !== Math.max(this.#ttsSectionIndex, 0) ||
-      oldTts !== this.#getTts()
-    ) {
-      return this.attachView(view, bindings);
-    }
 
     // Synchronous swap.
     this.view = view;
@@ -556,56 +540,30 @@ export class TTSController extends EventTarget {
     this.preprocessCallback = bindings.preprocessCallback;
     this.onSectionChange = bindings.onSectionChange;
     this.#attached = true;
-    this.#lastSetMark = null;
-    let lastWord: Range | null = null;
-    const anchorRange = (range: Range) =>
-      view.resolveCFI(view.getCFI(sectionIndex, range)).anchor(doc);
     const lastRange = oldTts?.getLastRange?.();
     if (lastRange) {
       try {
         // Re-derive the seed NOW: CFIs are valid from the old (content
         // identical) document, and from() needs a range anchored in the new
         // doc (compareBoundaryPoints throws cross-document).
-        const anchored = anchorRange(lastRange);
-        if (anchored) {
-          const ssml = newTts.from(anchored);
-          // Foliate's from() positions the block but clears its current mark.
-          // Restore the mark from the seeded SSML so clock, highlight and the
-          // next attach can all find the sentence that is already playing.
-          // Recorded narration's from() already restores its own mark.
-          const mark = !narration && ssml ? parseSSMLMarks(ssml).marks[0] : undefined;
-          if (mark) {
-            this.#suppressMarkHighlight = true;
-            try {
-              const range = newTts.setMark(mark.name);
-              if (range) {
-                this.#lastSetMark = { name: mark.name, range };
-                if (this.#lastSpeakWordRange)
-                  lastWord = anchorRange(this.#lastSpeakWordRange) ?? null;
-              }
-            } finally {
-              this.#suppressMarkHighlight = false;
-            }
-          }
+        const cfi = view.getCFI(sectionIndex, lastRange);
+        const anchored = view.resolveCFI(cfi).anchor(doc);
+        const ssml = anchored ? newTts.from(anchored) : undefined;
+        // foliate's from() positions the iterator but forgets the sentence
+        // being read: a paused reopen showed no highlight, lyric line or clock,
+        // and the next reopen had no seed and restarted the chapter (#7882).
+        // Put the sentence back; reapplyCurrentHighlight below draws it.
+        // Narration's from() keeps its own mark.
+        const mark = ssml && !narration ? parseSSMLMarks(ssml).marks[0] : undefined;
+        if (mark) {
+          this.#suppressMarkHighlight = true;
+          const range = newTts.setMark(mark.name);
+          this.#suppressMarkHighlight = false;
+          if (range) this.#lastSetMark = { name: mark.name, range };
         }
       } catch (err) {
         console.warn('[TTS] attachView re-seed failed', err);
       }
-    }
-    const restoredRange = this.#lastSetMark?.range;
-    if (
-      restoredRange &&
-      this.#speakWordBaseRange &&
-      rangeTextExcludingInert(restoredRange) === rangeTextExcludingInert(this.#speakWordBaseRange)
-    ) {
-      // Offsets belong to the utterance already playing. Only its DOM ranges
-      // need to be rebuilt for the new document.
-      this.#speakWordBaseRange = restoredRange;
-      this.#speakWordRanges = [];
-      this.#lastSpeakWordRange = lastWord;
-    } else {
-      this.#resetSpeakWords();
-      this.#speakWordsArmed = !!restoredRange;
     }
     this.#tts = newTts;
     this.view.tts = newTts;
@@ -959,22 +917,6 @@ export class TTSController extends EventTarget {
   }
 
   async #initTTSForSection(sectionIndex: number): Promise<boolean> {
-    // Finish building one chapter before another request can change its
-    // index or install a different iterator. Reattach waits on the whole queue.
-    const initialize = () => this.#initializeTTSForSection(sectionIndex);
-    const initialization = Promise.resolve(this.#sectionInitialization).then(
-      initialize,
-      initialize,
-    );
-    this.#sectionInitialization = initialization;
-    try {
-      return await initialization;
-    } finally {
-      if (this.#sectionInitialization === initialization) this.#sectionInitialization = null;
-    }
-  }
-
-  async #initializeTTSForSection(sectionIndex: number): Promise<boolean> {
     const sections = this.view.book.sections;
     if (!sections || sectionIndex < 0 || sectionIndex >= sections.length) {
       return false;
@@ -1048,7 +990,7 @@ export class TTSController extends EventTarget {
       // unnarrated and keep looking; the scan above moves monotonically toward
       // the spine edge, so this terminates.
       console.warn(`[TTS] no usable narration in section ${sectionIndex}`);
-      return await this.#initializeTTSForSection(sectionIndex + direction);
+      return await this.#initTTSForSection(sectionIndex + direction);
     }
 
     this.#mediaOverlaySection = null;
@@ -2965,7 +2907,6 @@ export class TTSController extends EventTarget {
   }
 
   async shutdown() {
-    this.#attachEpoch++;
     stopAudioKeepAlive();
     await this.stop();
     // A controller replaced by a newer session leaves that session's text
