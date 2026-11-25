@@ -22,6 +22,10 @@ const chapter = (i: number) =>
     (_, p) => `<p>${p} The text of chapter ${i} goes on here.</p>`,
   ).join('')}</body></html>`;
 
+// Sections whose load waits until released, to land a preload after a jump.
+let held: Record<number, Promise<void>> = {};
+const requested: number[] = [];
+
 const open = () => {
   paginator = document.createElement('foliate-paginator') as Paginator;
   Object.assign(paginator.style, {
@@ -40,6 +44,8 @@ const open = () => {
       linear: 'yes',
       size: html.length,
       load: async () => {
+        requested.push(i);
+        await held[i];
         const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
         urls.push(url);
         return url;
@@ -76,6 +82,8 @@ describe('Scrolled mode: going to a chapter that is not loaded', () => {
   });
 
   afterEach(() => {
+    held = {};
+    requested.length = 0;
     paginator?.destroy();
     paginator?.remove();
     for (const url of urls.splice(0)) URL.revokeObjectURL(url);
@@ -122,5 +130,27 @@ describe('Scrolled mode: going to a chapter that is not loaded', () => {
       view.getBoundingClientRect().bottom - container().getBoundingClientRect().top + 100;
     await pause(400);
     expect(chapterAtTop()).toBe(`Chapter ${target + 1}`);
+  });
+
+  it('leaves no hole when a preload that started before a jump lands after it', async () => {
+    let release = () => {};
+    held[1] = new Promise<void>((resolve) => (release = resolve));
+    open();
+    await paginator.goTo({ index: 0 });
+    // The fill after chapter 0 is waiting on chapter 1.
+    const start = Date.now();
+    while (!requested.includes(1)) {
+      if (Date.now() - start > 5000) throw new Error('chapter 1 was never preloaded');
+      await pause(20);
+    }
+
+    await paginator.goTo({ index: 4 });
+    release();
+    await settle();
+
+    const strip = [...loaded()].sort((a, b) => a - b);
+    const holes = strip.slice(1).filter((index, i) => index !== strip[i]! + 1);
+    expect(strip, 'chapters in the strip').toContain(4);
+    expect(holes, `chapters in the strip: ${strip.join(',')}`).toEqual([]);
   });
 });
