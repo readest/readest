@@ -73,7 +73,7 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
   const { appService } = useEnv();
   const { settings } = useSettingsStore();
   const { isDarkMode } = useThemeStore();
-  const { getViewSettings } = useReaderStore();
+  const { getView, getViewSettings } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
   const isEink = settings.globalViewSettings.isEink;
   const einkFgColor = isDarkMode ? '#ffffff' : '#000000';
@@ -90,7 +90,7 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
   const [currentEnd, setCurrentEnd] = useState<Point>({ x: 0, y: 0 });
   const [loupePoint, setLoupePoint] = useState<Point | null>(null);
 
-  useEffect(() => {
+  const placeHandles = useCallback(() => {
     if (draggingRef.current) return;
     // A cross-page selection's ends live on different pages: the start handle
     // on the first part, the end handle on the last.
@@ -106,6 +106,32 @@ const SelectionRangeEditor: React.FC<SelectionRangeEditorProps> = ({
       boundsRef.current = boundsOfSelection(selection);
     }
   }, [bookKey, selection, isVertical]);
+
+  useEffect(() => {
+    placeHandles();
+  }, [placeHandles]);
+
+  // The text can move under the same selection: the reader scrolls, or Pin to
+  // Notebook narrows the book cell and the page reflows (#7897). Place the
+  // handles again a frame later, as the toolbar is, so they stay on the text.
+  useEffect(() => {
+    let frame = 0;
+    const onMove = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(placeHandles);
+    };
+    const renderer = getView(bookKey)?.renderer;
+    renderer?.addEventListener('scroll', onMove);
+    const cell = document.querySelector(`#gridcell-${bookKey}`);
+    const observer =
+      cell && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onMove) : null;
+    if (cell) observer?.observe(cell);
+    return () => {
+      renderer?.removeEventListener('scroll', onMove);
+      observer?.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [bookKey, getView, placeHandles]);
 
   // The non-dragged end is anchored as a DOM position captured at drag start.
   // Anchoring it to its window coordinate instead would silently re-target it
