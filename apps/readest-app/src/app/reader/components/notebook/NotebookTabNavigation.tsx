@@ -1,12 +1,11 @@
 import clsx from 'clsx';
 import React from 'react';
-import { PiNotePencil, PiRobot } from 'react-icons/pi';
-import { LuBookA } from 'react-icons/lu';
 
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { NotebookTab } from '@/store/notebookStore';
+import { getNotebookTabs } from './notebookTabs';
 
 interface NotebookTabNavigationProps {
   activeTab: NotebookTab;
@@ -24,31 +23,11 @@ const NotebookTabNavigation: React.FC<NotebookTabNavigationProps> = ({
 
   // The Dictionary tab keeps the latest lookup beside the notes (#7730).
   const tabs: NotebookTab[] = aiEnabled ? ['notes', 'ai', 'dictionary'] : ['notes', 'dictionary'];
-
-  const getTabLabel = (tab: NotebookTab) => {
-    switch (tab) {
-      case 'notes':
-        return _('Notes');
-      case 'ai':
-        return _('AI');
-      case 'dictionary':
-        return _('Dictionary');
-      default:
-        return '';
-    }
-  };
-
+  const tabInfo = getNotebookTabs(_);
+  const getTabLabel = (tab: NotebookTab) => tabInfo[tab].label;
   const getTabIcon = (tab: NotebookTab) => {
-    switch (tab) {
-      case 'notes':
-        return <PiNotePencil className='mx-auto' size={20} />;
-      case 'ai':
-        return <PiRobot className='mx-auto' size={20} />;
-      case 'dictionary':
-        return <LuBookA className='mx-auto' size={20} />;
-      default:
-        return null;
-    }
+    const Icon = tabInfo[tab].icon;
+    return <Icon className='mx-auto' size={20} />;
   };
 
   // Lines up with the footer bar's top rule on e-ink, as the sidebar's does.

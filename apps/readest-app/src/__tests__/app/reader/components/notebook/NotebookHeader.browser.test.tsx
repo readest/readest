@@ -16,6 +16,7 @@ it.each([390, 768, 1024])('can close a full-screen mobile notebook at %ipx', asy
   const handleClose = vi.fn();
   render(
     <NotebookHeader
+      activeTab='notes'
       isFullScreenMobile
       isPinned={false}
       handleClose={handleClose}
@@ -34,14 +35,28 @@ it.each([390, 768, 1024])('can close a full-screen mobile notebook at %ipx', asy
 
 it('preserves the phone back button for a partial-height sheet', async () => {
   await page.viewport(390, 844);
-  render(<NotebookHeader isPinned={false} handleClose={vi.fn()} handleTogglePin={vi.fn()} />);
+  render(
+    <NotebookHeader
+      activeTab='notes'
+      isPinned={false}
+      handleClose={vi.fn()}
+      handleTogglePin={vi.fn()}
+    />,
+  );
   const close = screen.getByRole('button', { name: 'Close' });
   expect(close.getBoundingClientRect().left).toBe(12);
 });
 
 it('preserves the desktop header controls', async () => {
   await page.viewport(1024, 768);
-  render(<NotebookHeader isPinned={false} handleClose={vi.fn()} handleTogglePin={vi.fn()} />);
+  render(
+    <NotebookHeader
+      activeTab='notes'
+      isPinned={false}
+      handleClose={vi.fn()}
+      handleTogglePin={vi.fn()}
+    />,
+  );
   expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Pin Notebook' })).toBeTruthy();
 });
