@@ -19,6 +19,7 @@ afterEach(cleanup);
 const renderHeader = (activeTab: NotebookTab) =>
   render(
     <NotebookHeader
+      bookKey='book-1'
       activeTab={activeTab}
       isPinned={false}
       handleClose={vi.fn()}

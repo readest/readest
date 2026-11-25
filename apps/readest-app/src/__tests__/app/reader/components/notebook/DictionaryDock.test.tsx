@@ -9,7 +9,6 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 
 import type { DictionaryProvider } from '@/services/dictionaries/types';
 import { useDictionaryDockStore } from '@/store/dictionaryDockStore';
-import { useSettingsStore } from '@/store/settingsStore';
 
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
 vi.mock('@/hooks/useResponsiveSize', () => ({ useResponsiveSize: (value: number) => value }));
@@ -154,14 +153,14 @@ describe.each([
 
 describe('the Notebook Dictionary tab', () => {
   it('says how to fill it before the first lookup', () => {
-    render(<DictionaryView bookKey='book-1' />);
+    render(<DictionaryView />);
     expect(screen.queryByTestId('dict-title')).toBeNull();
     expect(screen.getByText('Look up a word to see its definitions here.')).toBeTruthy();
   });
 
   it('shows the latest lookup, starting each one fresh', async () => {
     useDictionaryDockStore.getState().setLookup({ word: 'serendipity', lang: 'en' });
-    render(<DictionaryView bookKey='book-1' />);
+    render(<DictionaryView />);
     expect(title()).toBe('serendipity');
 
     act(() => {
@@ -180,12 +179,12 @@ describe('the Notebook Dictionary tab', () => {
 
   it('has no Pin to Notebook button of its own', () => {
     useDictionaryDockStore.getState().setLookup({ word: 'serendipity', lang: 'en' });
-    render(<DictionaryView bookKey='book-1' />);
+    render(<DictionaryView />);
     expect(screen.queryByRole('button', { name: 'Pin to Notebook' })).toBeNull();
   });
 
   it('takes the lookups while it is on screen', () => {
-    const { unmount } = render(<DictionaryView bookKey='book-1' />);
+    const { unmount } = render(<DictionaryView />);
     expect(useDictionaryDockStore.getState().isDocked).toBe(true);
     unmount();
     expect(useDictionaryDockStore.getState().isDocked).toBe(false);
@@ -195,7 +194,7 @@ describe('the Notebook Dictionary tab', () => {
   // in the Notebook it must not fold the card and lose the place (#7788).
   it('keeps an open card open when it is tapped', async () => {
     useDictionaryDockStore.getState().setLookup({ word: 'serendipity', lang: 'en' });
-    render(<DictionaryView bookKey='book-1' />);
+    render(<DictionaryView />);
     const card = screen.getByTestId('dict-card');
     await waitFor(() => expect(card.getAttribute('aria-expanded')).toBe('true'));
 
@@ -207,7 +206,7 @@ describe('the Notebook Dictionary tab', () => {
   it('still unfolds a folded card when it is tapped', async () => {
     providers.list = [plain(1), plain(2), plain(3), plain(4)];
     useDictionaryDockStore.getState().setLookup({ word: 'serendipity', lang: 'en' });
-    render(<DictionaryView bookKey='book-1' />);
+    render(<DictionaryView />);
     await screen.findByText('plain 4: serendipity');
     const card = screen.getAllByTestId('dict-card')[0]!;
     await waitFor(() => expect(card.getAttribute('aria-expanded')).toBe('false'));
@@ -218,16 +217,10 @@ describe('the Notebook Dictionary tab', () => {
     expect(card.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('opens Manage Dictionaries from its gear', () => {
+  // The gear sits in the Notebook header instead (NotebookHeaderSettings.test.tsx).
+  it('has no Manage Dictionaries gear of its own', () => {
     useDictionaryDockStore.getState().setLookup({ word: 'serendipity', lang: 'en' });
-    render(<DictionaryView bookKey='book-1' />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Manage Dictionaries' }));
-
-    expect(useSettingsStore.getState()).toMatchObject({
-      isSettingsDialogOpen: true,
-      settingsDialogBookKey: 'book-1',
-      activeSettingsItemId: 'settings.language.dictionaries.manage',
-    });
+    render(<DictionaryView />);
+    expect(screen.queryByRole('button', { name: 'Manage Dictionaries' })).toBeNull();
   });
 });

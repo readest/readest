@@ -16,6 +16,7 @@ it.each([390, 768, 1024])('can close a full-screen mobile notebook at %ipx', asy
   const handleClose = vi.fn();
   render(
     <NotebookHeader
+      bookKey='book-1'
       activeTab='notes'
       isFullScreenMobile
       isPinned={false}
@@ -37,6 +38,7 @@ it('preserves the phone back button for a partial-height sheet', async () => {
   await page.viewport(390, 844);
   render(
     <NotebookHeader
+      bookKey='book-1'
       activeTab='notes'
       isPinned={false}
       handleClose={vi.fn()}
@@ -51,6 +53,7 @@ it('preserves the desktop header controls', async () => {
   await page.viewport(1024, 768);
   render(
     <NotebookHeader
+      bookKey='book-1'
       activeTab='notes'
       isPinned={false}
       handleClose={vi.fn()}
@@ -59,4 +62,35 @@ it('preserves the desktop header controls', async () => {
   );
   expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Pin Notebook' })).toBeTruthy();
+});
+
+it.each([
+  [1024, false],
+  [390, false],
+  [390, true],
+])("puts a tab's gear at the end of the header at %ipx (full screen: %s)", async (width, full) => {
+  await page.viewport(width, 844);
+  render(
+    <NotebookHeader
+      bookKey='book-1'
+      activeTab='dictionary'
+      isFullScreenMobile={full}
+      isPinned={false}
+      handleClose={vi.fn()}
+      handleTogglePin={vi.fn()}
+    />,
+  );
+  const gear = screen.getByRole('button', { name: 'Manage Dictionaries' }).getBoundingClientRect();
+  const title = document.querySelector('.notebook-title')!.getBoundingClientRect();
+  expect(gear.left).toBeGreaterThan(title.right);
+  expect(gear.top).toBeGreaterThanOrEqual(0);
+  expect(gear.bottom).toBeLessThanOrEqual(44);
+  if (full) {
+    // Close stays in the corner, the gear beside it.
+    const close = screen.getByRole('button', { name: 'Close' }).getBoundingClientRect();
+    expect(close.right).toBe(width - 12);
+    expect(gear.right).toBeLessThanOrEqual(close.left);
+  } else {
+    expect(gear.right).toBe(width - 12);
+  }
 });

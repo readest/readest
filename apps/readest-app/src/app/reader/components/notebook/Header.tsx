@@ -1,23 +1,61 @@
 import clsx from 'clsx';
 import React from 'react';
 
-import { MdArrowBackIosNew, MdClose, MdOutlinePushPin, MdPushPin } from 'react-icons/md';
+import {
+  MdArrowBackIosNew,
+  MdClose,
+  MdOutlinePushPin,
+  MdPushPin,
+  MdSettings,
+} from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useSettingsStore } from '@/store/settingsStore';
 import { NotebookTab } from '@/store/notebookStore';
 import { getNotebookTabs } from './notebookTabs';
 
 const NotebookHeader: React.FC<{
+  bookKey: string;
   activeTab: NotebookTab;
   isPinned: boolean;
   isFullScreenMobile?: boolean;
   handleClose: () => void;
   handleTogglePin: () => void;
-}> = ({ activeTab, isPinned, isFullScreenMobile = false, handleClose, handleTogglePin }) => {
+}> = ({
+  bookKey,
+  activeTab,
+  isPinned,
+  isFullScreenMobile = false,
+  handleClose,
+  handleTogglePin,
+}) => {
   const _ = useTranslation();
   const iconSize15 = useResponsiveSize(15);
   const iconSize18 = useResponsiveSize(18);
-  const { title, titleIcon: TitleIcon } = getNotebookTabs(_)[activeTab];
+  const { setSettingsDialogBookKey, setActiveSettingsItemId, setSettingsDialogOpen } =
+    useSettingsStore();
+  const { title, titleIcon: TitleIcon, settings } = getNotebookTabs(_)[activeTab];
+
+  const openSettings = (id: string) => {
+    setSettingsDialogBookKey(bookKey);
+    setActiveSettingsItemId(id);
+    setSettingsDialogOpen(true);
+  };
+
+  const closeButton = (
+    <button
+      title={_('Close')}
+      aria-label={_('Close')}
+      onClick={handleClose}
+      className={clsx(
+        'btn btn-ghost btn-circle flex h-11 min-h-11 w-11 hover:bg-transparent',
+        !isFullScreenMobile && 'sm:hidden',
+      )}
+    >
+      {isFullScreenMobile ? <MdClose size={iconSize18} /> : <MdArrowBackIosNew />}
+    </button>
+  );
+
   return (
     <div className='notebook-header relative flex h-11 items-center px-3' dir='ltr'>
       <div className='absolute inset-0 z-[-1] flex items-center justify-center space-x-2'>
@@ -36,17 +74,20 @@ const NotebookHeader: React.FC<{
         >
           {isPinned ? <MdPushPin size={iconSize15} /> : <MdOutlinePushPin size={iconSize15} />}
         </button>
-        <button
-          title={_('Close')}
-          aria-label={_('Close')}
-          onClick={handleClose}
-          className={clsx(
-            'btn btn-ghost btn-circle flex h-11 min-h-11 w-11 hover:bg-transparent',
-            isFullScreenMobile ? 'ml-auto' : 'sm:hidden',
+        {!isFullScreenMobile && closeButton}
+        <div className='ml-auto flex items-center'>
+          {settings && (
+            <button
+              title={settings.label}
+              aria-label={settings.label}
+              onClick={() => openSettings(settings.id)}
+              className='btn btn-ghost btn-circle h-8 min-h-8 w-8'
+            >
+              <MdSettings size={iconSize18} />
+            </button>
           )}
-        >
-          {isFullScreenMobile ? <MdClose size={iconSize18} /> : <MdArrowBackIosNew />}
-        </button>
+          {isFullScreenMobile && closeButton}
+        </div>
       </div>
     </div>
   );
