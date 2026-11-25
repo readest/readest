@@ -9,6 +9,9 @@ interface LibraryState {
   library: Book[]; // might contain deleted books
   libraryLoaded: boolean;
   isSyncing: boolean;
+  // An empty library waiting for its book list from Readest Cloud (minutes on
+  // a slow network), before isSyncing shows the books being added.
+  isPullingLibrary: boolean;
   syncProgress: number;
   checkOpenWithBooks: boolean;
   checkLastOpenBooks: boolean;
@@ -20,6 +23,7 @@ interface LibraryState {
   visibleLibrary: Book[];
   coverThumbnails: Map<string, { coverHash: string | null; url: string }>;
   setIsSyncing: (syncing: boolean) => void;
+  setIsPullingLibrary: (pulling: boolean) => void;
   setSyncProgress: (progress: number) => void;
   setSelectedBooks: (ids: string[]) => void;
   getSelectedBooks: () => string[];
@@ -69,6 +73,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   library: [],
   libraryLoaded: false,
   isSyncing: false,
+  isPullingLibrary: false,
   syncProgress: 0,
   currentBookshelf: [],
   selectedBooks: new Set(),
@@ -84,6 +89,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   checkPendingLaunchLink: isTauriAppPlatform() && isMainAppWindow(),
 
   setIsSyncing: (syncing: boolean) => set({ isSyncing: syncing }),
+  setIsPullingLibrary: (pulling: boolean) => set({ isPullingLibrary: pulling }),
   setSyncProgress: (progress: number) => set({ syncProgress: progress }),
   getVisibleLibrary: () => get().visibleLibrary,
   getBookByHash: (hash: string) => {

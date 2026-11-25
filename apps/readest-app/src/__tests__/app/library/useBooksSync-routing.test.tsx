@@ -54,21 +54,26 @@ const runFileLibrarySyncPass = vi.hoisted(() =>
   ),
 );
 
+const auth = vi.hoisted(() => ({ user: { id: 'user-1' } }));
 vi.mock('@/context/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'user-1' } }),
+  useAuth: () => auth,
 }));
 
+// One object, as EnvContext memoizes it (and AuthContext its user): a fresh
+// one per render would make pullLibrary a new callback each render and re-run
+// the mount pull.
+const env = vi.hoisted(() => ({ envConfig: {} }));
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService }),
+  useEnv: () => ({ envConfig: env.envConfig, appService }),
 }));
 
 vi.mock('@/context/SyncContext', () => ({
   useSyncContext: () => ({ syncClient: {} }),
 }));
 
-vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation:
-    () =>
+// Stable, as the real hook's useCallback is.
+const translate = vi.hoisted(
+  () =>
     (text: string, params?: Record<string, string | number>): string => {
       if (!params) return text;
       return Object.entries(params).reduce(
@@ -76,6 +81,9 @@ vi.mock('@/hooks/useTranslation', () => ({
         text,
       );
     },
+);
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => translate,
 }));
 
 vi.mock('@/hooks/useSync', () => ({
@@ -102,7 +110,12 @@ beforeEach(() => {
   syncState.lastSyncedAtBooks = 0;
   routing.readestEnabled = true;
   routing.backends = [];
-  useLibraryStore.setState({ library: [], libraryLoaded: true, isSyncing: false });
+  useLibraryStore.setState({
+    library: [],
+    libraryLoaded: true,
+    isSyncing: false,
+    isPullingLibrary: false,
+  });
 });
 
 describe('useBooksSync cover download failures', () => {
@@ -325,5 +338,66 @@ describe('useBooksSync pullLibrary routing (issue #5062)', () => {
     const toastCalls = dispatchSpy.mock.calls.filter(([event]) => event === 'toast');
     expect(toastCalls).toHaveLength(1);
     expect(toastCalls[0]?.[1]).toMatchObject({ type: 'info', message: '4 book(s) synced' });
+  });
+});
+
+describe('useBooksSync first pull indicator', () => {
+  // After signing in, an empty library waits for its book list from Readest
+  // Cloud. On a slow network (minutes on a Kindle) nothing showed that a sync
+  // was running until the list arrived.
+  it('shows the library as syncing while an empty library waits for its first pull', async () => {
+    let finishPull = (_count: number) => {};
+    syncState.syncBooks.mockImplementationOnce(
+      () =>
+        new Promise<number>((resolve) => {
+          finishPull = resolve;
+        }),
+    );
+    renderHook(() => useBooksSync());
+
+    await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalledWith([], 'pull', 0));
+    expect(useLibraryStore.getState().isPullingLibrary).toBe(true);
+
+    await act(async () => finishPull(0));
+    expect(useLibraryStore.getState().isPullingLibrary).toBe(false);
+  });
+
+  it('shows it too for a library that holds only deleted books', async () => {
+    useLibraryStore.setState({
+      library: [
+        { hash: 'book-1', title: 'Book', format: 'EPUB', updatedAt: 100, deletedAt: 100 } as Book,
+      ],
+    });
+    let finishPull = (_count: number) => {};
+    syncState.syncBooks.mockImplementationOnce(
+      () =>
+        new Promise<number>((resolve) => {
+          finishPull = resolve;
+        }),
+    );
+    renderHook(() => useBooksSync());
+
+    await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalledWith([], 'pull', undefined));
+    expect(useLibraryStore.getState().isPullingLibrary).toBe(true);
+    await act(async () => finishPull(0));
+    expect(useLibraryStore.getState().isPullingLibrary).toBe(false);
+  });
+
+  it('leaves a library that has books as it is during a pull', async () => {
+    useLibraryStore.setState({
+      library: [{ hash: 'book-1', title: 'Book', format: 'EPUB', updatedAt: 100 } as Book],
+    });
+    let finishPull = (_count: number) => {};
+    syncState.syncBooks.mockImplementationOnce(
+      () =>
+        new Promise<number>((resolve) => {
+          finishPull = resolve;
+        }),
+    );
+    renderHook(() => useBooksSync());
+
+    await waitFor(() => expect(syncState.syncBooks).toHaveBeenCalledWith([], 'pull', undefined));
+    expect(useLibraryStore.getState().isPullingLibrary).toBe(false);
+    await act(async () => finishPull(0));
   });
 });
