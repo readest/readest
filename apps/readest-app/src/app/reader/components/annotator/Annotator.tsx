@@ -1740,11 +1740,6 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     handleDismissPopupAndSelection();
   };
 
-  const handleCloseShareQR = () => {
-    setSelectionQRCode(null);
-    view?.parentElement?.focus({ preventScroll: true });
-  };
-
   const handleShareQR = () => {
     const text = selection?.text;
     if (!text?.trim()) return;
@@ -3192,18 +3187,19 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         />
       )}
       {selectionQRCode && (
-        <Dialog isOpen title={_('Share as QR Code')} onClose={handleCloseShareQR}>
+        <Dialog
+          isOpen
+          title={_('Share as QR Code')}
+          contentClassName='flex'
+          onClose={() => setSelectionQRCode(null)}
+        >
+          {/* A long passage makes a dense code: give it all the room the dialog has. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={selectionQRCode}
             alt={_('QR code for the selected text')}
-            className='mx-auto aspect-square w-full max-w-72'
+            className='min-h-0 min-w-0 flex-1 object-contain'
           />
-          <div className='mt-4 flex justify-end sm:hidden'>
-            <button type='button' className='btn btn-contrast' onClick={handleCloseShareQR}>
-              {_('Close')}
-            </button>
-          </div>
         </Dialog>
       )}
       {quoteCard && (

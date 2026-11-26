@@ -1680,9 +1680,8 @@ const FoliateViewer: React.FC<{
         ref={containerRef}
         role='main'
         aria-label={_('Book Content')}
-        tabIndex={-1}
         className={clsx(
-          'foliate-viewer focus-visible:outline-base-content/50 absolute h-[100%] w-[100%] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid',
+          'foliate-viewer absolute h-[100%] w-[100%] focus:outline-hidden',
           viewState?.loading && 'bg-base-100',
         )}
         style={{

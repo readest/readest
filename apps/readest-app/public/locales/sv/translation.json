@@ -3066,5 +3066,9 @@
   "Over 50,000 free ebooks": "Över 50 000 gratis e-böcker",
   "Free ebooks from authors who have \"unglued\" their books": "Gratis e-böcker från författare som har ”frigjort” sina böcker",
   "Free public-domain books, comics, magazines and puzzles": "Gratis böcker, serier, tidskrifter och pussel i public domain",
-  "Sync Settings": "Synkronisering"
+  "Sync Settings": "Synkronisering",
+  "Share as QR Code": "Dela som QR-kod",
+  "Show a QR code for the selected text": "Visa en QR-kod för den markerade texten",
+  "Select a shorter passage to share as a QR code.": "Markera ett kortare stycke för att dela det som QR-kod.",
+  "QR code for the selected text": "QR-kod för den markerade texten"
 }

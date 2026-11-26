@@ -3066,5 +3066,9 @@
   "Over 50,000 free ebooks": "Πάνω από 50.000 δωρεάν ηλεκτρονικά βιβλία",
   "Free ebooks from authors who have \"unglued\" their books": "Δωρεάν e-books από συγγραφείς που τα «απελευθέρωσαν»",
   "Free public-domain books, comics, magazines and puzzles": "Δωρεάν βιβλία, κόμικς, περιοδικά και γρίφοι κοινού κτήματος",
-  "Sync Settings": "Ρυθμίσεις συγχρονισμού"
+  "Sync Settings": "Ρυθμίσεις συγχρονισμού",
+  "Share as QR Code": "Κοινοποίηση ως κωδικός QR",
+  "Show a QR code for the selected text": "Εμφάνιση κωδικού QR για το επιλεγμένο κείμενο",
+  "Select a shorter passage to share as a QR code.": "Επιλέξτε ένα μικρότερο απόσπασμα για κοινοποίηση ως κωδικός QR.",
+  "QR code for the selected text": "Κωδικός QR για το επιλεγμένο κείμενο"
 }
