@@ -906,20 +906,35 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
             let Some(NodeData::Text(t)) = doc.get_node(n).map(|n| &n.data) else {
                 return Vec::new();
             };
-            let byte = |u16_offset: f64| {
-                let mut units = 0;
-                for (i, c) in t.content.char_indices() {
-                    if units >= u16_offset as usize {
-                        return i;
-                    }
-                    units += c.len_utf16();
-                }
-                t.content.len()
-            };
-            let (a, b) = (byte(start), byte(end));
+            let (a, b) = (byte_at(&t.content, start), byte_at(&t.content, end));
             flat(doc.text_rects(n, a, b))
         })
         .unwrap_or_default()
+    });
+    let d = docs.clone();
+    // Script's selection, painted: from UTF-16 offset `start` of text node `a` to `end` of text
+    // node `b` (of the same document).
+    op!("select", move |a: f64, start: f64, b: f64, end: f64| {
+        d.resolve(a, "select");
+        let (_, b) = d.dec(b);
+        d.with(a, |doc, a, _| {
+            let at = |n: NodeId, u16_offset: f64| match doc.get_node(n).map(|n| &n.data) {
+                Some(NodeData::Text(t)) => (n, byte_at(&t.content, u16_offset)),
+                _ => (n, 0),
+            };
+            let (a, b) = (at(a, start), at(b, end));
+            doc.select_text(a, b);
+        });
+    });
+    let d = docs.clone();
+    // Script's selection in the document of `h` is gone.
+    op!("unselect", move |h: f64| {
+        d.with(h, |doc, _, _| {
+            if doc.has_text_selection() {
+                doc.clear_text_selection();
+                doc.shell_provider.request_redraw();
+            }
+        });
     });
     let d = docs.clone();
     // CSSOM View's caretPositionFromPoint in the document of `h`, at (x, y) in its viewport:
@@ -1163,4 +1178,16 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     n.set("href", base.map(Url::to_string).unwrap_or_default())
         .unwrap();
     ctx.globals().set("__n", n).unwrap();
+}
+
+/// The byte offset in `content` of UTF-16 offset `u16_offset` (its end past the last).
+fn byte_at(content: &str, u16_offset: f64) -> usize {
+    let mut units = 0;
+    for (i, c) in content.char_indices() {
+        if units >= u16_offset as usize {
+            return i;
+        }
+        units += c.len_utf16();
+    }
+    content.len()
 }

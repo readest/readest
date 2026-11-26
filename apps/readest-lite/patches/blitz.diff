@@ -1193,7 +1193,60 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Set the text selection range (creates a new selection from anchor to focus)
      pub fn set_text_selection(
          &mut self,
-@@ -2944,6 +3579,66 @@
+@@ -2685,6 +3320,52 @@
+         }
+     }
+ 
++    /// Selects from byte `start.1` of text node `start.0`'s content to byte `end.1` of text node
++    /// `end.0` (script's Selection), or nothing when one of them is not laid out; repaints.
++    pub fn select_text(&mut self, start: (NodeId, usize), end: (NodeId, usize)) {
++        match (self.laid_out_position(start.0, start.1), self.laid_out_position(end.0, end.1)) {
++            (Some((a, at)), Some((b, bt))) => self.set_text_selection(a, at, b, bt),
++            _ => self.clear_text_selection(),
++        }
++        self.shell_provider.request_redraw();
++    }
++
++    /// Where byte `offset` of text node `node_id`'s content is laid out: its inline root and the
++    /// byte offset in that root's text (`text_rects`' mapping).
++    fn laid_out_position(&self, node_id: NodeId, offset: usize) -> Option<(NodeId, usize)> {
++        let node = self.get_node(node_id)?;
++        let NodeData::Text(data) = &node.data else {
++            return None;
++        };
++        let root = node.inline_root_ancestor()?;
++        let text = root.element_data()?.inline_layout_data.as_deref()?;
++        let &(_, from, _) = text.text_nodes.iter().find(|t| t.0 == node_id)?;
++        let collapse = node
++            .parent
++            .and_then(|p| self.get_node(p)?.primary_styles())
++            .is_none_or(|s| {
++                s.get_inherited_text().white_space_collapse
++                    == style::computed_values::white_space_collapse::T::Collapse
++            });
++        // A floated `::first-letter` box lays out the start of this text apart (text_rects).
++        let skip = crate::layout::inline::first_letter_skip(&self.nodes, node_id).filter(|&(b, _)| {
++            !self.nodes[b].display_style().is_some_and(|d| {
++                d.outside() == style::values::specified::box_::DisplayOutside::Inline
++                    && d.inside() == style::values::specified::box_::DisplayInside::Flow
++            })
++        });
++        let Some((letter_box, skip)) = skip else {
++            return Some((root.id, laid_out_offset(&data.content, offset, &text.text, from, collapse)));
++        };
++        if skip.contains(&offset) {
++            let letter = *self.nodes[letter_box].children.first()?;
++            return self.laid_out_position(letter, offset - skip.start);
++        }
++        let rest = [&data.content[..skip.start], &data.content[skip.end..]].concat();
++        let offset = if offset <= skip.start { offset } else { offset - skip.len() };
++        Some((root.id, laid_out_offset(&rest, offset, &text.text, from, collapse)))
++    }
++
+     /// Get the parent ID and sibling index for a node if it's an anonymous block.
+     /// Returns (None, None) for non-anonymous blocks.
+     fn anonymous_block_location(&self, node_id: NodeId) -> (Option<NodeId>, Option<usize>) {
+@@ -2944,6 +3625,66 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1260,7 +1313,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4203,58 @@
+@@ -3508,6 +4249,58 @@
  }
  
  #[cfg(test)]
@@ -1319,7 +1372,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4528,7 @@
+@@ -3781,3 +4574,7 @@
          );
      }
  }
@@ -6817,7 +6870,75 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
  /// Converts parley BoundingBox into peniko Rect
  fn convert_rect(rect: &parley::BoundingBox) -> kurbo::Rect {
      peniko::kurbo::Rect::new(rect.x0, rect.y0, rect.x1, rect.y1)
-@@ -1076,6 +1178,37 @@
+@@ -995,16 +1097,34 @@
+                 self.node.id,
+             );
+ 
+-            // Render text selection highlight (if any) using cached selection ranges
+-            if let Some(&(sel_start, sel_end)) = self.context.selection_ranges.get(&self.node.id) {
++            // Render text selection highlight (if any) using cached selection ranges, in the
++            // colors of `::selection` where the page styles it (Readest's e-ink one: white text
++            // on black).
++            let selection = self.context.selection_ranges.get(&self.node.id).copied();
++            let selection_style = selection.and_then(|_| {
++                let data = self.node.try_stylo_element_data()?.get()?;
++                data.styles
++                    .pseudos
++                    .get(&style::selector_parser::PseudoElement::Selection)
++                    .cloned()
++            });
++            let selected = selection.map(|(sel_start, sel_end)| {
++                let background = selection_style.as_ref().map_or(SELECTION_COLOR, |s| {
++                    let current_color = s.clone_color();
++                    s.get_background()
++                        .background_color
++                        .resolve_to_absolute(&current_color)
++                        .as_srgb_color()
++                });
+                 crate::text::draw_text_selection(
+                     scene,
+                     &text_layout.layout,
+                     transform,
+                     sel_start,
+                     sel_end,
+-                );
+-            }
++                    background,
++                )
++            });
+ 
+             // Render text
+             let mut draw_text_context = self.context.draw_text_context.borrow_mut();
+@@ -1020,6 +1140,28 @@
+                 self.node.id,
+                 &mut draw_text_context,
+             );
++
++            // The selected text again, over itself, in the color `::selection` gives it where
++            // that is not the text's own (unset, it inherits the element's).
++            let color = selection_style
++                .map(|s| s.clone_color())
++                .filter(|c| *c != self.style.clone_color());
++            if let (Some(boxes), Some(color)) = (selected, color) {
++                scene.push_clip_layer(Fill::NonZero, transform, &boxes);
++                crate::text::stroke_text(
++                    scene,
++                    text_layout.layout.lines(),
++                    self.context.dom,
++                    transform,
++                    TextPaintOptions {
++                        scale: self.scale,
++                        brush_override: Some(color.as_srgb_color()),
++                    },
++                    self.node.id,
++                    &mut draw_text_context,
++                );
++                scene.pop_layer();
++            }
+         }
+     }
+ 
+@@ -1076,6 +1218,37 @@
                  };
              }
  
@@ -6855,7 +6976,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              // Render text
              let mut draw_text_context = self.context.draw_text_context.borrow_mut();
              crate::text::stroke_text(
-@@ -1152,6 +1285,63 @@
+@@ -1152,6 +1325,63 @@
          }
      }
  
@@ -6919,7 +7040,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
      fn draw_children(
          &self,
          scene: &mut impl PaintScene,
-@@ -1183,7 +1373,9 @@
+@@ -1183,7 +1413,9 @@
                  // the viewport and do not scroll with it, so cancel out the viewport
                  // scroll (applied in `paint_scene`). A fixed box contained by a
                  // transformed ancestor scrolls with it like any out-of-flow box.
@@ -6930,7 +7051,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  let child_transform = if child.taffy_position() == taffy::Position::Fixed
                      && Some(self.node.id) == self.context.root_element_id
                  {
-@@ -1193,6 +1385,15 @@
+@@ -1193,6 +1425,15 @@
                          y: scroll.y * self.scale,
                      })
                  } else if let Some(offset) = child.lifted_paint_offset(self.node.id) {
@@ -6946,7 +7067,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                      parent_style_transform.pre_translate(kurbo::Vec2 {
                          x: offset.x as f64 * self.scale,
                          y: offset.y as f64 * self.scale,
-@@ -1200,7 +1401,37 @@
+@@ -1200,7 +1441,37 @@
                  } else {
                      parent_style_transform
                  };
@@ -6985,7 +7106,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
              }
          }
  
-@@ -1269,7 +1500,7 @@
+@@ -1269,7 +1540,7 @@
          let x = x + x_offset.px() as f64;
          let y = y + y_offset.px() as f64;
  
@@ -6994,7 +7115,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let transform = (self.transform * viewport).then_translate(Vec2 { x, y });
  
          self.with_replaced_content_clip(
-@@ -1377,7 +1608,8 @@
+@@ -1377,7 +1648,8 @@
          }
      }
  
@@ -7004,7 +7125,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          if let Some(sub_doc) = self.element.sub_doc_data().map(|doc| doc.inner()) {
              let scale = self.scale;
              let width = self.frame.content_box.width() as u32;
-@@ -1389,7 +1621,7 @@
+@@ -1389,7 +1661,7 @@
              let initial_y = translation.y + self.frame.content_box.origin().y;
              // let transform = self.transform.then_translate(Vec2 { x, y });
  
@@ -7013,7 +7134,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
                  &sub_doc,
                  scale,
                  width,
-@@ -1398,6 +1630,15 @@
+@@ -1398,6 +1670,15 @@
                  initial_y,
                  self.custom_widget_scenes,
              );
@@ -7032,6 +7153,15 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
 diff -ruN blitz/packages/blitz-paint/src/text.rs blitz/packages/blitz-paint/src/text.rs
 --- blitz/packages/blitz-paint/src/text.rs
 +++ blitz/packages/blitz-paint/src/text.rs
+@@ -12,7 +12,7 @@
+ use style::values::generics::text::{GenericTextDecorationInset, GenericTextDecorationLength};
+ 
+ use crate::color::{Color, ToColorColor as _};
+-use crate::{FONT_EMBOLDEN_ENABLED, SELECTION_COLOR};
++use crate::FONT_EMBOLDEN_ENABLED;
+ 
+ /// Draw the backgrounds of inline elements (e.g. `<span style="background: ...">`).
+ ///
 @@ -151,6 +151,9 @@
      fill_color: Color,
      /// The decoration this node introduces as a decorating box, if any.
@@ -7119,6 +7249,36 @@ diff -ruN blitz/packages/blitz-paint/src/text.rs blitz/packages/blitz-paint/src/
                                  deco: entry.decoration.clone().unwrap(),
                                  min_x: f64::INFINITY,
                                  max_x: f64::NEG_INFINITY,
+@@ -749,21 +767,27 @@
+ 
+ /// Draw selection highlight rectangles for the given byte range in a layout.
+ /// Uses Parley's Selection type for accurate geometry calculation.
++/// Paints the selection `selection_start..selection_end` of `layout` in `color`; returns its
++/// boxes.
+ pub(crate) fn draw_text_selection(
+     scene: &mut impl PaintScene,
+     layout: &Layout<TextBrush>,
+     transform: Affine,
+     selection_start: usize,
+     selection_end: usize,
+-) {
++    color: Color,
++) -> BezPath {
+     let anchor = Cursor::from_byte_index(layout, selection_start, Affinity::Downstream);
+     let focus = Cursor::from_byte_index(layout, selection_end, Affinity::Downstream);
+     let selection = Selection::new(anchor, focus);
+ 
++    let mut boxes = BezPath::new();
+     selection.geometry_with(layout, |rect, _line_idx| {
+         let rect = kurbo::Rect::new(rect.x0, rect.y0, rect.x1, rect.y1);
+-        scene.fill(Fill::NonZero, transform, SELECTION_COLOR, None, &rect);
++        scene.fill(Fill::NonZero, transform, color, None, &rect);
++        boxes.extend(kurbo::Shape::path_elements(&rect, 0.1));
+     });
++    boxes
+ }
+ 
+ /// Approximates macOS font smoothing (stem dilation). CoreGraphics dilates each side by an amount
 diff -ruN blitz/packages/blitz-traits/src/shell.rs blitz/packages/blitz-traits/src/shell.rs
 --- blitz/packages/blitz-traits/src/shell.rs
 +++ blitz/packages/blitz-traits/src/shell.rs

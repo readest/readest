@@ -2689,10 +2689,15 @@
     return new TreeWalker(root, whatToShow, filter);
   };
 
-  // One range per document, kept in JS: Blitz's own text selection is not tied to it yet.
+  // One range per document, kept in JS and painted by Blitz.
   class Selection {
-    constructor() {
+    constructor(doc) {
+      this._doc = doc;
       this._r = null;
+    }
+    _set(r) {
+      this._r = r;
+      paintSelection(this._doc, r);
     }
     get rangeCount() {
       return this._r ? 1 : 0;
@@ -2720,35 +2725,55 @@
       return this._r;
     }
     addRange(r) {
-      this._r ??= r;
+      if (!this._r) this._set(r);
     }
     removeRange(r) {
-      if (this._r === r) this._r = null;
+      if (this._r === r) this._set(null);
     }
     removeAllRanges() {
-      this._r = null;
+      this._set(null);
     }
     empty() {
-      this._r = null;
+      this._set(null);
     }
     collapse(node, offset = 0) {
       if (!node) return this.removeAllRanges();
       const r = docOf(node).createRange();
       r.setStart(node, offset);
-      this._r = r;
+      this._set(r);
     }
     setBaseAndExtent(anchor, anchorOffset, focus, focusOffset) {
       const r = docOf(anchor).createRange();
       r.setStart(anchor, anchorOffset);
       r.setEnd(focus, focusOffset);
-      this._r = r;
+      this._set(r);
     }
     toString() {
       return this._r?.toString() ?? '';
     }
   }
+  // Blitz paints a range from its first text position to its last: a boundary between nodes
+  // moves into the text the range holds.
+  function paintSelection(doc, r) {
+    if (!r || r.collapsed) return n.unselect(doc._id);
+    let { startContainer: sc, startOffset: so, endContainer: ec, endOffset: eo } = r;
+    if (sc.nodeType !== 3 || ec.nodeType !== 3) {
+      let first = null,
+        last = null;
+      const w = new TreeWalker(r.commonAncestorContainer, 0x4);
+      for (let t; (t = w.nextNode()); ) {
+        if (!r.intersectsNode(t)) continue;
+        first ??= t;
+        last = t;
+      }
+      if (!first) return n.unselect(doc._id);
+      if (sc.nodeType !== 3) [sc, so] = [first, 0];
+      if (ec.nodeType !== 3) [ec, eo] = [last, last.length];
+    }
+    n.select(sc._id, so, ec._id, eo);
+  }
   Document.prototype.getSelection = function () {
-    return (this._selection ??= new Selection());
+    return (this._selection ??= new Selection(this));
   };
 
   // CSSOM View: the caret nearest a point in this document's viewport, in the text under it.
