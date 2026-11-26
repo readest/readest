@@ -1000,7 +1000,9 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
     // importBook can recognize a re-import of the same file.
     const lookupIndex = buildBookLookupIndex(library, appService?.osPlatform);
     const failedImports: FailedImport[] = [];
-    // Keep one row per skipped file so the dialog's count and filenames match.
+    // Files the picker or drop skipped for their format are reported with this
+    // run's own failures, one row each so the dialog's count matches. A toast
+    // of their own was replaced by this run's success or failure toast (#6991).
     if (options.skipped?.length) {
       const errorMessage = _(getImportErrorMessage('Unsupported format'));
       for (const filename of options.skipped) {
