@@ -76,6 +76,7 @@ import {
   runFileLibrarySyncPass,
 } from '@/services/sync/file/runLibrarySync';
 import { useCustomFontStore } from '@/store/customFontStore';
+import { createFileSyncProvider } from '@/services/sync/file/providerRegistry';
 import type { Book } from '@/types/book';
 import type { CustomFont } from '@/styles/fonts';
 
@@ -373,6 +374,18 @@ describe('runFileFontDownload', () => {
     expect(await runFileFontDownload(envConfig, font)).toBe(false);
     expect(downloadFont).not.toHaveBeenCalled();
     expect(activateFontByContentId).not.toHaveBeenCalled();
+  });
+
+  test('with syncFontsOff, tries only the backends whose syncFonts is false (#7965)', async () => {
+    useSettingsStore.getState().setSettings({
+      ...multiProviderSettings,
+      webdav: { ...multiProviderSettings.webdav, syncFonts: false },
+    } as SystemSettings);
+    vi.mocked(createFileSyncProvider).mockClear();
+    downloadFont.mockResolvedValue(true);
+    expect(await runFileFontDownload(envConfig, font, true)).toBe(true);
+    expect(vi.mocked(createFileSyncProvider).mock.calls.map(([kind]) => kind)).toEqual(['webdav']);
+    expect(activateFontByContentId).toHaveBeenCalledWith(envConfig, 'c1');
   });
 });
 
