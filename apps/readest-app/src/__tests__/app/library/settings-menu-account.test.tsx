@@ -113,7 +113,7 @@ afterEach(() => {
 it('opens each Account menu entry on the account page', () => {
   render(<SettingsMenu onPullLibrary={vi.fn()} setIsDropdownOpen={mocks.setIsDropdownOpen} />);
 
-  expect(screen.getByText('Account')).toBeTruthy();
+  expect(screen.getByText('Logged in')).toBeTruthy();
   expect(screen.getByText('Subscription')).toBeTruthy();
   expect(screen.getByText('Sync Settings')).toBeTruthy();
   expect(screen.getByText('Shared Links')).toBeTruthy();

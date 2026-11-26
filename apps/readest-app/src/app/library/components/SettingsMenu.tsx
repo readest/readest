@@ -258,6 +258,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   };
 
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
+  const userFullName = user?.user_metadata?.['full_name'];
+  const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
   const themeModeLabel =
     themeMode === 'dark'
       ? _('Dark Mode')
@@ -302,7 +304,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     >
       {user ? (
         <MenuItem
-          label={_('Account')}
+          label={
+            userDisplayName
+              ? _('Logged in as {{userDisplayName}}', { userDisplayName })
+              : _('Logged in')
+          }
           labelClass='max-w-40! truncate text-nowrap!'
           aria-label={_('View account details and quota')}
           Icon={
