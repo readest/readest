@@ -1,7 +1,71 @@
-//! Whether a frame would change a pixel of the last one shown.
+//! Whether a frame would change a pixel of the last one shown, and where.
 
-use anyrender::{Paint, Scene, recording::RenderCommand};
-use peniko::{BlendMode, Color};
+use anyrender::{
+    Paint, Scene,
+    recording::{GlyphRunCommand, RenderCommand},
+};
+use peniko::{BlendMode, Color, kurbo::Rect, kurbo::Shape as _};
+
+/// Where drawing `b` can change a page that shows `a`, in device pixels: `None` when they draw
+/// the same. Cairo draws each pixel from that pixel alone (anyrender_cairo leaves out filters and
+/// blurs), a command draws only under its shape, and a layer only inside its clip; so `a` and `b`
+/// differ only under the commands between those they start and end with, and inside a layer
+/// pushed or popped among them. `glyphs`: where a glyph run inks.
+pub(crate) fn changed(
+    a: &Scene,
+    b: &Scene,
+    glyphs: &mut impl FnMut(&GlyphRunCommand) -> Option<Rect>,
+) -> Option<Rect> {
+    let (a, b) = (&a.commands, &b.commands);
+    let start = a.iter().zip(b).take_while(|(x, y)| x == y).count();
+    let (a_rest, b_rest) = (&a[start..], &b[start..]);
+    let end = a_rest
+        .iter()
+        .rev()
+        .zip(b_rest.iter().rev())
+        .take_while(|(x, y)| x == y)
+        .count();
+    let mut out: Option<Rect> = None;
+    for s in [a, b] {
+        // the clip of each layer open
+        let mut open = Vec::new();
+        for (i, c) in s[..s.len() - end].iter().enumerate() {
+            let r = match c {
+                RenderCommand::PushLayer(l) => {
+                    open.push(l.transform.transform_rect_bbox(l.clip.bounding_box()));
+                    open.last().copied()
+                }
+                RenderCommand::PushClipLayer(l) => {
+                    open.push(l.transform.transform_rect_bbox(l.clip.bounding_box()));
+                    open.last().copied()
+                }
+                RenderCommand::PopLayer => open.pop(),
+                _ if i < start => None,
+                RenderCommand::Fill(f) => {
+                    Some(f.transform.transform_rect_bbox(f.shape.bounding_box()))
+                }
+                RenderCommand::Stroke(f) => {
+                    // as far out as a miter join reaches
+                    let k = f.style.width / 2.0 * f.style.miter_limit.max(2.0);
+                    Some(
+                        f.transform
+                            .transform_rect_bbox(f.shape.bounding_box().inflate(k, k)),
+                    )
+                }
+                RenderCommand::GlyphRun(g) => glyphs(g),
+                RenderCommand::BoxShadow(s) => {
+                    let k = 3.0 * s.std_dev;
+                    Some(s.transform.transform_rect_bbox(s.rect.inflate(k, k)))
+                }
+            };
+            // a shape with no area draws nothing
+            if let Some(r) = r.filter(|r| i >= start && r.width() > 0.0 && r.height() > 0.0) {
+                out = Some(out.map_or(r, |o| o.union(r)));
+            }
+        }
+    }
+    out
+}
 
 /// Whether frames recorded as `a` and `b`, each drawn on a white page, have the same pixels: the
 /// same commands, once those that change no pixel are left out.

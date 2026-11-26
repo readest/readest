@@ -250,6 +250,64 @@ impl Caches {
     }
 }
 
+/// A glyph run's font size and glyph transform as cairo's font matrix.
+fn font_matrix(size: f32, glyph_transform: Option<Affine>) -> Matrix {
+    let s = f64::from(size);
+    let size = Matrix::new(s, 0.0, 0.0, s, 0.0, 0.0);
+    match glyph_transform {
+        Some(g) => Matrix::multiply(&size, &CairoScene::matrix(g)),
+        None => size,
+    }
+}
+
+fn font_options(hint: bool) -> cairo::FontOptions {
+    let mut opts = cairo::FontOptions::new().unwrap();
+    opts.set_antialias(cairo::Antialias::Gray);
+    opts.set_hint_style(if hint {
+        cairo::HintStyle::Slight
+    } else {
+        cairo::HintStyle::None
+    });
+    opts.set_hint_metrics(cairo::HintMetrics::Off);
+    opts
+}
+
+fn cairo_glyphs(glyphs: impl Iterator<Item = Glyph>) -> Vec<cairo::Glyph> {
+    glyphs
+        .map(|g| cairo::Glyph::new(u64::from(g.id) as _, f64::from(g.x), f64::from(g.y)))
+        .collect()
+}
+
+impl Caches {
+    /// The box of device pixels a glyph run inks, from cairo's own glyph extents: `None` when it
+    /// inks none (or its font doesn't load, when it draws nothing).
+    pub fn glyph_box(&mut self, run: &anyrender::recording::GlyphRunCommand) -> Option<Rect> {
+        let bold = run.embolden.x > 0.0 || run.embolden.y > 0.0;
+        let face = self.font(&run.font_data, bold, &run.normalized_coords)?;
+        let font = cairo::ScaledFont::new(
+            &face,
+            &font_matrix(run.font_size, run.glyph_transform),
+            &CairoScene::matrix(run.transform),
+            &font_options(run.hint),
+        )
+        .ok()?;
+        let glyphs = cairo_glyphs(run.glyphs.iter().copied());
+        let e = font.glyph_extents(&glyphs);
+        if e.width() <= 0.0 || e.height() <= 0.0 {
+            return None;
+        }
+        // stroked, it takes the line join and miter limit the last stroke left: anywhere
+        if let peniko::Style::Stroke(_) = &run.style {
+            let inf = f64::INFINITY;
+            return Some(Rect::new(-inf, -inf, inf, inf));
+        }
+        // the bearings are from the first glyph's origin
+        let (x, y) = (glyphs[0].x() + e.x_bearing(), glyphs[0].y() + e.y_bearing());
+        let ink = Rect::new(x, y, x + e.width(), y + e.height());
+        Some(run.transform.transform_rect_bbox(ink))
+    }
+}
+
 pub struct CairoScene<'a> {
     pub cr: Context,
     pub caches: &'a mut Caches,
@@ -595,30 +653,9 @@ impl PaintScene for CairoScene<'_> {
         let cr = &self.cr;
         cr.set_operator(Operator::Over);
         cr.set_font_face(&face);
-        let size = Matrix::new(
-            f64::from(font_size),
-            0.0,
-            0.0,
-            f64::from(font_size),
-            0.0,
-            0.0,
-        );
-        cr.set_font_matrix(match glyph_transform {
-            Some(g) => Matrix::multiply(&size, &Self::matrix(g)),
-            None => size,
-        });
-        let mut opts = cairo::FontOptions::new().unwrap();
-        opts.set_antialias(cairo::Antialias::Gray);
-        opts.set_hint_style(if hint {
-            cairo::HintStyle::Slight
-        } else {
-            cairo::HintStyle::None
-        });
-        opts.set_hint_metrics(cairo::HintMetrics::Off);
-        cr.set_font_options(&opts);
-        let run: Vec<cairo::Glyph> = glyphs
-            .map(|g| cairo::Glyph::new(u64::from(g.id) as _, f64::from(g.x), f64::from(g.y)))
-            .collect();
+        cr.set_font_matrix(font_matrix(font_size, glyph_transform));
+        cr.set_font_options(&font_options(hint));
+        let run = cairo_glyphs(glyphs);
         match style.into() {
             StyleRef::Fill(_) if brush_alpha >= 1.0 => {
                 let _ = cr.show_glyphs(&run);

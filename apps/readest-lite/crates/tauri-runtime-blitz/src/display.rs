@@ -193,15 +193,15 @@ impl Display {
         Ok(d)
     }
 
-    /// Shows a cairo RGB24 frame (`stride` bytes per row; BGRX on little-endian), sending only
-    /// the box that changed since the last frame (each update is a refresh on e-ink). Returns
-    /// that box, `None` when nothing changed.
-    pub fn present(&self, data: &[u8], stride: usize) -> Option<Rect> {
+    /// Shows a cairo RGB24 frame (`stride` bytes per row; BGRX on little-endian) that differs
+    /// from the last only `within` a box, sending only the box that changed (each update is a
+    /// refresh on e-ink). Returns that box, `None` when nothing changed.
+    pub fn present(&self, data: &[u8], stride: usize, within: Rect) -> Option<Rect> {
         let Target { w, format, .. } = self.target;
         let size = (usize::from(w), usize::from(self.h));
         let mut shown = self.last.lock().unwrap();
         let mut prev = self.prev.lock().unwrap();
-        let rect = update(&mut prev, &mut shown, data, stride, size, format);
+        let rect = update(&mut prev, &mut shown, data, stride, size, within, format);
         if let Some(rect) = rect
             && let Err(e) = put(&self.conn, self.target, &shown, rect)
         {
@@ -262,15 +262,17 @@ fn convert(src: &[u8], dst: &mut [u8], format: PixelFormat) {
 }
 
 /// Brings `shown` (the window's pixels) and `prev` (the cairo frame they came from) up to the
-/// cairo frame `data` (`stride` bytes a row); returns the box of the window to send again, `None`
-/// when nothing changed. Each row is compared, and what changed in it converted, in one pass: a
-/// Kindle's memory, not its CPU, sets the pace.
+/// cairo frame `data` (`stride` bytes a row), which differs from `prev` only `within` a box;
+/// returns the box of the window to send again, `None` when nothing changed. Each row is
+/// compared, and what changed in it converted, in one pass: a Kindle's memory, not its CPU, sets
+/// the pace.
 fn update(
     prev: &mut Vec<u8>,
     shown: &mut Vec<u8>,
     data: &[u8],
     stride: usize,
     (w, h): (usize, usize),
+    within: Rect,
     format: PixelFormat,
 ) -> Option<Rect> {
     // 8-bit rows: spans start and end on 4-byte boundaries, so the box's rows need no padding
@@ -280,18 +282,23 @@ fn update(
         prev.resize(w * 4 * h, 0);
         shown.resize(w * bytes * h, 0);
     }
+    let (wx0, wy0, wx1, wy1) = if first { (0, 0, w, h) } else { within };
     let (mut x0, mut y0, mut x1, mut y1) = (w, None, 0, 0);
-    for y in 0..h {
+    for y in wy0..wy1 {
         let src = &data[y * stride..y * stride + w * 4];
         let old = &mut prev[y * w * 4..(y + 1) * w * 4];
         let (l, r) = if first {
             (0, w)
         } else {
-            let (p, q) = (old.as_chunks::<4>().0, src.as_chunks::<4>().0);
+            let (p, q) = (
+                old[wx0 * 4..wx1 * 4].as_chunks::<4>().0,
+                src[wx0 * 4..wx1 * 4].as_chunks::<4>().0,
+            );
             let Some(l) = p.iter().zip(q).position(|(p, q)| p != q) else {
                 continue;
             };
-            (l, p.iter().zip(q).rposition(|(p, q)| p != q).unwrap() + 1)
+            let r = p.iter().zip(q).rposition(|(p, q)| p != q).unwrap() + 1;
+            (wx0 + l, wx0 + r)
         };
         let (l, r) = (l / a * a, (r.div_ceil(a) * a).min(w));
         let span = &src[l * 4..r * 4];
@@ -474,7 +481,7 @@ mod tests {
         let gray = PixelFormat::Gray8 { invert: false };
         let (mut prev, mut shown) = (Vec::new(), Vec::new());
         let mut show = |frame: &[u8], shown: &mut Vec<u8>| {
-            update(&mut prev, shown, frame, stride, (w, h), gray)
+            update(&mut prev, shown, frame, stride, (w, h), (0, 0, w, h), gray)
         };
         assert_eq!(show(&white, &mut shown), Some((0, 0, w, h)));
         assert_eq!(shown, vec![255u8; w * h]);
@@ -503,7 +510,17 @@ mod tests {
         let bgrx = PixelFormat::Bgrx { gray: false };
         let old = vec![255u8; w * 4 * h];
         let (mut prev, mut shown) = (Vec::new(), Vec::new());
-        let mut show = |frame: &[u8]| update(&mut prev, &mut shown, frame, w * 4, (w, h), bgrx);
+        let mut show = |frame: &[u8]| {
+            update(
+                &mut prev,
+                &mut shown,
+                frame,
+                w * 4,
+                (w, h),
+                (0, 0, w, h),
+                bgrx,
+            )
+        };
         // the first frame, with nothing before it, goes out whole
         assert_eq!(show(&old), Some((0, 0, w, h)));
         assert_eq!(show(&old), None);

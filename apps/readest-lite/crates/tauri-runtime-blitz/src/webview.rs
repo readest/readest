@@ -300,6 +300,10 @@ pub(crate) struct BlitzWebview {
     last_paint: Option<Instant>,
     /// The drawing commands of the last frame painted, and its size.
     last_scene: Option<(u32, u32, anyrender::Scene)>,
+    /// The last frame painted: the next draws over it where its commands changed.
+    surface: Option<cairo::ImageSurface>,
+    /// The box of the screen the last frame drew (device pixels).
+    drawn: Rect,
     /// Next frame of a running CSS animation/transition (BLITZ_TAURI_ANIM_MS apart, default 33).
     next_anim: Option<Instant>,
     /// BLITZ_TAURI_EVAL=file.js, evaluated once BLITZ_TAURI_EVAL_MS (default 5000) after navigate.
@@ -418,6 +422,8 @@ impl BlitzWebview {
                 .map(Duration::from_millis),
             last_paint: None,
             last_scene: None,
+            surface: None,
+            drawn: Rect::ZERO,
             next_anim: None,
             probe: None,
             pointers: Default::default(),
@@ -862,14 +868,30 @@ impl BlitzWebview {
             self.after_frame();
             return;
         }
+        // Over the last frame, only where the commands changed (a spinner's turn: a box ~120 px
+        // square of a Kindle's 1072×1448 screen, whose whole raster takes ~85 ms there).
+        let all = Rect::new(0.0, 0.0, f64::from(self.w), f64::from(self.h));
+        let (mut surface, drawn) = match (self.surface.take(), &self.last_scene) {
+            (Some(s), Some((w, h, last))) if (*w, *h) == (self.w, self.h) => {
+                let box_ =
+                    crate::frame::changed(last, &commands, &mut |g| self.caches.glyph_box(g));
+                // and the pixels antialiasing touches around it
+                let r = box_.map_or(Rect::ZERO, |r| r.inflate(1.0, 1.0).expand().intersect(all));
+                (s, r)
+            }
+            _ => (
+                cairo::ImageSurface::create(cairo::Format::Rgb24, self.w as i32, self.h as i32)
+                    .unwrap(),
+                all,
+            ),
+        };
         self.last_scene = Some((self.w, self.h, commands));
-        let surface =
-            cairo::ImageSurface::create(cairo::Format::Rgb24, self.w as i32, self.h as i32)
-                .unwrap();
+        self.drawn = drawn;
         {
             let cr = cairo::Context::new(&surface).unwrap();
+            cr.rectangle(drawn.x0, drawn.y0, drawn.width(), drawn.height());
+            cr.clip();
             let mut scene = cairo_scene::CairoScene::new(cr, &mut self.caches);
-            let all = Rect::new(0.0, 0.0, f64::from(self.w), f64::from(self.h));
             scene.fill(
                 Fill::NonZero,
                 Default::default(),
@@ -898,7 +920,11 @@ impl BlitzWebview {
             let stride = surface.stride() as usize;
             let mut rect = None;
             if surface
-                .with_data(|data| rect = d.present(data, stride))
+                .with_data(|data| {
+                    let r = drawn;
+                    let within = (r.x0 as usize, r.y0 as usize, r.x1 as usize, r.y1 as usize);
+                    rect = d.present(data, stride, within);
+                })
                 .is_ok()
             {
                 sent = rect.map_or("\"none\"".into(), |(x0, y0, x1, y1)| {
@@ -909,7 +935,6 @@ impl BlitzWebview {
         let present_ms = t_present.elapsed().as_secs_f64() * 1000.0;
         if let Some(out) = &self.out {
             let stride = surface.stride() as usize;
-            let mut surface = surface;
             let data = surface.data().unwrap();
             let (w, h) = (self.w as usize, self.h as usize);
             let mut pgm = format!("P5\n{w} {h}\n255\n").into_bytes();
@@ -927,6 +952,7 @@ impl BlitzWebview {
             }
             let _ = std::fs::write(format!("{out}/{}-{:03}.pgm", self.label, self.frames), pgm);
         }
+        self.surface = Some(surface);
         // BLITZ_TAURI_DUMP=1: the DOM as HTML next to each frame (diagnostics).
         if let (Some(out), Some(_)) = (&self.out, std::env::var_os("BLITZ_TAURI_DUMP")) {
             let html = doc.inner().root_element().outer_html();
@@ -949,9 +975,13 @@ impl BlitzWebview {
             heap += &format!(", \"cause\": \"{}\"", std::mem::take(&mut self.causes));
         }
         eline!(
-            "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"record_ms\": {record_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"present_ms\": {present_ms:.1}, \"sent\": {sent}{heap}}}",
+            "{{\"label\": \"frame\", \"t_ms\": {:.1}, \"n\": {}, \"layout_ms\": {layout_ms:.1}, \"record_ms\": {record_ms:.1}, \"paint_ms\": {paint_ms:.1}, \"present_ms\": {present_ms:.1}, \"drawn\": [{}, {}, {}, {}], \"sent\": {sent}{heap}}}",
             t_ms(),
             self.frames,
+            drawn.x0,
+            drawn.y0,
+            drawn.x1,
+            drawn.y1,
         );
         self.frames += 1;
         self.dirty = false;
@@ -1753,6 +1783,145 @@ mod tests {
         }
         std::fs::remove_dir_all(&dir).ok();
         assert_eq!(painted, [Some("start".into()), Some("shown".into())]);
+    }
+
+    // On e-ink a loading spinner turns in steps: a box ~120 px square of a Kindle's screen, where
+    // each step rasterized the whole frame and compared it with the last (~120 ms a step there).
+    // A frame draws only where its drawing commands changed, and looks as if drawn whole.
+    #[test]
+    fn a_frame_draws_only_what_changed_and_looks_as_if_drawn_whole() {
+        let dir = std::env::temp_dir().join(format!("blitz-part-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("part.html");
+        let arc = "data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' \
+            xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='9.5' fill='none' \
+            stroke='black' stroke-width='3' stroke-dasharray='42 150'/%3E%3C/svg%3E";
+        std::fs::write(
+            &file,
+            format!(
+                "<!DOCTYPE html><html><body style='margin: 0'>
+            <h1 id='t' style='text-align: center; font-style: italic'>Loading</h1>
+            <div id='s' style='width: 40px; height: 120px; overflow: hidden'>
+              <p style='margin: 0'>one</p><p style='margin: 0; opacity: .5'>two</p>
+              <p style='margin: 0'>three</p><p style='margin: 0'>four</p>
+              <p style='margin: 0'>five</p><p style='margin: 0'>six</p>
+            </div>
+            <style>#spin {{ display: block; margin: 20px; width: 40px; height: 40px;
+              background: black; mask-image: url(\"{arc}\") }}</style>
+            <span id='spin'></span>
+            <script>
+            const spin = document.getElementById('spin').style;
+            const steps = [
+              ['turn', () => {{ spin.transform = 'rotate(45deg)'; }}],
+              ['turn', () => {{ spin.transform = 'rotate(90deg)'; }}],
+              ['text', () => {{ document.getElementById('t').textContent = 'Opened the book'; }}],
+              ['scroll', () => {{ document.getElementById('s').scrollTop = 30; }}],
+              ['done', () => {{ spin.display = 'none'; }}],
+            ];
+            document.body.title = 'start';
+            // the test takes the next step once the page is quiet: one step a frame
+            globalThis.next = () => {{
+              const [step, f] = steps.shift();
+              f();
+              document.body.title = step;
+              return steps.length;
+            }};
+            </script></body></html>"
+            ),
+        )
+        .unwrap();
+        let mut wv = BlitzWebview::new(WebviewInit {
+            id: 0,
+            label: "test".into(),
+            url: Arc::new(Mutex::new(String::new())),
+            protocols: Arc::new(HashMap::new()),
+            ipc: None,
+            init_scripts: Vec::new(),
+            page_load: None,
+            tx: std::sync::mpsc::channel().0,
+            data_dir: None,
+        });
+        wv.navigate(Url::from_file_path(&file).unwrap().as_str());
+        // the last frame's commands drawn whole on a white page, as RGB
+        let whole = |wv: &mut BlitzWebview| {
+            let (w, h, scene) = wv.last_scene.clone().unwrap();
+            let mut s =
+                cairo::ImageSurface::create(cairo::Format::Rgb24, w as i32, h as i32).unwrap();
+            {
+                let cr = cairo::Context::new(&s).unwrap();
+                let mut cs = cairo_scene::CairoScene::new(cr, &mut wv.caches);
+                let all = Rect::new(0.0, 0.0, f64::from(w), f64::from(h));
+                cs.fill(Fill::NonZero, Default::default(), Color::WHITE, None, &all);
+                cs.append_scene(scene, Default::default());
+            }
+            rgb(&mut s)
+        };
+        let mut drawn = Vec::new();
+        let (mut quiet_since, mut left) = (Instant::now(), 1.0);
+        let end = Instant::now() + Duration::from_secs(10);
+        while drawn.last().is_none_or(|(s, _)| s != "done") && Instant::now() < end {
+            let frames = wv.frames;
+            wv.tick();
+            let quiet = quiet_since.elapsed() > Duration::from_millis(300);
+            if wv.frames == frames && quiet && left > 0.0 && wv.deadline().is_none() {
+                left = wv.doc.as_mut().unwrap().call_global("next", ()).unwrap();
+                quiet_since = Instant::now();
+            }
+            if wv.frames > frames {
+                quiet_since = Instant::now();
+                let step = {
+                    let doc = wv.doc.as_ref().unwrap().inner();
+                    let body = doc.root_element().children[1];
+                    let title = doc
+                        .get_node(body)
+                        .unwrap()
+                        .attr(blitz_dom::local_name!("title"));
+                    title.unwrap_or_default().to_owned()
+                };
+                let shown = rgb(wv.surface.as_mut().unwrap());
+                assert!(
+                    shown == whole(&mut wv),
+                    "the {step} frame differs from it drawn whole"
+                );
+                let r = wv.drawn;
+                drawn.push((step, r.area() / f64::from(wv.w * wv.h)));
+            }
+            let wake = wv
+                .deadline()
+                .unwrap_or(Instant::now() + Duration::from_millis(10));
+            std::thread::sleep(wake.saturating_duration_since(Instant::now()));
+        }
+        std::fs::remove_dir_all(&dir).ok();
+        let steps: Vec<_> = drawn.iter().map(|(s, _)| s.as_str()).collect();
+        for s in ["turn", "text", "scroll", "done"] {
+            assert!(steps.contains(&s), "no {s} frame in {steps:?}");
+        }
+        // a turn draws the box the spinner turns in (100 px turned 45°, ~1% of the screen)
+        for (s, part) in &drawn {
+            if s == "turn" {
+                assert!(
+                    *part < 0.02,
+                    "a turn drew {:.1}% of the screen",
+                    part * 100.0
+                );
+            }
+        }
+    }
+
+    /// The RGB of each pixel of `s` (an RGB24 surface's fourth byte is unused).
+    fn rgb(s: &mut cairo::ImageSurface) -> Vec<[u8; 3]> {
+        s.flush();
+        let (w, stride) = (s.width() as usize, s.stride() as usize);
+        let data = s.data().unwrap();
+        data.chunks(stride)
+            .flat_map(|row| {
+                row[..w * 4]
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .map(|p| [p[0], p[1], p[2]])
+            })
+            .collect()
     }
 
     // Page-turn timing runs pressed a key every 12 s to be sure the last turn's work was done;
