@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState, useEffect, memo } from 'react';
+import { isWebAppPlatform } from '@/services/environment';
 
 interface CachedImageProps {
   src: string | null;
@@ -134,8 +135,24 @@ const CachedImageComponent = ({
     );
   }
 
+  // The web app is cross-origin isolated (COEP: require-corp), which blocks a
+  // no-cors image from another origin unless it sends CORP. A CORS request is
+  // accepted: the OPDS proxies and directly loaded covers send
+  // Access-Control-Allow-Origin.
+  const crossOrigin =
+    isWebAppPlatform() && /^https?:\/\//.test(cachedUrl) ? 'anonymous' : undefined;
+
   if (fill) {
-    return <Image src={cachedUrl} alt={alt} fill className={className} sizes={sizes} />;
+    return (
+      <Image
+        src={cachedUrl}
+        alt={alt}
+        fill
+        className={className}
+        sizes={sizes}
+        crossOrigin={crossOrigin}
+      />
+    );
   }
 
   return (
@@ -146,6 +163,7 @@ const CachedImageComponent = ({
       height={height}
       className={className}
       sizes={sizes}
+      crossOrigin={crossOrigin}
     />
   );
 };
