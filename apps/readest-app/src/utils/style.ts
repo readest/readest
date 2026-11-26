@@ -20,7 +20,7 @@ import { isDialogueHighlightActive } from './dialogueHighlight';
 import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
-import { WHITE_TRANSPARENCY_FILTER } from './imageBackground';
+import { DARK_MONOCHROME_FILTER, WHITE_TRANSPARENCY_FILTER } from './imageBackground';
 import { classifyAndTagStandaloneDiagrams } from './imageClassifier';
 import {
   LINK_HIT_AREA_CLASS,
@@ -471,39 +471,32 @@ const getColorStyles = (
       mix-blend-mode: multiply;
     }
     /* inline images and gaiji */
-    *:has(> img.has-text-siblings):not(body) {
+    ${
+      !isDarkMode
+        ? `*:has(> img.has-text-siblings):not(body) {
       ${overrideColor ? `background-color: ${overrideBg};` : ''}
     }
     *:has(> img[class*="gaiji"]):not(body) {
       ${overrideColor ? `background-color: ${overrideBg};` : ''}
+    }`
+        : ''
     }
     p img.has-text-siblings,
     span img.has-text-siblings,
     sup img.has-text-siblings,
     img.has-text-siblings,
     img[class*="gaiji"] {
-      ${
-        isDarkMode && !invertImgColorInDark
-          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
-          : ''
-      }
-      mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+      ${isDarkMode ? `filter: ${DARK_MONOCHROME_FILTER};` : ''}
+      mix-blend-mode: ${isDarkMode ? 'normal' : 'multiply'};
     }
     ${
       isDarkMode
-        ? `*:has(> img.monochrome-diagram):not(body) {
-      ${overrideColor ? `background-color: ${overrideBg};` : ''}
-    }
-    img.monochrome-diagram {
-      ${
-        !invertImgColorInDark
-          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
-          : ''
-      }
-      mix-blend-mode: screen;
+        ? `img.monochrome-diagram {
+      filter: ${DARK_MONOCHROME_FILTER};
+      mix-blend-mode: normal;
     }
     p[width][height] > img.monochrome-diagram:only-child {
-      mix-blend-mode: screen;
+      mix-blend-mode: normal;
     }`
         : ''
     }

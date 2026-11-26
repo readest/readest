@@ -69,7 +69,7 @@ import { applyScrollableStyle, applyTableTouchScroll } from '@/utils/scrollable'
 import { bindInlineEventHandlers } from '@/utils/inlineEventHandlers';
 import { classifyAndTagStandaloneDiagrams } from '@/utils/imageClassifier';
 import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
-import { mountWhiteTransparencyFilter } from '@/utils/imageBackground';
+import { mountDarkMonochromeFilter, mountWhiteTransparencyFilter } from '@/utils/imageBackground';
 import { layoutWarichu, relayoutWarichu } from '@/utils/warichu';
 import { refreshSectionGlosses, whenSelectionClears } from '@/app/reader/utils/wordlensSection';
 import { useVocabularyStore } from '@/store/vocabularyStore';
@@ -687,6 +687,7 @@ const FoliateViewer: React.FC<{
       }
 
       mountWhiteTransparencyFilter(detail.doc);
+      mountDarkMonochromeFilter(detail.doc, getThemeCode().fg);
       applyImageStyle(detail.doc, useThemeStore.getState().isDarkMode, bookData?.isFixedLayout);
       applyScrollableStyle(detail.doc);
       applyTableTouchScroll(detail.doc);
@@ -1422,6 +1423,7 @@ const FoliateViewer: React.FC<{
           applyFixedlayoutStyles(doc, pageSettings, undefined, bookData?.book?.format);
         }
         applyThemeModeClass(doc, isDarkMode);
+        mountDarkMonochromeFilter(doc, (themeCode ?? getThemeCode()).fg);
         classifyAndTagStandaloneDiagrams(doc, isDarkMode, bookData?.isFixedLayout);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyEinkModeAttribute(doc, viewSettings.isEink || false);

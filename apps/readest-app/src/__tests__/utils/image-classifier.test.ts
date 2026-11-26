@@ -278,28 +278,20 @@ describe('imageClassifier', () => {
   });
 
   describe('CSS styling for monochrome diagrams in dark mode', () => {
-    it('applies invert and screen blending to img.monochrome-diagram in dark mode', () => {
+    it('applies dark-monochrome SVG filter and normal blending to img.monochrome-diagram in dark mode', () => {
       const css = getStyles(makeViewSettings(), darkTheme);
       expect(css).toMatch(
-        /img\.monochrome-diagram\s*\{[^}]*filter:\s*invert\(1\)\s*hue-rotate\(180deg\);/,
+        /img\.monochrome-diagram\s*\{[^}]*filter:\s*url\(#readest-dark-monochrome\);/,
       );
-      expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*screen;/);
+      expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*normal;/);
     });
 
-    it('keeps background transparent over a background texture when overrideColor is enabled', () => {
-      const css = getStyles(
-        makeViewSettings({ overrideColor: true, backgroundTextureId: 'paper' }),
-        darkTheme,
-      );
-      expect(css).toMatch(
-        /\*:has\(>\s*img\.monochrome-diagram\):not\(body\)\s*\{[^}]*background-color:\s*transparent;/,
-      );
-    });
-
-    it('keeps mix-blend-mode: screen without overriding invert filter when invertImgColorInDark is true', () => {
+    it('keeps dark-monochrome SVG filter when invertImgColorInDark is true', () => {
       const css = getStyles(makeViewSettings({ invertImgColorInDark: true }), darkTheme);
-      expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*screen;/);
-      expect(css).not.toMatch(/img\.monochrome-diagram\s*\{[^}]*filter:/);
+      expect(css).toMatch(
+        /img\.monochrome-diagram\s*\{[^}]*filter:\s*url\(#readest-dark-monochrome\);/,
+      );
+      expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*normal;/);
     });
 
     it('omits monochrome-diagram CSS rules completely in light mode', () => {
@@ -307,7 +299,7 @@ describe('imageClassifier', () => {
       expect(css).not.toContain('monochrome-diagram');
     });
 
-    it('uses screen blending instead of multiply for monochrome-diagram inside p[width][height]', () => {
+    it('uses normal blending instead of multiply for monochrome-diagram inside p[width][height]', () => {
       const style = document.createElement('style');
       style.textContent = getStyles(
         makeViewSettings({ transparentImageBackground: false, invertImgColorInDark: false }),
@@ -323,7 +315,7 @@ describe('imageClassifier', () => {
         const diag = document.getElementById('sized-diag')!;
         const photo = document.getElementById('sized-photo')!;
         expect(window.getComputedStyle(photo).mixBlendMode).toBe('multiply');
-        expect(window.getComputedStyle(diag).mixBlendMode).toBe('screen');
+        expect(window.getComputedStyle(diag).mixBlendMode).toBe('normal');
       } finally {
         style.remove();
         document.body.innerHTML = '';
