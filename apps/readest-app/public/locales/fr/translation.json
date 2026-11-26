@@ -3131,5 +3131,7 @@
   "Last active {{date}}": "Dernière activité le {{date}}",
   "Sign out {{device}}": "Déconnecter {{device}}",
   "Number of Devices": "Nombre d'appareils",
-  "Unlimited": "Illimité"
+  "Unlimited": "Illimité",
+  "Sync Custom Fonts": "Synchroniser les polices personnalisées",
+  "Syncs custom font files with this provider": "Synchronise les fichiers de polices personnalisées avec ce fournisseur"
 }

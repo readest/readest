@@ -2973,5 +2973,7 @@
   "Last active {{date}}": "最近活跃：{{date}}",
   "Sign out {{device}}": "让 {{device}} 退出登录",
   "Number of Devices": "设备数量",
-  "Unlimited": "无限制"
+  "Unlimited": "无限制",
+  "Sync Custom Fonts": "同步自定义字体",
+  "Syncs custom font files with this provider": "将自定义字体文件与此服务商同步"
 }

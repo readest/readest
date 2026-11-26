@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "අවසන් වරට සක්‍රිය: {{date}}",
   "Sign out {{device}}": "{{device}} ඉවත් කරන්න",
   "Number of Devices": "උපාංග ගණන",
-  "Unlimited": "අසීමිත"
+  "Unlimited": "අසීමිත",
+  "Sync Custom Fonts": "අභිරුචි අකුරු සමමුහුර්ත කරන්න",
+  "Syncs custom font files with this provider": "අභිරුචි අකුරු ගොනු මෙම සැපයුම්කරු සමඟ සමමුහුර්ත කරයි"
 }

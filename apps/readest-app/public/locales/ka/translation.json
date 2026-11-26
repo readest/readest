@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "ბოლო აქტივობა: {{date}}",
   "Sign out {{device}}": "{{device}}-დან გამოსვლა",
   "Number of Devices": "მოწყობილობების რაოდენობა",
-  "Unlimited": "შეუზღუდავი"
+  "Unlimited": "შეუზღუდავი",
+  "Sync Custom Fonts": "მორგებული შრიფტების სინქრონიზაცია",
+  "Syncs custom font files with this provider": "ასინქრონიზებს მორგებული შრიფტის ფაილებს ამ პროვაიდერთან"
 }

@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "Oxirgi faollik: {{date}}",
   "Sign out {{device}}": "{{device}} dan chiqish",
   "Number of Devices": "Qurilmalar soni",
-  "Unlimited": "Cheksiz"
+  "Unlimited": "Cheksiz",
+  "Sync Custom Fonts": "Maxsus shriftlarni sinxronlash",
+  "Syncs custom font files with this provider": "Maxsus shrift fayllarini ushbu provayder bilan sinxronlaydi"
 }

@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "Son etkinlik: {{date}}",
   "Sign out {{device}}": "{{device}} oturumunu kapat",
   "Number of Devices": "Cihaz sayısı",
-  "Unlimited": "Sınırsız"
+  "Unlimited": "Sınırsız",
+  "Sync Custom Fonts": "Özel Yazı Tiplerini Eşitle",
+  "Syncs custom font files with this provider": "Özel yazı tipi dosyalarını bu sağlayıcıyla eşitler"
 }

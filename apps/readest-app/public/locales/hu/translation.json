@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "Utoljára aktív: {{date}}",
   "Sign out {{device}}": "{{device}} kijelentkeztetése",
   "Number of Devices": "Eszközök száma",
-  "Unlimited": "Korlátlan"
+  "Unlimited": "Korlátlan",
+  "Sync Custom Fonts": "Egyéni betűtípusok szinkronizálása",
+  "Syncs custom font files with this provider": "Szinkronizálja az egyéni betűtípusfájlokat ezzel a szolgáltatóval"
 }

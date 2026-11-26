@@ -2973,5 +2973,7 @@
   "Last active {{date}}": "Kali terakhir aktif {{date}}",
   "Sign out {{device}}": "Log keluar {{device}}",
   "Number of Devices": "Bilangan peranti",
-  "Unlimited": "Tanpa had"
+  "Unlimited": "Tanpa had",
+  "Sync Custom Fonts": "Segerakkan Fon Tersuai",
+  "Syncs custom font files with this provider": "Menyegerakkan fail fon tersuai dengan pembekal ini"
 }

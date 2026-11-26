@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "Τελευταία δραστηριότητα: {{date}}",
   "Sign out {{device}}": "Αποσύνδεση {{device}}",
   "Number of Devices": "Αριθμός συσκευών",
-  "Unlimited": "Απεριόριστος"
+  "Unlimited": "Απεριόριστος",
+  "Sync Custom Fonts": "Συγχρονισμός προσαρμοσμένων γραμματοσειρών",
+  "Syncs custom font files with this provider": "Συγχρονίζει αρχεία προσαρμοσμένων γραμματοσειρών με αυτόν τον πάροχο"
 }

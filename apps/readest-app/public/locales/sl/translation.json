@@ -3210,5 +3210,7 @@
   "Last active {{date}}": "Nazadnje aktivna: {{date}}",
   "Sign out {{device}}": "Odjavi {{device}}",
   "Number of Devices": "Število naprav",
-  "Unlimited": "Neomejeno"
+  "Unlimited": "Neomejeno",
+  "Sync Custom Fonts": "Sinhroniziraj pisave po meri",
+  "Syncs custom font files with this provider": "Sinhronizira datoteke pisav po meri s tem ponudnikom"
 }

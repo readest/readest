@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "Laatst actief op {{date}}",
   "Sign out {{device}}": "{{device}} uitloggen",
   "Number of Devices": "Aantal apparaten",
-  "Unlimited": "Onbeperkt"
+  "Unlimited": "Onbeperkt",
+  "Sync Custom Fonts": "Aangepaste lettertypen synchroniseren",
+  "Syncs custom font files with this provider": "Synchroniseert aangepaste lettertypebestanden met deze provider"
 }

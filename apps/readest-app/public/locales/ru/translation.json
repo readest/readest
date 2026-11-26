@@ -3210,5 +3210,7 @@
   "Last active {{date}}": "Последняя активность: {{date}}",
   "Sign out {{device}}": "Выйти на {{device}}",
   "Number of Devices": "Количество устройств",
-  "Unlimited": "Без ограничений"
+  "Unlimited": "Без ограничений",
+  "Sync Custom Fonts": "Синхронизировать пользовательские шрифты",
+  "Syncs custom font files with this provider": "Синхронизирует файлы пользовательских шрифтов с этим провайдером"
 }
