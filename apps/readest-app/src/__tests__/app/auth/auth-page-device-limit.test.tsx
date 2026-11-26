@@ -80,6 +80,7 @@ vi.mock('@/utils/supabase', () => ({
       signOut: mocks.signOut,
       setSession: vi.fn(async () => ({ error: null })),
       getUser: vi.fn(async () => ({ data: { user: {} } })),
+      getSession: vi.fn(async () => ({ data: { session: null } })),
     },
   },
 }));

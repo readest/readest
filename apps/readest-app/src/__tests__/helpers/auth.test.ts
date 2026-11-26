@@ -195,6 +195,11 @@ describe('handleAuthCallback', () => {
   it('should login and navigate to next URL on successful auth', async () => {
     mockSetSession.mockResolvedValue({ error: null });
     mockGetUser.mockResolvedValue({ data: { user: fakeUser } });
+    // setSession refreshes an expired access token, which rotates the link's
+    // refresh token: the SDK's session holds the one that still works.
+    mockGetSession.mockResolvedValue({
+      data: { session: { access_token: 'good-token', refresh_token: 'rotated-refresh' } },
+    });
 
     handleAuthCallback({
       accessToken: 'good-token',
@@ -211,7 +216,7 @@ describe('handleAuthCallback', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/reader');
     // AuthProvider stores nothing when its device check fails, and an offline
     // launch restores the sign-in from this key.
-    expect(localStorage.getItem('refresh_token')).toBe('good-refresh');
+    expect(localStorage.getItem('refresh_token')).toBe('rotated-refresh');
   });
 
   it('should default next to "/" when not specified', async () => {

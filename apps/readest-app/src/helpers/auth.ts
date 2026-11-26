@@ -1,4 +1,4 @@
-import { User } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
 import { checkSignInDeviceLimit } from '@/libs/syncDevices';
 
@@ -47,9 +47,11 @@ export function parseOAuthCallbackUrl(url: string): OAuthCallbackParams {
 }
 
 // AuthProvider stores nothing for a new sign-in whose device check failed, and
-// an offline launch restores the sign-in from this key.
-const keepRefreshToken = (refreshToken: string) =>
-  localStorage.setItem('refresh_token', refreshToken);
+// an offline launch restores the sign-in from this key. It comes from the SDK's
+// session: setSession refreshes an expired link, which spends its refresh token.
+const keepRefreshToken = (session: Session | null) => {
+  if (session) localStorage.setItem('refresh_token', session.refresh_token);
+};
 
 export function handleAuthCallback({
   accessToken,
@@ -76,7 +78,7 @@ export function handleAuthCallback({
       }
       if (data.session) {
         login(data.session.access_token, data.session.user);
-        keepRefreshToken(data.session.refresh_token);
+        keepRefreshToken(data.session);
       }
       navigate('/library');
       return;
@@ -102,7 +104,7 @@ export function handleAuthCallback({
         return;
       }
       login(accessToken, user);
-      keepRefreshToken(refreshToken);
+      keepRefreshToken((await supabase.auth.getSession()).data.session);
       if (type === 'recovery') {
         navigate('/auth/recovery');
         return;
