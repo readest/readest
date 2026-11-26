@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
-import { DARK_MONOCHROME_FILTER, mountDarkMonochromeFilter } from '@/utils/imageBackground';
+import { getDarkMonochromeFilter, mountDarkMonochromeFilter } from '@/utils/imageBackground';
 import { getStyles, type ThemeCode } from '@/utils/style';
 import {
   DEFAULT_ANNOTATOR_CONFIG,
@@ -62,7 +62,7 @@ const renderPixels = async (fgColor: string) => {
   output.height = 1;
   const result = output.getContext('2d')!;
   mountDarkMonochromeFilter(document, fgColor);
-  result.filter = DARK_MONOCHROME_FILTER;
+  result.filter = getDarkMonochromeFilter(fgColor);
   result.drawImage(image, 0, 0);
   return [...result.getImageData(0, 0, 9, 1).data];
 };
@@ -83,30 +83,39 @@ const sampleScreenshotPixel = async (frame: HTMLElement, x: number, y: number) =
 };
 
 describe('dark monochrome SVG filter (#7981)', () => {
-  it('turns white transparent, maps black to fg, and keeps transparent pixels clear', async () => {
-    const pixels = await renderPixels('#c6c6c6');
-    expect(pixels[3]).toBe(0); // #ffffff -> transparent
-    expect(pixels[7]).toBe(0); // #f5f5f5 -> transparent
-    expect(pixels.slice(8, 12)).toEqual([198, 198, 198, 255]); // #000000 -> #c6c6c6
-    expect(pixels[15]).toBeGreaterThan(0); // #808080 -> partial alpha
-    expect(pixels[15]).toBeLessThan(255);
-    expect(pixels[16]).toBeGreaterThan(pixels[17]!); // red accent stays reddish
-    expect(pixels[19]).toBe(255); // opaque red keeps full alpha
-    expect(pixels.slice(20, 24)).toEqual([0, 0, 0, 0]); // transparent stays transparent
-    // semi-transparent black keeps full fg brightness and alpha=128
-    expect(Math.abs(pixels[24]! - 198)).toBeLessThanOrEqual(2);
-    expect(Math.abs(pixels[25]! - 198)).toBeLessThanOrEqual(2);
-    expect(Math.abs(pixels[26]! - 198)).toBeLessThanOrEqual(2);
-    expect(pixels[27]).toBe(128);
-    // semi-transparent gray stays visible (not dropped to 0)
-    expect(pixels[31]).toBeGreaterThan(40);
-    // opaque yellow keeps full alpha and yellow hue
-    expect(pixels[32]).toBeGreaterThan(pixels[34]!);
-    expect(pixels[33]).toBeGreaterThan(pixels[34]!);
-    expect(pixels[35]).toBe(255);
-  });
+  // Drawn through a canvas filter, which WebKit doesn't apply; the test below
+  // checks the same filter where the reader uses it.
+  const isWebKit = /AppleWebKit/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+  it.skipIf(isWebKit)(
+    'turns white transparent, maps black to fg, and keeps transparent pixels clear',
+    async () => {
+      const pixels = await renderPixels('#c6c6c6');
+      expect(pixels[3]).toBe(0); // #ffffff -> transparent
+      expect(pixels[7]).toBe(0); // #f5f5f5 -> transparent
+      expect(pixels.slice(8, 12)).toEqual([198, 198, 198, 255]); // #000000 -> #c6c6c6
+      expect(pixels[15]).toBeGreaterThan(0); // #808080 -> partial alpha
+      expect(pixels[15]).toBeLessThan(255);
+      expect(pixels[16]).toBeGreaterThan(pixels[17]!); // red accent stays reddish
+      expect(pixels[19]).toBe(255); // opaque red keeps full alpha
+      expect(pixels.slice(20, 24)).toEqual([0, 0, 0, 0]); // transparent stays transparent
+      // semi-transparent black keeps full fg brightness and alpha=128
+      expect(Math.abs(pixels[24]! - 198)).toBeLessThanOrEqual(2);
+      expect(Math.abs(pixels[25]! - 198)).toBeLessThanOrEqual(2);
+      expect(Math.abs(pixels[26]! - 198)).toBeLessThanOrEqual(2);
+      expect(pixels[27]).toBe(128);
+      // semi-transparent gray stays visible (not dropped to 0)
+      expect(pixels[31]).toBeGreaterThan(40);
+      // opaque yellow keeps full alpha and yellow hue
+      expect(pixels[32]).toBeGreaterThan(pixels[34]!);
+      expect(pixels[33]).toBeGreaterThan(pixels[34]!);
+      expect(pixels[35]).toBe(255);
+    },
+  );
 
-  it('blends white-background gaiji and monochrome-diagram over Gray Dark iframe without black boxes', async () => {
+  // The reader's section iframe has no background of its own: foliate paints
+  // the page color outside it. Screen-blending an inverted image there left a
+  // black box on every page that isn't black.
+  it('draws gaiji and diagrams on the page color, and follows a theme change', async () => {
     const imgCanvas = document.createElement('canvas');
     imgCanvas.width = 40;
     imgCanvas.height = 40;
@@ -132,25 +141,31 @@ describe('dark monochrome SVG filter (#7981)', () => {
       await new Promise((resolve) => (frame.onload = resolve));
       const doc = frame.contentDocument!;
       const style = doc.createElement('style');
-      style.textContent = `${getStyles({ ...baseSettings, transparentImageBackground: true }, grayDarkTheme)}
-        html, body { margin: 0 !important; padding: 0 !important; background: transparent !important; }`;
       doc.head.appendChild(style);
-      mountDarkMonochromeFilter(doc, grayDarkTheme.fg);
+      // What the reader does on load and on a theme change: set the styles,
+      // then mount the filter they name.
+      const applyTheme = async (theme: ThemeCode, settings: Partial<ViewSettings> = {}) => {
+        style.textContent = `${getStyles({ ...baseSettings, ...settings }, theme)}
+          html, body { margin: 0 !important; padding: 0 !important; background: transparent !important; }`;
+        mountDarkMonochromeFilter(doc, theme.fg);
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      };
       await Promise.all(Array.from(doc.querySelectorAll('img')).map((i) => i.decode()));
-      await new Promise((resolve) => setTimeout(resolve, 150));
 
-      // White background of gaiji (x=4, y=4) and diagram (x=44, y=4) must show Gray Dark #444444 (68,68,68)
-      expect(await sampleScreenshotPixel(wrapper, 4, 4)).toEqual([68, 68, 68]);
-      expect(await sampleScreenshotPixel(wrapper, 44, 4)).toEqual([68, 68, 68]);
-      // Black ink center of gaiji (x=20, y=20) and diagram (x=60, y=20) must show #c6c6c6 (198,198,198)
-      expect(await sampleScreenshotPixel(wrapper, 20, 20)).toEqual([198, 198, 198]);
-      expect(await sampleScreenshotPixel(wrapper, 60, 20)).toEqual([198, 198, 198]);
+      for (const transparentImageBackground of [false, true]) {
+        await applyTheme(grayDarkTheme, { transparentImageBackground });
+        // the white ground of the gaiji (4,4) and the diagram (44,4) shows the page
+        expect(await sampleScreenshotPixel(wrapper, 4, 4)).toEqual([68, 68, 68]);
+        expect(await sampleScreenshotPixel(wrapper, 44, 4)).toEqual([68, 68, 68]);
+        // their black ink (20,20) and (60,20) takes the text color
+        expect(await sampleScreenshotPixel(wrapper, 20, 20)).toEqual([198, 198, 198]);
+        expect(await sampleScreenshotPixel(wrapper, 60, 20)).toEqual([198, 198, 198]);
+      }
 
-      // Switching fgColor to Sepia Dark (#ffd595) updates ink color without black box
-      mountDarkMonochromeFilter(doc, '#ffd595');
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await applyTheme({ ...grayDarkTheme, fg: '#ffd595' });
       expect(await sampleScreenshotPixel(wrapper, 4, 4)).toEqual([68, 68, 68]);
       expect(await sampleScreenshotPixel(wrapper, 20, 20)).toEqual([255, 213, 149]);
+      expect(await sampleScreenshotPixel(wrapper, 60, 20)).toEqual([255, 213, 149]);
     } finally {
       wrapper.remove();
     }

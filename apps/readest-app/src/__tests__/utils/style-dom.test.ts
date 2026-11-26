@@ -519,20 +519,20 @@ describe('getStyles', () => {
     expect(clampRule).not.toContain('vertical-align');
   });
 
-  it('applies dark-monochrome SVG filter to inline glyphs and gaiji in dark mode (#7981)', () => {
+  it('draws inline glyphs and gaiji as ink in the text color in dark mode (#7373, #7981)', () => {
     const vs = makeViewSettings({ invertImgColorInDark: false });
     const themeCode: ThemeCode = {
-      bg: '#444444',
-      fg: '#c6c6c6',
-      primary: '#88ccee',
+      bg: '#171717',
+      fg: '#ffffff',
+      primary: '#0066cc',
       palette: {
-        'base-100': '#444444',
-        'base-200': '#3a3a3a',
-        'base-300': '#303030',
-        'base-content': '#c6c6c6',
+        'base-100': '#171717',
+        'base-200': '#222222',
+        'base-300': '#333333',
+        'base-content': '#ffffff',
         neutral: '#cccccc',
         'neutral-content': '#444444',
-        primary: '#88ccee',
+        primary: '#0066cc',
         secondary: '#3399ff',
         accent: '#0055aa',
       },
@@ -540,29 +540,29 @@ describe('getStyles', () => {
     };
     const css = getStyles(vs, themeCode);
     expect(css).toMatch(
-      /img\[class\*="gaiji"\]\s*\{[^}]*filter:\s*url\(#readest-dark-monochrome\);/,
+      /img\[class\*="gaiji"\]\s*\{[^}]*filter:\s*url\(#readest-dark-monochrome-ffffff\);/,
     );
     expect(css).toMatch(/img\[class\*="gaiji"\]\s*\{[^}]*mix-blend-mode:\s*normal;/);
   });
 
-  it('keeps inline and gaiji parent backgrounds transparent over a background texture in light mode (#7373)', () => {
+  it('keeps inline and gaiji parent backgrounds transparent over a background texture (#7373)', () => {
     const vs = makeViewSettings({ overrideColor: true, backgroundTextureId: 'leaves' });
     const themeCode: ThemeCode = {
-      bg: '#ffffff',
-      fg: '#171717',
+      bg: '#171717',
+      fg: '#ffffff',
       primary: '#0066cc',
       palette: {
-        'base-100': '#ffffff',
-        'base-200': '#f5f5f5',
-        'base-300': '#eeeeee',
-        'base-content': '#171717',
-        neutral: '#444444',
-        'neutral-content': '#ffffff',
+        'base-100': '#171717',
+        'base-200': '#222222',
+        'base-300': '#333333',
+        'base-content': '#ffffff',
+        neutral: '#cccccc',
+        'neutral-content': '#444444',
         primary: '#0066cc',
         secondary: '#3399ff',
         accent: '#0055aa',
       },
-      isDarkMode: false,
+      isDarkMode: true,
     };
     const css = getStyles(vs, themeCode);
     expect(css).toMatch(

@@ -278,20 +278,28 @@ describe('imageClassifier', () => {
   });
 
   describe('CSS styling for monochrome diagrams in dark mode', () => {
-    it('applies dark-monochrome SVG filter and normal blending to img.monochrome-diagram in dark mode', () => {
+    it('draws img.monochrome-diagram as ink in the text color in dark mode (#7981)', () => {
       const css = getStyles(makeViewSettings(), darkTheme);
       expect(css).toMatch(
-        /img\.monochrome-diagram\s*\{[^}]*filter:\s*url\(#readest-dark-monochrome\);/,
+        /img\.monochrome-diagram\s*\{[^}]*filter:\s*url\(#readest-dark-monochrome-e0e0e0\);/,
       );
       expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*normal;/);
     });
 
-    it('keeps dark-monochrome SVG filter when invertImgColorInDark is true', () => {
-      const css = getStyles(makeViewSettings({ invertImgColorInDark: true }), darkTheme);
-      expect(css).toMatch(
-        /img\.monochrome-diagram\s*\{[^}]*filter:\s*url\(#readest-dark-monochrome\);/,
+    it('keeps background transparent over a background texture when overrideColor is enabled', () => {
+      const css = getStyles(
+        makeViewSettings({ overrideColor: true, backgroundTextureId: 'paper' }),
+        darkTheme,
       );
-      expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*normal;/);
+      expect(css).toMatch(
+        /\*:has\(>\s*img\.monochrome-diagram\):not\(body\)\s*\{[^}]*background-color:\s*transparent;/,
+      );
+    });
+
+    it('keeps mix-blend-mode: screen without overriding invert filter when invertImgColorInDark is true', () => {
+      const css = getStyles(makeViewSettings({ invertImgColorInDark: true }), darkTheme);
+      expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*screen;/);
+      expect(css).not.toMatch(/img\.monochrome-diagram\s*\{[^}]*filter:/);
     });
 
     it('omits monochrome-diagram CSS rules completely in light mode', () => {
@@ -299,7 +307,7 @@ describe('imageClassifier', () => {
       expect(css).not.toContain('monochrome-diagram');
     });
 
-    it('uses normal blending instead of multiply for monochrome-diagram inside p[width][height]', () => {
+    it('blends monochrome-diagram normally instead of multiply inside p[width][height]', () => {
       const style = document.createElement('style');
       style.textContent = getStyles(
         makeViewSettings({ transparentImageBackground: false, invertImgColorInDark: false }),

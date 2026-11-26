@@ -135,7 +135,7 @@ describe('resolveImagePlate', () => {
     expect(
       resolveImagePlate({
         pagePlate: '#ffffff',
-        filter: 'url("#readest-dark-monochrome")',
+        filter: 'url("#readest-dark-monochrome-c6c6c6")',
         ink: lineArt,
       }),
     ).toBeNull();

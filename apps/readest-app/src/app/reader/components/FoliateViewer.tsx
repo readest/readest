@@ -1423,7 +1423,7 @@ const FoliateViewer: React.FC<{
           applyFixedlayoutStyles(doc, pageSettings, undefined, bookData?.book?.format);
         }
         applyThemeModeClass(doc, isDarkMode);
-        mountDarkMonochromeFilter(doc, (themeCode ?? getThemeCode()).fg);
+        mountDarkMonochromeFilter(doc, getThemeCode().fg);
         classifyAndTagStandaloneDiagrams(doc, isDarkMode, bookData?.isFixedLayout);
         applyScrollModeClass(doc, viewSettings.scrolled || false);
         applyEinkModeAttribute(doc, viewSettings.isEink || false);
