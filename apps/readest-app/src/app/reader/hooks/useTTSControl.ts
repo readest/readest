@@ -240,6 +240,23 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     eventDispatcher.dispatch('create-tts-highlight', { bookKey, ...sentence });
   };
 
+  const handleHighlightPassage = () => {
+    const passage = ttsControllerRef.current?.getSpokenPassage();
+    if (passage) {
+      eventDispatcher.dispatch('create-tts-highlight', { bookKey, ...passage });
+    } else {
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: _('Wait for Read Aloud to reach a passage.'),
+        timeout: 2000,
+      });
+    }
+  };
+
+  const handleMediaHighlightPassage = (event: CustomEvent) => {
+    if (event.detail?.bookKey === bookKey) handleHighlightPassage();
+  };
+
   // Set the TTS rate from the app bus. The RSVP overlay is full-screen, so its
   // rate picker can't reach the TTS panel; it dispatches `tts-set-rate` and we
   // reuse the same controller rate-change path the panel uses (handleSetRate,
@@ -287,6 +304,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     eventDispatcher.on('tts-toggle-play', handleTTSTogglePlay);
     eventDispatcher.on('tts-set-rate', handleTTSSetRate);
     eventDispatcher.on('tts-highlight-sentence', handleTTSHighlightSentence);
+    eventDispatcher.on('tts-highlight-passage', handleMediaHighlightPassage);
     eventDispatcher.on('tts-sync-request', handleTTSSyncRequest);
     return () => {
       eventDispatcher.off('tts-speak', handleTTSSpeak);
@@ -297,6 +315,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       eventDispatcher.off('tts-toggle-play', handleTTSTogglePlay);
       eventDispatcher.off('tts-set-rate', handleTTSSetRate);
       eventDispatcher.off('tts-highlight-sentence', handleTTSHighlightSentence);
+      eventDispatcher.off('tts-highlight-passage', handleMediaHighlightPassage);
       eventDispatcher.off('tts-sync-request', handleTTSSyncRequest);
       if (ttsControllerRef.current) {
         const controller = ttsControllerRef.current;
@@ -426,6 +445,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           preprocessCallback: preprocessSSMLForTTS,
           onSectionChange: handleSectionChange,
         });
+        ttsMediaBridge.refreshPlaybackState(controller);
         const speakingLang = controller.getSpeakingLang();
         if (speakingLang) setTtsLang(speakingLang);
         syncClientCapabilities();
@@ -1487,6 +1507,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     bookRemainingSec: ttsTime.bookRemainingSec,
     finishAtTimestamp: ttsTime.finishAtTimestamp,
     handleTogglePlay,
+    handleHighlightPassage,
     handleBackward,
     handleForward,
     handleToggleLoop,

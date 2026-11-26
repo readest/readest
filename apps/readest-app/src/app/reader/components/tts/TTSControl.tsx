@@ -147,6 +147,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onTogglePlay={tts.handleTogglePlay}
           onBackward={tts.handleBackward}
           onForward={tts.handleForward}
+          onHighlight={
+            tts.getController()?.supportsPassageHighlight ? tts.handleHighlightPassage : undefined
+          }
           loopState={tts.loopState}
           onToggleLoop={tts.handleToggleLoop}
           onGetLyricLoopRange={tts.handleGetLyricLoopRange}

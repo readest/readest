@@ -7,6 +7,7 @@
   res/values-<locale>/strings.xml alongside this file.
 -->
 <resources>
+    <string name="readest_highlight_current_passage">Highlight Current Passage</string>
     <string name="readest_auto_library_root">Library</string>
     <plurals name="readest_auto_library_count">
         <item quantity="one">%d book</item>

@@ -96,6 +96,7 @@ pub struct UpdateMediaSessionStateRequest {
     pub session_id: Option<String>,
     pub position: Option<f64>,
     pub duration: Option<f64>,
+    pub can_highlight_passage: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

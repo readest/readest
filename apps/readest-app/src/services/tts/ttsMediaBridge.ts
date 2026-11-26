@@ -11,6 +11,7 @@
 // playing HTMLMediaElement is required (iOS lock screen, desktop Chromium
 // media keys), and must survive hook unmount for a detached session.
 
+import { eventDispatcher } from '@/utils/event';
 import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
@@ -144,6 +145,10 @@ export class TTSMediaBridge {
     return this.#controller !== null;
   }
 
+  refreshPlaybackState(controller: PlaybackSource): void {
+    if (this.#controller === controller) void this.#updatePlaybackState();
+  }
+
   async bind(controller: PlaybackSource, meta: TTSMediaBridgeMeta): Promise<void> {
     if (this.#controller === controller) {
       // Re-bind on adopt: refresh the meta (new bookKey / live label source)
@@ -267,6 +272,7 @@ export class TTSMediaBridge {
         }
       }
       if (mediaSession instanceof TauriMediaSession) {
+        mediaSession.setActionHandler('highlightpassage', null);
         void mediaSession.setActive({ active: false, sessionId: this.#meta?.bookKey });
       }
     }
@@ -369,6 +375,13 @@ export class TTSMediaBridge {
       void controller()?.backward();
     });
     if (mediaSession instanceof TauriMediaSession) {
+      mediaSession.setActionHandler('highlightpassage', () => {
+        const ctrl = controller();
+        const bookKey = this.#meta?.bookKey;
+        if (bookKey && ctrl && this.#canHighlightPassage(ctrl)) {
+          eventDispatcher.dispatch('tts-highlight-passage', { bookKey });
+        }
+      });
       mediaSession.setActionHandler('seekto', ((positionMs: number) => {
         void controller()?.seekToTime(positionMs / 1000);
       }) as (position: number) => void);
@@ -465,6 +478,7 @@ export class TTSMediaBridge {
         playing: ctrl.state === 'playing',
         position: Math.round(position * 1000),
         duration: Math.round(info.duration * 1000),
+        canHighlightPassage: this.#canHighlightPassage(ctrl),
       });
     } else if ('setPositionState' in mediaSession) {
       try {
@@ -506,6 +520,10 @@ export class TTSMediaBridge {
     this.#skipping = false;
   }
 
+  #canHighlightPassage(ctrl: PlaybackSource): boolean {
+    return ctrl.isViewAttached && ctrl.supportsPassageHighlight === true && !ctrl.terminated;
+  }
+
   async #updatePlaybackState(): Promise<void> {
     const mediaSession = this.#mediaSession;
     const ctrl = this.#controller;
@@ -518,7 +536,10 @@ export class TTSMediaBridge {
     if (this.#skipping && !ctrl.terminated) return;
     if (ctrl.terminated) this.#endSkip();
     if (mediaSession instanceof TauriMediaSession) {
-      await mediaSession.updatePlaybackState({ playing: ctrl.state === 'playing' });
+      await mediaSession.updatePlaybackState({
+        playing: ctrl.state === 'playing',
+        canHighlightPassage: this.#canHighlightPassage(ctrl),
+      });
     } else {
       const playing = ctrl.state === 'playing';
       mediaSession.playbackState = playing ? 'playing' : 'paused';

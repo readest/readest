@@ -130,6 +130,7 @@ export class TTSSessionManager extends EventTarget {
     if (!session) return;
     const wasPlaying = session.controller.state === 'playing' || !session.controller.terminated;
     session.controller.detachView();
+    ttsMediaBridge.refreshPlaybackState(session.controller);
     this.#emitSessionChanged('detached');
     // Closing a book while it keeps talking inverts years of learned
     // behavior; announce it exactly once, ever.

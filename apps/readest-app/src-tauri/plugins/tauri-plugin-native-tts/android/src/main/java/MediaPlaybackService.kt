@@ -35,6 +35,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.media.MediaBrowserServiceCompat
+import androidx.media.MediaSessionManager
 import androidx.media.session.MediaButtonReceiver
 import androidx.core.content.FileProvider
 import androidx.media3.common.MediaItem
@@ -109,7 +110,40 @@ internal object MediaSessionActivationState {
 class MediaPlaybackService : MediaBrowserServiceCompat() {
     private var mediaSession: MediaSessionCompat? = null
     private lateinit var player: ExoPlayer
-    private lateinit var stateBuilder: PlaybackStateCompat.Builder
+    private var canHighlightPassage = false
+    private val highlightAvailable: Boolean
+        get() = sessionActive && !coldTtsActive && canHighlightPassage
+
+    private val stateBuilder: PlaybackStateCompat.Builder
+        get() = PlaybackStateCompat.Builder().setActions(
+            PlaybackStateCompat.ACTION_PLAY or
+            PlaybackStateCompat.ACTION_PLAY_PAUSE or
+            PlaybackStateCompat.ACTION_PAUSE or
+            PlaybackStateCompat.ACTION_STOP or
+            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+            PlaybackStateCompat.ACTION_SEEK_TO or
+            PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
+            PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
+        ).apply {
+            if (highlightAvailable) addCustomAction(
+                HIGHLIGHT_PASSAGE,
+                getString(R.string.readest_highlight_current_passage),
+                R.drawable.ic_highlight_passage,
+            )
+        }
+
+    private val highlightReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == HIGHLIGHT_PASSAGE) highlightCurrentPassage()
+        }
+    }
+
+    private fun highlightCurrentPassage() {
+        if (highlightAvailable) {
+            pluginEventTrigger?.invoke("media-session-highlight-passage", JSObject())
+        }
+    }
     private lateinit var audioManager: AudioManager
     private val mainHandler = Handler(Looper.getMainLooper())
     private val coldTextExecutor = Executors.newSingleThreadExecutor()
@@ -260,6 +294,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         private const val RESUME_MEDIA_ID = "readest_resume_last_book"
         const val ACTION_ACTIVATE_SESSION = "ACTIVATE_SESSION"
         private const val ACTION_START_COLD_EPUB = "START_COLD_EPUB"
+        private const val HIGHLIGHT_PASSAGE = "com.readest.native_tts.HIGHLIGHT_PASSAGE"
         private const val EXTRA_BOOK_HASH = "book_hash"
         private const val COLD_TTS_INIT_TIMEOUT_MS = 8_000L
 
@@ -485,6 +520,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 // Explicit WebView playback takes ownership even if Pause
                 // canceled the pending automatic book-selection handoff.
                 service.clearColdTtsPlayback()
+                service.canHighlightPassage = false
                 service.resetArtworkForBook(bookHash)
             }
         }
@@ -525,12 +561,17 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             playing: Boolean,
             position: Long?,
             duration: Long?,
+            canHighlightPassage: Boolean?,
         ) {
             if (!MediaSessionActivationState.acceptsUpdate(sessionId)) return
             if (position != null) currentPositionMs = position
             if (duration != null) currentDurationMs = duration
             val service = instance ?: return
-            Handler(Looper.getMainLooper()).post { service.applyPlaybackState(playing) }
+            Handler(Looper.getMainLooper()).post {
+                if (!MediaSessionActivationState.acceptsUpdate(sessionId)) return@post
+                canHighlightPassage?.let { service.canHighlightPassage = it }
+                service.applyPlaybackState(playing)
+            }
         }
     }
 
@@ -548,18 +589,13 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         player = ExoPlayer.Builder(this).build()
 
-        mediaSession = MediaSessionCompat(baseContext, "ReadestMediaSession").apply {
-            stateBuilder = PlaybackStateCompat.Builder().setActions(
-                PlaybackStateCompat.ACTION_PLAY or
-                PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                PlaybackStateCompat.ACTION_PAUSE or
-                PlaybackStateCompat.ACTION_STOP or
-                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                PlaybackStateCompat.ACTION_SEEK_TO or
-                PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
-                PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.registerReceiver(
+                this, highlightReceiver, IntentFilter(HIGHLIGHT_PASSAGE), ContextCompat.RECEIVER_NOT_EXPORTED,
             )
+        }
+
+        mediaSession = MediaSessionCompat(baseContext, "ReadestMediaSession").apply {
             setPlaybackState(
                 stateBuilder.setState(PlaybackStateCompat.STATE_STOPPED, 0L, 1f).build()
             )
@@ -633,6 +669,7 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         if (!sessionActive) return
         clearColdTtsPlayback()
         sessionActive = false
+        canHighlightPassage = false
 
         player.playWhenReady = false
         player.stop()
@@ -1014,6 +1051,14 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         // Scrubber drag: hand the target back to the JS controller, which owns
         // the real audio timeline (seekToTime), and optimistically move the
         // thumb so the lock screen feels responsive before the seek lands.
+        override fun onCustomAction(action: String?, extras: Bundle?) {
+            if (action != HIGHLIGHT_PASSAGE) return
+            val caller = mediaSession?.currentControllerInfo ?: return
+            if (MediaSessionManager.getSessionManager(this@MediaPlaybackService).isTrustedForMediaControl(caller)) {
+                highlightCurrentPassage()
+            }
+        }
+
         override fun onSeekTo(pos: Long) {
             currentPositionMs = pos
             pluginEventTrigger?.invoke("media-session-seek", JSObject().apply { put("position", pos) })
@@ -1146,9 +1191,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 )
                 .build()
         )
-        // stateBuilder is reused for every later state write, so the error must
-        // not stick to it.
-        stateBuilder.setErrorMessage(PlaybackStateCompat.ERROR_CODE_UNKNOWN_ERROR, "")
         applyMetadata()
     }
 
@@ -1366,6 +1408,19 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                     PlaybackStateCompat.ACTION_SKIP_TO_NEXT
                 )
             )
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && highlightAvailable) {
+                addAction(
+                    R.drawable.ic_highlight_passage,
+                    getString(R.string.readest_highlight_current_passage),
+                    PendingIntent.getBroadcast(
+                        this@MediaPlaybackService,
+                        0,
+                        Intent(HIGHLIGHT_PASSAGE).setPackage(packageName),
+                        PendingIntent.FLAG_IMMUTABLE,
+                    ),
+                )
+            }
 
             setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
@@ -1587,6 +1642,9 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         cancelSelectionWatchdog()
         clearColdTtsPlayback()
         coldTextExecutor.shutdownNow()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            unregisterReceiver(highlightReceiver)
+        }
         if (noisyReceiverRegistered) {
             noisyReceiverRegistered = false
             unregisterReceiver(becomingNoisyReceiver)

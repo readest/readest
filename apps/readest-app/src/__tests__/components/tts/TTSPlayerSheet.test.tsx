@@ -225,6 +225,17 @@ describe('TTSPlayerSheet', () => {
     localStorage.removeItem('ttsFavoriteVoices');
   });
 
+  test('highlights the current passage without toggling playback', () => {
+    const onHighlight = vi.fn();
+    const props = makeProps({ onHighlight });
+    render(<TTSPlayerSheet {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Highlight Current Passage' }));
+
+    expect(onHighlight).toHaveBeenCalledOnce();
+    expect(props.onTogglePlay).not.toHaveBeenCalled();
+  });
+
   test('opened while the clients initialize, it loads the voices once they are ready', async () => {
     const props = makeProps({
       clientsReady: false,

@@ -4,6 +4,7 @@ import {
   MdAlarm,
   MdArrowBackIosNew,
   MdCheck,
+  MdBookmarkAdd,
   MdClose,
   MdKeyboardArrowLeft,
   MdKeyboardArrowRight,
@@ -104,6 +105,7 @@ type TTSPlayerSheetProps = {
   onTogglePlay: () => void;
   onBackward: (byMark: boolean) => void;
   onForward: (byMark: boolean) => void;
+  onHighlight?: () => void;
   loopState: TTSLoopState;
   onToggleLoop: () => void;
   onGetLyricLoopRange: () => { start: number; end: number } | null;
@@ -155,6 +157,7 @@ const TTSPlayerSheet = ({
   onTogglePlay,
   onBackward,
   onForward,
+  onHighlight,
   loopState,
   onToggleLoop,
   onGetLyricLoopRange,
@@ -771,6 +774,17 @@ const TTSPlayerSheet = ({
               </span>
             </button>
           </div>
+          {onHighlight && (
+            <button
+              type='button'
+              className='not-eink:bg-base-200 eink-bordered btn btn-ghost w-full gap-2 rounded-xl'
+              onClick={onHighlight}
+              disabled={buffering}
+            >
+              <MdBookmarkAdd size={iconSize18} />
+              {_('Highlight Current Passage')}
+            </button>
+          )}
           {!isNarrating && downloads.supported && downloads.chapters.length > 0 && (
             <button
               type='button'

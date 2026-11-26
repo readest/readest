@@ -2588,8 +2588,27 @@ export class TTSController extends EventTarget {
     this.ttsTargetLang = lang;
   }
 
+  get supportsPassageHighlight(): boolean {
+    return this.ttsClient.getCapabilities().textHighlight !== false;
+  }
+
+  getSpokenPassage(): { cfi: string; text: string } | null {
+    if (!this.supportsPassageHighlight) return null;
+    if (
+      this.#highlightGranularity === 'word' &&
+      this.#wordHighlightActive &&
+      this.#lastSpeakWordRange
+    ) {
+      return this.#getPassageAtRange(this.#lastSpeakWordRange);
+    }
+    return this.getSpokenSentence();
+  }
+
   getSpokenSentence(): { cfi: string; text: string } | null {
-    const range = this.#getTts()?.getLastRange();
+    return this.#getPassageAtRange(this.#getTts()?.getLastRange());
+  }
+
+  #getPassageAtRange(range: Range | null | undefined): { cfi: string; text: string } | null {
     if (!range || this.#ttsSectionIndex < 0) return null;
     try {
       const cfi = this.view.getCFI(this.#ttsSectionIndex, range);

@@ -329,10 +329,11 @@ describe('TauriMediaSession.setActive', () => {
   test('a stale teardown cannot unregister replacement session listeners', async () => {
     const oldUnregisters: ReturnType<typeof vi.fn>[] = [];
     const newUnregisters: ReturnType<typeof vi.fn>[] = [];
+    const listenersPerSession = 9;
     let listenerCount = 0;
     vi.mocked(addPluginListener).mockImplementation(async () => {
       const unregister = vi.fn().mockResolvedValue(undefined);
-      (listenerCount++ < 8 ? oldUnregisters : newUnregisters).push(unregister);
+      (listenerCount++ < listenersPerSession ? oldUnregisters : newUnregisters).push(unregister);
       return { unregister } as unknown as PluginListener;
     });
 
@@ -364,9 +365,9 @@ describe('TauriMediaSession.setActive', () => {
     await staleTeardown;
     await session.updateMetadata({ title: 'Replacement' });
 
-    expect(oldUnregisters).toHaveLength(8);
+    expect(oldUnregisters).toHaveLength(listenersPerSession);
     expect(oldUnregisters.every((unregister) => unregister.mock.calls.length === 1)).toBe(true);
-    expect(newUnregisters).toHaveLength(8);
+    expect(newUnregisters).toHaveLength(listenersPerSession);
     expect(newUnregisters.every((unregister) => unregister.mock.calls.length === 0)).toBe(true);
     expect(invoke).toHaveBeenLastCalledWith('plugin:native-tts|update_media_session_metadata', {
       payload: { title: 'Replacement', sessionId: 'new-session' },
@@ -398,12 +399,17 @@ describe('TauriMediaSession media-session-seek', () => {
 
     const session = new TauriMediaSession();
     const seekHandler = vi.fn();
+    const highlightHandler = vi.fn();
+    session.setActionHandler('highlightpassage', highlightHandler);
     session.setActionHandler('seekto', seekHandler as (position: number) => void);
     await session.setActive({ active: true });
 
     // Native fires the payload directly: { position }.
     listeners['media-session-seek']!({ position: 42000 });
     expect(seekHandler).toHaveBeenCalledWith(42000);
+
+    listeners['media-session-highlight-passage']!({});
+    expect(highlightHandler).toHaveBeenCalledOnce();
   });
 });
 
