@@ -47,6 +47,23 @@ export const needsProxy = (url: string): boolean => {
   return isWebAppPlatform() && url.startsWith('http');
 };
 
+const isOnHost = (url: string, domain: string): boolean => {
+  try {
+    const { hostname } = new URL(url);
+    return hostname === domain || hostname.endsWith(`.${domain}`);
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * standardebooks.org answers web.readest.com's proxy with 403, but serves its
+ * covers to browsers with `Access-Control-Allow-Origin: *`, so the web app
+ * loads them directly. CachedImage requests them in CORS mode.
+ */
+export const needsImageProxy = (url: string): boolean =>
+  needsProxy(url) && !isOnHost(url, 'standardebooks.org');
+
 /**
  * On iOS/macOS the webview serves the app from the secure `tauri://localhost`
  * origin, so a plain-http cover in an <img> is mixed content. WebKit's Local
@@ -84,12 +101,12 @@ export const withOriginSuppressed = (headers: Record<string, string>): Record<st
     : headers;
 
 const PROXY_OVERRIDES: Record<string, string> = {
-  standardebooks: NODE_OPDS_PROXY_URL,
+  'standardebooks.org': NODE_OPDS_PROXY_URL,
 };
 
 const getProxyBaseUrl = (url: string): string => {
   for (const [domain, proxyUrl] of Object.entries(PROXY_OVERRIDES)) {
-    if (url.includes(domain)) {
+    if (isOnHost(url, domain)) {
       return proxyUrl;
     }
   }
