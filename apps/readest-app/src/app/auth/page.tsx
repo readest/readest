@@ -69,10 +69,13 @@ export default function AuthPage() {
   );
   // A Free plan sign-in whose device check is running, or that is held.
   const pendingSignIn = useRef(false);
-  // Moves on whenever the sign-in on this page ends or its session is
-  // replaced (Cancel, Go Back, sign-out, a newer session, leaving the page), so
-  // a device check or sign-out started before can't sign in or hold it.
-  const signInAttempt = useRef(0);
+  // Counts abandoned sign-ins (Cancel, Go Back, sign-out, leaving the page), so
+  // a device check, device sign-out or link callback that answers afterwards
+  // can't sign in or hold the session they ended.
+  const abandonedSignIns = useRef(0);
+  // The newest session this page heard of: a device check answers only for
+  // it, and a held sign-in finishes with it, after a token refresh too.
+  const latestSession = useRef<Session | null>(null);
   // Where a held deep-link sign-in goes once let in, as the callback would
   // have gone under the limit: the recovery form for a password reset link.
   // Kept when the link arrives, since the device list can show first.
@@ -203,13 +206,20 @@ export default function AuthPage() {
         nextPath = '/user';
       }
       heldDestination.current = type === 'recovery' ? '/auth/recovery' : nextPath;
+      const attempt = abandonedSignIns.current;
+      const isLive = () => attempt === abandonedSignIns.current;
       handleAuthCallback({
         accessToken,
         refreshToken,
         type,
         next: nextPath,
-        login,
-        navigate: router.push,
+        // A link abandoned while its own device check ran doesn't sign in.
+        login: (token, user) => {
+          if (isLive()) login(token, user);
+        },
+        navigate: (path) => {
+          if (isLive()) router.push(path);
+        },
         // This page hears the session too, and lists the devices.
         onDeviceLimit: () => {},
       });
@@ -262,7 +272,8 @@ export default function AuthPage() {
   };
 
   const endSignIn = () => {
-    signInAttempt.current += 1;
+    abandonedSignIns.current += 1;
+    latestSession.current = null;
     pendingSignIn.current = false;
     heldDestination.current = null;
     setHeldSignIn(null);
@@ -327,6 +338,8 @@ export default function AuthPage() {
   }, []);
 
   const finishSignIn = (session: Session, destination: string | null = null) => {
+    // A check still running for it has nothing left to decide.
+    latestSession.current = null;
     heldDestination.current = null;
     pendingSignIn.current = false;
     setHeldSignIn(null);
@@ -354,10 +367,10 @@ export default function AuthPage() {
 
   const handleSignOutDevice = async (device: SyncDevice) => {
     if (!heldSignIn) return;
-    const { session } = heldSignIn;
-    const attempt = signInAttempt.current;
-    const next = await signOutSyncDevice(session.access_token, device.id);
-    if (attempt !== signInAttempt.current) return;
+    const attempt = abandonedSignIns.current;
+    const next = await signOutSyncDevice(heldSignIn.session.access_token, device.id);
+    const session = latestSession.current;
+    if (attempt !== abandonedSignIns.current || !session) return;
     if (next.blocked) {
       setHeldSignIn({ ...next, session });
     } else {
@@ -371,16 +384,16 @@ export default function AuthPage() {
         endSignIn();
         return;
       }
-      signInAttempt.current += 1;
+      latestSession.current = session;
       // Paid plans have no device limit: sign in at once, as before.
       if (!hasDeviceLimit(session.access_token)) {
         finishSignIn(session);
         return;
       }
       pendingSignIn.current = true;
-      const attempt = signInAttempt.current;
+      const attempt = abandonedSignIns.current;
       void checkSignInDeviceLimit(session.access_token).then((blocked) => {
-        if (attempt !== signInAttempt.current) return;
+        if (attempt !== abandonedSignIns.current || latestSession.current !== session) return;
         if (!blocked) {
           finishSignIn(session);
           return;
@@ -391,7 +404,7 @@ export default function AuthPage() {
 
     return () => {
       subscription?.subscription.unsubscribe();
-      signInAttempt.current += 1;
+      abandonedSignIns.current += 1;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);

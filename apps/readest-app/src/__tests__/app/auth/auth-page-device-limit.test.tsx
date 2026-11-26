@@ -279,6 +279,27 @@ describe('AuthPage over the Free plan device limit', () => {
     expect(mocks.login).toHaveBeenCalledWith('refreshed-token', {});
   });
 
+  // A token refresh while the list shows uses up the old refresh token.
+  it('finishes with the refreshed session when a device is signed out meanwhile', async () => {
+    mocks.signOutSyncDevice.mockResolvedValue({ ...BLOCKED, blocked: false });
+    signIn();
+    await screen.findByText('Chrome on macOS');
+    mocks.checkSignInDeviceLimit.mockReturnValue(new Promise(() => {}));
+    act(() =>
+      mocks.onAuthStateChange?.('TOKEN_REFRESHED', {
+        access_token: 'refreshed-token',
+        refresh_token: 'refreshed-refresh',
+        user: {},
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out Chrome on macOS' }));
+
+    await waitFor(() => expect(mocks.login).toHaveBeenCalled());
+    expect(mocks.login).toHaveBeenCalledWith('refreshed-token', {});
+    expect(localStorage.getItem('refresh_token')).toBe('refreshed-refresh');
+  });
+
   it('abandons a sign-in whose device check is still running on Go Back', async () => {
     let finish = (_value: unknown) => {};
     mocks.checkSignInDeviceLimit.mockReturnValue(new Promise((resolve) => (finish = resolve)));
@@ -355,6 +376,30 @@ describe('AuthPage over the Free plan device limit', () => {
 
     await waitFor(() => expect(mocks.router.replace).toHaveBeenCalledWith('/library'));
     expect(mocks.router.replace).not.toHaveBeenCalledWith('/auth/recovery');
+  });
+
+  // The link's own check fails open, so an error after Cancel answers null.
+  it('does not sign in a link whose own check lets it in after Cancel', async () => {
+    let finish = (_value: unknown) => {};
+    const linkCheck = new Promise((resolve) => (finish = resolve));
+    mocks.checkSignInDeviceLimit.mockImplementation(async (token) =>
+      token === 'free-token' ? BLOCKED : linkCheck,
+    );
+    await openDeepLink('recovery');
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+
+    await act(async () => finish(null));
+
+    expect(mocks.login).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it('opens the recovery form for a reset link under the limit, as before', async () => {
+    mocks.checkSignInDeviceLimit.mockResolvedValue(null);
+    await openDeepLink('recovery');
+
+    await waitFor(() => expect(mocks.router.push).toHaveBeenCalledWith('/auth/recovery'));
+    expect(mocks.login).toHaveBeenCalled();
   });
 
   it('signs in at once under the limit', async () => {
