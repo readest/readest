@@ -71,7 +71,7 @@ export function useSearchNav(bookKey: string) {
       const result = flattenedResults[index];
       if (result) {
         setSearchResultIndex(bookKey, index);
-        getView(bookKey)?.goTo(result.cfi, { focus: true });
+        getView(bookKey)?.goTo(result.cfi, { focus: true, step: true });
       }
     },
     [bookKey, flattenedResults, setSearchResultIndex, getView],

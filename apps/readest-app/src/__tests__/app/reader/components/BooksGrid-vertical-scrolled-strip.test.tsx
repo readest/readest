@@ -9,7 +9,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
  */
 
 const h = vi.hoisted(() => {
-  const view = { renderer: { columnCount: 1 } };
+  const view = Object.assign(new EventTarget(), {
+    renderer: { columnCount: 1 },
+    history: new EventTarget(),
+  });
   const viewSettings = {
     vertical: true,
     scrolled: true,

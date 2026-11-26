@@ -34,6 +34,7 @@ import VimCommandLine from './VimCommandLine';
 import BooknotesNav from './sidebar/BooknotesNav';
 import FoliateViewer from './FoliateViewer';
 import HandwritingOverlay from './handwriting/HandwritingOverlay';
+import JumpReturn from './JumpReturn';
 import SectionInfo from './SectionInfo';
 import HeaderBar from './HeaderBar';
 import PageNavigationButtons from './PageNavigationButtons';
@@ -347,6 +348,7 @@ const BookCellInner: React.FC<BookCellProps> = ({
       <HandwritingOverlay bookKey={bookKey} gridInsets={gridInsets} />
       <BookmarkPullDown bookKey={bookKey} ribbonHidden={!!hoveredBookKey} slideRef={slideRef} />
       <PageNavigationButtons bookKey={bookKey} isDropdownOpen={isDropdownOpen} />
+      <JumpReturn bookKey={bookKey} gridInsets={gridInsets} />
       <SearchResultsNav bookKey={bookKey} gridInsets={gridInsets} />
       <VimCommandLine bookKey={bookKey} gridInsets={gridInsets} />
       <BooknotesNav bookKey={bookKey} gridInsets={gridInsets} toc={bookDoc.toc || []} />

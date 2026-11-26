@@ -158,17 +158,19 @@ const PageJumpInput: React.FC<PageJumpInputProps> = ({
   const jumpToPage = (page: number) => {
     if (!view) return;
     const target = clampPage(page, total);
+    // A typed page is a jump the reader asked for, so they can come back from it.
+    const jump = { focus: true };
     if (referenceInfo) {
       const href = findReferencePageHref(bookData?.bookDoc?.pageList, target);
-      if (href) view.goTo(href, { focus: true });
-      else view.goToFraction(fractionForPage(target, total));
+      if (href) view.goTo(href, jump);
+      else view.goTo({ fraction: fractionForPage(target, total) }, jump);
     } else if (bookData?.isFixedLayout) {
-      view.goTo(target - 1);
+      view.goTo(target - 1, jump);
     } else if (screenPages) {
       const fraction = getScreenPageFraction(bookKey, view, sections!, target - 1);
-      if (fraction !== null) view.goToFraction(fraction);
+      if (fraction !== null) view.goTo({ fraction }, jump);
     } else {
-      view.goToFraction(fractionForPage(target, total));
+      view.goTo({ fraction: fractionForPage(target, total) }, jump);
     }
   };
 

@@ -2991,5 +2991,6 @@
   "Share as QR Code": "QR 코드로 공유",
   "Show a QR code for the selected text": "선택한 텍스트의 QR 코드 표시",
   "Select a shorter passage to share as a QR code.": "QR 코드로 공유하려면 더 짧은 구절을 선택하세요.",
-  "QR code for the selected text": "선택한 텍스트의 QR 코드"
+  "QR code for the selected text": "선택한 텍스트의 QR 코드",
+  "Navigation History": "이동 기록"
 }
