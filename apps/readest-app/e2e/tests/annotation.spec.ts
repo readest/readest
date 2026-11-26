@@ -32,9 +32,10 @@ test.describe('Annotation', () => {
       (await code.getAttribute('src')) === `data:image/svg+xml,${encodeURIComponent(svg)}`,
       'the QR code encodes the same passage as Copy',
     ).toBe(true);
-    await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Close', exact: true }).press('Enter');
     await expect(dialog).toHaveCount(0);
     await expect(reader.viewer).toBeFocused();
+    await expect(reader.viewer).toHaveCSS('outline-style', 'solid');
   });
 
   test('creates a highlight from the selected text', async ({ openBook }) => {
