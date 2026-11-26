@@ -256,11 +256,15 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(image.width / image.height).toBeCloseTo(600 / 900, 2);
   });
 
-  it('keeps an absolutely positioned image at the size needed for a deliberate crop', async () => {
-    const sprite = `<figure style="position: relative; margin: 0; height: 30px; overflow: hidden"><img alt="" style="position: absolute; top: -90px; width: 200px; height: 300px" src="${COVER}"/></figure>`;
+  it.each([
+    ['absolute positioning', 'position: absolute; top: -90px'],
+    ['a negative margin', 'margin-top: -90px'],
+  ])('preserves the dimensions of an intentional crop made with %s', async (_, offset) => {
+    const sprite = `<figure style="position: relative; margin: 0; height: 30px; overflow: hidden"><img alt="" style="display: block; width: 200px; height: 300px; ${offset}" src="${COVER}"/></figure>`;
     const { doc } = await open(`${sprite}${TEXT}`, '');
     const figure = doc.querySelector('figure')!.getBoundingClientRect();
     const image = doc.querySelector('figure img')!.getBoundingClientRect();
+    expect(image.width).toBe(200);
     expect(image.height).toBe(300);
     expect(image.top).toBeLessThan(figure.top);
     expect(image.bottom).toBeGreaterThan(figure.bottom);
