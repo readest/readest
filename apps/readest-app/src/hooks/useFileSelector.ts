@@ -3,7 +3,7 @@ import { isTauriAppPlatform } from '@/services/environment';
 import { invoke } from '@tauri-apps/api/core';
 import { basename } from '@tauri-apps/api/path';
 import { isContentURI, isFileURI, stubTranslation as _ } from '@/utils/misc';
-import { getFileExtension, getFilename } from '@/utils/path';
+import { getFileExtension, getFilename, getURLFilename } from '@/utils/path';
 import type { TranslationFunc } from '@/hooks/useTranslation';
 import { eventDispatcher } from '@/utils/event';
 import { BOOK_ACCEPT_FORMATS, SUPPORTED_BOOK_EXTS } from '@/services/constants';
@@ -84,16 +84,18 @@ const selectFileWeb = (options: FileSelectorOptions): Promise<File[]> => {
  *
  * On Android a SAF `content://` URI may be an opaque document id that carries
  * no filename/extension in the URI string at all (varies by device / provider
- * — #4489); on iOS a security-scoped `file://` URI is likewise unreliable.
- * For those we query the native content resolver via `basename` (the same call
- * `AppService.openFile` uses). Plain filesystem paths parse fine with
+ * — #4489), so we query the native content resolver via `basename` (the same
+ * call `AppService.openFile` uses). An iOS picker `file://` URI stays encoded
+ * until the native copy (#7946) and `basename` there doesn't decode it, so it
+ * is named the way `openFile` names it. Plain filesystem paths parse fine with
  * `getFilename`.
  */
 export const resolveTauriFileName = async (
   path: string,
   appService: AppService,
 ): Promise<string> => {
-  if (isContentURI(path) || (isFileURI(path) && appService.isIOSApp)) {
+  if (isFileURI(path) && appService.isIOSApp) return getURLFilename(path);
+  if (isContentURI(path)) {
     try {
       return await basename(path);
     } catch {

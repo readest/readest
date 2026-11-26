@@ -5,6 +5,7 @@ const osTypeMock = vi.fn().mockReturnValue('macos');
 const writeTextFileMock = vi.fn().mockResolvedValue(undefined);
 const writeFileMock = vi.fn().mockResolvedValue(undefined);
 const mkdirMock = vi.fn().mockResolvedValue(undefined);
+const openDialogMock = vi.fn().mockResolvedValue(null);
 const saveDialogMock = vi.fn().mockResolvedValue('/tmp/exported.md');
 const shareFileMock = vi.fn().mockResolvedValue(undefined);
 const copyURIToPathMock = vi.fn().mockResolvedValue({ success: true });
@@ -35,7 +36,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({
-  open: vi.fn().mockResolvedValue(null),
+  open: (...args: unknown[]) => openDialogMock(...args),
   save: (...args: unknown[]) => saveDialogMock(...args),
   ask: vi.fn().mockResolvedValue(true),
 }));
@@ -138,6 +139,21 @@ describe('NativeAppService.saveFile share gating', () => {
     const request = copyURIToPathMock.mock.calls[0]![0] as { uri: string; dst: string };
     expect(request.uri).toBe(uri);
     expect(request.dst.endsWith(`-${expected}`)).toBe(true);
+  });
+
+  test.each([
+    ['100%25.epub', '100%.epub'],
+    ['Report%2520Final.epub', 'Report%20Final.epub'],
+  ])('keeps the iOS picker URI encoded until the native copy: %s', async (encodedName, expected) => {
+    const service = await loadServiceWithOS('ios');
+    const uri = `file:///private/var/Inbox/${encodedName}`;
+    openDialogMock.mockResolvedValueOnce([uri]);
+
+    const [selected] = await service.selectFiles('Select Books', ['epub']);
+    const file = await service.openFile(selected!, 'None');
+
+    expect(copyURIToPathMock).toHaveBeenCalledWith(expect.objectContaining({ uri }));
+    expect(file.name).toBe(expected);
   });
 
   test.each([
