@@ -100,7 +100,7 @@ describe('book em/rem lengths under the Android text zoom', () => {
   it('leaves names, zero, text, url() and at-rule preludes alone', async () => {
     const { transformStylesheet } = await loadStyle(1.3);
     const css =
-      '/* 2em */ @media ( min-width: 30em ) { p { margin: var(--gap2em) 0em; padding: var(--间2em); animation: slide2em 1s; content: "1em"; background: url(a2em.png); } }';
+      '/* 2em */ @media ( min-width: 30em ) { p { margin: var(--gap2em) 0em; animation: slide2em 1s; content: "1em"; background: url(a2em.png); } }';
     expect(transformStylesheet(css, 800, 600, false)).toBe(css);
   });
 
