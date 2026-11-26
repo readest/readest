@@ -42,11 +42,14 @@ describe('paginator jumps into a section still preloading (browser)', () => {
   // Opened at a, with the preload of b held as a loaded machine holds it
   const openHeld = async () => {
     const sections = [makeSection(pages('a', 1)), makeSection(pages('b', 6))];
+    const bSrc = sections[1]!.load();
+    let loads = 0;
+    sections[1]!.load = () => (loads++, bSrc);
     const held: (() => void)[] = [];
     Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
       ...src,
       set(this: HTMLIFrameElement, value: string) {
-        if (value === sections[1]!.load()) held.push(() => src.set!.call(this, value));
+        if (value === bSrc) held.push(() => src.set!.call(this, value));
         else src.set!.call(this, value);
       },
     });
@@ -62,7 +65,7 @@ describe('paginator jumps into a section still preloading (browser)', () => {
     await el.goTo({ index: 0 });
     await vi.waitFor(() => expect(held).toHaveLength(1));
     const release = () => held.splice(0).forEach((load) => load());
-    return { el, relocations, release };
+    return { el, relocations, release, loads: () => loads };
   };
 
   const toB4 = {
@@ -87,5 +90,16 @@ describe('paginator jumps into a section still preloading (browser)', () => {
     release();
     await first;
     expect(relocations.at(-1), 'the later jump, to a').toContain('a page 0');
+  });
+
+  it('drops a jump still waiting when the paginator is destroyed', async () => {
+    const { el, loads } = await openHeld();
+    const jump = el.goTo(toB4);
+    await new Promise((r) => setTimeout(r, 50));
+    const before = loads();
+    el.destroy();
+    await new Promise((r) => setTimeout(r, 100));
+    expect(loads(), 'sections loaded after the reader closed').toBe(before);
+    await jump;
   });
 });
