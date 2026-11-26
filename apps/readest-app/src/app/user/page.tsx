@@ -498,7 +498,10 @@ const ProfilePage = () => {
                   </div>
                 ) : showSyncManager ? (
                   <div className='flex flex-col gap-y-8 px-6'>
-                    <SyncCategoriesSection />
+                    <SyncCategoriesSection
+                      userPlan={userProfilePlan}
+                      customizationPurchased={customizationPurchased}
+                    />
                     <SyncPassphraseSection />
                     <SyncDevicesSection />
                   </div>
