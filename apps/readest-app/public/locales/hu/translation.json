@@ -3052,5 +3052,14 @@
   "Last active {{date}}": "Utoljára aktív: {{date}}",
   "Sign out {{device}}": "{{device}} kijelentkeztetése",
   "Number of Devices": "Eszközök száma",
-  "Unlimited": "Korlátlan"
+  "Unlimited": "Korlátlan",
+  "Library & Media": "Könyvtár és média",
+  "Account & Preferences": "Fiók és beállítások",
+  "Synced to Readest Cloud": "Szinkronizálva a Readest Cloudba",
+  "Synced to {{provider}}": "Szinkronizálva ide: {{provider}}",
+  "Synced to Readest Cloud and {{provider}} in parallel": "Párhuzamosan szinkronizálva a Readest Cloudba és ide: {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Szüneteltetve ({{provider}}) — a folytatáshoz frissítsen csomagot vagy kapcsolja be a Readest Cloudot",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "Nincs szinkronizálás — engedélyezzen egy szolgáltatót a Beállítások → Integrációk menüben",
+  "Always synced via Readest Cloud while signed in": "Bejelentkezve mindig a Readest Cloudon keresztül szinkronizálódik",
+  "Readest Cloud sync is off; still synced via {{provider}}": "A Readest Cloud szinkronizálás ki van kapcsolva; továbbra is a(z) {{provider}} szolgáltatón keresztül szinkronizál"
 }

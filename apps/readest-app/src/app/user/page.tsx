@@ -9,6 +9,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
+import { useSettingsStore } from '@/store/settingsStore';
+import { resolveCloudSyncGate } from '@/services/sync/cloudSyncProvider';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
@@ -68,6 +70,7 @@ const ProfilePage = () => {
   const { appService } = useEnv();
   const { token, user, refresh } = useAuth();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
+  const settings = useSettingsStore((s) => s.settings);
 
   const [loading, setLoading] = useState(false);
   const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
@@ -496,7 +499,12 @@ const ProfilePage = () => {
                   </div>
                 ) : showSyncManager ? (
                   <div className='flex flex-col gap-y-8 px-6'>
-                    <SyncCategoriesSection />
+                    <SyncCategoriesSection
+                      thirdPartyPaused={
+                        resolveCloudSyncGate(settings, userProfilePlan, customizationPurchased)
+                          .paused
+                      }
+                    />
                     <SyncPassphraseSection />
                     <SyncDevicesSection />
                   </div>

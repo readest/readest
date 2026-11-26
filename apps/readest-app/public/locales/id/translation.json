@@ -2973,5 +2973,14 @@
   "Last active {{date}}": "Terakhir aktif {{date}}",
   "Sign out {{device}}": "Keluarkan {{device}}",
   "Number of Devices": "Jumlah perangkat",
-  "Unlimited": "Tanpa batas"
+  "Unlimited": "Tanpa batas",
+  "Library & Media": "Perpustakaan & Media",
+  "Account & Preferences": "Akun & Preferensi",
+  "Synced to Readest Cloud": "Disinkronkan ke Readest Cloud",
+  "Synced to {{provider}}": "Disinkronkan ke {{provider}}",
+  "Synced to Readest Cloud and {{provider}} in parallel": "Disinkronkan secara paralel ke Readest Cloud dan {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Dijeda di {{provider}} — tingkatkan paket atau aktifkan Readest Cloud untuk melanjutkan",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "Tidak menyinkronkan — aktifkan penyedia di Pengaturan → Integrasi",
+  "Always synced via Readest Cloud while signed in": "Selalu disinkronkan melalui Readest Cloud saat masuk",
+  "Readest Cloud sync is off; still synced via {{provider}}": "Sinkronisasi Readest Cloud mati; tetap disinkronkan melalui {{provider}}"
 }

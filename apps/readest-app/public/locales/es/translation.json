@@ -3131,5 +3131,14 @@
   "Last active {{date}}": "Última actividad: {{date}}",
   "Sign out {{device}}": "Cerrar sesión en {{device}}",
   "Number of Devices": "Número de dispositivos",
-  "Unlimited": "Ilimitado"
+  "Unlimited": "Ilimitado",
+  "Library & Media": "Biblioteca y multimedia",
+  "Account & Preferences": "Cuenta y preferencias",
+  "Synced to Readest Cloud": "Sincronizado con Readest Cloud",
+  "Synced to {{provider}}": "Sincronizado con {{provider}}",
+  "Synced to Readest Cloud and {{provider}} in parallel": "Sincronizado en paralelo con Readest Cloud y {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "En pausa en {{provider}} — mejora tu plan o activa Readest Cloud para reanudar",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "Sin sincronizar — activa un proveedor en Ajustes → Integraciones",
+  "Always synced via Readest Cloud while signed in": "Siempre sincronizado mediante Readest Cloud al iniciar sesión",
+  "Readest Cloud sync is off; still synced via {{provider}}": "La sincronización con Readest Cloud está desactivada; sigue sincronizándose mediante {{provider}}"
 }

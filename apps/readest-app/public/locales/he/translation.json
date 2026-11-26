@@ -3131,5 +3131,14 @@
   "Last active {{date}}": "פעיל לאחרונה: {{date}}",
   "Sign out {{device}}": "נתק את {{device}}",
   "Number of Devices": "מספר מכשירים",
-  "Unlimited": "ללא הגבלה"
+  "Unlimited": "ללא הגבלה",
+  "Library & Media": "ספרייה ומדיה",
+  "Account & Preferences": "חשבון והעדפות",
+  "Synced to Readest Cloud": "מסונכרן אל Readest Cloud",
+  "Synced to {{provider}}": "מסונכרן אל {{provider}}",
+  "Synced to Readest Cloud and {{provider}} in parallel": "מסונכרן במקביל אל Readest Cloud ואל {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "מושהה ב-{{provider}} — יש לשדרג או להפעיל את Readest Cloud כדי להמשיך",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "לא מסתנכרן — יש להפעיל ספק בהגדרות ← אינטגרציות",
+  "Always synced via Readest Cloud while signed in": "מסונכרן תמיד דרך Readest Cloud בזמן שהחשבון מחובר",
+  "Readest Cloud sync is off; still synced via {{provider}}": "סנכרון Readest Cloud כבוי; עדיין מסונכרן דרך {{provider}}"
 }

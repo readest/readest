@@ -3131,5 +3131,14 @@
   "Last active {{date}}": "Ultima activitate: {{date}}",
   "Sign out {{device}}": "Deconectează {{device}}",
   "Number of Devices": "Număr de dispozitive",
-  "Unlimited": "Nelimitat"
+  "Unlimited": "Nelimitat",
+  "Library & Media": "Bibliotecă și media",
+  "Account & Preferences": "Cont și preferințe",
+  "Synced to Readest Cloud": "Sincronizat cu Readest Cloud",
+  "Synced to {{provider}}": "Sincronizat cu {{provider}}",
+  "Synced to Readest Cloud and {{provider}} in parallel": "Sincronizat în paralel cu Readest Cloud și {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Întrerupt pe {{provider}} — fă upgrade sau activează Readest Cloud pentru a relua",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "Fără sincronizare — activează un furnizor în Setări → Integrări",
+  "Always synced via Readest Cloud while signed in": "Sincronizat întotdeauna prin Readest Cloud cât timp ești conectat",
+  "Readest Cloud sync is off; still synced via {{provider}}": "Sincronizarea Readest Cloud este oprită; se sincronizează în continuare prin {{provider}}"
 }

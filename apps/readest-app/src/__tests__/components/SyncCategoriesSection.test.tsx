@@ -79,4 +79,97 @@ describe('SyncCategoriesSection', () => {
     expect(row('Fonts').closest('li')!.textContent).toContain(managed);
     expect(row('Dictionaries').closest('li')!.textContent).not.toContain(managed);
   });
+
+  test('groups Library & Media separately from Account & Preferences without redundant Account pills', () => {
+    useSettingsStore.setState({ settings: base } as never);
+    render(<SyncCategoriesSection />);
+
+    expect(screen.getByText('Library & Media')).toBeTruthy();
+    expect(screen.getByText('Synced to Readest Cloud')).toBeTruthy();
+    expect(screen.getByText('Account & Preferences')).toBeTruthy();
+    expect(screen.getByText('Always synced via Readest Cloud while signed in')).toBeTruthy();
+    expect(row('Books').closest('li')!.textContent).toContain('Readest Cloud');
+    expect(row('Dictionaries').closest('li')!.textContent).not.toContain('Readest Cloud');
+  });
+
+  test('shows parallel destination badges when both Readest Cloud and Google Drive are enabled', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: true },
+        googleDrive: { enabled: true },
+        syncCategories: { book: false, book_data: false },
+      },
+    } as never);
+    render(<SyncCategoriesSection />);
+
+    expect(screen.getByText('Synced to Readest Cloud and {{provider}} in parallel')).toBeTruthy();
+
+    const progressLi = row('Reading progress').closest('li')!.textContent;
+    expect(progressLi).toContain('Readest Cloud');
+    expect(progressLi).toContain('Google Drive');
+
+    const booksItem = row('Books').closest('li')!;
+    const booksHeader = booksItem.querySelector('div > div')!.textContent;
+    expect(booksHeader).not.toContain('Readest Cloud');
+    expect(booksHeader).toContain('Google Drive');
+    expect(booksItem.textContent).toContain(
+      'Readest Cloud sync is off; still synced via {{provider}}',
+    );
+
+    const bookDataLi = row('Book Data').closest('li')!.textContent;
+    expect(bookDataLi).not.toContain('Readest Cloud');
+    expect(bookDataLi).not.toContain('Google Drive');
+
+    const dictLi = row('Dictionaries').closest('li')!.textContent;
+    expect(dictLi).not.toContain('Readest Cloud');
+    expect(dictLi).not.toContain('Google Drive');
+  });
+
+  test('shows Book Data synced to third-party only when Readest Cloud is off, and supports multiple providers', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: false },
+        webdav: { enabled: true },
+        googleDrive: { enabled: true },
+        syncCategories: { book_data: true },
+      },
+    } as never);
+    render(<SyncCategoriesSection />);
+
+    expect(screen.getByText('Synced to {{provider}}')).toBeTruthy();
+    expect(row('Book Data').closest('li')!.textContent).toContain('WebDAV');
+    expect(row('Book Data').closest('li')!.textContent).toContain('Google Drive');
+    expect(row('Book Data').closest('li')!.textContent).not.toContain('Readest Cloud');
+    expect(row('Dictionaries').closest('li')!.textContent).not.toContain('Readest Cloud');
+  });
+
+  test('shows Local only when no cloud sync provider is active and paused notice when third-party is paused', () => {
+    useSettingsStore.setState({
+      settings: { ...base, readestCloud: { enabled: false } },
+    } as never);
+    render(<SyncCategoriesSection />);
+
+    expect(
+      screen.getByText('Not syncing — enable a cloud sync provider in Settings → Integrations'),
+    ).toBeTruthy();
+    expect(row('Books').closest('li')!.textContent).toContain('Local only');
+    expect(row('Dictionaries').closest('li')!.textContent).not.toContain('Local only');
+
+    cleanup();
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: false },
+        googleDrive: { enabled: true },
+      },
+    } as never);
+    render(<SyncCategoriesSection thirdPartyPaused={true} />);
+
+    expect(
+      screen.getByText('Paused on {{provider}} — upgrade or enable Readest Cloud to resume'),
+    ).toBeTruthy();
+    expect(row('Books').closest('li')!.textContent).toContain('Local only');
+  });
 });

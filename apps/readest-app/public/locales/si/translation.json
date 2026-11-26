@@ -3052,5 +3052,14 @@
   "Last active {{date}}": "අවසන් වරට සක්‍රිය: {{date}}",
   "Sign out {{device}}": "{{device}} ඉවත් කරන්න",
   "Number of Devices": "උපාංග ගණන",
-  "Unlimited": "අසීමිත"
+  "Unlimited": "අසීමිත",
+  "Library & Media": "පුස්තකාලය සහ මාධ්‍ය",
+  "Account & Preferences": "ගිණුම සහ මනාපයන්",
+  "Synced to Readest Cloud": "Readest Cloud වෙත සමමුහුර්ත වේ",
+  "Synced to {{provider}}": "{{provider}} වෙත සමමුහුර්ත වේ",
+  "Synced to Readest Cloud and {{provider}} in parallel": "Readest Cloud සහ {{provider}} වෙත සමාන්තරව සමමුහුර්ත වේ",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} මත විරාම ගන්වා ඇත — නැවත ඇරඹීමට උත්ශ්‍රේණි කරන්න හෝ Readest Cloud සක්‍රීය කරන්න",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "සමමුහුර්ත නොවේ — සැකසුම් → ඒකාබද්ධ කිරීම් හි සැපයුම්කරුවෙකු සක්‍රීය කරන්න",
+  "Always synced via Readest Cloud while signed in": "පුරනය වී සිටින විට සැමවිටම Readest Cloud හරහා සමමුහුර්ත වේ",
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud සමමුහුර්තකරණය අක්‍රීයයි; තවමත් {{provider}} හරහා සමමුහුර්ත වේ"
 }

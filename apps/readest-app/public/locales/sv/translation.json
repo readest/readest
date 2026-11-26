@@ -3052,5 +3052,14 @@
   "Last active {{date}}": "Senast aktiv {{date}}",
   "Sign out {{device}}": "Logga ut {{device}}",
   "Number of Devices": "Antal enheter",
-  "Unlimited": "Obegränsat"
+  "Unlimited": "Obegränsat",
+  "Library & Media": "Bibliotek och media",
+  "Account & Preferences": "Konto och inställningar",
+  "Synced to Readest Cloud": "Synkroniseras till Readest Cloud",
+  "Synced to {{provider}}": "Synkroniseras till {{provider}}",
+  "Synced to Readest Cloud and {{provider}} in parallel": "Synkroniseras parallellt till Readest Cloud och {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Pausad på {{provider}} — uppgradera eller aktivera Readest Cloud för att återuppta",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "Synkroniserar inte — aktivera en leverantör i Inställningar → Integrationer",
+  "Always synced via Readest Cloud while signed in": "Synkroniseras alltid via Readest Cloud när du är inloggad",
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud-synk är av; synkroniseras fortfarande via {{provider}}"
 }

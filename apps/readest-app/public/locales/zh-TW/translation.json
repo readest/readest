@@ -2973,5 +2973,14 @@
   "Last active {{date}}": "最近活動：{{date}}",
   "Sign out {{device}}": "讓 {{device}} 登出",
   "Number of Devices": "裝置數量",
-  "Unlimited": "無限制"
+  "Unlimited": "無限制",
+  "Library & Media": "書庫與媒體",
+  "Account & Preferences": "帳號與偏好設定",
+  "Synced to Readest Cloud": "已同步至 Readest Cloud",
+  "Synced to {{provider}}": "已同步至 {{provider}}",
+  "Synced to Readest Cloud and {{provider}} in parallel": "並行同步至 Readest Cloud 與 {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} 已暫停 — 升級方案或啟用 Readest Cloud 以恢復",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "未同步 — 請在設定 → 整合中啟用雲端同步服務",
+  "Always synced via Readest Cloud while signed in": "登入狀態下始終透過 Readest Cloud 同步",
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud 同步已關閉；仍透過 {{provider}} 同步"
 }

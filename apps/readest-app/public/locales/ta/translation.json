@@ -3052,5 +3052,14 @@
   "Last active {{date}}": "கடைசியாகச் செயலில்: {{date}}",
   "Sign out {{device}}": "{{device}} இலிருந்து வெளியேறு",
   "Number of Devices": "சாதனங்களின் எண்ணிக்கை",
-  "Unlimited": "வரம்பற்றது"
+  "Unlimited": "வரம்பற்றது",
+  "Library & Media": "நூலகம் & ஊடகம்",
+  "Account & Preferences": "கணக்கு & விருப்பங்கள்",
+  "Synced to Readest Cloud": "Readest Cloud உடன் ஒத்திசைக்கப்படுகிறது",
+  "Synced to {{provider}}": "{{provider}} உடன் ஒத்திசைக்கப்படுகிறது",
+  "Synced to Readest Cloud and {{provider}} in parallel": "Readest Cloud மற்றும் {{provider}} உடன் இணையாக ஒத்திசைக்கப்படுகிறது",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} இல் இடைநிறுத்தப்பட்டது — தொடர மேம்படுத்தவும் அல்லது Readest Cloud ஐ இயக்கவும்",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "ஒத்திசைக்கவில்லை — அமைப்புகள் → ஒருங்கிணைப்புகள் என்பதில் ஒரு வழங்குநரை இயக்கவும்",
+  "Always synced via Readest Cloud while signed in": "உள்நுழைந்திருக்கும்போது எப்போதும் Readest Cloud வழியாக ஒத்திசைக்கப்படும்",
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud ஒத்திசைவு அணைக்கப்பட்டுள்ளது; ஆனாலும் {{provider}} வழியாக ஒத்திசைக்கப்படுகிறது"
 }

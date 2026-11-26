@@ -3210,5 +3210,14 @@
   "Last active {{date}}": "Nazadnje aktivna: {{date}}",
   "Sign out {{device}}": "Odjavi {{device}}",
   "Number of Devices": "Število naprav",
-  "Unlimited": "Neomejeno"
+  "Unlimited": "Neomejeno",
+  "Library & Media": "Knjižnica in mediji",
+  "Account & Preferences": "Račun in nastavitve",
+  "Synced to Readest Cloud": "Sinhronizirano z Readest Cloud",
+  "Synced to {{provider}}": "Sinhronizirano z {{provider}}",
+  "Synced to Readest Cloud and {{provider}} in parallel": "Vzporedno sinhronizirano z Readest Cloud in {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Začasno ustavljeno pri {{provider}} — nadgradite ali omogočite Readest Cloud za nadaljevanje",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "Brez sinhronizacije — omogočite ponudnika v Nastavitve → Integracije",
+  "Always synced via Readest Cloud while signed in": "Med prijavo se vedno sinhronizira prek Readest Cloud",
+  "Readest Cloud sync is off; still synced via {{provider}}": "Sinhronizacija Readest Cloud je izklopljena; še vedno se sinhronizira prek {{provider}}"
 }

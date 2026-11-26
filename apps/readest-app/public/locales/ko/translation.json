@@ -2973,5 +2973,14 @@
   "Last active {{date}}": "마지막 활동: {{date}}",
   "Sign out {{device}}": "{{device}} 로그아웃",
   "Number of Devices": "기기 수",
-  "Unlimited": "무제한"
+  "Unlimited": "무제한",
+  "Library & Media": "라이브러리 및 미디어",
+  "Account & Preferences": "계정 및 환경설정",
+  "Synced to Readest Cloud": "Readest Cloud에 동기화됨",
+  "Synced to {{provider}}": "{{provider}}에 동기화됨",
+  "Synced to Readest Cloud and {{provider}} in parallel": "Readest Cloud 및 {{provider}}에 병렬 동기화됨",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}}에서 일시 중지됨 — 재개하려면 업그레이드하거나 Readest Cloud를 활성화하세요",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "동기화 안 함 — 설정 → 연동에서 클라우드 동기화 공급자를 활성화하세요",
+  "Always synced via Readest Cloud while signed in": "로그인한 동안 항상 Readest Cloud를 통해 동기화됩니다",
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud 동기화가 꺼져 있지만 {{provider}}를 통해 계속 동기화됩니다"
 }
