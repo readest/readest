@@ -3040,5 +3040,17 @@
   "Clear X-Ray": "Διαγραφή X-Ray",
   "Clear the X-Ray of this book?": "Διαγραφή του X-Ray αυτού του βιβλίου;",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Συγκεντρώνει τους χαρακτήρες, τα μέρη και τα γεγονότα για τα οποία έχετε διαβάσει, χωρίς spoiler, με τον παραπάνω μεταφραστή ΤΝ.",
-  "Update While Reading": "Ενημέρωση κατά την ανάγνωση"
+  "Update While Reading": "Ενημέρωση κατά την ανάγνωση",
+  "Subscription": "Συνδρομή",
+  "Sync Settings": "Ρυθμίσεις συγχρονισμού",
+  "Cloud Storage": "Αποθήκευση στο cloud",
+  "Readest Cloud Storage": "Αποθήκευση Readest Cloud",
+  "Shared Links": "Κοινόχρηστοι σύνδεσμοι",
+  "Login & Security": "Σύνδεση & Ασφάλεια",
+  "Change Password": "Αλλαγή κωδικού πρόσβασης",
+  "Change Email": "Αλλαγή email",
+  "Manage Billing": "Διαχείριση χρεώσεων",
+  "Delete Library Data": "Διαγραφή δεδομένων βιβλιοθήκης",
+  "Delete Library Data?": "Διαγραφή δεδομένων βιβλιοθήκης;",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "Αυτή η ενέργεια δεν μπορεί να αναιρεθεί. Κάθε βιβλίο θα αφαιρεθεί από αυτή τη συσκευή και από τη βιβλιοθήκη σας στο cloud του Readest, μαζί με την πρόοδο ανάγνωσης, τους σελιδοδείκτες και τις σημειώσεις. Τα βιβλία που εισαγάγατε επιτόπου διατηρούν τα αρχικά τους αρχεία και τα βιβλία που ανεβάσατε στον αποθηκευτικό χώρο cloud παραμένουν εκεί μέχρι να τα αφαιρέσετε από τη «Αποθήκευση Readest Cloud». Οι άλλες συνδεδεμένες συσκευές διατηρούν τα δικά τους αντίγραφα."
 }

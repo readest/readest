@@ -3040,5 +3040,17 @@
   "Clear X-Ray": "X-Ray löschen",
   "Clear the X-Ray of this book?": "X-Ray dieses Buchs löschen?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Sammelt die Figuren, Orte und Ereignisse, über die Sie gelesen haben, ohne Spoiler und mit dem KI-Übersetzer oben.",
-  "Update While Reading": "Beim Lesen aktualisieren"
+  "Update While Reading": "Beim Lesen aktualisieren",
+  "Subscription": "Abonnement",
+  "Sync Settings": "Synchronisierungseinstellungen",
+  "Cloud Storage": "Cloud-Speicher",
+  "Readest Cloud Storage": "Readest Cloud-Speicher",
+  "Shared Links": "Geteilte Links",
+  "Login & Security": "Anmeldung & Sicherheit",
+  "Change Password": "Passwort ändern",
+  "Change Email": "E-Mail ändern",
+  "Manage Billing": "Abrechnung verwalten",
+  "Delete Library Data": "Bibliotheksdaten löschen",
+  "Delete Library Data?": "Bibliotheksdaten löschen?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "Diese Aktion kann nicht rückgängig gemacht werden. Jedes Buch wird von diesem Gerät und aus Ihrer Readest-Cloud-Bibliothek entfernt, zusammen mit Lesefortschritt, Lesezeichen und Anmerkungen. Bücher, die Sie an Ort und Stelle importiert haben, behalten ihre Originaldateien, und in den Cloud-Speicher hochgeladene Bücher bleiben dort, bis Sie sie unter „Readest Cloud-Speicher“ entfernen. Andere angemeldete Geräte behalten ihre eigenen Kopien."
 }

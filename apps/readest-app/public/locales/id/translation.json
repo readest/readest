@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "Hapus X-Ray",
   "Clear the X-Ray of this book?": "Hapus X-Ray buku ini?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Mengumpulkan tokoh, tempat, dan peristiwa yang sudah Anda baca, tanpa spoiler, dengan Penerjemah AI di atas.",
-  "Update While Reading": "Perbarui Saat Membaca"
+  "Update While Reading": "Perbarui Saat Membaca",
+  "Subscription": "Langganan",
+  "Sync Settings": "Pengaturan Sinkronisasi",
+  "Cloud Storage": "Penyimpanan Cloud",
+  "Readest Cloud Storage": "Penyimpanan Readest Cloud",
+  "Shared Links": "Tautan Bersama",
+  "Login & Security": "Login & Keamanan",
+  "Change Password": "Ubah Kata Sandi",
+  "Change Email": "Ubah Email",
+  "Manage Billing": "Kelola Penagihan",
+  "Delete Library Data": "Hapus Data Perpustakaan",
+  "Delete Library Data?": "Hapus Data Perpustakaan?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "Tindakan ini tidak dapat dibatalkan. Setiap buku akan dihapus dari perangkat ini dan dari pustaka cloud Readest Anda, beserta kemajuan baca, markah, dan anotasi. Buku yang Anda impor di tempat tetap menyimpan berkas aslinya, dan buku yang diunggah ke penyimpanan cloud tetap ada di sana sampai Anda menghapusnya di «Penyimpanan Readest Cloud». Perangkat lain yang masuk tetap menyimpan salinannya sendiri."
 }

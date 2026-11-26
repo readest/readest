@@ -3119,5 +3119,17 @@
   "Clear X-Ray": "ניקוי X-Ray",
   "Clear the X-Ray of this book?": "לנקות את ה-X-Ray של ספר זה?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "אוסף את הדמויות, המקומות והאירועים שכבר קראתם עליהם, ללא ספוילרים, בעזרת מתרגם הבינה המלאכותית שלמעלה.",
-  "Update While Reading": "עדכון בזמן הקריאה"
+  "Update While Reading": "עדכון בזמן הקריאה",
+  "Subscription": "מנוי",
+  "Sync Settings": "הגדרות סנכרון",
+  "Cloud Storage": "אחסון בענן",
+  "Readest Cloud Storage": "אחסון Readest Cloud",
+  "Shared Links": "קישורים משותפים",
+  "Login & Security": "התחברות ואבטחה",
+  "Change Password": "שינוי סיסמה",
+  "Change Email": "שינוי כתובת אימייל",
+  "Manage Billing": "ניהול חיוב",
+  "Delete Library Data": "מחיקת נתוני הספרייה",
+  "Delete Library Data?": "למחוק את נתוני הספרייה?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "לא ניתן לבטל פעולה זו. כל הספרים יוסרו ממכשיר זה ומספריית הענן שלך ב-Readest, יחד עם התקדמות הקריאה, הסימניות וההערות. ספרים שייבאת במקומם שומרים על הקבצים המקוריים שלהם, וספרים שהועלו לאחסון הענן יישארו שם עד שתסיר אותם ב«אחסון Readest Cloud». מכשירים אחרים שמחוברים לחשבון שומרים על העותקים שלהם."
 }

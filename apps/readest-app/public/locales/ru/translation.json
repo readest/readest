@@ -3198,5 +3198,17 @@
   "Clear X-Ray": "Очистить X-Ray",
   "Clear the X-Ray of this book?": "Очистить X-Ray этой книги?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Собирает персонажей, места и события, о которых вы уже прочитали, без спойлеров, с помощью ИИ-переводчика выше.",
-  "Update While Reading": "Обновлять при чтении"
+  "Update While Reading": "Обновлять при чтении",
+  "Subscription": "Подписка",
+  "Sync Settings": "Настройки синхронизации",
+  "Cloud Storage": "Облачное хранилище",
+  "Readest Cloud Storage": "Облачное хранилище Readest",
+  "Shared Links": "Общие ссылки",
+  "Login & Security": "Вход и безопасность",
+  "Change Password": "Изменить пароль",
+  "Change Email": "Изменить эл. почту",
+  "Manage Billing": "Управление оплатой",
+  "Delete Library Data": "Удалить данные библиотеки",
+  "Delete Library Data?": "Удалить данные библиотеки?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "Это действие нельзя отменить. Все книги будут удалены с этого устройства и из вашей облачной библиотеки Readest вместе с прогрессом чтения, закладками и заметками. Книги, импортированные на месте, сохранят свои исходные файлы, а книги, загруженные в облачное хранилище, останутся там, пока вы не удалите их в разделе «Облачное хранилище Readest». На других устройствах, где выполнен вход, останутся собственные копии."
 }

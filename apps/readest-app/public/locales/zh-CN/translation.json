@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "清除 X-Ray",
   "Clear the X-Ray of this book?": "清除本书的 X-Ray？",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "使用上方的 AI 翻译器收集你已读到的人物、地点和事件，不会剧透。",
-  "Update While Reading": "阅读时更新"
+  "Update While Reading": "阅读时更新",
+  "Subscription": "订阅",
+  "Sync Settings": "同步设置",
+  "Cloud Storage": "云存储",
+  "Readest Cloud Storage": "Readest 云存储",
+  "Shared Links": "分享链接",
+  "Login & Security": "登录与安全",
+  "Change Password": "修改密码",
+  "Change Email": "修改邮箱",
+  "Manage Billing": "管理账单",
+  "Delete Library Data": "删除书库数据",
+  "Delete Library Data?": "删除书库数据？",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "此操作无法撤销。所有图书将连同阅读进度、书签和批注一起从本设备和您的 Readest 云端书库中删除。就地导入的图书会保留其原始文件，已上传到云存储的图书会一直保留，直到您在「Readest 云存储」中将其移除。其他已登录设备仍保留各自的副本。"
 }

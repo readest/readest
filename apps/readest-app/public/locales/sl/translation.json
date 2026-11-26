@@ -3198,5 +3198,17 @@
   "Clear X-Ray": "Počisti X-Ray",
   "Clear the X-Ray of this book?": "Počistim X-Ray te knjige?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Z zgornjim prevajalnikom UI brez kvarnikov zbira like, kraje in dogodke, o katerih ste že brali.",
-  "Update While Reading": "Posodabljaj med branjem"
+  "Update While Reading": "Posodabljaj med branjem",
+  "Subscription": "Naročnina",
+  "Sync Settings": "Nastavitve sinhronizacije",
+  "Cloud Storage": "Shramba v oblaku",
+  "Readest Cloud Storage": "Shramba Readest Cloud",
+  "Shared Links": "Deljene povezave",
+  "Login & Security": "Prijava in varnost",
+  "Change Password": "Spremeni geslo",
+  "Change Email": "Spremeni e-pošto",
+  "Manage Billing": "Upravljanje obračunavanja",
+  "Delete Library Data": "Izbriši podatke knjižnice",
+  "Delete Library Data?": "Izbrisati podatke knjižnice?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "Tega dejanja ni mogoče razveljaviti. Vse knjige bodo odstranjene iz te naprave in iz vaše knjižnice v oblaku Readest, skupaj z napredkom branja, zaznamki in opombami. Knjige, ki ste jih uvozili na mestu, ohranijo svoje izvirne datoteke, knjige, naložene v shrambo v oblaku, pa ostanejo tam, dokler jih ne odstranite v razdelku »Shramba Readest Cloud«. Druge prijavljene naprave obdržijo svoje kopije."
 }

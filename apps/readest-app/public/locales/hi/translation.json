@@ -3040,5 +3040,17 @@
   "Clear X-Ray": "X-Ray साफ़ करें",
   "Clear the X-Ray of this book?": "इस पुस्तक का X-Ray साफ़ करें?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "ऊपर दिए गए AI अनुवादक से, बिना स्पॉइलर के, आपके पढ़े हुए पात्रों, स्थानों और घटनाओं को इकट्ठा करता है।",
-  "Update While Reading": "पढ़ते समय अपडेट करें"
+  "Update While Reading": "पढ़ते समय अपडेट करें",
+  "Subscription": "सदस्यता",
+  "Sync Settings": "सिंक सेटिंग्स",
+  "Cloud Storage": "क्लाउड स्टोरेज",
+  "Readest Cloud Storage": "Readest क्लाउड स्टोरेज",
+  "Shared Links": "साझा लिंक",
+  "Login & Security": "लॉगिन और सुरक्षा",
+  "Change Password": "पासवर्ड बदलें",
+  "Change Email": "ईमेल बदलें",
+  "Manage Billing": "बिलिंग प्रबंधित करें",
+  "Delete Library Data": "लाइब्रेरी डेटा हटाएँ",
+  "Delete Library Data?": "लाइब्रेरी डेटा हटाएँ?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "यह क्रिया पूर्ववत नहीं की जा सकती। हर पुस्तक इस डिवाइस और आपकी Readest क्लाउड लाइब्रेरी से हटा दी जाएगी, साथ ही पठन प्रगति, बुकमार्क और टिप्पणियाँ भी। जिन पुस्तकों को आपने उनके स्थान पर ही आयात किया था, उनकी मूल फ़ाइलें बनी रहती हैं, और क्लाउड स्टोरेज पर अपलोड की गई पुस्तकें तब तक वहीं रहती हैं जब तक आप उन्हें «Readest क्लाउड स्टोरेज» में से नहीं हटाते। साइन इन किए गए अन्य डिवाइस अपनी प्रतियाँ रखते हैं।"
 }

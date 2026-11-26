@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "X-Rayを消去",
   "Clear the X-Ray of this book?": "この本のX-Rayを消去しますか？",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "上のAI翻訳サービスを使い、読んだところまでの登場人物、場所、出来事をネタバレなしでまとめます。",
-  "Update While Reading": "読書中に更新"
+  "Update While Reading": "読書中に更新",
+  "Subscription": "サブスクリプション",
+  "Sync Settings": "同期設定",
+  "Cloud Storage": "クラウドストレージ",
+  "Readest Cloud Storage": "Readest クラウドストレージ",
+  "Shared Links": "共有リンク",
+  "Login & Security": "ログインとセキュリティ",
+  "Change Password": "パスワードを変更",
+  "Change Email": "メールアドレスを変更",
+  "Manage Billing": "請求を管理",
+  "Delete Library Data": "ライブラリデータを削除",
+  "Delete Library Data?": "ライブラリデータを削除しますか？",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "この操作は取り消せません。すべての本が、読書の進捗、ブックマーク、注釈とともに、このデバイスと Readest クラウドライブラリから削除されます。その場で読み込んだ本は元のファイルが保持され、クラウドストレージにアップロードされた本は「Readest クラウドストレージ」から削除するまで残ります。サインイン済みの他のデバイスにはそれぞれのコピーが残ります。"
 }

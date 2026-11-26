@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "X-Ray 지우기",
   "Clear the X-Ray of this book?": "이 책의 X-Ray를 지울까요?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "위의 AI 번역기를 사용해 지금까지 읽은 인물, 장소, 사건을 스포일러 없이 모읍니다.",
-  "Update While Reading": "읽는 동안 업데이트"
+  "Update While Reading": "읽는 동안 업데이트",
+  "Subscription": "구독",
+  "Sync Settings": "동기화 설정",
+  "Cloud Storage": "클라우드 저장소",
+  "Readest Cloud Storage": "Readest 클라우드 저장소",
+  "Shared Links": "공유 링크",
+  "Login & Security": "로그인 및 보안",
+  "Change Password": "비밀번호 변경",
+  "Change Email": "이메일 변경",
+  "Manage Billing": "결제 관리",
+  "Delete Library Data": "라이브러리 데이터 삭제",
+  "Delete Library Data?": "라이브러리 데이터를 삭제하시겠습니까?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "이 작업은 되돌릴 수 없습니다. 모든 책이 읽기 진행률, 북마크, 주석과 함께 이 기기와 Readest 클라우드 서재에서 삭제됩니다. 원래 위치에서 가져온 책은 원본 파일이 유지되며, 클라우드 저장소에 업로드된 책은 「Readest 클라우드 저장소」에서 삭제할 때까지 남아 있습니다. 로그인된 다른 기기에는 각자의 사본이 남아 있습니다."
 }

@@ -3040,5 +3040,17 @@
   "Clear X-Ray": "X-Ray মুছুন",
   "Clear the X-Ray of this book?": "এই বইয়ের X-Ray মুছবেন?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "আপনি যেসব চরিত্র, স্থান ও ঘটনার কথা পড়েছেন, উপরের AI অনুবাদক ব্যবহার করে স্পয়লার ছাড়াই সেগুলো সংগ্রহ করে।",
-  "Update While Reading": "পড়ার সময় আপডেট করুন"
+  "Update While Reading": "পড়ার সময় আপডেট করুন",
+  "Subscription": "সাবস্ক্রিপশন",
+  "Sync Settings": "সিঙ্ক সেটিংস",
+  "Cloud Storage": "ক্লাউড স্টোরেজ",
+  "Readest Cloud Storage": "Readest ক্লাউড স্টোরেজ",
+  "Shared Links": "শেয়ার করা লিংক",
+  "Login & Security": "লগইন ও নিরাপত্তা",
+  "Change Password": "পাসওয়ার্ড পরিবর্তন করুন",
+  "Change Email": "ইমেল পরিবর্তন করুন",
+  "Manage Billing": "বিলিং পরিচালনা করুন",
+  "Delete Library Data": "লাইব্রেরি ডেটা মুছুন",
+  "Delete Library Data?": "লাইব্রেরি ডেটা মুছবেন?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "এই ক্রিয়াটি পূর্বাবস্থায় ফেরানো যাবে না। পড়ার অগ্রগতি, বুকমার্ক এবং টীকা সহ প্রতিটি বই এই ডিভাইস এবং আপনার Readest ক্লাউড লাইব্রেরি থেকে সরিয়ে ফেলা হবে। যে বইগুলি আপনি নিজ স্থানে আমদানি করেছেন সেগুলির মূল ফাইল অক্ষত থাকে, এবং ক্লাউড স্টোরেজে আপলোড করা বইগুলি «Readest ক্লাউড স্টোরেজ» থেকে না সরানো পর্যন্ত সেখানেই থাকে। সাইন ইন করা অন্যান্য ডিভাইসে নিজস্ব অনুলিপি থেকে যায়।"
 }

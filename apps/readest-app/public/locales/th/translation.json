@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "ล้าง X-Ray",
   "Clear the X-Ray of this book?": "ล้าง X-Ray ของหนังสือเล่มนี้หรือไม่",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "รวบรวมตัวละคร สถานที่ และเหตุการณ์ที่คุณอ่านมาแล้วโดยไม่สปอยล์ ด้วยตัวแปล AI ด้านบน",
-  "Update While Reading": "อัปเดตขณะอ่าน"
+  "Update While Reading": "อัปเดตขณะอ่าน",
+  "Subscription": "การสมัครสมาชิก",
+  "Sync Settings": "การตั้งค่าการซิงค์",
+  "Cloud Storage": "พื้นที่เก็บข้อมูลคลาวด์",
+  "Readest Cloud Storage": "พื้นที่เก็บข้อมูล Readest Cloud",
+  "Shared Links": "ลิงก์ที่แชร์",
+  "Login & Security": "การเข้าสู่ระบบและความปลอดภัย",
+  "Change Password": "เปลี่ยนรหัสผ่าน",
+  "Change Email": "เปลี่ยนอีเมล",
+  "Manage Billing": "จัดการการเรียกเก็บเงิน",
+  "Delete Library Data": "ลบข้อมูลคลังหนังสือ",
+  "Delete Library Data?": "ลบข้อมูลคลังหนังสือหรือไม่?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "การกระทำนี้ไม่สามารถย้อนกลับได้ หนังสือทุกเล่มจะถูกลบออกจากอุปกรณ์นี้และจากคลังหนังสือบนคลาวด์ Readest ของคุณ พร้อมกับความคืบหน้าการอ่าน บุ๊กมาร์ก และคำอธิบายประกอบ หนังสือที่คุณนำเข้าในตำแหน่งเดิมจะยังคงไฟล์ต้นฉบับไว้ และหนังสือที่อัปโหลดไปยังพื้นที่เก็บข้อมูลบนคลาวด์จะยังคงอยู่จนกว่าคุณจะลบออกใน «พื้นที่เก็บข้อมูล Readest Cloud» อุปกรณ์อื่นที่ลงชื่อเข้าใช้จะยังคงเก็บสำเนาของตนเองไว้"
 }

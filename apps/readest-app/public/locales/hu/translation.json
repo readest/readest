@@ -3040,5 +3040,17 @@
   "Clear X-Ray": "X-Ray törlése",
   "Clear the X-Ray of this book?": "Törli a könyv X-Ray adatait?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "A fenti MI-fordítóval, spoilerek nélkül gyűjti össze a szereplőket, helyszíneket és eseményeket, amelyekről már olvasott.",
-  "Update While Reading": "Frissítés olvasás közben"
+  "Update While Reading": "Frissítés olvasás közben",
+  "Subscription": "Előfizetés",
+  "Sync Settings": "Szinkronizálási beállítások",
+  "Cloud Storage": "Felhőtárhely",
+  "Readest Cloud Storage": "Readest felhőtárhely",
+  "Shared Links": "Megosztott hivatkozások",
+  "Login & Security": "Bejelentkezés és biztonság",
+  "Change Password": "Jelszó módosítása",
+  "Change Email": "E-mail-cím módosítása",
+  "Manage Billing": "Számlázás kezelése",
+  "Delete Library Data": "Könyvtáradatok törlése",
+  "Delete Library Data?": "Törli a könyvtáradatokat?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "Ez a művelet nem vonható vissza. Minden könyv törlődik erről az eszközről és a Readest felhőkönyvtárából, az olvasási előrehaladással, a könyvjelzőkkel és a jegyzetekkel együtt. A helyben importált könyvek megtartják az eredeti fájljaikat, a felhőtárhelyre feltöltött könyvek pedig ott maradnak, amíg el nem távolítja őket a «Readest felhőtárhely» részben. A többi bejelentkezett eszköz megtartja a saját másolatát."
 }

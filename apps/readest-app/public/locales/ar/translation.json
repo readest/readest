@@ -3356,5 +3356,17 @@
   "Clear X-Ray": "مسح X-Ray",
   "Clear the X-Ray of this book?": "هل تريد مسح X-Ray لهذا الكتاب؟",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "يجمع الشخصيات والأماكن والأحداث التي قرأت عنها دون حرق للأحداث، باستخدام مترجم الذكاء الاصطناعي أعلاه.",
-  "Update While Reading": "التحديث أثناء القراءة"
+  "Update While Reading": "التحديث أثناء القراءة",
+  "Subscription": "الاشتراك",
+  "Sync Settings": "إعدادات المزامنة",
+  "Cloud Storage": "التخزين السحابي",
+  "Readest Cloud Storage": "تخزين Readest السحابي",
+  "Shared Links": "الروابط المشتركة",
+  "Login & Security": "تسجيل الدخول والأمان",
+  "Change Password": "تغيير كلمة المرور",
+  "Change Email": "تغيير البريد الإلكتروني",
+  "Manage Billing": "إدارة الفوترة",
+  "Delete Library Data": "حذف بيانات المكتبة",
+  "Delete Library Data?": "هل تريد حذف بيانات المكتبة؟",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "لا يمكن التراجع عن هذا الإجراء. ستتم إزالة كل كتاب من هذا الجهاز ومن مكتبتك السحابية في Readest، إلى جانب تقدم القراءة والإشارات المرجعية والتعليقات. تحتفظ الكتب التي استوردتها في مكانها بملفاتها الأصلية، وتبقى الكتب المرفوعة إلى التخزين السحابي هناك حتى تحذفها من «تخزين Readest السحابي». تحتفظ الأجهزة الأخرى التي سجّلت الدخول بنسخها الخاصة."
 }

@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "X-Ray གཙང་སེལ།",
   "Clear the X-Ray of this book?": "དེབ་འདིའི་ X-Ray གཙང་སེལ་བྱེད་དམ།",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "གོང་གི་ AI སྒྱུར་བཅོས་ཆས་བེད་སྤྱད་ནས། ཁྱེད་ཀྱིས་བཀླགས་ཟིན་པའི་མི་སྣ་དང་ས་ཆ། བྱུང་བ་རྣམས་མཇུག་འབྲས་མི་བསྟན་པར་བསྡུ་རུབ་བྱེད།",
-  "Update While Reading": "ཀློག་སྐབས་གསར་སྒྱུར་བྱེད།"
+  "Update While Reading": "ཀློག་སྐབས་གསར་སྒྱུར་བྱེད།",
+  "Subscription": "མངགས་ཉོ།",
+  "Sync Settings": "མཉམ་སྒྲིག་སྒྲིག་འགོད།",
+  "Cloud Storage": "སྤྲིན་གྱི་གསོག་འཇོག",
+  "Readest Cloud Storage": "Readest སྤྲིན་གྱི་གསོག་འཇོག",
+  "Shared Links": "མཉམ་སྤྱོད་སྦྲེལ་ཐག",
+  "Login & Security": "ནང་འཇུག་དང་བདེ་འཇགས།",
+  "Change Password": "གསང་གྲངས་བརྗེ་བ།",
+  "Change Email": "གློག་འཕྲིན་བརྗེ་བ།",
+  "Manage Billing": "རྩིས་ཁྲ་དོ་དམ།",
+  "Delete Library Data": "དཔེ་མཛོད་གཞི་གྲངས་སུབ་པ།",
+  "Delete Library Data?": "དཔེ་མཛོད་གཞི་གྲངས་སུབ་དགོས་སམ།",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "བྱ་བ་འདི་ཕྱིར་བསྡུ་མི་ཐུབ། དེབ་རེ་རེ་དང་ཀློག་པའི་འཕེལ་རིམ། དེབ་རྟགས། མཆན་བུ་བཅས་ཐབས་ཆས་འདི་དང་ཁྱེད་ཀྱི་ Readest སྤྲིན་གྱི་དཔེ་མཛོད་ནས་བསུབ་འགྲོ། རང་གནས་སུ་ནང་འདྲེན་བྱས་པའི་དེབ་ཀྱི་མ་ཕྱི་ཡིག་ཆ་གནས་ཐུབ། སྤྲིན་གསོག་ནང་ཡར་འཇུག་བྱས་པའི་དེབ་རྣམས་ཁྱེད་ཀྱིས་ «Readest སྤྲིན་གྱི་གསོག་འཇོག» ནང་ནས་མ་བསུབས་བར་དུ་གནས། ཐོ་འགོད་བྱས་པའི་ཐབས་ཆས་གཞན་ལ་རང་གི་འདྲ་བཤུས་གནས།"
 }

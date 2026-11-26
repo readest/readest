@@ -3040,5 +3040,17 @@
   "Clear X-Ray": "پاک کردن X-Ray",
   "Clear the X-Ray of this book?": "X-Ray این کتاب پاک شود؟",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "شخصیت‌ها، مکان‌ها و رویدادهایی را که درباره‌شان خوانده‌اید، بدون لو دادن داستان و با مترجم هوش مصنوعی بالا گرد می‌آورد.",
-  "Update While Reading": "به‌روزرسانی هنگام خواندن"
+  "Update While Reading": "به‌روزرسانی هنگام خواندن",
+  "Subscription": "اشتراک",
+  "Sync Settings": "تنظیمات همگام‌سازی",
+  "Cloud Storage": "فضای ذخیره‌سازی ابری",
+  "Readest Cloud Storage": "فضای ابری Readest",
+  "Shared Links": "پیوندهای اشتراک‌گذاری‌شده",
+  "Login & Security": "ورود و امنیت",
+  "Change Password": "تغییر رمز عبور",
+  "Change Email": "تغییر ایمیل",
+  "Manage Billing": "مدیریت صورتحساب",
+  "Delete Library Data": "حذف داده‌های کتابخانه",
+  "Delete Library Data?": "داده‌های کتابخانه حذف شود؟",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "این عمل قابل بازگشت نیست. همه کتاب‌ها همراه با پیشرفت مطالعه، نشانک‌ها و یادداشت‌ها از این دستگاه و از کتابخانه ابری Readest شما حذف می‌شوند. کتاب‌هایی که در محل خود وارد کرده‌اید فایل‌های اصلی خود را حفظ می‌کنند و کتاب‌های بارگذاری‌شده در فضای ابری تا زمانی که آن‌ها را از «فضای ابری Readest» حذف نکنید باقی می‌مانند. دستگاه‌های دیگری که وارد شده‌اند نسخه‌های خود را نگه می‌دارند."
 }

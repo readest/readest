@@ -3040,5 +3040,17 @@
   "Clear X-Ray": "X-Ray හිස් කරන්න",
   "Clear the X-Ray of this book?": "මෙම පොතේ X-Ray හිස් කරන්නද?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "ඉහත AI පරිවර්තකය භාවිතයෙන්, ඔබ කියවා ඇති චරිත, ස්ථාන සහ සිදුවීම් කතාව හෙළි නොකර එක් කරයි.",
-  "Update While Reading": "කියවන අතරතුර යාවත්කාලීන කරන්න"
+  "Update While Reading": "කියවන අතරතුර යාවත්කාලීන කරන්න",
+  "Subscription": "දායකත්වය",
+  "Sync Settings": "සමමුහුර්ත සැකසුම්",
+  "Cloud Storage": "ක්ලවුඩ් ගබඩාව",
+  "Readest Cloud Storage": "Readest ක්ලවුඩ් ගබඩාව",
+  "Shared Links": "බෙදාගත් සබැඳි",
+  "Login & Security": "පිවිසුම සහ ආරක්ෂාව",
+  "Change Password": "මුරපදය වෙනස් කරන්න",
+  "Change Email": "විද්‍යුත් තැපෑල වෙනස් කරන්න",
+  "Manage Billing": "බිල්පත් කළමනාකරණය කරන්න",
+  "Delete Library Data": "පුස්තකාල දත්ත මකන්න",
+  "Delete Library Data?": "පුස්තකාල දත්ත මකන්නද?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "මෙම ක්‍රියාව අහෝසි කළ නොහැක. කියවීමේ ප්‍රගතිය, පිටු සලකුණු සහ විවරණ සමඟ සෑම පොතක්ම මෙම උපාංගයෙන් සහ ඔබේ Readest වලාකුළු පුස්තකාලයෙන් ඉවත් කරනු ලැබේ. ඔබ එහිම ආයාත කළ පොත්වල මුල් ගොනු පවතී, සහ වලාකුළු ගබඩාවට උඩුගත කළ පොත් ඔබ «Readest ක්ලවුඩ් ගබඩාව» තුළින් ඉවත් කරන තුරු එහි පවතී. පුරනය වී ඇති අනෙකුත් උපාංග ඒවායේම පිටපත් තබා ගනී."
 }

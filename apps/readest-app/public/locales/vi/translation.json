@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "Xóa X-Ray",
   "Clear the X-Ray of this book?": "Xóa X-Ray của cuốn sách này?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Tập hợp các nhân vật, địa điểm và sự kiện bạn đã đọc, không tiết lộ nội dung, bằng Trình dịch AI ở trên.",
-  "Update While Reading": "Cập nhật khi đọc"
+  "Update While Reading": "Cập nhật khi đọc",
+  "Subscription": "Gói đăng ký",
+  "Sync Settings": "Cài đặt đồng bộ",
+  "Cloud Storage": "Lưu trữ đám mây",
+  "Readest Cloud Storage": "Lưu trữ Readest Cloud",
+  "Shared Links": "Liên kết đã chia sẻ",
+  "Login & Security": "Đăng nhập & Bảo mật",
+  "Change Password": "Đổi mật khẩu",
+  "Change Email": "Đổi email",
+  "Manage Billing": "Quản lý thanh toán",
+  "Delete Library Data": "Xóa dữ liệu thư viện",
+  "Delete Library Data?": "Xóa dữ liệu thư viện?",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "Không thể hoàn tác thao tác này. Mọi cuốn sách sẽ bị xóa khỏi thiết bị này và khỏi thư viện đám mây Readest của bạn, cùng với tiến độ đọc, dấu trang và chú thích. Những sách bạn nhập tại chỗ vẫn giữ nguyên tệp gốc, còn sách đã tải lên bộ nhớ đám mây vẫn ở đó cho đến khi bạn xóa chúng trong «Lưu trữ Readest Cloud». Các thiết bị khác đã đăng nhập vẫn giữ bản sao riêng."
 }
