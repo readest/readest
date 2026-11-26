@@ -256,6 +256,19 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(image.width / image.height).toBeCloseTo(600 / 900, 2);
   });
 
+  it('fits a width-constrained illustration whose publisher set its height to auto', async () => {
+    const illustration = `<figure style="margin: 0; width: 300px; height: 260px; overflow: hidden"><img alt="" style="display: block; width: 100%; height: auto" src="${COVER}"/></figure>`;
+    const { doc } = await open(`${illustration}${TEXT}`, '');
+    const figure = doc.querySelector('figure')!.getBoundingClientRect();
+    const img = doc.querySelector<HTMLImageElement>('figure img')!;
+    await img.decode();
+    const image = img.getBoundingClientRect();
+    expect(image.top).toBe(figure.top);
+    expect(image.bottom).toBe(figure.bottom);
+    expect(image.width).toBe(300);
+    expect(getComputedStyle(img).objectFit).toBe('contain');
+  });
+
   const SPRITE = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="200" height="300" fill="#933"/></svg>',
   )}`;
