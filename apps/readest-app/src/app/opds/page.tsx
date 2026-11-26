@@ -42,6 +42,7 @@ import {
   getProxiedURL,
   fetchWithAuth,
   probeAuth,
+  needsImageProxy,
   needsProxy,
   needsNativeImageFetch,
   probeFilename,
@@ -906,7 +907,7 @@ export default function BrowserPage() {
         Object.keys(customHeaders).length === 0 &&
         !needsNativeImageFetch(url)
       ) {
-        return needsProxy(url) ? getProxiedURL(url, true) : url;
+        return needsImageProxy(url) ? getProxiedURL(url, true) : url;
       }
 
       const cachedKey = getOPDSImageCacheFilename(url, cacheVersion);

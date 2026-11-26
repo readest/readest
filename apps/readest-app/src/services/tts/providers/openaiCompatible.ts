@@ -121,13 +121,13 @@ const parseVoiceList = (body: unknown): ListedVoice[] => {
   });
 };
 
-// The voices a service offers: the names typed for it, else GET
-// {baseUrl}/audio/voices. OpenAI itself has no such endpoint, so a service that
-// lists nothing gets its standard voices.
-const fetchServiceVoices = async (service: CustomTTSService): Promise<ListedVoice[]> => {
-  const typed = service.voices?.split(',').flatMap((name) => name.trim() || []);
-  if (typed?.length) return typed.map((name) => ({ name }));
-  if (isMiMoService(service)) return MIMO_VOICES;
+const STANDARD_VOICES: ListedVoice[] = OPENAI_TTS_VOICES.map((name) => ({ name }));
+
+// GET {baseUrl}/audio/voices. OpenAI itself has no such endpoint, so a service
+// without one (404, 405) or that answers without a list gets its standard
+// voices. Null when the request failed (timed out, unreachable, busy, rate
+// limited, not JSON): the list is unknown.
+const requestVoiceList = async (service: CustomTTSService): Promise<ListedVoice[] | null> => {
   // A timer rather than AbortSignal.timeout: tauriFetch rejects unhandled when
   // a finished request is aborted.
   const controller = new AbortController();
@@ -137,14 +137,43 @@ const fetchServiceVoices = async (service: CustomTTSService): Promise<ListedVoic
       headers: authHeaders(service),
       signal: controller.signal,
     });
-    const voices = res.ok ? parseVoiceList(await res.json()) : [];
-    if (voices.length) return voices;
+    if (!res.ok) return res.status === 404 || res.status === 405 ? STANDARD_VOICES : null;
+    const voices = parseVoiceList(await res.json());
+    return voices.length ? voices : STANDARD_VOICES;
   } catch {
-    // Unreachable or not JSON: fall through to the standard voices.
+    return null;
   } finally {
     clearTimeout(timer);
   }
-  return OPENAI_TTS_VOICES.map((name) => ({ name }));
+};
+
+// The list each service last gave on this device, so a failed request still
+// offers that service's own voices, the reader's choice among them, rather
+// than OpenAI's (#7974).
+const SAVED_VOICES_KEY = 'readest-custom-tts-voices';
+type SavedVoices = Record<string, { baseUrl: string; voices: ListedVoice[] }>;
+
+const readSavedVoices = (): SavedVoices => {
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_VOICES_KEY) ?? '{}') as SavedVoices;
+  } catch {
+    return {};
+  }
+};
+
+const savedVoices = (service: CustomTTSService): ListedVoice[] | null => {
+  const saved = readSavedVoices()[service.id];
+  return saved?.baseUrl === service.baseUrl ? saved.voices : null;
+};
+
+const saveVoices = (service: CustomTTSService, voices: ListedVoice[]) => {
+  try {
+    const saved = readSavedVoices();
+    saved[service.id] = { baseUrl: service.baseUrl, voices };
+    localStorage.setItem(SAVED_VOICES_KEY, JSON.stringify(saved));
+  } catch {
+    // No storage here: the list just isn't remembered.
+  }
 };
 
 // MiMo chat completions wraps the generated MP3 in a Base64 audio.data field.
@@ -206,10 +235,32 @@ export class OpenAICompatibleSpeechProvider implements SpeechProvider {
     return this.getServices().length > 0 && (await this.isAllowed());
   }
 
+  // Each service's list once known in this session. A service whose request
+  // failed with no list saved is asked again on the next call (the voice list
+  // opening), so a timeout as Read Aloud starts doesn't leave OpenAI's voices
+  // standing in for the whole session.
+  #lists = new Map<string, ListedVoice[]>();
+
+  // The voices a service offers: the names typed for it, else the list it gives.
+  async #serviceVoices(service: CustomTTSService): Promise<ListedVoice[]> {
+    const typed = service.voices?.split(',').flatMap((name) => name.trim() || []);
+    if (typed?.length) return typed.map((name) => ({ name }));
+    if (isMiMoService(service)) return MIMO_VOICES;
+    const key = `${service.id} ${service.baseUrl}`;
+    const known = this.#lists.get(key);
+    if (known) return known;
+    const listed = await requestVoiceList(service);
+    if (listed) saveVoices(service, listed);
+    const voices = listed ?? savedVoices(service);
+    if (!voices) return STANDARD_VOICES;
+    this.#lists.set(key, voices);
+    return voices;
+  }
+
   async getAllVoices(): Promise<TTSVoice[]> {
     if (!(await this.init())) return [];
     const services = this.getServices();
-    const lists = await Promise.all(services.map(fetchServiceVoices));
+    const lists = await Promise.all(services.map((service) => this.#serviceVoices(service)));
     return services.flatMap((service, i) =>
       lists[i]!.map((voice) => {
         const gender = voiceGender(voice);

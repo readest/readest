@@ -3062,5 +3062,10 @@
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "সিঙ্ক হচ্ছে না — সেটিংস → ইন্টিগ্রেশন থেকে একটি ক্লাউড সিঙ্ক প্রোভাইডার চালু করুন",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud সিঙ্ক বন্ধ আছে; তবুও {{provider}}-এর মাধ্যমে সিঙ্ক হচ্ছে",
   "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "সাইন ইন থাকা অবস্থায় সবসময় Readest Cloud-এর মাধ্যমে সিঙ্ক হয়; কোনো বিভাগ বন্ধ করলে সেটি এই ডিভাইসেই থাকে",
-  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud-এ সিঙ্ক হচ্ছে; {{provider}}-এ বিরতি দেওয়া আছে — পুনরায় চালু করতে আপগ্রেড করুন"
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud-এ সিঙ্ক হচ্ছে; {{provider}}-এ বিরতি দেওয়া আছে — পুনরায় চালু করতে আপগ্রেড করুন",
+  "World's largest collection of free ebooks": "বিশ্বের বৃহত্তম বিনামূল্যের ই-বুক সংগ্রহ",
+  "Free and liberated ebooks, carefully produced for the true book lover": "প্রকৃত বইপ্রেমীদের জন্য যত্নসহকারে তৈরি বিনামূল্যের ও মুক্ত ই-বুক",
+  "Over 50,000 free ebooks": "৫০,০০০-এরও বেশি বিনামূল্যের ই-বুক",
+  "Free ebooks from authors who have \"unglued\" their books": "যেসব লেখক তাঁদের বই “মুক্ত” করেছেন তাঁদের বিনামূল্যের ই-বুক",
+  "Free public-domain books, comics, magazines and puzzles": "পাবলিক ডোমেইনের বিনামূল্যের বই, কমিক্স, পত্রিকা ও ধাঁধা"
 }

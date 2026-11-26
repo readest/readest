@@ -47,6 +47,7 @@ import { isLanAddress } from '@/utils/network';
 import { isSelfHosted } from '@/utils/access';
 import { allowsSelfSignedCert } from '@/utils/tls';
 import { eventDispatcher } from '@/utils/event';
+import { stubTranslation as _ } from '@/utils/misc';
 import { SectionTitle } from '@/components/settings/primitives';
 import { deleteSubscriptionState, loadSubscriptionState } from '@/services/opds';
 import type { OPDSSubscriptionState } from '@/services/opds/types';
@@ -64,29 +65,36 @@ const POPULAR_CATALOGS: OPDSCatalog[] = [
     id: 'gutenberg',
     name: 'Project Gutenberg',
     url: 'https://m.gutenberg.org/ebooks.opds/',
-    description: "World's largest collection of free ebooks",
+    description: _("World's largest collection of free ebooks"),
     icon: '🏛️',
   },
   {
     id: 'standardebooks',
     name: 'Standard Ebooks',
     url: 'https://standardebooks.org/feeds/opds',
-    description: 'Free and liberated ebooks, carefully produced for the true book lover',
+    description: _('Free and liberated ebooks, carefully produced for the true book lover'),
     icon: '📚',
   },
   {
     id: 'manybooks',
     name: 'ManyBooks',
     url: 'https://manybooks.net/opds/index.php',
-    description: 'Over 50,000 free ebooks',
+    description: _('Over 50,000 free ebooks'),
     icon: '📖',
   },
   {
     id: 'unglue.it',
     name: 'Unglue.it',
     url: 'https://unglue.it/api/opds/',
-    description: 'Free ebooks from authors who have "unglued" their books',
+    description: _('Free ebooks from authors who have "unglued" their books'),
     icon: '🔓',
+  },
+  {
+    id: 'firesidefolio',
+    name: 'Fireside Folio',
+    url: 'https://firesidefolio.com/opds/catalog',
+    description: _('Free public-domain books, comics, magazines and puzzles'),
+    icon: '🔥',
   },
 ];
 
@@ -770,7 +778,7 @@ export function CatalogManager({ inSubPage = false }: CatalogManagerProps = {}) 
                 </h4>
                 {catalog.description && (
                   <p className='text-base-content/70 line-clamp-2 text-xs leading-relaxed'>
-                    {catalog.description}
+                    {_(catalog.description)}
                   </p>
                 )}
                 <div className='border-base-200 mt-auto flex items-center justify-end gap-1 border-t pt-3'>

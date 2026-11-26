@@ -3141,5 +3141,10 @@
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Fără sincronizare — activează un furnizor în Setări → Integrări",
   "Readest Cloud sync is off; still synced via {{provider}}": "Sincronizarea Readest Cloud este oprită; se sincronizează în continuare prin {{provider}}",
   "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "Sincronizat mereu prin Readest Cloud cât timp ești conectat; dezactivarea unei categorii o păstrează pe acest dispozitiv",
-  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Sincronizat cu Readest Cloud; întrerupt pe {{provider}} — fă upgrade pentru a relua"
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Sincronizat cu Readest Cloud; întrerupt pe {{provider}} — fă upgrade pentru a relua",
+  "World's largest collection of free ebooks": "Cea mai mare colecție de cărți electronice gratuite din lume",
+  "Free and liberated ebooks, carefully produced for the true book lover": "Cărți electronice libere, realizate cu grijă pentru cititori",
+  "Over 50,000 free ebooks": "Peste 50.000 de cărți electronice gratuite",
+  "Free ebooks from authors who have \"unglued\" their books": "Cărți electronice gratuite de la autori care și-au „eliberat” cărțile",
+  "Free public-domain books, comics, magazines and puzzles": "Cărți, benzi desenate, reviste, jocuri gratuite din domeniul public"
 }

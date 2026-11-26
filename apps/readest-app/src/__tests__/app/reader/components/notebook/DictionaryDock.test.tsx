@@ -4,10 +4,12 @@
  * button hands its lookup over, and the Notebook's Dictionary tab shows the
  * latest lookup and tells the reader it is on screen.
  */
+import { StrictMode } from 'react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import type { DictionaryProvider } from '@/services/dictionaries/types';
+import type { DictionaryLookupContext, DictionaryProvider } from '@/services/dictionaries/types';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useDictionaryDockStore } from '@/store/dictionaryDockStore';
 
 vi.mock('@/hooks/useTranslation', () => ({ useTranslation: () => (s: string) => s }));
@@ -47,6 +49,34 @@ const plain = (n: number): DictionaryProvider => ({
   },
 });
 const providers = vi.hoisted(() => ({ list: [] as DictionaryProvider[] }));
+// The AI context dictionary: it streams part of an answer at once and the rest
+// when the test says so.
+const ai = vi.hoisted(() => ({ asked: [] as string[], finish: () => {} }));
+vi.mock('@/services/dictionaries/providers/contextProvider', () => ({
+  getContextTranslator: () => ({ id: 'ai-1', name: 'AI 1' }),
+  contextProvider: {
+    id: 'builtin:context',
+    kind: 'builtin',
+    label: 'Context Dictionary',
+    lookup: (word: string, ctx: DictionaryLookupContext) =>
+      new Promise((resolve) => {
+        ai.asked.push(word);
+        ctx.container.replaceChildren(`${word}: the answer so far`);
+        ctx.onUpdate?.();
+        ai.finish = () => {
+          ctx.container.replaceChildren(`${word}: the whole answer`);
+          resolve({ ok: true, headword: word, sourceLabel: 'AI 1' });
+        };
+      }),
+  },
+}));
+vi.mock('@/store/customTranslatorStore', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/store/customTranslatorStore')>()),
+  getLLMTranslators: () => [
+    { id: 'ai-1', name: 'AI 1' },
+    { id: 'ai-2', name: 'AI 2' },
+  ],
+}));
 vi.mock('@/services/dictionaries/registry', () => ({
   getEnabledProviders: () => providers.list,
   __resetRegistryForTests: vi.fn(),
@@ -78,7 +108,9 @@ beforeAll(() => {
 afterAll(() => vi.unstubAllGlobals());
 beforeEach(() => {
   providers.list = [linking];
+  ai.asked = [];
   useDictionaryDockStore.setState({ lookup: null, isDocked: false });
+  useCustomDictionaryStore.setState({ saveCustomDictionaries: vi.fn() });
 });
 afterEach(cleanup);
 
@@ -215,6 +247,78 @@ describe('the Notebook Dictionary tab', () => {
     expect(card.getAttribute('aria-expanded')).toBe('true');
     fireEvent.click(card);
     expect(card.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  // Closing the Notebook, or leaving the tab, while the AI is still answering
+  // cancels the answer. It isn't asked again when the tab comes back, in this
+  // book or another (#7971).
+  describe('an AI answer', () => {
+    const lookUp = (word: string) =>
+      act(() => {
+        useDictionaryDockStore.getState().setLookup({ word, lang: 'en', contextOnly: true });
+      });
+    const empty = 'Look up a word to see its definitions here.';
+
+    it('is dropped when the tab closes before it finishes', async () => {
+      lookUp('serendipity');
+      const { unmount } = render(
+        <StrictMode>
+          <DictionaryView />
+        </StrictMode>,
+      );
+      await screen.findByText('serendipity: the answer so far');
+      const asked = ai.asked.length;
+
+      unmount();
+      render(<DictionaryView />);
+
+      expect(screen.getByText(empty)).toBeTruthy();
+      expect(ai.asked).toHaveLength(asked);
+    });
+
+    it('is kept once it has finished', async () => {
+      lookUp('serendipity');
+      const { unmount } = render(<DictionaryView />);
+      await screen.findByText('serendipity: the answer so far');
+      act(() => ai.finish());
+      await screen.findByText('serendipity: the whole answer');
+
+      unmount();
+      render(<DictionaryView />);
+
+      expect(title()).toBe('serendipity');
+      expect(screen.queryByText(empty)).toBeNull();
+    });
+
+    it('is dropped when the tab closes while another AI is answering', async () => {
+      lookUp('serendipity');
+      const { unmount } = render(<DictionaryView />);
+      await screen.findByText('serendipity: the answer so far');
+      act(() => ai.finish());
+
+      fireEvent.change(await screen.findByRole('combobox', { name: 'AI Translator' }), {
+        target: { value: 'ai-2' },
+      });
+      await waitFor(() => expect(ai.asked).toHaveLength(2));
+      await screen.findByText('serendipity: the answer so far');
+      unmount();
+      render(<DictionaryView />);
+
+      expect(screen.getByText(empty)).toBeTruthy();
+      expect(ai.asked).toHaveLength(2);
+    });
+
+    it('cut off by a new lookup leaves the new lookup on screen', async () => {
+      lookUp('serendipity');
+      render(<DictionaryView />);
+      await screen.findByText('serendipity: the answer so far');
+
+      lookUp('luck');
+
+      await screen.findByText('luck: the answer so far');
+      expect(title()).toBe('luck');
+      expect(useDictionaryDockStore.getState().lookup?.word).toBe('luck');
+    });
   });
 
   // The gear sits in the Notebook header instead (NotebookHeaderSettings.test.tsx).

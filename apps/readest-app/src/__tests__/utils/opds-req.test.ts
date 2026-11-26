@@ -144,6 +144,34 @@ describe('opdsReq', () => {
       const proxied = getProxiedURL(url);
       expect(proxied).toContain('/node-api/opds/proxy');
     });
+
+    it('uses the node proxy only for a standardebooks.org host, not a URL that mentions it', () => {
+      // Fireside Folio's cover proxy names the Standard Ebooks cover in its query.
+      const url =
+        'https://firesidefolio.com/img/ext?w=400&u=https%3A%2F%2Fstandardebooks.org%2Febooks%2Fa%2Fb%2Fdownloads%2Fcover.jpg';
+      expect(getProxiedURL(url, true)).toMatch(/^\/api\/opds\/proxy\?/);
+      expect(getProxiedURL('https://www.standardebooks.org/feeds/opds')).toMatch(
+        /^\/node-api\/opds\/proxy\?/,
+      );
+    });
+  });
+
+  describe('needsImageProxy', () => {
+    it('loads Standard Ebooks covers directly on the web, and proxies every other cover', async () => {
+      // web.readest.com's proxy gets 403 from standardebooks.org, which serves
+      // covers to browsers with Access-Control-Allow-Origin: *.
+      const { needsImageProxy } = await import('@/app/opds/utils/opdsReq');
+      isWebAppPlatform.mockReturnValue(true);
+      expect(
+        needsImageProxy('https://standardebooks.org/ebooks/a/b/downloads/cover-thumbnail.jpg'),
+      ).toBe(false);
+      expect(
+        needsImageProxy('https://firesidefolio.com/img/ext?u=https%3A%2F%2Fstandardebooks.org'),
+      ).toBe(true);
+      expect(needsImageProxy('https://m.gutenberg.org/cache/epub/1/pg1.cover.medium.jpg')).toBe(
+        true,
+      );
+    });
   });
 
   describe('fetchWithAuth', () => {

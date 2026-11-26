@@ -2983,5 +2983,10 @@
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "未同期 — 設定 → 連携でクラウド同期プロバイダーを有効にしてください",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud 同期はオフですが、{{provider}} 経由で引き続き同期されます",
   "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "サインイン中は常に Readest Cloud 経由で同期され、オフにした項目はこのデバイスにのみ保持されます",
-  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud に同期中、{{provider}} は一時停止中 — 再開するにはアップグレードしてください"
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud に同期中、{{provider}} は一時停止中 — 再開するにはアップグレードしてください",
+  "World's largest collection of free ebooks": "世界最大の無料電子書籍コレクション",
+  "Free and liberated ebooks, carefully produced for the true book lover": "本を愛する人のために丁寧に制作された、無料で自由な電子書籍",
+  "Over 50,000 free ebooks": "50,000冊以上の無料電子書籍",
+  "Free ebooks from authors who have \"unglued\" their books": "著者が「解放」した無料の電子書籍",
+  "Free public-domain books, comics, magazines and puzzles": "パブリックドメインの無料の本、コミック、雑誌、パズル"
 }

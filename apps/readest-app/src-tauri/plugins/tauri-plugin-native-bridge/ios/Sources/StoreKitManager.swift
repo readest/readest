@@ -6,8 +6,10 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: 
 class StoreKitManager: NSObject, SKProductsRequestDelegate, SKPaymentTransactionObserver {
   static let shared = StoreKitManager()
 
-  private var productsRequest: SKProductsRequest?
-  private var productResponseHandler: (([SKProduct]) -> Void)?
+  // One completion per request. The account page fetches its plans and the
+  // gift card prices at the same time; a single shared handler gave one caller
+  // the other's products and left the other waiting forever.
+  private var productRequests: [SKProductsRequest: ([SKProduct]) -> Void] = [:]
   private var purchaseHandler: ((Result<SKPaymentTransaction, Error>) -> Void)?
   private var restoreHandler: (([SKPaymentTransaction]) -> Void)?
 
@@ -24,11 +26,12 @@ class StoreKitManager: NSObject, SKProductsRequestDelegate, SKPaymentTransaction
   }
 
   func fetchProducts(productIds: [String], completion: @escaping ([SKProduct]) -> Void) {
-    let ids = Set(productIds)
-    productsRequest = SKProductsRequest(productIdentifiers: ids)
-    productsRequest?.delegate = self
-    productResponseHandler = completion
-    productsRequest?.start()
+    DispatchQueue.main.async { [self] in
+      let request = SKProductsRequest(productIdentifiers: Set(productIds))
+      request.delegate = self
+      productRequests[request] = completion
+      request.start()
+    }
   }
 
   func purchase(
@@ -62,16 +65,15 @@ class StoreKitManager: NSObject, SKProductsRequestDelegate, SKPaymentTransaction
   // MARK: - SKProductsRequestDelegate
   func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
     DispatchQueue.main.async { [weak self] in
-      self?.productResponseHandler?(response.products)
-      self?.productResponseHandler = nil
+      self?.productRequests.removeValue(forKey: request)?(response.products)
     }
   }
 
   func request(_ request: SKRequest, didFailWithError error: Error) {
     DispatchQueue.main.async { [weak self] in
       logger.error("Products request failed: \(error.localizedDescription)")
-      self?.productResponseHandler?([])
-      self?.productResponseHandler = nil
+      guard let request = request as? SKProductsRequest else { return }
+      self?.productRequests.removeValue(forKey: request)?([])
     }
   }
 

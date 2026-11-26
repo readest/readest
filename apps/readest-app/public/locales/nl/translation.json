@@ -3062,5 +3062,10 @@
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Niet gesynchroniseerd — schakel een provider in via Instellingen → Integraties",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud-synchronisatie is uit; nog steeds gesynchroniseerd via {{provider}}",
   "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "Altijd gesynchroniseerd via Readest Cloud zolang je bent ingelogd; uitschakelen houdt een categorie op dit apparaat",
-  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Gesynchroniseerd met Readest Cloud; gepauzeerd op {{provider}} — upgrade om te hervatten"
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Gesynchroniseerd met Readest Cloud; gepauzeerd op {{provider}} — upgrade om te hervatten",
+  "World's largest collection of free ebooks": "'s Werelds grootste verzameling gratis e-books",
+  "Free and liberated ebooks, carefully produced for the true book lover": "Vrije e-books, met zorg gemaakt voor echte boekenliefhebbers",
+  "Over 50,000 free ebooks": "Meer dan 50.000 gratis e-books",
+  "Free ebooks from authors who have \"unglued\" their books": "Gratis e-books van auteurs die hun boeken hebben ‘vrijgegeven’",
+  "Free public-domain books, comics, magazines and puzzles": "Gratis boeken, strips, tijdschriften en puzzels uit het publieke domein"
 }

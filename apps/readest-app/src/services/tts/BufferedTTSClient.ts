@@ -154,6 +154,12 @@ export class BufferedTTSClient implements TTSClient {
     return this.initialized;
   }
 
+  // Lists the provider's voices again, for a list that failed to load at init.
+  async refreshVoices(): Promise<TTSVoice[]> {
+    this.voices = await this.provider.getAllVoices();
+    return this.getAllVoices();
+  }
+
   // Synthesis requests fail intermittently (network transports); retry a few
   // times before giving up so a single transient failure doesn't stall
   // playback. SpeechSynthesisPermanentError is permanent for a given
