@@ -59,7 +59,8 @@ export default function JumpReturn({
   const settings = viewState?.viewSettings;
   const footer = settings && footerAtBottom(settings) ? settings.marginBottomPx : 0;
   const player = settings && viewState?.ttsEnabled ? getTTSMiniPlayerClearance(settings, 0) : 0;
-  const chapter = jump.forward ? jump.to : jump.from;
+  // A chapter name says nothing when the jump stayed in that chapter.
+  const chapter = jump.from === jump.to ? undefined : jump.forward ? jump.to : jump.from;
   const label = jump.forward ? _('Go Forward') : _('Go Back');
   const move = () => {
     const history = view.history;

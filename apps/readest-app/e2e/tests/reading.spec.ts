@@ -42,6 +42,25 @@ test.describe('Reading', () => {
     await expect(history).toHaveCount(0);
   });
 
+  test('returns to the reading position after stepping through search results', async ({
+    page,
+    openBook,
+  }) => {
+    const reader = await openBook();
+    const start = await reader.readingProgress();
+    const history = page.getByRole('group', { name: 'Navigation History' });
+
+    await reader.search('Cheshire');
+    await reader.searchResults.first().click();
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(start);
+    const firstHit = await reader.readingProgress();
+    await page.getByTitle('Next Result').click();
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(firstHit);
+
+    await history.getByRole('button', { name: /^Go Back/ }).click();
+    await expect.poll(() => reader.readingProgress()).toBe(start);
+  });
+
   test('jumps to an entered page number', async ({ openBook }) => {
     const reader = await openBook();
     const startProgress = await reader.readingProgress();

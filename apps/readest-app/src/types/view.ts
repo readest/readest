@@ -108,7 +108,8 @@ export interface FoliateView extends HTMLElement {
   // `focus` moves focus to the destination: only for a navigation the user
   // asked for (a TOC entry, a bookmark, a search result), never for one that
   // runs on its own (restoring the position, sync, read aloud).
-  goTo: (target: string | number, options?: { focus?: boolean }) => void;
+  // `fromList`: a step through search results or annotations (see wrappedFoliateView).
+  goTo: (target: string | number, options?: { focus?: boolean; fromList?: boolean }) => void;
   goToFraction: (fraction: number) => void;
   getSectionFractions: () => number[];
   prev: (distance?: number) => Promise<void>;
@@ -163,6 +164,7 @@ export interface FoliateView extends HTMLElement {
     back: () => void;
     forward: () => void;
     clear: () => void;
+    replaceState: (state: string | number) => void;
   };
   renderer: Renderer;
 }
@@ -179,22 +181,51 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
   };
 
   const originalGoTo = originalView.goTo.bind(originalView);
+  // Stepping through a results list (search hits, annotations) moves the entry
+  // its first step pushed instead of pushing one per result, so Back returns to
+  // where reading was, not to the previous result. Any other history push ends
+  // the list.
+  let onListEntry = false;
+  let listFrom: string | undefined;
+  originalView.history.addEventListener('index-change', () => {
+    onListEntry = false;
+  });
+  const stepTo = async (target: string | number, focus?: boolean) => {
+    try {
+      const resolved = await originalView.resolveNavigation(target);
+      await originalView.renderer.goTo(focus ? { ...resolved, focus } : resolved);
+      originalView.history.replaceState(target);
+      return resolved;
+    } catch (e) {
+      console.error(`Could not go to ${target}`, e);
+      return undefined;
+    }
+  };
   // The FoliateView interface declares goTo as (href: string) => void, but
   // Foliate's runtime implementation returns a Promise. Returning a Promise
   // here is compatible with the void return type in TypeScript and lets callers
   // that know about the promise (e.g. tests, async handlers) await completion.
-  originalView.goTo = (target: string | number, options?: { focus?: boolean }): Promise<void> => {
+  originalView.goTo = (
+    target: string | number,
+    options?: { focus?: boolean; fromList?: boolean },
+  ): Promise<unknown> => {
     // Cross-section jumps can take seconds (the target section's images block
     // its iframe load); surface start/end so the viewer can show a spinner.
     originalView.dispatchEvent(new CustomEvent('navigate-start'));
     const from = originalView.lastLocation;
-    return Promise.resolve(originalGoTo(target, options))
+    const step = options?.fromList && onListEntry;
+    return Promise.resolve(step ? stepTo(target, options.focus) : originalGoTo(target, options))
       .then((resolved) => {
         const to = originalView.lastLocation;
         if (options?.focus && from?.cfi && to?.cfi && from.cfi !== to.cfi) {
+          if (options.fromList && !step) listFrom = from.tocItem?.label;
+          onListEntry = !!options.fromList;
           originalView.dispatchEvent(
             new CustomEvent('reader-jump', {
-              detail: { from: from.tocItem?.label, to: to.tocItem?.label },
+              detail: {
+                from: options.fromList ? listFrom : from.tocItem?.label,
+                to: to.tocItem?.label,
+              },
             }),
           );
         }
