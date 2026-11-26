@@ -321,6 +321,16 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(image.bottom).toBeGreaterThan(figure.bottom);
   });
 
+  it('leaves a page-tall crop shifted with a transform at the page height', async () => {
+    const tall = `data:image/svg+xml,${encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="800"><rect width="200" height="800" fill="#933"/></svg>',
+    )}`;
+    const sprite = `<figure style="margin: 0; height: 30px; overflow: hidden"><img alt="" style="display: block; transform: translateY(-90px)" src="${tall}"/></figure>`;
+    const { doc } = await open(`${sprite}${TEXT}`, '');
+    const image = doc.querySelector('figure img')!.getBoundingClientRect();
+    expect(image.height).toBe(availableHeight(doc));
+  });
+
   // After text or an empty block with a height, the plate moves to the next
   // page and its margin is dropped at the break, so it keeps the whole page
   // height
