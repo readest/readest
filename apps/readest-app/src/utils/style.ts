@@ -902,13 +902,7 @@ const getParagraphLayoutStyles = (
     line-height: ${lineSpacing} ${overrideLayout ? '!important' : ''};
     word-spacing: ${wordSpacing}px ${overrideLayout ? '!important' : ''};
     letter-spacing: ${letterSpacing}px ${overrideLayout ? '!important' : ''};
-    /* --readest-font-scale is measured inside the book iframe by
-       applyFontScaleToRenderer. Android WebView's system font-size setting
-       scales the rendered glyphs but leaves CSS em lengths resolving against
-       the declared px size, so 2em ends up narrower than two characters.
-       Multiplying by the measured ratio restores the authored proportion;
-       on desktop / default system size the variable is 1 and this is a no-op. */
-    text-indent: calc(${textIndent}em * var(--readest-font-scale, 1)) ${overrideLayout ? '!important' : ''};
+    text-indent: ${textIndent}em ${overrideLayout ? '!important' : ''};
     -webkit-hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
     hyphens: ${hyphenate ? 'auto' : 'manual'} ${overrideLayout ? '!important' : ''};
     -webkit-hyphenate-limit-before: 3;
@@ -1338,16 +1332,18 @@ export const getStyles = (
   );
   const paragraphLayoutStyles = viewSettings.useBookLayout
     ? ''
-    : getParagraphLayoutStyles(
-        viewSettings.overrideLayout!,
-        viewSettings.paragraphMargin!,
-        viewSettings.lineHeight!,
-        viewSettings.wordSpacing!,
-        viewSettings.letterSpacing!,
-        viewSettings.textIndent!,
-        viewSettings.fullJustification!,
-        viewSettings.hyphenation!,
-        viewSettings.vertical!,
+    : scaleFontRelativeLengths(
+        getParagraphLayoutStyles(
+          viewSettings.overrideLayout!,
+          viewSettings.paragraphMargin!,
+          viewSettings.lineHeight!,
+          viewSettings.wordSpacing!,
+          viewSettings.letterSpacing!,
+          viewSettings.textIndent!,
+          viewSettings.fullJustification!,
+          viewSettings.hyphenation!,
+          viewSettings.vertical!,
+        ),
       );
   const fontStyles = getFontStyles(
     viewSettings.serifFont!,
@@ -1499,97 +1495,65 @@ const FONT_SHORTHAND_REGEX = /((?:^|[\s;{])font\s*:)([^;{}]*)/gi;
 const wrapFontFamily = (_match: string, prefix: string, families: string) =>
   prefix + wrapPublisherFonts(families);
 
-// Android WebView applies the system font size as a uniform text zoom to
-// `font-size` and `line-height` only (readest#611, WebSettings#setTextZoom).
-// Every other property keeps the length it resolved to before the zoom: a
-// `2em` indent becomes 2/F characters, while a 20px box stays 20px. So book
-// CSS needs its font-relative *layout* lengths multiplied by the measured F.
-//
-// font-size, line-height and the `font` shorthand are excluded by design:
-// WebView already scales them, and multiplying again would double-zoom text.
-// rem is included because it resolves against the same declared root size.
-// Percentages, px and absolute units are left alone — they are containing-block
-// or physical lengths, not font metrics, and scaling them would move artwork,
-// borders and page geometry with the text.
-const FONT_RELATIVE_LENGTH = /([+-]?(?:\d*\.)?\d+(?:e[+-]?\d+)?)(rem|em)\b/gi;
+// Android WebView applies the system font size as a text zoom (#7972): it
+// grows the computed font-size and line-height by this factor, while em and
+// rem lengths keep resolving against the declared size, so `text-indent: 2em`
+// renders as 2/F characters. Measured once from the computed size of a probe,
+// which no stylesheet can override; 1 off Android and at the default size.
+let textZoom: number | undefined;
+const getTextZoom = () => {
+  if (textZoom !== undefined) return textZoom;
+  if (getOSPlatform() !== 'android' || typeof document === 'undefined' || !document.body) return 1;
+  const probe = document.createElement('span');
+  probe.style.setProperty('font-size', '100px', 'important');
+  document.body.append(probe);
+  const zoom = parseFloat(getComputedStyle(probe).fontSize) / 100;
+  probe.remove();
+  textZoom = zoom > 0 && Math.abs(zoom - 1) >= 0.01 ? zoom : 1;
+  return textZoom;
+};
+
+// font-size, line-height and the `font` shorthand are left out: the zoom
+// already scales them. So are custom properties, whose consumer may be one of
+// those. A number glued to a name (`--gap2em`, `slide2em`) is not a length, so
+// the match needs a non-name character in front of it.
+const FONT_RELATIVE_LENGTH = /(^|[^\w.-])([+-]?(?:\d*\.)?\d+(?:e[+-]?\d+)?)(rem|em)\b/gi;
 const FONT_METRIC_PROPS =
   /^(?:font-size|font|line-height|-webkit-text-size-adjust|text-size-adjust)$/i;
-// A custom property is substituted into whatever consumes it, so its value may
-// only be scaled when the consumer is a layout declaration. Two rules decide
-// that: a name that can only be a font metric is always left raw (`--font-size`
-// stays raw even when another sheet consumes it), and a `size`-named variable
-// is ambiguous, so it is judged by its consumer in this stylesheet.
-const FONT_ONLY_CUSTOM_PROP = /(?:font|line-height)/i;
-const FONT_METRIC_CONSUMER = /(?:^|[{\s;])(?:font-size|font|line-height)\s*:\s*([^;{}]*)/gi;
-const VAR_REFERENCE = /var\(\s*--([\w-]+)/g;
-const PARKED_CSS_TOKEN = /\/\*READEST_LEN_(\d+)_PLACEHOLDER\*\/|READEST_LEN_(\d+)_PLACEHOLDER/g;
 
 /**
- * Wrap em/rem lengths in book CSS with the measured Android text zoom factor.
- * Runs on linked/embedded stylesheets and style attributes; non-Android input
- * is returned untouched. Comments, strings, url() and at-rule preludes are
- * parked first so a literal "2em" in text, or a length in a media condition,
- * cannot be rewritten. Already-compensated declarations are skipped, making
- * repeated transforms idempotent.
+ * Multiply the em/rem lengths in CSS by the text zoom, so they keep their
+ * size relative to the zoomed glyphs. A no-op when the zoom is 1. Comments,
+ * strings, url() and at-rule preludes are parked first, so a `2em` in text or
+ * in `@media (min-width: 30em)` is never rewritten. The variable marks a value
+ * as scaled, so a repeated transform (#5277) leaves it alone; it is never set,
+ * and its fallback carries the factor.
  */
 const scaleFontRelativeLengths = (css: string) => {
-  if (getOSPlatform() !== 'android') return css;
+  const zoom = getTextZoom();
+  if (zoom === 1) return css;
 
   const parked: string[] = [];
-  const park = (token: string) => `READEST_LEN_${parked.push(token) - 1}_PLACEHOLDER`;
-  // A comment keeps its own delimiters, because CSS lets one sit between
-  // tokens: `margin:1em/*x*/` must still read `1em` as a dimension, and
-  // `padding:/*x*/2em` must not see a name. Bare placeholders there would glue
-  // the length to an identifier in both directions.
-  const parkComment = (token: string) => `/*${park(token)}*/`;
-  // The at-rule alternative comes first: `@import "a2em.css" screen` must be
-  // parked whole, quotes included.
   const masked = css.replace(
-    /(@(?:media|supports|container|import)\b[^{;]*)|(\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)\s*\))/gi,
-    (match, atRule: string | undefined) =>
-      atRule ? park(atRule) : /^\/\*/.test(match) ? parkComment(match) : park(match),
+    /\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)\s*\)|@[\w-]+[^{;]*/gi,
+    (token) => `READEST_LEN_${parked.push(token) - 1}_PLACEHOLDER`,
   );
-
-  // Variables this stylesheet hands to a font-metric declaration. Their values
-  // are zoomed by WebView already, so scaling them too would zoom twice.
-  const fontConsumedVars = new Set<string>();
-  for (const declaration of masked.matchAll(FONT_METRIC_CONSUMER)) {
-    for (const reference of declaration[1]!.matchAll(VAR_REFERENCE)) {
-      fontConsumedVars.add(reference[1]!);
-    }
-  }
-
-  // Require a declaration boundary ({, ; or start) before the property so an
-  // at-rule prelude is never treated as one. No lookbehind: older iOS WebViews
-  // cannot parse it.
   const scaled = masked.replace(
     /(^|[{\s;])([\w-]+)(\s*:\s*)([^;{}]*)/gi,
     (match, prefix: string, prop: string, sep: string, value: string) => {
-      if (FONT_METRIC_PROPS.test(prop)) return match;
-      if (prop.startsWith('--')) {
-        const ambiguous = prop.slice(2);
-        if (FONT_ONLY_CUSTOM_PROP.test(ambiguous) || fontConsumedVars.has(ambiguous)) return match;
-      }
+      if (FONT_METRIC_PROPS.test(prop) || prop.startsWith('--')) return match;
       if (value.includes('--readest-font-scale')) return match;
-      // A length glued to an identifier is a name, not a dimension:
-      // `var(--gap2em)` must keep resolving. The sign is part of the match, so
-      // `margin: 0 -2em` still reads a space (not a `-`) before the number.
       const rewritten = value.replace(
         FONT_RELATIVE_LENGTH,
-        (len, number: string, unit: string, offset: number, whole: string) =>
-          parseFloat(number) === 0 || /[-\w.]/.test(whole[offset - 1] ?? '')
+        (len, before: string, number: string, unit: string) =>
+          parseFloat(number) === 0
             ? len
-            : `calc(${number}${unit} * var(--readest-font-scale, 1))`,
+            : `${before}calc(${number}${unit} * var(--readest-font-scale, ${zoom}))`,
       );
       return rewritten === value ? match : prefix + prop + sep + rewritten;
     },
   );
-
-  return scaled.replace(
-    PARKED_CSS_TOKEN,
-    (_, commentIndex: string | undefined, bareIndex: string | undefined) =>
-      parked[+(commentIndex ?? bareIndex ?? 0)]!,
-  );
+  return scaled.replace(/READEST_LEN_(\d+)_PLACEHOLDER/g, (_, i: string) => parked[+i]!);
 };
 
 // `style` attributes don't pass through transformStylesheet.
@@ -1794,12 +1758,6 @@ export const transformStylesheet = (
     });
   }
 
-  // With Use Book Layout the book's own lengths are in force, so its font-
-  // relative layout units need the same correction as the reader's indent.
-  // Runs after the negative-margin pass: wrapping `-2em` in a calc() first
-  // would hide it from that analysis (#5711).
-  css = scaleFontRelativeLengths(css);
-
   // unset font-family for body when set to serif or sans-serif
   css = css.replace(ruleRegex, (_, selector, block) => {
     if (/\bbody\b/i.test(selector)) {
@@ -1967,7 +1925,9 @@ export const transformStylesheet = (
     });
   }
 
-  return css.replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
+  // Last, so the passes above still read the lengths the book wrote, such as
+  // a band's negative margin (#5711).
+  return scaleFontRelativeLengths(css.replace(FONT_SHORTHAND_REGEX, wrapFontShorthand));
 };
 
 export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => {
@@ -2045,76 +2005,6 @@ export const applyNamespacedAttributes = (document: Document) => {
  */
 export const applyEinkModeAttribute = (document: Document, isEink: boolean) => {
   document.documentElement.setAttribute('data-eink', isEink ? 'true' : 'false');
-};
-
-/**
- * Android WebView applies the system font-size setting as a text zoom: the
- * rendered glyph box grows by F, but a CSS `em` length still resolves against
- * the declared px font-size. The reader's `text-indent: 2em` therefore renders
- * as 2/F characters when the system size is not the default (readest#611).
- *
- * Measure the ratio inside the section document: `glyph` is a line box at
- * font-size:100px (its height follows the OS text zoom), `ruler` is a `1em`
- * box at the same declared size (its width follows CSS em resolution). Their
- * quotient is exactly the factor `text-indent` needs. When the system size is
- * default both are 100px and the result is 1, i.e. a no-op.
- *
- * Gate to Android so desktop and iOS keep byte-identical behaviour and no
- * probe is inserted there. The probe lives only for the duration of this
- * call and is removed before paint.
- */
-export const applyFontScaleToRenderer = (document: Document) => {
-  if (getOSPlatform() !== 'android') return;
-  const root = document.documentElement as HTMLElement | null;
-  if (!root || !document.body) return;
-
-  // The probe must speak horizontal-tb even inside a vertical book. In
-  // vertical-rl the block's physical height is its *inline* extent, so
-  // `offsetHeight` would report a glyph advance (which follows em resolution,
-  // not the text zoom) and the quotient would come out as 1 — leaving a
-  // vertical book with no compensation at all (its `text-indent: 2em` short
-  // and its fixed-height 夹批 splitting into too many columns).
-  //
-  // Every declaration is !important: the reader's own paragraph rule appends
-  // `!important` to line-height when Override Book Layout is on, and its
-  // `div:not(:has(…))` clause matches these text-only divs. An inline
-  // !important is the only thing that outranks a stylesheet !important, so the
-  // line box keeps measuring the zoomed font size instead of the user's line
-  // spacing (which would inflate every compensated length by that factor).
-  const horizontal =
-    'writing-mode:horizontal-tb !important;-webkit-writing-mode:horizontal-tb !important;';
-  const probe = document.createElement('div');
-  probe.setAttribute('aria-hidden', 'true');
-  probe.style.cssText =
-    'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;' + horizontal;
-  const glyph = document.createElement('div');
-  glyph.style.cssText = `${horizontal}font-size:100px !important;line-height:1 !important;width:auto;`;
-  glyph.textContent = 'x';
-  const ruler = document.createElement('div');
-  ruler.style.cssText = `${horizontal}font-size:100px !important;line-height:1 !important;width:1em !important;height:1px;`;
-  probe.append(glyph, ruler);
-  document.body.appendChild(probe);
-
-  let scale = 1;
-  try {
-    // offsetHeight/offsetWidth are layout values unaffected by any transform
-    // a vertical book puts on its content (getBoundingClientRect is not).
-    const rendered = glyph.offsetHeight;
-    const emLength = ruler.offsetWidth;
-    if (rendered > 0 && emLength > 0) {
-      const ratio = rendered / emLength;
-      // A fallback font or a detached doc can produce a nonsensical ratio;
-      // clamp to the range Android's font_scale actually spans and treat
-      // sub-percent noise as 1 so the default system size stays untouched.
-      if (Number.isFinite(ratio) && ratio >= 0.5 && ratio <= 2) {
-        scale = Math.abs(ratio - 1) < 0.01 ? 1 : ratio;
-      }
-    }
-  } catch {
-    // jsdom or a document without a viewport: leave the variable at 1.
-  }
-  probe.remove();
-  root.style.setProperty('--readest-font-scale', String(scale));
 };
 
 // The reading area's size, for the vw/vh lengths transformStylesheet rewrites.

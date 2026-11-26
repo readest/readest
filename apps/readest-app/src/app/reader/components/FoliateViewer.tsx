@@ -48,7 +48,6 @@ import { useKOSync } from '../hooks/useKOSync';
 import { useFileSync } from '../hooks/useFileSync';
 import {
   applyEinkModeAttribute,
-  applyFontScaleToRenderer,
   applyOrientationMedia,
   applyViewportUnits,
   applyFixedlayoutStyles,
@@ -672,10 +671,6 @@ const FoliateViewer: React.FC<{
       if (!bookData?.isFixedLayout) {
         const view = viewRef.current;
         if (view) applyViewportUnits(detail.doc, view.clientWidth, view.clientHeight);
-        // Android's system font size scales glyphs but not CSS em lengths;
-        // measure the ratio in this section so `text-indent: 2em` stays two
-        // characters wide. Must run before pagination reads the indent.
-        applyFontScaleToRenderer(detail.doc);
         mountAdditionalFonts(detail.doc, isCJKLang(bookData.book?.primaryLanguage));
       }
 
