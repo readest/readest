@@ -158,7 +158,11 @@ describe('footnote rejected by check (#7537)', () => {
       );
     });
 
-    await vi.waitFor(() => expect(h.goTo).toHaveBeenCalledWith('chapter.html#n1', { focus: true }));
+    // The check runs once the popup's own view has loaded the note's section
+    await vi.waitFor(
+      () => expect(h.goTo).toHaveBeenCalledWith('chapter.html#n1', { focus: true }),
+      { timeout: 5000 },
+    );
     // The content-size observer reports on the next frame and shows the popup
     // on the one after.
     await nextFrame();
@@ -185,7 +189,11 @@ describe('footnote rejected by check (#7537)', () => {
     click(anchor, 'chapter.html#n1');
     click(cell.querySelectorAll('a')[1]!, 'chapter.html#n2');
     const popup = document.querySelector<HTMLElement>('#popup-container')!;
-    await vi.waitFor(() => expect(popup.getAttribute('aria-hidden')).toBe('false'));
+    // The popup shows once its own view has loaded the note's section, which
+    // takes longer than waitFor's default second on a loaded machine
+    await vi.waitFor(() => expect(popup.getAttribute('aria-hidden')).toBe('false'), {
+      timeout: 5000,
+    });
     for (let i = 0; i < 5; i++) await nextFrame();
     // The newer popup can re-open itself on its next relocate, so record every
     // change rather than sampling the end state.
