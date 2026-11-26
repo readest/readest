@@ -183,13 +183,11 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
   const originalGoTo = originalView.goTo.bind(originalView);
   // Stepping through a results list (search hits, annotations) moves the entry
   // its first step pushed instead of pushing one per result, so Back returns to
-  // where reading was, not to the previous result. Any other history push ends
-  // the list.
-  let onListEntry = false;
+  // where reading was, not to the previous result. The list goes on only while
+  // the reader stays where its last step landed: a page turn or any other
+  // navigation starts a new one.
+  let listCfi: string | undefined;
   let listFrom: string | undefined;
-  originalView.history.addEventListener('index-change', () => {
-    onListEntry = false;
-  });
   const stepTo = async (target: string | number, focus?: boolean) => {
     try {
       const resolved = await originalView.resolveNavigation(target);
@@ -213,13 +211,13 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
     // its iframe load); surface start/end so the viewer can show a spinner.
     originalView.dispatchEvent(new CustomEvent('navigate-start'));
     const from = originalView.lastLocation;
-    const step = options?.fromList && onListEntry;
+    const step = options?.fromList && !!from?.cfi && from.cfi === listCfi;
     return Promise.resolve(step ? stepTo(target, options.focus) : originalGoTo(target, options))
       .then((resolved) => {
         const to = originalView.lastLocation;
         if (options?.focus && from?.cfi && to?.cfi && from.cfi !== to.cfi) {
           if (options.fromList && !step) listFrom = from.tocItem?.label;
-          onListEntry = !!options.fromList;
+          listCfi = options.fromList ? to.cfi : undefined;
           originalView.dispatchEvent(
             new CustomEvent('reader-jump', {
               detail: {

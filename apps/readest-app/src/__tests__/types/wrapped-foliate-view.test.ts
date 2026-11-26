@@ -6,7 +6,6 @@ function makeFakeView(goToImpl: (href: string) => Promise<void>) {
   const el = document.createElement('div') as unknown as FoliateView;
   el.addAnnotation = vi.fn() as unknown as FoliateView['addAnnotation'];
   el.goTo = goToImpl as unknown as FoliateView['goTo'];
-  el.history = new EventTarget() as FoliateView['history'];
   return el;
 }
 
@@ -96,6 +95,14 @@ describe('wrappedFoliateView goTo events', () => {
     await wrapped.goTo('E-1', { focus: true, fromList: true });
     expect(entries).toEqual(['A', 'C-1', 'D', 'E-1']);
     expect(showReturn.mock.lastCall?.[0].detail).toEqual({ from: 'D', to: 'E' });
+
+    // Reading on from a result (a page turn replaces the entry) ends the list
+    // too: the next list jump keeps the page that was being read.
+    view.lastLocation = { cfi: 'E-9', tocItem: { label: 'E', href: 'E', id: 0, index: 0 } };
+    view.history.replaceState('E-9');
+    await wrapped.goTo('F-1', { focus: true, fromList: true });
+    expect(entries).toEqual(['A', 'C-1', 'D', 'E-9', 'F-1']);
+    expect(showReturn.mock.lastCall?.[0].detail).toEqual({ from: 'E', to: 'F' });
   });
 
   it('dispatches navigate-end even when goTo rejects', async () => {
