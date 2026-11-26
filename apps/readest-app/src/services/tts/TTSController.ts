@@ -2483,6 +2483,10 @@ export class TTSController extends EventTarget {
       ? await this.ttsMediaOverlayClient.getVoices(lang)
       : [];
     // Services the user set up themselves come next, hidden when unavailable.
+    // A service whose list failed to load as Read Aloud started is asked again.
+    if (this.ttsCustomClient.initialized) {
+      this.ttsCustomVoices = await this.ttsCustomClient.refreshVoices();
+    }
     const ttsCustomVoices = this.ttsCustomClient.initialized
       ? (await this.ttsCustomClient.getVoices(lang)).filter((group) => group.voices.length > 0)
       : [];
