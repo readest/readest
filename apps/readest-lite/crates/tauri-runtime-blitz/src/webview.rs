@@ -305,6 +305,8 @@ pub(crate) struct BlitzWebview {
     surface: Option<cairo::ImageSurface>,
     /// The box of the screen the last frame drew (device pixels).
     drawn: Rect,
+    /// Frames whose drawing commands were recorded: painted, or found the same as the last.
+    recorded: u32,
     /// Next frame of a running CSS animation/transition (BLITZ_TAURI_ANIM_MS apart, default 33).
     next_anim: Option<Instant>,
     /// BLITZ_TAURI_EVAL=file.js, evaluated once BLITZ_TAURI_EVAL_MS (default 5000) after navigate.
@@ -425,6 +427,7 @@ impl BlitzWebview {
             last_scene: None,
             surface: None,
             drawn: Rect::ZERO,
+            recorded: 0,
             next_anim: None,
             probe: None,
             pointers: Default::default(),
@@ -753,8 +756,10 @@ impl BlitzWebview {
             .redraw
             .1
             .swap(false, std::sync::atomic::Ordering::Relaxed);
+        // An animation frame restyles: it paints only if that changed something (a stepped
+        // animation, such as the e-ink spinner, holds most of its frames).
         if self.next_anim.is_some_and(|t| t <= Instant::now()) {
-            self.dirty = true;
+            self.restyled = true;
             cause(&mut self.causes, 'a');
         }
         self.report_js();
@@ -848,6 +853,7 @@ impl BlitzWebview {
                         t.elapsed().as_secs_f64() * 1000.0
                     );
                 }
+                self.after_frame();
                 return;
             }
             cause(&mut self.causes, 's');
@@ -881,6 +887,7 @@ impl BlitzWebview {
             0,
         );
         let record_ms = t.elapsed().as_secs_f64() * 1000.0 - layout_ms;
+        self.recorded += 1;
         if self.last_scene.as_ref().is_some_and(|(w, h, last)| {
             (*w, *h) == (self.w, self.h) && crate::frame::same_pixels(last, &commands)
         }) {
@@ -1934,6 +1941,59 @@ mod tests {
                 );
             }
         }
+    }
+
+    // On e-ink a spinner turns in steps(8): it changes every 250 ms, and the loop woke for its
+    // animation every 33 ms, each time recording the whole page's drawing commands to find them
+    // the same (~10 ms on a Kindle: a fifth of the CPU while a book opened).
+    #[test]
+    fn a_stepped_animation_records_a_frame_only_when_it_steps() {
+        let dir = std::env::temp_dir().join(format!("blitz-steps-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("steps.html");
+        std::fs::write(
+            &file,
+            "<!DOCTYPE html><html><body style='margin: 0'><p>A page</p>
+            <style>@keyframes turn { to { transform: rotate(360deg) } }</style>
+            <div style='width: 40px; height: 40px; background: black;
+              animation: turn 1s steps(4) infinite'></div></body></html>",
+        )
+        .unwrap();
+        let mut wv = BlitzWebview::new(WebviewInit {
+            id: 0,
+            label: "test".into(),
+            url: Arc::new(Mutex::new(String::new())),
+            protocols: Arc::new(HashMap::new()),
+            ipc: None,
+            init_scripts: Vec::new(),
+            page_load: None,
+            tx: std::sync::mpsc::channel().0,
+            data_dir: None,
+        });
+        wv.navigate(Url::from_file_path(&file).unwrap().as_str());
+        let start = Instant::now();
+        let mut first = None;
+        while start.elapsed() < Duration::from_millis(1600) {
+            wv.tick();
+            if wv.frames > 0 && first.is_none() {
+                first = Some((Instant::now(), wv.frames, wv.recorded));
+            }
+            let wake = wv
+                .deadline()
+                .unwrap_or(Instant::now() + Duration::from_millis(10));
+            std::thread::sleep(wake.saturating_duration_since(Instant::now()));
+        }
+        std::fs::remove_dir_all(&dir).ok();
+        let (t0, frames0, recorded0) = first.unwrap();
+        let ms = t0.elapsed().as_millis();
+        let (frames, recorded) = (wv.frames - frames0, wv.recorded - recorded0);
+        // a step every 250 ms is painted
+        assert!(frames as u128 >= ms / 250 - 1, "{frames} frames in {ms} ms");
+        // and the ticks between steps record nothing
+        assert!(
+            recorded <= frames + 2,
+            "{recorded} recorded for {frames} frames in {ms} ms"
+        );
     }
 
     /// The RGB of each pixel of `s` (an RGB24 surface's fourth byte is unused).
