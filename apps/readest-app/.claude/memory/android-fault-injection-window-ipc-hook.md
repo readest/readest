@@ -1,6 +1,6 @@
 ---
 name: android-fault-injection-window-ipc-hook
-description: How to force a Tauri command to fail on an Android device (fault injection for a fallback path) — hook window.ipc.postMessage over CDP; __TAURI_INTERNALS__.invoke is non-writable and Android does NOT use the fetch IPC transport
+description: How to force a Tauri command to fail, or trace native calls, on an Android device — hook window.ipc.postMessage over CDP; __TAURI_INTERNALS__.invoke is non-writable (patching it silently logs nothing) and Android does NOT use the fetch IPC transport; logcat markers for native curl captures
 metadata:
   type: project
 ---
@@ -57,3 +57,11 @@ locally signed APK dies with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`; `adb install 
 does NOT help — the Play copy must be uninstalled (chrox's call, it wipes app
 data). MIUI then shows an on-device "Install via USB" prompt that must be tapped
 or the install returns `INSTALL_FAILED_USER_RESTRICTED`.
+
+**Tracing, not failing (2026-11-24, #7575 page wipe):** a patch of
+`__TAURI_INTERNALS__.invoke` that only logs fails the same way — assignment is
+silently ignored, so "0 native calls" proves nothing. Run a positive control
+first (a curl turn with the feature off must show calls). Cheaper than the IPC
+hook for the native curl: logcat `--pid=<pid>` lines `SkJpegEncoder` (each
+`capture_webview_region` JPEG) and `VRI[PopupWindow:…]` (the native sheet/cover)
+appear on every native capture; count them over the window under test.

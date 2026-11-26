@@ -22,3 +22,11 @@ Xiaomi unless they agree to a fixture card landing in their library. Prefer an
 emulator (no system image installed as of 2026-11-20: `sdkmanager` one first) or
 an existing library book via `readest://book/<hash>`. See [[android-cdp-e2e-lane]],
 [[feedback-always-verify-on-xiaomi]].
+
+**Opening a reporter's book on the Xiaomi without a card or upload (2026-11-26, #7987):** a VIEW/SEND
+import on mobile also force-uploads to the logged-in account (`processOpenWithFiles`,
+`forceUpload: isMobile && user`). Instead: library Settings Menu -> "Auto Import on File Open" OFF,
+then VIEW the MediaStore URI (transient open, no card, no upload); turn it back ON afterwards.
+Reader setting changes default to Apply to All Books (global + synced): pick Settings Menu ->
+"Apply to This Book" in the reader settings dialog first. CDP /json needs `Host: 127.0.0.1:<port>`
+(a port-less Host makes Chrome hand out a ws URL on port 80); use the `ws` package without Origin.

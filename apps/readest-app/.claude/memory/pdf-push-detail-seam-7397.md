@@ -46,3 +46,10 @@ draws 1px #222 rows at the image-strip seams of the FAA scan (applyPageColors ro
 image rects inward); 0 rows with theme off. NOT fixed, not filed yet.
 Gotcha: adb taps while the View menu is open toggle its rows (lock-pan got flipped); screenshot
 before tapping and re-check menu toggles before handing the phone back.
+
+**User report #7987 (2026-11-26) = this bug on 0.12.20:** Samsung tablet/phone, scanned PDF, a thin
+vertical line after 2-4 push turns that a pan clears. Main checked on the Xiaomi with the reporter's PDF
+(60 push turns, detail full-page after every landing). Archive: ~/Documents/books/issues/7987/.
+Gotcha: dev-web can NOT exercise this: the finger-tracked fixed-layout push (`getCapturedTurnStyle`)
+needs `isTauriAppPlatform()`, and desktop Tauri never makes a detail canvas (`isMobileWebView`).
+Only a mobile app build reproduces it.
