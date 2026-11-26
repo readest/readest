@@ -116,7 +116,6 @@ import { createFeedBook, ensureFeedBookCover } from '@/services/rss/feedBook';
 import { MigrateDataWindow } from './components/MigrateDataWindow';
 import { BackupWindow } from './components/BackupWindow';
 import { CacheManagerWindow } from './components/CacheManagerWindow';
-import { DeleteLibraryDialog } from './components/DeleteLibraryDialog';
 import { useDragDropImport } from './hooks/useDragDropImport';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { useAppRouter } from '@/hooks/useAppRouter';
@@ -2213,7 +2212,6 @@ const LibraryPageContent = ({ searchParams }: { searchParams: ReadonlyURLSearchP
       <MigrateDataWindow />
       <BackupWindow onPullLibrary={pullLibrary} />
       <CacheManagerWindow />
-      <DeleteLibraryDialog />
       {isSettingsDialogOpen && <SettingsDialog bookKey={''} />}
       {showCatalogManager && <CatalogDialog onClose={handleDismissOPDSDialog} />}
       {showFeeds && <FeedsView onClose={() => setShowFeeds(false)} />}

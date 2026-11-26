@@ -131,7 +131,7 @@ export function SyncCategoriesSection() {
   return (
     <div className='flex flex-col gap-6'>
       <div className='flex flex-col gap-2'>
-        <h3 className='text-base-content text-lg font-semibold'>{_('Sync Settings')}</h3>
+        <h3 className='text-base-content text-lg font-semibold'>{_('Manage Sync')}</h3>
         <p className='text-base-content/70 text-sm'>
           {_(
             'Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.',

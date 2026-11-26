@@ -26,7 +26,6 @@ import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { canToggleFullScreen, tauriHandleSetAlwaysOnTop, toggleFullScreen } from '@/utils/window';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
-import { openDeleteLibraryDialog } from '@/app/library/components/DeleteLibraryDialog';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
 import { requestStoragePermission } from '@/utils/permission';
 import { saveSysSettings } from '@/helpers/settings';
@@ -124,7 +123,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsDropdownOpen?.(false);
   };
 
-  const handleUserSection = (section: 'sync' | 'shared-links' | 'security') => {
+  const handleUserSection = (section: 'sync' | 'shared-links') => {
     navigateToProfile(router, section);
     setIsDropdownOpen?.(false);
   };
@@ -353,7 +352,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             <MenuItem label={_('Subscription')} onClick={handleUserProfile} />
             <MenuItem label={_('Sync Settings')} onClick={() => handleUserSection('sync')} />
             <MenuItem label={_('Shared Links')} onClick={() => handleUserSection('shared-links')} />
-            <MenuItem label={_('Login & Security')} onClick={() => handleUserSection('security')} />
             <MenuItem label={_('Sign Out')} onClick={onLogout} />
           </ul>
         </MenuItem>
@@ -467,16 +465,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               description={savedBookCoverForLockScreen ? savedBookCoverDescription : ''}
               toggled={!!savedBookCoverForLockScreen}
               onClick={handleSetSavedBookCoverForLockScreen}
-            />
-          )}
-          {user && (
-            <MenuItem
-              label={_('Delete Library Data')}
-              labelClass='not-eink:text-error'
-              onClick={() => {
-                setIsDropdownOpen?.(false);
-                openDeleteLibraryDialog();
-              }}
             />
           )}
         </ul>

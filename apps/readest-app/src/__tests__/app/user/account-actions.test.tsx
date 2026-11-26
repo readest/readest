@@ -1,15 +1,12 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LoginSecuritySection } from '@/app/user/components/LoginSecuritySection';
-import {
-  DeleteLibraryDialog,
-  openDeleteLibraryDialog,
-} from '@/app/library/components/DeleteLibraryDialog';
+import AccountActions from '@/app/user/components/AccountActions';
 import type { UserPlan } from '@/types/quota';
 
-const handleDeleteAllBooks = vi.hoisted(() => vi.fn());
-vi.mock('@/hooks/useUserActions', () => ({ useUserActions: () => ({ handleDeleteAllBooks }) }));
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ appService: { hasIAP: false } }),
+}));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation:
     () =>
@@ -17,20 +14,31 @@ vi.mock('@/hooks/useTranslation', () => ({
       params ? key.replace(/\{\{(\w+)\}\}/g, (_match, name) => String(params[name] ?? '')) : key,
 }));
 
-const renderActions = (userPlan: UserPlan = 'free', customizationPurchased = false) => {
+const renderActions = (
+  userPlan: UserPlan = 'free',
+  customizationPurchased = false,
+  giftOnly = false,
+  onRedeemGiftCard?: () => void,
+) => {
   const onConfirmDelete = vi.fn();
+  const onConfirmDeleteAllBooks = vi.fn();
   render(
-    <LoginSecuritySection
+    <AccountActions
       userEmail='reader@example.test'
       planName={`${userPlan} plan`}
       userPlan={userPlan}
       customizationPurchased={customizationPurchased}
+      iapAvailable={false}
+      giftOnly={giftOnly}
+      onLogout={vi.fn()}
       onResetPassword={vi.fn()}
       onUpdateEmail={vi.fn()}
       onConfirmDelete={onConfirmDelete}
+      onConfirmDeleteAllBooks={onConfirmDeleteAllBooks}
+      onRedeemGiftCard={onRedeemGiftCard}
     />,
   );
-  return { onConfirmDelete };
+  return { onConfirmDelete, onConfirmDeleteAllBooks };
 };
 
 const openAccountDeletion = () =>
@@ -122,7 +130,7 @@ describe('account deletion confirmation (#7251)', () => {
   it('returns focus to the dialog if a page control tries to take it', () => {
     renderActions();
     openAccountDeletion();
-    screen.getByRole('button', { name: 'Change Password' }).focus();
+    screen.getByRole('button', { name: 'Sign Out' }).focus();
     expect(document.activeElement).toBe(confirmationInput());
   });
 
@@ -144,21 +152,45 @@ describe('account deletion confirmation (#7251)', () => {
     expect(document.activeElement).toBe(input);
   });
 
-  it('keeps the Delete Library Data confirmation independent', async () => {
-    const { onConfirmDelete } = renderActions('pro');
-    render(<DeleteLibraryDialog />);
+  it('keeps the delete-all-books confirmation independent', async () => {
+    const { onConfirmDelete, onConfirmDeleteAllBooks } = renderActions('pro');
     openAccountDeletion();
     fireEvent.change(confirmationInput(), { target: { value: 'DELETE' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    act(() => openDeleteLibraryDialog());
+    fireEvent.click(screen.getByRole('button', { name: 'Delete All Books' }));
 
-    expect(screen.getByRole('dialog', { name: 'Delete Library Data?' })).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Delete All Books?' })).toBeTruthy();
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(screen.queryByText('reader@example.test')).toBeNull();
     expect(confirmButton().disabled).toBe(false);
     fireEvent.click(confirmButton());
-    expect(handleDeleteAllBooks).toHaveBeenCalledTimes(1);
+    expect(onConfirmDeleteAllBooks).toHaveBeenCalledTimes(1);
     expect(onConfirmDelete).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+});
+
+describe('gift cards', () => {
+  // Buying, and the cards you bought, live behind On-Demand Purchase.
+  it('offers Redeem Gift Card, which opens the redeem view', () => {
+    const onRedeemGiftCard = vi.fn();
+    renderActions('free', false, false, onRedeemGiftCard);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Redeem Gift Card' }));
+
+    expect(onRedeemGiftCard).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Gift Cards' })).toBeNull();
+  });
+});
+
+describe('gift-only holders', () => {
+  it('hides Manage Subscription for a gift-only holder', () => {
+    renderActions('plus', false, true);
+    expect(screen.queryByRole('button', { name: 'Manage Subscription' })).toBeNull();
+  });
+
+  it('keeps Manage Subscription for a paying holder', () => {
+    renderActions('plus', false, false);
+    expect(screen.getByRole('button', { name: 'Manage Subscription' })).toBeTruthy();
   });
 });

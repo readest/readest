@@ -6,7 +6,6 @@ import SettingsMenu from '@/app/library/components/SettingsMenu';
 const mocks = vi.hoisted(() => ({
   router: { push: vi.fn(), replace: vi.fn(), back: vi.fn() },
   navigateToProfile: vi.fn(),
-  openDeleteLibraryDialog: vi.fn(),
   handleLogout: vi.fn(),
   quotas: [
     { name: 'Storage', tooltip: '10% used', used: 10, total: 100, unit: 'MB' },
@@ -67,9 +66,6 @@ vi.mock('@/utils/nav', () => ({
   navigateToLogin: vi.fn(),
   navigateToProfile: mocks.navigateToProfile,
 }));
-vi.mock('@/app/library/components/DeleteLibraryDialog', () => ({
-  openDeleteLibraryDialog: mocks.openDeleteLibraryDialog,
-}));
 vi.mock('@/services/environment', () => ({
   isTauriAppPlatform: () => false,
   isWebAppPlatform: () => true,
@@ -114,17 +110,16 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it('renders the reorganized Account submenu items and routes each to its target section', () => {
+it('opens each Account menu entry on the account page', () => {
   render(<SettingsMenu onPullLibrary={vi.fn()} setIsDropdownOpen={mocks.setIsDropdownOpen} />);
 
   expect(screen.getByText('Account')).toBeTruthy();
   expect(screen.getByText('Subscription')).toBeTruthy();
   expect(screen.getByText('Sync Settings')).toBeTruthy();
   expect(screen.getByText('Shared Links')).toBeTruthy();
-  expect(screen.getByText('Login & Security')).toBeTruthy();
   expect(screen.getByText('Sign Out')).toBeTruthy();
 
-  // The Storage and Translation quota rows open the Subscription page.
+  // The Storage and Translation quota rows open the account page.
   fireEvent.click(screen.getByText('Storage,Translation'));
   expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router);
   mocks.navigateToProfile.mockClear();
@@ -138,19 +133,13 @@ it('renders the reorganized Account submenu items and routes each to its target 
   fireEvent.click(screen.getByText('Shared Links'));
   expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router, 'shared-links');
 
-  fireEvent.click(screen.getByText('Login & Security'));
-  expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router, 'security');
-
   fireEvent.click(screen.getByText('Sign Out'));
   expect(mocks.handleLogout).toHaveBeenCalledTimes(1);
 });
 
-it('places Delete Library Data under Advanced Settings and omits Data Sync', () => {
+it('drops Data Sync from Advanced Settings, now Sync Settings under Account', () => {
   render(<SettingsMenu onPullLibrary={vi.fn()} setIsDropdownOpen={mocks.setIsDropdownOpen} />);
 
+  expect(screen.getByText('Advanced Settings')).toBeTruthy();
   expect(screen.queryByText('Data Sync')).toBeNull();
-  fireEvent.click(screen.getByText('Delete Library Data'));
-
-  expect(mocks.setIsDropdownOpen).toHaveBeenCalledWith(false);
-  expect(mocks.openDeleteLibraryDialog).toHaveBeenCalledTimes(1);
 });
