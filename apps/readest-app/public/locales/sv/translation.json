@@ -3062,5 +3062,10 @@
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Synkroniserar inte — aktivera en leverantör i Inställningar → Integrationer",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud-synk är av; synkroniseras fortfarande via {{provider}}",
   "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "Synkroniseras alltid via Readest Cloud när du är inloggad; att stänga av en kategori behåller den på den här enheten",
-  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Synkroniseras till Readest Cloud; pausad på {{provider}} — uppgradera för att återuppta"
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Synkroniseras till Readest Cloud; pausad på {{provider}} — uppgradera för att återuppta",
+  "World's largest collection of free ebooks": "Världens största samling gratis e-böcker",
+  "Free and liberated ebooks, carefully produced for the true book lover": "Fria e-böcker, omsorgsfullt gjorda för bokälskare",
+  "Over 50,000 free ebooks": "Över 50 000 gratis e-böcker",
+  "Free ebooks from authors who have \"unglued\" their books": "Gratis e-böcker från författare som har ”frigjort” sina böcker",
+  "Free public-domain books, comics, magazines and puzzles": "Gratis böcker, serier, tidskrifter och pussel i public domain"
 }

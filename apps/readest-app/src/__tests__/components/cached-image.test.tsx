@@ -2,6 +2,12 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CachedImage, clearImageCache } from '@/components/CachedImage';
+import { isWebAppPlatform } from '@/services/environment';
+
+vi.mock('@/services/environment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/environment')>()),
+  isWebAppPlatform: vi.fn(() => false),
+}));
 
 vi.mock('next/image', () => ({
   __esModule: true,
@@ -120,5 +126,26 @@ describe('CachedImage cache versioning (issue #5492)', () => {
       );
     });
     expect(generate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('CachedImage on the web', () => {
+  beforeEach(() => {
+    cleanup();
+    clearImageCache();
+  });
+
+  it.each([
+    [true, 'https://standardebooks.org/ebooks/a/b/downloads/cover.jpg', 'anonymous'],
+    [true, 'https://node.readest.com/api/opds/proxy?url=x&stream=true', 'anonymous'],
+    [true, 'blob:https://web.readest.com/1', null],
+    [false, 'https://standardebooks.org/ebooks/a/b/downloads/cover.jpg', null],
+  ])('requests a cover in CORS mode only where the page is cross-origin isolated (web=%s, %s)', async (web, url, expected) => {
+    // web.readest.com sends COEP: require-corp, which blocks a no-cors image
+    // from another origin unless it carries CORP; a CORS request passes.
+    vi.mocked(isWebAppPlatform).mockReturnValue(web);
+    renderImage(async () => url);
+    await waitFor(() => expect(screen.getByRole('img').getAttribute('src')).toBe(url));
+    expect(screen.getByRole('img').getAttribute('crossorigin')).toBe(expected);
   });
 });
