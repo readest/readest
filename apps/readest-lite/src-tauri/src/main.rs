@@ -4,6 +4,7 @@
 mod picker;
 mod transfer;
 
+use tauri::Manager;
 use tauri_plugin_fs::FsExt;
 
 /// Stubs of Readest's own commands (src-tauri/src/lib.rs) that the app service calls at start.
@@ -43,6 +44,18 @@ fn files_from_args() -> Vec<std::path::PathBuf> {
 fn plugins<R: tauri::Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R> {
     builder
         .plugin(tauri_plugin_fs::init())
+        // Readest's portable mode: a settings.json next to the executable keeps the settings and
+        // the library in that folder, which readest-app's desktop build grants at start.
+        .plugin(
+            tauri::plugin::Builder::<R>::new("portable")
+                .setup(|app, _| {
+                    let dir = std::path::PathBuf::from(get_executable_dir());
+                    app.fs_scope().allow_directory(&dir, true)?;
+                    app.asset_protocol_scope().allow_directory(&dir, true)?;
+                    Ok(())
+                })
+                .build(),
+        )
         // After fs: the paths a user grants (picked books, folders read in place, books opened
         // from the command line) stay readable after a relaunch, as in readest-app.
         .plugin(tauri_plugin_persisted_scope::init())
@@ -96,6 +109,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use tauri::Manager;
     use tauri_plugin_fs::FsExt;
 
     /// A book picked in Import, a folder read in place or a book opened from the command line
@@ -124,5 +138,32 @@ mod tests {
             "the grant is gone after a relaunch"
         );
         let _ = std::fs::remove_dir_all(&data);
+    }
+
+    /// Readest's portable mode keeps the settings and the library next to the executable when a
+    /// settings.json is there (readest-app asks `fs|exists` for it at start): that folder is
+    /// readable and writable and its books load, as in readest-app's desktop build.
+    #[test]
+    fn the_executables_folder_is_granted_for_portable_mode() {
+        let data = std::env::temp_dir().join(format!("readest-lite-scope-{}", std::process::id()));
+        // SAFETY: as in granted_paths_survive_a_relaunch, which sets the same value.
+        unsafe { std::env::set_var("XDG_DATA_HOME", &data) };
+        let app = super::plugins(tauri::Builder::<tauri_runtime_blitz::BlitzRuntime>::new())
+            .build(tauri::generate_context!())
+            .unwrap();
+        let dir = std::path::PathBuf::from(super::get_executable_dir());
+        for path in [
+            dir.join("settings.json"),
+            dir.join("Readest/Books/h/book.epub"),
+        ] {
+            assert!(
+                app.fs_scope().is_allowed(&path),
+                "{path:?} is out of the fs scope"
+            );
+            assert!(
+                app.asset_protocol_scope().is_allowed(&path),
+                "{path:?} is out of the asset protocol scope"
+            );
+        }
     }
 }
