@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { LuBookA } from 'react-icons/lu';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { useDictionaryDockStore } from '@/store/dictionaryDockStore';
+import { BUILTIN_PROVIDER_IDS } from '@/services/dictionaries/types';
 import {
   useDictionaryResults,
   DictionaryResultsHeader,
@@ -10,8 +11,22 @@ import {
   type UseDictionaryResultsArgs,
 } from '../annotator/DictionaryResultsView';
 
-const DockedLookup: React.FC<{ lookup: UseDictionaryResultsArgs }> = ({ lookup }) => {
+const DockedLookup: React.FC<{ lookup: UseDictionaryResultsArgs & { id: number } }> = ({
+  lookup,
+}) => {
   const state = useDictionaryResults(lookup);
+  // Closing the tab cancels an AI answer still on its way, and only finished
+  // answers are cached, so the tab forgets the lookup rather than ask the AI
+  // again when it comes back (#7971).
+  const answering = useRef(false);
+  answering.current = !!state.cards[BUILTIN_PROVIDER_IDS.context]?.pending;
+  useEffect(
+    () => () => {
+      if (!answering.current) return;
+      useDictionaryDockStore.setState((s) => (s.lookup?.id === lookup.id ? { lookup: null } : s));
+    },
+    [lookup.id],
+  );
   return (
     <>
       <DictionaryResultsHeader
