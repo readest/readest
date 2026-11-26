@@ -1515,9 +1515,11 @@ const getTextZoom = () => {
 
 // font-size, line-height and the `font` shorthand are left out: the zoom
 // already scales them. So are custom properties, whose consumer may be one of
-// those. A number glued to a name (`--gap2em`, `slide2em`) is not a length, so
-// the match needs a non-name character in front of it.
-const FONT_RELATIVE_LENGTH = /(^|[^\w.-])([+-]?(?:\d*\.)?\d+(?:e[+-]?\d+)?)(rem|em)\b/gi;
+// those. A number glued to a name (`--gap2em`, `slide2em`, `--间2em`) is not a
+// length, so the match needs a non-name character in front of it. Names take
+// any character from U+0080 up, which `\w` does not cover.
+const FONT_RELATIVE_LENGTH =
+  /(^|[^\w.\u0080-\uffff-])([+-]?(?:\d*\.)?\d+(?:e[+-]?\d+)?)(rem|em)\b/gi;
 const FONT_METRIC_PROPS =
   /^(?:font-size|font|line-height|-webkit-text-size-adjust|text-size-adjust)$/i;
 
