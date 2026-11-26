@@ -77,6 +77,8 @@ interface CardState {
    * their auto-expand state.
    */
   refreshing?: boolean;
+  /** Asked and not answered yet, though a streamed answer may already show. */
+  pending?: boolean;
 }
 
 export interface UseDictionaryResultsArgs {
@@ -465,7 +467,10 @@ export function useDictionaryResults({
         setCards((prev) => {
           const old = prev[provider.id];
           if (!old || old.loadKey !== loadKey) return prev;
-          return { ...prev, [provider.id]: { ...old, state, outcome, refreshing: false } };
+          return {
+            ...prev,
+            [provider.id]: { ...old, state, outcome, refreshing: false, pending: false },
+          };
         });
       };
       void run();
@@ -497,6 +502,7 @@ export function useDictionaryResults({
           loadKey,
           outcome: undefined,
           expanded: false,
+          pending: true,
         };
       }
       return next;
@@ -517,7 +523,7 @@ export function useDictionaryResults({
       setCards((prev) => {
         const old = prev[provider.id];
         if (!old) return prev;
-        return { ...prev, [provider.id]: { ...old, refreshing: true } };
+        return { ...prev, [provider.id]: { ...old, refreshing: true, pending: true } };
       });
       lookupProvider(provider);
     },
