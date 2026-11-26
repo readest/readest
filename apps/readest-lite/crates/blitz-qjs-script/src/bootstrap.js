@@ -2809,7 +2809,11 @@
       press = p;
       return;
     }
-    if (!press || press.held) return;
+    if (!press) return;
+    if (press.held) {
+      if (type === 'pointermove' && press.word) dragPress(press, init.clientX, init.clientY);
+      return;
+    }
     const moved =
       type === 'pointermove' &&
       Math.hypot(init.clientX - press.x, init.clientY - press.y) > TOUCH_SLOP;
@@ -2824,14 +2828,37 @@
     const { doc, x, y } = p;
     const word = wordAt(doc, x, y);
     if (word) {
+      p.word = word;
       const sel = doc.getSelection();
       sel.removeAllRanges();
-      sel.addRange(word);
+      sel.addRange(word.cloneRange());
       doc.dispatchEvent(new Event('selectionchange'));
     }
     const view = doc.defaultView ?? window;
     const init = { bubbles: true, cancelable: true, composed: true, view, clientX: x, clientY: y };
     p.target.dispatchEvent(new PointerEvent('contextmenu', { ...init, pointerType: 'touch' }));
+  }
+  // A finger moved after a long press drags the selection's end from word to word, as
+  // Chromium's touch selection does: from the word held to the word under the finger, before it
+  // or after.
+  function dragPress(p, x, y) {
+    const to = wordAt(p.doc, x, y);
+    if (!to) return;
+    const r = p.doc.createRange();
+    if (to.compareBoundaryPoints(Range.START_TO_START, p.word) < 0) {
+      r.setStart(to.startContainer, to.startOffset);
+      r.setEnd(p.word.endContainer, p.word.endOffset);
+    } else {
+      r.setStart(p.word.startContainer, p.word.startOffset);
+      r.setEnd(to.endContainer, to.endOffset);
+    }
+    const sel = p.doc.getSelection();
+    const was = sel.rangeCount ? sel.getRangeAt(0) : null;
+    const same = (how) => was.compareBoundaryPoints(how, r) === 0;
+    if (was && same(Range.START_TO_START) && same(Range.END_TO_END)) return;
+    sel.removeAllRanges();
+    sel.addRange(r);
+    p.doc.dispatchEvent(new Event('selectionchange'));
   }
   function wordAt(doc, x, y) {
     const Segmenter = globalThis.Intl?.Segmenter;
