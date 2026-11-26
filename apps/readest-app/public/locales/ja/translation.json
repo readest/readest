@@ -2976,12 +2976,10 @@
   "Unlimited": "無制限",
   "Library & Media": "ライブラリとメディア",
   "Account & Preferences": "アカウントと設定",
-  "Synced to Readest Cloud": "Readest Cloud に同期",
   "Synced to {{provider}}": "{{provider}} に同期",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} は一時停止中 — 再開するにはアップグレードするか Readest Cloud を有効にしてください",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "未同期 — 設定 → 連携でクラウド同期プロバイダーを有効にしてください",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud 同期はオフですが、{{provider}} 経由で引き続き同期されます",
-  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "有効時は Readest Cloud 経由で同期され、オフにした項目はローカルのみに保持されます",
-  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Readest Cloud と {{provider}} に並列同期 — ダウンロード時はファイルを持つ最初のプロバイダーから取得します",
-  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "{{provider}} に並列同期 — ダウンロード時はファイルを持つ最初のプロバイダーから取得します"
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "サインイン中は常に Readest Cloud 経由で同期され、オフにした項目はこのデバイスにのみ保持されます",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud に同期中、{{provider}} は一時停止中 — 再開するにはアップグレードしてください"
 }

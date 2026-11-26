@@ -3134,12 +3134,10 @@
   "Unlimited": "Illimité",
   "Library & Media": "Bibliothèque et médias",
   "Account & Preferences": "Compte et préférences",
-  "Synced to Readest Cloud": "Synchronisé vers Readest Cloud",
   "Synced to {{provider}}": "Synchronisé vers {{provider}}",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "En pause sur {{provider}} — passez à une offre supérieure ou activez Readest Cloud pour reprendre",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Synchronisation inactive — activez un fournisseur dans Paramètres → Intégrations",
   "Readest Cloud sync is off; still synced via {{provider}}": "La synchronisation Readest Cloud est désactivée ; toujours synchronisé via {{provider}}",
-  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "Synchronisé via Readest Cloud lorsque activé ; désactiver une catégorie la garde en local",
-  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Synchronisé en parallèle vers Readest Cloud et {{provider}} — les téléchargements utilisent le premier fournisseur disposant du fichier",
-  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "Synchronisé en parallèle vers {{provider}} — les téléchargements utilisent le premier fournisseur disposant du fichier"
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "Toujours synchronisé via Readest Cloud lorsque vous êtes connecté ; désactiver une catégorie la garde sur cet appareil",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Synchronisé vers Readest Cloud ; en pause sur {{provider}} — passez à une offre supérieure pour reprendre"
 }

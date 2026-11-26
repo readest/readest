@@ -2,6 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+import type { UserPlan } from '@/types/quota';
 import type { SystemSettings } from '@/types/settings';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -24,7 +25,8 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (key: string) => key,
+  useTranslation: () => (key: string, options?: Record<string, string>) =>
+    key.replace(/\{\{(\w+)\}\}/g, (match, name) => options?.[name] ?? match),
 }));
 
 vi.mock('@/utils/settingsSync', () => ({
@@ -45,6 +47,12 @@ const base = {
 
 const row = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
 
+const renderSection = (userPlan: UserPlan = 'plus') =>
+  render(<SyncCategoriesSection userPlan={userPlan} customizationPurchased={false} />);
+
+const accountSubtitle =
+  'Always synced via Readest Cloud while signed in; turning a category off keeps it on this device';
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -59,13 +67,13 @@ describe('SyncCategoriesSection', () => {
     // misreporting the user's choices, and toggling a row would persist that
     // empty object over them.
     useSettingsStore.setState({ settings: {} as SystemSettings } as never);
-    render(<SyncCategoriesSection />);
+    renderSection();
     expect(screen.queryByLabelText('Books')).toBeNull();
   });
 
   test('renders the categories once hydrated', () => {
     useSettingsStore.setState({ settings: base } as never);
-    render(<SyncCategoriesSection />);
+    renderSection();
     expect(row('Books').checked).toBe(true);
     expect(row('App settings').checked).toBe(true);
   });
@@ -74,26 +82,32 @@ describe('SyncCategoriesSection', () => {
     useSettingsStore.setState({
       settings: { ...base, readestCloud: { enabled: false }, webdav: { enabled: true } },
     } as never);
-    render(<SyncCategoriesSection />);
-    const managed = 'Managed by {{provider}} while it is your cloud sync provider';
+    renderSection();
+    const managed = 'Managed by WebDAV while it is your cloud sync provider';
     expect(row('Fonts').closest('li')!.textContent).toContain(managed);
     expect(row('Dictionaries').closest('li')!.textContent).not.toContain(managed);
   });
 
   test('groups Library & Media separately from Account & Preferences without redundant Account pills', () => {
     useSettingsStore.setState({ settings: base } as never);
-    render(<SyncCategoriesSection />);
+    renderSection();
 
     expect(screen.getByText('Library & Media')).toBeTruthy();
     expect(screen.getByText('Synced to Readest Cloud')).toBeTruthy();
     expect(screen.getByText('Account & Preferences')).toBeTruthy();
-    expect(
-      screen.getByText(
-        'Synced via Readest Cloud when enabled; turning a category off keeps it local',
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText(accountSubtitle)).toBeTruthy();
     expect(row('Books').closest('li')!.textContent).toContain('Readest Cloud');
     expect(row('Dictionaries').closest('li')!.textContent).not.toContain('Readest Cloud');
+  });
+
+  test('says Account & Preferences still sync via Readest Cloud with its library switch off', () => {
+    // Replica categories never read the Readest Cloud switch: they sync while
+    // signed in whatever the Cloud Sync selection is.
+    useSettingsStore.setState({
+      settings: { ...base, readestCloud: { enabled: false }, googleDrive: { enabled: true } },
+    } as never);
+    renderSection();
+    expect(screen.getByText(accountSubtitle)).toBeTruthy();
   });
 
   test('shows parallel destination badges when both Readest Cloud and Google Drive are enabled', () => {
@@ -105,13 +119,9 @@ describe('SyncCategoriesSection', () => {
         syncCategories: { book: false, book_data: false },
       },
     } as never);
-    render(<SyncCategoriesSection />);
+    renderSection();
 
-    expect(
-      screen.getByText(
-        'Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file',
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText('Synced to Readest Cloud, Google Drive')).toBeTruthy();
 
     const progressLi = row('Reading progress').closest('li')!.textContent;
     expect(progressLi).toContain('Readest Cloud');
@@ -122,7 +132,7 @@ describe('SyncCategoriesSection', () => {
     expect(booksHeader).not.toContain('Readest Cloud');
     expect(booksHeader).toContain('Google Drive');
     expect(booksItem.textContent).toContain(
-      'Readest Cloud sync is off; still synced via {{provider}}',
+      'Readest Cloud sync is off; still synced via Google Drive',
     );
 
     const bookDataLi = row('Book Data').closest('li')!.textContent;
@@ -143,8 +153,8 @@ describe('SyncCategoriesSection', () => {
         syncCategories: { book_data: true },
       },
     } as never);
-    render(<SyncCategoriesSection />);
-    expect(screen.getByText('Synced to {{provider}}')).toBeTruthy();
+    renderSection();
+    expect(screen.getByText('Synced to WebDAV')).toBeTruthy();
 
     cleanup();
     useSettingsStore.setState({
@@ -156,13 +166,9 @@ describe('SyncCategoriesSection', () => {
         syncCategories: { book_data: true },
       },
     } as never);
-    render(<SyncCategoriesSection />);
+    renderSection();
 
-    expect(
-      screen.getByText(
-        'Synced to {{provider}} in parallel — downloads use the first provider with the file',
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText('Synced to WebDAV, Google Drive')).toBeTruthy();
     expect(row('Book Data').closest('li')!.textContent).toContain('WebDAV');
     expect(row('Book Data').closest('li')!.textContent).toContain('Google Drive');
     expect(row('Book Data').closest('li')!.textContent).not.toContain('Readest Cloud');
@@ -173,7 +179,7 @@ describe('SyncCategoriesSection', () => {
     useSettingsStore.setState({
       settings: { ...base, readestCloud: { enabled: false } },
     } as never);
-    render(<SyncCategoriesSection />);
+    renderSection();
 
     expect(
       screen.getByText('Not syncing — enable a cloud sync provider in Settings → Integrations'),
@@ -189,11 +195,25 @@ describe('SyncCategoriesSection', () => {
         googleDrive: { enabled: true },
       },
     } as never);
-    render(<SyncCategoriesSection thirdPartyPaused={true} />);
+    renderSection('free');
 
     expect(
-      screen.getByText('Paused on {{provider}} — upgrade or enable Readest Cloud to resume'),
+      screen.getByText('Paused on Google Drive — upgrade or enable Readest Cloud to resume'),
     ).toBeTruthy();
     expect(row('Books').closest('li')!.textContent).toContain('Local only');
+  });
+
+  test('says the third-party provider is paused while Readest Cloud keeps syncing', () => {
+    useSettingsStore.setState({
+      settings: { ...base, readestCloud: { enabled: true }, googleDrive: { enabled: true } },
+    } as never);
+    renderSection('free');
+
+    expect(
+      screen.getByText('Synced to Readest Cloud; paused on Google Drive — upgrade to resume'),
+    ).toBeTruthy();
+    const booksLi = row('Books').closest('li')!.textContent;
+    expect(booksLi).toContain('Readest Cloud');
+    expect(booksLi).not.toContain('Google Drive');
   });
 });

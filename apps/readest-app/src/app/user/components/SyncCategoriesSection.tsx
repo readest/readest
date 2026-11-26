@@ -6,8 +6,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useEnsureSettingsLoaded } from '@/hooks/useEnsureSettingsLoaded';
 import {
-  isReadestCloudEnabled,
-  getEnabledFileSyncBackends,
+  resolveCloudSyncGate,
+  getCloudSyncProviders,
   cloudProviderDisplayName,
   cloudProvidersDisplayName,
   type CloudSyncProviderKind,
@@ -17,6 +17,7 @@ import {
   isSyncCategoryLocked,
   type SyncCategory,
 } from '@/services/sync/syncCategories';
+import type { UserPlan } from '@/types/quota';
 import type { SystemSettings } from '@/types/settings';
 
 interface CategoryCopy {
@@ -110,10 +111,14 @@ const useCategoryCopy = (): Record<SyncCategory, CategoryCopy> => {
 };
 
 interface SyncCategoriesSectionProps {
-  thirdPartyPaused?: boolean;
+  userPlan: UserPlan;
+  customizationPurchased: boolean;
 }
 
-export function SyncCategoriesSection({ thirdPartyPaused = false }: SyncCategoriesSectionProps) {
+export function SyncCategoriesSection({
+  userPlan,
+  customizationPurchased,
+}: SyncCategoriesSectionProps) {
   const _ = useTranslation();
   const { envConfig } = useEnv();
   const settings = useSettingsStore((s) => s.settings);
@@ -121,9 +126,12 @@ export function SyncCategoriesSection({ thirdPartyPaused = false }: SyncCategori
   const saveSettings = useSettingsStore((s) => s.saveSettings);
   const hydrated = useEnsureSettingsLoaded();
   const copy = useCategoryCopy();
-  const readestEnabled = isReadestCloudEnabled(settings);
-  const backends = getEnabledFileSyncBackends(settings);
-  const activeBackends = thirdPartyPaused ? [] : backends;
+  const {
+    readest: readestEnabled,
+    backends,
+    paused,
+  } = resolveCloudSyncGate(settings, userPlan, customizationPurchased);
+  const activeBackends = paused ? [] : backends;
   const cloudProviderName = cloudProvidersDisplayName(backends);
   const activeProviderName = cloudProvidersDisplayName(activeBackends);
 
@@ -167,26 +175,18 @@ export function SyncCategoriesSection({ thirdPartyPaused = false }: SyncCategori
     return [];
   };
 
-  const librarySubtitle =
-    readestEnabled && activeBackends.length > 0
-      ? _(
-          'Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file',
-          { provider: activeProviderName },
-        )
-      : readestEnabled
-        ? _('Synced to Readest Cloud')
-        : activeBackends.length > 1
-          ? _(
-              'Synced to {{provider}} in parallel — downloads use the first provider with the file',
-              { provider: activeProviderName },
-            )
-          : activeBackends.length === 1
-            ? _('Synced to {{provider}}', { provider: activeProviderName })
-            : thirdPartyPaused && backends.length > 0
-              ? _('Paused on {{provider}} — upgrade or enable Readest Cloud to resume', {
-                  provider: cloudProviderName,
-                })
-              : _('Not syncing — enable a cloud sync provider in Settings → Integrations');
+  const providers = getCloudSyncProviders(settings);
+  const librarySubtitle = paused
+    ? readestEnabled
+      ? _('Synced to Readest Cloud; paused on {{provider}} — upgrade to resume', {
+          provider: cloudProviderName,
+        })
+      : _('Paused on {{provider}} — upgrade or enable Readest Cloud to resume', {
+          provider: cloudProviderName,
+        })
+    : providers.length > 0
+      ? _('Synced to {{provider}}', { provider: cloudProvidersDisplayName(providers) })
+      : _('Not syncing — enable a cloud sync provider in Settings → Integrations');
 
   const renderCategoryRow = (category: SyncCategory) => {
     const c = copy[category];
@@ -296,7 +296,9 @@ export function SyncCategoriesSection({ thirdPartyPaused = false }: SyncCategori
         <div className='flex flex-col gap-0.5'>
           <h4 className='text-base-content text-sm font-semibold'>{_('Account & Preferences')}</h4>
           <p className='text-base-content/60 text-xs'>
-            {_('Synced via Readest Cloud when enabled; turning a category off keeps it local')}
+            {_(
+              'Always synced via Readest Cloud while signed in; turning a category off keeps it on this device',
+            )}
           </p>
         </div>
         <ul className='bg-base-100 border-base-300 divide-base-200 eink-bordered divide-y rounded-lg border'>

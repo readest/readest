@@ -3055,12 +3055,10 @@
   "Unlimited": "අසීමිත",
   "Library & Media": "පුස්තකාලය සහ මාධ්‍ය",
   "Account & Preferences": "ගිණුම සහ මනාපයන්",
-  "Synced to Readest Cloud": "Readest Cloud වෙත සමමුහුර්ත වේ",
   "Synced to {{provider}}": "{{provider}} වෙත සමමුහුර්ත වේ",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} මත විරාම ගන්වා ඇත — නැවත ඇරඹීමට උත්ශ්‍රේණි කරන්න හෝ Readest Cloud සක්‍රීය කරන්න",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "සමමුහුර්ත නොවේ — සැකසුම් → ඒකාබද්ධ කිරීම් හි සැපයුම්කරුවෙකු සක්‍රීය කරන්න",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud සමමුහුර්තකරණය අක්‍රීයයි; තවමත් {{provider}} හරහා සමමුහුර්ත වේ",
-  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "සක්‍රිය විට Readest Cloud හරහා සමමුහුර්ත වේ; ප්‍රවර්ගයක් අක්‍රිය කිරීමෙන් එය දේශීයව පමණක් තබා ගනී",
-  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Readest Cloud සහ {{provider}} වෙත සමාන්තරව සමමුහුර්ත වේ — බාගැනීම් ගොනුව ඇති පළමු සපයන්නා භාවිතා කරයි",
-  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "{{provider}} වෙත සමාන්තරව සමමුහුර්ත වේ — බාගැනීම් ගොනුව ඇති පළමු සපයන්නා භාවිතා කරයි"
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "පුරනය වී සිටින විට සැමවිටම Readest Cloud හරහා සමමුහුර්ත වේ; ප්‍රවර්ගයක් අක්‍රිය කිරීමෙන් එය මෙම උපාංගයේ තබා ගනී",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud වෙත සමමුහුර්ත වේ; {{provider}} මත විරාම ගන්වා ඇත — නැවත ඇරඹීමට උත්ශ්‍රේණි කරන්න"
 }

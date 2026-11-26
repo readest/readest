@@ -2976,12 +2976,10 @@
   "Unlimited": "무제한",
   "Library & Media": "라이브러리 및 미디어",
   "Account & Preferences": "계정 및 환경설정",
-  "Synced to Readest Cloud": "Readest Cloud에 동기화됨",
   "Synced to {{provider}}": "{{provider}}에 동기화됨",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}}에서 일시 중지됨 — 재개하려면 업그레이드하거나 Readest Cloud를 활성화하세요",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "동기화 안 함 — 설정 → 연동에서 클라우드 동기화 공급자를 활성화하세요",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud 동기화가 꺼져 있지만 {{provider}}를 통해 계속 동기화됩니다",
-  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "활성화 시 Readest Cloud를 통해 동기화되며, 끄면 해당 항목은 로컬에만 유지됩니다",
-  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Readest Cloud 및 {{provider}}에 병렬 동기화 — 다운로드 시 파일이 있는 첫 번째 공급자를 사용합니다",
-  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "{{provider}}에 병렬 동기화 — 다운로드 시 파일이 있는 첫 번째 공급자를 사용합니다"
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "로그인 중에는 항상 Readest Cloud를 통해 동기화되며, 끄면 해당 항목은 이 기기에만 유지됩니다",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud에 동기화됨, {{provider}}에서 일시 중지됨 — 재개하려면 업그레이드하세요"
 }

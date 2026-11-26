@@ -3055,12 +3055,10 @@
   "Unlimited": "असीमित",
   "Library & Media": "लाइब्रेरी और मीडिया",
   "Account & Preferences": "खाता और प्राथमिकताएँ",
-  "Synced to Readest Cloud": "Readest Cloud में सिंक किया गया",
   "Synced to {{provider}}": "{{provider}} में सिंक किया गया",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} पर रुका हुआ — फिर से शुरू करने के लिए अपग्रेड करें या Readest Cloud सक्षम करें",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "सिंक नहीं हो रहा — सेटिंग्स → इंटीग्रेशन में क्लाउड सिंक प्रदाता सक्षम करें",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud सिंक बंद है; फिर भी {{provider}} के माध्यम से सिंक हो रहा है",
-  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "चालू होने पर Readest Cloud से सिंक होता है; किसी श्रेणी को बंद करने पर वह केवल स्थानीय रहती है",
-  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Readest Cloud और {{provider}} में समानांतर सिंक — डाउनलोड के लिए फ़ाइल रखने वाले पहले प्रदाता का उपयोग होता है",
-  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "{{provider}} में समानांतर सिंक — डाउनलोड के लिए फ़ाइल रखने वाले पहले प्रदाता का उपयोग होता है"
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "साइन इन रहने पर हमेशा Readest Cloud से सिंक होता है; किसी श्रेणी को बंद करने पर वह इसी डिवाइस पर रहती है",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud में सिंक किया गया; {{provider}} पर रुका हुआ — फिर से शुरू करने के लिए अपग्रेड करें"
 }

@@ -3055,12 +3055,10 @@
   "Unlimited": "Obegränsat",
   "Library & Media": "Bibliotek och media",
   "Account & Preferences": "Konto och inställningar",
-  "Synced to Readest Cloud": "Synkroniseras till Readest Cloud",
   "Synced to {{provider}}": "Synkroniseras till {{provider}}",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Pausad på {{provider}} — uppgradera eller aktivera Readest Cloud för att återuppta",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Synkroniserar inte — aktivera en leverantör i Inställningar → Integrationer",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud-synk är av; synkroniseras fortfarande via {{provider}}",
-  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "Synkroniseras via Readest Cloud när aktiverad; att stänga av en kategori behåller den lokalt",
-  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Synkroniseras parallellt med Readest Cloud och {{provider}} — hämtningar använder första leverantören med filen",
-  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "Synkroniseras parallellt med {{provider}} — hämtningar använder första leverantören med filen"
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "Synkroniseras alltid via Readest Cloud när du är inloggad; att stänga av en kategori behåller den på den här enheten",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Synkroniseras till Readest Cloud; pausad på {{provider}} — uppgradera för att återuppta"
 }

@@ -3213,12 +3213,10 @@
   "Unlimited": "Neomejeno",
   "Library & Media": "Knjižnica in mediji",
   "Account & Preferences": "Račun in nastavitve",
-  "Synced to Readest Cloud": "Sinhronizirano z Readest Cloud",
   "Synced to {{provider}}": "Sinhronizirano z {{provider}}",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Začasno ustavljeno pri {{provider}} — nadgradite ali omogočite Readest Cloud za nadaljevanje",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Brez sinhronizacije — omogočite ponudnika v Nastavitve → Integracije",
   "Readest Cloud sync is off; still synced via {{provider}}": "Sinhronizacija Readest Cloud je izklopljena; še vedno se sinhronizira prek {{provider}}",
-  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "Ko je omogočeno, se sinhronizira prek Readest Cloud; izklop kategorije jo ohrani lokalno",
-  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Vzporedno sinhronizirano z Readest Cloud in {{provider}} — prenosi uporabijo prvega ponudnika z datoteko",
-  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "Vzporedno sinhronizirano s {{provider}} — prenosi uporabijo prvega ponudnika z datoteko"
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "Med prijavo se vedno sinhronizira prek Readest Cloud; izklop kategorije jo ohrani v tej napravi",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Sinhronizirano z Readest Cloud; začasno ustavljeno pri {{provider}} — nadgradite za nadaljevanje"
 }
