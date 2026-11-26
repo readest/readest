@@ -1,5 +1,4 @@
 import { useTranslation } from '@/hooks/useTranslation';
-import { BoxedList, SettingsRow } from '@/components/settings/primitives';
 import { getLocale } from '@/utils/misc';
 import type { SyncDevice } from '@/utils/syncDevices';
 
@@ -10,11 +9,14 @@ interface SyncDeviceListProps {
   onSignOut: (device: SyncDevice) => void;
 }
 
-/** The devices signed in to the account, each but this one with Sign Out. */
+/**
+ * The devices signed in to the account, each but this one with Sign Out.
+ * Styled like Manage Sync's category list, which it sits under.
+ */
 export default function SyncDeviceList({ devices, busyId, onSignOut }: SyncDeviceListProps) {
   const _ = useTranslation();
   return (
-    <BoxedList>
+    <ul className='border-base-300 divide-base-300 eink-bordered w-full divide-y rounded-lg border'>
       {devices.map((device) => {
         const name =
           device.client && device.os
@@ -24,13 +26,15 @@ export default function SyncDeviceList({ devices, busyId, onSignOut }: SyncDevic
           dateStyle: 'medium',
         });
         return (
-          <SettingsRow
-            key={device.id}
-            label={name}
-            description={
-              device.current ? _('This device') : _('Last active {{date}}', { date: lastActive })
-            }
-          >
+          <li key={device.id} className='flex items-center justify-between gap-4 px-4 py-3'>
+            <div className='flex min-w-0 flex-col gap-0.5'>
+              <span className='text-base-content text-sm font-medium'>{name}</span>
+              <span className='text-base-content/60 text-xs'>
+                {device.current
+                  ? _('This device')
+                  : _('Last active {{date}}', { date: lastActive })}
+              </span>
+            </div>
             {!device.current && (
               <button
                 type='button'
@@ -46,9 +50,9 @@ export default function SyncDeviceList({ devices, busyId, onSignOut }: SyncDevic
                 )}
               </button>
             )}
-          </SettingsRow>
+          </li>
         );
       })}
-    </BoxedList>
+    </ul>
   );
 }
