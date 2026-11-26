@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "{{device}} oturumunu kapat",
   "Number of Devices": "Cihaz sayısı",
   "Unlimited": "Sınırsız",
+  "Sync Custom Fonts": "Özel Yazı Tiplerini Eşitle",
+  "Syncs custom font files with this provider": "Özel yazı tipi dosyalarını bu sağlayıcıyla eşitler",
   "Library & Media": "Kitaplık ve Medya",
   "Account & Preferences": "Hesap ve Tercihler",
   "Synced to {{provider}}": "{{provider}} ile eşitleniyor",

@@ -3211,6 +3211,8 @@
   "Sign out {{device}}": "Выйти на {{device}}",
   "Number of Devices": "Количество устройств",
   "Unlimited": "Без ограничений",
+  "Sync Custom Fonts": "Синхронизировать пользовательские шрифты",
+  "Syncs custom font files with this provider": "Синхронизирует файлы пользовательских шрифтов с этим провайдером",
   "Library & Media": "Библиотека и медиа",
   "Account & Preferences": "Аккаунт и настройки",
   "Synced to {{provider}}": "Синхронизация с {{provider}}",

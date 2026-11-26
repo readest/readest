@@ -2974,6 +2974,8 @@
   "Sign out {{device}}": "Đăng xuất {{device}}",
   "Number of Devices": "Số thiết bị",
   "Unlimited": "Không giới hạn",
+  "Sync Custom Fonts": "Đồng bộ phông chữ tùy chỉnh",
+  "Syncs custom font files with this provider": "Đồng bộ tệp phông chữ tùy chỉnh với nhà cung cấp này",
   "Library & Media": "Thư viện & Phương tiện",
   "Account & Preferences": "Tài khoản & Tùy chọn",
   "Synced to {{provider}}": "Đồng bộ lên {{provider}}",

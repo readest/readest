@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "{{device}} dan chiqish",
   "Number of Devices": "Qurilmalar soni",
   "Unlimited": "Cheksiz",
+  "Sync Custom Fonts": "Maxsus shriftlarni sinxronlash",
+  "Syncs custom font files with this provider": "Maxsus shrift fayllarini ushbu provayder bilan sinxronlaydi",
   "Library & Media": "Kutubxona va media",
   "Account & Preferences": "Hisob va sozlamalar",
   "Synced to {{provider}}": "{{provider}} bilan sinxronlanadi",

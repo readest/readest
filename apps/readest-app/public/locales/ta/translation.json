@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "{{device}} இலிருந்து வெளியேறு",
   "Number of Devices": "சாதனங்களின் எண்ணிக்கை",
   "Unlimited": "வரம்பற்றது",
+  "Sync Custom Fonts": "தனிப்பயன் எழுத்துருக்களை ஒத்திசைக்கவும்",
+  "Syncs custom font files with this provider": "தனிப்பயன் எழுத்துரு கோப்புகளை இந்த வழங்குநருடன் ஒத்திசைக்கிறது",
   "Library & Media": "நூலகம் & ஊடகம்",
   "Account & Preferences": "கணக்கு & விருப்பங்கள்",
   "Synced to {{provider}}": "{{provider}} உடன் ஒத்திசைக்கப்படுகிறது",

@@ -3369,6 +3369,8 @@
   "Sign out {{device}}": "تسجيل خروج {{device}}",
   "Number of Devices": "عدد الأجهزة",
   "Unlimited": "غير محدود",
+  "Sync Custom Fonts": "مزامنة الخطوط المخصصة",
+  "Syncs custom font files with this provider": "يزامن ملفات الخطوط المخصصة مع هذا المزوّد",
   "Library & Media": "المكتبة والوسائط",
   "Account & Preferences": "الحساب والتفضيلات",
   "Synced to {{provider}}": "تتم المزامنة إلى {{provider}}",

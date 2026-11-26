@@ -26,6 +26,7 @@ import { recordLibraryPass, recordLibraryPassFailure } from '@/services/sync/fil
 export interface FileSyncFormSettings {
   enabled?: boolean;
   syncBooks?: boolean;
+  syncFonts?: boolean;
   fullSync?: boolean;
   strategy?: KOSyncStrategy;
   deviceId?: string;
@@ -96,6 +97,7 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
   const setLastError = useFileSyncStore((s) => s.setLastError);
 
   const handleToggleSyncBooks = () => persist({ syncBooks: !(stored.syncBooks ?? false) });
+  const handleToggleSyncFonts = () => persist({ syncFonts: !(stored.syncFonts ?? true) });
   const handleToggleFullSync = () => persist({ fullSync: !(stored.fullSync ?? false) });
   const handleStrategyChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     await persist({ strategy: e.target.value as KOSyncStrategy });
@@ -168,9 +170,11 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
 
       recordLibraryPass(kind, result);
       // Custom fonts ride the same pass (#7793); a font failure is not a library one.
-      await syncFonts(envConfig, provider, strategy).catch((e) =>
-        console.warn('[cloudSync] font sync failed', kind, e),
-      );
+      if (stored.syncFonts !== false) {
+        await syncFonts(envConfig, provider, strategy).catch((e) =>
+          console.warn('[cloudSync] font sync failed', kind, e),
+        );
+      }
       const failure = formatSyncFailure(result, _);
       setLastError(kind, failure);
       if (!failure) {
@@ -197,6 +201,12 @@ const FileSyncForm: React.FC<FileSyncFormProps> = ({
         description={_('Uploads book files to your other devices')}
         checked={stored.syncBooks ?? false}
         onChange={handleToggleSyncBooks}
+      />
+      <SettingsSwitchRow
+        label={_('Sync Custom Fonts')}
+        description={_('Syncs custom font files with this provider')}
+        checked={stored.syncFonts ?? true}
+        onChange={handleToggleSyncFonts}
       />
       <SettingsSwitchRow
         label={_('Full Sync')}

@@ -66,6 +66,11 @@ describe('autoScrollSpeedGesture pure helpers', () => {
       expect(computeSpeed(start, 100, 1000)).toBeLessThan(start);
     });
 
+    it('lets a short edge swipe reach speeds between 100% and 125%', () => {
+      expect(computeSpeed(100, -18, 1000)).toBe(110);
+      expect(computeSpeed(100, 18, 1000)).toBe(90);
+    });
+
     it('a full view-height upward drag from min reaches max', () => {
       expect(computeSpeed(MIN_AUTO_SCROLL_SPEED, -1000, 1000)).toBe(MAX_AUTO_SCROLL_SPEED);
     });

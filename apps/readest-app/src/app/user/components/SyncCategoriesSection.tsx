@@ -10,6 +10,7 @@ import {
   getCloudSyncProviders,
   cloudProviderDisplayName,
   cloudProvidersDisplayName,
+  settingsKeyForBackend,
   type CloudSyncProviderKind,
 } from '@/services/sync/cloudSyncProvider';
 import {
@@ -133,7 +134,6 @@ export function SyncCategoriesSection({
   } = resolveCloudSyncGate(settings, userPlan, customizationPurchased);
   const activeBackends = paused ? [] : backends;
   const cloudProviderName = cloudProvidersDisplayName(backends);
-  const activeProviderName = cloudProvidersDisplayName(activeBackends);
 
   // A refreshed /user renders before the store is hydrated, where every
   // category reads its default. Showing that would misreport the user's real
@@ -161,9 +161,18 @@ export function SyncCategoriesSection({
     void saveSettings(envConfig, updated);
   };
 
+  // A backend with Sync Custom Fonts off (#7965) doesn't sync fonts.
+  const fileBackendsFor = (category: SyncCategory) =>
+    category === 'font'
+      ? activeBackends.filter((kind) => settings[settingsKeyForBackend(kind)]?.syncFonts !== false)
+      : activeBackends;
+
   const getDestinations = (category: SyncCategory, on: boolean): CloudSyncProviderKind[] => {
     if (PROVIDER_GATED_SET.has(category)) {
-      return [...(readestEnabled && on ? (['readest'] as const) : []), ...activeBackends];
+      return [
+        ...(readestEnabled && on ? (['readest'] as const) : []),
+        ...fileBackendsFor(category),
+      ];
     }
     if (category === 'book_data') {
       if (!on) return [];
@@ -195,6 +204,7 @@ export function SyncCategoriesSection({
     const isLibraryMedia = LIBRARY_MEDIA_SET.has(category);
     const isProviderGated = PROVIDER_GATED_SET.has(category);
     const destinations = getDestinations(category, on);
+    const fileBackends = fileBackendsFor(category);
 
     // While Readest Cloud is switched off and a file backend is on, the
     // book / progress / note / font channels are routed to the file
@@ -202,17 +212,17 @@ export function SyncCategoriesSection({
     // description says so in place (same pattern as `locked`), but the
     // toggle stays interactive and persists: it governs the native
     // channel the user returns to when Readest Cloud is re-enabled.
-    const managedByProvider = !readestEnabled && activeBackends.length > 0 && isProviderGated;
+    const managedByProvider = !readestEnabled && fileBackends.length > 0 && isProviderGated;
     const readestOffWithMirror =
-      readestEnabled && activeBackends.length > 0 && isProviderGated && !on;
+      readestEnabled && fileBackends.length > 0 && isProviderGated && !on;
 
     const description = managedByProvider
       ? _('Managed by {{provider}} while it is your cloud sync provider', {
-          provider: activeProviderName,
+          provider: cloudProvidersDisplayName(fileBackends),
         })
       : readestOffWithMirror
         ? _('Readest Cloud sync is off; still synced via {{provider}}', {
-            provider: activeProviderName,
+            provider: cloudProvidersDisplayName(fileBackends),
           })
         : locked
           ? _('Required while Dictionaries sync is enabled')

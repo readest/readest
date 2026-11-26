@@ -2974,6 +2974,8 @@
   "Sign out {{device}}": "讓 {{device}} 登出",
   "Number of Devices": "裝置數量",
   "Unlimited": "無限制",
+  "Sync Custom Fonts": "同步自訂字型",
+  "Syncs custom font files with this provider": "將自訂字型檔案與此服務商同步",
   "Library & Media": "書庫與媒體",
   "Account & Preferences": "帳號與偏好設定",
   "Synced to {{provider}}": "已同步至 {{provider}}",

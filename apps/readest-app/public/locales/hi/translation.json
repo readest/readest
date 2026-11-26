@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "{{device}} से साइन आउट करें",
   "Number of Devices": "डिवाइस की संख्या",
   "Unlimited": "असीमित",
+  "Sync Custom Fonts": "कस्टम फ़ॉन्ट सिंक करें",
+  "Syncs custom font files with this provider": "इस प्रदाता के साथ कस्टम फ़ॉन्ट फ़ाइलें सिंक करता है",
   "Library & Media": "लाइब्रेरी और मीडिया",
   "Account & Preferences": "खाता और प्राथमिकताएँ",
   "Synced to {{provider}}": "{{provider}} में सिंक किया गया",

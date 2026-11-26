@@ -3132,6 +3132,8 @@
   "Sign out {{device}}": "נתק את {{device}}",
   "Number of Devices": "מספר מכשירים",
   "Unlimited": "ללא הגבלה",
+  "Sync Custom Fonts": "סנכרון גופנים מותאמים אישית",
+  "Syncs custom font files with this provider": "מסנכרן קובצי גופנים מותאמים אישית עם ספק זה",
   "Library & Media": "ספרייה ומדיה",
   "Account & Preferences": "חשבון והעדפות",
   "Synced to {{provider}}": "מסונכרן אל {{provider}}",

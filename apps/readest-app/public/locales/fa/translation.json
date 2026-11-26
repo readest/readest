@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "خروج از {{device}}",
   "Number of Devices": "تعداد دستگاه‌ها",
   "Unlimited": "نامحدود",
+  "Sync Custom Fonts": "همگام‌سازی فونت‌های سفارشی",
+  "Syncs custom font files with this provider": "فایل‌های فونت سفارشی را با این ارائه‌دهنده همگام‌سازی می‌کند",
   "Library & Media": "کتابخانه و رسانه",
   "Account & Preferences": "حساب و ترجیحات",
   "Synced to {{provider}}": "همگام‌سازی‌شده با {{provider}}",

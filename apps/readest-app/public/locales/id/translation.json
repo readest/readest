@@ -2974,6 +2974,8 @@
   "Sign out {{device}}": "Keluarkan {{device}}",
   "Number of Devices": "Jumlah perangkat",
   "Unlimited": "Tanpa batas",
+  "Sync Custom Fonts": "Sinkronkan Font Kustom",
+  "Syncs custom font files with this provider": "Menyinkronkan file font kustom dengan penyedia ini",
   "Library & Media": "Perpustakaan & Media",
   "Account & Preferences": "Akun & Preferensi",
   "Synced to {{provider}}": "Disinkronkan ke {{provider}}",

@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "{{device}}-დან გამოსვლა",
   "Number of Devices": "მოწყობილობების რაოდენობა",
   "Unlimited": "შეუზღუდავი",
+  "Sync Custom Fonts": "მორგებული შრიფტების სინქრონიზაცია",
+  "Syncs custom font files with this provider": "ასინქრონიზებს მორგებული შრიფტის ფაილებს ამ პროვაიდერთან",
   "Library & Media": "ბიბლიოთეკა და მედია",
   "Account & Preferences": "ანგარიში და პარამეტრები",
   "Synced to {{provider}}": "სინქრონიზდება {{provider}}-თან",

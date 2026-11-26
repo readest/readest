@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "{{device}} abmelden",
   "Number of Devices": "Anzahl der Geräte",
   "Unlimited": "Unbegrenzt",
+  "Sync Custom Fonts": "Benutzerdefinierte Schriftarten synchronisieren",
+  "Syncs custom font files with this provider": "Synchronisiert benutzerdefinierte Schriftartdateien mit diesem Anbieter",
   "Library & Media": "Bibliothek & Medien",
   "Account & Preferences": "Konto & Einstellungen",
   "Synced to {{provider}}": "Mit {{provider}} synchronisiert",

@@ -2974,6 +2974,8 @@
   "Sign out {{device}}": "{{device}} 로그아웃",
   "Number of Devices": "기기 수",
   "Unlimited": "무제한",
+  "Sync Custom Fonts": "사용자 지정 글꼴 동기화",
+  "Syncs custom font files with this provider": "사용자 지정 글꼴 파일을 이 공급자와 동기화합니다",
   "Library & Media": "라이브러리 및 미디어",
   "Account & Preferences": "계정 및 환경설정",
   "Synced to {{provider}}": "{{provider}}에 동기화됨",

@@ -3132,6 +3132,8 @@
   "Sign out {{device}}": "Deconectează {{device}}",
   "Number of Devices": "Număr de dispozitive",
   "Unlimited": "Nelimitat",
+  "Sync Custom Fonts": "Sincronizează fonturile personalizate",
+  "Syncs custom font files with this provider": "Sincronizează fișierele de fonturi personalizate cu acest furnizor",
   "Library & Media": "Bibliotecă și media",
   "Account & Preferences": "Cont și preferințe",
   "Synced to {{provider}}": "Sincronizat cu {{provider}}",

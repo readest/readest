@@ -290,6 +290,7 @@ export interface WebDAVSettings {
   syncProgress?: boolean;
   syncNotes?: boolean;
   syncBooks?: boolean;
+  syncFonts?: boolean;
   // When true, "Sync now" re-checks every book instead of only those whose
   // local copy differs from the shared library.json index (the default
   // incremental walk). An escape hatch for drift or a first full sync.
@@ -324,6 +325,7 @@ export interface GoogleDriveSettings {
   syncProgress?: boolean;
   syncNotes?: boolean;
   syncBooks?: boolean;
+  syncFonts?: boolean;
   fullSync?: boolean;
   strategy?: KOSyncStrategy;
   deviceId?: string;
@@ -352,6 +354,7 @@ export interface S3Settings {
   syncProgress?: boolean;
   syncNotes?: boolean;
   syncBooks?: boolean;
+  syncFonts?: boolean;
   fullSync?: boolean;
   strategy?: KOSyncStrategy;
   deviceId?: string;
@@ -374,6 +377,7 @@ export interface OneDriveSettings {
   syncProgress?: boolean;
   syncNotes?: boolean;
   syncBooks?: boolean;
+  syncFonts?: boolean;
   fullSync?: boolean;
   strategy?: KOSyncStrategy;
   deviceId?: string;
@@ -393,6 +397,7 @@ export interface ICloudSettings {
   syncProgress?: boolean;
   syncNotes?: boolean;
   syncBooks?: boolean;
+  syncFonts?: boolean;
   fullSync?: boolean;
   strategy?: KOSyncStrategy;
   deviceId?: string;

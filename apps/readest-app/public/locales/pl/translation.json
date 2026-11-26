@@ -3211,6 +3211,8 @@
   "Sign out {{device}}": "Wyloguj {{device}}",
   "Number of Devices": "Liczba urządzeń",
   "Unlimited": "Bez limitu",
+  "Sync Custom Fonts": "Synchronizuj własne czcionki",
+  "Syncs custom font files with this provider": "Synchronizuje pliki własnych czcionek z tym dostawcą",
   "Library & Media": "Biblioteka i multimedia",
   "Account & Preferences": "Konto i preferencje",
   "Synced to {{provider}}": "Synchronizowane z {{provider}}",

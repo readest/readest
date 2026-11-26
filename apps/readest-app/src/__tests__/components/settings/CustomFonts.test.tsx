@@ -122,6 +122,32 @@ describe('CustomFonts download on demand', () => {
     expect(queueReplicaBinaryDownload).not.toHaveBeenCalled();
   });
 
+  it('prefers Readest Cloud over a backend with Sync Custom Fonts off (#7965)', async () => {
+    useCustomFontStore.setState({ fonts: [cloudFont()] });
+    render(<CustomFonts bookKey='' onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Inter'));
+
+    await waitFor(() => expect(saveViewSettings).toHaveBeenCalled());
+    expect(queueReplicaBinaryDownload).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(runFileFontDownload).mock.calls.map(([, , off]) => off)).toEqual([undefined]);
+  });
+
+  it('fetches a listed font from a backend with Sync Custom Fonts off when nothing else can (#7965)', async () => {
+    vi.mocked(runFileFontDownload).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    vi.mocked(queueReplicaBinaryDownload).mockResolvedValueOnce(null);
+    useCustomFontStore.setState({ fonts: [cloudFont()] });
+    render(<CustomFonts bookKey='' onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Inter'));
+
+    await waitFor(() => expect(saveViewSettings).toHaveBeenCalled());
+    expect(vi.mocked(runFileFontDownload).mock.calls.map(([, , off]) => off)).toEqual([
+      undefined,
+      true,
+    ]);
+  });
+
   it('shows progress while a file sync backend downloads the family', async () => {
     vi.mocked(runFileFontDownload).mockReturnValueOnce(new Promise(() => {}));
     useCustomFontStore.setState({ fonts: [cloudFont()] });

@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "{{device}} ඉවත් කරන්න",
   "Number of Devices": "උපාංග ගණන",
   "Unlimited": "අසීමිත",
+  "Sync Custom Fonts": "අභිරුචි අකුරු සමමුහුර්ත කරන්න",
+  "Syncs custom font files with this provider": "අභිරුචි අකුරු ගොනු මෙම සැපයුම්කරු සමඟ සමමුහුර්ත කරයි",
   "Library & Media": "පුස්තකාලය සහ මාධ්‍ය",
   "Account & Preferences": "ගිණුම සහ මනාපයන්",
   "Synced to {{provider}}": "{{provider}} වෙත සමමුහුර්ත වේ",

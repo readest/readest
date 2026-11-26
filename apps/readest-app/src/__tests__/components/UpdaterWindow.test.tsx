@@ -7,8 +7,9 @@
  * the auto-translated changelog back to the source English text (and back).
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import type { ProgressHandler } from '@/utils/transfer';
 
 const { mockInstallNightlyUpdate } = vi.hoisted(() => ({
   mockInstallNightlyUpdate: vi.fn(),
@@ -24,8 +25,11 @@ vi.mock('@/utils/misc', () => ({
   getLocale: () => mockLocale,
 }));
 
+// Fills {{placeholders}} the way the reader's i18next does, so a test can read
+// an interpolated readout such as the download's byte count.
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (s: string) => s,
+  useTranslation: () => (s: string, vars?: Record<string, unknown>) =>
+    vars ? s.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => String(vars[key])) : s,
 }));
 
 vi.mock('@/hooks/useTranslator', () => ({
@@ -267,5 +271,88 @@ describe('UpdaterContent — auto-translated changelog', () => {
     await waitFor(() => expect(screen.getByText('First feature')).toBeTruthy());
     expect(mockTranslate).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Show original' })).toBeNull();
+  });
+});
+
+describe('UpdaterContent — download readout', () => {
+  const MB = 1024 * 1024;
+  const NIGHTLY = {
+    endpoint: 'https://example.com/nightly.json',
+    version: '0.11.20',
+    platformKey: 'android-arm64',
+    url: 'https://example.com/readest.apk',
+    signature: 'signature',
+  };
+
+  // Starts a download that stays in flight and hands back a function that
+  // reports downloaded megabytes to it, the way tauriDownload does.
+  const startDownload = async () => {
+    let report!: ProgressHandler;
+    vi.mocked(tauriDownload).mockImplementationOnce(
+      (_url, _filePath, progressHandler) =>
+        new Promise<Record<string, string>>(() => {
+          report = progressHandler!;
+        }),
+    );
+    render(<UpdaterContent latestVersion='0.11.20' nightlyUpdate={NIGHTLY} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'DOWNLOAD & INSTALL' }));
+    await waitFor(() => {
+      expect(vi.mocked(tauriDownload)).toHaveBeenCalledOnce();
+      expect(document.querySelector('progress')).not.toBeNull();
+    });
+    return async (downloadedMb: number) => {
+      await act(async () => {
+        report({ progress: downloadedMb * MB, total: 100 * MB, transferSpeed: 0 });
+      });
+    };
+  };
+  const shownValue = () => document.querySelector('progress')!.getAttribute('value');
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete document.documentElement.dataset['eink'];
+  });
+
+  it('on e-ink moves the bar and the byte count together, at most twice a second', async () => {
+    document.documentElement.dataset['eink'] = 'true';
+    const report = await startDownload();
+    let now = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+
+    await report(10);
+    now += 100;
+    await report(20);
+    // The first chunk shows at once; the one 100 ms later is held back.
+    expect(shownValue()).toBe('10');
+    expect(screen.getByText('Downloading 10 MB of 100 MB')).toBeTruthy();
+
+    now += 400;
+    await report(30);
+    // 500 ms after the last shown value: the running total, not the last chunk.
+    expect(shownValue()).toBe('30');
+    expect(screen.getByText('Downloading 30 MB of 100 MB')).toBeTruthy();
+
+    now += 499;
+    await report(40);
+    expect(shownValue()).toBe('30');
+
+    now += 1;
+    await report(50);
+    expect(shownValue()).toBe('50');
+
+    now += 1;
+    await report(100);
+    // The end of the download shows at once.
+    expect(shownValue()).toBe('100');
+    expect(screen.getByText('Download finished')).toBeTruthy();
+  });
+
+  it('off e-ink shows every chunk', async () => {
+    const report = await startDownload();
+
+    await report(10);
+    await report(20);
+    expect(shownValue()).toBe('20');
+    expect(screen.getByText('Downloading 20 MB of 100 MB')).toBeTruthy();
   });
 });

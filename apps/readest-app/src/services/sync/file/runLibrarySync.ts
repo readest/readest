@@ -143,11 +143,13 @@ const syncOneBackend = async (
 
   recordLibraryPass(kind, result);
   // Custom fonts ride the same pass (#7793); a font failure is not a library one.
-  try {
-    const provider = await createFileSyncProvider(kind, useSettingsStore.getState().settings);
-    if (provider) await syncFonts(envConfig, provider, strategy);
-  } catch (e) {
-    console.warn('[cloudSync] font sync failed', kind, e);
+  if (ps?.syncFonts !== false) {
+    try {
+      const provider = await createFileSyncProvider(kind, useSettingsStore.getState().settings);
+      if (provider) await syncFonts(envConfig, provider, strategy);
+    } catch (e) {
+      console.warn('[cloudSync] font sync failed', kind, e);
+    }
   }
   if (!result.failures && !result.indexPushFailed) {
     const latest = useSettingsStore.getState().settings;
@@ -302,15 +304,19 @@ export const runFileBookDownload = async (
 /**
  * Download a synced custom font when the user picks it (#7793), from the first
  * enabled backend that holds it, then mount it as the Readest Cloud download
- * handler does.
+ * handler does. Backends with Sync Custom Fonts off are skipped (#7965), or,
+ * with `syncFontsOff`, are the only ones tried: the last resort for a font
+ * listed before the switch was turned off.
  */
 export const runFileFontDownload = async (
   envConfig: EnvConfigType,
   font: CustomFont,
+  syncFontsOff = false,
 ): Promise<boolean> => {
   const settings = useSettingsStore.getState().settings;
   const appService = await envConfig.getAppService();
   for (const kind of getReadyFileSyncBackends(settings)) {
+    if ((settings[settingsKeyForBackend(kind)]?.syncFonts === false) !== syncFontsOff) continue;
     try {
       const provider = await createFileSyncProvider(kind, settings);
       if (!provider || !(await downloadFont(provider, appService, font))) continue;

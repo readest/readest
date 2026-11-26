@@ -88,6 +88,65 @@ describe('SyncCategoriesSection', () => {
     expect(row('Dictionaries').closest('li')!.textContent).not.toContain(managed);
   });
 
+  test('fonts name only the file providers whose Sync Custom Fonts is on (#7965)', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: false },
+        webdav: { enabled: true, syncFonts: false },
+        googleDrive: { enabled: true },
+      },
+    } as never);
+    renderSection();
+    expect(row('Fonts').closest('li')!.textContent).toContain(
+      'Managed by Google Drive while it is your cloud sync provider',
+    );
+    expect(row('Books').closest('li')!.textContent).toContain(
+      'Managed by WebDAV, Google Drive while it is your cloud sync provider',
+    );
+  });
+
+  test('fonts read as local only when no file provider syncs them (#7965)', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: false },
+        webdav: { enabled: true, syncFonts: false },
+      },
+    } as never);
+    renderSection();
+    expect(row('Fonts').closest('li')!.textContent).toContain('Local only');
+    expect(row('Fonts').closest('li')!.textContent).not.toContain('Managed by');
+    expect(row('Books').closest('li')!.textContent).toContain('Managed by WebDAV');
+  });
+
+  test('fonts leave out a parallel provider with Sync Custom Fonts off (#7965)', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: true },
+        webdav: { enabled: true, syncFonts: false },
+      },
+    } as never);
+    renderSection();
+    const fonts = row('Fonts').closest('li')!.textContent;
+    expect(fonts).toContain('Readest Cloud');
+    expect(fonts).not.toContain('WebDAV');
+    expect(row('Books').closest('li')!.textContent).toContain('WebDAV');
+
+    cleanup();
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: true },
+        webdav: { enabled: true, syncFonts: false },
+        syncCategories: { font: false },
+      },
+    } as never);
+    renderSection();
+    expect(row('Fonts').closest('li')!.textContent).not.toContain('still synced via');
+  });
+
   test('groups Library & Media separately from Account & Preferences without redundant Account pills', () => {
     useSettingsStore.setState({ settings: base } as never);
     renderSection();

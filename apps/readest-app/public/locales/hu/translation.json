@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "{{device}} kijelentkeztetése",
   "Number of Devices": "Eszközök száma",
   "Unlimited": "Korlátlan",
+  "Sync Custom Fonts": "Egyéni betűtípusok szinkronizálása",
+  "Syncs custom font files with this provider": "Szinkronizálja az egyéni betűtípusfájlokat ezzel a szolgáltatóval",
   "Library & Media": "Könyvtár és média",
   "Account & Preferences": "Fiók és beállítások",
   "Synced to {{provider}}": "Szinkronizálva ide: {{provider}}",

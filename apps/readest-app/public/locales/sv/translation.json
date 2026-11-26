@@ -3053,6 +3053,8 @@
   "Sign out {{device}}": "Logga ut {{device}}",
   "Number of Devices": "Antal enheter",
   "Unlimited": "Obegränsat",
+  "Sync Custom Fonts": "Synkronisera anpassade teckensnitt",
+  "Syncs custom font files with this provider": "Synkroniserar anpassade teckensnittsfiler med den här leverantören",
   "Library & Media": "Bibliotek och media",
   "Account & Preferences": "Konto och inställningar",
   "Synced to {{provider}}": "Synkroniseras till {{provider}}",

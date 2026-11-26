@@ -3132,6 +3132,8 @@
   "Sign out {{device}}": "Terminar sessão em {{device}}",
   "Number of Devices": "Número de dispositivos",
   "Unlimited": "Ilimitado",
+  "Sync Custom Fonts": "Sincronizar tipos de letra personalizados",
+  "Syncs custom font files with this provider": "Sincroniza ficheiros de tipos de letra personalizados com este fornecedor",
   "Library & Media": "Biblioteca e multimédia",
   "Account & Preferences": "Conta e preferências",
   "Synced to {{provider}}": "Sincronizado com {{provider}}",

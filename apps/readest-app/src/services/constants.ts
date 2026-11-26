@@ -177,6 +177,7 @@ export const DEFAULT_WEBDAV_SETTINGS = {
   syncProgress: true,
   syncNotes: true,
   syncBooks: false,
+  syncFonts: true,
   strategy: 'silent',
   deviceId: '',
   lastSyncedAt: 0,
@@ -187,6 +188,7 @@ export const DEFAULT_GOOGLE_DRIVE_SETTINGS = {
   syncProgress: true,
   syncNotes: true,
   syncBooks: false,
+  syncFonts: true,
   strategy: 'silent',
   deviceId: '',
   lastSyncedAt: 0,
@@ -202,6 +204,7 @@ export const DEFAULT_S3_SETTINGS = {
   syncProgress: true,
   syncNotes: true,
   syncBooks: false,
+  syncFonts: true,
   strategy: 'silent',
   deviceId: '',
   lastSyncedAt: 0,
@@ -212,6 +215,7 @@ export const DEFAULT_ONEDRIVE_SETTINGS = {
   syncProgress: true,
   syncNotes: true,
   syncBooks: false,
+  syncFonts: true,
   strategy: 'silent',
   deviceId: '',
   lastSyncedAt: 0,
@@ -222,6 +226,7 @@ export const DEFAULT_ICLOUD_SETTINGS = {
   syncProgress: true,
   syncNotes: true,
   syncBooks: false,
+  syncFonts: true,
   strategy: 'silent',
   deviceId: '',
   lastSyncedAt: 0,
@@ -1066,7 +1071,7 @@ export const CONTRAST_STEP = 10;
 export const AUTO_SCROLL_BASE_PX_PER_SEC = 20;
 export const MAX_AUTO_SCROLL_SPEED = 500;
 export const MIN_AUTO_SCROLL_SPEED = 25;
-export const AUTO_SCROLL_SPEED_STEP = 25;
+export const AUTO_SCROLL_SPEED_STEP = 5;
 
 export const SHOW_UNREAD_STATUS_BADGE = false;
 
