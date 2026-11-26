@@ -108,6 +108,7 @@ vi.mock('@/services/tts/BufferedTTSClient', () => ({
       (this['getAllVoices'] as ReturnType<typeof vi.fn>).mockImplementation(
         async () => h.customVoices ?? CUSTOM_VOICES,
       );
+      this['refreshVoices'] = this['getAllVoices'];
       (this['getVoices'] as ReturnType<typeof vi.fn>).mockResolvedValue([
         { id: 'custom-tts:svc', name: 'My TTS', voices: CUSTOM_VOICES },
       ]);
