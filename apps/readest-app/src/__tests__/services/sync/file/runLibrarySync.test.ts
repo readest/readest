@@ -226,6 +226,15 @@ describe('runFileLibrarySyncPass', () => {
     expect(useFileSyncStore.getState().lastErrorByKind.webdav).toBeNull();
   });
 
+  test('skips custom font sync on a backend whose syncFonts is false', async () => {
+    useSettingsStore.getState().setSettings({
+      ...multiProviderSettings,
+      webdav: { ...multiProviderSettings.webdav, syncFonts: false },
+    } as SystemSettings);
+    await runFileLibrarySyncPass(envConfig, translationFn);
+    expect(syncFonts).toHaveBeenCalledTimes(1);
+  });
+
   test('returns null when every backend fails', async () => {
     syncLibrary.mockRejectedValue(new Error('offline'));
     expect(await runFileLibrarySyncPass(envConfig, translationFn)).toBeNull();
@@ -341,6 +350,28 @@ describe('runFileFontDownload', () => {
   test('fails when no backend holds the font', async () => {
     downloadFont.mockResolvedValue(false);
     expect(await runFileFontDownload(envConfig, font)).toBe(false);
+    expect(activateFontByContentId).not.toHaveBeenCalled();
+  });
+
+  test('skips backends whose syncFonts is false', async () => {
+    useSettingsStore.getState().setSettings({
+      ...multiProviderSettings,
+      webdav: { ...multiProviderSettings.webdav, syncFonts: false },
+    } as SystemSettings);
+    downloadFont.mockResolvedValueOnce(true);
+    expect(await runFileFontDownload(envConfig, font)).toBe(true);
+    expect(downloadFont).toHaveBeenCalledTimes(1);
+    expect(activateFontByContentId).toHaveBeenCalledWith(envConfig, 'c1');
+  });
+
+  test('returns false when every enabled backend has syncFonts set to false', async () => {
+    useSettingsStore.getState().setSettings({
+      ...multiProviderSettings,
+      webdav: { ...multiProviderSettings.webdav, syncFonts: false },
+      googleDrive: { ...multiProviderSettings.googleDrive, syncFonts: false },
+    } as SystemSettings);
+    expect(await runFileFontDownload(envConfig, font)).toBe(false);
+    expect(downloadFont).not.toHaveBeenCalled();
     expect(activateFontByContentId).not.toHaveBeenCalled();
   });
 });

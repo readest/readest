@@ -143,11 +143,13 @@ const syncOneBackend = async (
 
   recordLibraryPass(kind, result);
   // Custom fonts ride the same pass (#7793); a font failure is not a library one.
-  try {
-    const provider = await createFileSyncProvider(kind, useSettingsStore.getState().settings);
-    if (provider) await syncFonts(envConfig, provider, strategy);
-  } catch (e) {
-    console.warn('[cloudSync] font sync failed', kind, e);
+  if (ps?.syncFonts !== false) {
+    try {
+      const provider = await createFileSyncProvider(kind, useSettingsStore.getState().settings);
+      if (provider) await syncFonts(envConfig, provider, strategy);
+    } catch (e) {
+      console.warn('[cloudSync] font sync failed', kind, e);
+    }
   }
   if (!result.failures && !result.indexPushFailed) {
     const latest = useSettingsStore.getState().settings;
@@ -311,6 +313,7 @@ export const runFileFontDownload = async (
   const settings = useSettingsStore.getState().settings;
   const appService = await envConfig.getAppService();
   for (const kind of getReadyFileSyncBackends(settings)) {
+    if (settings[settingsKeyForBackend(kind)]?.syncFonts === false) continue;
     try {
       const provider = await createFileSyncProvider(kind, settings);
       if (!provider || !(await downloadFont(provider, appService, font))) continue;
