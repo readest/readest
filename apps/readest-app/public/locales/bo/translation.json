@@ -2983,5 +2983,10 @@
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "མཉམ་སྒྲིག་མེད — སྒྲིག་འགོད་ → མཐུད་སྦྱོར་ནས་སྤྲིན་མཁོ་སྤྲོད་བྱེད་མཁན་སྤྱོད",
   "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud མཉམ་སྒྲིག་བཀག་ཡོད་ཀྱང་ {{provider}} བརྒྱུད་མུ་མཐུད་མཉམ་སྒྲིག་བྱེད",
   "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "ནང་འཛུལ་བྱས་ཡོད་སྐབས་རྟག་ཏུ་ Readest Cloud བརྒྱུད་མཉམ་སྒྲིག་བྱེད། དབྱེ་ཁག་བཀག་ན་སྒྲིག་ཆས་འདིའི་ནང་ཉར་འཇོག་བྱེད",
-  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud ལ་མཉམ་སྒྲིག་བྱེད་བཞིན་པ། {{provider}} ཐོག་མཚམས་བཞག་ཡོད — མུ་མཐུད་པར་རིམ་སྤར་བྱེད"
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Readest Cloud ལ་མཉམ་སྒྲིག་བྱེད་བཞིན་པ། {{provider}} ཐོག་མཚམས་བཞག་ཡོད — མུ་མཐུད་པར་རིམ་སྤར་བྱེད",
+  "World's largest collection of free ebooks": "འཛམ་གླིང་ནང་གི་རིན་མེད་གློག་དཔེའི་ཕྱོགས་བསྡུས་ཆེ་ཤོས།",
+  "Free and liberated ebooks, carefully produced for the true book lover": "དཔེ་ཆ་ལ་དགའ་བ་དངོས་ཀྱི་ཆེད་དུ་ཞིབ་ཚགས་ངང་བཟོས་པའི་རིན་མེད་དང་རང་དབང་གི་གློག་དཔེ།",
+  "Over 50,000 free ebooks": "རིན་མེད་གློག་དཔེ་ཁྲི་ཚོ 5 ལྷག",
+  "Free ebooks from authors who have \"unglued\" their books": "རྩོམ་པ་པོས་རང་གི་དཔེ་དེབ་“གློད་གྲོལ་”བཏང་བའི་རིན་མེད་གློག་དཔེ།",
+  "Free public-domain books, comics, magazines and puzzles": "སྤྱི་མཐུན་ཁྱབ་ཁོངས་ཀྱི་རིན་མེད་དཔེ་དེབ་དང་། རི་མོའི་སྒྲུང་དེབ། དུས་དེབ། རྩེད་མོ་བཅས།"
 }
