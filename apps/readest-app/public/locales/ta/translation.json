@@ -3040,5 +3040,17 @@
   "Clear X-Ray": "X-Ray-ஐ அழி",
   "Clear the X-Ray of this book?": "இந்தப் புத்தகத்தின் X-Ray-ஐ அழிக்கவா?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "மேலே உள்ள AI மொழிபெயர்ப்பாளரைக் கொண்டு, நீங்கள் படித்த கதாபாத்திரங்கள், இடங்கள், நிகழ்வுகளைக் கதையை வெளிப்படுத்தாமல் தொகுக்கிறது.",
-  "Update While Reading": "படிக்கும்போது புதுப்பி"
+  "Update While Reading": "படிக்கும்போது புதுப்பி",
+  "Device limit reached": "சாதன வரம்பை அடைந்துவிட்டது",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "இலவச திட்டம் அதிகபட்சம் {{limit}} சாதனங்களில் ஒத்திசைக்கும். இந்தச் சாதனத்தில் உள்நுழைய அவற்றில் ஒன்றிலிருந்து வெளியேறவும்.",
+  "Failed to sign out the device. Please try again later.": "சாதனத்திலிருந்து வெளியேற முடியவில்லை. பின்னர் மீண்டும் முயற்சிக்கவும்.",
+  "Devices": "சாதனங்கள்",
+  "The devices signed in to your account. Sign out of one you no longer use.": "உங்கள் கணக்கில் உள்நுழைந்துள்ள சாதனங்கள். இனி பயன்படுத்தாத சாதனத்திலிருந்து வெளியேறவும்.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "இலவச திட்டம் அதிகபட்சம் {{limit}} சாதனங்களில் ஒத்திசைக்கும். வேறொரு சாதனத்தில் உள்நுழைய, இனி பயன்படுத்தாத சாதனத்திலிருந்து வெளியேறவும்.",
+  "{{client}} on {{os}}": "{{os}} இல் {{client}}",
+  "Unknown device": "தெரியாத சாதனம்",
+  "Last active {{date}}": "கடைசியாகச் செயலில்: {{date}}",
+  "Sign out {{device}}": "{{device}} இலிருந்து வெளியேறு",
+  "Number of Devices": "சாதனங்களின் எண்ணிக்கை",
+  "Unlimited": "வரம்பற்றது"
 }

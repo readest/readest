@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "X-Rayを消去",
   "Clear the X-Ray of this book?": "この本のX-Rayを消去しますか？",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "上のAI翻訳サービスを使い、読んだところまでの登場人物、場所、出来事をネタバレなしでまとめます。",
-  "Update While Reading": "読書中に更新"
+  "Update While Reading": "読書中に更新",
+  "Device limit reached": "デバイスの上限に達しました",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "無料プランで同期できるデバイスは最大 {{limit}} 台です。このデバイスでサインインするには、いずれかのデバイスからサインアウトしてください。",
+  "Failed to sign out the device. Please try again later.": "デバイスをサインアウトできませんでした。後でもう一度お試しください。",
+  "Devices": "デバイス",
+  "The devices signed in to your account. Sign out of one you no longer use.": "アカウントにサインインしているデバイスです。使わなくなったデバイスはサインアウトしてください。",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "無料プランで同期できるデバイスは最大 {{limit}} 台です。別のデバイスでサインインするには、使わなくなったデバイスをサインアウトしてください。",
+  "{{client}} on {{os}}": "{{os}} の {{client}}",
+  "Unknown device": "不明なデバイス",
+  "Last active {{date}}": "最終アクティブ: {{date}}",
+  "Sign out {{device}}": "{{device}} をサインアウト",
+  "Number of Devices": "デバイス数",
+  "Unlimited": "無制限"
 }

@@ -140,7 +140,7 @@ const PlanCard: React.FC<PlanCardProps> = ({
                   <div key={key} className='flex justify-between gap-2 text-xs'>
                     <span className={plan.hintColor}>{_(key)}</span>
                     <span className='text-base-content shrink-0 font-medium whitespace-nowrap'>
-                      {value}
+                      {typeof value === 'string' ? _(value) : value}
                     </span>
                   </div>
                 ))}

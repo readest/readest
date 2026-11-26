@@ -3119,5 +3119,17 @@
   "Clear X-Ray": "Limpar X-Ray",
   "Clear the X-Ray of this book?": "Limpar o X-Ray deste livro?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Reúne os personagens, lugares e acontecimentos sobre os quais você já leu, sem spoilers, com o tradutor de IA acima.",
-  "Update While Reading": "Atualizar durante a leitura"
+  "Update While Reading": "Atualizar durante a leitura",
+  "Device limit reached": "Limite de dispositivos atingido",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "O plano gratuito sincroniza em até {{limit}} dispositivos. Saia de um deles para entrar neste dispositivo.",
+  "Failed to sign out the device. Please try again later.": "Não foi possível desconectar o dispositivo. Tente novamente mais tarde.",
+  "Devices": "Dispositivos",
+  "The devices signed in to your account. Sign out of one you no longer use.": "Os dispositivos conectados à sua conta. Desconecte um que você não usa mais.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "O plano gratuito sincroniza em até {{limit}} dispositivos. Desconecte um que você não usa mais para entrar em outro.",
+  "{{client}} on {{os}}": "{{client}} em {{os}}",
+  "Unknown device": "Dispositivo desconhecido",
+  "Last active {{date}}": "Última atividade: {{date}}",
+  "Sign out {{device}}": "Desconectar {{device}}",
+  "Number of Devices": "Número de dispositivos",
+  "Unlimited": "Ilimitado"
 }
