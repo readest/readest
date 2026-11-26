@@ -134,6 +134,7 @@
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} פעילים, {{pendingCount}} בהמתנה",
   "{{failedCount}} failed": "{{failedCount}} נכשלו",
   "Never synced": "מעולם לא סונכרן",
+  "Account": "חשבון",
   "Sign In": "התחבר",
   "Auto Import on File Open": "ייבוא אוטומטי בעת פתיחת קובץ",
   "Open Last Book on Start": "פתח ספר אחרון בהפעלה",
@@ -3145,7 +3146,6 @@
   "Over 50,000 free ebooks": "יותר מ־50,000 ספרים אלקטרוניים חינמיים",
   "Free ebooks from authors who have \"unglued\" their books": "ספרים אלקטרוניים חינמיים מסופרים ששחררו את ספריהם לציבור",
   "Free public-domain books, comics, magazines and puzzles": "ספרים, קומיקס, מגזינים וחידות חינמיים בנחלת הכלל",
-  "Account & Subscription": "חשבון ומנוי",
   "Sync Settings": "הגדרות סנכרון",
   "Shared Links": "קישורים משותפים"
 }

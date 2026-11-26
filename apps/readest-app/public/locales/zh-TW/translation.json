@@ -166,6 +166,7 @@
   "Token": "令牌",
   "Your OTP token": "您的 OTP 令牌",
   "Verify token": "驗證令牌",
+  "Account": "帳戶",
   "Failed to delete user. Please try again later.": "刪除使用者失敗。請稍後再試。",
   "Community Support": "社群支援",
   "Priority Support": "優先支援",
@@ -2987,7 +2988,6 @@
   "Over 50,000 free ebooks": "超過 50,000 本免費電子書",
   "Free ebooks from authors who have \"unglued\" their books": "來自已將作品「解放」的作者的免費電子書",
   "Free public-domain books, comics, magazines and puzzles": "免費的公版書籍、漫畫、雜誌和謎題",
-  "Account & Subscription": "帳號與訂閱",
   "Sync Settings": "同步設定",
   "Shared Links": "分享連結"
 }

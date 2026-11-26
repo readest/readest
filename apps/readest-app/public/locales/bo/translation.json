@@ -166,6 +166,7 @@
   "Token": "བཀོལ་ཐོགས།",
   "Your OTP token": "ཁྱེད་ཀྱི་ OTP བཀོལ་ཐོགས།",
   "Verify token": "བཀོལ་ཐོགས་བདེན་སྦྱོང་།",
+  "Account": "རྩིས་ཐོ།",
   "Failed to delete user. Please try again later.": "སྤྱོད་མཁན་བསུབ་མ་ཐུབ། ཅུང་ཙམ་སྒུག་ནས་ཡང་བསྐྱར་ཚོད་ལྟ་བྱེད་རོགས།",
   "Community Support": "སྡེ་ཁུལ་གྱི་རྒྱབ་སྐྱོར།",
   "Priority Support": "གཙོ་རིམ་གྱི་རྒྱབ་སྐྱོར།",
@@ -2987,7 +2988,6 @@
   "Over 50,000 free ebooks": "རིན་མེད་གློག་དཔེ་ཁྲི་ཚོ 5 ལྷག",
   "Free ebooks from authors who have \"unglued\" their books": "རྩོམ་པ་པོས་རང་གི་དཔེ་དེབ་“གློད་གྲོལ་”བཏང་བའི་རིན་མེད་གློག་དཔེ།",
   "Free public-domain books, comics, magazines and puzzles": "སྤྱི་མཐུན་ཁྱབ་ཁོངས་ཀྱི་རིན་མེད་དཔེ་དེབ་དང་། རི་མོའི་སྒྲུང་དེབ། དུས་དེབ། རྩེད་མོ་བཅས།",
-  "Account & Subscription": "རྩིས་ཐོ་དང་མངགས་ཉོ།",
   "Sync Settings": "མཉམ་སྒྲིག་སྒྲིག་འགོད།",
   "Shared Links": "མཉམ་སྤྱོད་སྦྲེལ་ཐག"
 }

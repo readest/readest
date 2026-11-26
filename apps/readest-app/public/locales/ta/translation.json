@@ -70,6 +70,7 @@
   "Select All": "அனைத்தையும் தேர்வு செய்யவும்",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}} ஆக உள்நுழைந்துள்ளீர்கள்",
   "Logged in": "உள்நுழைந்துள்ளீர்கள்",
+  "Account": "கணக்கு",
   "Sign In": "உள்நுழையவும்",
   "Auto Import on File Open": "கோப்பு திறக்கும்போது தானாக இறக்குமதி",
   "Open Last Book on Start": "தொடங்கும்போது கடைசி புத்தகத்தைத் திறக்கவும்",
@@ -3066,7 +3067,6 @@
   "Over 50,000 free ebooks": "50,000-க்கும் மேற்பட்ட இலவச மின்னூல்கள்",
   "Free ebooks from authors who have \"unglued\" their books": "எழுத்தாளர்கள் “விடுவித்த” இலவச மின்னூல்கள்",
   "Free public-domain books, comics, magazines and puzzles": "இலவச பொதுக் கள நூல்கள், காமிக்ஸ், இதழ்கள், புதிர்கள்",
-  "Account & Subscription": "கணக்கு & சந்தா",
   "Sync Settings": "ஒத்திசைவு அமைப்புகள்",
   "Shared Links": "பகிர்வு இணைப்புகள்"
 }

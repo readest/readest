@@ -67,6 +67,7 @@
   "Select All": "เลือกทั้งหมด",
   "Logged in as {{userDisplayName}}": "เข้าสู่ระบบในชื่อ {{userDisplayName}}",
   "Logged in": "เข้าสู่ระบบแล้ว",
+  "Account": "บัญชี",
   "Sign In": "เข้าสู่ระบบ",
   "Auto Import on File Open": "นำเข้าอัตโนมัติเมื่อเปิดไฟล์",
   "Open Last Book on Start": "เปิดหนังสือล่าสุดเมื่อเริ่มใช้",
@@ -2987,7 +2988,6 @@
   "Over 50,000 free ebooks": "อีบุ๊กฟรีมากกว่า 50,000 เล่ม",
   "Free ebooks from authors who have \"unglued\" their books": "อีบุ๊กฟรีจากนักเขียนที่ “ปลดปล่อย” หนังสือของตน",
   "Free public-domain books, comics, magazines and puzzles": "หนังสือ การ์ตูน นิตยสาร และปริศนาสาธารณสมบัติฟรี",
-  "Account & Subscription": "บัญชีและการสมัครสมาชิก",
   "Sync Settings": "การตั้งค่าการซิงค์",
   "Shared Links": "ลิงก์ที่แชร์"
 }

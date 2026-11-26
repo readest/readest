@@ -108,6 +108,7 @@
   "Logged in as {{userDisplayName}}": "Log masuk sebagai {{userDisplayName}}",
   "Logged in": "Log masuk",
   "View account details and quota": "Lihat butiran akaun dan kuota",
+  "Account": "Akaun",
   "Sign In": "Log Masuk",
   "Auto Import on File Open": "Auto Import Apabila Buka Fail",
   "Open Last Book on Start": "Buka Buku Terakhir Semasa Mula",
@@ -2987,7 +2988,6 @@
   "Over 50,000 free ebooks": "Lebih 50,000 e-buku percuma",
   "Free ebooks from authors who have \"unglued\" their books": "E-buku percuma yang telah “dibebaskan” oleh pengarangnya",
   "Free public-domain books, comics, magazines and puzzles": "Buku, komik, majalah dan teka-teki domain awam percuma",
-  "Account & Subscription": "Akaun & Langganan",
   "Sync Settings": "Tetapan Segerak",
   "Shared Links": "Pautan Dikongsi"
 }

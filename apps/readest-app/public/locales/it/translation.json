@@ -166,6 +166,7 @@
   "Token": "Token",
   "Your OTP token": "Il tuo token OTP",
   "Verify token": "Verifica token",
+  "Account": "Account",
   "Failed to delete user. Please try again later.": "Impossibile eliminare l'utente. Riprova più tardi.",
   "Community Support": "Supporto della community",
   "Priority Support": "Supporto prioritario",
@@ -3145,7 +3146,6 @@
   "Over 50,000 free ebooks": "Oltre 50.000 ebook gratuiti",
   "Free ebooks from authors who have \"unglued\" their books": "Ebook gratuiti di autori che hanno «liberato» i loro libri",
   "Free public-domain books, comics, magazines and puzzles": "Libri, fumetti, riviste ed enigmi gratis di pubblico dominio",
-  "Account & Subscription": "Account e abbonamento",
   "Sync Settings": "Sincronizzazione",
   "Shared Links": "Link condivisi"
 }

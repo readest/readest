@@ -166,6 +166,7 @@
   "Token": "토큰",
   "Your OTP token": "당신의 OTP 토큰",
   "Verify token": "토큰 확인",
+  "Account": "계정",
   "Failed to delete user. Please try again later.": "사용자 삭제에 실패했습니다. 나중에 다시 시도해 주세요.",
   "Community Support": "커뮤니티 지원",
   "Priority Support": "우선 지원",
@@ -2987,7 +2988,6 @@
   "Over 50,000 free ebooks": "50,000권 이상의 무료 전자책",
   "Free ebooks from authors who have \"unglued\" their books": "저자들이 ‘해방’한 무료 전자책",
   "Free public-domain books, comics, magazines and puzzles": "퍼블릭 도메인 무료 도서, 만화, 잡지, 퍼즐",
-  "Account & Subscription": "계정 및 구독",
   "Sync Settings": "동기화 설정",
   "Shared Links": "공유 링크"
 }

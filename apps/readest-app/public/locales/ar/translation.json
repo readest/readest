@@ -164,6 +164,7 @@
   "Token": "الرمز",
   "Your OTP token": "رمز OTP الذي وصلك",
   "Verify token": "التحقق من الرمز",
+  "Account": "الحساب",
   "Failed to delete user. Please try again later.": "فشل حذف المستخدم. يرجى المحاولة مرة أخرى لاحقًا.",
   "Community Support": "دعم المجتمع",
   "Priority Support": "دعم ذو أولوية",
@@ -3382,7 +3383,6 @@
   "Over 50,000 free ebooks": "أكثر من 50 ألف كتاب إلكتروني مجاني",
   "Free ebooks from authors who have \"unglued\" their books": "كتب إلكترونية مجانية من مؤلفين «حرّروا» كتبهم",
   "Free public-domain books, comics, magazines and puzzles": "كتب وقصص مصورة ومجلات وألغاز مجانية من الملك العام",
-  "Account & Subscription": "الحساب والاشتراك",
   "Sync Settings": "إعدادات المزامنة",
   "Shared Links": "الروابط المشتركة"
 }

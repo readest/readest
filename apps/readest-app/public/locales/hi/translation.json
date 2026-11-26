@@ -166,6 +166,7 @@
   "Token": "टोकन",
   "Your OTP token": "आपका ओटीपी टोकन",
   "Verify token": "टोकन सत्यापित करें",
+  "Account": "खाता",
   "Failed to delete user. Please try again later.": "उपयोगकर्ता को हटाने में विफल। कृपया बाद में पुनः प्रयास करें।",
   "Community Support": "सामुदायिक सहायता",
   "Priority Support": "प्राथमिकता सहायता",
@@ -3066,7 +3067,6 @@
   "Over 50,000 free ebooks": "50,000 से अधिक मुफ़्त ई-बुक्स",
   "Free ebooks from authors who have \"unglued\" their books": "उन लेखकों की मुफ़्त ई-बुक्स जिन्होंने अपनी किताबें “मुक्त” कर दी हैं",
   "Free public-domain books, comics, magazines and puzzles": "सार्वजनिक डोमेन की मुफ़्त किताबें, कॉमिक्स, पत्रिकाएँ और पहेलियाँ",
-  "Account & Subscription": "खाता और सदस्यता",
   "Sync Settings": "सिंक सेटिंग्स",
   "Shared Links": "साझा लिंक"
 }

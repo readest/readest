@@ -153,6 +153,7 @@
   "{{failedCount}} failed": "{{failedCount}} falharam",
   "Synced {{time}}": "Sincronizado {{time}}",
   "Never synced": "Nunca sincronizado",
+  "Account": "Conta",
   "Sign In": "Entrar",
   "Auto Import on File Open": "Importação automática ao abrir arquivo",
   "Open Last Book on Start": "Abrir o último livro ao iniciar",
@@ -3145,7 +3146,6 @@
   "Over 50,000 free ebooks": "Mais de 50.000 e-books gratuitos",
   "Free ebooks from authors who have \"unglued\" their books": "E-books gratuitos de autores que “libertaram” seus livros",
   "Free public-domain books, comics, magazines and puzzles": "Livros, HQs, revistas, passatempos grátis em domínio público",
-  "Account & Subscription": "Conta e assinatura",
   "Sync Settings": "Sincronização",
   "Shared Links": "Links compartilhados"
 }

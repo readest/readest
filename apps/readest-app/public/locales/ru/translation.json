@@ -166,6 +166,7 @@
   "Token": "Токен",
   "Your OTP token": "Ваш OTP токен",
   "Verify token": "Проверить токен",
+  "Account": "Аккаунт",
   "Failed to delete user. Please try again later.": "Не удалось удалить пользователя. Пожалуйста, повторите попытку позже.",
   "Community Support": "Поддержка сообщества",
   "Priority Support": "Приоритетная поддержка",
@@ -3224,7 +3225,6 @@
   "Over 50,000 free ebooks": "Более 50 000 бесплатных электронных книг",
   "Free ebooks from authors who have \"unglued\" their books": "Бесплатные книги от авторов, которые их «освободили»",
   "Free public-domain books, comics, magazines and puzzles": "Бесплатные книги, комиксы, журналы и головоломки из общественного достояния",
-  "Account & Subscription": "Аккаунт и подписка",
   "Sync Settings": "Синхронизация",
   "Shared Links": "Общие ссылки"
 }

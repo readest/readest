@@ -146,6 +146,7 @@
   "{{activeCount}} active, {{pendingCount}} pending": "{{activeCount}} aktív, {{pendingCount}} függőben",
   "{{failedCount}} failed": "{{failedCount}} sikertelen",
   "Never synced": "Még nem szinkronizált",
+  "Account": "Fiók",
   "Sign In": "Bejelentkezés",
   "Auto Import on File Open": "Automatikus importálás fájl megnyitásakor",
   "Open Last Book on Start": "Utolsó könyv megnyitása indításkor",
@@ -3066,7 +3067,6 @@
   "Over 50,000 free ebooks": "Több mint 50 000 ingyenes e-könyv",
   "Free ebooks from authors who have \"unglued\" their books": "Ingyenes e-könyvek, amelyeket szerzőik „felszabadítottak”",
   "Free public-domain books, comics, magazines and puzzles": "Ingyenes közkincs könyvek, képregények, lapok, rejtvények",
-  "Account & Subscription": "Fiók és előfizetés",
   "Sync Settings": "Szinkronizálási beállítások",
   "Shared Links": "Megosztott hivatkozások"
 }

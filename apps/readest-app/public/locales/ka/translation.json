@@ -279,6 +279,7 @@
   "Library sync via {{count}} providers_one": "ბიბლიოთეკის სინქრონიზაცია {{count}} პროვაიდერით",
   "Library sync via {{count}} providers_other": "ბიბლიოთეკის სინქრონიზაცია {{count}} პროვაიდერით",
   "Library sync via {{provider}}": "ბიბლიოთეკის სინქრონიზაცია: {{provider}}",
+  "Account": "ანგარიში",
   "Sign In": "შესვლა",
   "Auto Import on File Open": "ავტომატური იმპორტი ფაილის გახსნისას",
   "Open Last Book on Start": "ბოლო წიგნის გახსნა გაშვებისას",
@@ -3066,7 +3067,6 @@
   "Over 50,000 free ebooks": "50 000-ზე მეტი უფასო ელწიგნი",
   "Free ebooks from authors who have \"unglued\" their books": "უფასო ელწიგნები, რომლებიც ავტორებმა „გაათავისუფლეს“",
   "Free public-domain books, comics, magazines and puzzles": "უფასო საჯარო დომენი: წიგნი, კომიქსი, ჟურნალი, თავსატეხი",
-  "Account & Subscription": "ანგარიში და გამოწერა",
   "Sync Settings": "სინქრონიზაცია",
   "Shared Links": "გაზიარებული ბმულები"
 }

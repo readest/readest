@@ -166,6 +166,7 @@
   "Token": "トークン",
   "Your OTP token": "あなたのOTPトークン",
   "Verify token": "トークンを確認",
+  "Account": "アカウント",
   "Failed to delete user. Please try again later.": "ユーザーの削除に失敗しました。後ほど再試行してください。",
   "Community Support": "コミュニティサポート",
   "Priority Support": "優先サポート",
@@ -2987,7 +2988,6 @@
   "Over 50,000 free ebooks": "50,000冊以上の無料電子書籍",
   "Free ebooks from authors who have \"unglued\" their books": "著者が「解放」した無料の電子書籍",
   "Free public-domain books, comics, magazines and puzzles": "パブリックドメインの無料の本、コミック、雑誌、パズル",
-  "Account & Subscription": "アカウントとプラン",
   "Sync Settings": "同期設定",
   "Shared Links": "共有リンク"
 }

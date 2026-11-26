@@ -166,6 +166,7 @@
   "Token": "Κωδικός επαλήθευσης",
   "Your OTP token": "Ο κωδικός OTP σας",
   "Verify token": "Επαλήθευση κωδικού",
+  "Account": "Λογαριασμός",
   "Failed to delete user. Please try again later.": "Αποτυχία διαγραφής χρήστη. Παρακαλώ δοκιμάστε ξανά αργότερα.",
   "Community Support": "Υποστήριξη κοινότητας",
   "Priority Support": "Υποστήριξη προτεραιότητας",
@@ -3066,7 +3067,6 @@
   "Over 50,000 free ebooks": "Πάνω από 50.000 δωρεάν ηλεκτρονικά βιβλία",
   "Free ebooks from authors who have \"unglued\" their books": "Δωρεάν e-books από συγγραφείς που τα «απελευθέρωσαν»",
   "Free public-domain books, comics, magazines and puzzles": "Δωρεάν βιβλία, κόμικς, περιοδικά και γρίφοι κοινού κτήματος",
-  "Account & Subscription": "Λογαριασμός & Συνδρομή",
   "Sync Settings": "Ρυθμίσεις συγχρονισμού",
   "Shared Links": "Κοινόχρηστοι σύνδεσμοι"
 }

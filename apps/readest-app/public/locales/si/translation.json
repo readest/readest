@@ -70,6 +70,7 @@
   "Select All": "සියල්ල තෝරන්න",
   "Logged in as {{userDisplayName}}": "{{userDisplayName}} ලෙස පුරන්ගද්",
   "Logged in": "පුරනගද්",
+  "Account": "ගිණුම",
   "Sign In": "ඇතුල් වන්න",
   "Auto Import on File Open": "ගොනුව විවෘත කිරීමේදී ස්වයංක්‍රීයව ආයාත කරන්න",
   "Open Last Book on Start": "ආරම්භයේදී අන්තිම පොත විවෘත කරන්න",
@@ -3066,7 +3067,6 @@
   "Over 50,000 free ebooks": "නොමිලේ ඊ-පොත් 50,000කට වඩා",
   "Free ebooks from authors who have \"unglued\" their books": "තම පොත් “නිදහස්” කළ කතුවරුන්ගේ නොමිලේ ඊ-පොත්",
   "Free public-domain books, comics, magazines and puzzles": "පොදු වසමේ නොමිලේ පොත්, චිත්‍රකතා, සඟරා සහ ප්‍රහේලිකා",
-  "Account & Subscription": "ගිණුම සහ දායකත්වය",
   "Sync Settings": "සමමුහුර්ත සැකසුම්",
   "Shared Links": "බෙදාගත් සබැඳි"
 }
