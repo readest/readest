@@ -572,6 +572,20 @@ describe('TTS', () => {
       expect(marks[0]?.offset).toBe(0);
     });
 
+    it('keeps the entire translation around an inline span in another language', () => {
+      const doc = createHTMLDoc(
+        '<p>Source sentence.<font lang="fr">En passant par <span lang="de">Berlin</span>, nous sommes rentrés.</font></p>',
+        { lang: 'en' },
+      );
+      const tts = new TTS(doc, textWalker, undefined, highlight, 'sentence');
+
+      const translated = filterSSMLWithLang(tts.start()!, 'fr');
+      const xml = new DOMParser().parseFromString(translated, 'application/xml');
+      expect(xml.querySelector('parsererror')).toBeNull();
+      expect(xml.documentElement.textContent).toBe('En passant par Berlin, nous sommes rentrés.');
+      expect(xml.querySelector('mark')).not.toBeNull();
+    });
+
     it('keeps the first sentence when a translated paragraph contains multiple sentences', () => {
       const doc = createHTMLDoc(
         '<p>Source sentence.<font lang="ru">О все воинство небесное! О земля! Что дальше?</font></p>',

@@ -23,6 +23,42 @@ export const genSSMLRaw = (text: string) => {
   `;
 };
 
+function* getLanguageBlocks(ssml: string) {
+  let depth = 0;
+  let start = 0;
+  let openEnd = 0;
+  let lang = '';
+  for (const match of ssml.matchAll(/<lang\s+xml:lang="([^"]+)"[^>]*>|<\/lang>/g)) {
+    const tag = match[0];
+    const index = match.index!;
+    if (match[1]) {
+      if (tag.endsWith('/>')) continue;
+      if (depth === 0) {
+        start = index;
+        openEnd = index + tag.length;
+        lang = match[1];
+      }
+      depth++;
+    } else if (depth > 0) {
+      depth--;
+      if (depth === 0) {
+        yield { start, end: index + tag.length, lang, content: ssml.slice(openEnd, index) };
+      }
+    }
+  }
+}
+
+const removeLanguageBlocks = (ssml: string, keep: (lang: string) => boolean) => {
+  let result = '';
+  let from = 0;
+  for (const { start, end, lang } of getLanguageBlocks(ssml)) {
+    if (keep(lang)) continue;
+    result += ssml.slice(from, start);
+    from = end;
+  }
+  return result + ssml.slice(from);
+};
+
 export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   let lang = 'en';
   const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);
@@ -49,7 +85,7 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   if (isDefaultEnglish && primaryLang && !isSameLang(lang, primaryLang)) {
     lang = primaryLang.split('-')[0]!.toLowerCase();
   }
-  const textWithoutLangTags = ssml.replace(/<lang[^>]*>.*?<\/lang>/gs, '');
+  const textWithoutLangTags = removeLanguageBlocks(ssml, () => false);
   return inferLangFromScript(textWithoutLangTags, lang);
 };
 
@@ -169,37 +205,16 @@ export const filterSSMLWithLang = (
   // Normalize target language
   const normalizedTarget = code6392to6391(targetLang.toLowerCase()) || targetLang.toLowerCase();
 
-  // Check if target matches main language
+  const matchesTarget = (lang: string) =>
+    isSameLang(code6392to6391(lang.toLowerCase()) || lang.toLowerCase(), normalizedTarget);
+
   if (isSameLang(normalizedTarget, mainLang)) {
-    // Remove all <lang> blocks that don't match the main language
-    return ssml.replace(/<lang\s+xml:lang="([^"]+)"[^>]*>.*?<\/lang>/gs, (match, langAttr) => {
-      const blockLang = code6392to6391(langAttr.toLowerCase()) || langAttr.toLowerCase();
-      // If the lang block matches the main language, keep it as is
-      if (isSameLang(blockLang, mainLang)) {
-        return match;
-      }
-      // Otherwise remove the entire block
-      return '';
-    });
+    return removeLanguageBlocks(ssml, matchesTarget);
   }
 
-  // Check if target matches any <lang> block
-  const langBlocks: Array<{ match: string; lang: string; content: string; index: number }> = [];
-  const langBlockRegex = /<lang\s+xml:lang="([^"]+)"[^>]*>(.*?)<\/lang>/gs;
-  let match: RegExpExecArray | null;
-
-  const tempRegex = new RegExp(langBlockRegex.source, langBlockRegex.flags);
-  while ((match = tempRegex.exec(ssml)) !== null) {
-    const blockLang = code6392to6391(match[1]!.toLowerCase()) || match[1]!.toLowerCase();
-    if (isSameLang(blockLang, normalizedTarget)) {
-      langBlocks.push({
-        match: match[0]!,
-        lang: match[1]!,
-        content: match[2]!,
-        index: match.index,
-      });
-    }
-  }
+  // An inline foreign phrase can introduce a nested <lang> tag inside a
+  // translation. Keep the full outer block and its original marks together.
+  const langBlocks = [...getLanguageBlocks(ssml)].filter((block) => matchesTarget(block.lang));
 
   if (langBlocks.length > 0) {
     const speakOpenMatch = ssml.match(/<speak[^>]*>/i);
@@ -211,22 +226,23 @@ export const filterSSMLWithLang = (
 
     const combinedContent = langBlocks
       .map((block) => {
+        const match = ssml.slice(block.start, block.end);
         const firstMarkIndex = block.content.search(/<mark\b[^>]*\/>/i);
         const textBeforeFirstMark = block.content
           .slice(0, firstMarkIndex < 0 ? undefined : firstMarkIndex)
           .replace(/<[^>]+>/g, '')
           .trim();
-        if (!textBeforeFirstMark) return block.match;
+        if (!textBeforeFirstMark) return match;
 
         // Foliate can place the mark for the first translated sentence
         // immediately before its <lang> block. Keep that existing mark when
         // source text is filtered out, even when later translated sentences
         // already have marks of their own.
-        const precedingMarks = ssml.slice(0, block.index).match(/<mark\b[^>]*\/>/gi);
+        const precedingMarks = ssml.slice(0, block.start).match(/<mark\b[^>]*\/>/gi);
         const precedingMark = precedingMarks?.at(-1);
-        if (!precedingMark) return block.match;
+        if (!precedingMark) return match;
 
-        return block.match.replace(/(<lang\b[^>]*>)/i, `$1${precedingMark}`);
+        return match.replace(/(<lang\b[^>]*>)/i, `$1${precedingMark}`);
       })
       .join('');
     return `${speakOpenMatch[0]}${combinedContent}${speakCloseMatch[0]}`;
