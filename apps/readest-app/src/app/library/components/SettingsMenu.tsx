@@ -356,8 +356,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               </button>
             )}
             <MenuItem label={_('Account')} onClick={handleUserProfile} />
-            <MenuItem label={_('Sync Settings')} onClick={handleSyncSettings} />
             <MenuItem label={_('Sign Out')} onClick={onLogout} />
+            <MenuItem label={_('Sync Settings')} onClick={handleSyncSettings} />
           </ul>
         </MenuItem>
       ) : (

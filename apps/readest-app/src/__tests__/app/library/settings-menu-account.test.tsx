@@ -117,7 +117,9 @@ it('opens each Account menu entry on the account page', () => {
   expect(screen.getByText('Account')).toBeTruthy();
   expect(screen.getByText('Sync Settings')).toBeTruthy();
   expect(screen.queryByText('Shared Links')).toBeNull();
-  expect(screen.getByText('Sign Out')).toBeTruthy();
+  expect(
+    screen.getAllByText(/^(Account|Sign Out|Sync Settings)$/).map((el) => el.textContent),
+  ).toEqual(['Account', 'Sign Out', 'Sync Settings']);
 
   // The Storage and Translation quota rows open the account page.
   fireEvent.click(screen.getByText('Storage,Translation'));
