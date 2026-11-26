@@ -22,5 +22,6 @@
       }
     }
   },
+  "plugins": { "fs": { "requireLiteralLeadingDot": false } },
   "bundle": { "active": false, "icon": ["icons/icon.png"] }
 }
