@@ -200,6 +200,52 @@ describe('Paginator chunked section (browser)', () => {
     expect(end.range.intersectsNode(first)).toBe(true);
   });
 
+  it('keeps turns made on a chunk still loading from paging past it', async () => {
+    // Until it renders, each chunk after the one opened is a one-page blank
+    // placeholder: turned across, the reader would skip whole chunks
+    const srcdoc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'srcdoc')!;
+    const held: (() => void)[] = [];
+    let loads = 0;
+    Object.defineProperty(HTMLIFrameElement.prototype, 'srcdoc', {
+      ...srcdoc,
+      set(this: HTMLIFrameElement, value: string) {
+        if (loads++ === 0) srcdoc.set!.call(this, value);
+        else held.push(() => srcdoc.set!.call(this, value));
+      },
+    });
+    let last: number;
+    try {
+      open();
+      paginator.setAttribute('max-column-count', '1');
+      const stabilized = waitFor(paginator, 'stabilized');
+      await paginator.goTo({ index: 1, anchor: 0.199 });
+      await stabilized;
+      const startDoc = relocations.at(-1)!.range.startContainer.ownerDocument!;
+      const paras = startDoc.body.querySelectorAll(`:scope > :not([${CHUNK_ATTRIBUTE}])`);
+      last = Number(paras[paras.length - 1]!.id.slice(1));
+      await vi.waitFor(() => expect(held.length).toBeGreaterThan(0));
+      // page onto the next chunk's placeholder, then on, as a reader taps
+      for (let i = 0; i < 40; i++) {
+        const count = relocations.length;
+        await paginator.next();
+        if (relocations.length === count) break;
+      }
+      for (let i = 0; i < 5; i++) await paginator.next();
+    } finally {
+      Object.defineProperty(HTMLIFrameElement.prototype, 'srcdoc', srcdoc);
+    }
+    const relocated = waitFor(paginator, 'relocate', 5000);
+    held.splice(0).forEach((load) => load());
+    await relocated;
+
+    const { index, range } = relocations.at(-1)!;
+    expect(index).toBe(1);
+    // the next chunk's first page
+    const first = range.startContainer.ownerDocument!.getElementById(`p${last + 1}`);
+    expect(first?.hasAttribute(CHUNK_ATTRIBUTE)).toBe(false);
+    expect(range.intersectsNode(first!), range.toString().slice(0, 40)).toBe(true);
+  });
+
   it('reports a position scrolled onto a chunk still loading once it renders', async () => {
     open();
     paginator.setAttribute('flow', 'scrolled');

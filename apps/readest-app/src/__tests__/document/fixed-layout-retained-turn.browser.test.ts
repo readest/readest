@@ -465,6 +465,26 @@ describe('retained fixed-layout page turns', () => {
     expect(landed?.isConnected, 'the turn must land on an attached page').toBe(true);
   });
 
+  it('draws a page still preloading at the zoom of a swipe onto it', async () => {
+    // A preload draws at the zoom a tap turn keeps; a swipe while zoomed in
+    // shows its page at fit-page. Finishing after the swipe started, the
+    // preload must not resize the page the swipe brings in. The page before
+    // preloads second, so a swipe back can start while it still loads.
+    const release = hold(loadGate, 1);
+    await mount();
+    renderer.setAttribute('scale-factor', '146');
+    const begun = renderer.beginPageTurn!(false);
+    release();
+    expect(await begun).toBe(true);
+    const incoming = renderer.shadowRoot!.querySelector<HTMLElement>(
+      '[data-page-turn-view="incoming"]',
+    )!;
+    expect(
+      incoming.getBoundingClientRect().width,
+      'the incoming page must fit the view, as fit-page draws it',
+    ).toBeLessThanOrEqual(renderer.getBoundingClientRect().width);
+  });
+
   it('creates the overlayer of the hidden page a portrait turn brings in', async () => {
     await mount('ltr', 'auto');
     const created: number[] = [];
