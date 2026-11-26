@@ -153,46 +153,4 @@ describe('shouldCheckAsFootnote', () => {
       expect(shouldCheckAsFootnote(a)).toBe(false);
     }
   });
-
-  it('recognises explicit prefixed cross-reference links even among many sibling noterefs (#7982)', () => {
-    const body = parseHtml(`
-      <div>
-        <p>
-          First (<a href="#n1" epub:type="noteref" role="doc-noteref">1</a>),
-          second (<a href="#n2" epub:type="noteref" role="doc-noteref">2</a>),
-          third (<a href="#n3" epub:type="noteref" role="doc-noteref">3</a>),
-          and see [<a href="#n5">注<span>5</span></a>] for details.
-        </p>
-        <p>Another paragraph (<a href="#n4" epub:type="noteref" role="doc-noteref">4</a>).</p>
-      </div>
-    `);
-    const a = getAnchorByText(body, '注5');
-    expect(shouldCheckAsFootnote(a)).toBe(true);
-  });
-
-  it('does not let confirmed doc-noteref siblings or separate paragraphs disqualify a numeric marker (#7982)', () => {
-    const body = parseHtml(`
-      <div>
-        <p>
-          First (<a href="#n1" epub:type="noteref" role="doc-noteref">1</a>),
-          second (<a href="#n2" epub:type="noteref" role="doc-noteref">2</a>),
-          and plain crossref (<a href="#n5">5</a>).
-        </p>
-        <p>Next paragraph (<a href="#n3">3</a>) and (<a href="#n4">4</a>).</p>
-      </div>
-    `);
-    expect(shouldCheckAsFootnote(getAnchorByText(body, '5'))).toBe(true);
-    expect(shouldCheckAsFootnote(getAnchorByText(body, '3'))).toBe(true);
-  });
-
-  it('still returns false for block-wrapped navigation lists without prose', () => {
-    const body = parseHtml(`
-      <div>
-        <div><a href="chapter1.xhtml">1</a></div>
-        <div><a href="chapter2.xhtml">2</a></div>
-        <div><a href="chapter3.xhtml">3</a></div>
-      </div>
-    `);
-    expect(shouldCheckAsFootnote(getAnchorByText(body, '1'))).toBe(false);
-  });
 });

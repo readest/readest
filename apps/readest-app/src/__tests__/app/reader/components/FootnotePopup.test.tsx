@@ -147,6 +147,7 @@ vi.mock('@/app/reader/utils/annotatorUtil', () => ({
 
 vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
   shouldCheckAsFootnote: () => false,
+  linksToDeclaredNote: () => false,
   isLinkTargetVisible: hoisted.isLinkTargetVisible,
 }));
 

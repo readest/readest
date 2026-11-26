@@ -8,26 +8,10 @@ import type { FoliateView } from '@/types/view';
 const FOOTNOTE_MARKER_RE =
   /^[（(［\[【〔〈〖]?\s*(?:[＊*※†‡]\s*[0-9０-９]*|(?:[a-zA-Z]{1,2}|(?:訳|原|編)?[注註](?:釈)?|Notes?)\s*[0-9０-９]+(?:[〜～~-][0-9０-９]+)?|[①-⑳㉑-㊿]|[0-9０-９]+(?:[〜～~-][0-9０-９]+)?)\s*[）)］\]】〕〉〗]?$/i;
 
-const EXPLICIT_NOTE_PREFIX_RE =
-  /^[（(［\[【〔〈〖]?\s*(?:(?:訳|原|編)?[注註](?:釈)?|Notes?)\s*[0-9０-９]+(?:[〜～~-][0-9０-９]+)?\s*[）)］\]】〕〉〗]?$/i;
-
 const isFootnoteMarkerText = (text: string | null | undefined) =>
   text != null && FOOTNOTE_MARKER_RE.test(text.trim());
 
 const isNumericMarkerText = isFootnoteMarkerText;
-
-const EXPLICIT_NOTEREF_TYPES = new Set(['noteref', 'biblioref', 'glossref']);
-const EXPLICIT_NOTEREF_ROLES = new Set(['doc-noteref', 'doc-biblioref', 'doc-glossref']);
-
-const isExplicitNoteref = (anchor: HTMLAnchorElement) => {
-  const epubType =
-    anchor.getAttributeNS('http://www.idpf.org/2007/ops', 'type') ??
-    anchor.getAttribute('epub:type') ??
-    '';
-  if (epubType.split(/\s+/).some((t) => EXPLICIT_NOTEREF_TYPES.has(t))) return true;
-  const role = anchor.getAttribute('role') ?? '';
-  return role.split(/\s+/).some((r) => EXPLICIT_NOTEREF_ROLES.has(r));
-};
 
 // Books with in-book navigation (TOC, chapter/verse indexes) often render a
 // flat list of short numeric links: `<a>1</a>, <a>2</a>, ...`. Those should
@@ -37,43 +21,11 @@ const isExplicitNoteref = (anchor: HTMLAnchorElement) => {
 // markers, so a low threshold is safe.
 const NAV_LIST_SIBLING_THRESHOLD = 2;
 const MAX_ANCESTOR_DEPTH = 3;
-const BLOCK_CONTAINER_TAGS = new Set([
-  'P',
-  'DIV',
-  'LI',
-  'TD',
-  'TH',
-  'DD',
-  'DT',
-  'BLOCKQUOTE',
-  'SECTION',
-  'ARTICLE',
-  'MAIN',
-  'BODY',
-]);
-
-const LIST_PUNCTUATION_RE = /^[\s,|/·•・:：、。.,()（）[\]［］【】〔〕〈〉〖〗\-–—]*$/;
-
-const hasProseOutsideLinks = (root: Element): boolean => {
-  const walk = (node: Node): boolean => {
-    if (node.nodeType === 3) {
-      return !LIST_PUNCTUATION_RE.test(node.textContent ?? '');
-    }
-    if (node.nodeType === 1) {
-      if ((node as Element).tagName === 'A') return false;
-      for (const child of Array.from(node.childNodes)) {
-        if (walk(child)) return true;
-      }
-    }
-    return false;
-  };
-  return walk(root);
-};
 
 const countNumericSiblings = (container: Element, anchor: HTMLAnchorElement) => {
   let count = 0;
   for (const link of Array.from(container.querySelectorAll('a'))) {
-    if (link === anchor || isExplicitNoteref(link)) continue;
+    if (link === anchor) continue;
     if (isNumericMarkerText(link.textContent)) {
       count++;
       if (count >= NAV_LIST_SIBLING_THRESHOLD) return count;
@@ -84,19 +36,31 @@ const countNumericSiblings = (container: Element, anchor: HTMLAnchorElement) => 
 
 export const shouldCheckAsFootnote = (anchor: HTMLAnchorElement): boolean => {
   if (!isNumericMarkerText(anchor.textContent)) return false;
-  if (EXPLICIT_NOTE_PREFIX_RE.test(anchor.textContent!.trim())) return true;
   let container: Element | null = anchor.parentElement;
   for (let depth = 0; depth < MAX_ANCESTOR_DEPTH && container; depth++) {
-    if (container.tagName === 'HTML') break;
     if (countNumericSiblings(container, anchor) >= NAV_LIST_SIBLING_THRESHOLD) {
       return false;
-    }
-    if (BLOCK_CONTAINER_TAGS.has(container.tagName) && hasProseOutsideLinks(container)) {
-      break;
     }
     container = container.parentElement;
   }
   return true;
+};
+
+// A note marker the book declares. An XHTML section keeps `epub:type`
+// namespaced, an HTML one as a plain attribute.
+const DECLARED_NOTE_REF =
+  'a[href][*|type~="noteref"], a[href][epub\\:type~="noteref"], a[href][role~="doc-noteref"]';
+
+// A cross-reference in the text (`〔原注47参照〕`) is a plain link to a note
+// whose own marker sits elsewhere in the chapter. Report whether a declared
+// marker points where the link does, so the link opens that note as the
+// marker does (#7982).
+export const linksToDeclaredNote = (anchor: HTMLAnchorElement): boolean => {
+  const href = anchor.getAttribute('href');
+  if (!href?.includes('#')) return false;
+  return Array.from(anchor.ownerDocument.querySelectorAll(DECLARED_NOTE_REF)).some(
+    (marker) => marker.getAttribute('href') === href,
+  );
 };
 
 // The reader hides inline footnote bodies in `getLayoutStyles`

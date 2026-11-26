@@ -88,6 +88,7 @@ vi.mock('@/app/reader/utils/transientHighlight', () => ({ showTransientHighlight
 vi.mock('@/app/reader/utils/annotatorUtil', () => ({ drawAnnotationOverlay: vi.fn() }));
 vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
   shouldCheckAsFootnote: () => false,
+  linksToDeclaredNote: () => false,
   isLinkTargetVisible: () => true,
 }));
 vi.mock('@/components/Overlay', () => ({ Overlay: () => <div /> }));
