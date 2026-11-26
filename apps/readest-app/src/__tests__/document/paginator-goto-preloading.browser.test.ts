@@ -25,6 +25,7 @@ const pages = (name: string, n: number) =>
   ).join('');
 
 describe('paginator jumps into a section still preloading (browser)', () => {
+  const src = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src')!;
   let paginator: Renderer | null = null;
 
   beforeAll(async () => {
@@ -32,15 +33,15 @@ describe('paginator jumps into a section still preloading (browser)', () => {
   }, 30000);
 
   afterEach(() => {
+    Object.defineProperty(HTMLIFrameElement.prototype, 'src', src);
     paginator?.destroy();
     paginator?.remove();
     paginator = null;
   });
 
-  it('lands on the anchor once the section renders', async () => {
+  // Opened at a, with the preload of b held as a loaded machine holds it
+  const openHeld = async () => {
     const sections = [makeSection(pages('a', 1)), makeSection(pages('b', 6))];
-    // hold the next section's load, as a loaded machine does
-    const src = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src')!;
     const held: (() => void)[] = [];
     Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
       ...src,
@@ -49,28 +50,42 @@ describe('paginator jumps into a section still preloading (browser)', () => {
         else src.set!.call(this, value);
       },
     });
-    let last: { range: Range } | undefined;
-    try {
-      const el = document.createElement('foliate-paginator') as Renderer;
-      Object.assign(el.style, { width: '800px', height: '600px', display: 'block' });
-      document.body.append(el);
-      paginator = el;
-      el.addEventListener('relocate', (e) => (last = (e as CustomEvent).detail));
-      el.open({ sections } as unknown as BookDoc);
-      await el.goTo({ index: 0 });
-      await vi.waitFor(() => expect(held).toHaveLength(1));
-      const jump = el.goTo({
-        index: 1,
-        anchor: ((doc: Document) => doc.getElementById('b-4')) as unknown as (
-          doc: Document,
-        ) => Range,
-      });
-      await new Promise((r) => setTimeout(r, 50));
-      held.splice(0).forEach((load) => load());
-      await jump;
-    } finally {
-      Object.defineProperty(HTMLIFrameElement.prototype, 'src', src);
-    }
-    expect(last!.range.toString(), 'where the jump is when goTo resolves').toContain('b page 4');
+    const el = document.createElement('foliate-paginator') as Renderer;
+    Object.assign(el.style, { width: '800px', height: '600px', display: 'block' });
+    document.body.append(el);
+    paginator = el;
+    const relocations: string[] = [];
+    el.addEventListener('relocate', (e) =>
+      relocations.push((e as CustomEvent).detail.range.toString()),
+    );
+    el.open({ sections } as unknown as BookDoc);
+    await el.goTo({ index: 0 });
+    await vi.waitFor(() => expect(held).toHaveLength(1));
+    const release = () => held.splice(0).forEach((load) => load());
+    return { el, relocations, release };
+  };
+
+  const toB4 = {
+    index: 1,
+    anchor: ((doc: Document) => doc.getElementById('b-4')) as unknown as (doc: Document) => Range,
+  };
+
+  it('lands on the anchor once the section renders', async () => {
+    const { el, relocations, release } = await openHeld();
+    const jump = el.goTo(toB4);
+    await new Promise((r) => setTimeout(r, 50));
+    release();
+    await jump;
+    expect(relocations.at(-1), 'where the jump is when goTo resolves').toContain('b page 4');
+  });
+
+  it('leaves a later jump where it went', async () => {
+    const { el, relocations, release } = await openHeld();
+    const first = el.goTo(toB4);
+    await new Promise((r) => setTimeout(r, 50));
+    await el.goTo({ index: 0 });
+    release();
+    await first;
+    expect(relocations.at(-1), 'the later jump, to a').toContain('a page 0');
   });
 });
