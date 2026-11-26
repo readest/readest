@@ -1321,14 +1321,16 @@ export const getStyles = (
   if (!themeCode) {
     themeCode = getThemeCode();
   }
-  const pageLayoutStyles = getPageLayoutStyles(
-    viewSettings.marginTopPx,
-    viewSettings.marginRightPx,
-    viewSettings.marginBottomPx,
-    viewSettings.marginLeftPx,
-    1.0,
-    viewSettings.writingMode!,
-    viewSettings.vertical!,
+  const pageLayoutStyles = scaleFontRelativeLengths(
+    getPageLayoutStyles(
+      viewSettings.marginTopPx,
+      viewSettings.marginRightPx,
+      viewSettings.marginBottomPx,
+      viewSettings.marginLeftPx,
+      1.0,
+      viewSettings.writingMode!,
+      viewSettings.vertical!,
+    ),
   );
   const paragraphLayoutStyles = viewSettings.useBookLayout
     ? ''

@@ -146,6 +146,15 @@ describe("the reader's own em lengths under the Android text zoom", () => {
     expect(css).toContain(`margin-top: ${scaled('1em')}`);
   });
 
+  it('scales the em sizes it gives inline images and gaiji', async () => {
+    const { getStyles } = await loadStyle(1.3);
+    const css = getStyles(settings({ vertical: false }));
+    expect(css).toMatch(
+      /img\[class\*="gaiji"\] \{\s*height: calc\(1em \* var\(--readest-font-scale, 1\.3\)\)/,
+    );
+    expect(css).toContain(`width: ${scaled('0.8em')}`);
+  });
+
   it('leaves them alone at the default system font size', async () => {
     const { getStyles } = await loadStyle(1);
     const css = getStyles(settings({ textIndent: 2, paragraphMargin: 1, useBookLayout: false }));
