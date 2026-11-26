@@ -133,10 +133,10 @@ describe('daisyUI 5 theme tokens', () => {
     // `Spinner` reaches the dots through the `not-eink:` variant, which Tailwind
     // emits as a second, separately ordered copy of the same pair.
     expect(durations('variant')).toEqual(['1.05s', '1.05s', '1.05s']);
-    // Restoring it must not leak past the variant: e-ink still swaps in the
-    // spinner, whose steady sweep survives a slow panel refresh.
+    // Restoring it must not leak past the variant: on e-ink the spinner is a
+    // still arc turned in steps (eink-loading.browser.test.ts), no SMIL at all.
     document.documentElement.setAttribute('data-eink', 'true');
-    expect(durations('variant')).toEqual(['2s', '1.5s', '1.5s']);
+    expect(durations('variant')).toEqual([]);
   });
 
   it('keeps the Tailwind 3 default palette', () => {

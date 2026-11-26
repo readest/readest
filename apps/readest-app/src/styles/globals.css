@@ -892,6 +892,20 @@
     }
   }
 
+  /* On e-ink a spinner turns in steps: a still arc, turned 45° at a time and held there, so
+     every frame is a finished picture. daisyUI's turns through SMIL in its mask, which e-ink
+     can't show smoothly and Readest Lite (Blitz) draws as a still, full ring. */
+  html[data-eink='true'] .loading {
+    mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='9.5' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-dasharray='42 150'/%3E%3C/svg%3E");
+    animation: eink-loading 2s steps(8) infinite;
+  }
+
+  @keyframes eink-loading {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   :where(.checkbox) {
     border-radius: var(--radius-field);
   }
