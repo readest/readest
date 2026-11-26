@@ -20,6 +20,10 @@ git -c credential.helper= -c credential.helper='!gh auth git-credential' \
   push https://github.com/readest/readest.git HEAD:refs/heads/<branch>
 ```
 
+For a community PR whose branch lives in a fork, push to the PR's head repo
+instead (`gh pr view <N> --json headRepositoryOwner,headRepository,headRefName`):
+`https://github.com/<owner>/<repo>.git HEAD:refs/heads/<headRefName>`.
+
 Not for changes under `.github/workflows/` (the gh OAuth token lacks workflow
 scope, see [[push-workflow-file-needs-ssh-not-gh-oauth]]).
 

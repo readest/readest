@@ -10,10 +10,11 @@ metadata:
 
 `git merge origin/main` in a worktree updates the recorded foliate-js pin but not the checkout. `git status` shows ` M packages/foliate-js` and `git submodule status` shows `+<old sha>`. Lint and tests then run on the old foliate. On 2026-11-25 the gift-cards branch had passed a full suite this way after a merge that brought in #7854's pin.
 
-`git submodule update packages/foliate-js` then fails: "Fetched in submodule path ... but it did not contain <sha>". The worktree's foliate `origin` is the main checkout's `.git/modules/packages/foliate-js` (see [[footnote-fb2-span-notes-7564]]). There the pinned commit sits only on `refs/remotes/origin/main`, which a plain fetch doesn't bring over.
+`git submodule update packages/foliate-js` then fails: "Fetched in submodule path ... but it did not contain <sha>". The worktree's foliate `origin` is the main checkout's `.git/modules/packages/foliate-js` (see [[footnote-fb2-span-notes-7564]]). There the pinned commit sits only on the mirror's remote-tracking refs (`refs/remotes/origin/*`), which a plain fetch doesn't bring over. A pin on foliate main is on `refs/remotes/origin/main`. An off-main pin is only on its `*-on-pin` branch (see [[cfi-range-start-between-children-7482]]), so fetching main alone misses it.
 
-Fix, from the worktree root:
-`git -C packages/foliate-js fetch origin refs/remotes/origin/main && git -C packages/foliate-js checkout --detach <pin>`
+Fix, from the worktree root (fetches every remote-tracking ref, so it covers both):
+`git -C packages/foliate-js fetch origin '+refs/remotes/origin/*:refs/remotes/origin/*' && git -C packages/foliate-js checkout --detach <pin>`
+Checked 2026-11-26 from an empty repo with the mirror as `origin`: a fetch of main alone brought main's pin a4b72589 but not the off-main a8c708f; the fetch above brought both.
 
 **Why:** a merge is reported as tested when its foliate code wasn't.
 
