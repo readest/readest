@@ -1,5 +1,20 @@
 {
   "releases": {
+    "0.12.26": {
+      "date": "2026-11-27",
+      "notes": [
+        "X-Ray: You can now build a spoiler-free X-Ray of the book you're reading, with its characters, places and terms up to your current page, and look names up in the dictionary popup",
+        "Reading: You can now read a PDF side by side with another book and drag the divider to resize them, share a passage as a QR code",
+        "Reading: Page turns are faster, Auto Scroll wipes in each new page with finer speed steps, two-page mode keeps spreads together",
+        "Library: You can now sort by several fields in priority order, drag books into your own order, search by field such as author or series",
+        "Statistics: Added a monthly reading calendar and your reading speed, and you can now merge or delete a book's statistics on all your devices",
+        "Text-to-Speech: You can now favorite voices and filter or search them by engine, and Read Aloud keeps playing more reliably in the background and with CarPlay",
+        "Dictionary: You can now dock the dictionary in the Notebook, and send richer Anki cards with the dictionary entry, audio and a deck per language",
+        "Sync: Custom fonts now sync through WebDAV, S3, Google Drive, OneDrive and iCloud, and you can see your devices and sign them out; the Free plan now syncs up to 3 devices",
+        "Account: You can now sign in by scanning a QR code, and give or receive a year of Readest Plus or Pro as a gift card",
+        "More: Android pens can turn pages with gestures, Copy can add a citation, and Apple devices can translate on device with Apple Intelligence"
+      ]
+    },
     "0.12.20": {
       "date": "2026-11-06",
       "notes": [
