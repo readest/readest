@@ -3067,5 +3067,9 @@
   "Free ebooks from authors who have \"unglued\" their books": "უფასო ელწიგნები, რომლებიც ავტორებმა „გაათავისუფლეს“",
   "Free public-domain books, comics, magazines and puzzles": "უფასო საჯარო დომენი: წიგნი, კომიქსი, ჟურნალი, თავსატეხი",
   "Sync Settings": "სინქრონიზაცია",
+  "Share as QR Code": "გაზიარება QR კოდად",
+  "Show a QR code for the selected text": "მონიშნული ტექსტის QR კოდის ჩვენება",
+  "Select a shorter passage to share as a QR code.": "QR კოდად გასაზიარებლად აირჩიეთ უფრო მოკლე მონაკვეთი.",
+  "QR code for the selected text": "მონიშნული ტექსტის QR კოდი",
   "Navigation History": "ნავიგაციის ისტორია"
 }

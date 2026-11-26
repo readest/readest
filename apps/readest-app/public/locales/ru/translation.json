@@ -3225,5 +3225,9 @@
   "Free ebooks from authors who have \"unglued\" their books": "Бесплатные книги от авторов, которые их «освободили»",
   "Free public-domain books, comics, magazines and puzzles": "Бесплатные книги, комиксы, журналы и головоломки из общественного достояния",
   "Sync Settings": "Синхронизация",
+  "Share as QR Code": "Поделиться как QR-код",
+  "Show a QR code for the selected text": "Показать QR-код для выделенного текста",
+  "Select a shorter passage to share as a QR code.": "Выделите более короткий фрагмент, чтобы поделиться им как QR-кодом.",
+  "QR code for the selected text": "QR-код для выделенного текста",
   "Navigation History": "История переходов"
 }

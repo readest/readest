@@ -3067,5 +3067,9 @@
   "Free ebooks from authors who have \"unglued\" their books": "उन लेखकों की मुफ़्त ई-बुक्स जिन्होंने अपनी किताबें “मुक्त” कर दी हैं",
   "Free public-domain books, comics, magazines and puzzles": "सार्वजनिक डोमेन की मुफ़्त किताबें, कॉमिक्स, पत्रिकाएँ और पहेलियाँ",
   "Sync Settings": "सिंक सेटिंग्स",
+  "Share as QR Code": "QR कोड के रूप में साझा करें",
+  "Show a QR code for the selected text": "चयनित टेक्स्ट का QR कोड दिखाएँ",
+  "Select a shorter passage to share as a QR code.": "QR कोड के रूप में साझा करने के लिए छोटा अंश चुनें।",
+  "QR code for the selected text": "चयनित टेक्स्ट का QR कोड",
   "Navigation History": "नेविगेशन इतिहास"
 }

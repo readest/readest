@@ -3146,5 +3146,9 @@
   "Free ebooks from authors who have \"unglued\" their books": "ספרים אלקטרוניים חינמיים מסופרים ששחררו את ספריהם לציבור",
   "Free public-domain books, comics, magazines and puzzles": "ספרים, קומיקס, מגזינים וחידות חינמיים בנחלת הכלל",
   "Sync Settings": "הגדרות סנכרון",
+  "Share as QR Code": "שיתוף כקוד QR",
+  "Show a QR code for the selected text": "הצגת קוד QR עבור הטקסט שנבחר",
+  "Select a shorter passage to share as a QR code.": "יש לבחור קטע קצר יותר כדי לשתף אותו כקוד QR.",
+  "QR code for the selected text": "קוד QR עבור הטקסט שנבחר",
   "Navigation History": "היסטוריית ניווט"
 }

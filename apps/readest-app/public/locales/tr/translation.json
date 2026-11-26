@@ -3067,5 +3067,9 @@
   "Free ebooks from authors who have \"unglued\" their books": "Kitaplarını “özgürleştiren” yazarlardan ücretsiz e-kitaplar",
   "Free public-domain books, comics, magazines and puzzles": "Kamu malı ücretsiz kitaplar, çizgi romanlar, dergiler ve bulmacalar",
   "Sync Settings": "Eşitleme Ayarları",
+  "Share as QR Code": "QR kodu olarak paylaş",
+  "Show a QR code for the selected text": "Seçili metin için QR kodu göster",
+  "Select a shorter passage to share as a QR code.": "QR kodu olarak paylaşmak için daha kısa bir bölüm seçin.",
+  "QR code for the selected text": "Seçili metnin QR kodu",
   "Navigation History": "Gezinme geçmişi"
 }

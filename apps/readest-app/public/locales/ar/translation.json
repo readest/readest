@@ -3383,5 +3383,9 @@
   "Free ebooks from authors who have \"unglued\" their books": "كتب إلكترونية مجانية من مؤلفين «حرّروا» كتبهم",
   "Free public-domain books, comics, magazines and puzzles": "كتب وقصص مصورة ومجلات وألغاز مجانية من الملك العام",
   "Sync Settings": "إعدادات المزامنة",
+  "Share as QR Code": "مشاركة كرمز QR",
+  "Show a QR code for the selected text": "عرض رمز QR للنص المحدد",
+  "Select a shorter passage to share as a QR code.": "حدّد مقطعًا أقصر لمشاركته كرمز QR.",
+  "QR code for the selected text": "رمز QR للنص المحدد",
   "Navigation History": "سجل التنقل"
 }
