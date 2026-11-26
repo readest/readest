@@ -1,0 +1,10 @@
+{
+  "name": "select-highlight",
+  "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/verwandlung-de.epub",
+  "size": [536, 724],
+  "scale": 2,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "capture_ms": 3000,
+  "step_ms": 4000,
+  "steps": ["wait:15000", "select:214,320>416,320", "[aria-label=\"Highlight\"]", "300,600"]
+}

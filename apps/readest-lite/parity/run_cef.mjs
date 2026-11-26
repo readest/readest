@@ -234,8 +234,9 @@ for (const s of steps) {
   if (i === 0) await capture(0);
   i++;
   // `2x:` before a target: a double click (Lite: a double tap); `hold:`, a finger held on it
-  // 700 ms (a long press).
-  const t = s.replace(/^(2x|hold):/, '');
+  // 700 ms (a long press); `select:X,Y>X2,Y2`, a mouse drag from one point to the other (Lite: a
+  // long press dragged there, its way to select on a touch screen).
+  const t = s.replace(/^(2x|hold|select):/, '');
   const hold = async (x, y) => {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
     await sleep(700);
@@ -244,6 +245,13 @@ for (const s of steps) {
   const click = (x, y) =>
     t === s ? page.mouse.click(x, y) : s.startsWith('hold:') ? hold(x, y) : page.mouse.dblclick(x, y);
   if (s.startsWith('key:')) await page.keyboard.press(s.slice(4));
+  else if (s.startsWith('select:')) {
+    const [[ax, ay], [bx, by]] = t.split('>').map((p) => p.split(',').map(Number));
+    await page.mouse.move(ax, ay);
+    await page.mouse.down();
+    await page.mouse.move(bx, by, { steps: 8 });
+    await page.mouse.up();
+  }
   else if (/^\d+(\.\d+)?,\d+(\.\d+)?$/.test(t)) { const [x, y] = t.split(',').map(Number); await click(x, y); }
   else {
     if (t.startsWith('[data-parity-text=')) await evaluate(() => globalThis.__parityTag?.());

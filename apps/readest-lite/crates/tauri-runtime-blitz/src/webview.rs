@@ -13,7 +13,8 @@
 //! element matching a selector, or press `key:Name` (e.g. `key:ArrowRight`), one per painted
 //! frame (`BLITZ_TAURI_TAP_MS` apart, default 800); `wait:MS` holds the next one back MS ms more;
 //! `2x:` before a target taps it twice at once (a double tap) and `hold:` holds a finger on it for
-//! `HOLD_MS` (a long press, which selects a word in a book).
+//! `HOLD_MS` (a long press, which selects a word in a book); `select:X,Y>X2,Y2` holds a finger at
+//! the first point, then drags it to the second (selecting the words between) and lifts it.
 //! With `BLITZ_TAURI_TAP_IDLE_MS=Q` the next one goes as soon as nothing has painted for Q ms and
 //! no JS timer is due within Q; those delays become its latest time.
 
@@ -651,6 +652,25 @@ impl BlitzWebview {
             cause(&mut self.causes, 'k');
             self.input = true;
         } else if self.next_tap.is_some_and(|t| t <= now)
+            && let Some(((ax, ay), (bx, by))) = self
+                .taps
+                .front()
+                .and_then(|t| t.strip_prefix("move:"))
+                .and_then(|t| t.split_once('>'))
+                .and_then(|(a, b)| point_of(a).zip(point_of(b)))
+        {
+            // The drag of a `select:`, over the way from A to B as a finger moves.
+            for i in 1..=8 {
+                let f = i as f32 / 8.0;
+                let (x, y) = (ax + (bx - ax) * f, ay + (by - ay) * f);
+                send_pointer(doc, &self.pointers, x, y, Touch::Move);
+            }
+            self.taps.pop_front();
+            self.next_tap = Some(Instant::now() + Duration::from_millis(100));
+            self.dirty = true;
+            cause(&mut self.causes, 'k');
+            self.input = true;
+        } else if self.next_tap.is_some_and(|t| t <= now)
             && let Some((x, y)) = self
                 .taps
                 .front()
@@ -670,6 +690,8 @@ impl BlitzWebview {
                 (t, 2)
             } else if let Some(t) = step.strip_prefix("hold:") {
                 (t, 0)
+            } else if let Some(t) = step.strip_prefix("select:") {
+                (t.split_once('>').map_or(t, |(a, _)| a), 0)
             } else {
                 (step.as_str(), 1)
             };
@@ -701,7 +723,13 @@ impl BlitzWebview {
             }
             if n == 0 {
                 send_pointer(doc, &self.pointers, x, y, Touch::Down);
-                self.taps.push_front(format!("release:{x},{y}"));
+                match step.strip_prefix("select:").and_then(|t| t.split_once('>')) {
+                    Some((_, to)) => {
+                        self.taps.push_front(format!("release:{to}"));
+                        self.taps.push_front(format!("move:{x},{y}>{to}"));
+                    }
+                    None => self.taps.push_front(format!("release:{x},{y}")),
+                }
             }
             eline!(
                 "{{\"label\": \"tap\", \"t_ms\": {t0:.1}, \"unix_ms\": {}, \"handler_ms\": {:.1}, \"target\": \"{step}\", \"x\": {x:.0}, \"y\": {y:.0}}}",
