@@ -594,6 +594,12 @@ const controlPanelItems = [
     section: 'Device',
   },
   {
+    id: 'settings.control.largeMenuButtons',
+    labelKey: _('Larger Menu Buttons'),
+    keywords: ['touchscreen', 'accessibility', 'menu', 'size', 'tap'],
+    section: 'Device',
+  },
+  {
     id: 'settings.control.alwaysShowStatusBar',
     labelKey: _('Always Show Status Bar'),
     keywords: ['status', 'bar', 'system', 'clock', 'battery', 'fullscreen'],

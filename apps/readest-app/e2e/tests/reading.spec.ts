@@ -47,6 +47,29 @@ test.describe('Reading', () => {
     await expect(reader.viewer).toBeVisible();
   });
 
+  test('enlarges reader menu targets when enabled', async ({ openBook, page }) => {
+    const reader = await openBook();
+    const viewOptions = reader.headerBar.getByRole('button', { name: 'View Options' });
+    const settingsItem = page.locator('.view-menu').getByRole('menuitem', { name: 'Settings' });
+
+    await reader.revealHeader();
+    await viewOptions.click();
+    await expect(settingsItem).toBeVisible();
+    expect((await settingsItem.boundingBox())!.height).toBeLessThan(48);
+    await settingsItem.click();
+
+    await page.locator('[data-tab="Control"]').click();
+    const toggle = page.getByRole('checkbox', { name: 'Larger Menu Buttons' });
+    await toggle.check();
+    await expect(toggle).toBeChecked();
+    await page.keyboard.press('Escape');
+
+    await reader.revealHeader();
+    await viewOptions.click();
+    await expect(settingsItem).toBeVisible();
+    expect((await settingsItem.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  });
+
   test('increases the font size from the settings dialog', async ({ openBook }) => {
     const reader = await openBook();
 

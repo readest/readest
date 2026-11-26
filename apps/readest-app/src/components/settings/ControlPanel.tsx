@@ -751,6 +751,15 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
 
       <BoxedList title={_('Device')} data-setting-id='settings.control.device'>
         <SettingsSwitchRow
+          label={_('Larger Menu Buttons')}
+          description={_('Make menu items easier to tap on a touchscreen')}
+          checked={settings.largeMenuButtons ?? false}
+          onChange={() =>
+            void saveSysSettings(envConfig, 'largeMenuButtons', !settings.largeMenuButtons)
+          }
+          data-setting-id='settings.control.largeMenuButtons'
+        />
+        <SettingsSwitchRow
           label={_('E-Ink Mode')}
           checked={isEink}
           onChange={() => setIsEink(!isEink)}

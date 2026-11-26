@@ -4,6 +4,7 @@ import { IconType } from 'react-icons';
 import { MdCheck } from 'react-icons/md';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface MenuItemProps {
   label: string;
@@ -48,6 +49,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
 }) => {
   const _ = useTranslation();
   const iconSize = useResponsiveSize(16);
+  const largeMenuButtons = useSettingsStore((s) => s.settings.largeMenuButtons);
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(detailsOpen);
   const IconType = Icon || (toggled !== undefined ? (toggled ? MdCheck : undefined) : undefined);
 
@@ -127,6 +129,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
               aria-expanded={isDetailsOpen}
               className={clsx(
                 'hover:bg-base-300 text-base-content cursor-pointer rounded-md p-1 py-[10px] pr-3',
+                largeMenuButtons && 'min-h-12',
                 disabled && 'btn-disabled cursor-not-allowed text-gray-400',
                 buttonClass,
               )}
@@ -152,6 +155,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         tabIndex={disabled ? -1 : 0}
         className={clsx(
           'hover:bg-base-300 text-base-content flex w-full min-w-0 flex-col items-center justify-center rounded-md p-1 py-[10px]',
+          largeMenuButtons && 'min-h-12',
           disabled && 'btn-disabled text-gray-400',
           buttonClass,
         )}
