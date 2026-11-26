@@ -24,4 +24,27 @@ test.describe('Book import', () => {
     await expect(library.bookshelf).toBeVisible();
     await expect(library.bookCards()).toHaveCount(1);
   });
+
+  test('counts and lists each skipped file in a mixed failed import', async ({ page }) => {
+    const library = new LibraryPage(page);
+    await library.goto();
+    await expect(library.emptyState).toBeVisible();
+
+    await library.container.evaluate((element) => {
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(new File(['invalid EPUB'], 'Novel.epub'));
+      dataTransfer.items.add(new File(['unsupported'], 'Notes.csv'));
+      dataTransfer.items.add(new File(['unsupported'], 'Cover.gif'));
+      element.dispatchEvent(
+        new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }),
+      );
+    });
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toHaveAccessibleName('Failed to import 3 books');
+    await expect(dialog.getByRole('listitem')).toHaveCount(3);
+    for (const filename of ['Novel.epub', 'Notes.csv', 'Cover.gif']) {
+      await expect(dialog.getByText(filename, { exact: true })).toBeVisible();
+    }
+  });
 });
