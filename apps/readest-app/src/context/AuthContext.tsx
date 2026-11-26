@@ -13,6 +13,7 @@ import {
 import { isAuthRetryableFetchError, User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
 import { claimGiftCards } from '@/libs/payment/gift/client';
+import { fetchSyncDevices, hasDeviceLimit } from '@/libs/syncDevices';
 import posthog from 'posthog-js';
 
 interface AuthContextType {
@@ -43,26 +44,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signingOut = useRef(false);
 
   useEffect(() => {
-    const syncSession = (
-      session: { access_token: string; refresh_token: string; user: User } | null,
-    ) => {
+    type Session = { access_token: string; refresh_token: string; user: User };
+    // The SDK's latest report, so a device check that answers late can't
+    // publish a session that has changed or ended since.
+    let latestSession: Session | null = null;
+    const publishSession = ({ access_token, refresh_token, user }: Session) => {
+      console.log('Syncing session');
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      posthog.identify(user.id);
+      setToken(access_token);
+      setUser(user);
+    };
+    const syncSession = (session: Session | null) => {
       if (session && signingOut.current) return;
-      if (session) {
-        console.log('Syncing session');
-        const { access_token, refresh_token, user } = session;
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('refresh_token', refresh_token);
-        localStorage.setItem('user', JSON.stringify(user));
-        posthog.identify(user.id);
-        setToken(access_token);
-        setUser(user);
-      } else {
+      latestSession = session;
+      if (!session) {
         localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         setToken(null);
         setUser(null);
+        return;
       }
+      // A new sign-in on the Free plan waits for the device check. Held at the
+      // device limit, it stays out of the app while the login page lists the
+      // devices, and after a restart too; the login page signs it in once a
+      // device is signed out. Only the server's answer lets it in: a failed
+      // check, such as one the browser aborts on a reload, would let a held
+      // sign-in in for good. The sign-in screens sign in on their own answer,
+      // which still lets a sign-in through when the server can't answer.
+      const storedUser = localStorage.getItem('user');
+      const signedIn = !!storedUser && JSON.parse(storedUser).id === session.user.id;
+      if (signedIn || !hasDeviceLimit(session.access_token)) {
+        publishSession(session);
+        return;
+      }
+      fetchSyncDevices(session.access_token).then(
+        ({ blocked }) => {
+          if (!blocked && !signingOut.current && latestSession === session) {
+            publishSession(session);
+          }
+        },
+        () => {},
+      );
     };
     const refreshSession = async () => {
       try {

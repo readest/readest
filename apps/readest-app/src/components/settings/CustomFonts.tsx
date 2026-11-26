@@ -143,7 +143,9 @@ const CustomFonts: React.FC<CustomFontsProps> = ({ bookKey, onBack }) => {
         cloudFonts.map(
           async (font) =>
             (await runFileFontDownload(envConfig, font)) ||
-            (await queueReplicaBinaryDownload('font', font)),
+            (await queueReplicaBinaryDownload('font', font)) ||
+            // Listed before its backend's Sync Custom Fonts was turned off (#7965).
+            (await runFileFontDownload(envConfig, font, true)),
         ),
       ).finally(() => setFileDownload((shown) => (shown?.selection === selection ? null : shown)));
       if (!queued.some(Boolean)) {

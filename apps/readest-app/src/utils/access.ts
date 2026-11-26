@@ -5,6 +5,7 @@ import {
   DEFAULT_DAILY_TRANSLATION_QUOTA,
   DEFAULT_DAILY_TTS_QUOTA,
   DEFAULT_STORAGE_QUOTA,
+  FREE_PLAN_DEVICE_LIMIT,
 } from '@/services/constants';
 import { isWebAppPlatform } from '@/services/environment';
 import { getDailyUsage } from '@/services/translators/dailyUsage';
@@ -197,6 +198,16 @@ export const isSelfHosted = (): boolean =>
  */
 export const isCustomizationAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isSelfHosted() || customizationPurchased || PREMIUM_PLANS.includes(plan);
+
+/**
+ * How many devices the account may sign in to sync on: three on the Free
+ * plan, or null for no limit, which is every other plan, any purchase and a
+ * self-hosted deployment.
+ */
+export const getDeviceLimit = (token: string): number | null =>
+  isSelfHosted() || getUserProfilePlan(token) !== 'free' || getCustomizationPurchased(token)
+    ? null
+    : FREE_PLAN_DEVICE_LIMIT;
 
 /**
  * Custom translators (the user's own OpenAI-compatible LLM or DeepL key) are a

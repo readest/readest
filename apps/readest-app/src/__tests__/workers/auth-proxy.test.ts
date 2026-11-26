@@ -75,6 +75,14 @@ describe('auth proxy worker', () => {
       expect(headers.get('sb-forwarded-for')).toBe('203.0.113.7');
     });
 
+    // Supabase stores the agent on the session, and the device list in
+    // Manage Sync names each device from it.
+    it("passes on the reader's user agent", async () => {
+      await worker.fetch(post(path, { headers: { 'User-Agent': 'KOReader/v2025.08' } }), env);
+
+      expect(forwarded().headers.get('user-agent')).toBe('KOReader/v2025.08');
+    });
+
     it('ignores a forwarded IP and Authorization sent by the client', async () => {
       await worker.fetch(post(path, { headers: { 'Sb-Forwarded-For': '198.51.100.1' } }), env);
 

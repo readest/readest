@@ -1,5 +1,6 @@
 import type { StripeAvailablePlan } from '@/libs/payment/stripe/client';
 import type { AvailablePlan, PlanInterval, PlanType, QuotaFeature, UserPlan } from '@/types/quota';
+import { FREE_PLAN_DEVICE_LIMIT } from '@/services/constants';
 import { stubTranslation as _ } from '@/utils/misc';
 
 type FeatureType = {
@@ -256,6 +257,7 @@ export function getPlanDetails(
         limits: {
           [_('Cloud Sync Storage')]: '500 MB',
           [_('AI Translations (per day)')]: '10K',
+          [_('Number of Devices')]: FREE_PLAN_DEVICE_LIMIT,
         },
       };
     case 'plus':
@@ -317,6 +319,7 @@ export function getPlanDetails(
         limits: {
           [_('Cloud Sync Storage')]: '5 GB',
           [_('AI Translations (per day)')]: '100K',
+          [_('Number of Devices')]: _('Unlimited'),
         },
       };
     case 'pro':
@@ -362,6 +365,7 @@ export function getPlanDetails(
         limits: {
           [_('Cloud Sync Storage')]: '20 GB',
           [_('AI Translations (per day)')]: '500K',
+          [_('Number of Devices')]: _('Unlimited'),
         },
       };
     default:

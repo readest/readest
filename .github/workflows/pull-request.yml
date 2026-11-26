@@ -40,7 +40,7 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086
+      - uses: cachix/install-nix-action@bb0495a1086c46893eee56f32fd192dfe4a15bb9
       # skipPush is a cachix-action input, not an install-nix-action one. The
       # cache is public, so pulling needs no token at all; omitting authToken
       # keeps the push token out of PR-triggered builds entirely.

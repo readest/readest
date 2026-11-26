@@ -95,6 +95,9 @@ vi.mock('@/app/user/components/SyncPassphraseSection', () => ({
 vi.mock('@/app/user/components/SyncCategoriesSection', () => ({
   SyncCategoriesSection: () => <div>sync categories section</div>,
 }));
+vi.mock('@/app/user/components/SyncDevicesSection', () => ({
+  SyncDevicesSection: () => <div>sync devices section</div>,
+}));
 vi.mock('@/app/user/components/Checkout', () => ({ default: () => null }));
 vi.mock('@/app/user/components/gift/GiftCardsSection', () => ({ default: () => null }));
 
