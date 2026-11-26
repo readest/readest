@@ -116,7 +116,7 @@ it('opens each Account menu entry on the account page', () => {
   expect(screen.getByText('Logged in')).toBeTruthy();
   expect(screen.getByText('Account')).toBeTruthy();
   expect(screen.getByText('Sync Settings')).toBeTruthy();
-  expect(screen.getByText('Shared Links')).toBeTruthy();
+  expect(screen.queryByText('Shared Links')).toBeNull();
   expect(screen.getByText('Sign Out')).toBeTruthy();
 
   // The Storage and Translation quota rows open the account page.
@@ -129,9 +129,6 @@ it('opens each Account menu entry on the account page', () => {
 
   fireEvent.click(screen.getByText('Sync Settings'));
   expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router, 'sync');
-
-  fireEvent.click(screen.getByText('Shared Links'));
-  expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router, 'shared-links');
 
   fireEvent.click(screen.getByText('Sign Out'));
   expect(mocks.handleLogout).toHaveBeenCalledTimes(1);

@@ -72,10 +72,8 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
   const [showStorageManager, setShowStorageManager] = useState(false);
+  const [showSharedLinksManager, setShowSharedLinksManager] = useState(false);
   const searchParams = useSearchParams();
-  const [showSharedLinksManager, setShowSharedLinksManager] = useState(
-    () => searchParams?.get('section') === 'shared-links',
-  );
   const [showSyncManager, setShowSyncManager] = useState(
     () => searchParams?.get('section') === 'sync',
   );
@@ -216,7 +214,10 @@ const ProfilePage = () => {
       refresh();
     } else if (showSharedLinksManager) {
       setShowSharedLinksManager(false);
-    } else if (showSyncManager) {
+    } else if (showSyncManager && searchParams?.get('section') !== 'sync') {
+      // Back returns to the account page only when Manage Sync was opened
+      // there. Opened at section=sync (the library's Sync Settings), Back
+      // leaves the page below.
       setShowSyncManager(false);
     } else if (giftView) {
       setGiftView(null);

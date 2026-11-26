@@ -123,8 +123,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsDropdownOpen?.(false);
   };
 
-  const handleUserSection = (section: 'sync' | 'shared-links') => {
-    navigateToProfile(router, section);
+  const handleSyncSettings = () => {
+    navigateToProfile(router, 'sync');
     setIsDropdownOpen?.(false);
   };
 
@@ -356,8 +356,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               </button>
             )}
             <MenuItem label={_('Account')} onClick={handleUserProfile} />
-            <MenuItem label={_('Sync Settings')} onClick={() => handleUserSection('sync')} />
-            <MenuItem label={_('Shared Links')} onClick={() => handleUserSection('shared-links')} />
+            <MenuItem label={_('Sync Settings')} onClick={handleSyncSettings} />
             <MenuItem label={_('Sign Out')} onClick={onLogout} />
           </ul>
         </MenuItem>

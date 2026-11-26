@@ -55,7 +55,13 @@ vi.mock('@/app/user/components/Header', () => ({
 vi.mock('@/app/user/components/UserInfo', () => ({ default: () => null }));
 vi.mock('@/app/user/components/UsageStats', () => ({ default: () => <div>usage stats</div> }));
 vi.mock('@/app/user/components/PlansComparison', () => ({ default: () => null }));
-vi.mock('@/app/user/components/AccountActions', () => ({ default: () => null }));
+vi.mock('@/app/user/components/AccountActions', () => ({
+  default: ({ onManageSync }: { onManageSync: () => void }) => (
+    <button type='button' onClick={onManageSync}>
+      Manage Sync
+    </button>
+  ),
+}));
 vi.mock('@/app/user/components/StorageManager', () => ({ default: () => null }));
 vi.mock('@/app/user/components/SharedLinksSection', () => ({
   default: () => <div>shared links section</div>,
@@ -75,23 +81,38 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-// The library's Account menu opens these views directly; Back shows the
-// account page they live on, and Back again returns to the library.
-it.each([
-  ['shared-links', 'shared links section'],
-  ['sync', 'sync categories section'],
-])('opens section=%s directly and goes back to the account page', (section, text) => {
-  mocks.params = new URLSearchParams({ section, redirect: '/library' });
+const goBack = () => fireEvent.click(screen.getByRole('button', { name: 'Go Back' }));
+
+// The library's Sync Settings opens Manage Sync directly, and Back returns to
+// the library without stopping on the account page.
+it('goes back to the library from section=sync', () => {
+  mocks.params = new URLSearchParams({ section: 'sync', redirect: '/library' });
   render(<ProfilePage />);
 
-  expect(screen.getByText(text)).toBeTruthy();
+  expect(screen.getByText('sync categories section')).toBeTruthy();
   expect(screen.queryByText('usage stats')).toBeNull();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Go Back' }));
-  expect(screen.queryByText(text)).toBeNull();
+  goBack();
+  expect(navigateBackFromProfile).toHaveBeenCalledWith(mocks.router, '/library', false);
+});
+
+it('goes back to the account page from Manage Sync opened there', () => {
+  mocks.params = new URLSearchParams({ redirect: '/library' });
+  render(<ProfilePage />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Manage Sync' }));
+  expect(screen.getByText('sync categories section')).toBeTruthy();
+
+  goBack();
+  expect(screen.queryByText('sync categories section')).toBeNull();
   expect(screen.getByText('usage stats')).toBeTruthy();
   expect(navigateBackFromProfile).not.toHaveBeenCalled();
+});
 
-  fireEvent.click(screen.getByRole('button', { name: 'Go Back' }));
-  expect(navigateBackFromProfile).toHaveBeenCalledWith(mocks.router, '/library', false);
+it('opens the account page for section=shared-links', () => {
+  mocks.params = new URLSearchParams({ section: 'shared-links', redirect: '/library' });
+  render(<ProfilePage />);
+
+  expect(screen.queryByText('shared links section')).toBeNull();
+  expect(screen.getByText('usage stats')).toBeTruthy();
 });

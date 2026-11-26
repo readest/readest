@@ -223,10 +223,10 @@ describe('navigateToProfile', () => {
     });
 
     const router = mockRouter();
-    navigateToProfile(router, 'shared-links');
+    navigateToProfile(router, 'sync');
 
     expect(router.push).toHaveBeenCalledWith(
-      `/user?section=shared-links&redirect=${encodeURIComponent('/library')}`,
+      `/user?section=sync&redirect=${encodeURIComponent('/library')}`,
     );
     expect(document.documentElement.getAttribute('data-nav-direction')).toBe('forward');
   });
