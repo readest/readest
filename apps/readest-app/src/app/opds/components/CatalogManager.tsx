@@ -88,6 +88,13 @@ const POPULAR_CATALOGS: OPDSCatalog[] = [
     description: 'Free ebooks from authors who have "unglued" their books',
     icon: '🔓',
   },
+  {
+    id: 'firesidefolio',
+    name: 'Fireside Folio',
+    url: 'https://firesidefolio.com/opds/catalog',
+    description: 'Free public-domain books, comics, magazines and puzzles',
+    icon: '🔥',
+  },
 ];
 
 async function validateOPDSCatalog(
