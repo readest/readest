@@ -865,11 +865,12 @@ describe('getColorStyles branches (via getStyles)', () => {
     expect(css).toMatch(/svg,\s*img\s*\{[^}]*background-color:\s*transparent\s*!important/);
   });
 
-  it('applies screen blend mode for inline images in dark mode', () => {
+  it('applies dark-monochrome SVG filter and normal blending for inline images in dark mode', () => {
     const vs = makeViewSettings();
     const theme = makeThemeCode({ isDarkMode: true, bg: '#1a1a1a', fg: '#e0e0e0' });
     const css = getStyles(vs, theme);
-    expect(css).toContain('mix-blend-mode: screen');
+    expect(css).toContain('url(#readest-dark-monochrome)');
+    expect(css).toContain('mix-blend-mode: normal');
   });
 
   it('applies multiply blend mode for inline images in light mode', () => {

@@ -42,15 +42,35 @@ const parseFgColor = (color: string): [number, number, number] => {
 const buildDarkMonochromeSvg = (fgColor: string) => {
   const [fr, fg, fb] = parseFgColor(fgColor);
   const f = (n: number) => n.toFixed(4);
-  // Map near-white (>=245/255) to alpha=0, preserve existing transparency,
-  // map black ink to the theme fg color, and preserve chromatic accents.
-  const matrix = [
-    `0.7010 -0.5870 -0.1140 ${f(fr)} 0`,
-    `-0.2990 0.4130 -0.1140 ${f(fg)} 0`,
-    `-0.2990 -0.5870 0.8860 ${f(fb)} 0`,
-    `-0.3115 -0.6115 -0.1188 1 0`,
+  // 1. Tint neutral ink to theme fg (column 5 = constant offset so non-premultiplied
+  //    semi-transparent black keeps full fg brightness) while preserving chroma & SourceAlpha.
+  const tintMatrix = [
+    `0.7010 -0.5870 -0.1140 0 ${f(fr)}`,
+    `-0.2990 0.4130 -0.1140 0 ${f(fg)}`,
+    `-0.2990 -0.5870 0.8860 0 ${f(fb)}`,
+    `0 0 0 1 0`,
   ].join(' ');
-  return `<svg xmlns="http://www.w3.org/2000/svg" data-readest-filter="dark-monochrome" data-fg="${fgColor}"><filter id="${DARK_MONOCHROME_FILTER_ID}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${matrix}"/></filter></svg>`;
+  // 2. Compute whiteness-to-ink mask: max(1 - 1.0418*R, 1 - 1.0418*G, 1 - 1.0418*B)
+  //    = 1 - 1.0418 * min(R, G, B). Near-white (>= 245/255) becomes alpha = 0,
+  //    while saturated colors (e.g. yellow/red) keep alpha = 1 and semi-transparent
+  //    gray stays visible.
+  const invR = `-1.0418 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1`;
+  const invG = `0 -1.0418 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1`;
+  const invB = `0 0 -1.0418 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1`;
+  const rToAlpha = `0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0`;
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" data-readest-filter="dark-monochrome" data-fg="${fgColor}">` +
+    `<filter id="${DARK_MONOCHROME_FILTER_ID}" color-interpolation-filters="sRGB">` +
+    `<feColorMatrix in="SourceGraphic" type="matrix" result="tinted" values="${tintMatrix}"/>` +
+    `<feColorMatrix in="SourceGraphic" type="matrix" result="invR" values="${invR}"/>` +
+    `<feColorMatrix in="SourceGraphic" type="matrix" result="invG" values="${invG}"/>` +
+    `<feColorMatrix in="SourceGraphic" type="matrix" result="invB" values="${invB}"/>` +
+    `<feBlend in="invR" in2="invG" mode="lighten" result="maxRG"/>` +
+    `<feBlend in="maxRG" in2="invB" mode="lighten" result="maxRGB"/>` +
+    `<feColorMatrix in="maxRGB" type="matrix" result="inkMask" values="${rToAlpha}"/>` +
+    `<feComposite in="tinted" in2="inkMask" operator="in"/>` +
+    `</filter></svg>`
+  );
 };
 
 export const mountWhiteTransparencyFilter = (doc: Document) => {

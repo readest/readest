@@ -38,31 +38,33 @@ const grayDarkTheme = {
 
 const renderPixels = async (fgColor: string) => {
   const source = document.createElement('canvas');
-  source.width = 7;
+  source.width = 9;
   source.height = 1;
   const ctx = source.getContext('2d')!;
   const colors = [
-    [255, 255, 255, 255], // white -> transparent
-    [245, 245, 245, 255], // near-white -> transparent
-    [0, 0, 0, 255], // black ink -> fgColor
-    [128, 128, 128, 255], // anti-aliased gray
-    [255, 0, 0, 255], // chromatic red accent
-    [0, 0, 0, 0], // already transparent
-    [0, 0, 0, 128], // semi-transparent black ink
+    [255, 255, 255, 255], // 0: white -> transparent
+    [245, 245, 245, 255], // 1: near-white -> transparent
+    [0, 0, 0, 255], // 2: black ink -> fgColor
+    [128, 128, 128, 255], // 3: anti-aliased gray
+    [255, 0, 0, 255], // 4: chromatic red accent
+    [0, 0, 0, 0], // 5: already transparent
+    [0, 0, 0, 128], // 6: semi-transparent black ink
+    [128, 128, 128, 128], // 7: semi-transparent gray
+    [255, 255, 0, 255], // 8: chromatic yellow accent
   ];
-  ctx.putImageData(new ImageData(new Uint8ClampedArray(colors.flat()), 7, 1), 0, 0);
+  ctx.putImageData(new ImageData(new Uint8ClampedArray(colors.flat()), 9, 1), 0, 0);
   const image = new Image();
   image.src = source.toDataURL();
   await image.decode();
 
   const output = document.createElement('canvas');
-  output.width = 7;
+  output.width = 9;
   output.height = 1;
   const result = output.getContext('2d')!;
   mountDarkMonochromeFilter(document, fgColor);
   result.filter = DARK_MONOCHROME_FILTER;
   result.drawImage(image, 0, 0);
-  return [...result.getImageData(0, 0, 7, 1).data];
+  return [...result.getImageData(0, 0, 9, 1).data];
 };
 
 const sampleScreenshotPixel = async (frame: HTMLElement, x: number, y: number) => {
@@ -89,8 +91,19 @@ describe('dark monochrome SVG filter (#7981)', () => {
     expect(pixels[15]).toBeGreaterThan(0); // #808080 -> partial alpha
     expect(pixels[15]).toBeLessThan(255);
     expect(pixels[16]).toBeGreaterThan(pixels[17]!); // red accent stays reddish
+    expect(pixels[19]).toBe(255); // opaque red keeps full alpha
     expect(pixels.slice(20, 24)).toEqual([0, 0, 0, 0]); // transparent stays transparent
-    expect(pixels[27]).toBe(128); // semi-transparent black keeps alpha
+    // semi-transparent black keeps full fg brightness and alpha=128
+    expect(Math.abs(pixels[24]! - 198)).toBeLessThanOrEqual(2);
+    expect(Math.abs(pixels[25]! - 198)).toBeLessThanOrEqual(2);
+    expect(Math.abs(pixels[26]! - 198)).toBeLessThanOrEqual(2);
+    expect(pixels[27]).toBe(128);
+    // semi-transparent gray stays visible (not dropped to 0)
+    expect(pixels[31]).toBeGreaterThan(40);
+    // opaque yellow keeps full alpha and yellow hue
+    expect(pixels[32]).toBeGreaterThan(pixels[34]!);
+    expect(pixels[33]).toBeGreaterThan(pixels[34]!);
+    expect(pixels[35]).toBe(255);
   });
 
   it('blends white-background gaiji and monochrome-diagram over Gray Dark iframe without black boxes', async () => {
