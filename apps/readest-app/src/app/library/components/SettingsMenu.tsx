@@ -355,7 +355,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
                 <Quota quotas={quotas} labelClassName='h-10 ps-3 pe-2' />
               </button>
             )}
-            <MenuItem label={_('Subscription')} onClick={handleUserProfile} />
+            <MenuItem label={_('Account & Subscription')} onClick={handleUserProfile} />
             <MenuItem label={_('Sync Settings')} onClick={() => handleUserSection('sync')} />
             <MenuItem label={_('Shared Links')} onClick={() => handleUserSection('shared-links')} />
             <MenuItem label={_('Sign Out')} onClick={onLogout} />

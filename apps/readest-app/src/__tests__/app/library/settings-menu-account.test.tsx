@@ -114,7 +114,7 @@ it('opens each Account menu entry on the account page', () => {
   render(<SettingsMenu onPullLibrary={vi.fn()} setIsDropdownOpen={mocks.setIsDropdownOpen} />);
 
   expect(screen.getByText('Logged in')).toBeTruthy();
-  expect(screen.getByText('Subscription')).toBeTruthy();
+  expect(screen.getByText('Account & Subscription')).toBeTruthy();
   expect(screen.getByText('Sync Settings')).toBeTruthy();
   expect(screen.getByText('Shared Links')).toBeTruthy();
   expect(screen.getByText('Sign Out')).toBeTruthy();
@@ -124,7 +124,7 @@ it('opens each Account menu entry on the account page', () => {
   expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router);
   mocks.navigateToProfile.mockClear();
 
-  fireEvent.click(screen.getByText('Subscription'));
+  fireEvent.click(screen.getByText('Account & Subscription'));
   expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router);
 
   fireEvent.click(screen.getByText('Sync Settings'));
