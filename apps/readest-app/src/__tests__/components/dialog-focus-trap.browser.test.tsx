@@ -197,6 +197,52 @@ for (const [width, height] of [
       expect(visited.every(inside('Inner'))).toBe(true);
     });
 
+    it('sends Tab into a layer that covers the dialog, such as Add OPDS Catalog', async () => {
+      // The layer opens from a button inside the dialog and doesn't take focus
+      // itself, so focus is still on that button behind it.
+      render(
+        <>
+          <Dialog isOpen title='Catalogs' onClose={vi.fn()}>
+            <button type='button'>Add Catalog</button>
+            <button type='button'>Browse</button>
+          </Dialog>
+          <div data-capture-blocking-overlay='true' className='fixed inset-0 z-[1200]'>
+            <input aria-label='Catalog Name' />
+            <button type='button'>Cancel</button>
+          </div>
+        </>,
+      );
+      await settle();
+      screen.getByRole('button', { name: 'Add Catalog' }).focus();
+
+      await tab(false);
+      expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Catalog Name' }));
+
+      // Back from the layer's start goes round inside the layer, not behind it.
+      screen.getByRole('button', { name: 'Browse' }).focus();
+      await tab(true);
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Cancel' }));
+    });
+
+    it('keeps Tab in the dialog over a layer beneath it, such as the selection popup', async () => {
+      render(
+        <>
+          <div data-capture-blocking-overlay='true' className='fixed inset-0 z-0'>
+            <button type='button'>Popup action</button>
+          </div>
+          <Dialog isOpen title='Share as QR Code' onClose={vi.fn()}>
+            <button type='button'>Done</button>
+          </Dialog>
+        </>,
+      );
+      await settle();
+      screen.getByRole('button', { name: 'Done' }).focus();
+
+      const visited = await walk(4);
+
+      expect(visited.every(inside('Share as QR Code'))).toBe(true);
+    });
+
     it('leaves focus alone in a layer above the dialog, such as a ModalPortal', async () => {
       render(
         <>
