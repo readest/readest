@@ -26,6 +26,7 @@ export const ALL_ANNOTATION_TOOL_TYPES: AnnotationToolType[] = [
   'tts',
   'proofread',
   'share',
+  'shareqr',
   'quotecard',
 ];
 

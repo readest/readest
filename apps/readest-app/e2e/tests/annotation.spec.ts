@@ -1,3 +1,4 @@
+import { renderSVG } from 'uqr';
 import { expect, test } from '../fixtures/base';
 
 test.describe('Annotation', () => {
@@ -8,6 +9,30 @@ test.describe('Annotation', () => {
 
     await expect(reader.annotationPopup).toBeVisible();
     await expect(reader.popupTool('Highlight')).toBeVisible();
+  });
+
+  test('shares the selected book text as a local QR code', async ({ page, openBook, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const reader = await openBook();
+    await reader.enableAnnotationTool('Share as QR Code');
+    await reader.selectText();
+    await reader.popupTool('Copy').click();
+    await expect.poll(async () => (await reader.readClipboard()).length).toBeGreaterThan(0);
+    const text = (await reader.readClipboard()).replace(/\r\n/g, '\n');
+
+    await reader.selectText();
+
+    await reader.popupTool('Share as QR Code').click();
+    const dialog = page.getByRole('dialog', { name: 'Share as QR Code' });
+    const code = dialog.getByRole('img', { name: 'QR code for the selected text' });
+    await expect(code).toBeVisible();
+    const svg = renderSVG(text, { ecc: 'M', border: 4 });
+    expect(
+      (await code.getAttribute('src')) === `data:image/svg+xml,${encodeURIComponent(svg)}`,
+      'the QR code encodes the same passage as Copy',
+    ).toBe(true);
+    await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(dialog).toHaveCount(0);
   });
 
   test('creates a highlight from the selected text', async ({ openBook }) => {
