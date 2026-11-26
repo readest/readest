@@ -3133,5 +3133,13 @@
   "Number of Devices": "מספר מכשירים",
   "Unlimited": "ללא הגבלה",
   "Sync Custom Fonts": "סנכרון גופנים מותאמים אישית",
-  "Syncs custom font files with this provider": "מסנכרן קובצי גופנים מותאמים אישית עם ספק זה"
+  "Syncs custom font files with this provider": "מסנכרן קובצי גופנים מותאמים אישית עם ספק זה",
+  "Library & Media": "ספרייה ומדיה",
+  "Account & Preferences": "חשבון והעדפות",
+  "Synced to {{provider}}": "מסונכרן אל {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "מושהה ב-{{provider}} — יש לשדרג או להפעיל את Readest Cloud כדי להמשיך",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "לא מסתנכרן — יש להפעיל ספק בהגדרות ← אינטגרציות",
+  "Readest Cloud sync is off; still synced via {{provider}}": "סנכרון Readest Cloud כבוי; עדיין מסונכרן דרך {{provider}}",
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "מסונכרן תמיד דרך Readest Cloud כל עוד אתה מחובר; כיבוי קטגוריה משאיר אותה במכשיר זה",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "מסונכרן אל Readest Cloud; מושהה ב-{{provider}} — יש לשדרג כדי להמשיך"
 }

@@ -3054,5 +3054,13 @@
   "Number of Devices": "Eszközök száma",
   "Unlimited": "Korlátlan",
   "Sync Custom Fonts": "Egyéni betűtípusok szinkronizálása",
-  "Syncs custom font files with this provider": "Szinkronizálja az egyéni betűtípusfájlokat ezzel a szolgáltatóval"
+  "Syncs custom font files with this provider": "Szinkronizálja az egyéni betűtípusfájlokat ezzel a szolgáltatóval",
+  "Library & Media": "Könyvtár és média",
+  "Account & Preferences": "Fiók és beállítások",
+  "Synced to {{provider}}": "Szinkronizálva ide: {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Szüneteltetve ({{provider}}) — a folytatáshoz frissítsen csomagot vagy kapcsolja be a Readest Cloudot",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "Nincs szinkronizálás — engedélyezzen egy szolgáltatót a Beállítások → Integrációk menüben",
+  "Readest Cloud sync is off; still synced via {{provider}}": "A Readest Cloud szinkronizálás ki van kapcsolva; továbbra is a(z) {{provider}} szolgáltatón keresztül szinkronizál",
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "Bejelentkezve mindig a Readest Cloudon keresztül szinkronizál; kikapcsolva a kategória ezen az eszközön marad",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "Szinkronizálva ide: Readest Cloud; szüneteltetve ({{provider}}) — a folytatáshoz frissítsen csomagot"
 }

@@ -2975,5 +2975,13 @@
   "Number of Devices": "裝置數量",
   "Unlimited": "無限制",
   "Sync Custom Fonts": "同步自訂字型",
-  "Syncs custom font files with this provider": "將自訂字型檔案與此服務商同步"
+  "Syncs custom font files with this provider": "將自訂字型檔案與此服務商同步",
+  "Library & Media": "書庫與媒體",
+  "Account & Preferences": "帳號與偏好設定",
+  "Synced to {{provider}}": "已同步至 {{provider}}",
+  "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} 已暫停 — 升級方案或啟用 Readest Cloud 以恢復",
+  "Not syncing — enable a cloud sync provider in Settings → Integrations": "未同步 — 請在設定 → 整合中啟用雲端同步服務",
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud 同步已關閉；仍透過 {{provider}} 同步",
+  "Always synced via Readest Cloud while signed in; turning a category off keeps it on this device": "登入期間一律透過 Readest Cloud 同步；關閉類別將僅保留於此裝置",
+  "Synced to Readest Cloud; paused on {{provider}} — upgrade to resume": "已同步至 Readest Cloud；{{provider}} 已暫停 — 升級方案以恢復"
 }
