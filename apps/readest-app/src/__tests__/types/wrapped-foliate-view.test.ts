@@ -25,6 +25,24 @@ describe('wrappedFoliateView goTo events', () => {
     expect(order).toEqual(['start', 'end']);
   });
 
+  it('emits the previous and next chapters only for an explicit jump with a new location', async () => {
+    const view = makeFakeView(async (href) => {
+      view.lastLocation = { cfi: href, tocItem: { label: href, href, id: 0, index: 0 } };
+    });
+    view.lastLocation = { cfi: 'A', tocItem: { label: 'A', href: 'A', id: 0, index: 0 } };
+    const showReturn = vi.fn();
+    view.addEventListener('reader-jump', showReturn);
+    const wrapped = wrappedFoliateView(view);
+
+    await wrapped.goTo('B', { focus: true });
+    expect(showReturn).toHaveBeenCalledOnce();
+    expect(showReturn.mock.calls[0]?.[0].detail).toEqual({ from: 'A', to: 'B' });
+
+    await wrapped.goTo('B', { focus: true });
+    await wrapped.goTo('C');
+    expect(showReturn).toHaveBeenCalledOnce();
+  });
+
   it('dispatches navigate-end even when goTo rejects', async () => {
     const order: string[] = [];
     const view = makeFakeView(() => Promise.reject(new Error('nav failed')));

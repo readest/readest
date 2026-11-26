@@ -149,7 +149,7 @@ export interface FoliateView extends HTMLElement {
   tts: ViewTTS | null;
   // The most recent relocate location, set synchronously by foliate on every
   // relocate — fresher than the rAF-debounced readerStore progress.
-  lastLocation?: { cfi?: string; range?: Range | null };
+  lastLocation?: { cfi?: string; range?: Range | null; tocItem?: TOCItem | null };
   isFixedLayout: boolean;
   language: {
     locale?: LocaleWithTextInfo;
@@ -157,7 +157,7 @@ export interface FoliateView extends HTMLElement {
     canonical?: string;
     direction?: string;
   };
-  history: {
+  history: EventTarget & {
     canGoBack: boolean;
     canGoForward: boolean;
     back: () => void;
@@ -187,9 +187,22 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
     // Cross-section jumps can take seconds (the target section's images block
     // its iframe load); surface start/end so the viewer can show a spinner.
     originalView.dispatchEvent(new CustomEvent('navigate-start'));
-    return Promise.resolve(originalGoTo(target, options)).finally(() => {
-      originalView.dispatchEvent(new CustomEvent('navigate-end'));
-    });
+    const from = originalView.lastLocation;
+    return Promise.resolve(originalGoTo(target, options))
+      .then((resolved) => {
+        const to = originalView.lastLocation;
+        if (options?.focus && from?.cfi && to?.cfi && from.cfi !== to.cfi) {
+          originalView.dispatchEvent(
+            new CustomEvent('reader-jump', {
+              detail: { from: from.tocItem?.label, to: to.tocItem?.label },
+            }),
+          );
+        }
+        return resolved;
+      })
+      .finally(() => {
+        originalView.dispatchEvent(new CustomEvent('navigate-end'));
+      });
   };
 
   return originalView;
