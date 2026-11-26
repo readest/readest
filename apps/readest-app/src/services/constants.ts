@@ -1066,7 +1066,7 @@ export const CONTRAST_STEP = 10;
 export const AUTO_SCROLL_BASE_PX_PER_SEC = 20;
 export const MAX_AUTO_SCROLL_SPEED = 500;
 export const MIN_AUTO_SCROLL_SPEED = 25;
-export const AUTO_SCROLL_SPEED_STEP = 25;
+export const AUTO_SCROLL_SPEED_STEP = 5;
 
 export const SHOW_UNREAD_STATUS_BADGE = false;
 
@@ -1083,6 +1083,9 @@ export const DEFAULT_DAILY_TRANSLATION_QUOTA: UserDailyTranslationQuota = {
   pro: 500 * 1024,
   purchase: 0,
 };
+
+// Devices a Free account syncs on; every other plan has no limit.
+export const FREE_PLAN_DEVICE_LIMIT = 3;
 
 export const DEFAULT_DAILY_TTS_QUOTA: UserDailyTTSQuota = {
   free: 0,

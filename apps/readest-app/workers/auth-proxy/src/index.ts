@@ -30,7 +30,9 @@ const emptyResponse = (status: number) => new Response(null, { status, headers: 
 
 const forwardedHeaders = (request: Request, url: URL, env: Env) => {
   const headers = new Headers();
-  for (const name of ['content-type', 'x-client-info', 'x-supabase-api-version']) {
+  // Supabase keeps the user agent on the session, and Manage Sync names the
+  // account's devices from it.
+  for (const name of ['content-type', 'user-agent', 'x-client-info', 'x-supabase-api-version']) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }

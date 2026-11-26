@@ -1,5 +1,6 @@
-import { User } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/utils/supabase';
+import { checkSignInDeviceLimit } from '@/libs/syncDevices';
 
 interface UseAuthCallbackOptions {
   accessToken?: string | null;
@@ -11,6 +12,11 @@ interface UseAuthCallbackOptions {
   error?: string | null;
   errorCode?: string | null;
   errorDescription?: string | null;
+  /**
+   * Over the Free plan's device limit. Goes to /auth, which lists the devices
+   * and goes on to `destination` once one is signed out.
+   */
+  onDeviceLimit?: (destination: string) => void;
 }
 
 export interface OAuthCallbackParams {
@@ -40,6 +46,13 @@ export function parseOAuthCallbackUrl(url: string): OAuthCallbackParams {
   };
 }
 
+// AuthProvider stores nothing for a new sign-in whose device check failed, and
+// an offline launch restores the sign-in from this key. It comes from the SDK's
+// session: setSession refreshes an expired link, which spends its refresh token.
+const keepRefreshToken = (session: Session | null) => {
+  if (session) localStorage.setItem('refresh_token', session.refresh_token);
+};
+
 export function handleAuthCallback({
   accessToken,
   refreshToken,
@@ -48,6 +61,7 @@ export function handleAuthCallback({
   type,
   next = '/',
   error,
+  onDeviceLimit = (destination) => navigate(`/auth?redirect=${encodeURIComponent(destination)}`),
 }: UseAuthCallbackOptions) {
   async function finalizeSession() {
     if (error) {
@@ -56,6 +70,16 @@ export function handleAuthCallback({
     }
 
     if (!accessToken || !refreshToken) {
+      // On web, supabase-js takes the tokens from the URL and clears it first.
+      const { data } = await supabase.auth.getSession();
+      if (data.session && (await checkSignInDeviceLimit(data.session.access_token))) {
+        onDeviceLimit('/library');
+        return;
+      }
+      if (data.session) {
+        login(data.session.access_token, data.session.user);
+        keepRefreshToken(data.session);
+      }
       navigate('/library');
       return;
     }
@@ -75,7 +99,14 @@ export function handleAuthCallback({
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
+      if (await checkSignInDeviceLimit(accessToken)) {
+        onDeviceLimit(type === 'recovery' ? '/auth/recovery' : next);
+        return;
+      }
       login(accessToken, user);
+      // Another link may have replaced the SDK's session meanwhile.
+      const { session } = (await supabase.auth.getSession()).data;
+      if (session?.user.id === user.id) keepRefreshToken(session);
       if (type === 'recovery') {
         navigate('/auth/recovery');
         return;

@@ -30,6 +30,14 @@ function makePlan(overrides: Partial<TestPlan> = {}): TestPlan {
 }
 
 describe('getPlanDetails', () => {
+  it.each([
+    ['free', 3],
+    ['plus', 'Unlimited'],
+    ['pro', 'Unlimited'],
+  ] as const)('lists the number of devices for the %s plan', (planCode, devices) => {
+    expect(getPlanDetails(planCode, []).limits?.['Number of Devices']).toBe(devices);
+  });
+
   describe('free plan', () => {
     it('should return free plan details with no available plans', () => {
       const result = getPlanDetails('free', []);

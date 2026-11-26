@@ -138,7 +138,7 @@ export function SyncCategoriesSection() {
           )}
         </p>
       </div>
-      <ul className='border-base-300 divide-base-300 divide-y rounded-lg border'>
+      <ul className='border-base-300 divide-base-300 eink-bordered divide-y rounded-lg border'>
         {SYNC_CATEGORIES.map((category) => {
           const c = copy[category];
           const on = enabled(category);

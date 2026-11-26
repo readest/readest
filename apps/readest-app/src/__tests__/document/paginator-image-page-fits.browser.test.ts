@@ -241,6 +241,96 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(img.getBoundingClientRect().height).toBe(availableHeight(doc) - space);
   });
 
+  it('keeps an oversized illustration inside its clipping figure', async () => {
+    const illustration = `<figure style="margin: 0; height: 260px; overflow: hidden"><img alt="" style="display: block; margin: 0 auto; width: auto; height: auto" src="${COVER}"/></figure>`;
+    const { doc } = await open(`${illustration}${TEXT}`, '');
+    const figure = doc.querySelector('figure')!.getBoundingClientRect();
+    const img = doc.querySelector<HTMLImageElement>('figure img')!;
+    await img.decode();
+    expect(img.naturalWidth).toBeGreaterThan(0);
+    expect(img.checkVisibility({ visibilityProperty: true, opacityProperty: true })).toBe(true);
+    const image = img.getBoundingClientRect();
+    expect(image.top).toBeGreaterThanOrEqual(figure.top);
+    expect(image.bottom).toBeLessThanOrEqual(figure.bottom);
+    expect(image.left + image.width / 2).toBeCloseTo(figure.left + figure.width / 2, 0);
+    expect(image.width / image.height).toBeCloseTo(600 / 900, 2);
+  });
+
+  it('fits a width-constrained illustration whose publisher set its height to auto', async () => {
+    const illustration = `<figure style="margin: 0; width: 300px; height: 260px; overflow: hidden"><img alt="" style="display: block; width: 100%; height: auto" src="${COVER}"/></figure>`;
+    const { doc } = await open(`${illustration}${TEXT}`, '');
+    const figure = doc.querySelector('figure')!.getBoundingClientRect();
+    const img = doc.querySelector<HTMLImageElement>('figure img')!;
+    await img.decode();
+    const image = img.getBoundingClientRect();
+    expect(image.top).toBe(figure.top);
+    expect(image.bottom).toBe(figure.bottom);
+    expect(image.width).toBe(300);
+    expect(getComputedStyle(img).objectFit).toBe('contain');
+  });
+
+  it('fits a clipping figure again after a restyle changes its height', async () => {
+    const fixture = `<figure style="margin: 0; width: 300px; height: 260px; overflow: hidden"><img alt="" style="display: block; width: 100%; height: auto" src="${COVER}"/></figure>`;
+    const { el, doc } = await open(`${fixture}${TEXT}`, '');
+    const img = doc.querySelector<HTMLImageElement>('figure img')!;
+    const figure = doc.querySelector('figure')!;
+    expect(img.getBoundingClientRect().height).toBe(260);
+
+    const styles = getStyles(makeViewSettings(), undefined, []);
+    for (const height of [200, 350]) {
+      el.setStyles?.(`${styles} figure { height: ${height}px !important; }`);
+      await doc.fonts.ready;
+      await frames(10);
+      expect(figure.getBoundingClientRect().height).toBe(height);
+      expect(img.getBoundingClientRect().height).toBe(height);
+    }
+  });
+
+  it('fits a clipping figure again after a restyle turns its clipping off and on', async () => {
+    const fixture = `<figure style="margin: 0; width: 300px; height: 260px; overflow: hidden"><img alt="" style="display: block; width: 100%; height: auto" src="${COVER}"/></figure>`;
+    const { el, doc } = await open(`${fixture}${TEXT}`, '');
+    const img = doc.querySelector<HTMLImageElement>('figure img')!;
+    expect(img.getBoundingClientRect().height).toBe(260);
+
+    const styles = getStyles(makeViewSettings(), undefined, []);
+    for (const css of [`${styles} figure { overflow: visible !important; }`, styles]) {
+      el.setStyles?.(css);
+      await doc.fonts.ready;
+      await frames(10);
+    }
+    expect(img.getBoundingClientRect().height).toBe(260);
+  });
+
+  const SPRITE = `data:image/svg+xml,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="200" height="300" fill="#933"/></svg>',
+  )}`;
+  it.each([
+    ['absolute positioning', 'position: absolute; top: -90px', '', true],
+    ['a negative margin', 'margin-top: -90px', '', true],
+    ['an inline height', 'height: 300px', '', false],
+    ['a height attribute', '', 'height="300"', false],
+    ['a stylesheet height', '', 'class="sprite"', false],
+  ])('preserves the dimensions of an intentional crop made with %s', async (_, style, attrs, shifted) => {
+    const sprite = `<style>.sprite { height: 300px; }</style><figure style="position: relative; margin: 0; height: 30px; overflow: hidden"><img alt="" style="display: block; ${style}" ${attrs} src="${SPRITE}"/></figure>`;
+    const { doc } = await open(`${sprite}${TEXT}`, '');
+    const figure = doc.querySelector('figure')!.getBoundingClientRect();
+    const image = doc.querySelector('figure img')!.getBoundingClientRect();
+    expect(image.width).toBe(200);
+    expect(image.height).toBe(300);
+    expect(image.top).toBe(figure.top - (shifted ? 90 : 0));
+    expect(image.bottom).toBeGreaterThan(figure.bottom);
+  });
+
+  it('leaves a page-tall crop shifted with a transform at the page height', async () => {
+    const tall = `data:image/svg+xml,${encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="800"><rect width="200" height="800" fill="#933"/></svg>',
+    )}`;
+    const sprite = `<figure style="margin: 0; height: 30px; overflow: hidden"><img alt="" style="display: block; transform: translateY(-90px)" src="${tall}"/></figure>`;
+    const { doc } = await open(`${sprite}${TEXT}`, '');
+    const image = doc.querySelector('figure img')!.getBoundingClientRect();
+    expect(image.height).toBe(availableHeight(doc));
+  });
+
   // After text or an empty block with a height, the plate moves to the next
   // page and its margin is dropped at the break, so it keeps the whole page
   // height

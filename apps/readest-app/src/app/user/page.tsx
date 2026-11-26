@@ -48,6 +48,7 @@ import PlansComparison from './components/PlansComparison';
 import StorageManager from './components/StorageManager';
 import SharedLinksSection from './components/SharedLinksSection';
 import { SyncPassphraseSection } from './components/SyncPassphraseSection';
+import { SyncDevicesSection } from './components/SyncDevicesSection';
 import { SyncCategoriesSection } from './components/SyncCategoriesSection';
 import { LoginSecuritySection } from './components/LoginSecuritySection';
 import Checkout from './components/Checkout';
@@ -505,6 +506,7 @@ const ProfilePage = () => {
                   <div className='flex flex-col gap-y-8 px-6'>
                     <SyncCategoriesSection />
                     <SyncPassphraseSection />
+                    <SyncDevicesSection />
                   </div>
                 ) : activeSection === 'security' ? (
                   <div className='flex flex-col gap-y-8 px-6'>
