@@ -119,6 +119,8 @@ const ask = async (
       prompt,
       maxRetries: 1,
       abortSignal: controller.signal,
+      // Local models often break the JSON without it, closing a string with a curly quote.
+      json: true,
       onText: () => {},
       onProgress: (type) => {
         // The SDK starts its stream before the server takes the request.
