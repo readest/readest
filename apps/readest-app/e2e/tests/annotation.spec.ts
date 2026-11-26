@@ -16,6 +16,7 @@ test.describe('Annotation', () => {
     const reader = await openBook();
     await reader.enableAnnotationTool('Share as QR Code');
     await reader.selectText();
+    await page.evaluate(() => navigator.clipboard.writeText(''));
     await reader.popupTool('Copy').click();
     await expect.poll(async () => (await reader.readClipboard()).length).toBeGreaterThan(0);
     const text = (await reader.readClipboard()).replace(/\r\n/g, '\n');
@@ -33,6 +34,7 @@ test.describe('Annotation', () => {
     ).toBe(true);
     await dialog.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(dialog).toHaveCount(0);
+    await expect(reader.viewer).toBeFocused();
   });
 
   test('creates a highlight from the selected text', async ({ openBook }) => {
