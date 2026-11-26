@@ -229,9 +229,7 @@ export function SyncCategoriesSection({ thirdPartyPaused = false }: SyncCategori
                   key={dest}
                   className={clsx(
                     pillBaseClass,
-                    dest === 'readest'
-                      ? 'bg-base-200 text-base-content/75 border-base-300'
-                      : 'not-eink:bg-base-content/10 text-base-content border-base-content/20',
+                    'not-eink:bg-base-content/10 text-base-content border-base-content/20',
                   )}
                 >
                   {cloudProviderDisplayName(dest)}
