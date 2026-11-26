@@ -306,7 +306,7 @@ describe('getLayoutStyles branches (via getStyles)', () => {
   it('sets text-indent', () => {
     const vs = makeViewSettings({ textIndent: 2 });
     const css = getStyles(vs, theme);
-    expect(css).toContain('text-indent: 2em');
+    expect(css).toContain('text-indent: calc(2em * var(--readest-font-scale, 1))');
   });
 
   it('sets paragraph margins vertically (margin-left/right) when vertical is true', () => {
@@ -439,7 +439,7 @@ describe('getLayoutStyles branches (via getStyles)', () => {
     expect(css).not.toContain('line-height: 1.7');
     expect(css).not.toContain('word-spacing: 3px');
     expect(css).not.toContain('letter-spacing: 2px');
-    expect(css).not.toContain('text-indent: 2em');
+    expect(css).not.toContain('text-indent: calc(2em * var(--readest-font-scale, 1))');
     expect(css).not.toContain('hyphens: auto');
     expect(css).not.toContain('-webkit-hyphens: auto');
     // the body line-height reset exists to make room for our paragraph rules;
@@ -472,7 +472,7 @@ describe('getLayoutStyles branches (via getStyles)', () => {
     expect(css).toContain('line-height: 1.7');
     expect(css).toContain('word-spacing: 3px');
     expect(css).toContain('letter-spacing: 2px');
-    expect(css).toContain('text-indent: 2em');
+    expect(css).toContain('text-indent: calc(2em * var(--readest-font-scale, 1))');
     expect(css).toContain('hyphens: auto');
     expect(css).toContain('line-height: unset');
   });
