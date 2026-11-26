@@ -2991,5 +2991,6 @@
   "Share as QR Code": "QRコードで共有",
   "Show a QR code for the selected text": "選択したテキストのQRコードを表示",
   "Select a shorter passage to share as a QR code.": "QRコードで共有するには、もっと短い文章を選択してください。",
-  "QR code for the selected text": "選択したテキストのQRコード"
+  "QR code for the selected text": "選択したテキストのQRコード",
+  "Navigation History": "移動履歴"
 }

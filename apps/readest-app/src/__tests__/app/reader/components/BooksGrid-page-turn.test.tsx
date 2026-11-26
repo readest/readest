@@ -12,7 +12,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => {
   const renders = { HeaderBar: 0, Annotator: 0, FootnotePopup: 0, HandwritingOverlay: 0 };
   const columnGaps: number[] = [];
-  const view = { renderer: { columnCount: 1 } };
+  const view = Object.assign(new EventTarget(), {
+    renderer: { columnCount: 1 },
+    history: new EventTarget(),
+  });
   const viewSettings = { columnGapPx: 24, gapPercent: 5, showHeader: true, showFooter: true };
   const viewState = { viewSettings, viewerKey: 'v1', inited: true, view };
   const counted = (name: keyof typeof renders) => ({

@@ -3228,5 +3228,6 @@
   "Share as QR Code": "Поделиться как QR-код",
   "Show a QR code for the selected text": "Показать QR-код для выделенного текста",
   "Select a shorter passage to share as a QR code.": "Выделите более короткий фрагмент, чтобы поделиться им как QR-кодом.",
-  "QR code for the selected text": "QR-код для выделенного текста"
+  "QR code for the selected text": "QR-код для выделенного текста",
+  "Navigation History": "История переходов"
 }
