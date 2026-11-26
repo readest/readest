@@ -85,9 +85,11 @@ const ProfilePage = () => {
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
 
   const searchParams = useSearchParams();
-  const section = searchParams?.get('section');
-  // A section opens on its own from the Account menu; Back returns to the opener.
-  const activeSection = isProfileSection(section) ? section : null;
+  // The Account menu opens a section directly.
+  const [activeSection, setActiveSection] = useState<ProfileSection | null>(() => {
+    const section = searchParams?.get('section');
+    return isProfileSection(section) ? section : null;
+  });
   const [loading, setLoading] = useState(false);
   const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
   // Read once: the code is taken out of the URL as soon as the page opens.
@@ -218,9 +220,11 @@ const ProfilePage = () => {
       setShowEmbeddedCheckout(false);
     } else if (giftView) {
       setGiftView(null);
-    } else {
-      // Files removed under Storage change the quota the Account menu shows.
+    } else if (activeSection && activeSection !== 'sync') {
+      // Files removed under Storage change the quota.
       if (activeSection === 'storage') refresh();
+      setActiveSection(null);
+    } else {
       // A book stays open beneath while this page sits over it (#6607).
       const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
       navigateBackFromProfile(router, searchParams?.get('redirect'), readerBeneath);
@@ -544,6 +548,12 @@ const ProfilePage = () => {
                       )}
                       <button onClick={handleRedeemGiftCard} className={actionButtonClass}>
                         {_('Redeem Gift Card')}
+                      </button>
+                      <button
+                        onClick={() => setActiveSection('storage')}
+                        className={actionButtonClass}
+                      >
+                        {_('Manage Storage')}
                       </button>
                     </div>
                   </>

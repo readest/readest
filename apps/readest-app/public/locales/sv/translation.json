@@ -3051,7 +3051,8 @@
   "Manage Billing": "Hantera fakturering",
   "Delete Library Data": "Ta bort biblioteksdata",
   "Delete Library Data?": "Ta bort biblioteksdata?",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "Den här åtgärden kan inte ångras. Alla böcker tas bort från den här enheten och från ditt Readest-molnbibliotek, tillsammans med läsförlopp, bokmärken och anteckningar. Böcker som du importerat på plats behåller sina originalfiler, och böcker som laddats upp till molnlagringen ligger kvar tills du tar bort dem under ”Readest Cloud-lagring”. Andra inloggade enheter behåller sina egna kopior.",
   "Manage your password, email address, and account deletion": "Hantera ditt lösenord, din e-postadress och kontoborttagning",
-  "View and remove files uploaded to Readest Cloud Storage": "Visa och ta bort filer som laddats upp till Readest Cloud-lagring"
+  "View and remove files uploaded to Readest Cloud Storage": "Visa och ta bort filer som laddats upp till Readest Cloud-lagring",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Den här åtgärden kan inte ångras. Alla böcker tas bort från den här enheten och från ditt Readest-molnbibliotek, tillsammans med läsförlopp, bokmärken och anteckningar. Böcker som du importerat på plats behåller sina originalfiler, och böcker som laddats upp till molnlagringen ligger kvar tills du tar bort dem under ”Hantera lagring”. Andra inloggade enheter behåller sina egna kopior.",
+  "Manage Storage": "Hantera lagring"
 }

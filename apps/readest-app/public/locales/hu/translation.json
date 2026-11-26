@@ -3051,7 +3051,8 @@
   "Manage Billing": "Számlázás kezelése",
   "Delete Library Data": "Könyvtáradatok törlése",
   "Delete Library Data?": "Törli a könyvtáradatokat?",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "Ez a művelet nem vonható vissza. Minden könyv törlődik erről az eszközről és a Readest felhőkönyvtárából, az olvasási előrehaladással, a könyvjelzőkkel és a jegyzetekkel együtt. A helyben importált könyvek megtartják az eredeti fájljaikat, a felhőtárhelyre feltöltött könyvek pedig ott maradnak, amíg el nem távolítja őket a «Readest felhőtárhely» részben. A többi bejelentkezett eszköz megtartja a saját másolatát.",
   "Manage your password, email address, and account deletion": "Jelszó, e-mail-cím és fióktörlés kezelése",
-  "View and remove files uploaded to Readest Cloud Storage": "A Readest felhőtárhelyre feltöltött fájlok megtekintése és eltávolítása"
+  "View and remove files uploaded to Readest Cloud Storage": "A Readest felhőtárhelyre feltöltött fájlok megtekintése és eltávolítása",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "Ez a művelet nem vonható vissza. Minden könyv törlődik erről az eszközről és a Readest felhőkönyvtárából, az olvasási előrehaladással, a könyvjelzőkkel és a jegyzetekkel együtt. A helyben importált könyvek megtartják az eredeti fájljaikat, a felhőtárhelyre feltöltött könyvek pedig ott maradnak, amíg el nem távolítja őket a «Tárhely kezelése» részben. A többi bejelentkezett eszköz megtartja a saját másolatát.",
+  "Manage Storage": "Tárhely kezelése"
 }

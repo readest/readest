@@ -3051,7 +3051,8 @@
   "Manage Billing": "مدیریت صورتحساب",
   "Delete Library Data": "حذف داده‌های کتابخانه",
   "Delete Library Data?": "داده‌های کتابخانه حذف شود؟",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "این عمل قابل بازگشت نیست. همه کتاب‌ها همراه با پیشرفت مطالعه، نشانک‌ها و یادداشت‌ها از این دستگاه و از کتابخانه ابری Readest شما حذف می‌شوند. کتاب‌هایی که در محل خود وارد کرده‌اید فایل‌های اصلی خود را حفظ می‌کنند و کتاب‌های بارگذاری‌شده در فضای ابری تا زمانی که آن‌ها را از «فضای ابری Readest» حذف نکنید باقی می‌مانند. دستگاه‌های دیگری که وارد شده‌اند نسخه‌های خود را نگه می‌دارند.",
   "Manage your password, email address, and account deletion": "رمز عبور، نشانی ایمیل و حذف حساب کاربری خود را مدیریت کنید",
-  "View and remove files uploaded to Readest Cloud Storage": "فایل‌های بارگذاری‌شده در فضای ابری Readest را مشاهده و حذف کنید"
+  "View and remove files uploaded to Readest Cloud Storage": "فایل‌های بارگذاری‌شده در فضای ابری Readest را مشاهده و حذف کنید",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "این عمل قابل بازگشت نیست. همه کتاب‌ها همراه با پیشرفت مطالعه، نشانک‌ها و یادداشت‌ها از این دستگاه و از کتابخانه ابری Readest شما حذف می‌شوند. کتاب‌هایی که در محل خود وارد کرده‌اید فایل‌های اصلی خود را حفظ می‌کنند و کتاب‌های بارگذاری‌شده در فضای ابری تا زمانی که آن‌ها را از «مدیریت فضای ذخیره‌سازی» حذف نکنید باقی می‌مانند. دستگاه‌های دیگری که وارد شده‌اند نسخه‌های خود را نگه می‌دارند.",
+  "Manage Storage": "مدیریت فضای ذخیره‌سازی"
 }

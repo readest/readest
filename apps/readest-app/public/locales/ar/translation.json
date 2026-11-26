@@ -3367,7 +3367,8 @@
   "Manage Billing": "إدارة الفوترة",
   "Delete Library Data": "حذف بيانات المكتبة",
   "Delete Library Data?": "هل تريد حذف بيانات المكتبة؟",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "لا يمكن التراجع عن هذا الإجراء. ستتم إزالة كل كتاب من هذا الجهاز ومن مكتبتك السحابية في Readest، إلى جانب تقدم القراءة والإشارات المرجعية والتعليقات. تحتفظ الكتب التي استوردتها في مكانها بملفاتها الأصلية، وتبقى الكتب المرفوعة إلى التخزين السحابي هناك حتى تحذفها من «تخزين Readest السحابي». تحتفظ الأجهزة الأخرى التي سجّلت الدخول بنسخها الخاصة.",
   "Manage your password, email address, and account deletion": "أدِر كلمة المرور وعنوان البريد الإلكتروني وحذف الحساب",
-  "View and remove files uploaded to Readest Cloud Storage": "اعرض وأزل الملفات المرفوعة إلى تخزين Readest السحابي"
+  "View and remove files uploaded to Readest Cloud Storage": "اعرض وأزل الملفات المرفوعة إلى تخزين Readest السحابي",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "لا يمكن التراجع عن هذا الإجراء. ستتم إزالة كل كتاب من هذا الجهاز ومن مكتبتك السحابية في Readest، إلى جانب تقدم القراءة والإشارات المرجعية والتعليقات. تحتفظ الكتب التي استوردتها في مكانها بملفاتها الأصلية، وتبقى الكتب المرفوعة إلى التخزين السحابي هناك حتى تحذفها من «إدارة التخزين». تحتفظ الأجهزة الأخرى التي سجّلت الدخول بنسخها الخاصة.",
+  "Manage Storage": "إدارة التخزين"
 }

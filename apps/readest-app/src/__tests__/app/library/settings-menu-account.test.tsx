@@ -118,20 +118,16 @@ it('renders the reorganized Account submenu items and routes each to its target 
   render(<SettingsMenu onPullLibrary={vi.fn()} setIsDropdownOpen={mocks.setIsDropdownOpen} />);
 
   expect(screen.getByText('Account')).toBeTruthy();
-  expect(screen.getByText('Storage')).toBeTruthy();
-  expect(screen.getByText('Translation')).toBeTruthy();
-  expect(screen.queryByText('Cloud Storage')).toBeNull();
   expect(screen.getByText('Subscription')).toBeTruthy();
   expect(screen.getByText('Sync Settings')).toBeTruthy();
   expect(screen.getByText('Shared Links')).toBeTruthy();
   expect(screen.getByText('Login & Security')).toBeTruthy();
   expect(screen.getByText('Sign Out')).toBeTruthy();
 
-  fireEvent.click(screen.getByText('Storage'));
-  expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router, 'storage');
-
-  fireEvent.click(screen.getByText('Translation'));
+  // The Storage and Translation quota rows open the Subscription page.
+  fireEvent.click(screen.getByText('Storage,Translation'));
   expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router);
+  mocks.navigateToProfile.mockClear();
 
   fireEvent.click(screen.getByText('Subscription'));
   expect(mocks.navigateToProfile).toHaveBeenLastCalledWith(mocks.router);

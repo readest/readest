@@ -2972,7 +2972,8 @@
   "Manage Billing": "결제 관리",
   "Delete Library Data": "라이브러리 데이터 삭제",
   "Delete Library Data?": "라이브러리 데이터를 삭제하시겠습니까?",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "이 작업은 되돌릴 수 없습니다. 모든 책이 읽기 진행률, 북마크, 주석과 함께 이 기기와 Readest 클라우드 서재에서 삭제됩니다. 원래 위치에서 가져온 책은 원본 파일이 유지되며, 클라우드 저장소에 업로드된 책은 「Readest 클라우드 저장소」에서 삭제할 때까지 남아 있습니다. 로그인된 다른 기기에는 각자의 사본이 남아 있습니다.",
   "Manage your password, email address, and account deletion": "비밀번호, 이메일 주소 및 계정 삭제를 관리합니다",
-  "View and remove files uploaded to Readest Cloud Storage": "Readest 클라우드 저장소에 업로드된 파일을 확인하고 삭제합니다"
+  "View and remove files uploaded to Readest Cloud Storage": "Readest 클라우드 저장소에 업로드된 파일을 확인하고 삭제합니다",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "이 작업은 되돌릴 수 없습니다. 모든 책이 읽기 진행률, 북마크, 주석과 함께 이 기기와 Readest 클라우드 서재에서 삭제됩니다. 원래 위치에서 가져온 책은 원본 파일이 유지되며, 클라우드 저장소에 업로드된 책은 「저장소 관리」에서 삭제할 때까지 남아 있습니다. 로그인된 다른 기기에는 각자의 사본이 남아 있습니다.",
+  "Manage Storage": "저장소 관리"
 }

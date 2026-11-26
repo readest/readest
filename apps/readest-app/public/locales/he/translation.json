@@ -3130,7 +3130,8 @@
   "Manage Billing": "ניהול חיוב",
   "Delete Library Data": "מחיקת נתוני הספרייה",
   "Delete Library Data?": "למחוק את נתוני הספרייה?",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "לא ניתן לבטל פעולה זו. כל הספרים יוסרו ממכשיר זה ומספריית הענן שלך ב-Readest, יחד עם התקדמות הקריאה, הסימניות וההערות. ספרים שייבאת במקומם שומרים על הקבצים המקוריים שלהם, וספרים שהועלו לאחסון הענן יישארו שם עד שתסיר אותם ב«אחסון Readest Cloud». מכשירים אחרים שמחוברים לחשבון שומרים על העותקים שלהם.",
   "Manage your password, email address, and account deletion": "ניהול הסיסמה, כתובת האימייל ומחיקת החשבון",
-  "View and remove files uploaded to Readest Cloud Storage": "הצגה והסרה של קבצים שהועלו אל אחסון Readest Cloud"
+  "View and remove files uploaded to Readest Cloud Storage": "הצגה והסרה של קבצים שהועלו אל אחסון Readest Cloud",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "לא ניתן לבטל פעולה זו. כל הספרים יוסרו ממכשיר זה ומספריית הענן שלך ב-Readest, יחד עם התקדמות הקריאה, הסימניות וההערות. ספרים שייבאת במקומם שומרים על הקבצים המקוריים שלהם, וספרים שהועלו לאחסון הענן יישארו שם עד שתסיר אותם ב«נהל אחסון». מכשירים אחרים שמחוברים לחשבון שומרים על העותקים שלהם.",
+  "Manage Storage": "נהל אחסון"
 }

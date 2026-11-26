@@ -109,12 +109,12 @@ afterEach(() => {
   mocks.giftOnly = false;
 });
 
+const goBack = () => fireEvent.click(screen.getByRole('button', { name: 'Go Back' }));
+
 it.each([
-  ['storage', 'storage manager'],
   ['shared-links', 'shared links section'],
-  ['sync', 'sync categories section'],
   ['security', 'Login & Security'],
-] as const)('opens section=%s directly, hides UsageStats/Plans, and navigates back on Go Back', (section, expectedText) => {
+] as const)('opens section=%s directly and goes back to the Subscription page', (section, expectedText) => {
   mocks.params = new URLSearchParams({ section, redirect: '/library' });
   render(<ProfilePage />);
 
@@ -122,12 +122,39 @@ it.each([
   expect(screen.queryByText('usage stats')).toBeNull();
   expect(screen.queryByText('plans comparison')).toBeNull();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Go Back' }));
+  goBack();
+  expect(screen.queryByText(expectedText)).toBeNull();
+  expect(screen.getByText('usage stats')).toBeTruthy();
+  expect(screen.getByText('plans comparison')).toBeTruthy();
+  expect(navigateBackFromProfile).not.toHaveBeenCalled();
 
-  if (section === 'storage') {
-    expect(mocks.refresh).toHaveBeenCalledTimes(1);
-  }
+  goBack();
   expect(navigateBackFromProfile).toHaveBeenCalledWith(mocks.router, '/library', false);
+});
+
+it('opens section=sync directly and goes back to the opener', () => {
+  mocks.params = new URLSearchParams({ section: 'sync', redirect: '/library' });
+  render(<ProfilePage />);
+
+  expect(screen.getByText('sync categories section')).toBeTruthy();
+  goBack();
+  expect(navigateBackFromProfile).toHaveBeenCalledWith(mocks.router, '/library', false);
+});
+
+it('opens Manage Storage from the Subscription page and goes back to it', () => {
+  mocks.params = new URLSearchParams({ redirect: '/library' });
+  render(<ProfilePage />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Manage Storage' }));
+  expect(screen.getByText('storage manager')).toBeTruthy();
+  expect(screen.queryByText('plans comparison')).toBeNull();
+
+  goBack();
+  // Files removed there change the storage quota.
+  expect(mocks.refresh).toHaveBeenCalledTimes(1);
+  expect(screen.queryByText('storage manager')).toBeNull();
+  expect(screen.getByText('plans comparison')).toBeTruthy();
+  expect(navigateBackFromProfile).not.toHaveBeenCalled();
 });
 
 it('renders Manage Billing alongside Redeem Gift Card for paid web plans and hides Manage Billing when giftOnly', async () => {

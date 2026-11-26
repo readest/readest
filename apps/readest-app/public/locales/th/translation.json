@@ -2972,7 +2972,8 @@
   "Manage Billing": "จัดการการเรียกเก็บเงิน",
   "Delete Library Data": "ลบข้อมูลคลังหนังสือ",
   "Delete Library Data?": "ลบข้อมูลคลังหนังสือหรือไม่?",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "การกระทำนี้ไม่สามารถย้อนกลับได้ หนังสือทุกเล่มจะถูกลบออกจากอุปกรณ์นี้และจากคลังหนังสือบนคลาวด์ Readest ของคุณ พร้อมกับความคืบหน้าการอ่าน บุ๊กมาร์ก และคำอธิบายประกอบ หนังสือที่คุณนำเข้าในตำแหน่งเดิมจะยังคงไฟล์ต้นฉบับไว้ และหนังสือที่อัปโหลดไปยังพื้นที่เก็บข้อมูลบนคลาวด์จะยังคงอยู่จนกว่าคุณจะลบออกใน «พื้นที่เก็บข้อมูล Readest Cloud» อุปกรณ์อื่นที่ลงชื่อเข้าใช้จะยังคงเก็บสำเนาของตนเองไว้",
   "Manage your password, email address, and account deletion": "จัดการรหัสผ่าน ที่อยู่อีเมล และการลบบัญชีของคุณ",
-  "View and remove files uploaded to Readest Cloud Storage": "ดูและลบไฟล์ที่อัปโหลดไปยังพื้นที่เก็บข้อมูล Readest Cloud"
+  "View and remove files uploaded to Readest Cloud Storage": "ดูและลบไฟล์ที่อัปโหลดไปยังพื้นที่เก็บข้อมูล Readest Cloud",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "การกระทำนี้ไม่สามารถย้อนกลับได้ หนังสือทุกเล่มจะถูกลบออกจากอุปกรณ์นี้และจากคลังหนังสือบนคลาวด์ Readest ของคุณ พร้อมกับความคืบหน้าการอ่าน บุ๊กมาร์ก และคำอธิบายประกอบ หนังสือที่คุณนำเข้าในตำแหน่งเดิมจะยังคงไฟล์ต้นฉบับไว้ และหนังสือที่อัปโหลดไปยังพื้นที่เก็บข้อมูลบนคลาวด์จะยังคงอยู่จนกว่าคุณจะลบออกใน «จัดการพื้นที่เก็บข้อมูล» อุปกรณ์อื่นที่ลงชื่อเข้าใช้จะยังคงเก็บสำเนาของตนเองไว้",
+  "Manage Storage": "จัดการพื้นที่เก็บข้อมูล"
 }

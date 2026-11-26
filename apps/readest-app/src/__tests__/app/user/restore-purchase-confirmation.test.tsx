@@ -104,7 +104,7 @@ it('refreshes verified restored purchases before showing the account deletion wa
     mocks.customizationPurchased = true;
     return true;
   });
-  const { rerender } = render(<ProfilePage />);
+  render(<ProfilePage />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Restore Purchase' }));
   await waitFor(() => expect(mocks.verifyApple).toHaveBeenCalledTimes(1));
@@ -112,8 +112,10 @@ it('refreshes verified restored purchases before showing the account deletion wa
   finishVerification!();
   await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
 
+  // Delete Account sits under Login & Security, opened from the Account menu.
+  cleanup();
   mocks.params = new URLSearchParams({ section: 'security' });
-  rerender(<ProfilePage />);
+  render(<ProfilePage />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Delete Account' }));
   expect(screen.getByText('This account has a paid plan or purchases.')).toBeTruthy();

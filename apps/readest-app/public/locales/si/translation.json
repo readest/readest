@@ -3051,7 +3051,8 @@
   "Manage Billing": "බිල්පත් කළමනාකරණය කරන්න",
   "Delete Library Data": "පුස්තකාල දත්ත මකන්න",
   "Delete Library Data?": "පුස්තකාල දත්ත මකන්නද?",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "මෙම ක්‍රියාව අහෝසි කළ නොහැක. කියවීමේ ප්‍රගතිය, පිටු සලකුණු සහ විවරණ සමඟ සෑම පොතක්ම මෙම උපාංගයෙන් සහ ඔබේ Readest වලාකුළු පුස්තකාලයෙන් ඉවත් කරනු ලැබේ. ඔබ එහිම ආයාත කළ පොත්වල මුල් ගොනු පවතී, සහ වලාකුළු ගබඩාවට උඩුගත කළ පොත් ඔබ «Readest ක්ලවුඩ් ගබඩාව» තුළින් ඉවත් කරන තුරු එහි පවතී. පුරනය වී ඇති අනෙකුත් උපාංග ඒවායේම පිටපත් තබා ගනී.",
   "Manage your password, email address, and account deletion": "ඔබේ මුරපදය, විද්‍යුත් තැපැල් ලිපිනය සහ ගිණුම මැකීම කළමනාකරණය කරන්න",
-  "View and remove files uploaded to Readest Cloud Storage": "Readest ක්ලවුඩ් ගබඩාවට උඩුගත කළ ගොනු බලන්න සහ ඉවත් කරන්න"
+  "View and remove files uploaded to Readest Cloud Storage": "Readest ක්ලවුඩ් ගබඩාවට උඩුගත කළ ගොනු බලන්න සහ ඉවත් කරන්න",
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Manage Storage. Other signed-in devices keep their own copies.": "මෙම ක්‍රියාව අහෝසි කළ නොහැක. කියවීමේ ප්‍රගතිය, පිටු සලකුණු සහ විවරණ සමඟ සෑම පොතක්ම මෙම උපාංගයෙන් සහ ඔබේ Readest වලාකුළු පුස්තකාලයෙන් ඉවත් කරනු ලැබේ. ඔබ එහිම ආයාත කළ පොත්වල මුල් ගොනු පවතී, සහ වලාකුළු ගබඩාවට උඩුගත කළ පොත් ඔබ «ගබඩා කළමනාකරණය කරන්න» තුළින් ඉවත් කරන තුරු එහි පවතී. පුරනය වී ඇති අනෙකුත් උපාංග ඒවායේම පිටපත් තබා ගනී.",
+  "Manage Storage": "ගබඩා කළමනාකරණය කරන්න"
 }

@@ -124,7 +124,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsDropdownOpen?.(false);
   };
 
-  const handleUserSection = (section: 'sync' | 'storage' | 'shared-links' | 'security') => {
+  const handleUserSection = (section: 'sync' | 'shared-links' | 'security') => {
     navigateToProfile(router, section);
     setIsDropdownOpen?.(false);
   };
@@ -339,18 +339,17 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
                       })
               }
             />
-            {quotas.map((quota, index) => (
+            {quotas.length > 0 && (
               <button
-                key={quota.name}
-                onClick={index === 0 ? () => handleUserSection('storage') : handleUserProfile}
+                onClick={handleUserProfile}
                 className='hover:bg-base-300 w-full rounded-md'
                 style={{
                   paddingInlineStart: `${iconSize}px`,
                 }}
               >
-                <Quota quotas={[quota]} labelClassName='h-10 ps-3 pe-2' />
+                <Quota quotas={quotas} labelClassName='h-10 ps-3 pe-2' />
               </button>
-            ))}
+            )}
             <MenuItem label={_('Subscription')} onClick={handleUserProfile} />
             <MenuItem label={_('Sync Settings')} onClick={() => handleUserSection('sync')} />
             <MenuItem label={_('Shared Links')} onClick={() => handleUserSection('shared-links')} />
