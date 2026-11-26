@@ -245,11 +245,25 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     const illustration = `<figure style="margin: 0; height: 260px; overflow: hidden"><img alt="" style="display: block; margin: 0 auto; width: auto; height: auto" src="${COVER}"/></figure>`;
     const { doc } = await open(`${illustration}${TEXT}`, '');
     const figure = doc.querySelector('figure')!.getBoundingClientRect();
-    const image = doc.querySelector('figure img')!.getBoundingClientRect();
+    const img = doc.querySelector<HTMLImageElement>('figure img')!;
+    await img.decode();
+    expect(img.naturalWidth).toBeGreaterThan(0);
+    expect(img.checkVisibility({ visibilityProperty: true, opacityProperty: true })).toBe(true);
+    const image = img.getBoundingClientRect();
     expect(image.top).toBeGreaterThanOrEqual(figure.top);
     expect(image.bottom).toBeLessThanOrEqual(figure.bottom);
     expect(image.left + image.width / 2).toBeCloseTo(figure.left + figure.width / 2, 0);
     expect(image.width / image.height).toBeCloseTo(600 / 900, 2);
+  });
+
+  it('keeps an absolutely positioned image at the size needed for a deliberate crop', async () => {
+    const sprite = `<figure style="position: relative; margin: 0; height: 30px; overflow: hidden"><img alt="" style="position: absolute; top: -90px; width: 200px; height: 300px" src="${COVER}"/></figure>`;
+    const { doc } = await open(`${sprite}${TEXT}`, '');
+    const figure = doc.querySelector('figure')!.getBoundingClientRect();
+    const image = doc.querySelector('figure img')!.getBoundingClientRect();
+    expect(image.height).toBe(300);
+    expect(image.top).toBeLessThan(figure.top);
+    expect(image.bottom).toBeGreaterThan(figure.bottom);
   });
 
   // After text or an empty block with a height, the plate moves to the next
