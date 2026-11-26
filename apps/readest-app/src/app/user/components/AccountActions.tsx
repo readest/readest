@@ -252,13 +252,13 @@ const AccountActions: React.FC<AccountActionsProps> = ({
           onClick={onResetPassword}
           className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
         >
-          {_('Reset Password')}
+          {_('Change Password')}
         </button>
         <button
           onClick={onUpdateEmail}
           className='bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto'
         >
-          {_('Update Email')}
+          {_('Change Email')}
         </button>
         <button
           onClick={onLogout}

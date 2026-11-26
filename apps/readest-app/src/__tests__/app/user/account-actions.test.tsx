@@ -194,3 +194,13 @@ describe('gift-only holders', () => {
     expect(screen.getByRole('button', { name: 'Manage Subscription' })).toBeTruthy();
   });
 });
+
+describe('sign-in details', () => {
+  it('labels the password and email actions as changes', () => {
+    renderActions();
+    expect(screen.getByRole('button', { name: 'Change Password' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Change Email' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Reset Password' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Update Email' })).toBeNull();
+  });
+});
