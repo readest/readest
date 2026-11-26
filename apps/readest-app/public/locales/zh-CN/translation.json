@@ -2973,5 +2973,7 @@
   "Manage Billing": "管理账单",
   "Delete Library Data": "删除书库数据",
   "Delete Library Data?": "删除书库数据？",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "此操作无法撤销。所有图书将连同阅读进度、书签和批注一起从本设备和您的 Readest 云端书库中删除。就地导入的图书会保留其原始文件，已上传到云存储的图书会一直保留，直到您在「Readest 云存储」中将其移除。其他已登录设备仍保留各自的副本。"
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "此操作无法撤销。所有图书将连同阅读进度、书签和批注一起从本设备和您的 Readest 云端书库中删除。就地导入的图书会保留其原始文件，已上传到云存储的图书会一直保留，直到您在「Readest 云存储」中将其移除。其他已登录设备仍保留各自的副本。",
+  "Manage your password, email address, and account deletion": "管理您的密码、邮箱地址以及账号注销",
+  "View and remove files uploaded to Readest Cloud Storage": "查看并移除上传到 Readest 云存储的文件"
 }

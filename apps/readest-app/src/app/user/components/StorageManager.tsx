@@ -284,7 +284,12 @@ const StorageManager = () => {
 
   return (
     <div className='flex flex-col gap-6'>
-      <h3 className='text-base-content text-lg font-semibold'>{_('Readest Cloud Storage')}</h3>
+      <div className='flex flex-col gap-2'>
+        <h3 className='text-base-content text-lg font-semibold'>{_('Readest Cloud Storage')}</h3>
+        <p className='text-base-content/70 text-sm'>
+          {_('View and remove files uploaded to Readest Cloud Storage')}
+        </p>
+      </div>
       {/* Stats Section */}
       {stats ? (
         <div className='bg-base-100 border-base-300 rounded-lg border p-4'>

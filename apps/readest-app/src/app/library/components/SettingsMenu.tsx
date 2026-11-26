@@ -348,7 +348,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
                   paddingInlineStart: `${iconSize}px`,
                 }}
               >
-                <Quota quotas={[quota]} labelClassName='h-10 pl-3 pr-2' />
+                <Quota quotas={[quota]} labelClassName='h-10 ps-3 pe-2' />
               </button>
             ))}
             <MenuItem label={_('Subscription')} onClick={handleUserProfile} />
@@ -476,7 +476,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           {user && (
             <MenuItem
               label={_('Delete Library Data')}
-              labelClass='not-eink:text-rose-600'
+              labelClass='not-eink:text-error'
               onClick={() => {
                 setIsDropdownOpen?.(false);
                 openDeleteLibraryDialog();

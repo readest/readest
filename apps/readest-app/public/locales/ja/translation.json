@@ -2973,5 +2973,7 @@
   "Manage Billing": "請求を管理",
   "Delete Library Data": "ライブラリデータを削除",
   "Delete Library Data?": "ライブラリデータを削除しますか？",
-  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "この操作は取り消せません。すべての本が、読書の進捗、ブックマーク、注釈とともに、このデバイスと Readest クラウドライブラリから削除されます。その場で読み込んだ本は元のファイルが保持され、クラウドストレージにアップロードされた本は「Readest クラウドストレージ」から削除するまで残ります。サインイン済みの他のデバイスにはそれぞれのコピーが残ります。"
+  "This action cannot be undone. Every book will be removed from this device and from your Readest cloud library, along with reading progress, bookmarks, and annotations. Books you imported in place keep their original files, and books uploaded to cloud storage stay there until you remove them under Readest Cloud Storage. Other signed-in devices keep their own copies.": "この操作は取り消せません。すべての本が、読書の進捗、ブックマーク、注釈とともに、このデバイスと Readest クラウドライブラリから削除されます。その場で読み込んだ本は元のファイルが保持され、クラウドストレージにアップロードされた本は「Readest クラウドストレージ」から削除するまで残ります。サインイン済みの他のデバイスにはそれぞれのコピーが残ります。",
+  "Manage your password, email address, and account deletion": "パスワード、メールアドレス、アカウント削除を管理します",
+  "View and remove files uploaded to Readest Cloud Storage": "Readest クラウドストレージにアップロードされたファイルの確認と削除を行います"
 }

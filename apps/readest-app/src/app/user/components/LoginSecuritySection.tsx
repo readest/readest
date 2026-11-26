@@ -55,7 +55,12 @@ export const LoginSecuritySection: React.FC<LoginSecuritySectionProps> = ({
         </DeleteConfirmationModal>
       )}
 
-      <h3 className='text-base-content text-lg font-semibold'>{_('Login & Security')}</h3>
+      <div className='flex flex-col gap-2'>
+        <h3 className='text-base-content text-lg font-semibold'>{_('Login & Security')}</h3>
+        <p className='text-base-content/70 text-sm'>
+          {_('Manage your password, email address, and account deletion')}
+        </p>
+      </div>
 
       <div className='flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3'>
         <button
@@ -72,13 +77,13 @@ export const LoginSecuritySection: React.FC<LoginSecuritySectionProps> = ({
         </button>
       </div>
 
-      <div className='eink-bordered mt-4 flex w-full flex-col gap-3 rounded-lg border p-4 not-eink:border-rose-200 sm:w-fit sm:min-w-64'>
-        <h4 className='text-base-content text-sm font-semibold not-eink:text-rose-700'>
+      <div className='eink-bordered mt-4 flex w-full flex-col gap-3 rounded-lg border p-4 not-eink:border-error/30 sm:w-fit sm:min-w-64'>
+        <h4 className='text-base-content text-sm font-semibold not-eink:text-error'>
           {_('Danger Zone')}
         </h4>
         <button
           onClick={() => setConfirmOpen(true)}
-          className='eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 not-eink:border-rose-300 not-eink:bg-rose-100 not-eink:text-rose-900 not-eink:hover:bg-rose-200'
+          className='eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 not-eink:border-error/40 not-eink:bg-error/10 not-eink:text-error not-eink:hover:bg-error/20'
         >
           {_('Delete Account')}
         </button>
