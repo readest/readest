@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{client}} auf {{os}}",
   "Unknown device": "Unbekanntes Gerät",
   "Last active {{date}}": "Zuletzt aktiv am {{date}}",
-  "Sign out {{device}}": "{{device}} abmelden"
+  "Sign out {{device}}": "{{device}} abmelden",
+  "Number of Devices": "Anzahl der Geräte",
+  "Unlimited": "Unbegrenzt"
 }

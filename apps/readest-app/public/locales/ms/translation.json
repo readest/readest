@@ -2971,5 +2971,7 @@
   "{{client}} on {{os}}": "{{client}} pada {{os}}",
   "Unknown device": "Peranti tidak diketahui",
   "Last active {{date}}": "Kali terakhir aktif {{date}}",
-  "Sign out {{device}}": "Log keluar {{device}}"
+  "Sign out {{device}}": "Log keluar {{device}}",
+  "Number of Devices": "Bilangan peranti",
+  "Unlimited": "Tanpa had"
 }

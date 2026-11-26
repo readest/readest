@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{os}} üzerinde {{client}}",
   "Unknown device": "Bilinmeyen cihaz",
   "Last active {{date}}": "Son etkinlik: {{date}}",
-  "Sign out {{device}}": "{{device}} oturumunu kapat"
+  "Sign out {{device}}": "{{device}} oturumunu kapat",
+  "Number of Devices": "Cihaz sayısı",
+  "Unlimited": "Sınırsız"
 }

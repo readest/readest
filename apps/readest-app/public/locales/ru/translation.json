@@ -3208,5 +3208,7 @@
   "{{client}} on {{os}}": "{{client}} на {{os}}",
   "Unknown device": "Неизвестное устройство",
   "Last active {{date}}": "Последняя активность: {{date}}",
-  "Sign out {{device}}": "Выйти на {{device}}"
+  "Sign out {{device}}": "Выйти на {{device}}",
+  "Number of Devices": "Количество устройств",
+  "Unlimited": "Без ограничений"
 }

@@ -3366,5 +3366,7 @@
   "{{client}} on {{os}}": "{{client}} على {{os}}",
   "Unknown device": "جهاز غير معروف",
   "Last active {{date}}": "آخر نشاط: {{date}}",
-  "Sign out {{device}}": "تسجيل خروج {{device}}"
+  "Sign out {{device}}": "تسجيل خروج {{device}}",
+  "Number of Devices": "عدد الأجهزة",
+  "Unlimited": "غير محدود"
 }

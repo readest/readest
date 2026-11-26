@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{client}} روی {{os}}",
   "Unknown device": "دستگاه ناشناخته",
   "Last active {{date}}": "آخرین فعالیت: {{date}}",
-  "Sign out {{device}}": "خروج از {{device}}"
+  "Sign out {{device}}": "خروج از {{device}}",
+  "Number of Devices": "تعداد دستگاه‌ها",
+  "Unlimited": "نامحدود"
 }

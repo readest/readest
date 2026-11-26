@@ -5,6 +5,7 @@ import {
   DEFAULT_DAILY_TRANSLATION_QUOTA,
   DEFAULT_DAILY_TTS_QUOTA,
   DEFAULT_STORAGE_QUOTA,
+  FREE_PLAN_DEVICE_LIMIT,
 } from '@/services/constants';
 import { isWebAppPlatform } from '@/services/environment';
 import { getDailyUsage } from '@/services/translators/dailyUsage';
@@ -197,8 +198,6 @@ export const isSelfHosted = (): boolean =>
  */
 export const isCustomizationAllowed = (plan: UserPlan, customizationPurchased: boolean): boolean =>
   isSelfHosted() || customizationPurchased || PREMIUM_PLANS.includes(plan);
-
-export const FREE_PLAN_DEVICE_LIMIT = 3;
 
 /**
  * How many devices the account may sign in to sync on: three on the Free

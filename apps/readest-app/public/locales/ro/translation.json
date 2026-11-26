@@ -3129,5 +3129,7 @@
   "{{client}} on {{os}}": "{{client}} pe {{os}}",
   "Unknown device": "Dispozitiv necunoscut",
   "Last active {{date}}": "Ultima activitate: {{date}}",
-  "Sign out {{device}}": "Deconectează {{device}}"
+  "Sign out {{device}}": "Deconectează {{device}}",
+  "Number of Devices": "Număr de dispozitive",
+  "Unlimited": "Nelimitat"
 }

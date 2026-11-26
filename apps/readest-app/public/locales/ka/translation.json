@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{client}} ({{os}})",
   "Unknown device": "უცნობი მოწყობილობა",
   "Last active {{date}}": "ბოლო აქტივობა: {{date}}",
-  "Sign out {{device}}": "{{device}}-დან გამოსვლა"
+  "Sign out {{device}}": "{{device}}-დან გამოსვლა",
+  "Number of Devices": "მოწყობილობების რაოდენობა",
+  "Unlimited": "შეუზღუდავი"
 }

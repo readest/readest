@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{os}} හි {{client}}",
   "Unknown device": "නොදන්නා උපාංගය",
   "Last active {{date}}": "අවසන් වරට සක්‍රිය: {{date}}",
-  "Sign out {{device}}": "{{device}} ඉවත් කරන්න"
+  "Sign out {{device}}": "{{device}} ඉවත් කරන්න",
+  "Number of Devices": "උපාංග ගණන",
+  "Unlimited": "අසීමිත"
 }

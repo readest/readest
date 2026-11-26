@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{client}} ({{os}})",
   "Unknown device": "Nomaʼlum qurilma",
   "Last active {{date}}": "Oxirgi faollik: {{date}}",
-  "Sign out {{device}}": "{{device}} dan chiqish"
+  "Sign out {{device}}": "{{device}} dan chiqish",
+  "Number of Devices": "Qurilmalar soni",
+  "Unlimited": "Cheksiz"
 }

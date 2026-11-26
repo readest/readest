@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{os}} இல் {{client}}",
   "Unknown device": "தெரியாத சாதனம்",
   "Last active {{date}}": "கடைசியாகச் செயலில்: {{date}}",
-  "Sign out {{device}}": "{{device}} இலிருந்து வெளியேறு"
+  "Sign out {{device}}": "{{device}} இலிருந்து வெளியேறு",
+  "Number of Devices": "சாதனங்களின் எண்ணிக்கை",
+  "Unlimited": "வரம்பற்றது"
 }

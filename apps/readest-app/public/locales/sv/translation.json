@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{client}} på {{os}}",
   "Unknown device": "Okänd enhet",
   "Last active {{date}}": "Senast aktiv {{date}}",
-  "Sign out {{device}}": "Logga ut {{device}}"
+  "Sign out {{device}}": "Logga ut {{device}}",
+  "Number of Devices": "Antal enheter",
+  "Unlimited": "Obegränsat"
 }

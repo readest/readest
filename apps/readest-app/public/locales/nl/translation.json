@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{client}} op {{os}}",
   "Unknown device": "Onbekend apparaat",
   "Last active {{date}}": "Laatst actief op {{date}}",
-  "Sign out {{device}}": "{{device}} uitloggen"
+  "Sign out {{device}}": "{{device}} uitloggen",
+  "Number of Devices": "Aantal apparaten",
+  "Unlimited": "Onbeperkt"
 }

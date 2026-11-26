@@ -2971,5 +2971,7 @@
   "{{client}} on {{os}}": "{{os}} སྟེང་གི་ {{client}}",
   "Unknown device": "ངོ་མི་ཤེས་པའི་སྒྲིག་ཆས།",
   "Last active {{date}}": "མཐའ་མའི་བྱ་འགུལ། {{date}}",
-  "Sign out {{device}}": "{{device}} ཕྱིར་བུད།"
+  "Sign out {{device}}": "{{device}} ཕྱིར་བུད།",
+  "Number of Devices": "སྒྲིག་ཆས་ཀྱི་གྲངས་ཀ།",
+  "Unlimited": "ཚད་མེད།"
 }

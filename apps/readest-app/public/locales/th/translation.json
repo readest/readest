@@ -2971,5 +2971,7 @@
   "{{client}} on {{os}}": "{{client}} บน {{os}}",
   "Unknown device": "อุปกรณ์ที่ไม่รู้จัก",
   "Last active {{date}}": "ใช้งานล่าสุด {{date}}",
-  "Sign out {{device}}": "ออกจากระบบ {{device}}"
+  "Sign out {{device}}": "ออกจากระบบ {{device}}",
+  "Number of Devices": "จำนวนอุปกรณ์",
+  "Unlimited": "ไม่จำกัด"
 }

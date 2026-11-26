@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{client}} ({{os}})",
   "Unknown device": "Ismeretlen eszköz",
   "Last active {{date}}": "Utoljára aktív: {{date}}",
-  "Sign out {{device}}": "{{device}} kijelentkeztetése"
+  "Sign out {{device}}": "{{device}} kijelentkeztetése",
+  "Number of Devices": "Eszközök száma",
+  "Unlimited": "Korlátlan"
 }

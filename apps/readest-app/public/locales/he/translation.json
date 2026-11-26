@@ -3129,5 +3129,7 @@
   "{{client}} on {{os}}": "{{client}} ב-{{os}}",
   "Unknown device": "מכשיר לא ידוע",
   "Last active {{date}}": "פעיל לאחרונה: {{date}}",
-  "Sign out {{device}}": "נתק את {{device}}"
+  "Sign out {{device}}": "נתק את {{device}}",
+  "Number of Devices": "מספר מכשירים",
+  "Unlimited": "ללא הגבלה"
 }

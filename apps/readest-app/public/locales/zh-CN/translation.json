@@ -2971,5 +2971,7 @@
   "{{client}} on {{os}}": "{{os}} 上的 {{client}}",
   "Unknown device": "未知设备",
   "Last active {{date}}": "最近活跃：{{date}}",
-  "Sign out {{device}}": "让 {{device}} 退出登录"
+  "Sign out {{device}}": "让 {{device}} 退出登录",
+  "Number of Devices": "设备数量",
+  "Unlimited": "无限制"
 }

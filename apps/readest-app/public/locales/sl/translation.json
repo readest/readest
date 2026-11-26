@@ -3208,5 +3208,7 @@
   "{{client}} on {{os}}": "{{client}} na {{os}}",
   "Unknown device": "Neznana naprava",
   "Last active {{date}}": "Nazadnje aktivna: {{date}}",
-  "Sign out {{device}}": "Odjavi {{device}}"
+  "Sign out {{device}}": "Odjavi {{device}}",
+  "Number of Devices": "Število naprav",
+  "Unlimited": "Neomejeno"
 }

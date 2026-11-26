@@ -2971,5 +2971,7 @@
   "{{client}} on {{os}}": "{{os}} の {{client}}",
   "Unknown device": "不明なデバイス",
   "Last active {{date}}": "最終アクティブ: {{date}}",
-  "Sign out {{device}}": "{{device}} をサインアウト"
+  "Sign out {{device}}": "{{device}} をサインアウト",
+  "Number of Devices": "デバイス数",
+  "Unlimited": "無制限"
 }

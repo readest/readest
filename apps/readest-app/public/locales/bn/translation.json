@@ -3050,5 +3050,7 @@
   "{{client}} on {{os}}": "{{os}}-এ {{client}}",
   "Unknown device": "অজানা ডিভাইস",
   "Last active {{date}}": "সর্বশেষ সক্রিয়: {{date}}",
-  "Sign out {{device}}": "{{device}} সাইন আউট করুন"
+  "Sign out {{device}}": "{{device}} সাইন আউট করুন",
+  "Number of Devices": "ডিভাইসের সংখ্যা",
+  "Unlimited": "সীমাহীন"
 }

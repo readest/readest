@@ -2971,5 +2971,7 @@
   "{{client}} on {{os}}": "{{client}} di {{os}}",
   "Unknown device": "Perangkat tidak dikenal",
   "Last active {{date}}": "Terakhir aktif {{date}}",
-  "Sign out {{device}}": "Keluarkan {{device}}"
+  "Sign out {{device}}": "Keluarkan {{device}}",
+  "Number of Devices": "Jumlah perangkat",
+  "Unlimited": "Tanpa batas"
 }

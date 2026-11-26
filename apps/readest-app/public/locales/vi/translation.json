@@ -2971,5 +2971,7 @@
   "{{client}} on {{os}}": "{{client}} trên {{os}}",
   "Unknown device": "Thiết bị không xác định",
   "Last active {{date}}": "Hoạt động lần cuối: {{date}}",
-  "Sign out {{device}}": "Đăng xuất {{device}}"
+  "Sign out {{device}}": "Đăng xuất {{device}}",
+  "Number of Devices": "Số thiết bị",
+  "Unlimited": "Không giới hạn"
 }

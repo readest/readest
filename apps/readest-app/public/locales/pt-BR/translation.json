@@ -3129,5 +3129,7 @@
   "{{client}} on {{os}}": "{{client}} em {{os}}",
   "Unknown device": "Dispositivo desconhecido",
   "Last active {{date}}": "Última atividade: {{date}}",
-  "Sign out {{device}}": "Desconectar {{device}}"
+  "Sign out {{device}}": "Desconectar {{device}}",
+  "Number of Devices": "Número de dispositivos",
+  "Unlimited": "Ilimitado"
 }

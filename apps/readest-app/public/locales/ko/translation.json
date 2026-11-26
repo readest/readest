@@ -2971,5 +2971,7 @@
   "{{client}} on {{os}}": "{{os}}의 {{client}}",
   "Unknown device": "알 수 없는 기기",
   "Last active {{date}}": "마지막 활동: {{date}}",
-  "Sign out {{device}}": "{{device}} 로그아웃"
+  "Sign out {{device}}": "{{device}} 로그아웃",
+  "Number of Devices": "기기 수",
+  "Unlimited": "무제한"
 }
