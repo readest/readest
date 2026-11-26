@@ -32,7 +32,11 @@ import { mountAdditionalFonts, mountCustomFont } from '@/styles/fonts';
 import { mountWhiteTransparencyFilter } from '@/utils/imageBackground';
 import { eventDispatcher } from '@/utils/event';
 import { getCfiSpinePrefix } from '@/utils/cfi';
-import { isLinkTargetVisible, shouldCheckAsFootnote } from '../utils/footnoteHeuristics';
+import {
+  isLinkTargetVisible,
+  linksToDeclaredNote,
+  shouldCheckAsFootnote,
+} from '../utils/footnoteHeuristics';
 import { showTransientHighlight } from '../utils/transientHighlight';
 import { drawAnnotationOverlay } from '../utils/annotatorUtil';
 import { refreshSectionGlosses } from '../utils/wordlensSection';
@@ -761,7 +765,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
       'footnote-ref',
       'noteref',
     ];
-    if (footnoteClasses.some((cls) => anchor.classList.contains(cls))) {
+    if (
+      footnoteClasses.some((cls) => anchor.classList.contains(cls)) ||
+      linksToDeclaredNote(anchor)
+    ) {
       detail['follow'] = true;
     }
     if (shouldCheckAsFootnote(anchor)) {

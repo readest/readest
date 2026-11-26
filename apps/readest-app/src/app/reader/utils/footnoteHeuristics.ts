@@ -46,6 +46,23 @@ export const shouldCheckAsFootnote = (anchor: HTMLAnchorElement): boolean => {
   return true;
 };
 
+// A note marker the book declares. An XHTML section keeps `epub:type`
+// namespaced, an HTML one as a plain attribute.
+const DECLARED_NOTE_REF =
+  'a[href][*|type~="noteref"], a[href][epub\\:type~="noteref"], a[href][role~="doc-noteref"]';
+
+// A cross-reference in the text (`〔原注47参照〕`) is a plain link to a note
+// whose own marker sits elsewhere in the chapter. Report whether a declared
+// marker points where the link does, so the link opens that note as the
+// marker does (#7982).
+export const linksToDeclaredNote = (anchor: HTMLAnchorElement): boolean => {
+  const href = anchor.getAttribute('href');
+  if (!href?.includes('#')) return false;
+  return Array.from(anchor.ownerDocument.querySelectorAll(DECLARED_NOTE_REF)).some(
+    (marker) => marker.getAttribute('href') === href,
+  );
+};
+
 // The reader hides inline footnote bodies in `getLayoutStyles`
 // (`.duokan-footnote-content`, `.epubtype-footnote`, `aside[epub|type~=note]`
 // and friends), so a link pointing at one leads to a spot the reader cannot

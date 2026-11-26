@@ -60,6 +60,7 @@ vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({
 }));
 vi.mock('@/app/reader/utils/footnoteHeuristics', () => ({
   shouldCheckAsFootnote: () => false,
+  linksToDeclaredNote: () => false,
   isLinkTargetVisible: () => true,
 }));
 vi.mock('@/app/reader/utils/annotatorUtil', () => ({ drawAnnotationOverlay: () => {} }));
