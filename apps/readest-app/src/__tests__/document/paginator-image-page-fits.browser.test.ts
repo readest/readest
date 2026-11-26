@@ -269,6 +269,23 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(getComputedStyle(img).objectFit).toBe('contain');
   });
 
+  it('fits a clipping figure again after a restyle changes its height', async () => {
+    const fixture = `<figure style="margin: 0; width: 300px; height: 260px; overflow: hidden"><img alt="" style="display: block; width: 100%; height: auto" src="${COVER}"/></figure>`;
+    const { el, doc } = await open(`${fixture}${TEXT}`, '');
+    const img = doc.querySelector<HTMLImageElement>('figure img')!;
+    const figure = doc.querySelector('figure')!;
+    expect(img.getBoundingClientRect().height).toBe(260);
+
+    const styles = getStyles(makeViewSettings(), undefined, []);
+    for (const height of [200, 350]) {
+      el.setStyles?.(`${styles} figure { height: ${height}px !important; }`);
+      await doc.fonts.ready;
+      await frames(10);
+      expect(figure.getBoundingClientRect().height).toBe(height);
+      expect(img.getBoundingClientRect().height).toBe(height);
+    }
+  });
+
   const SPRITE = `data:image/svg+xml,${encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="200" height="300" fill="#933"/></svg>',
   )}`;
