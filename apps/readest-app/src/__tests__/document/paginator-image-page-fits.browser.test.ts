@@ -256,17 +256,23 @@ describe('a section holding only an image fits one page (readest#6676)', () => {
     expect(image.width / image.height).toBeCloseTo(600 / 900, 2);
   });
 
+  const SPRITE = `data:image/svg+xml,${encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="300"><rect width="200" height="300" fill="#933"/></svg>',
+  )}`;
   it.each([
-    ['absolute positioning', 'position: absolute; top: -90px'],
-    ['a negative margin', 'margin-top: -90px'],
-  ])('preserves the dimensions of an intentional crop made with %s', async (_, offset) => {
-    const sprite = `<figure style="position: relative; margin: 0; height: 30px; overflow: hidden"><img alt="" style="display: block; width: 200px; height: 300px; ${offset}" src="${COVER}"/></figure>`;
+    ['absolute positioning', 'position: absolute; top: -90px', '', true],
+    ['a negative margin', 'margin-top: -90px', '', true],
+    ['an inline height', 'height: 300px', '', false],
+    ['a height attribute', '', 'height="300"', false],
+    ['a stylesheet height', '', 'class="sprite"', false],
+  ])('preserves the dimensions of an intentional crop made with %s', async (_, style, attrs, shifted) => {
+    const sprite = `<style>.sprite { height: 300px; }</style><figure style="position: relative; margin: 0; height: 30px; overflow: hidden"><img alt="" style="display: block; ${style}" ${attrs} src="${SPRITE}"/></figure>`;
     const { doc } = await open(`${sprite}${TEXT}`, '');
     const figure = doc.querySelector('figure')!.getBoundingClientRect();
     const image = doc.querySelector('figure img')!.getBoundingClientRect();
     expect(image.width).toBe(200);
     expect(image.height).toBe(300);
-    expect(image.top).toBeLessThan(figure.top);
+    expect(image.top).toBe(figure.top - (shifted ? 90 : 0));
     expect(image.bottom).toBeGreaterThan(figure.bottom);
   });
 
