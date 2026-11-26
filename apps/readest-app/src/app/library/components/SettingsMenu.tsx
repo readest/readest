@@ -353,9 +353,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
             ))}
             <MenuItem label={_('Subscription')} onClick={handleUserProfile} />
             <MenuItem label={_('Sync Settings')} onClick={() => handleUserSection('sync')} />
-            {quotas.length === 0 && (
-              <MenuItem label={_('Cloud Storage')} onClick={() => handleUserSection('storage')} />
-            )}
             <MenuItem label={_('Shared Links')} onClick={() => handleUserSection('shared-links')} />
             <MenuItem label={_('Login & Security')} onClick={() => handleUserSection('security')} />
             <MenuItem label={_('Sign Out')} onClick={onLogout} />

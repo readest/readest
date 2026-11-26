@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { DeleteConfirmationModal } from '@/app/user/components/AccountActions';
+import DeleteConfirmationModal from '@/app/user/components/DeleteConfirmationModal';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useUserActions } from '@/hooks/useUserActions';
 

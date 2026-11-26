@@ -85,12 +85,11 @@ const ProfilePage = () => {
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
 
   const searchParams = useSearchParams();
-  const initialSection = searchParams?.get('section');
+  const section = searchParams?.get('section');
+  // A section opens on its own from the Account menu; Back returns to the opener.
+  const activeSection = isProfileSection(section) ? section : null;
   const [loading, setLoading] = useState(false);
   const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
-  const [activeSection, setActiveSection] = useState<ProfileSection | null>(() =>
-    isProfileSection(initialSection) ? initialSection : null,
-  );
   // Read once: the code is taken out of the URL as soon as the page opens.
   const [giftCode] = useState(() => searchParams?.get('gift') || undefined);
   // A gift link opens redeeming; a returning gift checkout opens buying.
@@ -108,20 +107,6 @@ const ProfilePage = () => {
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    if (isProfileSection(initialSection)) {
-      setActiveSection(initialSection);
-      setGiftView(null);
-      return;
-    }
-    setActiveSection(null);
-    if (initialSection === 'redeem') {
-      setGiftView('redeem');
-    } else if (initialSection === 'gifts') {
-      setGiftView('give');
-    }
-  }, [initialSection]);
 
   const { signingOut, handleResetPassword, handleUpdateEmail, handleConfirmDelete } =
     useUserActions();
@@ -228,28 +213,17 @@ const ProfilePage = () => {
     ),
   });
 
-  const navigateBack = () => {
-    // A book stays open beneath while this page sits over it (#6607).
-    const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
-    navigateBackFromProfile(router, searchParams?.get('redirect'), readerBeneath);
-  };
-
   const handleGoBack = () => {
     if (showEmbeddedCheckout) {
       setShowEmbeddedCheckout(false);
-    } else if (activeSection) {
-      if (activeSection === 'storage') {
-        refresh();
-      }
-      if (initialSection === activeSection) {
-        navigateBack();
-      } else {
-        setActiveSection(null);
-      }
     } else if (giftView) {
       setGiftView(null);
     } else {
-      navigateBack();
+      // Files removed under Storage change the quota the Account menu shows.
+      if (activeSection === 'storage') refresh();
+      // A book stays open beneath while this page sits over it (#6607).
+      const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
+      navigateBackFromProfile(router, searchParams?.get('redirect'), readerBeneath);
     }
   };
 

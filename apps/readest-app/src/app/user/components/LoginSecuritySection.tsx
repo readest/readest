@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { UserPlan } from '@/types/quota';
-import { DeleteConfirmationModal } from './AccountActions';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 interface LoginSecuritySectionProps {
   userEmail: string;
