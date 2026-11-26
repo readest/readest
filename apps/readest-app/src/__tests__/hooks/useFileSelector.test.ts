@@ -258,3 +258,21 @@ describe('useFileSelector reports every file it skips', () => {
     dispatchSpy.mockRestore();
   });
 });
+
+// The iOS picker URI now stays encoded until the native copy (#7946), and
+// `basename` there splits the string without decoding it.
+describe('useFileSelector iOS picker names', () => {
+  test.each([
+    ['My%20Book.epub', 'My Book.epub'],
+    ['100%25.epub', '100%.epub'],
+    ['Report%2520Final.epub', 'Report%20Final.epub'],
+    ['%E4%B8%AD%E6%96%87.epub', '中文.epub'],
+  ])('names %s by its decoded filename', async (encodedName, name) => {
+    const path = `file:///private/var/mobile/Containers/Data/Application/ABC/tmp/Inbox/${encodedName}`;
+    const { appService } = makeAppService('ios', [path]);
+    const { selectFiles: select } = useFileSelector(appService, _);
+
+    const result = await select({ type: 'books', multiple: true });
+    expect(result.files).toEqual([{ path, name }]);
+  });
+});
