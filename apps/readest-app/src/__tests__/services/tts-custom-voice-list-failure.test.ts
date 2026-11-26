@@ -133,6 +133,25 @@ describe('a custom service whose voice list request fails', () => {
     expect(await controller.ttsCustomClient.getVoiceIdFromLang('de')).toBe('home:Bruce');
   });
 
+  it.each([429, 503])('keeps the saved list when the service answers %i', async (status) => {
+    fetchMock.mockImplementation(voiceList);
+    const first = await startReadAloud();
+    await first.setVoice('home:Bruce', 'de');
+
+    fetchMock.mockImplementation(async () => new Response('busy', { status }));
+    const next = await startReadAloud();
+    expect(await next.ttsCustomClient.getVoiceIdFromLang('de')).toBe('home:Bruce');
+    expect(await customVoiceIds(next)).toEqual(['home:Bruce', 'home:Eva']);
+  });
+
+  it('asks a service that was busy as Read Aloud started again when the voice list opens', async () => {
+    fetchMock.mockImplementation(async () => new Response('busy', { status: 503 }));
+    const controller = await startReadAloud();
+
+    fetchMock.mockImplementation(voiceList);
+    expect(await customVoiceIds(controller)).toEqual(['home:Bruce', 'home:Eva']);
+  });
+
   it('does not ask a service that answered again when the voice list opens', async () => {
     fetchMock.mockImplementation(voiceList);
     const controller = await startReadAloud();

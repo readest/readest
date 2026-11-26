@@ -124,8 +124,9 @@ const parseVoiceList = (body: unknown): ListedVoice[] => {
 const STANDARD_VOICES: ListedVoice[] = OPENAI_TTS_VOICES.map((name) => ({ name }));
 
 // GET {baseUrl}/audio/voices. OpenAI itself has no such endpoint, so a service
-// that answers without a list gets its standard voices. Null when the request
-// failed (timed out, unreachable, not JSON): the list is unknown.
+// without one (404, 405) or that answers without a list gets its standard
+// voices. Null when the request failed (timed out, unreachable, busy, rate
+// limited, not JSON): the list is unknown.
 const requestVoiceList = async (service: CustomTTSService): Promise<ListedVoice[] | null> => {
   // A timer rather than AbortSignal.timeout: tauriFetch rejects unhandled when
   // a finished request is aborted.
@@ -136,7 +137,8 @@ const requestVoiceList = async (service: CustomTTSService): Promise<ListedVoice[
       headers: authHeaders(service),
       signal: controller.signal,
     });
-    const voices = res.ok ? parseVoiceList(await res.json()) : [];
+    if (!res.ok) return res.status === 404 || res.status === 405 ? STANDARD_VOICES : null;
+    const voices = parseVoiceList(await res.json());
     return voices.length ? voices : STANDARD_VOICES;
   } catch {
     return null;
