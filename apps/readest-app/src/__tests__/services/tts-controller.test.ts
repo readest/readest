@@ -1257,6 +1257,36 @@ describe('TTSController', () => {
     });
   });
 
+  test('does not save the outgoing text under the next section while it opens', async () => {
+    await controller.initViewTTS(0);
+    vi.mocked(mockView.tts!.next).mockReturnValue(undefined);
+    vi.mocked(mockView.tts!.getLastRange).mockReturnValue({
+      toString: () => 'Outgoing passage',
+    } as Range);
+    expect(controller.getSpokenPassage()?.text).toBe('Outgoing passage');
+
+    let releaseSection!: () => void;
+    const opening = new Promise<void>((resolve) => {
+      releaseSection = resolve;
+    });
+    let notifyOpening!: () => void;
+    const startedOpening = new Promise<void>((resolve) => {
+      notifyOpening = resolve;
+    });
+    controller.onSectionChange = async () => {
+      notifyOpening();
+      await opening;
+    };
+    const advancing = controller.forward();
+    await startedOpening;
+    try {
+      expect(controller.getSpokenPassage()).toBeNull();
+    } finally {
+      releaseSection();
+      await advancing;
+    }
+  });
+
   describe('getSpokenSentence', () => {
     test('returns the trimmed text and cfi of the current sentence', async () => {
       await controller.initViewTTS(0);

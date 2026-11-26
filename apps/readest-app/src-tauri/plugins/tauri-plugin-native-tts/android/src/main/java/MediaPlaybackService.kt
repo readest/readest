@@ -65,12 +65,15 @@ internal object MediaSessionActivationState {
     private var desiredActive = false
     @Volatile
     private var desiredSessionId: String? = null
+    @Volatile
+    private var canHighlightPassage = false
 
     @Synchronized
     fun requestActivation(sessionId: String? = null): Boolean {
         val changed = !desiredActive || desiredSessionId != sessionId
         desiredActive = true
         desiredSessionId = sessionId
+        if (changed) canHighlightPassage = false
         return changed
     }
 
@@ -82,6 +85,7 @@ internal object MediaSessionActivationState {
             return false
         }
         desiredActive = false
+        canHighlightPassage = false
         // Deliberately keep desiredSessionId. The idle-shutdown timer and
         // destroy() deactivate with no sessionId, and clearing the owner here
         // made acceptsUpdate() reject every later update from the session that
@@ -101,18 +105,25 @@ internal object MediaSessionActivationState {
         sessionId == null || desiredSessionId == null || sessionId == desiredSessionId
 
     @Synchronized
+    fun updateHighlightCapability(sessionId: String?, available: Boolean) {
+        if (desiredActive && desiredSessionId == sessionId) canHighlightPassage = available
+    }
+
+    fun canHighlightCurrentPassage(): Boolean = canHighlightPassage
+
+    @Synchronized
     fun resetForTest() {
         desiredActive = false
         desiredSessionId = null
+        canHighlightPassage = false
     }
 }
 
 class MediaPlaybackService : MediaBrowserServiceCompat() {
     private var mediaSession: MediaSessionCompat? = null
     private lateinit var player: ExoPlayer
-    private var canHighlightPassage = false
     private val highlightAvailable: Boolean
-        get() = sessionActive && !coldTtsActive && canHighlightPassage
+        get() = sessionActive && !coldTtsActive && MediaSessionActivationState.canHighlightCurrentPassage()
 
     private val stateBuilder: PlaybackStateCompat.Builder
         get() = PlaybackStateCompat.Builder().setActions(
@@ -520,7 +531,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
                 // Explicit WebView playback takes ownership even if Pause
                 // canceled the pending automatic book-selection handoff.
                 service.clearColdTtsPlayback()
-                service.canHighlightPassage = false
                 service.resetArtworkForBook(bookHash)
             }
         }
@@ -566,10 +576,10 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
             if (!MediaSessionActivationState.acceptsUpdate(sessionId)) return
             if (position != null) currentPositionMs = position
             if (duration != null) currentDurationMs = duration
+            canHighlightPassage?.let { MediaSessionActivationState.updateHighlightCapability(sessionId, it) }
             val service = instance ?: return
             Handler(Looper.getMainLooper()).post {
                 if (!MediaSessionActivationState.acceptsUpdate(sessionId)) return@post
-                canHighlightPassage?.let { service.canHighlightPassage = it }
                 service.applyPlaybackState(playing)
             }
         }
@@ -669,7 +679,6 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         if (!sessionActive) return
         clearColdTtsPlayback()
         sessionActive = false
-        canHighlightPassage = false
 
         player.playWhenReady = false
         player.stop()

@@ -216,6 +216,7 @@ export class TTSController extends EventTarget {
   #currentSpeakPromise: Promise<void> | null = null;
 
   #ttsSectionIndex: number = -1;
+  #ttsPassageSectionIndex = -1;
 
   // Virtual section timeline for position/duration/seek (Edge client only).
   // Built lazily OFF the playback critical path: enumerating a 2000-sentence
@@ -940,6 +941,7 @@ export class TTSController extends EventTarget {
     // Entering a section: drop any highlight left behind in the views that
     // are still rendering the outgoing section.
     this.#clearAllHighlights();
+    if (this.#ttsSectionIndex !== sectionIndex) this.#resetSpeakWords();
 
     this.#setSectionIndex(sectionIndex);
 
@@ -968,6 +970,7 @@ export class TTSController extends EventTarget {
     if (existing && existing.doc === doc) {
       this.#tts = existing;
       this.view.tts = existing;
+      this.#ttsPassageSectionIndex = sectionIndex;
       return true;
     }
 
@@ -979,6 +982,7 @@ export class TTSController extends EventTarget {
         this.#ttsGranularity = 'sentence';
         this.#tts = new MediaOverlayTTS(doc, narration, this.#getHighlighter());
         this.view.tts = this.#tts;
+        this.#ttsPassageSectionIndex = sectionIndex;
         console.log(`[TTS] Initialized narration for section ${sectionIndex}`);
         return true;
       }
@@ -1008,6 +1012,7 @@ export class TTSController extends EventTarget {
       granularity,
     );
     this.view.tts = this.#tts;
+    this.#ttsPassageSectionIndex = sectionIndex;
     console.log(`[TTS] Initialized TTS for section ${sectionIndex}`);
 
     return true;
@@ -2593,7 +2598,9 @@ export class TTSController extends EventTarget {
   }
 
   getSpokenPassage(): { cfi: string; text: string } | null {
-    if (!this.supportsPassageHighlight) return null;
+    if (!this.supportsPassageHighlight || this.#ttsPassageSectionIndex !== this.#ttsSectionIndex) {
+      return null;
+    }
     if (
       this.#highlightGranularity === 'word' &&
       this.#wordHighlightActive &&

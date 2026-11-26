@@ -146,7 +146,19 @@ export class TTSMediaBridge {
   }
 
   refreshPlaybackState(controller: PlaybackSource): void {
-    if (this.#controller === controller) void this.#updatePlaybackState();
+    if (this.#controller !== controller) return;
+    if (
+      this.#skipping &&
+      this.#mediaSession instanceof TauriMediaSession &&
+      !controller.terminated
+    ) {
+      void this.#mediaSession.updatePlaybackState({
+        playing: true,
+        canHighlightPassage: this.#canHighlightPassage(controller),
+      });
+      return;
+    }
+    void this.#updatePlaybackState();
   }
 
   async bind(controller: PlaybackSource, meta: TTSMediaBridgeMeta): Promise<void> {

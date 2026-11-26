@@ -701,6 +701,35 @@ describe('TTSMediaBridge bind teardown race (READEST-1A)', () => {
     expect(bridge.isBound).toBe(true);
   });
 
+  test('removes the native highlight action on detach during a skip', async () => {
+    const session = new TauriMediaSession();
+    session.setActive = vi.fn().mockResolvedValue(undefined);
+    session.updateMetadata = vi.fn().mockResolvedValue(undefined);
+    session.updatePlaybackState = vi.fn().mockResolvedValue(undefined);
+    session.setActionHandler = vi.fn();
+    const bridge = new TTSMediaBridge(() => session);
+    const controller = Object.assign(new FakeController(), {
+      state: 'paused',
+      isViewAttached: true,
+      supportsPassageHighlight: true,
+    });
+    try {
+      await bridge.bind(controller as unknown as TTSController, meta());
+      const skip = vi
+        .mocked(session.setActionHandler)
+        .mock.calls.find(([action]) => action === 'nexttrack')?.[1] as () => void;
+      skip();
+      controller.isViewAttached = false;
+      bridge.refreshPlaybackState(controller as unknown as TTSController);
+      expect(session.updatePlaybackState).toHaveBeenLastCalledWith({
+        playing: true,
+        canHighlightPassage: false,
+      });
+    } finally {
+      bridge.unbind();
+    }
+  });
+
   test('reconciles playback that started while native activation was pending', async () => {
     const tauriSession = new TauriMediaSession();
     let releaseActivation!: () => void;
