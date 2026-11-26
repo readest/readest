@@ -137,16 +137,37 @@ for (const [width, height] of [
       expect(inside('Pick')(document.activeElement!)).toBe(true);
     });
 
+    it('wraps Shift+Tab past a visibility-hidden control at the end', async () => {
+      // A `visibility: hidden` control keeps its layout box but can't take
+      // focus: wrapping onto it would leave focus where it was.
+      render(
+        <Dialog isOpen title='Edit' onClose={vi.fn()}>
+          <button type='button'>One</button>
+          <button type='button'>Two</button>
+          <button type='button' style={{ visibility: 'hidden' }}>
+            Hidden last
+          </button>
+        </Dialog>,
+      );
+      await settle();
+      // The header's visible close button is the first stop.
+      screen.getByRole('button', { name: 'Close' }).focus();
+
+      await tab(true);
+
+      expect(document.activeElement?.textContent).toBe('Two');
+    });
+
     it('brings back a Tab the browser still sends outside', async () => {
-      // The hidden button looks like a Tab stop ahead, but the browser skips it,
+      // The inert button looks like a Tab stop ahead, but the browser skips it,
       // as macOS WebKit skips buttons by default: the Tab lands on the field behind.
       render(
         <>
           <Dialog isOpen title='Name' onClose={vi.fn()}>
             <input aria-label='Title' />
-            <button type='button' style={{ visibility: 'hidden' }}>
-              Hidden
-            </button>
+            <div inert>
+              <button type='button'>Skipped</button>
+            </div>
           </Dialog>
           <input aria-label='Search behind' />
         </>,

@@ -24,14 +24,18 @@ const SWIPE_DISMISS_THRESHOLD = 8;
 // How long the modal takes to fade and scale away once `isOpen` goes false.
 const CLOSE_TRANSITION_MS = 300;
 
-// Elements that can take Tab focus; `tabIndex` and layout filter the rest.
+// Elements that can take Tab focus; `tabIndex`, layout and visibility filter
+// the rest (`visibility: hidden` keeps a layout box but can't take focus).
 const TABBABLE =
   'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), ' +
   'textarea:not(:disabled), iframe, summary, [contenteditable], [tabindex]';
 
 const getTabbables = (root: HTMLElement) =>
   Array.from(root.querySelectorAll<HTMLElement>(TABBABLE)).filter(
-    (el) => el.tabIndex >= 0 && el.getClientRects().length > 0,
+    (el) =>
+      el.tabIndex >= 0 &&
+      el.getClientRects().length > 0 &&
+      getComputedStyle(el).visibility !== 'hidden',
   );
 
 const isSameRadioGroup = (a: Element, b: Element) =>
