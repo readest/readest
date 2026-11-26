@@ -1019,7 +1019,6 @@ enum Touch {
     Up,
 }
 
-/// A primary pointer down, moved or up at CSS pixels `x`, `y` (a finger, as on a touch screen).
 /// How long a scripted `hold:` keeps its finger down: past Chromium's long-press time (500 ms).
 const HOLD_MS: u64 = 700;
 
@@ -1029,6 +1028,7 @@ fn point_of(s: &str) -> Option<(f32, f32)> {
     Some((x.trim().parse().ok()?, y.trim().parse().ok()?))
 }
 
+/// A primary pointer down, moved or up at CSS pixels `x`, `y` (a finger, as on a touch screen).
 fn send_pointer(
     doc: &mut QjsDocument,
     pointers: &Arc<atomic_refcell::AtomicRefCell<Vec<BlitzPointerEvent>>>,
