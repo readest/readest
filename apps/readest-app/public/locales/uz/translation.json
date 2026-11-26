@@ -732,8 +732,8 @@
   "Manage Subscription": "Obunani boshqarish",
   "Manage Storage": "Xotirani boshqarish",
   "Manage Shared Links": "Ulashilgan havolalarni boshqarish",
-  "Reset Password": "Parolni tiklash",
-  "Update Email": "Emailni yangilash",
+  "Change Password": "Parolni o‘zgartirish",
+  "Change Email": "Emailni o‘zgartirish",
   "Sign Out": "Chiqish",
   "Delete Account": "Hisobni oʻchirish",
   "Upgrade to {{plan}}": "{{plan}} ga yangilash",
@@ -1312,7 +1312,6 @@
   "Current PIN": "Joriy PIN",
   "New PIN": "Yangi PIN",
   "Confirm new PIN": "Yangi PIN'ni tasdiqlash",
-  "Data Sync": "Maʼlumotlarni sinxronlash",
   "Manage Sync": "Sinxronlashni boshqarish",
   "Imported book files and library metadata": "Import qilingan kitob fayllari va kutubxona metamaʼlumotlari",
   "Last-read position, bookmarks, and per-book preferences": "Soʻnggi oʻqilgan joy, xatcho‘plar va har bir kitob uchun sozlamalar",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Kitobsevarlar uchun puxta tayyorlangan erkin e-kitoblar",
   "Over 50,000 free ebooks": "50 000 dan ortiq bepul elektron kitob",
   "Free ebooks from authors who have \"unglued\" their books": "Mualliflar “ozod qilgan” bepul elektron kitoblar",
-  "Free public-domain books, comics, magazines and puzzles": "Jamoat mulki boʻlgan bepul kitoblar, komikslar, jurnallar va boshqotirmalar"
+  "Free public-domain books, comics, magazines and puzzles": "Jamoat mulki boʻlgan bepul kitoblar, komikslar, jurnallar va boshqotirmalar",
+  "Sync Settings": "Sinxronlash sozlamalari"
 }

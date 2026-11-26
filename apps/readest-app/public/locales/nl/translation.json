@@ -425,7 +425,7 @@
   "Terms of Service": "Gebruiksvoorwaarden",
   "Privacy Policy": "Privacybeleid",
   "Disable Double Click": "Dubbelklikken uitschakelen",
-  "Reset Password": "Wachtwoord resetten",
+  "Change Password": "Wachtwoord wijzigen",
   "Reading Progress Style": "Stijl van leesvoortgang",
   "Page Number": "Pagina nummer",
   "Percentage": "Percentage",
@@ -618,7 +618,7 @@
   "Updating email ...": "E-mail wordt bijgewerkt...",
   "Update email": "E-mail bijwerken",
   "Current email": "Huidig e-mailadres",
-  "Update Email": "E-mail bijwerken",
+  "Change Email": "E-mailadres wijzigen",
   "All": "Alles",
   "Unable to open book": "Kan boek niet openen",
   "Punctuation": "Interpunctie",
@@ -1326,7 +1326,6 @@
   "Failed to decrypt synced credentials": "Kan gesynchroniseerde inloggegevens niet ontsleutelen",
   "Imported dictionary bundles and settings": "Geïmporteerde woordenboekpakketten en instellingen",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Kies wat er tussen je apparaten wordt gesynchroniseerd. Een categorie uitschakelen zorgt dat dit apparaat geen items van dat type meer verstuurt of ontvangt. Alles wat al op de server staat blijft ongewijzigd, en bij opnieuw inschakelen wordt verdergegaan waar je was gestopt.",
-  "Data Sync": "Gegevenssynchronisatie",
   "Manage Fonts": "Lettertypen beheren",
   "App settings": "App-instellingen",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Thema, markeringskleuren en integraties (KOSync, Readwise, Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Vrije e-books, met zorg gemaakt voor echte boekenliefhebbers",
   "Over 50,000 free ebooks": "Meer dan 50.000 gratis e-books",
   "Free ebooks from authors who have \"unglued\" their books": "Gratis e-books van auteurs die hun boeken hebben ‘vrijgegeven’",
-  "Free public-domain books, comics, magazines and puzzles": "Gratis boeken, strips, tijdschriften en puzzels uit het publieke domein"
+  "Free public-domain books, comics, magazines and puzzles": "Gratis boeken, strips, tijdschriften en puzzels uit het publieke domein",
+  "Sync Settings": "Synchronisatie-instellingen"
 }

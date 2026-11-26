@@ -425,7 +425,7 @@
   "Terms of Service": "شرایط و قوانین",
   "Privacy Policy": "سیاست حفظ حریم خصوصی",
   "Disable Double Click": "غیرفعال کردن کلیک دوبل",
-  "Reset Password": "بازنشانی رمز عبور",
+  "Change Password": "تغییر رمز عبور",
   "Reading Progress Style": "سبک نمایش وضعیت مطالعه",
   "Page Number": "شماره صفحه",
   "Percentage": "درصد",
@@ -618,7 +618,7 @@
   "Updating email ...": "در حال به‌روزرسانی ایمیل ...",
   "Update email": "به‌روزرسانی ایمیل",
   "Current email": "ایمیل فعلی",
-  "Update Email": "به‌روزرسانی ایمیل",
+  "Change Email": "تغییر ایمیل",
   "All": "همه",
   "Unable to open book": "قادر به باز کردن کتاب نیست",
   "Punctuation": "علامت نگارشی",
@@ -1326,7 +1326,6 @@
   "Failed to decrypt synced credentials": "رمزگشایی اعتبارنامه‌های همگام‌شده ناموفق بود",
   "Imported dictionary bundles and settings": "بسته‌های فرهنگ‌لغت وارد شده و تنظیمات",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "انتخاب کنید چه چیزی بین دستگاه‌های شما همگام‌سازی شود. غیرفعال کردن یک دسته باعث می‌شود این دستگاه ارسال یا دریافت ردیف‌های آن نوع را متوقف کند. آنچه از قبل روی سرور است دست‌نخورده باقی می‌ماند، و با فعال‌سازی مجدد، از همان جایی که متوقف شده‌اید ادامه می‌یابد.",
-  "Data Sync": "همگام‌سازی داده‌ها",
   "Manage Fonts": "مدیریت قلم‌ها",
   "App settings": "تنظیمات برنامه",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "پوسته، رنگ‌های هایلایت و یکپارچه‌سازی‌ها (KOSync، Readwise، Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "کتاب‌های الکترونیکی رایگان و آزاد، با دقت تهیه‌شده برای دوستداران واقعی کتاب",
   "Over 50,000 free ebooks": "بیش از ۵۰٬۰۰۰ کتاب الکترونیکی رایگان",
   "Free ebooks from authors who have \"unglued\" their books": "کتاب‌های الکترونیکی رایگان از نویسندگانی که کتاب‌هایشان را «آزاد» کرده‌اند",
-  "Free public-domain books, comics, magazines and puzzles": "کتاب‌ها، کمیک‌ها، مجله‌ها و پازل‌های رایگان با مالکیت عمومی"
+  "Free public-domain books, comics, magazines and puzzles": "کتاب‌ها، کمیک‌ها، مجله‌ها و پازل‌های رایگان با مالکیت عمومی",
+  "Sync Settings": "تنظیمات همگام‌سازی"
 }

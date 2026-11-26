@@ -652,8 +652,8 @@
   "Restore Purchase": "Vásárlás visszaállítása",
   "Manage Subscription": "Előfizetés kezelése",
   "Manage Storage": "Tárhely kezelése",
-  "Reset Password": "Jelszó visszaállítása",
-  "Update Email": "E-mail frissítése",
+  "Change Password": "Jelszó módosítása",
+  "Change Email": "E-mail-cím módosítása",
   "Sign Out": "Kijelentkezés",
   "Delete Account": "Fiók törlése",
   "Upgrade to {{plan}}": "Váltás erre: {{plan}}",
@@ -1326,7 +1326,6 @@
   "Failed to decrypt synced credentials": "A szinkronizált hitelesítő adatok visszafejtése sikertelen",
   "Imported dictionary bundles and settings": "Importált szótárcsomagok és beállítások",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Válaszd ki, mi szinkronizálódjon az eszközeid között. Egy kategória letiltása megakadályozza, hogy ez az eszköz ilyen típusú bejegyzéseket küldjön vagy fogadjon. A szerveren már lévő adatok érintetlenek maradnak, az újbóli engedélyezés onnan folytatódik, ahol abbahagytad.",
-  "Data Sync": "Adatszinkronizálás",
   "Manage Fonts": "Betűtípusok kezelése",
   "App settings": "Alkalmazásbeállítások",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Téma, kiemelési színek és integrációk (KOSync, Readwise, Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Szabad e-könyvek, gondosan elkészítve könyvbarátoknak",
   "Over 50,000 free ebooks": "Több mint 50 000 ingyenes e-könyv",
   "Free ebooks from authors who have \"unglued\" their books": "Ingyenes e-könyvek, amelyeket szerzőik „felszabadítottak”",
-  "Free public-domain books, comics, magazines and puzzles": "Ingyenes közkincs könyvek, képregények, lapok, rejtvények"
+  "Free public-domain books, comics, magazines and puzzles": "Ingyenes közkincs könyvek, képregények, lapok, rejtvények",
+  "Sync Settings": "Szinkronizálási beállítások"
 }

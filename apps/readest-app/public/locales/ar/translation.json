@@ -437,7 +437,7 @@
   "Terms of Service": "شروط الخدمة",
   "Privacy Policy": "سياسة الخصوصية",
   "Disable Double Click": "تعطيل النقر المزدوج",
-  "Reset Password": "إعادة تعيين",
+  "Change Password": "تغيير كلمة المرور",
   "Reading Progress Style": "نمط تقدم القراءة",
   "Page Number": "رقم الصفحة",
   "Percentage": "النسبة المئوية",
@@ -634,7 +634,7 @@
   "Updating email ...": "جارٍ تحديث البريد الإلكتروني ...",
   "Update email": "تحديث البريد الإلكتروني",
   "Current email": "البريد الإلكتروني الحالي",
-  "Update Email": "تحديث البريد الإلكتروني",
+  "Change Email": "تغيير البريد الإلكتروني",
   "All": "الكل",
   "Unable to open book": "غير قادر على فتح الكتاب",
   "Punctuation": "علامات الترقيم",
@@ -1422,7 +1422,6 @@
   "Failed to decrypt synced credentials": "تعذر فك تشفير بيانات الاعتماد المتزامنة",
   "Imported dictionary bundles and settings": "حزم القواميس المستوردة والإعدادات",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "اختر ما تتم مزامنته عبر أجهزتك. تعطيل أي فئة يوقف هذا الجهاز عن إرسال أو استقبال السجلات من ذلك النوع. أي شيء موجود بالفعل على الخادم يُترك كما هو، وعند إعادة التفعيل تُستأنف المزامنة من حيث توقفت.",
-  "Data Sync": "مزامنة البيانات",
   "Manage Fonts": "إدارة الخطوط",
   "App settings": "إعدادات التطبيق",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "السمة وألوان التظليل والتكاملات (KOSync وReadwise وHardcover)",
@@ -3383,5 +3382,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "كتب إلكترونية مجانية وحرة، أُعدّت بعناية لمحبي الكتب الحقيقيين",
   "Over 50,000 free ebooks": "أكثر من 50 ألف كتاب إلكتروني مجاني",
   "Free ebooks from authors who have \"unglued\" their books": "كتب إلكترونية مجانية من مؤلفين «حرّروا» كتبهم",
-  "Free public-domain books, comics, magazines and puzzles": "كتب وقصص مصورة ومجلات وألغاز مجانية من الملك العام"
+  "Free public-domain books, comics, magazines and puzzles": "كتب وقصص مصورة ومجلات وألغاز مجانية من الملك العام",
+  "Sync Settings": "إعدادات المزامنة"
 }

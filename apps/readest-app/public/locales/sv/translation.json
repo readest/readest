@@ -294,7 +294,7 @@
   "Delete Permanently": "Ta bort permanent",
   "Restore Purchase": "Återställ köp",
   "Manage Subscription": "Hantera prenumeration",
-  "Reset Password": "Återställ lösenord",
+  "Change Password": "Byt lösenord",
   "Sign Out": "Logga ut",
   "Delete Account": "Ta bort konto",
   "Upgrade to {{plan}}": "Uppgradera till {{plan}}",
@@ -618,7 +618,7 @@
   "Updating email ...": "Uppdaterar e-post ...",
   "Update email": "Uppdatera e-post",
   "Current email": "Nuvarande e-post",
-  "Update Email": "Uppdatera e-post",
+  "Change Email": "Byt e-postadress",
   "All": "Alla",
   "Unable to open book": "Kunde inte öppna bok",
   "Punctuation": "Interpunktion",
@@ -1326,7 +1326,6 @@
   "Failed to decrypt synced credentials": "Det gick inte att dekryptera synkroniserade inloggningsuppgifter",
   "Imported dictionary bundles and settings": "Importerade ordbokspaket och inställningar",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Välj vad som synkroniseras mellan dina enheter. Att inaktivera en kategori gör att den här enheten slutar skicka eller ta emot poster av den typen. Det som redan finns på servern lämnas orört, och när du aktiverar igen fortsätter synkroniseringen där du slutade.",
-  "Data Sync": "Datasynkronisering",
   "Manage Fonts": "Hantera teckensnitt",
   "App settings": "Appinställningar",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, markeringsfärger och integrationer (KOSync, Readwise, Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Fria e-böcker, omsorgsfullt gjorda för bokälskare",
   "Over 50,000 free ebooks": "Över 50 000 gratis e-böcker",
   "Free ebooks from authors who have \"unglued\" their books": "Gratis e-böcker från författare som har ”frigjort” sina böcker",
-  "Free public-domain books, comics, magazines and puzzles": "Gratis böcker, serier, tidskrifter och pussel i public domain"
+  "Free public-domain books, comics, magazines and puzzles": "Gratis böcker, serier, tidskrifter och pussel i public domain",
+  "Sync Settings": "Synkronisering"
 }

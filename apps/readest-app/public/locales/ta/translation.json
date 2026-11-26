@@ -315,7 +315,7 @@
   "Delete Permanently": "நிரந்தரமாக நீக்கவும்",
   "Restore Purchase": "வாங்குதலை மீட்டெடுக்கவும்",
   "Manage Subscription": "சந்தாவை நிர்வகிக்கவும்",
-  "Reset Password": "கடவுச்சொல் மீட்டமைக்கவும்",
+  "Change Password": "கடவுச்சொல்லை மாற்று",
   "Sign Out": "வெளியேறவும்",
   "Delete Account": "கணக்கை நீக்கவும்",
   "Upgrade to {{plan}}": "{{plan}} க்கு மேம்படுத்தவும்",
@@ -618,7 +618,7 @@
   "Updating email ...": "மின்னஞ்சல் புதுப்பிக்கப்படுகிறது ...",
   "Update email": "மின்னஞ்சல் புதுப்பிக்கவும்",
   "Current email": "தற்போதைய மின்னஞ்சல்",
-  "Update Email": "மின்னஞ்சல் புதுப்பிக்கவும்",
+  "Change Email": "மின்னஞ்சலை மாற்று",
   "All": "அனைத்து",
   "Unable to open book": "புத்தகத்தைத் திறக்க முடியவில்லை",
   "Punctuation": "விருத்தி",
@@ -1326,7 +1326,6 @@
   "Failed to decrypt synced credentials": "ஒத்திசைக்கப்பட்ட சான்றுகளின் குறியாக்கத்தை நீக்க முடியவில்லை",
   "Imported dictionary bundles and settings": "இறக்குமதி செய்யப்பட்ட அகராதி பொதிகள் மற்றும் அமைப்புகள்",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "உங்கள் சாதனங்களுக்கு இடையே எது ஒத்திசைக்க வேண்டும் என்பதைத் தேர்ந்தெடுக்கவும். ஒரு பிரிவை முடக்கும்போது, அந்த வகை பதிவுகளை அனுப்புவதையும் பெறுவதையும் இந்த சாதனம் நிறுத்தும். சர்வரில் ஏற்கனவே உள்ளவை அப்படியே இருக்கும், மீண்டும் இயக்கும்போது நீங்கள் நிறுத்திய இடத்திலிருந்து தொடரும்.",
-  "Data Sync": "தரவு ஒத்திசைவு",
   "Manage Fonts": "எழுத்துருக்களை நிர்வகி",
   "App settings": "ஆப் அமைப்புகள்",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "தீம், ஹைலைட் வண்ணங்கள் மற்றும் ஒருங்கிணைப்புகள் (KOSync, Readwise, Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "கவனமாக உருவாக்கப்பட்ட இலவச, கட்டற்ற மின்னூல்கள்",
   "Over 50,000 free ebooks": "50,000-க்கும் மேற்பட்ட இலவச மின்னூல்கள்",
   "Free ebooks from authors who have \"unglued\" their books": "எழுத்தாளர்கள் “விடுவித்த” இலவச மின்னூல்கள்",
-  "Free public-domain books, comics, magazines and puzzles": "இலவச பொதுக் கள நூல்கள், காமிக்ஸ், இதழ்கள், புதிர்கள்"
+  "Free public-domain books, comics, magazines and puzzles": "இலவச பொதுக் கள நூல்கள், காமிக்ஸ், இதழ்கள், புதிர்கள்",
+  "Sync Settings": "ஒத்திசைவு அமைப்புகள்"
 }

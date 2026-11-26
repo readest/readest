@@ -583,8 +583,8 @@
   "Restore Purchase": "שחזר רכישה",
   "Manage Subscription": "נהל מנוי",
   "Manage Storage": "נהל אחסון",
-  "Reset Password": "אפס סיסמה",
-  "Update Email": "עדכן אימייל",
+  "Change Password": "שינוי סיסמה",
+  "Change Email": "שינוי כתובת אימייל",
   "Sign Out": "התנתק",
   "Delete Account": "מחק חשבון",
   "Upgrade to {{plan}}": "שדרג ל-{{plan}}",
@@ -1350,7 +1350,6 @@
   "Failed to decrypt synced credentials": "פענוח פרטי הגישה המסונכרנים נכשל",
   "Imported dictionary bundles and settings": "חבילות מילונים מיובאות והגדרות",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "בחר מה מסונכרן בין המכשירים שלך. השבתת קטגוריה גורמת למכשיר זה להפסיק לשלוח או לקבל רשומות מהסוג הזה. מה שכבר נמצא בשרת נשאר כפי שהוא, והפעלה מחדש ממשיכה מהמקום שבו עצרת.",
-  "Data Sync": "סנכרון נתונים",
   "Manage Fonts": "ניהול גופנים",
   "App settings": "הגדרות אפליקציה",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "ערכת נושא, צבעי הדגשה ושילובים (KOSync, Readwise, Hardcover)",
@@ -3146,5 +3145,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "ספרים אלקטרוניים חינמיים וחופשיים, שהופקו בקפידה עבור אוהבי ספרים אמיתיים",
   "Over 50,000 free ebooks": "יותר מ־50,000 ספרים אלקטרוניים חינמיים",
   "Free ebooks from authors who have \"unglued\" their books": "ספרים אלקטרוניים חינמיים מסופרים ששחררו את ספריהם לציבור",
-  "Free public-domain books, comics, magazines and puzzles": "ספרים, קומיקס, מגזינים וחידות חינמיים בנחלת הכלל"
+  "Free public-domain books, comics, magazines and puzzles": "ספרים, קומיקס, מגזינים וחידות חינמיים בנחלת הכלל",
+  "Sync Settings": "הגדרות סנכרון"
 }

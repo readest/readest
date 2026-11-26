@@ -215,6 +215,21 @@ describe('navigateToProfile', () => {
     );
     expect(document.documentElement.getAttribute('data-nav-direction')).toBe('forward');
   });
+
+  test('navigates to /user with section when specified', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/library', search: '' },
+      writable: true,
+    });
+
+    const router = mockRouter();
+    navigateToProfile(router, 'sync');
+
+    expect(router.push).toHaveBeenCalledWith(
+      `/user?section=sync&redirect=${encodeURIComponent('/library')}`,
+    );
+    expect(document.documentElement.getAttribute('data-nav-direction')).toBe('forward');
+  });
 });
 
 describe('navigateBackFromProfile', () => {

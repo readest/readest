@@ -422,7 +422,7 @@
   "Terms of Service": "服務條款",
   "Privacy Policy": "隱私政策",
   "Disable Double Click": "禁用雙擊",
-  "Reset Password": "重設密碼",
+  "Change Password": "變更密碼",
   "Reading Progress Style": "閱讀進度樣式",
   "Page Number": "頁碼",
   "Percentage": "百分比",
@@ -614,7 +614,7 @@
   "Updating email ...": "正在更新電子郵件 ...",
   "Update email": "更新電子郵件",
   "Current email": "當前電子郵件",
-  "Update Email": "更新電子郵件",
+  "Change Email": "變更電子郵件",
   "All": "全部",
   "Unable to open book": "無法打開書籍",
   "Punctuation": "標點符號",
@@ -1317,7 +1317,6 @@
   "Failed to decrypt synced credentials": "無法解密已同步的認證資訊",
   "Imported dictionary bundles and settings": "已匯入的字典包與設定",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "選擇要在你的裝置間同步哪些內容。停用某個類別後，此裝置將停止傳送或接收該類的記錄。伺服器上已有的內容不會被更動，重新啟用後會從你停下的位置繼續同步。",
-  "Data Sync": "資料同步",
   "Manage Fonts": "管理字型",
   "App settings": "應用程式設定",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "主題、螢光標記顏色以及第三方整合（KOSync、Readwise、Hardcover）",
@@ -2988,5 +2987,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "免費且自由的電子書，為真正的愛書人精心製作",
   "Over 50,000 free ebooks": "超過 50,000 本免費電子書",
   "Free ebooks from authors who have \"unglued\" their books": "來自已將作品「解放」的作者的免費電子書",
-  "Free public-domain books, comics, magazines and puzzles": "免費的公版書籍、漫畫、雜誌和謎題"
+  "Free public-domain books, comics, magazines and puzzles": "免費的公版書籍、漫畫、雜誌和謎題",
+  "Sync Settings": "同步設定"
 }

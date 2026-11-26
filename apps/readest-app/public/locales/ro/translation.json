@@ -642,8 +642,8 @@
   "Restore Purchase": "Restaurați achiziția",
   "Manage Subscription": "Gestionați abonamentul",
   "Manage Storage": "Gestionați stocarea",
-  "Reset Password": "Resetați parola",
-  "Update Email": "Actualizați e-mailul",
+  "Change Password": "Schimbă parola",
+  "Change Email": "Schimbă e-mailul",
   "Sign Out": "Deconectare",
   "Delete Account": "Ștergeți contul",
   "Upgrade to {{plan}}": "Treceți la {{plan}}",
@@ -1350,7 +1350,6 @@
   "Failed to decrypt synced credentials": "Decriptarea acreditărilor sincronizate a eșuat",
   "Imported dictionary bundles and settings": "Pachete de dicționare importate și setări",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Alege ce se sincronizează între dispozitivele tale. Dezactivarea unei categorii oprește acest dispozitiv să trimită sau să primească intrări de acel tip. Ce există deja pe server rămâne neschimbat, iar reactivarea reia din locul în care te-ai oprit.",
-  "Data Sync": "Sincronizare date",
   "Manage Fonts": "Gestionează fonturile",
   "App settings": "Setări aplicație",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Temă, culorile evidențierilor și integrări (KOSync, Readwise, Hardcover)",
@@ -3146,5 +3145,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Cărți electronice libere, realizate cu grijă pentru cititori",
   "Over 50,000 free ebooks": "Peste 50.000 de cărți electronice gratuite",
   "Free ebooks from authors who have \"unglued\" their books": "Cărți electronice gratuite de la autori care și-au „eliberat” cărțile",
-  "Free public-domain books, comics, magazines and puzzles": "Cărți, benzi desenate, reviste, jocuri gratuite din domeniul public"
+  "Free public-domain books, comics, magazines and puzzles": "Cărți, benzi desenate, reviste, jocuri gratuite din domeniul public",
+  "Sync Settings": "Setări sincronizare"
 }

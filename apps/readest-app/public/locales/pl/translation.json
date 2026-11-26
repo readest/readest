@@ -431,7 +431,7 @@
   "Terms of Service": "Warunki korzystania z usługi",
   "Privacy Policy": "Polityka prywatności",
   "Disable Double Click": "Wyłącz podwójne kliknięcie",
-  "Reset Password": "Zresetuj hasło",
+  "Change Password": "Zmień hasło",
   "Reading Progress Style": "Styl postępu czytania",
   "Page Number": "Numer strony",
   "Percentage": "Procent",
@@ -626,7 +626,7 @@
   "Updating email ...": "Aktualizowanie e-maila...",
   "Update email": "Zaktualizuj e-mail",
   "Current email": "Obecny e-mail",
-  "Update Email": "Zaktualizuj e-mail",
+  "Change Email": "Zmień adres e-mail",
   "All": "Wszystkie",
   "Unable to open book": "Nie można otworzyć książki",
   "Punctuation": "Interpunkcja",
@@ -1374,7 +1374,6 @@
   "Failed to decrypt synced credentials": "Nie udało się odszyfrować zsynchronizowanych danych uwierzytelniających",
   "Imported dictionary bundles and settings": "Zaimportowane pakiety słowników i ustawienia",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Wybierz, co ma być synchronizowane między Twoimi urządzeniami. Wyłączenie kategorii sprawia, że to urządzenie przestaje wysyłać i odbierać wpisy tego typu. To, co jest już na serwerze, pozostaje nietknięte, a ponowne włączenie wznawia synchronizację od miejsca, w którym ją zatrzymałeś.",
-  "Data Sync": "Synchronizacja danych",
   "Manage Fonts": "Zarządzaj czcionkami",
   "App settings": "Ustawienia aplikacji",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Motyw, kolory podświetleń oraz integracje (KOSync, Readwise, Hardcover)",
@@ -3225,5 +3224,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Wolne e-booki, starannie wydane dla miłośników książek",
   "Over 50,000 free ebooks": "Ponad 50 000 darmowych e-booków",
   "Free ebooks from authors who have \"unglued\" their books": "Darmowe e-booki od autorów, którzy „uwolnili” swoje książki",
-  "Free public-domain books, comics, magazines and puzzles": "Darmowe książki, komiksy, pisma i łamigłówki z domeny publicznej"
+  "Free public-domain books, comics, magazines and puzzles": "Darmowe książki, komiksy, pisma i łamigłówki z domeny publicznej",
+  "Sync Settings": "Ustawienia synchronizacji"
 }

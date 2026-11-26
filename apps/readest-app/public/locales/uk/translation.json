@@ -431,7 +431,7 @@
   "Terms of Service": "Умови обслуговування",
   "Privacy Policy": "Політика конфіденційності",
   "Disable Double Click": "Вимкнути подвійне натискання",
-  "Reset Password": "Скинути пароль",
+  "Change Password": "Змінити пароль",
   "Reading Progress Style": "Стиль проґресу читання",
   "Page Number": "Номер сторінки",
   "Percentage": "Відсотки",
@@ -626,7 +626,7 @@
   "Updating email ...": "Оновлення електронної адреси ...",
   "Update email": "Оновити електронну адресу",
   "Current email": "Поточна електронна адреса",
-  "Update Email": "Оновити Адресу",
+  "Change Email": "Змінити електронну пошту",
   "All": "Всі",
   "Unable to open book": "Не вдалося відкрити книгу",
   "Punctuation": "Пунктуація",
@@ -1374,7 +1374,6 @@
   "Failed to decrypt synced credentials": "Не вдалося розшифрувати синхронізовані облікові дані",
   "Imported dictionary bundles and settings": "Імпортовані пакети словників і налаштування",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Виберіть, що синхронізується між вашими пристроями. Вимкнення категорії зупиняє цей пристрій від надсилання або отримання записів цього типу. Те, що вже на сервері, залишається без змін, а повторне ввімкнення відновлює синхронізацію з того місця, де ви зупинилися.",
-  "Data Sync": "Синхронізація даних",
   "Manage Fonts": "Керування шрифтами",
   "App settings": "Налаштування застосунку",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Тема, кольори виділень та інтеграції (KOSync, Readwise, Hardcover)",
@@ -3225,5 +3224,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Вільні електронні книги, ретельно зроблені для книголюбів",
   "Over 50,000 free ebooks": "Понад 50 000 безкоштовних електронних книг",
   "Free ebooks from authors who have \"unglued\" their books": "Безкоштовні електронні книги від авторів, які «звільнили» свої книги",
-  "Free public-domain books, comics, magazines and puzzles": "Безкоштовні книги, комікси, журнали та головоломки із суспільного надбання"
+  "Free public-domain books, comics, magazines and puzzles": "Безкоштовні книги, комікси, журнали та головоломки із суспільного надбання",
+  "Sync Settings": "Синхронізація"
 }

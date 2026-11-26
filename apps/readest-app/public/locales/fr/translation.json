@@ -428,7 +428,7 @@
   "Terms of Service": "Conditions d'utilisation",
   "Privacy Policy": "Politique de confidentialité",
   "Disable Double Click": "Désactiver le double-clic",
-  "Reset Password": "Nouveau mot de passe",
+  "Change Password": "Modifier le mot de passe",
   "Reading Progress Style": "Style de progression",
   "Page Number": "Numéro de page",
   "Percentage": "Pourcentage",
@@ -622,7 +622,7 @@
   "Updating email ...": "Mise à jour de l’e-mail ...",
   "Update email": "Mettre à jour l’e-mail",
   "Current email": "E-mail actuel",
-  "Update Email": "Mettre à jour l’e-mail",
+  "Change Email": "Modifier l'e-mail",
   "All": "Tous",
   "Unable to open book": "Impossible d'ouvrir le livre",
   "Punctuation": "Ponctuation",
@@ -1350,7 +1350,6 @@
   "Failed to decrypt synced credentials": "Impossible de déchiffrer les identifiants synchronisés",
   "Imported dictionary bundles and settings": "Paquets de dictionnaires importés et paramètres",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Choisissez ce qui est synchronisé entre vos appareils. Désactiver une catégorie empêche cet appareil d'envoyer ou de recevoir des entrées de ce type. Ce qui est déjà sur le serveur reste intact, la réactivation reprend là où vous vous étiez arrêté.",
-  "Data Sync": "Synchronisation des données",
   "Manage Fonts": "Gérer les polices",
   "App settings": "Paramètres de l’application",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Thème, couleurs de surlignage et intégrations (KOSync, Readwise, Hardcover)",
@@ -3146,5 +3145,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Livres numériques libres, soignés pour les amoureux des livres",
   "Over 50,000 free ebooks": "Plus de 50 000 livres numériques gratuits",
   "Free ebooks from authors who have \"unglued\" their books": "Livres numériques gratuits d’auteurs qui ont « libéré » leurs livres",
-  "Free public-domain books, comics, magazines and puzzles": "Livres, BD, magazines et jeux gratuits du domaine public"
+  "Free public-domain books, comics, magazines and puzzles": "Livres, BD, magazines et jeux gratuits du domaine public",
+  "Sync Settings": "Synchronisation"
 }

@@ -617,8 +617,8 @@
   "Restore Purchase": "Obnovi nakup",
   "Manage Subscription": "Upravljaj naročnino",
   "Manage Storage": "Upravljaj shrambo",
-  "Reset Password": "Ponastavi geslo",
-  "Update Email": "Posodobi e-pošto",
+  "Change Password": "Spremeni geslo",
+  "Change Email": "Spremeni e-pošto",
   "Sign Out": "Odjava",
   "Delete Account": "Izbriši račun",
   "Upgrade to {{plan}}": "Nadgradi na {{plan}}",
@@ -1374,7 +1374,6 @@
   "Failed to decrypt synced credentials": "Dešifriranje sinhroniziranih poverilnic ni uspelo",
   "Imported dictionary bundles and settings": "Uvoženi paketi slovarjev in nastavitve",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Izberi, kaj naj se sinhronizira med tvojimi napravami. Onemogočanje kategorije ustavi to napravo, da bi pošiljala ali prejemala vnose te vrste. Kar je že na strežniku, ostane nespremenjeno, ob ponovnem omogočanju pa se sinhronizacija nadaljuje tam, kjer si končal.",
-  "Data Sync": "Sinhronizacija podatkov",
   "Manage Fonts": "Upravljanje pisav",
   "App settings": "Nastavitve aplikacije",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, barve označb in integracije (KOSync, Readwise, Hardcover)",
@@ -3225,5 +3224,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Proste e-knjige, skrbno izdelane za ljubitelje knjig",
   "Over 50,000 free ebooks": "Več kot 50.000 brezplačnih e-knjig",
   "Free ebooks from authors who have \"unglued\" their books": "Brezplačne e-knjige avtorjev, ki so svoje knjige »osvobodili«",
-  "Free public-domain books, comics, magazines and puzzles": "Brezplačne knjige, stripi, revije in uganke v javni domeni"
+  "Free public-domain books, comics, magazines and puzzles": "Brezplačne knjige, stripi, revije in uganke v javni domeni",
+  "Sync Settings": "Nastavitve sinhronizacije"
 }

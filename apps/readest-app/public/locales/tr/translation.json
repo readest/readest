@@ -429,7 +429,7 @@
   "Terms of Service": "Hizmet Şartları",
   "Privacy Policy": "Gizlilik Politikası",
   "Disable Double Click": "Çift Tıklamayı Devre Dışı Bırak",
-  "Reset Password": "Şifreyi Sıfırla",
+  "Change Password": "Şifreyi Değiştir",
   "Reading Progress Style": "Okuma İlerlemesi Stili",
   "Page Number": "Sayfa Numarası",
   "Percentage": "Yüzde",
@@ -622,7 +622,7 @@
   "Updating email ...": "E-posta güncelleniyor ...",
   "Update email": "E-postayı güncelle",
   "Current email": "Mevcut e-posta",
-  "Update Email": "E-postayı güncelle",
+  "Change Email": "E-postayı Değiştir",
   "All": "Tümü",
   "Unable to open book": "Kitap açılamıyor",
   "Punctuation": "Noktalama İşaretleri",
@@ -1330,7 +1330,6 @@
   "Failed to decrypt synced credentials": "Eşitlenmiş kimlik bilgileri çözülemedi",
   "Imported dictionary bundles and settings": "İçe aktarılan sözlük paketleri ve ayarlar",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Cihazlarınız arasında neyin eşitleneceğini seçin. Bir kategoriyi devre dışı bırakmak, bu cihazın o türden kayıtları göndermesini veya almasını durdurur. Sunucuda zaten bulunan veriler olduğu gibi kalır, yeniden etkinleştirdiğinizde eşitleme bıraktığınız yerden devam eder.",
-  "Data Sync": "Veri eşitleme",
   "Manage Fonts": "Yazı tiplerini yönet",
   "App settings": "Uygulama ayarları",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, vurgu renkleri ve entegrasyonlar (KOSync, Readwise, Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Kitap severler için özenle hazırlanmış özgür e-kitaplar",
   "Over 50,000 free ebooks": "50.000'den fazla ücretsiz e-kitap",
   "Free ebooks from authors who have \"unglued\" their books": "Kitaplarını “özgürleştiren” yazarlardan ücretsiz e-kitaplar",
-  "Free public-domain books, comics, magazines and puzzles": "Kamu malı ücretsiz kitaplar, çizgi romanlar, dergiler ve bulmacalar"
+  "Free public-domain books, comics, magazines and puzzles": "Kamu malı ücretsiz kitaplar, çizgi romanlar, dergiler ve bulmacalar",
+  "Sync Settings": "Eşitleme Ayarları"
 }

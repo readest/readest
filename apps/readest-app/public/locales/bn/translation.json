@@ -315,7 +315,7 @@
   "Delete Permanently": "স্থায়ীভাবে মুছুন",
   "Restore Purchase": "ক্রয় পুনরুদ্ধার",
   "Manage Subscription": "সাবস্ক্রিপশন পরিচালনা",
-  "Reset Password": "পাসওয়ার্ড রিসেট",
+  "Change Password": "পাসওয়ার্ড পরিবর্তন করুন",
   "Sign Out": "সাইন আউট",
   "Delete Account": "অ্যাকাউন্ট মুছুন",
   "Upgrade to {{plan}}": "{{plan}} এ আপগ্রেড",
@@ -618,7 +618,7 @@
   "Updating email ...": "ইমেল আপডেট হচ্ছে ...",
   "Update email": "ইমেল আপডেট করুন",
   "Current email": "বর্তমান ইমেল",
-  "Update Email": "ইমেল আপডেট করুন",
+  "Change Email": "ইমেল পরিবর্তন করুন",
   "All": "সব",
   "Unable to open book": "বই খুলতে অক্ষম",
   "Punctuation": "বিরামচিহ্ন",
@@ -1326,7 +1326,6 @@
   "Failed to decrypt synced credentials": "সিঙ্ক করা ক্রেডেনশিয়াল ডিক্রিপ্ট করতে ব্যর্থ",
   "Imported dictionary bundles and settings": "আমদানি করা অভিধান বান্ডিল এবং সেটিংস",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "আপনার ডিভাইসগুলোর মধ্যে কী সিঙ্ক হবে তা বেছে নিন। কোনো বিভাগ নিষ্ক্রিয় করলে এই ডিভাইসটি সেই ধরনের সারি পাঠানো বা গ্রহণ করা বন্ধ করে দেয়। সার্ভারে ইতিমধ্যে থাকা কিছুই পরিবর্তন হয় না, পুনরায় সক্রিয় করলে যেখানে থেমেছিলেন সেখান থেকে আবার শুরু হয়।",
-  "Data Sync": "ডেটা সিঙ্ক",
   "Manage Fonts": "ফন্ট পরিচালনা",
   "App settings": "অ্যাপ সেটিংস",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "থিম, হাইলাইট রং এবং ইন্টিগ্রেশন (KOSync, Readwise, Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "প্রকৃত বইপ্রেমীদের জন্য যত্নসহকারে তৈরি বিনামূল্যের ও মুক্ত ই-বুক",
   "Over 50,000 free ebooks": "৫০,০০০-এরও বেশি বিনামূল্যের ই-বুক",
   "Free ebooks from authors who have \"unglued\" their books": "যেসব লেখক তাঁদের বই “মুক্ত” করেছেন তাঁদের বিনামূল্যের ই-বুক",
-  "Free public-domain books, comics, magazines and puzzles": "পাবলিক ডোমেইনের বিনামূল্যের বই, কমিক্স, পত্রিকা ও ধাঁধা"
+  "Free public-domain books, comics, magazines and puzzles": "পাবলিক ডোমেইনের বিনামূল্যের বই, কমিক্স, পত্রিকা ও ধাঁধা",
+  "Sync Settings": "সিঙ্ক সেটিংস"
 }

@@ -422,7 +422,7 @@
   "Terms of Service": "利用規約",
   "Privacy Policy": "プライバシーポリシー",
   "Disable Double Click": "ダブルクリック無効",
-  "Reset Password": "パスワードをリセット",
+  "Change Password": "パスワードを変更",
   "Reading Progress Style": "読書進捗スタイル",
   "Page Number": "ページ番号",
   "Percentage": "パーセンテージ",
@@ -614,7 +614,7 @@
   "Updating email ...": "メールを更新しています ...",
   "Update email": "メールを更新",
   "Current email": "現在のメールアドレス",
-  "Update Email": "メールを更新",
+  "Change Email": "メールアドレスを変更",
   "All": "すべて",
   "Unable to open book": "本を開くことができません",
   "Punctuation": "句読点",
@@ -1302,7 +1302,6 @@
   "Failed to decrypt synced credentials": "同期された認証情報を復号できませんでした",
   "Imported dictionary bundles and settings": "インポートした辞書バンドルと設定",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "デバイス間で同期する項目を選択します。カテゴリを無効にすると、このデバイスはその種類のデータを送受信しなくなります。サーバーに既にあるデータはそのまま残り、再度有効にすると停止した位置から再開します。",
-  "Data Sync": "データ同期",
   "Manage Fonts": "フォントを管理",
   "App settings": "アプリ設定",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "テーマ、ハイライトの色、連携 (KOSync、Readwise、Hardcover)",
@@ -2988,5 +2987,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "本を愛する人のために丁寧に制作された、無料で自由な電子書籍",
   "Over 50,000 free ebooks": "50,000冊以上の無料電子書籍",
   "Free ebooks from authors who have \"unglued\" their books": "著者が「解放」した無料の電子書籍",
-  "Free public-domain books, comics, magazines and puzzles": "パブリックドメインの無料の本、コミック、雑誌、パズル"
+  "Free public-domain books, comics, magazines and puzzles": "パブリックドメインの無料の本、コミック、雑誌、パズル",
+  "Sync Settings": "同期設定"
 }

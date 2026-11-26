@@ -428,7 +428,7 @@
   "Terms of Service": "Termos de Serviço",
   "Privacy Policy": "Política de Privacidade",
   "Disable Double Click": "Desativar Clique Duplo",
-  "Reset Password": "Redefinir Senha",
+  "Change Password": "Alterar palavra-passe",
   "Reading Progress Style": "Estilo de Progresso de Leitura",
   "Page Number": "Número da Página",
   "Percentage": "Porcentagem",
@@ -622,7 +622,7 @@
   "Updating email ...": "A atualizar o e-mail...",
   "Update email": "Atualizar e-mail",
   "Current email": "E-mail atual",
-  "Update Email": "Atualizar e-mail",
+  "Change Email": "Alterar e-mail",
   "All": "Todos",
   "Unable to open book": "Não foi possível abrir o livro",
   "Punctuation": "Pontuação",
@@ -1350,7 +1350,6 @@
   "Failed to decrypt synced credentials": "Falha ao descriptografar as credenciais sincronizadas",
   "Imported dictionary bundles and settings": "Pacotes de dicionários importados e configurações",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Escolha o que será sincronizado entre seus dispositivos. Desativar uma categoria impede este dispositivo de enviar ou receber registros desse tipo. O que já está no servidor permanece intacto, e ao reativar a sincronização retoma de onde você parou.",
-  "Data Sync": "Sincronização de dados",
   "Manage Fonts": "Gerenciar fontes",
   "App settings": "Configurações do app",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, cores de destaque e integrações (KOSync, Readwise, Hardcover)",
@@ -3146,5 +3145,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Ebooks livres, produzidos com cuidado para amantes de livros",
   "Over 50,000 free ebooks": "Mais de 50 000 ebooks gratuitos",
   "Free ebooks from authors who have \"unglued\" their books": "Ebooks gratuitos de autores que «libertaram» os seus livros",
-  "Free public-domain books, comics, magazines and puzzles": "Livros, BD, revistas e passatempos grátis do domínio público"
+  "Free public-domain books, comics, magazines and puzzles": "Livros, BD, revistas e passatempos grátis do domínio público",
+  "Sync Settings": "Sincronização"
 }

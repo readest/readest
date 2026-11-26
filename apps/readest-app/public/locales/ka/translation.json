@@ -289,7 +289,6 @@
   "Always Show Status Bar": "სტატუსის ზოლის ყოველთვის ჩვენება",
   "Settings": "პარამეტრები",
   "Advanced Settings": "დამატებითი პარამეტრები",
-  "Data Sync": "მონაცემთა სინქრონიზაცია",
   "Refresh Metadata": "მეტამონაცემების განახლება",
   "Set PIN…": "PIN-კოდის დაყენება…",
   "Require a PIN (and biometrics, if available) to open Readest": "Readest-ის გასახსნელად მოითხოვე PIN-კოდი (და ბიომეტრია, თუ ხელმისაწვდომია)",
@@ -1020,8 +1019,8 @@
   "Manage Sync": "სინქრონიზაციის მართვა",
   "Manage Storage": "საცავის მართვა",
   "Manage Shared Links": "გაზიარებული ბმულების მართვა",
-  "Reset Password": "პაროლის აღდგენა",
-  "Update Email": "ელფოსტის განახლება",
+  "Change Password": "პაროლის შეცვლა",
+  "Change Email": "ელფოსტის შეცვლა",
   "Sign Out": "გასვლა",
   "Danger Zone": "საშიში ზონა",
   "Delete All Books": "ყველა წიგნის წაშლა",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "თავისუფალი ელწიგნები წიგნის მოყვარულთათვის",
   "Over 50,000 free ebooks": "50 000-ზე მეტი უფასო ელწიგნი",
   "Free ebooks from authors who have \"unglued\" their books": "უფასო ელწიგნები, რომლებიც ავტორებმა „გაათავისუფლეს“",
-  "Free public-domain books, comics, magazines and puzzles": "უფასო საჯარო დომენი: წიგნი, კომიქსი, ჟურნალი, თავსატეხი"
+  "Free public-domain books, comics, magazines and puzzles": "უფასო საჯარო დომენი: წიგნი, კომიქსი, ჟურნალი, თავსატეხი",
+  "Sync Settings": "სინქრონიზაცია"
 }

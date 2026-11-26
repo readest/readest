@@ -422,7 +422,7 @@
   "Terms of Service": "ཞབས་འདེགས་ཀྱི་ཆ་རྐྱེན།",
   "Privacy Policy": "སྒེར་གསང་གི་སྲིད་ཇུས།",
   "Disable Double Click": "ཐེངས་གཉིས་མནན་པ་སྒོ་བརྒྱབ།",
-  "Reset Password": "གསང་ཨང་བསྐྱར་སྒྲིག",
+  "Change Password": "གསང་གྲངས་བརྗེ་བ།",
   "Reading Progress Style": "ཀློག་པའི་ཡར་འཕེལ་གྱི་རྣམ་པ།",
   "Page Number": "ཤོག་ཨང་།",
   "Percentage": "བརྒྱ་ཆ།",
@@ -614,7 +614,7 @@
   "Updating email ...": "ཡིག་འཕྲིན་གསར་བསྒྱུར་བཞིན་པ། ...",
   "Update email": "ཡིག་འཕྲིན་གསར་བསྒྱུར།",
   "Current email": "མིག་སྔའི་ཡིག་འཕྲིན།",
-  "Update Email": "ཡིག་འཕྲིན་གསར་བསྒྱུར།",
+  "Change Email": "གློག་འཕྲིན་བརྗེ་བ།",
   "All": "ཆེན་མོ།",
   "Unable to open book": "དེབ་ཀྱི་སྤྱོད་བྱས་མ་ཐུབ།",
   "Punctuation": "ཚིག་གྲུབ།",
@@ -1302,7 +1302,6 @@
   "Failed to decrypt synced credentials": "མཉམ་འགྲོ་བྱས་པའི་ཐོབ་ཐང་ལག་འཁྱེར་ཁ་ཕྱེ་བར་ཕམ་ཉེས་བྱུང་།",
   "Imported dictionary bundles and settings": "ནང་འཇུག་བྱས་པའི་ཚིག་མཛོད་ཐུམ་སྒྲིལ་དང་སྒྲིག་འགོད།",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "ཁྱེད་ཀྱི་སྒྲིག་ཆས་ཁག་གི་བར་ལ་གང་མཉམ་འགྲོ་དགོས་པ་འདེམས་རོགས། སྡེ་ཚན་ཞིག་ནུས་མེད་བཟོས་ན། སྒྲིག་ཆས་འདིས་རིགས་དེའི་ཡིག་ཆ་སྐུར་སྤྲོད་དམ་ལེན་པ་མཚམས་འཇོག་བྱེད། ཞབས་ཞུ་བ་སྟེང་གནས་ཟིན་པའི་གང་ཡང་འགྱུར་ལྡོག་མི་ཐེབས། ཡང་བསྐྱར་ནུས་ཅན་བཟོས་ཚེ། མཚམས་འཇོག་སའི་གནས་ནས་མུ་མཐུད་འགྲོ་བ་ཡིན།",
-  "Data Sync": "གཞི་གྲངས་མཉམ་འགྲོ།",
   "Manage Fonts": "ཡིག་གཟུགས་སྟངས་འཛིན།",
   "App settings": "མཉེན་ཆས་སྒྲིག་འགོད།",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "བརྗོད་གཞི། གསལ་རྟགས་ཁ་དོག དང་ཟུང་འབྲེལ་ (KOSync, Readwise, Hardcover)",
@@ -2988,5 +2987,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "དཔེ་ཆ་ལ་དགའ་བ་དངོས་ཀྱི་ཆེད་དུ་ཞིབ་ཚགས་ངང་བཟོས་པའི་རིན་མེད་དང་རང་དབང་གི་གློག་དཔེ།",
   "Over 50,000 free ebooks": "རིན་མེད་གློག་དཔེ་ཁྲི་ཚོ 5 ལྷག",
   "Free ebooks from authors who have \"unglued\" their books": "རྩོམ་པ་པོས་རང་གི་དཔེ་དེབ་“གློད་གྲོལ་”བཏང་བའི་རིན་མེད་གློག་དཔེ།",
-  "Free public-domain books, comics, magazines and puzzles": "སྤྱི་མཐུན་ཁྱབ་ཁོངས་ཀྱི་རིན་མེད་དཔེ་དེབ་དང་། རི་མོའི་སྒྲུང་དེབ། དུས་དེབ། རྩེད་མོ་བཅས།"
+  "Free public-domain books, comics, magazines and puzzles": "སྤྱི་མཐུན་ཁྱབ་ཁོངས་ཀྱི་རིན་མེད་དཔེ་དེབ་དང་། རི་མོའི་སྒྲུང་དེབ། དུས་དེབ། རྩེད་མོ་བཅས།",
+  "Sync Settings": "མཉམ་སྒྲིག་སྒྲིག་འགོད།"
 }

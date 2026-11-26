@@ -746,8 +746,8 @@
   "Manage Subscription": "Gerenciar assinatura",
   "Manage Storage": "Gerenciar armazenamento",
   "Manage Shared Links": "Gerenciar links de compartilhamento",
-  "Reset Password": "Redefinir senha",
-  "Update Email": "Atualizar e-mail",
+  "Change Password": "Alterar senha",
+  "Change Email": "Alterar e-mail",
   "Sign Out": "Sair",
   "Delete Account": "Excluir conta",
   "Upgrade to {{plan}}": "Atualizar para {{plan}}",
@@ -1336,7 +1336,6 @@
   "Current PIN": "PIN atual",
   "New PIN": "Novo PIN",
   "Confirm new PIN": "Confirmar novo PIN",
-  "Data Sync": "Sincronização de Dados",
   "Manage Sync": "Gerenciar Sincronização",
   "Imported book files and library metadata": "Arquivos de livros importados e metadados da biblioteca",
   "Last-read position, bookmarks, and per-book preferences": "Última posição lida, marcadores e preferências por livro",
@@ -3146,5 +3145,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "E-books livres, produzidos com cuidado para amantes de livros",
   "Over 50,000 free ebooks": "Mais de 50.000 e-books gratuitos",
   "Free ebooks from authors who have \"unglued\" their books": "E-books gratuitos de autores que “libertaram” seus livros",
-  "Free public-domain books, comics, magazines and puzzles": "Livros, HQs, revistas, passatempos grátis em domínio público"
+  "Free public-domain books, comics, magazines and puzzles": "Livros, HQs, revistas, passatempos grátis em domínio público",
+  "Sync Settings": "Sincronização"
 }

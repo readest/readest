@@ -422,7 +422,7 @@
   "Terms of Service": "Điều khoản dịch vụ",
   "Privacy Policy": "Chính sách bảo mật",
   "Disable Double Click": "Tắt Nhấp Đôi",
-  "Reset Password": "Đặt lại mật khẩu",
+  "Change Password": "Đổi mật khẩu",
   "Reading Progress Style": "Phong cách tiến độ đọc",
   "Page Number": "Số trang",
   "Percentage": "Phần trăm",
@@ -614,7 +614,7 @@
   "Updating email ...": "Đang cập nhật email ...",
   "Update email": "Cập nhật email",
   "Current email": "Email hiện tại",
-  "Update Email": "Cập nhật email",
+  "Change Email": "Đổi email",
   "All": "Tất cả",
   "Unable to open book": "Không thể mở sách",
   "Punctuation": "Dấu câu",
@@ -1302,7 +1302,6 @@
   "Failed to decrypt synced credentials": "Không thể giải mã thông tin đăng nhập đã đồng bộ",
   "Imported dictionary bundles and settings": "Gói từ điển đã nhập và cài đặt",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Chọn những gì sẽ đồng bộ giữa các thiết bị của bạn. Tắt một danh mục sẽ ngăn thiết bị này gửi hoặc nhận các mục thuộc loại đó. Bất kỳ dữ liệu nào đã có trên máy chủ vẫn được giữ nguyên, bật lại sẽ tiếp tục từ nơi bạn đã dừng.",
-  "Data Sync": "Đồng bộ dữ liệu",
   "Manage Fonts": "Quản lý phông chữ",
   "App settings": "Cài đặt ứng dụng",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Chủ đề, màu tô sáng và tích hợp (KOSync, Readwise, Hardcover)",
@@ -2988,5 +2987,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Sách điện tử tự do, biên soạn công phu cho người yêu sách",
   "Over 50,000 free ebooks": "Hơn 50.000 sách điện tử miễn phí",
   "Free ebooks from authors who have \"unglued\" their books": "Sách điện tử miễn phí từ các tác giả đã “giải phóng” sách của họ",
-  "Free public-domain books, comics, magazines and puzzles": "Sách, truyện tranh, tạp chí và câu đố miễn phí thuộc phạm vi công cộng"
+  "Free public-domain books, comics, magazines and puzzles": "Sách, truyện tranh, tạp chí và câu đố miễn phí thuộc phạm vi công cộng",
+  "Sync Settings": "Cài đặt đồng bộ"
 }

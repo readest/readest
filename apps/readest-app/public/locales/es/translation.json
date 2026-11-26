@@ -451,7 +451,7 @@
   "Terms of Service": "Condiciones del servicio",
   "Privacy Policy": "Política de privacidad",
   "Disable Double Click": "Deshabilitar Doble Clic",
-  "Reset Password": "Restablecer contraseña",
+  "Change Password": "Cambiar contraseña",
   "Reading Progress Style": "Estilo de progreso de lectura",
   "Percentage": "Porcentaje",
   "Page Number": "Número de página",
@@ -622,7 +622,7 @@
   "Updating email ...": "Actualizando correo electrónico ...",
   "Update email": "Actualizar correo electrónico",
   "Current email": "Correo electrónico actual",
-  "Update Email": "Actualizar correo electrónico",
+  "Change Email": "Cambiar correo electrónico",
   "All": "Todos",
   "Unable to open book": "No se puede abrir el libro",
   "Punctuation": "Signos de puntuación",
@@ -1350,7 +1350,6 @@
   "Failed to decrypt synced credentials": "No se pudieron descifrar las credenciales sincronizadas",
   "Imported dictionary bundles and settings": "Paquetes de diccionarios importados y ajustes",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Elige qué se sincroniza entre tus dispositivos. Al desactivar una categoría, este dispositivo deja de enviar o recibir entradas de ese tipo. Lo que ya está en el servidor se mantiene intacto, y al reactivarla se reanuda desde donde lo dejaste.",
-  "Data Sync": "Sincronización de datos",
   "Manage Fonts": "Administrar fuentes",
   "App settings": "Ajustes de la aplicación",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, colores de resaltado e integraciones (KOSync, Readwise, Hardcover)",
@@ -3146,5 +3145,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Libros digitales libres, editados con esmero para lectores",
   "Over 50,000 free ebooks": "Más de 50.000 libros electrónicos gratuitos",
   "Free ebooks from authors who have \"unglued\" their books": "Libros gratuitos de autores que los han «liberado»",
-  "Free public-domain books, comics, magazines and puzzles": "Libros, cómics, revistas y juegos gratis de dominio público"
+  "Free public-domain books, comics, magazines and puzzles": "Libros, cómics, revistas y juegos gratis de dominio público",
+  "Sync Settings": "Ajustes de sincronización"
 }

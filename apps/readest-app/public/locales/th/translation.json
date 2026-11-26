@@ -422,7 +422,7 @@
   "Terms of Service": "ข้อกำหนดในการให้บริการ",
   "Privacy Policy": "นโยบายความเป็นส่วนตัว",
   "Disable Double Click": "ปิดการคลิกสองครั้ง",
-  "Reset Password": "รีเซ็ตพาสเวิร์ด",
+  "Change Password": "เปลี่ยนรหัสผ่าน",
   "Reading Progress Style": "สไตล์ความก้าวหน้าในการอ่าน",
   "Page Number": "หมายเลขหน้า",
   "Percentage": "เปอร์เซ็นต์",
@@ -614,7 +614,7 @@
   "Updating email ...": "กำลังอัปเดตอีเมล ...",
   "Update email": "อัปเดตอีเมล",
   "Current email": "อีเมลปัจจุบัน",
-  "Update Email": "อัปเดตอีเมล",
+  "Change Email": "เปลี่ยนอีเมล",
   "All": "ทั้งหมด",
   "Unable to open book": "ไม่สามารถเปิดหนังสือได้",
   "Punctuation": "เครื่องหมายวรรคตอน",
@@ -1302,7 +1302,6 @@
   "Failed to decrypt synced credentials": "ไม่สามารถถอดรหัสข้อมูลรับรองที่ซิงค์ได้",
   "Imported dictionary bundles and settings": "ชุดพจนานุกรมที่นำเข้าและการตั้งค่า",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "เลือกสิ่งที่ซิงค์ระหว่างอุปกรณ์ของคุณ การปิดหมวดหมู่จะหยุดอุปกรณ์นี้จากการส่งหรือรับรายการประเภทนั้น สิ่งที่อยู่บนเซิร์ฟเวอร์อยู่แล้วจะไม่ถูกแตะต้อง การเปิดใช้งานอีกครั้งจะดำเนินการต่อจากจุดที่คุณหยุดไว้",
-  "Data Sync": "ซิงค์ข้อมูล",
   "Manage Fonts": "จัดการแบบอักษร",
   "App settings": "การตั้งค่าแอป",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "ธีม สีไฮไลต์ และการเชื่อมต่อ (KOSync, Readwise, Hardcover)",
@@ -2988,5 +2987,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "อีบุ๊กฟรีและเสรี จัดทำอย่างพิถีพิถันสำหรับคนรักหนังสือตัวจริง",
   "Over 50,000 free ebooks": "อีบุ๊กฟรีมากกว่า 50,000 เล่ม",
   "Free ebooks from authors who have \"unglued\" their books": "อีบุ๊กฟรีจากนักเขียนที่ “ปลดปล่อย” หนังสือของตน",
-  "Free public-domain books, comics, magazines and puzzles": "หนังสือ การ์ตูน นิตยสาร และปริศนาสาธารณสมบัติฟรี"
+  "Free public-domain books, comics, magazines and puzzles": "หนังสือ การ์ตูน นิตยสาร และปริศนาสาธารณสมบัติฟรี",
+  "Sync Settings": "การตั้งค่าการซิงค์"
 }

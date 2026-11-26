@@ -214,7 +214,10 @@ const ProfilePage = () => {
       refresh();
     } else if (showSharedLinksManager) {
       setShowSharedLinksManager(false);
-    } else if (showSyncManager) {
+    } else if (showSyncManager && searchParams?.get('section') !== 'sync') {
+      // Back returns to the account page only when Manage Sync was opened
+      // there. Opened at section=sync (the library's Sync Settings), Back
+      // leaves the page below.
       setShowSyncManager(false);
     } else if (giftView) {
       setGiftView(null);

@@ -428,7 +428,7 @@
   "Terms of Service": "Termini di servizio",
   "Privacy Policy": "Informativa sulla privacy",
   "Disable Double Click": "Disabilita Doppio Clic",
-  "Reset Password": "Reimposta Password",
+  "Change Password": "Cambia password",
   "Reading Progress Style": "Stile di Progresso Lettura",
   "Page Number": "Numero di Pagina",
   "Percentage": "Percentuale",
@@ -622,7 +622,7 @@
   "Updating email ...": "Aggiornamento dell'email ...",
   "Update email": "Aggiorna email",
   "Current email": "Email attuale",
-  "Update Email": "Aggiorna email",
+  "Change Email": "Cambia email",
   "All": "Tutti",
   "Unable to open book": "Impossibile aprire il libro",
   "Punctuation": "Segni di punteggiatura",
@@ -1350,7 +1350,6 @@
   "Failed to decrypt synced credentials": "Impossibile decifrare le credenziali sincronizzate",
   "Imported dictionary bundles and settings": "Pacchetti di dizionari importati e impostazioni",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Scegli cosa sincronizzare tra i tuoi dispositivi. Disabilitare una categoria impedisce a questo dispositivo di inviare o ricevere voci di quel tipo. Quanto già presente sul server resta intatto, riabilitandola la sincronizzazione riprende da dove l'hai interrotta.",
-  "Data Sync": "Sincronizzazione dati",
   "Manage Fonts": "Gestisci caratteri",
   "App settings": "Impostazioni app",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, colori delle evidenziazioni e integrazioni (KOSync, Readwise, Hardcover)",
@@ -3146,5 +3145,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Ebook gratuiti e liberi, realizzati con cura per i veri amanti dei libri",
   "Over 50,000 free ebooks": "Oltre 50.000 ebook gratuiti",
   "Free ebooks from authors who have \"unglued\" their books": "Ebook gratuiti di autori che hanno «liberato» i loro libri",
-  "Free public-domain books, comics, magazines and puzzles": "Libri, fumetti, riviste ed enigmi gratis di pubblico dominio"
+  "Free public-domain books, comics, magazines and puzzles": "Libri, fumetti, riviste ed enigmi gratis di pubblico dominio",
+  "Sync Settings": "Sincronizzazione"
 }

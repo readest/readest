@@ -431,7 +431,7 @@
   "Terms of Service": "Условия использования",
   "Privacy Policy": "Политика конфиденциальности",
   "Disable Double Click": "Отключить двойной клик",
-  "Reset Password": "Сбросить пароль",
+  "Change Password": "Изменить пароль",
   "Reading Progress Style": "Стиль прогресса чтения",
   "Page Number": "Номер страницы",
   "Percentage": "Процент",
@@ -626,7 +626,7 @@
   "Updating email ...": "Обновление электронной почты ...",
   "Update email": "Обновить электронную почту",
   "Current email": "Текущий адрес электронной почты",
-  "Update Email": "Обновить электронную почту",
+  "Change Email": "Изменить эл. почту",
   "All": "Все",
   "Unable to open book": "Не удалось открыть книгу",
   "Punctuation": "Пунктуация",
@@ -1374,7 +1374,6 @@
   "Failed to decrypt synced credentials": "Не удалось расшифровать синхронизированные учётные данные",
   "Imported dictionary bundles and settings": "Импортированные пакеты словарей и настройки",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Выберите, что синхронизируется между вашими устройствами. При отключении категории это устройство перестаёт отправлять и получать записи такого типа. То, что уже на сервере, остаётся без изменений, а при повторном включении синхронизация возобновится с того места, где вы остановились.",
-  "Data Sync": "Синхронизация данных",
   "Manage Fonts": "Управление шрифтами",
   "App settings": "Настройки приложения",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Тема, цвета выделений и интеграции (KOSync, Readwise, Hardcover)",
@@ -3225,5 +3224,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Свободные электронные книги, бережно сделанные для читателей",
   "Over 50,000 free ebooks": "Более 50 000 бесплатных электронных книг",
   "Free ebooks from authors who have \"unglued\" their books": "Бесплатные книги от авторов, которые их «освободили»",
-  "Free public-domain books, comics, magazines and puzzles": "Бесплатные книги, комиксы, журналы и головоломки из общественного достояния"
+  "Free public-domain books, comics, magazines and puzzles": "Бесплатные книги, комиксы, журналы и головоломки из общественного достояния",
+  "Sync Settings": "Синхронизация"
 }

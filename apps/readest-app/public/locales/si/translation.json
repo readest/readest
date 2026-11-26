@@ -315,7 +315,7 @@
   "Delete Permanently": "ස්ථිරවම මකන්න",
   "Restore Purchase": "මිලදී ගැනීම ප්‍රතිෂ්ඨාපනය කරන්න",
   "Manage Subscription": "දායකත්වය කළමනාකරණය කරන්න",
-  "Reset Password": "මුරපදය නැවත සකස් කරන්න",
+  "Change Password": "මුරපදය වෙනස් කරන්න",
   "Sign Out": "ඉවත් වන්න",
   "Delete Account": "ගිණුම මකන්න",
   "Upgrade to {{plan}}": "{{plan}} වෙත උසස් කරන්න",
@@ -618,7 +618,7 @@
   "Updating email ...": "විද්‍යුත් තැපැල් යාවත්කාලීන කරමින් ...",
   "Update email": "විද්‍යුත් තැපැල් යාවත්කාලීන කරන්න",
   "Current email": "වත්මන් විද්‍යුත් තැපැල්",
-  "Update Email": "විද්‍යුත් තැපැල් යාවත්කාලීන කරන්න",
+  "Change Email": "විද්‍යුත් තැපෑල වෙනස් කරන්න",
   "All": "සියල්ල",
   "Unable to open book": "පොත විවෘත කිරීමට නොහැක",
   "Punctuation": "ලකුණු",
@@ -1326,7 +1326,6 @@
   "Failed to decrypt synced credentials": "සමමුහූර්ත කළ අක්තපත්‍ර විකේතනය කිරීමට අසමත් විය",
   "Imported dictionary bundles and settings": "ආයාතිත ශබ්දකෝෂ පැකේජ සහ සැකසීම්",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "ඔබේ උපාංග අතර කුමක් සමමුහූර්ත කළ යුතුද යන්න තෝරන්න. කාණ්ඩයක් අක්‍රිය කිරීමෙන් මෙම උපාංගයෙන් එම වර්ගයේ පේළි යැවීම හෝ ලැබීම නවතී. සේවාදායකයේ දැනටමත් ඇති දේ එලෙසම පවතී, නැවත සක්‍රිය කළ විට ඔබ නැවැත්වූ තැනින් යළි ආරම්භ වේ.",
-  "Data Sync": "දත්ත සමමුහූර්තය",
   "Manage Fonts": "අකුරු කළමනාකරණය",
   "App settings": "යෙදුමේ සැකසුම්",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "තේමාව, උද්දීපන වර්ණ සහ ඒකාබද්ධතා (KOSync, Readwise, Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "පොත් ලෝලීන් සඳහා සැලකිල්ලෙන් නිපදවූ නිදහස් ඊ-පොත්",
   "Over 50,000 free ebooks": "නොමිලේ ඊ-පොත් 50,000කට වඩා",
   "Free ebooks from authors who have \"unglued\" their books": "තම පොත් “නිදහස්” කළ කතුවරුන්ගේ නොමිලේ ඊ-පොත්",
-  "Free public-domain books, comics, magazines and puzzles": "පොදු වසමේ නොමිලේ පොත්, චිත්‍රකතා, සඟරා සහ ප්‍රහේලිකා"
+  "Free public-domain books, comics, magazines and puzzles": "පොදු වසමේ නොමිලේ පොත්, චිත්‍රකතා, සඟරා සහ ප්‍රහේලිකා",
+  "Sync Settings": "සමමුහුර්ත සැකසුම්"
 }

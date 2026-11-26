@@ -313,8 +313,8 @@
   "Delete Permanently": "Padam Kekal",
   "Restore Purchase": "Pulihkan Pembelian",
   "Manage Subscription": "Urus Langganan",
-  "Reset Password": "Tetapkan Semula Kata Laluan",
-  "Update Email": "Kemas Kini E-mel",
+  "Change Password": "Tukar Kata Laluan",
+  "Change Email": "Tukar E-mel",
   "Sign Out": "Log Keluar",
   "Delete Account": "Padam Akaun",
   "Upgrade to {{plan}}": "Naik Taraf ke {{plan}}",
@@ -1302,7 +1302,6 @@
   "Failed to decrypt synced credentials": "Gagal menyahsulit kelayakan yang disegerakkan",
   "Imported dictionary bundles and settings": "Himpunan kamus yang diimport dan tetapan",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Pilih apa yang disegerakkan antara peranti anda. Melumpuhkan kategori menghentikan peranti ini daripada menghantar atau menerima entri jenis itu. Apa-apa yang sudah ada pada pelayan dibiarkan, mengaktifkannya semula akan menyambung dari tempat anda berhenti.",
-  "Data Sync": "Penyegerakan Data",
   "Manage Fonts": "Urus Fon",
   "App settings": "Tetapan aplikasi",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Tema, warna sorotan, dan integrasi (KOSync, Readwise, Hardcover)",
@@ -2988,5 +2987,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "E-buku bebas, dihasilkan dengan teliti untuk pencinta buku",
   "Over 50,000 free ebooks": "Lebih 50,000 e-buku percuma",
   "Free ebooks from authors who have \"unglued\" their books": "E-buku percuma yang telah “dibebaskan” oleh pengarangnya",
-  "Free public-domain books, comics, magazines and puzzles": "Buku, komik, majalah dan teka-teki domain awam percuma"
+  "Free public-domain books, comics, magazines and puzzles": "Buku, komik, majalah dan teka-teki domain awam percuma",
+  "Sync Settings": "Tetapan Segerak"
 }

@@ -425,7 +425,7 @@
   "Terms of Service": "सेवा की शर्तें",
   "Privacy Policy": "गोपनीयता नीति",
   "Disable Double Click": "डबल क्लिक अक्षम करें",
-  "Reset Password": "पासवर्ड रीसेट करें",
+  "Change Password": "पासवर्ड बदलें",
   "Reading Progress Style": "पढ़ने की प्रगति शैली",
   "Page Number": "पृष्ठ संख्या",
   "Percentage": "प्रतिशत",
@@ -618,7 +618,7 @@
   "Updating email ...": "ईमेल अपडेट किया जा रहा है ...",
   "Update email": "ईमेल अपडेट करें",
   "Current email": "वर्तमान ईमेल",
-  "Update Email": "ईमेल अपडेट करें",
+  "Change Email": "ईमेल बदलें",
   "All": "सभी",
   "Unable to open book": "पुस्तक खोलने में असमर्थ",
   "Punctuation": "विराम चिह्न",
@@ -1326,7 +1326,6 @@
   "Failed to decrypt synced credentials": "सिंक की गई क्रेडेंशियल्स को डिक्रिप्ट करने में विफल",
   "Imported dictionary bundles and settings": "आयातित शब्दकोश बंडल और सेटिंग्स",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "चुनें कि आपके डिवाइसों के बीच क्या सिंक हो। किसी श्रेणी को अक्षम करने पर यह डिवाइस उस प्रकार की प्रविष्टियाँ भेजना या प्राप्त करना बंद कर देता है। सर्वर पर पहले से मौजूद कुछ भी नहीं बदलता, फिर से सक्षम करने पर वहीं से जारी होता है जहाँ आपने रोका था।",
-  "Data Sync": "डेटा सिंक",
   "Manage Fonts": "फ़ॉन्ट प्रबंधित करें",
   "App settings": "ऐप सेटिंग्स",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "थीम, हाइलाइट रंग और एकीकरण (KOSync, Readwise, Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "सच्चे पुस्तक प्रेमियों के लिए सावधानी से तैयार की गई मुफ़्त और स्वतंत्र ई-बुक्स",
   "Over 50,000 free ebooks": "50,000 से अधिक मुफ़्त ई-बुक्स",
   "Free ebooks from authors who have \"unglued\" their books": "उन लेखकों की मुफ़्त ई-बुक्स जिन्होंने अपनी किताबें “मुक्त” कर दी हैं",
-  "Free public-domain books, comics, magazines and puzzles": "सार्वजनिक डोमेन की मुफ़्त किताबें, कॉमिक्स, पत्रिकाएँ और पहेलियाँ"
+  "Free public-domain books, comics, magazines and puzzles": "सार्वजनिक डोमेन की मुफ़्त किताबें, कॉमिक्स, पत्रिकाएँ और पहेलियाँ",
+  "Sync Settings": "सिंक सेटिंग्स"
 }

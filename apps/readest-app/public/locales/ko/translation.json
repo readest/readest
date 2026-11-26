@@ -422,7 +422,7 @@
   "Terms of Service": "서비스 약관",
   "Privacy Policy": "개인정보 보호정책",
   "Disable Double Click": "더블 클릭 비활성화",
-  "Reset Password": "비밀번호 재설정",
+  "Change Password": "비밀번호 변경",
   "Reading Progress Style": "읽기 진행 상황 스타일",
   "Page Number": "페이지 번호",
   "Percentage": "백분율",
@@ -614,7 +614,7 @@
   "Updating email ...": "이메일 업데이트 중...",
   "Update email": "이메일 업데이트",
   "Current email": "현재 이메일",
-  "Update Email": "이메일 업데이트",
+  "Change Email": "이메일 변경",
   "All": "전체",
   "Unable to open book": "책을 열 수 없습니다",
   "Punctuation": "구두점",
@@ -1302,7 +1302,6 @@
   "Failed to decrypt synced credentials": "동기화된 자격 증명을 복호화하지 못했습니다",
   "Imported dictionary bundles and settings": "가져온 사전 번들과 설정",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "기기 간에 동기화할 항목을 선택하세요. 카테고리를 비활성화하면 이 기기는 해당 종류의 항목을 보내거나 받지 않습니다. 서버에 이미 있는 데이터는 그대로 유지되며, 다시 활성화하면 중단한 지점부터 이어집니다.",
-  "Data Sync": "데이터 동기화",
   "Manage Fonts": "글꼴 관리",
   "App settings": "앱 설정",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "테마, 하이라이트 색상, 연동 (KOSync, Readwise, Hardcover)",
@@ -2988,5 +2987,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "진정한 책 애호가를 위해 정성껏 만든 무료 자유 전자책",
   "Over 50,000 free ebooks": "50,000권 이상의 무료 전자책",
   "Free ebooks from authors who have \"unglued\" their books": "저자들이 ‘해방’한 무료 전자책",
-  "Free public-domain books, comics, magazines and puzzles": "퍼블릭 도메인 무료 도서, 만화, 잡지, 퍼즐"
+  "Free public-domain books, comics, magazines and puzzles": "퍼블릭 도메인 무료 도서, 만화, 잡지, 퍼즐",
+  "Sync Settings": "동기화 설정"
 }

@@ -425,7 +425,7 @@
   "Terms of Service": "Όροι χρήσης",
   "Privacy Policy": "Πολιτική απορρήτου",
   "Disable Double Click": "Απενεργοποίηση διπλού κλικ",
-  "Reset Password": "Επαναφορά κωδικού",
+  "Change Password": "Αλλαγή κωδικού πρόσβασης",
   "Reading Progress Style": "Στυλ προόδου ανάγνωσης",
   "Page Number": "Αριθμός σελίδας",
   "Percentage": "Ποσοστό",
@@ -618,7 +618,7 @@
   "Updating email ...": "Ενημέρωση email ...",
   "Update email": "Ενημέρωση email",
   "Current email": "Τρέχον email",
-  "Update Email": "Ενημέρωση email",
+  "Change Email": "Αλλαγή email",
   "All": "Όλα",
   "Unable to open book": "Αδύνατη η άνοιγμα του βιβλίου",
   "Punctuation": "Στίξη",
@@ -1326,7 +1326,6 @@
   "Failed to decrypt synced credentials": "Αποτυχία αποκρυπτογράφησης των συγχρονισμένων διαπιστευτηρίων",
   "Imported dictionary bundles and settings": "Εισηγμένα πακέτα λεξικών και ρυθμίσεις",
   "Choose what syncs across your devices. Disabling a category stops this device from sending or receiving rows of that kind. Anything already on the server is left alone, re-enabling resumes from where you stopped.": "Επιλέξτε τι συγχρονίζεται μεταξύ των συσκευών σας. Η απενεργοποίηση μιας κατηγορίας σταματά αυτή τη συσκευή από το να στέλνει ή να λαμβάνει εγγραφές αυτού του τύπου. Ό,τι υπάρχει ήδη στον διακομιστή παραμένει ως έχει, η εκ νέου ενεργοποίηση συνεχίζει από εκεί που σταματήσατε.",
-  "Data Sync": "Συγχρονισμός δεδομένων",
   "Manage Fonts": "Διαχείριση γραμματοσειρών",
   "App settings": "Ρυθμίσεις εφαρμογής",
   "Theme, highlight colours, and integrations (KOSync, Readwise, Hardcover)": "Θέμα, χρώματα επισήμανσης και ενσωματώσεις (KOSync, Readwise, Hardcover)",
@@ -3067,5 +3066,6 @@
   "Free and liberated ebooks, carefully produced for the true book lover": "Ελεύθερα e-books, επιμελημένα με φροντίδα για βιβλιόφιλους",
   "Over 50,000 free ebooks": "Πάνω από 50.000 δωρεάν ηλεκτρονικά βιβλία",
   "Free ebooks from authors who have \"unglued\" their books": "Δωρεάν e-books από συγγραφείς που τα «απελευθέρωσαν»",
-  "Free public-domain books, comics, magazines and puzzles": "Δωρεάν βιβλία, κόμικς, περιοδικά και γρίφοι κοινού κτήματος"
+  "Free public-domain books, comics, magazines and puzzles": "Δωρεάν βιβλία, κόμικς, περιοδικά και γρίφοι κοινού κτήματος",
+  "Sync Settings": "Ρυθμίσεις συγχρονισμού"
 }
