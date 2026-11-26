@@ -169,18 +169,24 @@ export function SyncCategoriesSection({ thirdPartyPaused = false }: SyncCategori
 
   const librarySubtitle =
     readestEnabled && activeBackends.length > 0
-      ? _('Synced to Readest Cloud and {{provider}} in parallel', {
-          provider: activeProviderName,
-        })
+      ? _(
+          'Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file',
+          { provider: activeProviderName },
+        )
       : readestEnabled
         ? _('Synced to Readest Cloud')
-        : activeBackends.length > 0
-          ? _('Synced to {{provider}}', { provider: activeProviderName })
-          : thirdPartyPaused && backends.length > 0
-            ? _('Paused on {{provider}} — upgrade or enable Readest Cloud to resume', {
-                provider: cloudProviderName,
-              })
-            : _('Not syncing — enable a cloud sync provider in Settings → Integrations');
+        : activeBackends.length > 1
+          ? _(
+              'Synced to {{provider}} in parallel — downloads use the first provider with the file',
+              { provider: activeProviderName },
+            )
+          : activeBackends.length === 1
+            ? _('Synced to {{provider}}', { provider: activeProviderName })
+            : thirdPartyPaused && backends.length > 0
+              ? _('Paused on {{provider}} — upgrade or enable Readest Cloud to resume', {
+                  provider: cloudProviderName,
+                })
+              : _('Not syncing — enable a cloud sync provider in Settings → Integrations');
 
   const renderCategoryRow = (category: SyncCategory) => {
     const c = copy[category];
@@ -292,7 +298,7 @@ export function SyncCategoriesSection({ thirdPartyPaused = false }: SyncCategori
         <div className='flex flex-col gap-0.5'>
           <h4 className='text-base-content text-sm font-semibold'>{_('Account & Preferences')}</h4>
           <p className='text-base-content/60 text-xs'>
-            {_('Always synced via Readest Cloud while signed in')}
+            {_('Synced via Readest Cloud when enabled; turning a category off keeps it local')}
           </p>
         </div>
         <ul className='bg-base-100 border-base-300 divide-base-200 eink-bordered divide-y rounded-lg border'>

@@ -87,7 +87,11 @@ describe('SyncCategoriesSection', () => {
     expect(screen.getByText('Library & Media')).toBeTruthy();
     expect(screen.getByText('Synced to Readest Cloud')).toBeTruthy();
     expect(screen.getByText('Account & Preferences')).toBeTruthy();
-    expect(screen.getByText('Always synced via Readest Cloud while signed in')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Synced via Readest Cloud when enabled; turning a category off keeps it local',
+      ),
+    ).toBeTruthy();
     expect(row('Books').closest('li')!.textContent).toContain('Readest Cloud');
     expect(row('Dictionaries').closest('li')!.textContent).not.toContain('Readest Cloud');
   });
@@ -103,7 +107,11 @@ describe('SyncCategoriesSection', () => {
     } as never);
     render(<SyncCategoriesSection />);
 
-    expect(screen.getByText('Synced to Readest Cloud and {{provider}} in parallel')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file',
+      ),
+    ).toBeTruthy();
 
     const progressLi = row('Reading progress').closest('li')!.textContent;
     expect(progressLi).toContain('Readest Cloud');
@@ -132,13 +140,29 @@ describe('SyncCategoriesSection', () => {
         ...base,
         readestCloud: { enabled: false },
         webdav: { enabled: true },
+        syncCategories: { book_data: true },
+      },
+    } as never);
+    render(<SyncCategoriesSection />);
+    expect(screen.getByText('Synced to {{provider}}')).toBeTruthy();
+
+    cleanup();
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: false },
+        webdav: { enabled: true },
         googleDrive: { enabled: true },
         syncCategories: { book_data: true },
       },
     } as never);
     render(<SyncCategoriesSection />);
 
-    expect(screen.getByText('Synced to {{provider}}')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Synced to {{provider}} in parallel — downloads use the first provider with the file',
+      ),
+    ).toBeTruthy();
     expect(row('Book Data').closest('li')!.textContent).toContain('WebDAV');
     expect(row('Book Data').closest('li')!.textContent).toContain('Google Drive');
     expect(row('Book Data').closest('li')!.textContent).not.toContain('Readest Cloud');

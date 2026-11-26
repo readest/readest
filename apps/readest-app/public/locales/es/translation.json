@@ -3136,9 +3136,10 @@
   "Account & Preferences": "Cuenta y preferencias",
   "Synced to Readest Cloud": "Sincronizado con Readest Cloud",
   "Synced to {{provider}}": "Sincronizado con {{provider}}",
-  "Synced to Readest Cloud and {{provider}} in parallel": "Sincronizado en paralelo con Readest Cloud y {{provider}}",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "En pausa en {{provider}} — mejora tu plan o activa Readest Cloud para reanudar",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Sin sincronizar — activa un proveedor en Ajustes → Integraciones",
-  "Always synced via Readest Cloud while signed in": "Siempre sincronizado mediante Readest Cloud al iniciar sesión",
-  "Readest Cloud sync is off; still synced via {{provider}}": "La sincronización con Readest Cloud está desactivada; sigue sincronizándose mediante {{provider}}"
+  "Readest Cloud sync is off; still synced via {{provider}}": "La sincronización con Readest Cloud está desactivada; sigue sincronizándose mediante {{provider}}",
+  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "Se sincroniza mediante Readest Cloud cuando está activado; desactivar una categoría la mantiene local",
+  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Sincronizado en paralelo con Readest Cloud y {{provider}} — las descargas usan el primer proveedor que tenga el archivo",
+  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "Sincronizado en paralelo con {{provider}} — las descargas usan el primer proveedor que tenga el archivo"
 }

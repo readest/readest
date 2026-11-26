@@ -3057,9 +3057,10 @@
   "Account & Preferences": "Fiók és beállítások",
   "Synced to Readest Cloud": "Szinkronizálva a Readest Cloudba",
   "Synced to {{provider}}": "Szinkronizálva ide: {{provider}}",
-  "Synced to Readest Cloud and {{provider}} in parallel": "Párhuzamosan szinkronizálva a Readest Cloudba és ide: {{provider}}",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Szüneteltetve ({{provider}}) — a folytatáshoz frissítsen csomagot vagy kapcsolja be a Readest Cloudot",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Nincs szinkronizálás — engedélyezzen egy szolgáltatót a Beállítások → Integrációk menüben",
-  "Always synced via Readest Cloud while signed in": "Bejelentkezve mindig a Readest Cloudon keresztül szinkronizálódik",
-  "Readest Cloud sync is off; still synced via {{provider}}": "A Readest Cloud szinkronizálás ki van kapcsolva; továbbra is a(z) {{provider}} szolgáltatón keresztül szinkronizál"
+  "Readest Cloud sync is off; still synced via {{provider}}": "A Readest Cloud szinkronizálás ki van kapcsolva; továbbra is a(z) {{provider}} szolgáltatón keresztül szinkronizál",
+  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "Bekapcsolva a Readest Cloudon keresztül szinkronizál; kikapcsolva a kategória helyben marad",
+  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Párhuzamos szinkronizálás a Readest Cloud és {{provider}} között — a letöltések az első fájllal rendelkező szolgáltatót használják",
+  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "Párhuzamos szinkronizálás a(z) {{provider}} szolgáltatókkal — a letöltések az első fájllal rendelkező szolgáltatót használják"
 }

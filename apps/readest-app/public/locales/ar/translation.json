@@ -3373,9 +3373,10 @@
   "Account & Preferences": "الحساب والتفضيلات",
   "Synced to Readest Cloud": "تتم المزامنة إلى Readest Cloud",
   "Synced to {{provider}}": "تتم المزامنة إلى {{provider}}",
-  "Synced to Readest Cloud and {{provider}} in parallel": "تتم المزامنة بالتوازي إلى Readest Cloud و{{provider}}",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "متوقف مؤقتًا على {{provider}} — قم بالترقية أو فعّل Readest Cloud للمتابعة",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "لا تتم المزامنة — فعّل مزودًا من الإعدادات ← التكاملات",
-  "Always synced via Readest Cloud while signed in": "تتم المزامنة دائمًا عبر Readest Cloud أثناء تسجيل الدخول",
-  "Readest Cloud sync is off; still synced via {{provider}}": "مزامنة Readest Cloud متوقفة؛ لا تزال تتم المزامنة عبر {{provider}}"
+  "Readest Cloud sync is off; still synced via {{provider}}": "مزامنة Readest Cloud متوقفة؛ لا تزال تتم المزامنة عبر {{provider}}",
+  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "تتم المزامنة عبر Readest Cloud عند التفعيل؛ إيقاف فئة يبقيها محلية",
+  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "تتم المزامنة بالتوازي مع Readest Cloud و{{provider}} — تستخدم التنزيلات أول مزود يتوفر لديه الملف",
+  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "تتم المزامنة بالتوازي مع {{provider}} — تستخدم التنزيلات أول مزود يتوفر لديه الملف"
 }

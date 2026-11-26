@@ -2978,9 +2978,10 @@
   "Account & Preferences": "账号与偏好设置",
   "Synced to Readest Cloud": "已同步至 Readest Cloud",
   "Synced to {{provider}}": "已同步至 {{provider}}",
-  "Synced to Readest Cloud and {{provider}} in parallel": "并行同步至 Readest Cloud 和 {{provider}}",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} 已暂停 — 升级套餐或启用 Readest Cloud 以恢复",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "未同步 — 请在设置 → 集成中启用云同步服务",
-  "Always synced via Readest Cloud while signed in": "登录状态下始终通过 Readest Cloud 同步",
-  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud 同步已关闭；仍通过 {{provider}} 同步"
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud 同步已关闭；仍通过 {{provider}} 同步",
+  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "开启后通过 Readest Cloud 同步；关闭类别将仅保存在本地",
+  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "与 Readest Cloud 和 {{provider}} 并行同步 — 下载时将从首个存有该文件的提供方获取",
+  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "与 {{provider}} 并行同步 — 下载时将从首个存有该文件的提供方获取"
 }

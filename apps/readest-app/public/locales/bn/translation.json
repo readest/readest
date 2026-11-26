@@ -3057,9 +3057,10 @@
   "Account & Preferences": "অ্যাকাউন্ট ও পছন্দসমূহ",
   "Synced to Readest Cloud": "Readest Cloud-এ সিঙ্ক হচ্ছে",
   "Synced to {{provider}}": "{{provider}}-এ সিঙ্ক হচ্ছে",
-  "Synced to Readest Cloud and {{provider}} in parallel": "Readest Cloud এবং {{provider}}-এ সমান্তরালভাবে সিঙ্ক হচ্ছে",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}}-এ বিরতি দেওয়া আছে — পুনরায় চালু করতে আপগ্রেড করুন বা Readest Cloud চালু করুন",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "সিঙ্ক হচ্ছে না — সেটিংস → ইন্টিগ্রেশন থেকে একটি ক্লাউড সিঙ্ক প্রোভাইডার চালু করুন",
-  "Always synced via Readest Cloud while signed in": "সাইন ইন থাকা অবস্থায় সর্বদা Readest Cloud-এর মাধ্যমে সিঙ্ক হয়",
-  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud সিঙ্ক বন্ধ আছে; তবুও {{provider}}-এর মাধ্যমে সিঙ্ক হচ্ছে"
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud সিঙ্ক বন্ধ আছে; তবুও {{provider}}-এর মাধ্যমে সিঙ্ক হচ্ছে",
+  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "সক্রিয় থাকলে Readest Cloud-এর মাধ্যমে সিঙ্ক হয়; কোনো বিভাগ বন্ধ করলে সেটি কেবল লোকালেই থাকে",
+  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Readest Cloud ও {{provider}}-এ সমান্তরালে সিঙ্ক হয় — ডাউনলোডে ফাইলটি থাকা প্রথম প্রদানকারী ব্যবহৃত হয়",
+  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "{{provider}}-এ সমান্তরালে সিঙ্ক হয় — ডাউনলোডে ফাইলটি থাকা প্রথম প্রদানকারী ব্যবহৃত হয়"
 }

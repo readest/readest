@@ -3057,9 +3057,10 @@
   "Account & Preferences": "Hisob va sozlamalar",
   "Synced to Readest Cloud": "Readest Cloud bilan sinxronlanadi",
   "Synced to {{provider}}": "{{provider}} bilan sinxronlanadi",
-  "Synced to Readest Cloud and {{provider}} in parallel": "Readest Cloud va {{provider}} bilan parallel sinxronlanadi",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} uchun to‘xtatilgan — davom ettirish uchun tarifni oshiring yoki Readest Cloud ni yoqing",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Sinxronlanmayapti — Sozlamalar → Integratsiyalar bo‘limida provayderni yoqing",
-  "Always synced via Readest Cloud while signed in": "Hisobga kirilganda doimo Readest Cloud orqali sinxronlanadi",
-  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud sinxronlash o‘chirilgan; baribir {{provider}} orqali sinxronlanmoqda"
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud sinxronlash o‘chirilgan; baribir {{provider}} orqali sinxronlanmoqda",
+  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "Yoqilganda Readest Cloud orqali sinxronlanadi; toifani o‘chirish uni faqat lokal qoldiradi",
+  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Readest Cloud va {{provider}} bilan parallel sinxronlanadi — yuklab olishda fayli bor birinchi provayder ishlatiladi",
+  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "{{provider}} bilan parallel sinxronlanadi — yuklab olishda fayli bor birinchi provayder ishlatiladi"
 }

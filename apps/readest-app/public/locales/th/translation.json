@@ -2978,9 +2978,10 @@
   "Account & Preferences": "บัญชีและการตั้งค่า",
   "Synced to Readest Cloud": "ซิงค์ไปยัง Readest Cloud",
   "Synced to {{provider}}": "ซิงค์ไปยัง {{provider}}",
-  "Synced to Readest Cloud and {{provider}} in parallel": "ซิงค์พร้อมกันไปยัง Readest Cloud และ {{provider}}",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "หยุดชั่วคราวบน {{provider}} — อัปเกรดหรือเปิดใช้งาน Readest Cloud เพื่อทำต่อ",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "ไม่ได้ซิงค์ — เปิดใช้งานผู้ให้บริการใน การตั้งค่า → การผสานรวม",
-  "Always synced via Readest Cloud while signed in": "ซิงค์ผ่าน Readest Cloud เสมอเมื่อเข้าสู่ระบบ",
-  "Readest Cloud sync is off; still synced via {{provider}}": "ปิดการซิงค์ Readest Cloud อยู่ แต่ยังคงซิงค์ผ่าน {{provider}}"
+  "Readest Cloud sync is off; still synced via {{provider}}": "ปิดการซิงค์ Readest Cloud อยู่ แต่ยังคงซิงค์ผ่าน {{provider}}",
+  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "ซิงค์ผ่าน Readest Cloud เมื่อเปิดใช้งาน; การปิดหมวดหมู่จะเก็บข้อมูลไว้ในเครื่องเท่านั้น",
+  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "ซิงค์แบบขนานไปยัง Readest Cloud และ {{provider}} — การดาวน์โหลดจะใช้ผู้ให้บริการรายแรกที่มีไฟล์",
+  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "ซิงค์แบบขนานไปยัง {{provider}} — การดาวน์โหลดจะใช้ผู้ให้บริการรายแรกที่มีไฟล์"
 }

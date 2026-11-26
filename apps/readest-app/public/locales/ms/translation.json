@@ -2978,9 +2978,10 @@
   "Account & Preferences": "Akaun & Keutamaan",
   "Synced to Readest Cloud": "Disegerakkan ke Readest Cloud",
   "Synced to {{provider}}": "Disegerakkan ke {{provider}}",
-  "Synced to Readest Cloud and {{provider}} in parallel": "Disegerakkan secara selari ke Readest Cloud dan {{provider}}",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "Dijeda pada {{provider}} — naik taraf atau dayakan Readest Cloud untuk menyambung",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "Tidak disegerakkan — dayakan pembekal di Tetapan → Integrasi",
-  "Always synced via Readest Cloud while signed in": "Sentiasa disegerakkan melalui Readest Cloud semasa log masuk",
-  "Readest Cloud sync is off; still synced via {{provider}}": "Segerak Readest Cloud dimatikan; masih disegerakkan melalui {{provider}}"
+  "Readest Cloud sync is off; still synced via {{provider}}": "Segerak Readest Cloud dimatikan; masih disegerakkan melalui {{provider}}",
+  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "Disegerakkan melalui Readest Cloud apabila didayakan; mematikan kategori mengekalkannya secara setempat",
+  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Disegerakkan secara selari ke Readest Cloud dan {{provider}} — muat turun menggunakan pembekal pertama yang mempunyai fail",
+  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "Disegerakkan secara selari ke {{provider}} — muat turun menggunakan pembekal pertama yang mempunyai fail"
 }

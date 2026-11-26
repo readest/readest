@@ -2978,9 +2978,10 @@
   "Account & Preferences": "རྩིས་ཐོ་དང་སྒྲིག་འགོད",
   "Synced to Readest Cloud": "Readest Cloud ལ་མཉམ་སྒྲིག་བྱེད་བཞིན་པ",
   "Synced to {{provider}}": "{{provider}} ལ་མཉམ་སྒྲིག་བྱེད་བཞིན་པ",
-  "Synced to Readest Cloud and {{provider}} in parallel": "Readest Cloud དང་ {{provider}} གཉིས་ཀར་མཉམ་སྒྲིག་བྱེད་བཞིན་པ",
   "Paused on {{provider}} — upgrade or enable Readest Cloud to resume": "{{provider}} ཐོག་མཚམས་བཞག་ཡོད — མུ་མཐུད་པར་རིམ་སྤར་བྱེད་པའམ་ Readest Cloud སྤྱོད",
   "Not syncing — enable a cloud sync provider in Settings → Integrations": "མཉམ་སྒྲིག་མེད — སྒྲིག་འགོད་ → མཐུད་སྦྱོར་ནས་སྤྲིན་མཁོ་སྤྲོད་བྱེད་མཁན་སྤྱོད",
-  "Always synced via Readest Cloud while signed in": "ནང་འཇུག་བྱས་རིང་ Readest Cloud བརྒྱུད་རྟག་ཏུ་མཉམ་སྒྲིག་བྱེད",
-  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud མཉམ་སྒྲིག་བཀག་ཡོད་ཀྱང་ {{provider}} བརྒྱུད་མུ་མཐུད་མཉམ་སྒྲིག་བྱེད"
+  "Readest Cloud sync is off; still synced via {{provider}}": "Readest Cloud མཉམ་སྒྲིག་བཀག་ཡོད་ཀྱང་ {{provider}} བརྒྱུད་མུ་མཐུད་མཉམ་སྒྲིག་བྱེད",
+  "Synced via Readest Cloud when enabled; turning a category off keeps it local": "ལྕོགས་ཅན་བཟོས་སྐབས་ Readest Cloud བརྒྱུད་མཉམ་སྒྲིག་བྱེད། དབྱེ་ཁག་བཀག་ན་ས་གནས་རང་དུ་ཉར་འཇོག་བྱེད",
+  "Synced to Readest Cloud and {{provider}} in parallel — downloads use the first provider with the file": "Readest Cloud དང་ {{provider}} ལ་མཉམ་དུ་སྒྲིག་བཞིན་ཡོད — ཕབ་ལེན་སྐབས་ཡིག་ཆ་ཡོད་པའི་མཁོ་སྤྲོད་པ་དང་པོ་བེད་སྤྱོད་གཏོང",
+  "Synced to {{provider}} in parallel — downloads use the first provider with the file": "{{provider}} ལ་མཉམ་དུ་སྒྲིག་བཞིན་ཡོད — ཕབ་ལེན་སྐབས་ཡིག་ཆ་ཡོད་པའི་མཁོ་སྤྲོད་པ་དང་པོ་བེད་སྤྱོད་གཏོང"
 }
