@@ -13,6 +13,7 @@ import type { NavigationHandlers } from '@/app/reader/components/footerbar/types
 // screen pages its label and the footer count (#7445, #7453).
 
 const goToFraction = vi.hoisted(() => vi.fn());
+const goTo = vi.hoisted(() => vi.fn());
 const viewSettings = vi.hoisted(() => ({
   progressStyle: 'fraction',
   stablePageNumbers: false as boolean,
@@ -25,6 +26,7 @@ vi.mock('@/store/readerStore', () => {
     renderer: { page: 1, getContents: () => [] },
     getSectionFractions: () => [0, 0.25, 0.5, 1],
     goToFraction,
+    goTo,
   };
   const state = {
     hoveredBookKey: 'book-1',
@@ -110,6 +112,7 @@ afterEach(() => {
   clearBookProgress('book-1');
   clearChapterScreens('book-1');
   goToFraction.mockClear();
+  goTo.mockClear();
   vi.useRealTimers();
 });
 
@@ -126,8 +129,12 @@ describe('FooterBar progress slider with Stable Page Numbers off', () => {
     // screens, 1 / 3 into it.
     footer.handlers!.onProgressChange(75);
     act(() => vi.advanceTimersByTime(200));
-    expect(goToFraction).toHaveBeenCalledOnce();
-    expect(goToFraction.mock.calls[0]![0]).toBeCloseTo(0.5 + (1 / 3) * 0.5);
+    // A slider move is a step in a run (#8004): the run keeps one history
+    // entry, so Back returns to where the drag started.
+    expect(goToFraction).not.toHaveBeenCalled();
+    expect(goTo).toHaveBeenCalledOnce();
+    expect(goTo.mock.calls[0]![0].fraction).toBeCloseTo(0.5 + (1 / 3) * 0.5);
+    expect(goTo.mock.calls[0]![1]).toEqual({ step: true });
   });
 
   it('keeps the byte-grid slider with Stable Page Numbers on', () => {
@@ -137,6 +144,6 @@ describe('FooterBar progress slider with Stable Page Numbers off', () => {
     expect(footer.fraction).toBe(5 / 9);
     footer.handlers!.onProgressChange(75);
     act(() => vi.advanceTimersByTime(200));
-    expect(goToFraction).toHaveBeenCalledWith(0.75);
+    expect(goTo).toHaveBeenCalledWith({ fraction: 0.75 }, { step: true });
   });
 });

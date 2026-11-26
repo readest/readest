@@ -24,6 +24,9 @@ export default function JumpReturn({
   const _ = useTranslation();
   const view = useReaderStore((s) => s.getView(bookKey));
   const viewState = useReaderStore((s) => s.viewStates[bookKey]);
+  // An open phone toolbar panel rises over the spot this control takes; the
+  // progress panel has its own Go Back and Go Forward.
+  const panelOpen = useReaderStore((s) => s.hoveredBookKey === bookKey && !!s.bottomBarTab);
   const [jump, setJump] = useState<JumpReturnState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -54,7 +57,7 @@ export default function JumpReturn({
     };
   }, [view]);
 
-  if (!view || !jump || viewState?.drawingEnabled) return null;
+  if (!view || !jump || viewState?.drawingEnabled || panelOpen) return null;
 
   const settings = viewState?.viewSettings;
   const footer = settings && footerAtBottom(settings) ? settings.marginBottomPx : 0;

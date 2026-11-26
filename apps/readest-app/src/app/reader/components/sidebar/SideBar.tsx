@@ -187,7 +187,7 @@ const SideBar = ({}) => {
 
   const handleSearchResultClick = (cfi: string) => {
     onNavigateEvent();
-    getView(sideBarBookKey)?.goTo(cfi, { focus: true, fromList: true });
+    getView(sideBarBookKey)?.goTo(cfi, { focus: true, step: true });
   };
 
   const bookData = useBookData(sideBarBookKey);

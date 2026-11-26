@@ -101,6 +101,9 @@ export interface Renderer extends HTMLElement {
   destroy: () => void;
 }
 
+// A CFI, an href, a section index, or a fraction of the book.
+type GoToTarget = string | number | { fraction: number };
+
 export interface FoliateView extends HTMLElement {
   open: (book: BookDoc) => Promise<void>;
   close: () => void;
@@ -108,8 +111,10 @@ export interface FoliateView extends HTMLElement {
   // `focus` moves focus to the destination: only for a navigation the user
   // asked for (a TOC entry, a bookmark, a search result), never for one that
   // runs on its own (restoring the position, sync, read aloud).
-  // `fromList`: a step through search results or annotations (see wrappedFoliateView).
-  goTo: (target: string | number, options?: { focus?: boolean; fromList?: boolean }) => void;
+  // `step`: one jump in a run the reader makes in a row (search results,
+  // annotations, the progress slider). A run keeps one history entry, so Back
+  // returns to where it started (see wrappedFoliateView).
+  goTo: (target: GoToTarget, options?: { focus?: boolean; step?: boolean }) => void;
   goToFraction: (fraction: number) => void;
   getSectionFractions: () => number[];
   prev: (distance?: number) => Promise<void>;
@@ -132,7 +137,7 @@ export interface FoliateView extends HTMLElement {
     time: { section: number; total: number };
   } | null>;
   resolveCFI: (cfi: string) => { index: number; anchor: RangeAnchor };
-  resolveNavigation: (cfiOrHrefOrIndex: string | number) => { index: number; anchor?: RangeAnchor };
+  resolveNavigation: (cfiOrHrefOrIndex: GoToTarget) => { index: number; anchor?: RangeAnchor };
   addAnnotation: (
     note: BookNote & { value?: string },
     remove?: boolean,
@@ -164,7 +169,7 @@ export interface FoliateView extends HTMLElement {
     back: () => void;
     forward: () => void;
     clear: () => void;
-    replaceState: (state: string | number) => void;
+    replaceState: (state: GoToTarget) => void;
   };
   renderer: Renderer;
 }
@@ -181,14 +186,14 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
   };
 
   const originalGoTo = originalView.goTo.bind(originalView);
-  // Stepping through a results list (search hits, annotations) moves the entry
-  // its first step pushed instead of pushing one per result, so Back returns to
-  // where reading was, not to the previous result. The list goes on only while
-  // the reader stays where its last step landed: a page turn or any other
+  // A run of steps (search hits, annotations, slider moves) moves the entry its
+  // first step pushed instead of pushing one per step, so Back returns to where
+  // reading was, not to the previous step. The run goes on only while the
+  // reader stays where its last step landed: a page turn or any other
   // navigation starts a new one.
-  let listCfi: string | undefined;
-  let listFrom: string | undefined;
-  const stepTo = async (target: string | number, focus?: boolean) => {
+  let runCfi: string | undefined;
+  let runFrom: string | undefined;
+  const stepTo = async (target: GoToTarget, focus?: boolean) => {
     try {
       const resolved = await originalView.resolveNavigation(target);
       await originalView.renderer.goTo(focus ? { ...resolved, focus } : resolved);
@@ -204,24 +209,27 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
   // here is compatible with the void return type in TypeScript and lets callers
   // that know about the promise (e.g. tests, async handlers) await completion.
   originalView.goTo = (
-    target: string | number,
-    options?: { focus?: boolean; fromList?: boolean },
+    target: GoToTarget,
+    options?: { focus?: boolean; step?: boolean },
   ): Promise<unknown> => {
     // Cross-section jumps can take seconds (the target section's images block
     // its iframe load); surface start/end so the viewer can show a spinner.
     originalView.dispatchEvent(new CustomEvent('navigate-start'));
     const from = originalView.lastLocation;
-    const step = options?.fromList && !!from?.cfi && from.cfi === listCfi;
-    return Promise.resolve(step ? stepTo(target, options.focus) : originalGoTo(target, options))
+    const continues = options?.step && !!from?.cfi && from.cfi === runCfi;
+    return Promise.resolve(
+      continues ? stepTo(target, options.focus) : originalGoTo(target, options),
+    )
       .then((resolved) => {
         const to = originalView.lastLocation;
-        if (options?.focus && from?.cfi && to?.cfi && from.cfi !== to.cfi) {
-          if (options.fromList && !step) listFrom = from.tocItem?.label;
-          listCfi = options.fromList ? to.cfi : undefined;
+        const asked = options?.focus || options?.step;
+        if (asked && from?.cfi && to?.cfi && from.cfi !== to.cfi) {
+          if (options.step && !continues) runFrom = from.tocItem?.label;
+          runCfi = options.step ? to.cfi : undefined;
           originalView.dispatchEvent(
             new CustomEvent('reader-jump', {
               detail: {
-                from: options.fromList ? listFrom : from.tocItem?.label,
+                from: options.step ? runFrom : from.tocItem?.label,
                 to: to.tocItem?.label,
               },
             }),

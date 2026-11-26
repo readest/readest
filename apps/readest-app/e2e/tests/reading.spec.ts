@@ -61,6 +61,30 @@ test.describe('Reading', () => {
     await expect.poll(() => reader.readingProgress()).toBe(start);
   });
 
+  test('returns to the reading position after a page-number or slider jump', async ({
+    page,
+    openBook,
+  }) => {
+    const reader = await openBook();
+    const start = await reader.readingProgress();
+    const history = page.getByRole('group', { name: 'Navigation History' });
+    const goBack = history.getByRole('button', { name: /^Go Back/ });
+
+    await reader.goToPage(40);
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(start);
+    await goBack.click();
+    await expect.poll(() => reader.readingProgress()).toBe(start);
+
+    await reader.revealFooter();
+    const slider = page.getByRole('slider', { name: 'Jump to Location' });
+    await slider.fill('50');
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(start);
+    await slider.fill('70');
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(60);
+    await goBack.click();
+    await expect.poll(() => reader.readingProgress()).toBe(start);
+  });
+
   test('jumps to an entered page number', async ({ openBook }) => {
     const reader = await openBook();
     const startProgress = await reader.readingProgress();

@@ -14,6 +14,7 @@ import type { BookProgress } from '@/types/book';
 // (#7445).
 
 const goToFraction = vi.hoisted(() => vi.fn());
+const goTo = vi.hoisted(() => vi.fn());
 const viewSettings = vi.hoisted(() => ({
   progressStyle: 'fraction',
   stablePageNumbers: false as boolean,
@@ -25,6 +26,7 @@ vi.mock('@/store/readerStore', () => {
     renderer: { page: 1 },
     getSectionFractions: () => [0, 0.25, 0.5, 1],
     goToFraction,
+    goTo,
   };
   const state = {
     hoveredBookKey: 'book1',
@@ -63,6 +65,7 @@ afterEach(() => {
   clearBookProgress('book1');
   clearChapterScreens('book1');
   goToFraction.mockClear();
+  goTo.mockClear();
 });
 
 describe('PageJumpInput with Stable Page Numbers off', () => {
@@ -83,8 +86,10 @@ describe('PageJumpInput with Stable Page Numbers off', () => {
     fireEvent.change(input, { target: { value: '7' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     // Page 7 is the third of chapter 2's four screens: 2 / 3 into it.
-    expect(goToFraction).toHaveBeenCalledOnce();
-    expect(goToFraction.mock.calls[0]![0]).toBeCloseTo(0.5 + (2 / 3) * 0.5);
+    expect(goToFraction).not.toHaveBeenCalled();
+    expect(goTo).toHaveBeenCalledOnce();
+    expect(goTo.mock.calls[0]![0].fraction).toBeCloseTo(0.5 + (2 / 3) * 0.5);
+    expect(goTo.mock.calls[0]![1]).toEqual({ focus: true });
   });
 
   it('keeps the byte-grid pair with Stable Page Numbers on', () => {

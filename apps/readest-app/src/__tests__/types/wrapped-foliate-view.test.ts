@@ -43,10 +43,10 @@ describe('wrappedFoliateView goTo events', () => {
     expect(showReturn).toHaveBeenCalledOnce();
   });
 
-  it('keeps the place before a results list while stepping through it', async () => {
+  it('keeps the place before a run of steps through results', async () => {
     // Mirrors foliate: goTo moves the page and pushes the target; replaceState
     // swaps the current entry without an index-change.
-    const entries: (string | number)[] = ['A'];
+    const entries: unknown[] = ['A'];
     let index = 0;
     const view = makeFakeView(async (href) => {
       await view.renderer.goTo(view.resolveNavigation(href));
@@ -60,7 +60,9 @@ describe('wrappedFoliateView goTo events', () => {
       back: vi.fn(),
       forward: vi.fn(),
       clear: vi.fn(),
-      replaceState: (x: string | number) => (entries[index] = x),
+      replaceState: (x: unknown) => {
+        entries[index] = x;
+      },
     });
     view.resolveNavigation = ((href: string | number) => ({
       index: 0,
@@ -80,9 +82,9 @@ describe('wrappedFoliateView goTo events', () => {
     view.addEventListener('reader-jump', showReturn);
     const wrapped = wrappedFoliateView(view);
 
-    await wrapped.goTo('B-1', { focus: true, fromList: true });
-    await wrapped.goTo('B-2', { focus: true, fromList: true });
-    await wrapped.goTo('C-1', { focus: true, fromList: true });
+    await wrapped.goTo('B-1', { focus: true, step: true });
+    await wrapped.goTo('B-2', { focus: true, step: true });
+    await wrapped.goTo('C-1', { focus: true, step: true });
     expect(entries).toEqual(['A', 'C-1']);
     expect(showReturn.mock.calls.map(([e]) => e.detail)).toEqual([
       { from: 'A', to: 'B' },
@@ -90,19 +92,27 @@ describe('wrappedFoliateView goTo events', () => {
       { from: 'A', to: 'C' },
     ]);
 
-    // Any other jump ends the list: the next step stacks a new entry again.
+    // Any other jump ends the run: the next step stacks a new entry again.
     await wrapped.goTo('D', { focus: true });
-    await wrapped.goTo('E-1', { focus: true, fromList: true });
+    await wrapped.goTo('E-1', { focus: true, step: true });
     expect(entries).toEqual(['A', 'C-1', 'D', 'E-1']);
     expect(showReturn.mock.lastCall?.[0].detail).toEqual({ from: 'D', to: 'E' });
 
-    // Reading on from a result (a page turn replaces the entry) ends the list
-    // too: the next list jump keeps the page that was being read.
+    // Reading on from a result (a page turn replaces the entry) ends the run
+    // too: the next step keeps the page that was being read.
     view.lastLocation = { cfi: 'E-9', tocItem: { label: 'E', href: 'E', id: 0, index: 0 } };
     view.history.replaceState('E-9');
-    await wrapped.goTo('F-1', { focus: true, fromList: true });
+    await wrapped.goTo('F-1', { focus: true, step: true });
     expect(entries).toEqual(['A', 'C-1', 'D', 'E-9', 'F-1']);
     expect(showReturn.mock.lastCall?.[0].detail).toEqual({ from: 'E', to: 'F' });
+
+    // Slider moves are steps without focus: they still arm the return.
+    view.lastLocation = { cfi: 'F-9', tocItem: { label: 'F', href: 'F', id: 0, index: 0 } };
+    view.history.replaceState('F-9');
+    await wrapped.goTo('G-1', { step: true });
+    await wrapped.goTo('H-1', { step: true });
+    expect(entries).toEqual(['A', 'C-1', 'D', 'E-9', 'F-9', 'H-1']);
+    expect(showReturn.mock.lastCall?.[0].detail).toEqual({ from: 'F', to: 'H' });
   });
 
   it('dispatches navigate-end even when goTo rejects', async () => {
