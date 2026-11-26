@@ -1,14 +1,18 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, cleanup, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import { invoke } from '@tauri-apps/api/core';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-const platform = vi.hoisted(() => ({ isWindowsApp: false }));
+const platform = vi.hoisted(() => ({
+  isWindowsApp: false,
+  isMobileApp: false,
+  hasOrientationLock: false,
+}));
 
 /**
- * Settings > Behavior > Device switches: Gamepad Support (issue #5979) and
- * Hide Bookshelf Buttons.
+ * Settings > Behavior > Device: Gamepad Support (issue #5979), Hide Bookshelf
+ * Buttons and Orientation.
  *
  * Gamepad Support (issue #5979).
  *
@@ -22,7 +26,7 @@ const sysSettings: Record<string, unknown> = { gamepadEnabled: true };
 const view = { bookEink: false, globalEink: false };
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ envConfig: {}, appService: { isMobileApp: false, ...platform } }),
+  useEnv: () => ({ envConfig: {}, appService: { ...platform } }),
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
@@ -37,6 +41,7 @@ vi.mock('@/store/readerStore', () => ({
       scrolled: false,
       noContinuousScroll: false,
       isEink: view.bookEink,
+      screenOrientation: 'auto',
     }),
     recreateViewer: vi.fn(),
   }),
@@ -63,9 +68,16 @@ vi.mock('@/hooks/useEinkMode', () => ({
 }));
 
 const saveSysSettings = vi.fn();
+const saveViewSettings = vi.fn();
 vi.mock('@/helpers/settings', () => ({
-  saveViewSettings: vi.fn(),
+  saveViewSettings: (...args: unknown[]) => saveViewSettings(...args),
   saveSysSettings: (...args: unknown[]) => saveSysSettings(...args),
+}));
+
+const lockScreenOrientation = vi.fn();
+vi.mock('@/utils/bridge', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/bridge')>()),
+  lockScreenOrientation: (...args: unknown[]) => lockScreenOrientation(...args),
 }));
 
 vi.mock('@/services/environment', () => ({
@@ -107,10 +119,14 @@ const gamepadSwitch = () =>
 afterEach(() => {
   cleanup();
   saveSysSettings.mockClear();
+  saveViewSettings.mockClear();
+  lockScreenOrientation.mockClear();
   sysSettings['gamepadEnabled'] = true;
   view.bookEink = false;
   view.globalEink = false;
   platform.isWindowsApp = false;
+  platform.isMobileApp = false;
+  platform.hasOrientationLock = false;
   vi.mocked(invoke).mockReset();
 });
 
@@ -231,5 +247,36 @@ describe('Settings > Behavior > Device > Hide Bookshelf Buttons', () => {
     render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
 
     expect(hideButtonsSwitch()?.disabled).toBe(true);
+  });
+});
+
+describe('Settings > Behavior > Device > Orientation', () => {
+  it('is hidden where the app cannot lock the orientation', () => {
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+
+    expect(screen.queryByText('Orientation')).toBeNull();
+  });
+
+  it('sits in the Device section and locks the chosen orientation', () => {
+    platform.isMobileApp = true;
+    platform.hasOrientationLock = true;
+    render(<ControlPanel bookKey='test' onRegisterReset={() => {}} />);
+
+    const device = document.querySelector<HTMLElement>(
+      '[data-setting-id="settings.control.device"]',
+    )!;
+    expect(within(device).queryByText('Orientation')).not.toBeNull();
+
+    fireEvent.click(device.querySelector('[data-tip="Landscape"] button')!);
+
+    expect(saveViewSettings).toHaveBeenLastCalledWith(
+      {},
+      'test',
+      'screenOrientation',
+      'landscape',
+      false,
+      false,
+    );
+    expect(lockScreenOrientation).toHaveBeenLastCalledWith({ orientation: 'landscape' });
   });
 });

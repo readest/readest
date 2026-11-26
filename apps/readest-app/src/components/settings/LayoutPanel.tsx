@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { MdOutlineAutoMode, MdOutlineScreenRotation } from 'react-icons/md';
+import { MdOutlineAutoMode } from 'react-icons/md';
 import { MdOutlineTextRotationNone, MdTextRotateVertical } from 'react-icons/md';
-import { IoPhoneLandscapeOutline, IoPhonePortraitOutline } from 'react-icons/io5';
 import { TbTextDirectionRtl } from 'react-icons/tb';
 
 import { useEnv } from '@/context/EnvContext';
@@ -13,7 +12,6 @@ import { useResetViewSettings } from '@/hooks/useResetSettings';
 import { isCJKEnv } from '@/utils/misc';
 import { getStyles } from '@/utils/style';
 import { getMaxInlineSize } from '@/utils/config';
-import { lockScreenOrientation } from '@/utils/bridge';
 import { saveViewSettings } from '@/helpers/settings';
 import { getBookDirFromWritingMode, getBookLangCode } from '@/utils/book';
 import { MIGHT_BE_RTL_LANGS } from '@/services/constants';
@@ -32,7 +30,7 @@ import { Toggle } from '../primitives/toggle';
 
 const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterReset }) => {
   const _ = useTranslation();
-  const { envConfig, appService } = useEnv();
+  const { envConfig } = useEnv();
   const { settings } = useSettingsStore();
   const { getView, getViewSettings, getGridInsets } = useReaderStore();
   const { setViewSettings, recreateViewer } = useReaderStore();
@@ -116,7 +114,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
       ? viewSettings.headerFooterBackground
       : '#808080',
   );
-  const [screenOrientation, setScreenOrientation] = useState(viewSettings.screenOrientation);
 
   const resetToDefaults = useResetViewSettings();
 
@@ -533,14 +530,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
     // Margin and gap settings will be applied in FoliateViewer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showFooter]);
-
-  useEffect(() => {
-    saveViewSettings(envConfig, bookKey, 'screenOrientation', screenOrientation, false, false);
-    if (appService?.isMobileApp) {
-      lockScreenOrientation({ orientation: screenOrientation });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screenOrientation]);
 
   const langCode = getBookLangCode(bookData?.bookDoc?.metadata?.language);
   const mightBeRTLBook = MIGHT_BE_RTL_LANGS.includes(langCode) || isCJKEnv();
@@ -961,39 +950,6 @@ const LayoutPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRese
           />
         )}
       </BoxedList>
-
-      {appService?.hasOrientationLock && (
-        <BoxedList title={_('Screen')}>
-          <SettingsRow label={_('Orientation')}>
-            <div className='flex gap-4'>
-              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Auto')}>
-                <button
-                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'auto' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
-                  onClick={() => setScreenOrientation('auto')}
-                >
-                  <MdOutlineScreenRotation />
-                </button>
-              </div>
-              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Portrait')}>
-                <button
-                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'portrait' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
-                  onClick={() => setScreenOrientation('portrait')}
-                >
-                  <IoPhonePortraitOutline />
-                </button>
-              </div>
-              <div className='lg:tooltip lg:tooltip-bottom' data-tip={_('Landscape')}>
-                <button
-                  className={`btn btn-ghost btn-circle btn-sm ${screenOrientation === 'landscape' ? 'btn-active bg-base-300 eink-bordered' : ''}`}
-                  onClick={() => setScreenOrientation('landscape')}
-                >
-                  <IoPhoneLandscapeOutline />
-                </button>
-              </div>
-            </div>
-          </SettingsRow>
-        </BoxedList>
-      )}
     </div>
   );
 };
