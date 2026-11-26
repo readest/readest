@@ -258,7 +258,12 @@ export const resolveImagePlate = ({
   filter?: string | null;
   ink?: ImageInk | null;
 }): string | null => {
-  if (filter?.includes('readest-white-transparent')) return null;
+  if (
+    filter?.includes('readest-white-transparent') ||
+    filter?.includes('readest-dark-monochrome')
+  ) {
+    return null;
+  }
   const inverts = !!filter && /invert\s*\(/i.test(filter);
   if (inverts) return pagePlate ?? null;
   const darkDrawing =

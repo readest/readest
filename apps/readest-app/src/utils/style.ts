@@ -20,7 +20,7 @@ import { isDialogueHighlightActive } from './dialogueHighlight';
 import { readStoredAmbientIsDarkMode } from './ambientLight';
 import { INLINE_FORMATTING_SELECTOR } from './inlineTags';
 import { getOSPlatform } from './misc';
-import { WHITE_TRANSPARENCY_FILTER } from './imageBackground';
+import { getDarkMonochromeFilter, WHITE_TRANSPARENCY_FILTER } from './imageBackground';
 import { classifyAndTagStandaloneDiagrams } from './imageClassifier';
 import {
   LINK_HIT_AREA_CLASS,
@@ -369,6 +369,11 @@ const getColorStyles = (
   // Tables keep the darker tint they get in dark mode (see `blockquote, table *`).
   const tableBg =
     hasBackgroundTexture || !isDarkMode ? overrideBg : `color-mix(in srgb, ${bg} 80%, #000)`;
+  // Gaiji, inline glyphs and monochrome diagrams are drawn as ink in the text
+  // color on a clear ground (#7981), blended normally: screen would lighten the
+  // ink over the page color Override Book Color paints behind them. Invert
+  // Image In Dark Mode inverts them like every other image instead.
+  const darkInk = isDarkMode && !invertImgColorInDark;
   const colorStyles = `
     html {
       --bg-texture-id: ${backgroundTextureId};
@@ -482,12 +487,8 @@ const getColorStyles = (
     sup img.has-text-siblings,
     img.has-text-siblings,
     img[class*="gaiji"] {
-      ${
-        isDarkMode && !invertImgColorInDark
-          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
-          : ''
-      }
-      mix-blend-mode: ${isDarkMode ? 'screen' : 'multiply'};
+      ${darkInk ? `filter: ${getDarkMonochromeFilter(fg)};` : ''}
+      mix-blend-mode: ${darkInk ? 'normal' : isDarkMode ? 'screen' : 'multiply'};
     }
     ${
       isDarkMode
@@ -495,15 +496,11 @@ const getColorStyles = (
       ${overrideColor ? `background-color: ${overrideBg};` : ''}
     }
     img.monochrome-diagram {
-      ${
-        !invertImgColorInDark
-          ? `filter: ${transparentImageBackground ? `${WHITE_TRANSPARENCY_FILTER} ` : ''}invert(1) hue-rotate(180deg);`
-          : ''
-      }
-      mix-blend-mode: screen;
+      ${darkInk ? `filter: ${getDarkMonochromeFilter(fg)};` : ''}
+      mix-blend-mode: ${darkInk ? 'normal' : 'screen'};
     }
     p[width][height] > img.monochrome-diagram:only-child {
-      mix-blend-mode: screen;
+      mix-blend-mode: ${darkInk ? 'normal' : 'screen'};
     }`
         : ''
     }

@@ -132,6 +132,13 @@ describe('resolveImagePlate', () => {
         ink: lineArt,
       }),
     ).toBeNull();
+    expect(
+      resolveImagePlate({
+        pagePlate: '#ffffff',
+        filter: 'url("#readest-dark-monochrome-c6c6c6")',
+        ink: lineArt,
+      }),
+    ).toBeNull();
   });
 
   it('uses the page plate whenever the page had one', () => {

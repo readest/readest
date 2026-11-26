@@ -519,7 +519,7 @@ describe('getStyles', () => {
     expect(clampRule).not.toContain('vertical-align');
   });
 
-  it('inverts inline glyphs and gaiji in dark mode under screen blending (#7373)', () => {
+  it('draws inline glyphs and gaiji as ink in the text color in dark mode (#7373, #7981)', () => {
     const vs = makeViewSettings({ invertImgColorInDark: false });
     const themeCode: ThemeCode = {
       bg: '#171717',
@@ -540,9 +540,9 @@ describe('getStyles', () => {
     };
     const css = getStyles(vs, themeCode);
     expect(css).toMatch(
-      /img\[class\*="gaiji"\]\s*\{[^}]*filter:\s*invert\(1\)\s*hue-rotate\(180deg\);/,
+      /img\[class\*="gaiji"\]\s*\{[^}]*filter:\s*url\(#readest-dark-monochrome-ffffff\);/,
     );
-    expect(css).toMatch(/img\[class\*="gaiji"\]\s*\{[^}]*mix-blend-mode:\s*screen;/);
+    expect(css).toMatch(/img\[class\*="gaiji"\]\s*\{[^}]*mix-blend-mode:\s*normal;/);
   });
 
   it('keeps inline and gaiji parent backgrounds transparent over a background texture (#7373)', () => {

@@ -278,12 +278,12 @@ describe('imageClassifier', () => {
   });
 
   describe('CSS styling for monochrome diagrams in dark mode', () => {
-    it('applies invert and screen blending to img.monochrome-diagram in dark mode', () => {
+    it('draws img.monochrome-diagram as ink in the text color in dark mode (#7981)', () => {
       const css = getStyles(makeViewSettings(), darkTheme);
       expect(css).toMatch(
-        /img\.monochrome-diagram\s*\{[^}]*filter:\s*invert\(1\)\s*hue-rotate\(180deg\);/,
+        /img\.monochrome-diagram\s*\{[^}]*filter:\s*url\(#readest-dark-monochrome-e0e0e0\);/,
       );
-      expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*screen;/);
+      expect(css).toMatch(/img\.monochrome-diagram\s*\{[^}]*mix-blend-mode:\s*normal;/);
     });
 
     it('keeps background transparent over a background texture when overrideColor is enabled', () => {
@@ -307,7 +307,7 @@ describe('imageClassifier', () => {
       expect(css).not.toContain('monochrome-diagram');
     });
 
-    it('uses screen blending instead of multiply for monochrome-diagram inside p[width][height]', () => {
+    it('blends monochrome-diagram normally instead of multiply inside p[width][height]', () => {
       const style = document.createElement('style');
       style.textContent = getStyles(
         makeViewSettings({ transparentImageBackground: false, invertImgColorInDark: false }),
@@ -323,7 +323,7 @@ describe('imageClassifier', () => {
         const diag = document.getElementById('sized-diag')!;
         const photo = document.getElementById('sized-photo')!;
         expect(window.getComputedStyle(photo).mixBlendMode).toBe('multiply');
-        expect(window.getComputedStyle(diag).mixBlendMode).toBe('screen');
+        expect(window.getComputedStyle(diag).mixBlendMode).toBe('normal');
       } finally {
         style.remove();
         document.body.innerHTML = '';
