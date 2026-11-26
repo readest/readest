@@ -85,6 +85,22 @@ afterEach(() => {
   cleanup();
 });
 
+test('adjusts and saves Auto Scroll speed in five percentage point steps', () => {
+  h.viewSettings['autoScrollSpeed'] = 125;
+  const { result } = setup();
+
+  act(() => result.current.adjustSpeed(-1));
+  expect(result.current.speed).toBe(120);
+  expect(h.saveViewSettings).toHaveBeenLastCalledWith(
+    {},
+    BOOK_KEY,
+    'autoScrollSpeed',
+    120,
+    false,
+    false,
+  );
+});
+
 // Issue #5631: a session that was still running when the book was closed is
 // resumed on reopen, so Auto Scroll readers don't re-toggle it every time.
 describe('useAutoScroll session persistence', () => {
