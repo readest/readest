@@ -70,6 +70,22 @@
   </supports>
 
   <releases>
+    <release version="0.12.26" date="2026-11-27">
+      <description>
+        <ul>
+          <li>X-Ray: You can now build a spoiler-free X-Ray of the book you're reading, with its characters, places and terms up to your current page, and look names up in the dictionary popup</li>
+          <li>Reading: You can now read a PDF side by side with another book and drag the divider to resize them, share a passage as a QR code</li>
+          <li>Reading: Page turns are faster, Auto Scroll wipes in each new page with finer speed steps, two-page mode keeps spreads together</li>
+          <li>Library: You can now sort by several fields in priority order, drag books into your own order, search by field such as author or series</li>
+          <li>Statistics: Added a monthly reading calendar and your reading speed, and you can now merge or delete a book's statistics on all your devices</li>
+          <li>Text-to-Speech: You can now favorite voices and filter or search them by engine, and Read Aloud keeps playing more reliably in the background and with CarPlay</li>
+          <li>Dictionary: You can now dock the dictionary in the Notebook, and send richer Anki cards with the dictionary entry, audio and a deck per language</li>
+          <li>Sync: Custom fonts now sync through WebDAV, S3, Google Drive, OneDrive and iCloud, and you can see your devices and sign them out; the Free plan now syncs up to 3 devices</li>
+          <li>Account: You can now sign in by scanning a QR code, and give or receive a year of Readest Plus or Pro as a gift card</li>
+          <li>More: Android pens can turn pages with gestures, Copy can add a citation, and Apple devices can translate on device with Apple Intelligence</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.12.20" date="2026-11-06">
       <description>
         <ul>
@@ -208,21 +224,6 @@
           <li>Integrations: Added a Calibre plugin to push books and custom columns into Readest, and improved OPDS sign-in and auto-download for self-hosted catalogs</li>
           <li>Library: New books dropped into watched folders now import automatically, and you can sort your shelf by reading progress</li>
           <li>More: Added a speak button in the dictionary popup, a cleaner theme switcher, and per-rule toggles for proofreading</li>
-        </ul>
-      </description>
-    </release>
-    <release version="0.11.17" date="2026-06-29">
-      <description>
-        <ul>
-          <li>Sync: Added WebDAV and Google Drive sync for your books and reading data</li>
-          <li>Widgets: Added home-screen reading widgets on mobile so you can jump straight back into your book</li>
-          <li>Reading: You can now open and read Markdown(.md) files</li>
-          <li>Reading: You can select a word by double-clicking it, and search gained regex and nearby-words modes</li>
-          <li>Reading: Added a sticky progress bar with chapter markers, and keyboard shortcuts to fine-tune text selection</li>
-          <li>Library: Added a Recently Read shelf to quickly pick up where you left off, plus a separate background texture for your library</li>
-          <li>Text-to-Speech: Added offline voices on iOS, a setting to highlight by word or by sentence</li>
-          <li>PDF: Smoother pinch-zoom and panning, faster scrolling on mobile, and a new contrast option in the view menu</li>
-          <li>More: Customize the highlight toolbar across all books, filter exported annotations by color and style</li>
         </ul>
       </description>
     </release>
