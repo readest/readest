@@ -37,7 +37,38 @@ const isExplicitNoteref = (anchor: HTMLAnchorElement) => {
 // markers, so a low threshold is safe.
 const NAV_LIST_SIBLING_THRESHOLD = 2;
 const MAX_ANCESTOR_DEPTH = 3;
-const SECTION_CONTAINER_TAGS = new Set(['BODY', 'HTML', 'MAIN', 'ARTICLE', 'SECTION']);
+const BLOCK_CONTAINER_TAGS = new Set([
+  'P',
+  'DIV',
+  'LI',
+  'TD',
+  'TH',
+  'DD',
+  'DT',
+  'BLOCKQUOTE',
+  'SECTION',
+  'ARTICLE',
+  'MAIN',
+  'BODY',
+]);
+
+const LIST_PUNCTUATION_RE = /^[\s,|/·•・:：、。.,()（）[\]［］【】〔〕〈〉〖〗\-–—]*$/;
+
+const hasProseOutsideLinks = (root: Element): boolean => {
+  const walk = (node: Node): boolean => {
+    if (node.nodeType === 3) {
+      return !LIST_PUNCTUATION_RE.test(node.textContent ?? '');
+    }
+    if (node.nodeType === 1) {
+      if ((node as Element).tagName === 'A') return false;
+      for (const child of Array.from(node.childNodes)) {
+        if (walk(child)) return true;
+      }
+    }
+    return false;
+  };
+  return walk(root);
+};
 
 const countNumericSiblings = (container: Element, anchor: HTMLAnchorElement) => {
   let count = 0;
@@ -56,13 +87,12 @@ export const shouldCheckAsFootnote = (anchor: HTMLAnchorElement): boolean => {
   if (EXPLICIT_NOTE_PREFIX_RE.test(anchor.textContent!.trim())) return true;
   let container: Element | null = anchor.parentElement;
   for (let depth = 0; depth < MAX_ANCESTOR_DEPTH && container; depth++) {
-    if (SECTION_CONTAINER_TAGS.has(container.tagName)) break;
-    const blockChildren = Array.from(container.children).filter(
-      (el) => el.tagName === 'P' || el.tagName === 'DIV',
-    ).length;
-    if (blockChildren > 1) break;
+    if (container.tagName === 'HTML') break;
     if (countNumericSiblings(container, anchor) >= NAV_LIST_SIBLING_THRESHOLD) {
       return false;
+    }
+    if (BLOCK_CONTAINER_TAGS.has(container.tagName) && hasProseOutsideLinks(container)) {
+      break;
     }
     container = container.parentElement;
   }

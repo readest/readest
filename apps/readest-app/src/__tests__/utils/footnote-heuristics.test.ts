@@ -184,4 +184,15 @@ describe('shouldCheckAsFootnote', () => {
     expect(shouldCheckAsFootnote(getAnchorByText(body, '5'))).toBe(true);
     expect(shouldCheckAsFootnote(getAnchorByText(body, '3'))).toBe(true);
   });
+
+  it('still returns false for block-wrapped navigation lists without prose', () => {
+    const body = parseHtml(`
+      <div>
+        <div><a href="chapter1.xhtml">1</a></div>
+        <div><a href="chapter2.xhtml">2</a></div>
+        <div><a href="chapter3.xhtml">3</a></div>
+      </div>
+    `);
+    expect(shouldCheckAsFootnote(getAnchorByText(body, '1'))).toBe(false);
+  });
 });
