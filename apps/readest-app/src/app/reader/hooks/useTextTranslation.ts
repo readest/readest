@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { FoliateView } from '@/types/view';
 import { UseTranslatorOptions } from '@/services/translators';
 import { useReaderStore } from '@/store/readerStore';
@@ -212,9 +212,9 @@ export function useTextTranslation(
   const progress = useBookProgress(bookKey);
 
   const enabled = useRef(viewSettings?.translationEnabled);
-  const [provider, setProvider] = useState(viewSettings?.translationProvider);
-  const [targetLang, setTargetLang] = useState(viewSettings?.translateTargetLang);
-  const [promptId, setPromptId] = useState(viewSettings?.translationPromptId);
+  const provider = viewSettings?.translationProvider;
+  const targetLang = viewSettings?.translateTargetLang;
+  const promptId = viewSettings?.translationPromptId;
   const book = useBookDataStore((s) => s.getBookData(bookKey)?.book);
   const showTranslateSourceRef = useRef(viewSettings?.showTranslateSource);
 
@@ -226,17 +226,25 @@ export function useTextTranslation(
     bookAuthor: book?.author,
   } as UseTranslatorOptions);
 
-  const translateRef = useRef(translate);
   // `translationProvider` is a loose string in settings, so match by name
   // rather than narrowing to TranslatorName.
   const translatorPreservesMarkup = !!getTranslators().find(
     (translator) => translator.name === provider,
   )?.preservesMarkup;
+  const translationRef = useRef({
+    translate,
+    provider,
+    targetLang,
+    promptId,
+    translatorPreservesMarkup,
+  });
   const observerRefs = useRef<IntersectionObserver[]>([]);
   const translatedElements = useRef<HTMLElement[]>([]);
   const allTextNodes = useRef<HTMLElement[]>([]);
   const translationQueue = useRef<HTMLElement[]>([]);
   const activeTranslations = useRef(0);
+  // A reset starts a fresh queue while its previous requests can still resolve.
+  const translationGeneration = useRef(0);
   // Read through a ref: the queue drains from observer callbacks created on
   // earlier renders. Batching providers ask for more in-flight paragraphs.
   const maxConcurrentRef = useRef(5);
@@ -254,6 +262,7 @@ export function useTextTranslation(
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      translationGeneration.current++;
       // The `[view]` cleanup misses these when translation was off at mount.
       if (batchTimerRef.current) {
         clearTimeout(batchTimerRef.current);
@@ -278,10 +287,6 @@ export function useTextTranslation(
       });
     });
   };
-
-  useEffect(() => {
-    translateRef.current = translate;
-  }, [translate]);
 
   const hintInitialTranslating = () => {
     setIsLoading(bookKey, true);
@@ -312,6 +317,7 @@ export function useTextTranslation(
   };
 
   const updateTranslation = () => {
+    translationGeneration.current++;
     translationQueue.current = [];
     activeTranslations.current = 0;
     if (batchTimerRef.current) {
@@ -329,9 +335,6 @@ export function useTextTranslation(
     });
 
     translatedElements.current = [];
-    if (viewSettings?.translationEnabled && view) {
-      recreateTranslationObserver();
-    }
   };
 
   const createTranslationObserver = (document: Document) => {
@@ -364,6 +367,7 @@ export function useTextTranslation(
   };
 
   const drainTranslationQueue = () => {
+    const generation = translationGeneration.current;
     while (
       activeTranslations.current < maxConcurrentRef.current &&
       translationQueue.current.length > 0
@@ -371,7 +375,8 @@ export function useTextTranslation(
       const el = translationQueue.current.shift()!;
       if (el.querySelector('.translation-target') || !enabled.current) continue;
       activeTranslations.current++;
-      translateElement(el).finally(() => {
+      translateElement(el, generation).finally(() => {
+        if (generation !== translationGeneration.current) return;
         activeTranslations.current--;
         drainTranslationQueue();
       });
@@ -403,8 +408,9 @@ export function useTextTranslation(
     );
   };
 
-  const translateElement = async (el: HTMLElement) => {
+  const translateElement = async (el: HTMLElement, generation: number) => {
     if (!enabled.current) return;
+    const { translate, targetLang, translatorPreservesMarkup } = translationRef.current;
     // The payload's text leaves out ruby readings and injected nodes.
     const payload = extractSourcePayload(el);
     const text = payload.text.replaceAll('\n', '').trim();
@@ -430,8 +436,8 @@ export function useTextTranslation(
           : [];
       const useMarkup = markupChunks.length > 0;
 
-      const translated = await translateRef.current(useMarkup ? markupChunks : [text]);
-      if (!mountedRef.current) return;
+      const translated = await translate(useMarkup ? markupChunks : [text]);
+      if (!mountedRef.current || generation !== translationGeneration.current) return;
       const translatedText = translated.join('');
       if (!translatedText || text === translatedText) return;
 
@@ -533,12 +539,20 @@ export function useTextTranslation(
   }, [progress]);
 
   useEffect(() => {
+    const previous = translationRef.current;
+    translationRef.current = {
+      translate,
+      provider,
+      targetLang,
+      promptId,
+      translatorPreservesMarkup,
+    };
     if (!viewSettings) return;
 
     const enabledChanged = enabled.current !== viewSettings.translationEnabled;
-    const providerChanged = provider !== viewSettings.translationProvider;
-    const targetLangChanged = targetLang !== viewSettings.translateTargetLang;
-    const promptChanged = promptId !== viewSettings.translationPromptId;
+    const providerChanged = previous.provider !== provider;
+    const targetLangChanged = previous.targetLang !== targetLang;
+    const promptChanged = previous.promptId !== promptId;
     const showTranslateSourceChanged =
       showTranslateSourceRef.current !== viewSettings.showTranslateSource;
 
@@ -546,37 +560,22 @@ export function useTextTranslation(
       enabled.current = viewSettings.translationEnabled;
     }
 
-    if (providerChanged) {
-      setProvider(viewSettings.translationProvider);
-    }
-
-    if (targetLangChanged) {
-      setTargetLang(viewSettings.translateTargetLang);
-    }
-
-    if (promptChanged) {
-      setPromptId(viewSettings.translationPromptId);
-    }
-
     if (showTranslateSourceChanged) {
       showTranslateSourceRef.current = viewSettings.showTranslateSource;
     }
 
+    const translationChanged =
+      providerChanged || targetLangChanged || promptChanged || showTranslateSourceChanged;
+    if (translationChanged) updateTranslation();
+
     if (enabledChanged) {
       toggleTranslationVisibility(viewSettings.translationEnabled);
-      if (enabled.current) {
-        observeTextNodes();
-      }
-    } else if (
-      providerChanged ||
-      targetLangChanged ||
-      promptChanged ||
-      showTranslateSourceChanged
-    ) {
-      updateTranslation();
+      if (enabled.current) observeTextNodes();
+    } else if (translationChanged && enabled.current && view) {
+      recreateTranslationObserver();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookKey, viewSettings, provider, targetLang, promptId]);
+  }, [bookKey, viewSettings, provider, targetLang, promptId, translate, translatorPreservesMarkup]);
 
   useEffect(() => {
     if (!view || !enabled.current) return;
@@ -595,6 +594,7 @@ export function useTextTranslation(
       observerRefs.current.forEach((observer) => observer.disconnect());
       observerRefs.current = [];
       translatedElements.current = [];
+      translationGeneration.current++;
       translationQueue.current = [];
       activeTranslations.current = 0;
       if (batchTimerRef.current) {
