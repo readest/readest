@@ -92,6 +92,29 @@ describe('images inline with text', () => {
     expect(img.getBoundingClientRect().height).toBeCloseTo(180, 0);
   });
 
+  test('keeps a figure width declared by the book on the img element (#7417)', async () => {
+    const img = await render('img { width: 50%; }', `<p><img src="${SQUARE}"/></p>`);
+
+    expect(img.getBoundingClientRect().width).toBeCloseTo(300, 0);
+    expect(img.getBoundingClientRect().height).toBeCloseTo(300, 0);
+  });
+
+  test('keeps a figure height declared by the book on the img element (#7417)', async () => {
+    const img = await render('img { height: 80px; }', `<p><img src="${SQUARE}"/></p>`);
+
+    expect(img.getBoundingClientRect().height).toBeCloseTo(80, 0);
+  });
+
+  test('keeps intrinsic dimensions and HTML dimension attributes (#3274)', async () => {
+    const intrinsic = await render('', `<p><img src="${SQUARE}"/></p>`);
+    const sized = await render('', `<p><img width="120" height="100" src="${SQUARE}"/></p>`);
+
+    expect(intrinsic.getBoundingClientRect().width).toBeCloseTo(200, 0);
+    expect(intrinsic.getBoundingClientRect().height).toBeCloseTo(200, 0);
+    expect(sized.getBoundingClientRect().width).toBeCloseTo(120, 0);
+    expect(sized.getBoundingClientRect().height).toBeCloseTo(100, 0);
+  });
+
   test('a title image with a calc() percentage width keeps its size', async () => {
     const img = await render(
       '.p { width: calc(30% - 1px); height: auto; }',

@@ -641,12 +641,6 @@ const getPageLayoutStyles = (
   html.${LINK_TOUCH_HOLD_CLASS} a[href] svg:not([zy-enlarge-src="none"]) image {
     pointer-events: auto !important;
   }
-  svg:where(:not([width])), img:where(:not([width])) {
-    width: auto;
-  }
-  svg:where(:not([height])), img:where(:not([height])) {
-    height: auto;
-  }
   figure > div:has(img) {
     height: auto !important;
   }
