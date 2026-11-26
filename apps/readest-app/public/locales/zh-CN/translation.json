@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "清除 X-Ray",
   "Clear the X-Ray of this book?": "清除本书的 X-Ray？",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "使用上方的 AI 翻译器收集你已读到的人物、地点和事件，不会剧透。",
-  "Update While Reading": "阅读时更新"
+  "Update While Reading": "阅读时更新",
+  "Device limit reached": "已达到设备上限",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "免费套餐最多可在 {{limit}} 台设备上同步。请先在其中一台设备上退出登录，再在此设备上登录。",
+  "Failed to sign out the device. Please try again later.": "无法让该设备退出登录，请稍后重试。",
+  "Devices": "设备",
+  "The devices signed in to your account. Sign out of one you no longer use.": "已登录您账户的设备。可以让不再使用的设备退出登录。",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "免费套餐最多可在 {{limit}} 台设备上同步。让不再使用的设备退出登录，即可在其他设备上登录。",
+  "{{client}} on {{os}}": "{{os}} 上的 {{client}}",
+  "Unknown device": "未知设备",
+  "Last active {{date}}": "最近活跃：{{date}}",
+  "Sign out {{device}}": "让 {{device}} 退出登录",
+  "Number of Devices": "设备数量",
+  "Unlimited": "无限制"
 }

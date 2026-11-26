@@ -2961,5 +2961,17 @@
   "Clear X-Ray": "Xóa X-Ray",
   "Clear the X-Ray of this book?": "Xóa X-Ray của cuốn sách này?",
   "Collects the characters, places and events you have read about, without spoilers, using the AI Translator above.": "Tập hợp các nhân vật, địa điểm và sự kiện bạn đã đọc, không tiết lộ nội dung, bằng Trình dịch AI ở trên.",
-  "Update While Reading": "Cập nhật khi đọc"
+  "Update While Reading": "Cập nhật khi đọc",
+  "Device limit reached": "Đã đạt giới hạn thiết bị",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one of them to sign in on this device.": "Gói miễn phí đồng bộ trên tối đa {{limit}} thiết bị. Hãy đăng xuất khỏi một trong số đó để đăng nhập trên thiết bị này.",
+  "Failed to sign out the device. Please try again later.": "Không thể đăng xuất thiết bị. Vui lòng thử lại sau.",
+  "Devices": "Thiết bị",
+  "The devices signed in to your account. Sign out of one you no longer use.": "Các thiết bị đã đăng nhập vào tài khoản của bạn. Hãy đăng xuất thiết bị bạn không còn dùng.",
+  "The Free plan syncs on up to {{limit}} devices. Sign out of one you no longer use to sign in on another.": "Gói miễn phí đồng bộ trên tối đa {{limit}} thiết bị. Hãy đăng xuất thiết bị bạn không còn dùng để đăng nhập trên thiết bị khác.",
+  "{{client}} on {{os}}": "{{client}} trên {{os}}",
+  "Unknown device": "Thiết bị không xác định",
+  "Last active {{date}}": "Hoạt động lần cuối: {{date}}",
+  "Sign out {{device}}": "Đăng xuất {{device}}",
+  "Number of Devices": "Số thiết bị",
+  "Unlimited": "Không giới hạn"
 }
