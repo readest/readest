@@ -16,7 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useQuotaStats } from '@/hooks/useQuotaStats';
-import { isReadestCloudEnabled } from '@/services/sync/cloudSyncProvider';
+import { useUserActions } from '@/hooks/useUserActions';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -26,6 +26,7 @@ import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import { canToggleFullScreen, tauriHandleSetAlwaysOnTop, toggleFullScreen } from '@/utils/window';
 import { setAboutDialogVisible } from '@/components/AboutWindow';
+import { openDeleteLibraryDialog } from '@/app/library/components/DeleteLibraryDialog';
 import { setMigrateDataDirDialogVisible } from '@/app/library/components/MigrateDataWindow';
 import { requestStoragePermission } from '@/utils/permission';
 import { saveSysSettings } from '@/helpers/settings';
@@ -53,6 +54,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   const { envConfig, appService } = useEnv();
   const { user } = useAuth();
   const { userProfilePlan, quotas } = useQuotaStats(true);
+  const { handleLogout } = useUserActions();
   const { themeMode, setThemeMode } = useThemeStore();
   const { settings, setSettingsDialogOpen } = useSettingsStore();
   const [isAlwaysOnTop, setIsAlwaysOnTop] = useState(settings.alwaysOnTop);
@@ -122,9 +124,14 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     setIsDropdownOpen?.(false);
   };
 
-  const handleManageSync = () => {
-    router.push('/user?section=sync');
+  const handleUserSection = (section: 'sync' | 'storage' | 'shared-links' | 'security') => {
+    navigateToProfile(router, section);
     setIsDropdownOpen?.(false);
+  };
+
+  const onLogout = () => {
+    setIsDropdownOpen?.(false);
+    void handleLogout();
   };
 
   const cycleThemeMode = () => {
@@ -252,8 +259,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   };
 
   const avatarUrl = user?.user_metadata?.['picture'] || user?.user_metadata?.['avatar_url'];
-  const userFullName = user?.user_metadata?.['full_name'];
-  const userDisplayName = userFullName ? userFullName.split(' ')[0] : null;
   const themeModeLabel =
     themeMode === 'dark'
       ? _('Dark Mode')
@@ -270,7 +275,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
   // The sync row reports the health of whatever the user selected. Native
   // cursors freeze while Readest Cloud is off (the book/progress/note channels
   // are gated), so the file engine's timestamps have to stand in.
-  const readestEnabled = isReadestCloudEnabled(settings);
   // Shared with the reader's View menu (#5910) so both surfaces answer "is my
   // sync healthy?" identically. The hook gates the native cursors on whether
   // Readest Cloud is actually enabled and drops backends that cannot run right
@@ -299,11 +303,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
     >
       {user ? (
         <MenuItem
-          label={
-            userDisplayName
-              ? _('Logged in as {{userDisplayName}}', { userDisplayName })
-              : _('Logged in')
-          }
+          label={_('Account')}
           labelClass='max-w-40! truncate text-nowrap!'
           aria-label={_('View account details and quota')}
           Icon={
@@ -339,18 +339,26 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
                       })
               }
             />
-            {readestEnabled ? (
+            {quotas.map((quota, index) => (
               <button
-                onClick={handleUserProfile}
+                key={quota.name}
+                onClick={index === 0 ? () => handleUserSection('storage') : handleUserProfile}
                 className='hover:bg-base-300 w-full rounded-md'
                 style={{
                   paddingInlineStart: `${iconSize}px`,
                 }}
               >
-                <Quota quotas={quotas} labelClassName='h-10 pl-3 pr-2' />
+                <Quota quotas={[quota]} labelClassName='h-10 pl-3 pr-2' />
               </button>
-            ) : null}
-            <MenuItem label={_('Account')} onClick={handleUserProfile} />
+            ))}
+            <MenuItem label={_('Subscription')} onClick={handleUserProfile} />
+            <MenuItem label={_('Sync Settings')} onClick={() => handleUserSection('sync')} />
+            {quotas.length === 0 && (
+              <MenuItem label={_('Cloud Storage')} onClick={() => handleUserSection('storage')} />
+            )}
+            <MenuItem label={_('Shared Links')} onClick={() => handleUserSection('shared-links')} />
+            <MenuItem label={_('Login & Security')} onClick={() => handleUserSection('security')} />
+            <MenuItem label={_('Sign Out')} onClick={onLogout} />
           </ul>
         </MenuItem>
       ) : (
@@ -423,7 +431,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
           {appService?.canCustomizeRootDir && (
             <MenuItem label={_('Change Data Location')} onClick={handleSetRootDir} />
           )}
-          {user && <MenuItem label={_('Data Sync')} onClick={handleManageSync} />}
           <MenuItem
             label={_('Refresh Metadata')}
             description={refreshMetadataProgress}
@@ -464,6 +471,16 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ onPullLibrary, setIsDropdow
               description={savedBookCoverForLockScreen ? savedBookCoverDescription : ''}
               toggled={!!savedBookCoverForLockScreen}
               onClick={handleSetSavedBookCoverForLockScreen}
+            />
+          )}
+          {user && (
+            <MenuItem
+              label={_('Delete Library Data')}
+              labelClass='not-eink:text-rose-600'
+              onClick={() => {
+                setIsDropdownOpen?.(false);
+                openDeleteLibraryDialog();
+              }}
             />
           )}
         </ul>

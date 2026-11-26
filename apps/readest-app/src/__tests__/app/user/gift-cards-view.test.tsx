@@ -17,7 +17,6 @@ const mocks = vi.hoisted(() => ({
   router: { push: vi.fn(), replace: vi.fn(), back: vi.fn() },
   sectionProps: vi.fn(),
   plansProps: vi.fn(),
-  accountProps: vi.fn(),
   params: new URLSearchParams(),
 }));
 
@@ -92,12 +91,6 @@ vi.mock('@/app/user/components/UsageStats', () => ({
 vi.mock('@/app/user/components/PlansComparison', () => ({
   default: (props: Record<string, unknown>) => {
     mocks.plansProps(props);
-    return null;
-  },
-}));
-vi.mock('@/app/user/components/AccountActions', () => ({
-  default: (props: Record<string, unknown>) => {
-    mocks.accountProps(props);
     return null;
   },
 }));
@@ -178,7 +171,7 @@ it.each([
   [
     'Redeem Gift Card',
     'redeem',
-    () => lastProps<{ onRedeemGiftCard: () => void }>(mocks.accountProps).onRedeemGiftCard(),
+    () => screen.getByRole('button', { name: 'Redeem Gift Card' }).click(),
   ],
 ] as const)('%s opens the %s view', (_name, view, open) => {
   mocks.params = new URLSearchParams();

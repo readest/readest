@@ -141,10 +141,15 @@ export const navigateToHardcoverConnect = (router: ReturnType<typeof useRouter>)
 // Remember the opener so leaving the profile returns to it, e.g. the book
 // being read when Plans was opened from the reader settings (#6607). The
 // direction picks the slide of the route view transition (useAppRouter).
-export const navigateToProfile = (router: ReturnType<typeof useRouter>) => {
+export const navigateToProfile = (router: ReturnType<typeof useRouter>, section?: string) => {
   const { pathname, search } = window.location;
   document.documentElement.setAttribute('data-nav-direction', 'forward');
-  router.push(`/user?redirect=${encodeURIComponent(pathname + search)}`);
+  const params = new URLSearchParams();
+  if (section) {
+    params.set('section', section);
+  }
+  params.set('redirect', pathname + search);
+  router.push(`/user?${params.toString()}`);
 };
 
 export const navigateBackFromProfile = (

@@ -45,15 +45,30 @@ import ProfileHeader from './components/Header';
 import UserInfo from './components/UserInfo';
 import UsageStats from './components/UsageStats';
 import PlansComparison from './components/PlansComparison';
-import AccountActions from './components/AccountActions';
 import StorageManager from './components/StorageManager';
 import SharedLinksSection from './components/SharedLinksSection';
 import { SyncPassphraseSection } from './components/SyncPassphraseSection';
 import { SyncCategoriesSection } from './components/SyncCategoriesSection';
+import { LoginSecuritySection } from './components/LoginSecuritySection';
 import Checkout from './components/Checkout';
 import GiftCardsSection, { GiftCardsView } from './components/gift/GiftCardsSection';
 
 type GiftInfo = Pick<GiftCardsResponse, 'giftPlan' | 'giftActiveUntil' | 'giftOnly'>;
+
+type ProfileSection = 'storage' | 'shared-links' | 'sync' | 'security';
+
+const PROFILE_SECTIONS: ReadonlySet<string> = new Set<ProfileSection>([
+  'storage',
+  'shared-links',
+  'sync',
+  'security',
+]);
+
+const isProfileSection = (value: string | null | undefined): value is ProfileSection =>
+  !!value && PROFILE_SECTIONS.has(value);
+
+const actionButtonClass =
+  'bg-base-300 hover:bg-base-content/15 text-base-content border-base-content/10 eink-bordered w-full rounded-lg border px-6 py-3 font-medium transition-colors duration-150 md:w-auto';
 
 type CheckoutState = {
   clientSecret: string;
@@ -68,13 +83,12 @@ const ProfilePage = () => {
   const { token, user, refresh } = useAuth();
   const { safeAreaInsets, isRoundedWindow } = useThemeStore();
 
+  const searchParams = useSearchParams();
+  const initialSection = searchParams?.get('section');
   const [loading, setLoading] = useState(false);
   const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
-  const [showStorageManager, setShowStorageManager] = useState(false);
-  const [showSharedLinksManager, setShowSharedLinksManager] = useState(false);
-  const searchParams = useSearchParams();
-  const [showSyncManager, setShowSyncManager] = useState(
-    () => searchParams?.get('section') === 'sync',
+  const [activeSection, setActiveSection] = useState<ProfileSection | null>(() =>
+    isProfileSection(initialSection) ? initialSection : null,
   );
   // Read once: the code is taken out of the URL as soon as the page opens.
   const [giftCode] = useState(() => searchParams?.get('gift') || undefined);
@@ -94,14 +108,22 @@ const ProfilePage = () => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const {
-    signingOut,
-    handleLogout,
-    handleResetPassword,
-    handleUpdateEmail,
-    handleConfirmDelete,
-    handleDeleteAllBooks,
-  } = useUserActions();
+  useEffect(() => {
+    if (isProfileSection(initialSection)) {
+      setActiveSection(initialSection);
+      setGiftView(null);
+      return;
+    }
+    setActiveSection(null);
+    if (initialSection === 'redeem') {
+      setGiftView('redeem');
+    } else if (initialSection === 'gifts') {
+      setGiftView('give');
+    }
+  }, [initialSection]);
+
+  const { signingOut, handleResetPassword, handleUpdateEmail, handleConfirmDelete } =
+    useUserActions();
 
   useEffect(() => {
     if (!mounted) return;
@@ -205,22 +227,28 @@ const ProfilePage = () => {
     ),
   });
 
+  const navigateBack = () => {
+    // A book stays open beneath while this page sits over it (#6607).
+    const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
+    navigateBackFromProfile(router, searchParams?.get('redirect'), readerBeneath);
+  };
+
   const handleGoBack = () => {
     if (showEmbeddedCheckout) {
       setShowEmbeddedCheckout(false);
-    } else if (showStorageManager) {
-      setShowStorageManager(false);
-      refresh();
-    } else if (showSharedLinksManager) {
-      setShowSharedLinksManager(false);
-    } else if (showSyncManager) {
-      setShowSyncManager(false);
+    } else if (activeSection) {
+      if (activeSection === 'storage') {
+        refresh();
+      }
+      if (initialSection === activeSection) {
+        navigateBack();
+      } else {
+        setActiveSection(null);
+      }
     } else if (giftView) {
       setGiftView(null);
     } else {
-      // A book stays open beneath while this page sits over it (#6607).
-      const readerBeneath = Object.keys(useReaderStore.getState().viewStates).length > 0;
-      navigateBackFromProfile(router, searchParams?.get('redirect'), readerBeneath);
+      navigateBack();
     }
   };
 
@@ -376,30 +404,13 @@ const ProfilePage = () => {
 
   const handleManageSubscription = () => openStripePortal();
 
-  const handleDeleteWithMessage = () => {
+  const handleDeleteWithMessage = () =>
     handleConfirmDelete(_('Failed to delete user. Please try again later.'));
-  };
 
-  const handleDeleteAllBooksWithMessage = () => {
-    handleDeleteAllBooks(
-      _('All books deleted.'),
-      _('Failed to delete books. Please try again later.'),
-    );
-  };
-
-  const handleManageStorage = () => {
-    setShowStorageManager(true);
-  };
-
-  const handleManageSharedLinks = () => {
-    setShowSharedLinksManager(true);
-  };
-  const handleManageSync = () => {
-    setShowSyncManager(true);
-  };
   const handleGiftCard = () => {
     setGiftView('give');
   };
+
   const handleRedeemGiftCard = () => {
     setGiftView('redeem');
   };
@@ -478,25 +489,34 @@ const ProfilePage = () => {
                       planDetails={userPlanDetails}
                     />
 
-                    {!showStorageManager &&
-                      !showSharedLinksManager &&
-                      !showSyncManager &&
-                      !giftView && <UsageStats quotas={quotas} />}
+                    {!activeSection && !giftView && <UsageStats quotas={quotas} />}
                   </div>
                 )}
 
-                {showStorageManager ? (
+                {activeSection === 'storage' ? (
                   <div className='flex flex-col gap-y-8 px-6'>
                     <StorageManager />
                   </div>
-                ) : showSharedLinksManager ? (
+                ) : activeSection === 'shared-links' ? (
                   <div className='flex flex-col gap-y-8 px-6'>
                     <SharedLinksSection />
                   </div>
-                ) : showSyncManager ? (
+                ) : activeSection === 'sync' ? (
                   <div className='flex flex-col gap-y-8 px-6'>
                     <SyncCategoriesSection />
                     <SyncPassphraseSection />
+                  </div>
+                ) : activeSection === 'security' ? (
+                  <div className='flex flex-col gap-y-8 px-6'>
+                    <LoginSecuritySection
+                      userEmail={userEmail}
+                      planName={_(userPlanDetails.name)}
+                      userPlan={userProfilePlan}
+                      customizationPurchased={customizationPurchased}
+                      onResetPassword={handleResetPassword}
+                      onUpdateEmail={handleUpdateEmail}
+                      onConfirmDelete={handleDeleteWithMessage}
+                    />
                   </div>
                 ) : giftView ? (
                   // Without the account block above it, the buy page clears the
@@ -533,26 +553,22 @@ const ProfilePage = () => {
                         onGiftCard={handleGiftCard}
                       />
                     </div>
-                    <div className='flex flex-col gap-y-8 px-6'>
-                      <AccountActions
-                        userEmail={userEmail}
-                        planName={_(userPlanDetails.name)}
-                        userPlan={userProfilePlan}
-                        customizationPurchased={customizationPurchased}
-                        iapAvailable={iapAvailable}
-                        giftOnly={giftInfo?.giftOnly}
-                        onLogout={handleLogout}
-                        onResetPassword={handleResetPassword}
-                        onUpdateEmail={handleUpdateEmail}
-                        onConfirmDelete={handleDeleteWithMessage}
-                        onConfirmDeleteAllBooks={handleDeleteAllBooksWithMessage}
-                        onRestorePurchase={handleIAPRestorePurchase}
-                        onManageSubscription={handleManageSubscription}
-                        onManageStorage={handleManageStorage}
-                        onManageSharedLinks={handleManageSharedLinks}
-                        onManageSync={handleManageSync}
-                        onRedeemGiftCard={handleRedeemGiftCard}
-                      />
+                    <div className='flex flex-col gap-4 px-6 md:flex-row'>
+                      {buyThroughIAP ? (
+                        <button onClick={handleIAPRestorePurchase} className={actionButtonClass}>
+                          {_('Restore Purchase')}
+                        </button>
+                      ) : (
+                        userProfilePlan !== 'free' &&
+                        !giftInfo?.giftOnly && (
+                          <button onClick={handleManageSubscription} className={actionButtonClass}>
+                            {_('Manage Billing')}
+                          </button>
+                        )
+                      )}
+                      <button onClick={handleRedeemGiftCard} className={actionButtonClass}>
+                        {_('Redeem Gift Card')}
+                      </button>
                     </div>
                   </>
                 )}

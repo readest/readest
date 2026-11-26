@@ -284,12 +284,13 @@ const StorageManager = () => {
 
   return (
     <div className='flex flex-col gap-6'>
+      <h3 className='text-base-content text-lg font-semibold'>{_('Readest Cloud Storage')}</h3>
       {/* Stats Section */}
       {stats ? (
         <div className='bg-base-100 border-base-300 rounded-lg border p-4'>
-          <h3 className='text-base-content mb-4 text-lg font-semibold'>
+          <h4 className='text-base-content mb-4 text-base font-semibold'>
             {_('Cloud Storage Usage')}
-          </h3>
+          </h4>
           <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
             <div>
               <div className='text-base-content/60 text-sm'>{_('Total Files')}</div>

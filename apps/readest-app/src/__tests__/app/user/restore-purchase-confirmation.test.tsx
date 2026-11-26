@@ -9,9 +9,10 @@ const mocks = vi.hoisted(() => ({
   verifyGoogle: vi.fn(),
   verifyApple: vi.fn(),
   dispatch: vi.fn(),
+  params: new URLSearchParams(),
 }));
 
-vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }));
+vi.mock('next/navigation', () => ({ useSearchParams: () => mocks.params }));
 vi.mock('@/hooks/useAppRouter', () => ({ useAppRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: { getState: () => ({ viewStates: {} }) },
@@ -70,11 +71,24 @@ vi.mock('@/app/user/components/SyncCategoriesSection', () => ({
   SyncCategoriesSection: () => null,
 }));
 vi.mock('@/app/user/components/Checkout', () => ({ default: () => null }));
+vi.mock('@/app/user/components/gift/GiftCardsSection', () => ({ default: () => null }));
+vi.mock('@/libs/payment/gift/client', () => ({
+  claimGiftCards: vi.fn().mockResolvedValue(0),
+  fetchGiftPrices: vi.fn().mockResolvedValue([]),
+  fetchGiftCards: vi.fn().mockResolvedValue({
+    sent: [],
+    received: [],
+    giftPlan: 'free',
+    giftActiveUntil: null,
+    giftOnly: false,
+  }),
+}));
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   mocks.customizationPurchased = false;
+  mocks.params = new URLSearchParams();
 });
 
 it('refreshes verified restored purchases before showing the account deletion warning', async () => {
@@ -90,13 +104,16 @@ it('refreshes verified restored purchases before showing the account deletion wa
     mocks.customizationPurchased = true;
     return true;
   });
-  render(<ProfilePage />);
+  const { rerender } = render(<ProfilePage />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Restore Purchase' }));
   await waitFor(() => expect(mocks.verifyApple).toHaveBeenCalledTimes(1));
   expect(mocks.refresh).not.toHaveBeenCalled();
   finishVerification!();
   await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
+
+  mocks.params = new URLSearchParams({ section: 'security' });
+  rerender(<ProfilePage />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Delete Account' }));
   expect(screen.getByText('This account has a paid plan or purchases.')).toBeTruthy();

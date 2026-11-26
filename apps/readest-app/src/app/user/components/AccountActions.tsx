@@ -3,7 +3,7 @@ import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { UserPlan } from '@/types/quota';
 
-interface DeleteConfirmationModalProps {
+export interface DeleteConfirmationModalProps {
   title: string;
   message: string;
   children?: ReactNode;
@@ -12,7 +12,7 @@ interface DeleteConfirmationModalProps {
   onConfirm: () => void;
 }
 
-const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
+export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   title,
   message,
   children,
