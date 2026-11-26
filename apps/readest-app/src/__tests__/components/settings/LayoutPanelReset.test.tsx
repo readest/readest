@@ -33,7 +33,6 @@ vi.mock('@/store/settingsStore', () => ({
   useSettingsStore: () => ({ settings: { globalViewSettings: viewSettings } }),
 }));
 vi.mock('@/helpers/settings', () => ({ saveViewSettings: vi.fn() }));
-vi.mock('@/utils/bridge', () => ({ lockScreenOrientation: vi.fn() }));
 
 import LayoutPanel from '@/components/settings/LayoutPanel';
 
