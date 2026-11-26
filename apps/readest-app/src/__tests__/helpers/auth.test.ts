@@ -192,13 +192,36 @@ describe('handleAuthCallback', () => {
     expect(mockLogin).not.toHaveBeenCalled();
   });
 
+  // A second link can replace the SDK's session during the device check.
+  it("doesn't keep the refresh token of another account's session", async () => {
+    mockSetSession.mockResolvedValue({ error: null });
+    mockGetUser.mockResolvedValue({ data: { user: fakeUser } });
+    mockGetSession.mockResolvedValue({
+      data: { session: { refresh_token: 'other-refresh', user: { id: 'other-user' } } },
+    });
+
+    handleAuthCallback({
+      accessToken: 'good-token',
+      refreshToken: 'good-refresh',
+      login: mockLogin,
+      navigate: mockNavigate,
+      next: '/reader',
+    });
+
+    await vi.waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/reader'));
+    expect(mockLogin).toHaveBeenCalledWith('good-token', fakeUser);
+    expect(localStorage.getItem('refresh_token')).toBeNull();
+  });
+
   it('should login and navigate to next URL on successful auth', async () => {
     mockSetSession.mockResolvedValue({ error: null });
     mockGetUser.mockResolvedValue({ data: { user: fakeUser } });
     // setSession refreshes an expired access token, which rotates the link's
     // refresh token: the SDK's session holds the one that still works.
     mockGetSession.mockResolvedValue({
-      data: { session: { access_token: 'good-token', refresh_token: 'rotated-refresh' } },
+      data: {
+        session: { access_token: 'good-token', refresh_token: 'rotated-refresh', user: fakeUser },
+      },
     });
 
     handleAuthCallback({

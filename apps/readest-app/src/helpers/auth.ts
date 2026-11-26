@@ -104,7 +104,9 @@ export function handleAuthCallback({
         return;
       }
       login(accessToken, user);
-      keepRefreshToken((await supabase.auth.getSession()).data.session);
+      // Another link may have replaced the SDK's session meanwhile.
+      const { session } = (await supabase.auth.getSession()).data;
+      if (session?.user.id === user.id) keepRefreshToken(session);
       if (type === 'recovery') {
         navigate('/auth/recovery');
         return;
