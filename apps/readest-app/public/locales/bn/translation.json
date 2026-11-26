@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "সর্বশেষ সক্রিয়: {{date}}",
   "Sign out {{device}}": "{{device}} সাইন আউট করুন",
   "Number of Devices": "ডিভাইসের সংখ্যা",
-  "Unlimited": "সীমাহীন"
+  "Unlimited": "সীমাহীন",
+  "Sync Custom Fonts": "কাস্টম ফন্ট সিঙ্ক করুন",
+  "Syncs custom font files with this provider": "এই সরবরাহকারীর সাথে কাস্টম ফন্ট ফাইল সিঙ্ক করে"
 }

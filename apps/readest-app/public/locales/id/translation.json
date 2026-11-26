@@ -2973,5 +2973,7 @@
   "Last active {{date}}": "Terakhir aktif {{date}}",
   "Sign out {{device}}": "Keluarkan {{device}}",
   "Number of Devices": "Jumlah perangkat",
-  "Unlimited": "Tanpa batas"
+  "Unlimited": "Tanpa batas",
+  "Sync Custom Fonts": "Sinkronkan Font Kustom",
+  "Syncs custom font files with this provider": "Menyinkronkan file font kustom dengan penyedia ini"
 }

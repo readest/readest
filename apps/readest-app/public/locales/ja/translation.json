@@ -2973,5 +2973,7 @@
   "Last active {{date}}": "最終アクティブ: {{date}}",
   "Sign out {{device}}": "{{device}} をサインアウト",
   "Number of Devices": "デバイス数",
-  "Unlimited": "無制限"
+  "Unlimited": "無制限",
+  "Sync Custom Fonts": "カスタムフォントを同期",
+  "Syncs custom font files with this provider": "カスタムフォントファイルをこのプロバイダーと同期します"
 }

@@ -2973,5 +2973,7 @@
   "Last active {{date}}": "ใช้งานล่าสุด {{date}}",
   "Sign out {{device}}": "ออกจากระบบ {{device}}",
   "Number of Devices": "จำนวนอุปกรณ์",
-  "Unlimited": "ไม่จำกัด"
+  "Unlimited": "ไม่จำกัด",
+  "Sync Custom Fonts": "ซิงค์ฟอนต์ที่กำหนดเอง",
+  "Syncs custom font files with this provider": "ซิงค์ไฟล์ฟอนต์ที่กำหนดเองกับผู้ให้บริการนี้"
 }

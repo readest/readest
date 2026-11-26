@@ -9,6 +9,7 @@ import {
   isReadestCloudEnabled,
   getEnabledFileSyncBackends,
   cloudProvidersDisplayName,
+  settingsKeyForBackend,
 } from '@/services/sync/cloudSyncProvider';
 import {
   SYNC_CATEGORIES,
@@ -100,7 +101,10 @@ export function SyncCategoriesSection() {
   const copy = useCategoryCopy();
   const readestEnabled = isReadestCloudEnabled(settings);
   const backends = getEnabledFileSyncBackends(settings);
-  const cloudProviderName = cloudProvidersDisplayName(backends);
+  // A backend with Sync Custom Fonts off (#7965) doesn't manage fonts.
+  const fontBackends = backends.filter(
+    (kind) => settings?.[settingsKeyForBackend(kind)]?.syncFonts !== false,
+  );
 
   // A refreshed /user renders before the store is hydrated, where every
   // category reads its default. Showing that would misreport the user's real
@@ -148,14 +152,17 @@ export function SyncCategoriesSection() {
           // backend at runtime and these toggles have no immediate effect. The
           // description says so in place (same pattern as `locked`), but the
           // toggle stays interactive and persists: it governs the native
-          // channel the user returns to when Readest Cloud is re-enabled.
-          const managedByProvider =
+          // channel the user returns to when Readest Cloud is re-enabled. Fonts
+          // stay on this device when every backend has Sync Custom Fonts off.
+          const providerBackends = category === 'font' ? fontBackends : backends;
+          const routedToProvider =
             !readestEnabled &&
             backends.length > 0 &&
             (category === 'book' ||
               category === 'progress' ||
               category === 'note' ||
               category === 'font');
+          const managedByProvider = routedToProvider && providerBackends.length > 0;
           return (
             <li key={category} className='flex items-center justify-between gap-4 px-4 py-3'>
               <div className='flex flex-col gap-0.5'>
@@ -163,11 +170,13 @@ export function SyncCategoriesSection() {
                 <span className='text-base-content/60 text-xs'>
                   {managedByProvider
                     ? _('Managed by {{provider}} while it is your cloud sync provider', {
-                        provider: cloudProviderName,
+                        provider: cloudProvidersDisplayName(providerBackends),
                       })
-                    : locked
-                      ? _('Required while Dictionaries sync is enabled')
-                      : c.description}
+                    : routedToProvider
+                      ? _('Local only')
+                      : locked
+                        ? _('Required while Dictionaries sync is enabled')
+                        : c.description}
                 </span>
               </div>
               <input

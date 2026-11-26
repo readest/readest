@@ -3210,5 +3210,7 @@
   "Last active {{date}}": "Ostatnia aktywność: {{date}}",
   "Sign out {{device}}": "Wyloguj {{device}}",
   "Number of Devices": "Liczba urządzeń",
-  "Unlimited": "Bez limitu"
+  "Unlimited": "Bez limitu",
+  "Sync Custom Fonts": "Synchronizuj własne czcionki",
+  "Syncs custom font files with this provider": "Synchronizuje pliki własnych czcionek z tym dostawcą"
 }

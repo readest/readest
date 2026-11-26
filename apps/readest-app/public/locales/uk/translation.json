@@ -3210,5 +3210,7 @@
   "Last active {{date}}": "Остання активність: {{date}}",
   "Sign out {{device}}": "Вийти з {{device}}",
   "Number of Devices": "Кількість пристроїв",
-  "Unlimited": "Необмежено"
+  "Unlimited": "Необмежено",
+  "Sync Custom Fonts": "Синхронізувати власні шрифти",
+  "Syncs custom font files with this provider": "Синхронізує файли власних шрифтів із цим постачальником"
 }

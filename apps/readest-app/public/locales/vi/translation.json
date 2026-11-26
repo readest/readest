@@ -2973,5 +2973,7 @@
   "Last active {{date}}": "Hoạt động lần cuối: {{date}}",
   "Sign out {{device}}": "Đăng xuất {{device}}",
   "Number of Devices": "Số thiết bị",
-  "Unlimited": "Không giới hạn"
+  "Unlimited": "Không giới hạn",
+  "Sync Custom Fonts": "Đồng bộ phông chữ tùy chỉnh",
+  "Syncs custom font files with this provider": "Đồng bộ tệp phông chữ tùy chỉnh với nhà cung cấp này"
 }

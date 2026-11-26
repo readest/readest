@@ -2973,5 +2973,7 @@
   "Last active {{date}}": "མཐའ་མའི་བྱ་འགུལ། {{date}}",
   "Sign out {{device}}": "{{device}} ཕྱིར་བུད།",
   "Number of Devices": "སྒྲིག་ཆས་ཀྱི་གྲངས་ཀ།",
-  "Unlimited": "ཚད་མེད།"
+  "Unlimited": "ཚད་མེད།",
+  "Sync Custom Fonts": "རང་སྒྲིག་ཡིག་གཟུགས་མཉམ་སྒྲིག་བྱེད",
+  "Syncs custom font files with this provider": "རང་སྒྲིག་ཡིག་གཟུགས་ཡིག་ཆ་འདི་མཁོ་སྤྲོད་བྱེད་མཁན་དང་མཉམ་སྒྲིག་བྱེད"
 }

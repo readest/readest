@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "Zuletzt aktiv am {{date}}",
   "Sign out {{device}}": "{{device}} abmelden",
   "Number of Devices": "Anzahl der Geräte",
-  "Unlimited": "Unbegrenzt"
+  "Unlimited": "Unbegrenzt",
+  "Sync Custom Fonts": "Benutzerdefinierte Schriftarten synchronisieren",
+  "Syncs custom font files with this provider": "Synchronisiert benutzerdefinierte Schriftartdateien mit diesem Anbieter"
 }

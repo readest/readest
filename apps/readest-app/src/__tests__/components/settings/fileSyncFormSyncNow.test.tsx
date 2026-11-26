@@ -168,3 +168,30 @@ test.each([
   expect(persist).not.toHaveBeenCalled();
   expect(useFileSyncStore.getState().lastErrorByKind.webdav).toMatch(/HTTP 507/);
 });
+
+test('renders Sync Custom Fonts checked by default and persists toggle changes', () => {
+  const persist = vi.fn(async () => {});
+  render(<FileSyncForm kind='webdav' stored={stored} persist={persist} />);
+
+  const toggle = screen.getByRole('checkbox', { name: /Sync Custom Fonts/ }) as HTMLInputElement;
+  expect(toggle.checked).toBe(true);
+
+  fireEvent.click(toggle);
+  expect(persist).toHaveBeenCalledWith({ syncFonts: false });
+});
+
+test('Sync now skips custom font sync when syncFonts is false', async () => {
+  render(
+    <FileSyncForm
+      kind='webdav'
+      stored={{ ...stored, syncFonts: false }}
+      persist={vi.fn(async () => {})}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: 'Sync now' }));
+
+  await waitFor(() => expect(useFileSyncStore.getState().byKind.webdav?.isSyncing).toBe(false));
+  expect(syncLibrary).toHaveBeenCalledTimes(1);
+  expect(syncFonts).not.toHaveBeenCalled();
+});

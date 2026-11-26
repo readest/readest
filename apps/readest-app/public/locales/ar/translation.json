@@ -3368,5 +3368,7 @@
   "Last active {{date}}": "آخر نشاط: {{date}}",
   "Sign out {{device}}": "تسجيل خروج {{device}}",
   "Number of Devices": "عدد الأجهزة",
-  "Unlimited": "غير محدود"
+  "Unlimited": "غير محدود",
+  "Sync Custom Fonts": "مزامنة الخطوط المخصصة",
+  "Syncs custom font files with this provider": "يزامن ملفات الخطوط المخصصة مع هذا المزوّد"
 }

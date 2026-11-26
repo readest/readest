@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "Senast aktiv {{date}}",
   "Sign out {{device}}": "Logga ut {{device}}",
   "Number of Devices": "Antal enheter",
-  "Unlimited": "Obegränsat"
+  "Unlimited": "Obegränsat",
+  "Sync Custom Fonts": "Synkronisera anpassade teckensnitt",
+  "Syncs custom font files with this provider": "Synkroniserar anpassade teckensnittsfiler med den här leverantören"
 }

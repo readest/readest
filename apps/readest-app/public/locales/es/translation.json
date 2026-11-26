@@ -3131,5 +3131,7 @@
   "Last active {{date}}": "Última actividad: {{date}}",
   "Sign out {{device}}": "Cerrar sesión en {{device}}",
   "Number of Devices": "Número de dispositivos",
-  "Unlimited": "Ilimitado"
+  "Unlimited": "Ilimitado",
+  "Sync Custom Fonts": "Sincronizar fuentes personalizadas",
+  "Syncs custom font files with this provider": "Sincroniza los archivos de fuentes personalizadas con este proveedor"
 }

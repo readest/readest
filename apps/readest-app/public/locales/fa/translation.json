@@ -3052,5 +3052,7 @@
   "Last active {{date}}": "آخرین فعالیت: {{date}}",
   "Sign out {{device}}": "خروج از {{device}}",
   "Number of Devices": "تعداد دستگاه‌ها",
-  "Unlimited": "نامحدود"
+  "Unlimited": "نامحدود",
+  "Sync Custom Fonts": "همگام‌سازی فونت‌های سفارشی",
+  "Syncs custom font files with this provider": "فایل‌های فونت سفارشی را با این ارائه‌دهنده همگام‌سازی می‌کند"
 }

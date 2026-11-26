@@ -24,7 +24,8 @@ vi.mock('@/context/EnvContext', () => ({
 }));
 
 vi.mock('@/hooks/useTranslation', () => ({
-  useTranslation: () => (key: string) => key,
+  useTranslation: () => (key: string, opts?: Record<string, string>) =>
+    key.replace(/{{(\w+)}}/g, (_, name: string) => opts?.[name] ?? ''),
 }));
 
 vi.mock('@/utils/settingsSync', () => ({
@@ -75,8 +76,40 @@ describe('SyncCategoriesSection', () => {
       settings: { ...base, readestCloud: { enabled: false }, webdav: { enabled: true } },
     } as never);
     render(<SyncCategoriesSection />);
-    const managed = 'Managed by {{provider}} while it is your cloud sync provider';
+    const managed = 'Managed by WebDAV while it is your cloud sync provider';
     expect(row('Fonts').closest('li')!.textContent).toContain(managed);
     expect(row('Dictionaries').closest('li')!.textContent).not.toContain(managed);
+  });
+
+  test('fonts name only the file providers whose Sync Custom Fonts is on (#7965)', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: false },
+        webdav: { enabled: true, syncFonts: false },
+        googleDrive: { enabled: true },
+      },
+    } as never);
+    render(<SyncCategoriesSection />);
+    expect(row('Fonts').closest('li')!.textContent).toContain(
+      'Managed by Google Drive while it is your cloud sync provider',
+    );
+    expect(row('Books').closest('li')!.textContent).toContain(
+      'Managed by WebDAV, Google Drive while it is your cloud sync provider',
+    );
+  });
+
+  test('fonts read as local only when no file provider syncs them (#7965)', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...base,
+        readestCloud: { enabled: false },
+        webdav: { enabled: true, syncFonts: false },
+      },
+    } as never);
+    render(<SyncCategoriesSection />);
+    expect(row('Fonts').closest('li')!.textContent).toContain('Local only');
+    expect(row('Fonts').closest('li')!.textContent).not.toContain('Managed by');
+    expect(row('Books').closest('li')!.textContent).toContain('Managed by WebDAV');
   });
 });
