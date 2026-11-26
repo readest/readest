@@ -46,6 +46,11 @@ export function parseOAuthCallbackUrl(url: string): OAuthCallbackParams {
   };
 }
 
+// AuthProvider stores nothing for a new sign-in whose device check failed, and
+// an offline launch restores the sign-in from this key.
+const keepRefreshToken = (refreshToken: string) =>
+  localStorage.setItem('refresh_token', refreshToken);
+
 export function handleAuthCallback({
   accessToken,
   refreshToken,
@@ -69,7 +74,10 @@ export function handleAuthCallback({
         onDeviceLimit('/library');
         return;
       }
-      if (data.session) login(data.session.access_token, data.session.user);
+      if (data.session) {
+        login(data.session.access_token, data.session.user);
+        keepRefreshToken(data.session.refresh_token);
+      }
       navigate('/library');
       return;
     }
@@ -94,6 +102,7 @@ export function handleAuthCallback({
         return;
       }
       login(accessToken, user);
+      keepRefreshToken(refreshToken);
       if (type === 'recovery') {
         navigate('/auth/recovery');
         return;

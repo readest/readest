@@ -94,10 +94,16 @@ describe('handleAuthCallback', () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockCheckDeviceLimit.mockResolvedValue(null);
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => void storage.set(key, value),
+    });
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('should navigate to /auth/error when error is present', async () => {
@@ -203,6 +209,9 @@ describe('handleAuthCallback', () => {
     });
 
     expect(mockNavigate).toHaveBeenCalledWith('/reader');
+    // AuthProvider stores nothing when its device check fails, and an offline
+    // launch restores the sign-in from this key.
+    expect(localStorage.getItem('refresh_token')).toBe('good-refresh');
   });
 
   it('should default next to "/" when not specified', async () => {
@@ -381,12 +390,15 @@ describe('handleAuthCallback', () => {
   // in itself, as it does with tokens, also when the check can't run.
   it('signs in a session supabase-js already took from the URL', async () => {
     const user = { id: 'user-1' };
-    mockGetSession.mockResolvedValue({ data: { session: { access_token: 'url-token', user } } });
+    mockGetSession.mockResolvedValue({
+      data: { session: { access_token: 'url-token', refresh_token: 'url-refresh', user } },
+    });
     mockCheckDeviceLimit.mockResolvedValue(null);
 
     handleAuthCallback({ login: mockLogin, navigate: mockNavigate });
 
     await vi.waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/library'));
     expect(mockLogin).toHaveBeenCalledWith('url-token', user);
+    expect(localStorage.getItem('refresh_token')).toBe('url-refresh');
   });
 });
