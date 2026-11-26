@@ -1318,27 +1318,31 @@ export const getStyles = (
   if (!themeCode) {
     themeCode = getThemeCode();
   }
-  const pageLayoutStyles = getPageLayoutStyles(
-    viewSettings.marginTopPx,
-    viewSettings.marginRightPx,
-    viewSettings.marginBottomPx,
-    viewSettings.marginLeftPx,
-    1.0,
-    viewSettings.writingMode!,
-    viewSettings.vertical!,
+  const pageLayoutStyles = scaleFontRelativeLengths(
+    getPageLayoutStyles(
+      viewSettings.marginTopPx,
+      viewSettings.marginRightPx,
+      viewSettings.marginBottomPx,
+      viewSettings.marginLeftPx,
+      1.0,
+      viewSettings.writingMode!,
+      viewSettings.vertical!,
+    ),
   );
   const paragraphLayoutStyles = viewSettings.useBookLayout
     ? ''
-    : getParagraphLayoutStyles(
-        viewSettings.overrideLayout!,
-        viewSettings.paragraphMargin!,
-        viewSettings.lineHeight!,
-        viewSettings.wordSpacing!,
-        viewSettings.letterSpacing!,
-        viewSettings.textIndent!,
-        viewSettings.fullJustification!,
-        viewSettings.hyphenation!,
-        viewSettings.vertical!,
+    : scaleFontRelativeLengths(
+        getParagraphLayoutStyles(
+          viewSettings.overrideLayout!,
+          viewSettings.paragraphMargin!,
+          viewSettings.lineHeight!,
+          viewSettings.wordSpacing!,
+          viewSettings.letterSpacing!,
+          viewSettings.textIndent!,
+          viewSettings.fullJustification!,
+          viewSettings.hyphenation!,
+          viewSettings.vertical!,
+        ),
       );
   const fontStyles = getFontStyles(
     viewSettings.serifFont!,
@@ -1490,11 +1494,74 @@ const FONT_SHORTHAND_REGEX = /((?:^|[\s;{])font\s*:)([^;{}]*)/gi;
 const wrapFontFamily = (_match: string, prefix: string, families: string) =>
   prefix + wrapPublisherFonts(families);
 
+// Android WebView applies the system font size as a text zoom (#7972): it
+// grows the computed font-size and line-height by this factor, while em and
+// rem lengths keep resolving against the declared size, so `text-indent: 2em`
+// renders as 2/F characters. Measured once from the computed size of a probe,
+// which no stylesheet can override; 1 off Android and at the default size.
+let textZoom: number | undefined;
+const getTextZoom = () => {
+  if (textZoom !== undefined) return textZoom;
+  if (getOSPlatform() !== 'android' || typeof document === 'undefined' || !document.body) return 1;
+  const probe = document.createElement('span');
+  probe.style.setProperty('font-size', '100px', 'important');
+  document.body.append(probe);
+  const zoom = parseFloat(getComputedStyle(probe).fontSize) / 100;
+  probe.remove();
+  textZoom = zoom > 0 && Math.abs(zoom - 1) >= 0.01 ? zoom : 1;
+  return textZoom;
+};
+
+// font-size, line-height and the `font` shorthand are left out: the zoom
+// already scales them. So are custom properties, whose consumer may be one of
+// those. A number glued to a name (`--gap2em`, `slide2em`) is not a length, so
+// the match needs a non-name character in front of it.
+const FONT_RELATIVE_LENGTH = /(^|[^\w.-])([+-]?(?:\d*\.)?\d+(?:e[+-]?\d+)?)(rem|em)\b/gi;
+const FONT_METRIC_PROPS =
+  /^(?:font-size|font|line-height|-webkit-text-size-adjust|text-size-adjust)$/i;
+
+/**
+ * Multiply the em/rem lengths in CSS by the text zoom, so they keep their
+ * size relative to the zoomed glyphs. A no-op when the zoom is 1. Comments,
+ * strings, url() and at-rule preludes are parked first, so a `2em` in text or
+ * in `@media (min-width: 30em)` is never rewritten. The variable marks a value
+ * as scaled, so a repeated transform (#5277) leaves it alone; it is never set,
+ * and its fallback carries the factor.
+ */
+const scaleFontRelativeLengths = (css: string) => {
+  const zoom = getTextZoom();
+  if (zoom === 1) return css;
+
+  const parked: string[] = [];
+  const masked = css.replace(
+    /\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)\s*\)|@[\w-]+[^{;]*/gi,
+    (token) => `READEST_LEN_${parked.push(token) - 1}_PLACEHOLDER`,
+  );
+  const scaled = masked.replace(
+    /(^|[{\s;])([\w-]+)(\s*:\s*)([^;{}]*)/gi,
+    (match, prefix: string, prop: string, sep: string, value: string) => {
+      if (FONT_METRIC_PROPS.test(prop) || prop.startsWith('--')) return match;
+      if (value.includes('--readest-font-scale')) return match;
+      const rewritten = value.replace(
+        FONT_RELATIVE_LENGTH,
+        (len, before: string, number: string, unit: string) =>
+          parseFloat(number) === 0
+            ? len
+            : `${before}calc(${number}${unit} * var(--readest-font-scale, ${zoom}))`,
+      );
+      return rewritten === value ? match : prefix + prop + sep + rewritten;
+    },
+  );
+  return scaled.replace(/READEST_LEN_(\d+)_PLACEHOLDER/g, (_, i: string) => parked[+i]!);
+};
+
 // `style` attributes don't pass through transformStylesheet.
 export const transformInlineFonts = (css: string) =>
-  css
-    .replace(/(font-family\s*:)([^;{}!]*)/gi, wrapFontFamily)
-    .replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
+  scaleFontRelativeLengths(
+    css
+      .replace(/(font-family\s*:)([^;{}!]*)/gi, wrapFontFamily)
+      .replace(FONT_SHORTHAND_REGEX, wrapFontShorthand),
+  );
 
 export const transformStylesheet = (
   css: string,
@@ -1857,7 +1924,9 @@ export const transformStylesheet = (
     });
   }
 
-  return css.replace(FONT_SHORTHAND_REGEX, wrapFontShorthand);
+  // Last, so the passes above still read the lengths the book wrote, such as
+  // a band's negative margin (#5711).
+  return scaleFontRelativeLengths(css.replace(FONT_SHORTHAND_REGEX, wrapFontShorthand));
 };
 
 export const applyThemeModeClass = (document: Document, isDarkMode: boolean) => {
