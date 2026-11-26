@@ -300,6 +300,33 @@ describe('AuthPage over the Free plan device limit', () => {
     expect(localStorage.getItem('refresh_token')).toBe('refreshed-refresh');
   });
 
+  // Another tab can sign in a second account while the list shows.
+  it('does not sign in another account on a sign-out answered for the first', async () => {
+    let finish = (_value: unknown) => {};
+    mocks.signOutSyncDevice.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    act(() =>
+      mocks.onAuthStateChange?.('SIGNED_IN', {
+        access_token: 'a-token',
+        refresh_token: 'a-refresh',
+        user: { id: 'a' },
+      }),
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out Chrome on macOS' }));
+    mocks.checkSignInDeviceLimit.mockReturnValue(new Promise(() => {}));
+    act(() =>
+      mocks.onAuthStateChange?.('SIGNED_IN', {
+        access_token: 'b-token',
+        refresh_token: 'b-refresh',
+        user: { id: 'b' },
+      }),
+    );
+
+    await act(async () => finish({ ...BLOCKED, blocked: false }));
+
+    expect(mocks.signOutSyncDevice).toHaveBeenCalledWith('a-token', 'mac');
+    expect(mocks.login).not.toHaveBeenCalled();
+  });
+
   it('abandons a sign-in whose device check is still running on Go Back', async () => {
     let finish = (_value: unknown) => {};
     mocks.checkSignInDeviceLimit.mockReturnValue(new Promise((resolve) => (finish = resolve)));

@@ -369,8 +369,11 @@ export default function AuthPage() {
     if (!heldSignIn) return;
     const attempt = abandonedSignIns.current;
     const next = await signOutSyncDevice(heldSignIn.session.access_token, device.id);
+    // The answer is for the account that asked, refreshed or not.
     const session = latestSession.current;
-    if (attempt !== abandonedSignIns.current || !session) return;
+    if (attempt !== abandonedSignIns.current || session?.user.id !== heldSignIn.session.user.id) {
+      return;
+    }
     if (next.blocked) {
       setHeldSignIn({ ...next, session });
     } else {
