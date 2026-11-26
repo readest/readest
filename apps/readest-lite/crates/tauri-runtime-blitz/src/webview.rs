@@ -572,6 +572,8 @@ impl BlitzWebview {
     pub fn tick(&mut self) {
         let Some(doc) = self.doc.as_mut() else { return };
         let t_start = t_ms();
+        // One animation time for the turn's tasks, their layout reads and its frame.
+        blitz_qjs_script::advance_animation_time();
         let queue = std::mem::take(&mut *self.net.0.lock().unwrap());
         for (req, handler) in queue {
             let url = req.url.to_string();

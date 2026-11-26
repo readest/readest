@@ -302,7 +302,14 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// How many clicks have been made in quick succession
      pub(crate) click_count: u16,
      /// Whether we're currently in a text selection drag (moved 2px+ from mousedown)
-@@ -379,6 +391,8 @@
+@@ -375,10 +387,15 @@
+     // TODO: collapse animating state into a bitflags
+     /// Whether there are active CSS animations/transitions (so we should re-render every frame)
+     pub(crate) has_active_animations: bool,
++    /// The animation time the last restyle ran the animations at: resolving at it again has
++    /// nothing of theirs to restyle (see `is_resolved`).
++    pub(crate) animations_resolved_at: f64,
+     /// Whether there is a `<canvas>` element in the DOM (so we should re-render every frame)
      pub(crate) has_canvas: bool,
      /// Whether there are subdocuments that are animating (so we should re-render every frame)
      pub(crate) subdoc_is_animating: bool,
@@ -311,7 +318,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
      /// Map of id attribute values to node IDs for fast lookups.
      /// May contain multiple nodes for the same id: `get_element_by_id`
-@@ -394,6 +408,8 @@
+@@ -394,6 +411,8 @@
      pub(crate) controls_to_form: HashMap<NodeId, NodeId>,
      /// Nodes that contain sub documents
      pub(crate) sub_document_nodes: HashSet<NodeId>,
@@ -320,7 +327,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Load state (abort controller and in-flight request id) for each
      /// `<iframe>` element whose sub-document is loaded automatically
      pub(crate) iframe_loads: HashMap<NodeId, crate::iframe::IframeLoad>,
-@@ -410,7 +426,8 @@
+@@ -410,7 +429,8 @@
      pub(crate) pending_resource_deallocations: Vec<anyrender::ResourceId>,
  
      /// Cache of loaded images, keyed by URL. Allows reusing images across multiple
@@ -330,7 +337,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub(crate) image_cache: HashMap<String, ImageData>,
  
      /// Tracks in-flight image requests. When an image is being fetched, additional
-@@ -418,6 +435,10 @@
+@@ -418,6 +438,10 @@
      /// Value is a list of (node_id, image_type) pairs waiting for the image.
      pub(crate) pending_images: HashMap<String, Vec<(NodeId, ImageType)>>,
  
@@ -341,7 +348,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Nodes whose `background-image`/`mask-image` layers need flushing to
      /// dedicated storage on the node because their style changed (populated by
      /// the style traversal and by pseudo-element box construction).
-@@ -559,12 +580,15 @@
+@@ -559,12 +583,16 @@
              hover_node_is_text: false,
              last_client_pointer_position: None,
              focus_node_id: None,
@@ -349,6 +356,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              active_node_id: None,
              mousedown_node_id: None,
              has_active_animations: false,
++            animations_resolved_at: f64::NAN,
              subdoc_is_animating: false,
 +            damaged_since_taken: true,
              has_canvas: false,
@@ -357,7 +365,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              iframe_loads: HashMap::new(),
  
              #[cfg(feature = "custom-widget")]
-@@ -576,6 +600,7 @@
+@@ -576,6 +604,7 @@
              deferred_construction_nodes: Vec::new(),
              image_cache: HashMap::new(),
              pending_images: HashMap::new(),
@@ -365,7 +373,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              pending_style_image_nodes: Vec::new(),
              pending_critical_resources: HashSet::new(),
              controls_to_form: HashMap::new(),
-@@ -590,6 +615,7 @@
+@@ -590,6 +619,7 @@
              devtools_title: None,
              last_mousedown_time: None,
              mousedown_position: taffy::Point::ZERO,
@@ -373,7 +381,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              click_count: 0,
              drag_mode: DragMode::None,
              hovered_scrollbar: None,
-@@ -840,7 +866,8 @@
+@@ -840,7 +870,8 @@
          self.shell_provider.request_redraw();
      }
  
@@ -383,7 +391,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          let node = &mut self.nodes[node_id];
          let did_change = node.element_data_mut().unwrap().set_style_property(
              name,
-@@ -851,9 +878,11 @@
+@@ -851,9 +882,11 @@
          if did_change {
              node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
          }
@@ -396,7 +404,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          let node = &mut self.nodes[node_id];
          let did_change = node.element_data_mut().unwrap().remove_style_property(
              name,
-@@ -863,6 +892,7 @@
+@@ -863,6 +896,7 @@
          if did_change {
              node.set_restyle_hint(RestyleHint::RESTYLE_STYLE_ATTRIBUTE);
          }
@@ -404,7 +412,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      pub fn sub_document_node_ids(&self) -> Vec<NodeId> {
-@@ -1093,6 +1123,9 @@
+@@ -1093,6 +1127,9 @@
              if let Some(before) = node.before() {
                  self.drop_node_ignoring_parent_with(before, on_drop);
              }
@@ -414,7 +422,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
              if let Some(after) = node.after() {
                  self.drop_node_ignoring_parent_with(after, on_drop);
              }
-@@ -1124,6 +1157,20 @@
+@@ -1124,6 +1161,20 @@
          for nested_id in nested {
              self.deallocate_anonymous_block(nested_id);
          }
@@ -435,7 +443,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          self.remove_node_from_tree(anon_id);
      }
-@@ -1397,7 +1444,13 @@
+@@ -1397,7 +1448,13 @@
                          "Resource load failed"
                      );
                      #[cfg(not(feature = "tracing"))]
@@ -450,7 +458,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
                  } else {
                      #[cfg(feature = "tracing")]
                      tracing::warn!(error = err.as_str(), "Resource load failed (no url)");
-@@ -1493,6 +1546,35 @@
+@@ -1493,6 +1550,35 @@
          }
      }
  
@@ -486,7 +494,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Cache a loaded image and apply it to all nodes waiting on it
      /// (`<img>` elements, `background-image` layers and `mask-image` layers).
      fn apply_loaded_image(&mut self, url: &str, image: ImageData) {
-@@ -1526,6 +1608,7 @@
+@@ -1526,6 +1612,7 @@
                      // Clear layout cache
                      node.clear_layout_cache();
                      node.insert_damage(ALL_DAMAGE);
@@ -494,7 +502,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
                  }
                  ImageType::Background(idx) | ImageType::Mask(idx) => {
                      let layer_image = node.element_data_mut().and_then(|el| {
-@@ -1684,6 +1767,62 @@
+@@ -1684,6 +1771,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -557,7 +565,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -1810,6 +1949,27 @@
+@@ -1810,6 +1953,27 @@
          }
      }
  
@@ -585,7 +593,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn set_mousedown_node_id(&mut self, node_id: Option<NodeId>) {
          self.mousedown_node_id = node_id.and_then(|id| self.nearest_non_anonymous_ancestor(id));
      }
-@@ -1838,10 +1998,14 @@
+@@ -1838,10 +2002,14 @@
          }
  
          // Focus the new node
@@ -601,7 +609,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          );
  
          // Update :focus-within on the ancestor chains (shared prefix stays)
-@@ -2049,13 +2213,21 @@
+@@ -2049,13 +2217,21 @@
          }
  
          self.hover_node_id = hover_node_id;
@@ -626,7 +634,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn clear_hover(&mut self) -> bool {
          // The pointer is no longer over the document, so stop re-resolving
          // hover state against it.
-@@ -2073,9 +2245,7 @@
+@@ -2073,9 +2249,7 @@
  
          self.hover_node_id = None;
          self.hover_node_is_text = false;
@@ -637,7 +645,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          true
      }
-@@ -2333,6 +2503,56 @@
+@@ -2333,6 +2507,56 @@
          self.stylist.device()
      }
  
@@ -694,7 +702,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn get_cursor(&self) -> Option<CursorIcon> {
          // Prefer the precise hit node: `cursor` and `user-select` may be set on
          // a pseudo-element or resolved on an anonymous box, and text hits carry
-@@ -2440,6 +2660,40 @@
+@@ -2440,6 +2664,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -735,7 +743,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2701,27 @@
+@@ -2447,17 +2705,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -773,7 +781,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2792,7 @@
+@@ -2528,7 +2796,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -782,7 +790,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2807,339 @@
+@@ -2543,20 +2811,339 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -1134,7 +1142,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2661,6 +3244,58 @@
+@@ -2661,6 +3248,58 @@
          Some((inline_root.id, byte_offset))
      }
  
@@ -1193,7 +1201,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Set the text selection range (creates a new selection from anchor to focus)
      pub fn set_text_selection(
          &mut self,
-@@ -2685,6 +3320,52 @@
+@@ -2685,6 +3324,52 @@
          }
      }
  
@@ -1246,7 +1254,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Get the parent ID and sibling index for a node if it's an anonymous block.
      /// Returns (None, None) for non-anonymous blocks.
      fn anonymous_block_location(&self, node_id: NodeId) -> (Option<NodeId>, Option<usize>) {
-@@ -2944,6 +3625,66 @@
+@@ -2944,6 +3629,66 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1313,7 +1321,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4249,58 @@
+@@ -3508,6 +4253,58 @@
  }
  
  #[cfg(test)]
@@ -1372,7 +1380,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4574,7 @@
+@@ -3781,3 +4578,7 @@
          );
      }
  }
@@ -4770,7 +4778,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
  
 +        // Nothing changed since the last resolve: its styles and layout stand. Only the iframes
 +        // may have changed on their own.
-+        if self.is_resolved() {
++        if self.is_resolved(current_time_for_animations) {
 +            // The iframes resolve whatever damage this document has yet to hand over.
 +            let subdocs_damaged = subdocs && self.resolve_subdocs(current_time_for_animations);
 +            self.damaged_since_taken = earlier || subdocs_damaged;
@@ -4780,7 +4788,15 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          let root_node_id = self.root_element().id;
          debug_timer!(timer, feature = "log-phase-times");
  
-@@ -92,7 +129,10 @@
+@@ -81,6 +118,7 @@
+ 
+         // we need to resolve stylist first since it will need to drive our layout bits
+         self.resolve_stylist(current_time_for_animations);
++        self.animations_resolved_at = current_time_for_animations;
+         timer.record_time("style");
+ 
+         // Non-incremental mode is "every node is damaged every frame": mark the
+@@ -92,7 +130,10 @@
          }
  
          // Propagate damage flags (from mutation and restyles) up and down the tree
@@ -4792,7 +4808,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("damage");
  
          // Fix up tree for layout (insert anonymous blocks as necessary, etc)
-@@ -115,6 +155,10 @@
+@@ -115,6 +156,10 @@
  
          // Resolve transforms
          self.resolve_transforms(root_node_id);
@@ -4803,7 +4819,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("transform");
  
          // Build paint children / stacking contexts for damaged subtrees. Runs
-@@ -123,10 +167,18 @@
+@@ -123,10 +168,18 @@
          self.build_paint_tree(root_node_id);
          timer.record_time("paint_tree");
  
@@ -4822,7 +4838,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          timer.record_time("c_damage");
  
          // Re-resolve the hover node from the pointer position against the fresh
-@@ -138,34 +190,81 @@
+@@ -138,34 +191,83 @@
          // if the hovered node actually changes.
          self.refresh_hover();
  
@@ -4847,14 +4863,14 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 +        let subdocs_damaged = subdocs && self.resolve_subdocs(current_time_for_animations);
 +        self.damaged_since_taken = earlier || !damage.is_empty() || subdocs_damaged;
 +        timer.record_time("subdocs");
- 
++
 +        timer.print_times(&format!("Resolve({}): ", self.id()));
 +    }
 +
 +    /// Whether a resolve would change nothing: no node is dirty (marking a node marks its
 +    /// ancestors up to the document node) or damaged, and no stylesheet, device, animation or
 +    /// deferred work is pending.
-+    fn is_resolved(&self) -> bool {
++    fn is_resolved(&self, current_time_for_animations: f64) -> bool {
 +        let doc = self.root_node();
 +        self.incremental_layout
 +            && !doc.has_dirty_descendants()
@@ -4862,11 +4878,13 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 +            && self.snapshots.is_empty()
 +            && self.pending_device_changes.is_empty()
 +            && !self.stylist.stylesheets_have_changed()
-+            && self.animations.sets.read().is_empty()
++            // running animations have moved on only if the time has
++            && (self.animations.sets.read().is_empty()
++                || self.animations_resolved_at == current_time_for_animations)
 +            && self.deferred_construction_nodes.is_empty()
 +            && self.pending_style_image_nodes.is_empty()
 +    }
-+
+ 
 +    /// Resolves the documents of the iframes that show; whether any of them was damaged. A
 +    /// hidden iframe paints nothing, so its document is laid out only when read (or shown); it
 +    /// still takes in its loaded resources, as its `load` waits on its stylesheets.
@@ -4924,7 +4942,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
      }
  
      fn resolve_transforms(&mut self, node_id: NodeId) -> Rect {
-@@ -222,7 +321,8 @@
+@@ -222,7 +324,8 @@
              overflow = overflow.union(child_rect_in_self);
          }
          *self.nodes[node_id].hoisted_children.borrow_mut() = hoisted_children;
@@ -4934,7 +4952,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
              let Some(pseudo) = pseudo else { continue };
              if self.nodes[pseudo].is_out_of_flow() {
                  continue;
-@@ -453,6 +553,22 @@
+@@ -453,6 +556,22 @@
              }
          };
          taffy::compute_root_layout(&mut state, root_element_id, available_space);
@@ -4957,7 +4975,7 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
          #[cfg(feature = "writing-mode")]
          state.physicalise_and_round_layout(root_element_id);
          #[cfg(not(feature = "writing-mode"))]
-@@ -462,3 +578,70 @@
+@@ -462,3 +581,97 @@
          // taffy::print_tree(self, root_node_id)
      }
  }
@@ -5026,6 +5044,33 @@ diff -ruN blitz/packages/blitz-dom/src/resolve.rs blitz/packages/blitz-dom/src/r
 +        drop(m);
 +        doc.resolve(0.0);
 +        assert_eq!(width(&doc, div), 30.0);
++    }
++
++    #[test]
++    fn a_running_animation_resolved_again_at_the_same_time_lays_out_nothing() {
++        // Script's layout reads in one task resolve at one animation time, as a browser samples
++        // animations once a frame: a spinner turning must not restyle the page for each read.
++        let (mut doc, div) = page();
++        let body = doc.get_node(div).unwrap().parent.unwrap();
++        let mut m = doc.mutate();
++        let style = m.create_element(qual_name!("style", html), vec![]);
++        let text = m.create_text_node(
++            "@keyframes grow { from { width: 10px } to { width: 110px } }
++            div { animation: grow 1s linear infinite }",
++        );
++        m.append_children(style, &[text]);
++        m.append_children(body, &[style]);
++        drop(m);
++        doc.resolve(0.0);
++        doc.resolve(0.5);
++        assert_eq!(width(&doc, div), 60.0);
++        let generation = doc.nodes.geometry_generation();
++        doc.resolve(0.5);
++        doc.resolve(0.5);
++        assert_eq!(doc.nodes.geometry_generation(), generation);
++        // and at a later time it moves on
++        doc.resolve(0.75);
++        assert_eq!(width(&doc, div), 85.0);
 +    }
 +}
 diff -ruN blitz/packages/blitz-dom/src/scrolling.rs blitz/packages/blitz-dom/src/scrolling.rs

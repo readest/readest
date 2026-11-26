@@ -326,11 +326,23 @@ pub fn take_forced_layout() -> (f64, u32) {
     FORCED_LAYOUT.with(|f| f.replace((0.0, 0)))
 }
 
+thread_local! {
+    static ANIMATION_TIME: std::cell::Cell<f64> = const { std::cell::Cell::new(0.0) };
+}
+
 /// The clock for CSS animations and transitions, in seconds: pass it to `resolve` everywhere (a
-/// constant freezes every transition at its first frame).
+/// constant freezes every transition at its first frame). It stands still until
+/// `advance_animation_time`, as a browser's document timeline does until its next frame, so the
+/// layout reads of a task find the page resolved after the first, a running animation or not.
 pub fn animation_time() -> f64 {
+    ANIMATION_TIME.with(std::cell::Cell::get)
+}
+
+/// Moves the animation clock to now: once a turn of the event loop, before its tasks run.
+pub fn advance_animation_time() {
     static START: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
-    START.get_or_init(Instant::now).elapsed().as_secs_f64()
+    let now = START.get_or_init(Instant::now).elapsed().as_secs_f64();
+    ANIMATION_TIME.with(|t| t.set(now));
 }
 
 /// `innerHTML` and friends parse through the document's HTML parser provider, which is a no-op
