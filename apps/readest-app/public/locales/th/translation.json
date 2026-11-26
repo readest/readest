@@ -2987,5 +2987,9 @@
   "Over 50,000 free ebooks": "อีบุ๊กฟรีมากกว่า 50,000 เล่ม",
   "Free ebooks from authors who have \"unglued\" their books": "อีบุ๊กฟรีจากนักเขียนที่ “ปลดปล่อย” หนังสือของตน",
   "Free public-domain books, comics, magazines and puzzles": "หนังสือ การ์ตูน นิตยสาร และปริศนาสาธารณสมบัติฟรี",
-  "Sync Settings": "การตั้งค่าการซิงค์"
+  "Sync Settings": "การตั้งค่าการซิงค์",
+  "Share as QR Code": "แชร์เป็นคิวอาร์โค้ด",
+  "Show a QR code for the selected text": "แสดงคิวอาร์โค้ดของข้อความที่เลือก",
+  "Select a shorter passage to share as a QR code.": "เลือกข้อความที่สั้นลงเพื่อแชร์เป็นคิวอาร์โค้ด",
+  "QR code for the selected text": "คิวอาร์โค้ดของข้อความที่เลือก"
 }

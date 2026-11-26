@@ -13,4 +13,5 @@ export type AnnotationToolType =
   | 'tts'
   | 'proofread'
   | 'share'
+  | 'shareqr'
   | 'quotecard';

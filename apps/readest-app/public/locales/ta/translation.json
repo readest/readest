@@ -3066,5 +3066,9 @@
   "Over 50,000 free ebooks": "50,000-க்கும் மேற்பட்ட இலவச மின்னூல்கள்",
   "Free ebooks from authors who have \"unglued\" their books": "எழுத்தாளர்கள் “விடுவித்த” இலவச மின்னூல்கள்",
   "Free public-domain books, comics, magazines and puzzles": "இலவச பொதுக் கள நூல்கள், காமிக்ஸ், இதழ்கள், புதிர்கள்",
-  "Sync Settings": "ஒத்திசைவு அமைப்புகள்"
+  "Sync Settings": "ஒத்திசைவு அமைப்புகள்",
+  "Share as QR Code": "QR குறியீடாகப் பகிர்",
+  "Show a QR code for the selected text": "தேர்ந்தெடுத்த உரைக்கான QR குறியீட்டைக் காட்டு",
+  "Select a shorter passage to share as a QR code.": "QR குறியீடாகப் பகிர, சிறிய பகுதியைத் தேர்ந்தெடுக்கவும்.",
+  "QR code for the selected text": "தேர்ந்தெடுத்த உரைக்கான QR குறியீடு"
 }

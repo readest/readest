@@ -3066,5 +3066,9 @@
   "Over 50,000 free ebooks": "Meer dan 50.000 gratis e-books",
   "Free ebooks from authors who have \"unglued\" their books": "Gratis e-books van auteurs die hun boeken hebben ‘vrijgegeven’",
   "Free public-domain books, comics, magazines and puzzles": "Gratis boeken, strips, tijdschriften en puzzels uit het publieke domein",
-  "Sync Settings": "Synchronisatie-instellingen"
+  "Sync Settings": "Synchronisatie-instellingen",
+  "Share as QR Code": "Delen als QR-code",
+  "Show a QR code for the selected text": "Een QR-code van de geselecteerde tekst tonen",
+  "Select a shorter passage to share as a QR code.": "Selecteer een kortere passage om als QR-code te delen.",
+  "QR code for the selected text": "QR-code van de geselecteerde tekst"
 }

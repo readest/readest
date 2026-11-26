@@ -124,6 +124,8 @@ import useShortcuts from '@/hooks/useShortcuts';
 import ProofreadPopup from './ProofreadPopup';
 import { setProofreadRulesVisibility } from '@/app/reader/components/ProofreadRules';
 import ExportMarkdownDialog from './ExportMarkdownDialog';
+import Dialog from '@/components/Dialog';
+import { getQRCodeDataUrl } from '@/components/settings/integrations/QRCode';
 import QuoteCardDialog from './QuoteCardDialog';
 import type { QuoteCardColors, QuoteCardFont } from '@/utils/quoteCard';
 import { getFontFamilies } from '@/utils/style';
@@ -315,6 +317,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const [editingAnnotation, setEditingAnnotation] = useState<BookNote | null>(null);
   const [externalDragPoint, setExternalDragPoint] = useState<Point | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [selectionQRCode, setSelectionQRCode] = useState<string | null>(null);
   const [quoteCard, setQuoteCard] = useState<{
     content: QuoteCardContent;
     readerColors: QuoteCardColors;
@@ -1737,6 +1740,21 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     handleDismissPopupAndSelection();
   };
 
+  const handleShareQR = () => {
+    const text = selection?.text;
+    if (!text?.trim()) return;
+    try {
+      setSelectionQRCode(getQRCodeDataUrl(text));
+      handleDismissPopupAndSelection();
+    } catch {
+      void eventDispatcher.dispatch('toast', {
+        type: 'error',
+        message: _('Select a shorter passage to share as a QR code.'),
+        timeout: 2500,
+      });
+    }
+  };
+
   const handleQuoteCard = async () => {
     if (!selection?.text) return;
     // The card shows the passage as rendered, without hidden translations or
@@ -2943,6 +2961,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         };
       case 'share':
         return { tooltipText: _(label), Icon, onClick: handleShare };
+      case 'shareqr':
+        return { tooltipText: _(label), Icon, onClick: handleShareQR };
       case 'quotecard':
         return { tooltipText: _(label), Icon, onClick: () => void handleQuoteCard() };
       default:
@@ -3165,6 +3185,22 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           cancelAutoTurn={cancelAutoTurn}
           onAutoTurn={onAutoTurn}
         />
+      )}
+      {selectionQRCode && (
+        <Dialog
+          isOpen
+          title={_('Share as QR Code')}
+          contentClassName='flex'
+          onClose={() => setSelectionQRCode(null)}
+        >
+          {/* A long passage makes a dense code: give it all the room the dialog has. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={selectionQRCode}
+            alt={_('QR code for the selected text')}
+            className='min-h-0 min-w-0 flex-1 object-contain'
+          />
+        </Dialog>
       )}
       {quoteCard && (
         <QuoteCardDialog

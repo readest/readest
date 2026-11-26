@@ -1,3 +1,4 @@
+import { renderSVG } from 'uqr';
 import { expect, test } from '../fixtures/base';
 
 test.describe('Annotation', () => {
@@ -8,6 +9,68 @@ test.describe('Annotation', () => {
 
     await expect(reader.annotationPopup).toBeVisible();
     await expect(reader.popupTool('Highlight')).toBeVisible();
+  });
+
+  test('shares the selected book text as a local QR code', async ({ page, openBook, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const reader = await openBook();
+    await reader.enableAnnotationTool('Share as QR Code');
+    await reader.selectText();
+    await page.evaluate(() => navigator.clipboard.writeText(''));
+    await reader.popupTool('Copy').click();
+    await expect.poll(async () => (await reader.readClipboard()).length).toBeGreaterThan(0);
+    const text = (await reader.readClipboard()).replace(/\r\n/g, '\n');
+
+    await reader.selectText();
+
+    await reader.popupTool('Share as QR Code').click();
+    const dialog = page.getByRole('dialog', { name: 'Share as QR Code' });
+    const code = dialog.getByRole('img', { name: 'QR code for the selected text' });
+    await expect(code).toBeVisible();
+    const svg = renderSVG(text, { ecc: 'M', border: 4 });
+    expect(
+      (await code.getAttribute('src')) === `data:image/svg+xml,${encodeURIComponent(svg)}`,
+      'the QR code encodes the same passage as Copy',
+    ).toBe(true);
+    // A long passage makes a dense code, so it gets all the room the dialog has.
+    const { side, room } = await code.evaluate((img) => {
+      const body = img.parentElement!;
+      const style = getComputedStyle(body);
+      return {
+        side: Math.min(img.clientWidth, img.clientHeight),
+        room: Math.min(
+          body.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+          body.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom),
+        ),
+      };
+    });
+    expect(side, 'the QR code fills the dialog body').toBe(room);
+    await dialog.getByRole('button', { name: 'Close', exact: true }).press('Enter');
+    await expect(dialog).toHaveCount(0);
+
+    // The reader's keys still work once the dialog is gone.
+    const before = await reader.readingProgress();
+    await reader.nextPage();
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(before);
+  });
+
+  test('closes the QR code sheet on a phone-sized screen from its header only', async ({
+    page,
+    openBook,
+  }) => {
+    const reader = await openBook();
+    // Settings opens from the wide layout's header; the sheet is checked at phone width.
+    await reader.enableAnnotationTool('Share as QR Code');
+    await page.setViewportSize({ width: 412, height: 839 });
+    await reader.selectText();
+    await reader.popupTool('Share as QR Code').click();
+    const dialog = page.getByRole('dialog', { name: 'Share as QR Code' });
+    await expect(dialog.getByRole('img', { name: 'QR code for the selected text' })).toBeVisible();
+
+    const close = dialog.getByRole('button', { name: 'Close' });
+    await expect(close).toHaveCount(1);
+    await close.click();
+    await expect(dialog).toHaveCount(0);
   });
 
   test('creates a highlight from the selected text', async ({ openBook }) => {

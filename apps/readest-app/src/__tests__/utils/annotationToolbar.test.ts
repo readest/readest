@@ -70,6 +70,7 @@ describe('annotationToolbar helpers', () => {
       'tts',
       'proofread',
       'share',
+      'shareqr',
       'quotecard',
     ]);
   });
@@ -109,6 +110,11 @@ describe('annotationToolbar helpers', () => {
     expect(DEFAULT_ANNOTATION_TOOLBAR_ITEMS).not.toContain('quotecard');
     expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, false)).toContain('quotecard');
     expect(getToolbarToolTypes(['copy', 'quotecard'], false)).toEqual(['copy', 'quotecard']);
+  });
+
+  test('offers QR sharing as an opt-in tool without a native share sheet', () => {
+    expect(getAvailableToolTypes(DEFAULT_ANNOTATION_TOOLBAR_ITEMS, false)).toContain('shareqr');
+    expect(getToolbarToolTypes(undefined, false)).not.toContain('shareqr');
   });
 
   test('getAvailableToolTypes hides share when !canShare', () => {

@@ -3066,5 +3066,9 @@
   "Over 50,000 free ebooks": "بیش از ۵۰٬۰۰۰ کتاب الکترونیکی رایگان",
   "Free ebooks from authors who have \"unglued\" their books": "کتاب‌های الکترونیکی رایگان از نویسندگانی که کتاب‌هایشان را «آزاد» کرده‌اند",
   "Free public-domain books, comics, magazines and puzzles": "کتاب‌ها، کمیک‌ها، مجله‌ها و پازل‌های رایگان با مالکیت عمومی",
-  "Sync Settings": "تنظیمات همگام‌سازی"
+  "Sync Settings": "تنظیمات همگام‌سازی",
+  "Share as QR Code": "اشتراک‌گذاری به‌صورت کد QR",
+  "Show a QR code for the selected text": "نمایش کد QR برای متن انتخاب‌شده",
+  "Select a shorter passage to share as a QR code.": "برای اشتراک‌گذاری به‌صورت کد QR، بخش کوتاه‌تری را انتخاب کنید.",
+  "QR code for the selected text": "کد QR برای متن انتخاب‌شده"
 }

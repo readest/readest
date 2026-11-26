@@ -3066,5 +3066,9 @@
   "Over 50,000 free ebooks": "50 000 dan ortiq bepul elektron kitob",
   "Free ebooks from authors who have \"unglued\" their books": "Mualliflar “ozod qilgan” bepul elektron kitoblar",
   "Free public-domain books, comics, magazines and puzzles": "Jamoat mulki boʻlgan bepul kitoblar, komikslar, jurnallar va boshqotirmalar",
-  "Sync Settings": "Sinxronlash sozlamalari"
+  "Sync Settings": "Sinxronlash sozlamalari",
+  "Share as QR Code": "QR kod sifatida ulashish",
+  "Show a QR code for the selected text": "Tanlangan matn uchun QR kodni ko‘rsatish",
+  "Select a shorter passage to share as a QR code.": "QR kod sifatida ulashish uchun qisqaroq parchani tanlang.",
+  "QR code for the selected text": "Tanlangan matn uchun QR kod"
 }
