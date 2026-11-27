@@ -38,8 +38,27 @@ if ! grep -q 'MANAGE_EXTERNAL_STORAGE' "$MANIFEST"; then
 fi
 
 source .env.google-play.local
+
+# --- VERSION CODE ---
+# Play refuses a versionCode it has already seen, and every other Android build
+# rewrites tauri.properties with the version's own code, so the last Play code
+# can't be read back from there. Use the version's code (major*1000000 +
+# minor*1000 + patch), or one more than the highest code on Play if that is
+# already at or above it.
+VERSION_CODE=$(echo "${VERSION%%-*}" | awk -F. '{ print $1 * 1000000 + $2 * 1000 + $3 }')
+LATEST_CODE=$( (cd ../.. && fastlane android latest_version_code) | sed -n 's/.*LATEST_VERSION_CODE=\([0-9]*\).*/\1/p' | tail -1)
+if [[ ! "$LATEST_CODE" =~ ^[0-9]+$ ]]; then
+  echo "❌ Could not read the highest versionCode from Google Play" >&2
+  exit 1
+fi
+if ((LATEST_CODE >= VERSION_CODE)); then
+  VERSION_CODE=$((LATEST_CODE + 1))
+fi
+echo "🔢 versionCode $VERSION_CODE for $VERSION (highest on Google Play: $LATEST_CODE)"
+
 echo "🚀 Running: pnpm tauri android build (googleplay flavor)"
-ORG_GRADLE_PROJECT_storeFlavor=googleplay pnpm tauri android build --config src-tauri/tauri.playstore.conf.json
+ORG_GRADLE_PROJECT_storeFlavor=googleplay pnpm tauri android build \
+  --config "{\"bundle\":{\"android\":{\"versionCode\":$VERSION_CODE}}}"
 
 # --- ADD PERMISSION BACK AFTER BUILD ---
 if ! grep -q 'REQUEST_INSTALL_PACKAGES' "$MANIFEST"; then
