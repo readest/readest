@@ -1,0 +1,20 @@
+{
+  "name": "reader-search",
+  "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/novel.epub",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "capture_ms": 6000,
+  "step_ms": 7000,
+  "steps": [
+    "wait:15000",
+    "520,400",
+    "268,362",
+    "text:Table of Contents",
+    "[title=\"Show Search Bar\"]",
+    "input.search-input",
+    "type:Chani",
+    ".search-results li[role=\"button\"]"
+  ]
+}

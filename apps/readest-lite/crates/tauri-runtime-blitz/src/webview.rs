@@ -10,8 +10,9 @@
 //!
 //! Output is headless: frames are painted with cairo and, with `BLITZ_TAURI_OUT=DIR`, written as
 //! PGM files. `BLITZ_TAURI_TAPS="x,y;#sel"` taps CSS-pixel points or the centre of the first
-//! element matching a selector, or press `key:Name` (e.g. `key:ArrowRight`), one per painted
-//! frame (`BLITZ_TAURI_TAP_MS` apart, default 800); `wait:MS` holds the next one back MS ms more;
+//! element matching a selector, press `key:Name` (e.g. `key:ArrowRight`) or type `type:TEXT`
+//! into the focused field, one per painted frame (`BLITZ_TAURI_TAP_MS` apart, default 800);
+//! `wait:MS` holds the next one back MS ms more;
 //! `2x:` before a target taps it twice at once (a double tap) and `hold:` holds a finger on it for
 //! `HOLD_MS` (a long press, which selects a word in a book); `select:X,Y>X2,Y2` holds a finger at
 //! the first point, then drags it to the second (selecting the words between) and lifts it.
@@ -652,11 +653,23 @@ impl BlitzWebview {
             let ms = ms.parse().unwrap_or(0);
             self.taps.pop_front();
             self.next_tap = Some(Instant::now() + Duration::from_millis(ms));
-        } else if tap_due && let Some(name) = self.taps.front().and_then(|t| t.strip_prefix("key:"))
+        } else if tap_due
+            && let Some(step) = self.taps.front()
+            && let Some((kind, name)) = step.split_once(':')
+            && (kind == "key" || kind == "type")
         {
-            let ok = [true, false]
-                .into_iter()
-                .all(|down| send_key(doc, name, down));
+            // `key:NAME` presses one key; `type:TEXT` types TEXT, a key press per character.
+            let ok = if kind == "key" {
+                [true, false]
+                    .into_iter()
+                    .all(|down| send_key(doc, name, down))
+            } else {
+                name.chars().all(|c| {
+                    [true, false]
+                        .into_iter()
+                        .all(|down| send_key(doc, c.encode_utf8(&mut [0; 4]), down))
+                })
+            };
             eline!(
                 "{{\"label\": \"key\", \"t_ms\": {t0:.1}, \"unix_ms\": {}, \"handler_ms\": {:.1}, \"key\": \"{name}\", \"ok\": {ok}}}",
                 unix0,
@@ -1147,7 +1160,11 @@ fn send_pointer(
 /// False when it is not both.
 fn send_key(doc: &mut QjsDocument, name: &str, down: bool) -> bool {
     use blitz_traits::events::{BlitzKeyEvent, KeyState};
-    let (Ok(key), Ok(code)) = (name.parse(), name.parse()) else {
+    let Ok(key) = name.parse() else {
+        return false;
+    };
+    // A typed character (`type:`) has no key code of its own.
+    let Ok(code) = name.parse().or_else(|_| "Unidentified".parse()) else {
         return false;
     };
     let k = BlitzKeyEvent {
@@ -1507,6 +1524,28 @@ mod tests {
             ),
             ["body path=%2Fb.epub&start=0&end=0"]
         );
+    }
+
+    /// A `type:` step presses a key per character into the focused field. A character has no
+    /// key code of its own (`KeyA` is a place on the keyboard, not "a").
+    #[test]
+    fn a_typed_character_goes_into_the_focused_field() {
+        let mut doc = page_doc(
+            "const input = document.createElement('input');
+             document.body.append(input);
+             input.focus();
+             input.addEventListener('input', () => console.log('input ' + input.value));",
+            std::sync::mpsc::channel().0,
+        );
+        doc.inner_mut().resolve(0.0);
+        for c in ["H", "i"] {
+            assert!(
+                send_key(&mut doc, c, true) && send_key(&mut doc, c, false),
+                "{c}"
+            );
+            doc.run_jobs();
+        }
+        assert_eq!(logs(&mut doc), ["input H", "input Hi"]);
     }
 
     /// Runs `script`, hands its one fetch answer from the runtime back to it, and returns the

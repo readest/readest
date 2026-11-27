@@ -34,6 +34,8 @@
   "plugin:native-bridge|get_reading_widget_instances": "Home screen widgets.",
   "plugin:native-bridge|set_reading_widget_catalog": "Home screen widgets.",
   "plugin:native-bridge|update_reading_widget": "Home screen widgets.",
+  "plugin:native-bridge|on_device_llm_status": "Apple Intelligence's on-device model for the custom translator, offered on iOS only (isOnDeviceLLMSupported): never called elsewhere.",
+  "plugin:native-bridge|on_device_llm_cancel": "Apple Intelligence's on-device model for the custom translator, offered on iOS only (isOnDeviceLLMSupported): never called elsewhere.",
   "upload_file": "Uploads books and covers to Readest Cloud (utils/transfer.ts): books added in Lite don't reach the cloud.",
   "optimize_cover_thumbnails": "Shrinks downloaded covers to thumbnails (nativeAppService.ts). Fails on every cover batch on the Kindle; the covers stay full size.",
   "read_dir": "Lists a folder's books for import (nativeAppService.ts).",

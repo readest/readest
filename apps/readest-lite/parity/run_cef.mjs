@@ -245,6 +245,7 @@ for (const s of steps) {
   const click = (x, y) =>
     t === s ? page.mouse.click(x, y) : s.startsWith('hold:') ? hold(x, y) : page.mouse.dblclick(x, y);
   if (s.startsWith('key:')) await page.keyboard.press(s.slice(4));
+  else if (s.startsWith('type:')) await page.keyboard.type(s.slice(5)); // a key press per character
   else if (s.startsWith('select:')) {
     const [[ax, ay], [bx, by]] = t.split('>').map((p) => p.split(',').map(Number));
     await page.mouse.move(ax, ay);
