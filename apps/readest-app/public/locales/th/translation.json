@@ -2992,5 +2992,7 @@
   "Show a QR code for the selected text": "แสดงคิวอาร์โค้ดของข้อความที่เลือก",
   "Select a shorter passage to share as a QR code.": "เลือกข้อความที่สั้นลงเพื่อแชร์เป็นคิวอาร์โค้ด",
   "QR code for the selected text": "คิวอาร์โค้ดของข้อความที่เลือก",
-  "Navigation History": "ประวัติการนำทาง"
+  "Navigation History": "ประวัติการนำทาง",
+  "Highlight Current Paragraph": "ไฮไลต์ย่อหน้าปัจจุบัน",
+  "Highlight Button": "ปุ่มไฮไลต์"
 }

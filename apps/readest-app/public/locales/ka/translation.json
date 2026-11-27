@@ -3071,5 +3071,7 @@
   "Show a QR code for the selected text": "მონიშნული ტექსტის QR კოდის ჩვენება",
   "Select a shorter passage to share as a QR code.": "QR კოდად გასაზიარებლად აირჩიეთ უფრო მოკლე მონაკვეთი.",
   "QR code for the selected text": "მონიშნული ტექსტის QR კოდი",
-  "Navigation History": "ნავიგაციის ისტორია"
+  "Navigation History": "ნავიგაციის ისტორია",
+  "Highlight Current Paragraph": "მიმდინარე აბზაცის მარკირება",
+  "Highlight Button": "მარკირების ღილაკი"
 }

@@ -110,6 +110,16 @@ const textRangeOf = (doc: Document, el: Element): Range | null => {
   return range;
 };
 
+// The paragraph a spoken range starts in, as a text range: the block paragraph
+// navigation steps by. A PDF text layer is read sentence by sentence and has no
+// paragraphs, so it gives none.
+export const paragraphRangeOf = (range: Range): Range | null => {
+  const node = range.startContainer;
+  const el = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+  if (!el || el.closest('.textLayer')) return null;
+  return textRangeOf(el.ownerDocument, blockAncestor(el));
+};
+
 const MEDIA_SELECTOR = 'img, svg, image, video';
 
 // A target with no text but an image in it (a title page drawn as a picture, a

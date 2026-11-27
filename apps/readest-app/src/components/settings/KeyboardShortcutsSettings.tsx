@@ -16,6 +16,7 @@ import {
 } from '@/helpers/shortcuts';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isMacPlatform } from '@/services/environment';
+import { eventDispatcher } from '@/utils/event';
 import {
   formatKeyForDisplay,
   getShortcutFromKeyboardEvent,
@@ -188,11 +189,14 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
       event.preventDefault();
       event.stopImmediatePropagation();
     };
+    // The highlight button of the media notification, pressed while listening.
+    const handleShortcutButton = (event: CustomEvent) => finishCapture(event.detail.key);
 
     window.addEventListener('keydown', handleKeyDown, true);
     window.addEventListener('mousedown', handleMouseDown, true);
     window.addEventListener('mouseup', handleMouseUp, true);
     window.addEventListener('auxclick', handleAuxClick, true);
+    eventDispatcher.on('shortcut-button', handleShortcutButton);
     timeoutRef.current = setTimeout(stopListening, LEARN_TIMEOUT_MS);
 
     return () => {
@@ -200,6 +204,7 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
       window.removeEventListener('mousedown', handleMouseDown, true);
       window.removeEventListener('mouseup', handleMouseUp, true);
       window.removeEventListener('auxclick', handleAuxClick, true);
+      eventDispatcher.off('shortcut-button', handleShortcutButton);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     };
@@ -303,7 +308,7 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
                         if (isListening && listening.replacing === key) {
                           return <React.Fragment key={key}>{listeningButton}</React.Fragment>;
                         }
-                        const label = formatKeyForDisplay(key, isMac);
+                        const label = formatKeyForDisplay(key, isMac, _);
                         return (
                           <span
                             key={key}
@@ -378,7 +383,7 @@ const KeyboardShortcutsSettings: React.FC<KeyboardShortcutsSettingsProps> = ({ o
                 className='text-base-content/70 leading-relaxed'
               >
                 {_('The shortcut {{shortcut}} is already assigned to {{actions}}.', {
-                  shortcut: formatKeyForDisplay(pendingReplacement.binding, isMac),
+                  shortcut: formatKeyForDisplay(pendingReplacement.binding, isMac, _),
                   actions: pendingReplacement.conflicts
                     .map((action) => _(shortcuts[action].description))
                     .join(', '),

@@ -3071,5 +3071,7 @@
   "Show a QR code for the selected text": "Seçili metin için QR kodu göster",
   "Select a shorter passage to share as a QR code.": "QR kodu olarak paylaşmak için daha kısa bir bölüm seçin.",
   "QR code for the selected text": "Seçili metnin QR kodu",
-  "Navigation History": "Gezinme geçmişi"
+  "Navigation History": "Gezinme geçmişi",
+  "Highlight Current Paragraph": "Geçerli paragrafı vurgula",
+  "Highlight Button": "Vurgulama düğmesi"
 }

@@ -63,7 +63,7 @@ export const KeyboardShortcutsHelp = () => {
                     className='border-base-300 bg-base-200 text-base-content inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-sm border px-1.5 text-xs shadow-xs'
                     style={{ fontFamily: 'monospace' }}
                   >
-                    {formatKeyForDisplay(key, isMac)}
+                    {formatKeyForDisplay(key, isMac, _)}
                   </kbd>
                 ))}
               </div>

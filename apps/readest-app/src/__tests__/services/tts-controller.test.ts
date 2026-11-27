@@ -1263,7 +1263,7 @@ describe('TTSController', () => {
     vi.mocked(mockView.tts!.getLastRange).mockReturnValue({
       toString: () => 'Outgoing passage',
     } as Range);
-    expect(controller.getSpokenPassage()?.text).toBe('Outgoing passage');
+    expect(controller.getSpokenSentence()?.text).toBe('Outgoing passage');
 
     let releaseSection!: () => void;
     const opening = new Promise<void>((resolve) => {
@@ -1280,7 +1280,7 @@ describe('TTSController', () => {
     const advancing = controller.forward();
     await startedOpening;
     try {
-      expect(controller.getSpokenPassage()).toBeNull();
+      expect(controller.getSpokenSentence()).toBeNull();
     } finally {
       releaseSection();
       await advancing;
@@ -1335,6 +1335,60 @@ describe('TTSController', () => {
       vi.mocked(mockView.getCFI).mockReturnValue('cfi-current');
 
       expect(controller.getSpokenSentence()).toBeNull();
+    });
+
+    // A paired audiobook knows only which chapter plays; its range is the
+    // whole mapped chapter (#6060).
+    test('returns null for a paired audiobook', async () => {
+      await controller.initViewTTS(0);
+      mockView.tts = {
+        getLastRange: vi.fn().mockReturnValue({ toString: () => 'A whole mapped chapter.' }),
+      } as unknown as FoliateView['tts'];
+      vi.mocked(mockView.getCFI).mockReturnValue('cfi-chapter');
+      controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
+        textHighlight: false,
+      }) as unknown as typeof controller.ttsClient.getCapabilities;
+
+      expect(controller.getSpokenSentence()).toBeNull();
+      expect(controller.getSpokenParagraph()).toBeNull();
+    });
+  });
+
+  describe('getSpokenParagraph', () => {
+    const speak = (html: string, select: (doc: Document) => Range) => {
+      const doc = document.implementation.createHTMLDocument();
+      doc.body.innerHTML = html;
+      mockView.tts = {
+        getLastRange: vi.fn().mockReturnValue(select(doc)),
+      } as unknown as FoliateView['tts'];
+      vi.mocked(mockView.getCFI).mockImplementation((_index, range) => `cfi:${range}`);
+    };
+
+    test('returns the paragraph the spoken sentence is in', async () => {
+      await controller.initViewTTS(0);
+      speak('<p>Before.</p><p>\n  First one. <em>Second</em> one.\n</p><p>After.</p>', (doc) => {
+        const range = doc.createRange();
+        range.selectNodeContents(doc.querySelector('em')!);
+        range.setEnd(doc.querySelector('em')!.nextSibling!, 5);
+        return range;
+      });
+
+      expect(controller.getSpokenParagraph()).toEqual({
+        cfi: 'cfi:First one. Second one.',
+        text: 'First one. Second one.',
+      });
+    });
+
+    // foliate reads a PDF text layer sentence by sentence; the layer is a page.
+    test('keeps the sentence in a PDF text layer', async () => {
+      await controller.initViewTTS(0);
+      speak('<div class="textLayer"><span>One line.</span><span>Next line.</span></div>', (doc) => {
+        const range = doc.createRange();
+        range.selectNodeContents(doc.querySelector('span')!.firstChild!);
+        return range;
+      });
+
+      expect(controller.getSpokenParagraph()?.text).toBe('One line.');
     });
   });
 

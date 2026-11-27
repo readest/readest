@@ -139,8 +139,8 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
         ).apply {
             if (highlightAvailable) addCustomAction(
                 HIGHLIGHT_PASSAGE,
-                getString(R.string.readest_highlight_current_passage),
-                R.drawable.ic_highlight_passage,
+                getString(R.string.readest_highlight),
+                R.drawable.ic_highlight,
             )
         }
 
@@ -1420,8 +1420,8 @@ class MediaPlaybackService : MediaBrowserServiceCompat() {
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && highlightAvailable) {
                 addAction(
-                    R.drawable.ic_highlight_passage,
-                    getString(R.string.readest_highlight_current_passage),
+                    R.drawable.ic_highlight,
+                    getString(R.string.readest_highlight),
                     PendingIntent.getBroadcast(
                         this@MediaPlaybackService,
                         0,

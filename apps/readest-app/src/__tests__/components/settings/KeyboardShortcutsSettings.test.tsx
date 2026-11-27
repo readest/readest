@@ -40,6 +40,8 @@ vi.mock('@/components/settings/primitives', () => ({
 
 import KeyboardShortcutsSettings from '@/components/settings/KeyboardShortcutsSettings';
 import { addShortcutBinding, getDefaultShortcuts, saveShortcuts } from '@/helpers/shortcuts';
+import { eventDispatcher } from '@/utils/event';
+import { MEDIA_HIGHLIGHT_KEY } from '@/utils/shortcutKeys';
 
 const saveCommandPaletteCtrlK = () =>
   saveShortcuts(
@@ -165,6 +167,21 @@ describe('KeyboardShortcutsSettings', () => {
     expect(screen.queryByLabelText('Toggle Notebook: Shift+O')).toBeNull();
     expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
       onToggleNotebook: ['m'],
+    });
+  });
+
+  test('moves the highlight button from sentence to paragraph (#6060)', async () => {
+    render(<KeyboardShortcutsSettings onBack={vi.fn()} />);
+    expect(screen.getByLabelText('Highlight Current Sentence: Highlight Button')).toBeTruthy();
+
+    fireEvent.click(screen.getByLabelText('Highlight Current Paragraph: Set key'));
+    await act(() => eventDispatcher.dispatch('shortcut-button', { key: MEDIA_HIGHLIGHT_KEY }));
+    fireEvent.click(screen.getByText('Replace'));
+
+    expect(screen.getByLabelText('Highlight Current Paragraph: Highlight Button')).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem('customShortcuts') ?? '{}')).toEqual({
+      onTTSHighlightSentence: ['shift+m'],
+      onTTSHighlightParagraph: [MEDIA_HIGHLIGHT_KEY],
     });
   });
 

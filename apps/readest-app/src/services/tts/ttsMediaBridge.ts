@@ -12,6 +12,7 @@
 // media keys), and must survive hook unmount for a detached session.
 
 import { eventDispatcher } from '@/utils/event';
+import { MEDIA_HIGHLIGHT_KEY } from '@/utils/shortcutKeys';
 import { buildTTSMediaMetadata } from '@/utils/ttsMetadata';
 import { fetchImageAsBase64 } from '@/utils/image';
 import { getMediaSession, TauriMediaSession } from '@/libs/mediaSession';
@@ -387,11 +388,12 @@ export class TTSMediaBridge {
       void controller()?.backward();
     });
     if (mediaSession instanceof TauriMediaSession) {
+      // Runs the action the highlight button is bound to (#6060).
       mediaSession.setActionHandler('highlightpassage', () => {
         const ctrl = controller();
         const bookKey = this.#meta?.bookKey;
         if (bookKey && ctrl && this.#canHighlightPassage(ctrl)) {
-          eventDispatcher.dispatch('tts-highlight-passage', { bookKey });
+          eventDispatcher.dispatch('shortcut-button', { key: MEDIA_HIGHLIGHT_KEY, bookKey });
         }
       });
       mediaSession.setActionHandler('seekto', ((positionMs: number) => {

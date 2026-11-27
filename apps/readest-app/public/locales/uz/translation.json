@@ -3071,5 +3071,7 @@
   "Show a QR code for the selected text": "Tanlangan matn uchun QR kodni ko‘rsatish",
   "Select a shorter passage to share as a QR code.": "QR kod sifatida ulashish uchun qisqaroq parchani tanlang.",
   "QR code for the selected text": "Tanlangan matn uchun QR kod",
-  "Navigation History": "Navigatsiya tarixi"
+  "Navigation History": "Navigatsiya tarixi",
+  "Highlight Current Paragraph": "Joriy xatboshini ajratib ko'rsatish",
+  "Highlight Button": "Belgilash tugmasi"
 }

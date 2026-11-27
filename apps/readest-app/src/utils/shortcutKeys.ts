@@ -18,6 +18,10 @@ const MODIFIER_MAP_OTHER: Record<string, string> = {
   meta: 'Win',
 };
 
+// Not a key: the highlight button in the Read Aloud player and the media
+// notification (#6060). Pressing it runs whichever action it is bound to.
+export const MEDIA_HIGHLIGHT_KEY = 'MediaHighlight';
+
 const MODIFIERS = new Set(['ctrl', 'cmd', 'alt', 'opt', 'altgr', 'shift', 'meta']);
 const MODIFIER_KEYS = new Set(['Control', 'Alt', 'AltGraph', 'Shift', 'Meta']);
 
@@ -37,7 +41,12 @@ const SPECIAL_KEYS: Record<string, string> = {
   mousex2: 'Mouse X2',
 };
 
-export const formatKeyForDisplay = (key: string, isMac: boolean): string => {
+export const formatKeyForDisplay = (
+  key: string,
+  isMac: boolean,
+  _: (text: string) => string = (text) => text,
+): string => {
+  if (key.toLowerCase() === MEDIA_HIGHLIGHT_KEY.toLowerCase()) return _('Highlight Button');
   const parts = key.split('+');
   const modMap = isMac ? MODIFIER_MAP_MAC : MODIFIER_MAP_OTHER;
 

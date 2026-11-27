@@ -4,7 +4,6 @@ import {
   MdAlarm,
   MdArrowBackIosNew,
   MdCheck,
-  MdBookmarkAdd,
   MdClose,
   MdKeyboardArrowLeft,
   MdKeyboardArrowRight,
@@ -20,6 +19,7 @@ import {
   MdTextDecrease,
   MdTextIncrease,
 } from 'react-icons/md';
+import { PiHighlighterFill } from 'react-icons/pi';
 import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
 import { TbArrowBarToRight } from 'react-icons/tb';
 import { useAppRouter } from '@/hooks/useAppRouter';
@@ -773,18 +773,20 @@ const TTSPlayerSheet = ({
                 {timerCaption}
               </span>
             </button>
+            {onHighlight && (
+              <button
+                type='button'
+                aria-label={_('Highlight')}
+                onClick={onHighlight}
+                className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+              >
+                <PiHighlighterFill size={iconSize18} />
+                <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
+                  {_('Highlight')}
+                </span>
+              </button>
+            )}
           </div>
-          {onHighlight && (
-            <button
-              type='button'
-              className='not-eink:bg-base-200 eink-bordered btn btn-ghost w-full gap-2 rounded-xl'
-              onClick={onHighlight}
-              disabled={buffering}
-            >
-              <MdBookmarkAdd size={iconSize18} />
-              {_('Highlight Current Passage')}
-            </button>
-          )}
           {!isNarrating && downloads.supported && downloads.chapters.length > 0 && (
             <button
               type='button'

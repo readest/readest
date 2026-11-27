@@ -3229,5 +3229,7 @@
   "Show a QR code for the selected text": "Prikaži kodo QR za izbrano besedilo",
   "Select a shorter passage to share as a QR code.": "Izberite krajši odlomek, da ga delite kot kodo QR.",
   "QR code for the selected text": "Koda QR za izbrano besedilo",
-  "Navigation History": "Zgodovina navigacije"
+  "Navigation History": "Zgodovina navigacije",
+  "Highlight Current Paragraph": "Označi trenutni odstavek",
+  "Highlight Button": "Gumb za označevanje"
 }

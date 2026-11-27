@@ -469,10 +469,17 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     eventDispatcher.dispatch('tts-backward', { bookKey: sideBarBookKey, byMark: false });
   };
 
-  const ttsHighlightSentence = () => {
-    if (!sideBarBookKey) return;
-    eventDispatcher.dispatch('tts-highlight-sentence', { bookKey: sideBarBookKey });
-  };
+  // The media highlight button names the book Read Aloud plays.
+  const ttsHighlight =
+    (unit: 'sentence' | 'paragraph') => (event?: KeyboardEvent | MessageEvent) => {
+      const eventBookKey =
+        event instanceof MessageEvent && typeof event.data?.bookKey === 'string'
+          ? event.data.bookKey
+          : null;
+      const bookKey = eventBookKey || sideBarBookKey;
+      if (!bookKey) return;
+      eventDispatcher.dispatch('tts-highlight', { bookKey, unit });
+    };
 
   const toggleBookmark = () => {
     if (!sideBarBookKey) return;
@@ -582,7 +589,8 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onTTSGoPreviousSentence: ttsGoPreviousSentence,
       onTTSGoNextParagraph: ttsGoNextParagraph,
       onTTSGoPreviousParagraph: ttsGoPreviousParagraph,
-      onTTSHighlightSentence: ttsHighlightSentence,
+      onTTSHighlightSentence: ttsHighlight('sentence'),
+      onTTSHighlightParagraph: ttsHighlight('paragraph'),
       onReloadPage: reloadPage,
       onCloseWindow: closeWindow,
       onQuitApp: quitApp,

@@ -3071,5 +3071,7 @@
   "Show a QR code for the selected text": "चयनित टेक्स्ट का QR कोड दिखाएँ",
   "Select a shorter passage to share as a QR code.": "QR कोड के रूप में साझा करने के लिए छोटा अंश चुनें।",
   "QR code for the selected text": "चयनित टेक्स्ट का QR कोड",
-  "Navigation History": "नेविगेशन इतिहास"
+  "Navigation History": "नेविगेशन इतिहास",
+  "Highlight Current Paragraph": "वर्तमान पैराग्राफ को हाइलाइट करें",
+  "Highlight Button": "हाइलाइट बटन"
 }
