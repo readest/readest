@@ -72,25 +72,35 @@ afterEach(() => {
   bookData.isFixedLayout = false;
 });
 
+const renderAndAssertGapFilled = async (bookFormat: 'EPUB' | 'PDF') => {
+  await page.viewport(1280, 800);
+  render(
+    <div className='relative h-[800px] w-[1280px]'>
+      <FooterBar
+        bookKey='book-1'
+        bookFormat={bookFormat}
+        isHoveredAnim={false}
+        gridInsets={insets}
+      />
+    </div>,
+  );
+
+  const footer = screen.getByRole('contentinfo');
+  const filler = footer.nextElementSibling as HTMLElement;
+  expect(filler).not.toBeNull();
+  expect(getComputedStyle(filler).pointerEvents).toBe('none');
+
+  const footerRect = footer.getBoundingClientRect();
+  const fillerRect = filler.getBoundingClientRect();
+
+  expect(footerRect.bottom).toBe(800 - 17);
+  expect(fillerRect.bottom).toBe(800);
+  expect(fillerRect.top).toBe(footerRect.bottom);
+};
+
 describe('FooterBar horizontal scrollbar filler (#8026)', () => {
   it('fills the entire 17px gap under the lifted desktop footer bar in scrolled vertical reading', async () => {
-    await page.viewport(1280, 800);
-    render(
-      <div className='relative h-[800px] w-[1280px]'>
-        <FooterBar bookKey='book-1' bookFormat='EPUB' isHoveredAnim={false} gridInsets={insets} />
-      </div>,
-    );
-
-    const footer = screen.getByRole('contentinfo');
-    const filler = footer.nextElementSibling as HTMLElement;
-    expect(filler).not.toBeNull();
-
-    const footerRect = footer.getBoundingClientRect();
-    const fillerRect = filler.getBoundingClientRect();
-
-    expect(footerRect.bottom).toBe(800 - 17);
-    expect(fillerRect.bottom).toBe(800);
-    expect(fillerRect.top).toBe(footerRect.bottom);
+    await renderAndAssertGapFilled('EPUB');
   });
 
   it('fills the entire 17px gap under the lifted desktop footer bar on a zoomed fixed-layout page', async () => {
@@ -99,22 +109,6 @@ describe('FooterBar horizontal scrollbar filler (#8026)', () => {
     viewSettings.zoomLevel = 150;
     bookData.isFixedLayout = true;
 
-    await page.viewport(1280, 800);
-    render(
-      <div className='relative h-[800px] w-[1280px]'>
-        <FooterBar bookKey='book-1' bookFormat='PDF' isHoveredAnim={false} gridInsets={insets} />
-      </div>,
-    );
-
-    const footer = screen.getByRole('contentinfo');
-    const filler = footer.nextElementSibling as HTMLElement;
-    expect(filler).not.toBeNull();
-
-    const footerRect = footer.getBoundingClientRect();
-    const fillerRect = filler.getBoundingClientRect();
-
-    expect(footerRect.bottom).toBe(800 - 17);
-    expect(fillerRect.bottom).toBe(800);
-    expect(fillerRect.top).toBe(footerRect.bottom);
+    await renderAndAssertGapFilled('PDF');
   });
 });
