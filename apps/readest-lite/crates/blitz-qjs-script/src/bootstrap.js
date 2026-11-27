@@ -1461,6 +1461,20 @@
     set value(v) {
       this.setAttribute('value', v);
     }
+    // The field's selection, in UTF-16 units of its text; Blitz's editor holds it.
+    get selectionStart() {
+      return n.fieldSelection(this._id)[0] ?? 0;
+    }
+    get selectionEnd() {
+      return n.fieldSelection(this._id)[1] ?? 0;
+    }
+    setSelectionRange(start, end) {
+      const e = Math.max(0, end);
+      n.selectField(this._id, Math.min(Math.max(0, start), e), e);
+    }
+    select() {
+      n.selectField(this._id, 0, Infinity);
+    }
     get checked() {
       return this.hasAttribute('checked');
     }

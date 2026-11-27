@@ -927,6 +927,31 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         });
     });
     let d = docs.clone();
+    // A text field's selection, from UTF-16 offset `start` of its text to `end`
+    // (`setSelectionRange`, `select()`).
+    op!("selectField", move |h: f64, start: f64, end: f64| {
+        d.with(h, |doc, n, _| {
+            doc.with_text_input(n, |mut driver| {
+                let text = driver.editor.raw_text();
+                let (a, b) = (byte_at(text, start), byte_at(text, end));
+                driver.select_byte_range(a, b);
+            });
+            doc.shell_provider.request_redraw();
+        });
+    });
+    let d = docs.clone();
+    // A text field's selection: [start, end], in UTF-16 units of its text.
+    op!("fieldSelection", move |h: f64| -> Vec<f64> {
+        d.with(h, |doc, n, _| {
+            let editor = &doc.get_node(n)?.element_data()?.text_input_data()?.editor;
+            let (text, range) = (editor.raw_text(), editor.raw_selection().text_range());
+            let units = |b: usize| text[..b].encode_utf16().count() as f64;
+            Some(vec![units(range.start), units(range.end)])
+        })
+        .flatten()
+        .unwrap_or_default()
+    });
+    let d = docs.clone();
     // Script's selection in the document of `h` is gone.
     op!("unselect", move |h: f64| {
         d.with(h, |doc, _, _| {
