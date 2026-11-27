@@ -568,6 +568,7 @@ export class TTSController extends EventTarget {
     }
     this.#tts = newTts;
     this.view.tts = newTts;
+    this.#ttsTextSectionIndex = sectionIndex;
     if (this.#ttsDoc !== doc) this.#ttsDocSheet++;
     this.#ttsDoc = doc;
     if (narration) {

@@ -250,6 +250,33 @@ describe('TTSController detach/attach', () => {
     expect(getCFISpy.mock.calls.some(([, range]) => range === earlyRange)).toBe(false);
   });
 
+  // attachView installs the text of the section it captured before its awaits.
+  // When headless playback opens the next section meanwhile, that text must
+  // not be saved under the next section's CFI (#6060).
+  test('a section change during attach prep leaves no sentence to highlight', async () => {
+    controller.detachView();
+
+    let releaseDoc!: (doc: Document) => void;
+    const gated = new Promise<Document>((resolve) => {
+      releaseDoc = resolve;
+    });
+    const { view: newView } = makeView({ createDocument: () => gated, rendered: false });
+
+    const attaching = controller.attachView(newView, { bookKey: 'hash-section' });
+    await flush();
+    // Section 0 runs out while the new view prepares: playback opens section 1.
+    ttsNextReturns = [undefined];
+    controller.state = 'playing';
+    await controller.forward();
+    releaseDoc(document.implementation.createHTMLDocument('section 0'));
+    await attaching;
+
+    mockTtsInstances.at(-1)!.getLastRange.mockReturnValue({
+      toString: () => 'A sentence of section 0.',
+    });
+    expect(controller.getSpokenSentence()).toBeNull();
+  });
+
   test('detachView during attach prep cancels the attach', async () => {
     controller.detachView();
 
