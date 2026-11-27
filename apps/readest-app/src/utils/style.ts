@@ -806,7 +806,10 @@ const getPageLayoutStyles = (
   img.has-text-siblings-baseline {
     vertical-align: baseline;
   }
-  :is(div) > img.has-text-siblings[style*="object-fit"] {
+  /* Only an image beside bare text right in a div is made a block (#2189).
+     Text in a sibling element, like the count beside a footer icon, keeps the
+     image on its line. */
+  :is(div) > img.beside-bare-text[style*="object-fit"] {
     display: block;
     height: auto;
     vertical-align: unset;
@@ -2197,6 +2200,7 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
 
     let inlineWithText = false;
     let keepBaseline = false;
+    let besideBareText = false;
     const isGaiji = !!(img.className && /(?:^|\s)gaiji(?:-|\s|$)/i.test(img.className));
     const parent = img.parentNode;
     if (parent && parent.nodeType === Node.ELEMENT_NODE) {
@@ -2237,6 +2241,12 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
         // win. Empty string covers environments that report unset props as ''.
         const valign = win.getComputedStyle(img).verticalAlign;
         keepBaseline = valign === '' || valign === 'baseline';
+        // The div block rule keeps to what has-text-siblings meant before #7437
+        // widened it: a text node in the parent and no <br>.
+        const nodes = Array.from(parent.childNodes);
+        besideBareText =
+          nodes.some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) &&
+          !nodes.some((node) => node.nodeName.toUpperCase() === 'BR');
       }
     }
     return {
@@ -2245,6 +2255,7 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
       percentHeight,
       inlineWithText,
       keepBaseline,
+      besideBareText,
       noEnlarge,
       leadingImageParagraph,
       aloneOnLine: !hasTextOnLine(img, win),
@@ -2274,6 +2285,7 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
     percentHeight,
     inlineWithText,
     keepBaseline,
+    besideBareText,
     noEnlarge,
     leadingImageParagraph,
     aloneOnLine,
@@ -2294,6 +2306,7 @@ export const applyImageStyle = (document: Document, isDarkMode = false, isFixedL
     if (inlineWithText) {
       img.classList.add('has-text-siblings');
       if (keepBaseline) img.classList.add('has-text-siblings-baseline');
+      if (besideBareText) img.classList.add('beside-bare-text');
     }
     if (noEnlarge) {
       img.style.setProperty('pointer-events', 'none');
