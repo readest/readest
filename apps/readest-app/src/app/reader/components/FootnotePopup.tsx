@@ -77,6 +77,12 @@ const popupHeight = 88;
 // to `auto` too, so the popup wrapped its document in a spurious vertical and
 // horizontal scrollbar (#5999).
 const popupBorder = 1;
+// `getPopupPosition` leaves this gap between the anchor point and the box on
+// the right/down sides (sel.ts: `position.point.x + 6` / `+ 6`). The max size
+// must reserve it: sizing the box to the whole room up to the anchor made the
+// clamp pull its edge back onto the anchor, where the box covered the triangle
+// and the arrow disappeared (#8031).
+const popupAnchorGap = 6;
 // Every size the popup computes comes from measuring content — the paginator's
 // `viewSize`, the height of the synthesized paragraph — but the number handed
 // to `Popup` is the outer box. Grow the measurement by the border, or the
@@ -308,7 +314,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     if (trianglePositionRef.current?.dir === 'up') {
       availableHeight = trianglePositionRef.current.point.y - safe.top - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'down') {
-      availableHeight = safe.bottom - trianglePositionRef.current.point.y - popupPadding;
+      availableHeight = Math.max(
+        0,
+        safe.bottom - trianglePositionRef.current.point.y - popupPadding - popupAnchorGap,
+      );
     }
     return availableHeight;
   }, [popupPadding]);
@@ -319,7 +328,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     if (trianglePositionRef.current?.dir === 'left') {
       availableWidth = trianglePositionRef.current.point.x - safe.left - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'right') {
-      availableWidth = safe.right - trianglePositionRef.current.point.x - popupPadding;
+      availableWidth = Math.max(
+        0,
+        safe.right - trianglePositionRef.current.point.x - popupPadding - popupAnchorGap,
+      );
     }
     return availableWidth;
   }, [popupPadding]);

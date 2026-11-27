@@ -206,6 +206,29 @@ describe('FootnotePopup room beside the noteref (#7637)', () => {
     expect((hoisted.positionTarget as Range).startContainer).toBe(link);
   });
 
+  it('reserves the anchor gap on the right so the triangle is not covered (#8031)', async () => {
+    hoisted.vertical = true;
+    hoisted.anchor = { point: { x: 177.797, y: 360 }, dir: 'right' };
+    setWindowSize(667, 720);
+    const cell = new DOMRect(240, 0, 427, 720);
+
+    const { width, point, anchor } = await openNote(cell, 5000);
+
+    expect(point.x).toBeGreaterThanOrEqual(anchor.x + 6);
+    expect(point.x + width).toBeLessThanOrEqual(cell.width - PADDING);
+  });
+
+  it('reserves the anchor gap below so the triangle is not covered (#8031)', async () => {
+    hoisted.vertical = false;
+    hoisted.anchor = { point: { x: 300, y: 600 }, dir: 'down' };
+    setWindowSize(800, 700);
+    const cell = new DOMRect(0, 0, 800, 700);
+
+    const { point, anchor } = await openNote(cell, 5000);
+
+    expect(point.y).toBeGreaterThanOrEqual(anchor.y + 6);
+  });
+
   it('keeps the element rect for a text noteref (#8031)', async () => {
     hoisted.vertical = true;
     hoisted.anchor = { point: { x: 600, y: 400 }, dir: 'right' };
