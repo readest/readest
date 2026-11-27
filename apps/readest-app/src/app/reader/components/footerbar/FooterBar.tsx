@@ -107,15 +107,16 @@ const FooterBar: React.FC<FooterBarProps> = ({
     () =>
       debounce((value: number) => {
         if (!view) return;
+        // Each move is a step of one run, so Back returns to where the drag began.
         if (screenPages) {
           // The page the label previews: (page + 1) / total is the slider's
           // position for a page.
           const { total } = getScreenPageInfo(bookKey, view, sections!, getBookProgress(bookKey));
           const page = Math.max(0, Math.ceil((value / 100) * total) - 1);
           const fraction = getScreenPageFraction(bookKey, view, sections!, page);
-          if (fraction !== null) view.goToFraction(fraction);
+          if (fraction !== null) view.goTo({ fraction }, { step: true });
         } else {
-          view.goToFraction(value / 100.0);
+          view.goTo({ fraction: value / 100.0 }, { step: true });
         }
       }, 100),
     [view, screenPages, bookKey, sections],
@@ -336,7 +337,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         <DesktopFooterBar {...commonProps} />
       </div>
       {isVisible && needHorizontalScroll && (
-        <div className='bg-base-100 pointer-events-none absolute bottom-0 left-0 hidden h-3 w-full sm:block' />
+        <div className='bg-base-100 pointer-events-none absolute bottom-0 left-0 hidden h-[17px] w-full sm:block' />
       )}
 
       <TTSControl bookKey={bookKey} gridInsets={gridInsets} />

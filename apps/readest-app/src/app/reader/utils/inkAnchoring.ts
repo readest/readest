@@ -221,7 +221,16 @@ export const createInkAnchoring = (
     for (let i = 0; i <= PROBE_STEPS; i++) {
       const t = i / PROBE_STEPS;
       const range = contentAt(x + (tx - x) * t, y + (ty - y) * t);
-      if (range && boxOf(range)) return range;
+      if (!range) continue;
+      // Margin ink is measured in its content's line height. The space ending
+      // a vertical line has none (no box at all in WebKit), so ink there goes
+      // with the character before it.
+      if (!boxOf(range)?.height && isCharacter(range) && range.startOffset > 0) {
+        const { startContainer: text, startOffset: at } = range;
+        range.setStart(text, at - 1);
+        range.setEnd(text, at);
+      }
+      if (boxOf(range)?.height) return range;
     }
     return null;
   };
@@ -287,11 +296,15 @@ export const createInkAnchoring = (
         // A short mark encloses nothing; it still marks the text it sits on.
         const covered = flat ? markedText(path) : (enclosedContent(ink) ?? markedText(path));
         const lines = covered ? linesOf(covered) : [];
-        if (covered && lines.length) {
+        const box = columnBox(lines);
+        // The space ending a paragraph is laid out with no width (no height in
+        // vertical text), leaving nothing to fit the mark to: it goes on to
+        // the margin path below.
+        if (covered && box?.width && box.height) {
           const anchor = cfiOf(covered);
           return flat
             ? { anchor, shape: 'flow', points: toFlow(path, lines) }
-            : { anchor, shape: 'box', points: fitToBox(ink, columnBox(lines)!) };
+            : { anchor, shape: 'box', points: fitToBox(ink, box) };
         }
       }
 

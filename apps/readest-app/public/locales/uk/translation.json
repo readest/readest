@@ -3224,5 +3224,10 @@
   "Over 50,000 free ebooks": "Понад 50 000 безкоштовних електронних книг",
   "Free ebooks from authors who have \"unglued\" their books": "Безкоштовні електронні книги від авторів, які «звільнили» свої книги",
   "Free public-domain books, comics, magazines and puzzles": "Безкоштовні книги, комікси, журнали та головоломки із суспільного надбання",
-  "Sync Settings": "Синхронізація"
+  "Sync Settings": "Синхронізація",
+  "Share as QR Code": "Поділитися як QR-код",
+  "Show a QR code for the selected text": "Показати QR-код для виділеного тексту",
+  "Select a shorter passage to share as a QR code.": "Виберіть коротший уривок, щоб поділитися ним як QR-кодом.",
+  "QR code for the selected text": "QR-код для виділеного тексту",
+  "Navigation History": "Історія переходів"
 }

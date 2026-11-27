@@ -15,6 +15,8 @@ export default defineConfig({
       'src/__tests__/app/user/gift-card-layout.browser.test.tsx',
       // WebKit kept drawing a replaced filter after a theme change (#7981)
       'src/__tests__/utils/dark-monochrome-filter.browser.test.ts',
+      // WebKit gives the space ending a vertical line no box (#8027)
+      'src/__tests__/app/reader/utils/inkAnchoring.browser.test.ts',
     ],
     browser: { ...base.test?.browser, instances: [{ browser: 'webkit' }] },
   },

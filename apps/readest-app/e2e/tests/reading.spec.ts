@@ -21,6 +21,70 @@ test.describe('Reading', () => {
     await expect.poll(() => reader.readingProgress()).toBeGreaterThan(startProgress);
   });
 
+  test('can return to the reading position after a chapter jump', async ({ page, openBook }) => {
+    const reader = await openBook();
+    const start = await reader.readingProgress();
+    const history = page.getByRole('group', { name: 'Navigation History' });
+    await expect(history).toHaveCount(0);
+
+    await reader.openTocChapter(6);
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(start);
+    const destination = await reader.readingProgress();
+
+    await history.getByRole('button', { name: /^Go Back/ }).click();
+    await expect.poll(() => reader.readingProgress()).toBe(start);
+    await history.getByRole('button', { name: /^Go Forward/ }).click();
+    await expect.poll(() => reader.readingProgress()).toBe(destination);
+    await history.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(history).toHaveCount(0);
+
+    await reader.nextPage();
+    await expect(history).toHaveCount(0);
+  });
+
+  test('returns to the reading position after stepping through search results', async ({
+    page,
+    openBook,
+  }) => {
+    const reader = await openBook();
+    const start = await reader.readingProgress();
+    const history = page.getByRole('group', { name: 'Navigation History' });
+
+    await reader.search('Cheshire');
+    await reader.searchResults.first().click();
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(start);
+    const firstHit = await reader.readingProgress();
+    await page.getByTitle('Next Result').click();
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(firstHit);
+
+    await history.getByRole('button', { name: /^Go Back/ }).click();
+    await expect.poll(() => reader.readingProgress()).toBe(start);
+  });
+
+  test('returns to the reading position after a page-number or slider jump', async ({
+    page,
+    openBook,
+  }) => {
+    const reader = await openBook();
+    const start = await reader.readingProgress();
+    const history = page.getByRole('group', { name: 'Navigation History' });
+    const goBack = history.getByRole('button', { name: /^Go Back/ });
+
+    await reader.goToPage(40);
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(start);
+    await goBack.click();
+    await expect.poll(() => reader.readingProgress()).toBe(start);
+
+    await reader.revealFooter();
+    const slider = page.getByRole('slider', { name: 'Jump to Location' });
+    await slider.fill('50');
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(start);
+    await slider.fill('70');
+    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(60);
+    await goBack.click();
+    await expect.poll(() => reader.readingProgress()).toBe(start);
+  });
+
   test('jumps to an entered page number', async ({ openBook }) => {
     const reader = await openBook();
     const startProgress = await reader.readingProgress();

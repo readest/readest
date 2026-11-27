@@ -2987,5 +2987,10 @@
   "Over 50,000 free ebooks": "50,000冊以上の無料電子書籍",
   "Free ebooks from authors who have \"unglued\" their books": "著者が「解放」した無料の電子書籍",
   "Free public-domain books, comics, magazines and puzzles": "パブリックドメインの無料の本、コミック、雑誌、パズル",
-  "Sync Settings": "同期設定"
+  "Sync Settings": "同期設定",
+  "Share as QR Code": "QRコードで共有",
+  "Show a QR code for the selected text": "選択したテキストのQRコードを表示",
+  "Select a shorter passage to share as a QR code.": "QRコードで共有するには、もっと短い文章を選択してください。",
+  "QR code for the selected text": "選択したテキストのQRコード",
+  "Navigation History": "移動履歴"
 }

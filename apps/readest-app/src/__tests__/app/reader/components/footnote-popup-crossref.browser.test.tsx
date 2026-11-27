@@ -173,7 +173,11 @@ describe('cross-reference to a declared note (#7982)', () => {
 
     expect(event.defaultPrevented).toBe(true);
     const popup = document.querySelector<HTMLElement>('#popup-container')!;
-    await vi.waitFor(() => expect(popup.getAttribute('aria-hidden')).toBe('false'));
+    // The popup shows once its own view has loaded the note's section, which
+    // takes longer than waitFor's default second on a loaded machine
+    await vi.waitFor(() => expect(popup.getAttribute('aria-hidden')).toBe('false'), {
+      timeout: 5000,
+    });
     await vi.waitFor(() => expect(popupText()).toContain('ダミー注釈47の本文'));
     expect(popupText()).not.toContain('ダミー注釈48');
     expect(h.goTo).not.toHaveBeenCalled();

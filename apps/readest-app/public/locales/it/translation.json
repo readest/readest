@@ -3145,5 +3145,10 @@
   "Over 50,000 free ebooks": "Oltre 50.000 ebook gratuiti",
   "Free ebooks from authors who have \"unglued\" their books": "Ebook gratuiti di autori che hanno «liberato» i loro libri",
   "Free public-domain books, comics, magazines and puzzles": "Libri, fumetti, riviste ed enigmi gratis di pubblico dominio",
-  "Sync Settings": "Sincronizzazione"
+  "Sync Settings": "Sincronizzazione",
+  "Share as QR Code": "Condividi come codice QR",
+  "Show a QR code for the selected text": "Mostra un codice QR del testo selezionato",
+  "Select a shorter passage to share as a QR code.": "Seleziona un passaggio più breve per condividerlo come codice QR.",
+  "QR code for the selected text": "Codice QR del testo selezionato",
+  "Navigation History": "Cronologia di navigazione"
 }

@@ -24,6 +24,29 @@ const SWIPE_DISMISS_THRESHOLD = 8;
 // How long the modal takes to fade and scale away once `isOpen` goes false.
 const CLOSE_TRANSITION_MS = 300;
 
+// Elements that can take Tab focus; `tabIndex`, layout and visibility filter
+// the rest (`visibility: hidden` keeps a layout box but can't take focus).
+const TABBABLE =
+  'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), ' +
+  'textarea:not(:disabled), iframe, summary, [contenteditable], [tabindex]';
+
+const getTabbables = (root: HTMLElement) =>
+  Array.from(root.querySelectorAll<HTMLElement>(TABBABLE)).filter(
+    (el) =>
+      el.tabIndex >= 0 &&
+      el.getClientRects().length > 0 &&
+      getComputedStyle(el).visibility !== 'hidden',
+  );
+
+const isSameRadioGroup = (a: Element, b: Element) =>
+  a instanceof HTMLInputElement &&
+  b instanceof HTMLInputElement &&
+  a.type === 'radio' &&
+  b.type === 'radio' &&
+  !!a.name &&
+  a.name === b.name &&
+  a.form === b.form;
+
 interface DialogProps {
   id?: string;
   isOpen: boolean;
@@ -111,6 +134,8 @@ const Dialog: React.FC<DialogProps> = ({
   const dragOffsetRef = useRef(0);
   const pendingSwipeRef = useRef<{ x: number; y: number } | null>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+  // Set while a Tab that started inside the dialog moves focus.
+  const tabFromInsideRef = useRef<'forward' | 'back' | null>(null);
   // The key listeners below are bound once per open, so they read the latest onBack here.
   const onBackRef = useRef(onBack);
   onBackRef.current = onBack;
@@ -183,6 +208,62 @@ const Dialog: React.FC<DialogProps> = ({
   // button; a shorter one is dismissed by its handle, backdrop or own actions.
   const isFullHeightSheet = !isContentHeightSheet && (fullScreen || isFullHeightInMobile);
 
+  const focusEnd = (dialog: HTMLElement, last: boolean) => {
+    const tabbables = getTabbables(dialog);
+    (tabbables[last ? tabbables.length - 1 : 0] ?? dialog).focus();
+  };
+
+  // `<dialog open>` without showModal() leaves the page behind it focusable, so
+  // Tab would walk out to it (#8007). When nothing focusable lies ahead inside
+  // the dialog, wrap to its other end. Only a Tab that starts inside acts: a
+  // layer above the dialog (a ModalPortal, a toast) keeps its own focus.
+  const keepTabInside = (event: KeyboardEvent) => {
+    const dialog = dialogRef.current;
+    const active = document.activeElement;
+    if (!dialog || !active || !dialog.contains(active)) return;
+    // A layer opened from inside the dialog (Add OPDS Catalog's ModalPortal)
+    // covers it without taking focus: Tab goes up into that layer. What's on
+    // top at the dialog's centre tells a layer above from one beneath it.
+    const rect = dialog.getBoundingClientRect();
+    const top = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    const cover =
+      top && !dialog.contains(top)
+        ? top.closest<HTMLElement>('[data-capture-blocking-overlay]')
+        : null;
+    if (cover) {
+      event.preventDefault();
+      focusEnd(cover, event.shiftKey);
+      return;
+    }
+    const ahead = event.shiftKey
+      ? Node.DOCUMENT_POSITION_PRECEDING
+      : Node.DOCUMENT_POSITION_FOLLOWING;
+    // The rest of a radio group isn't a Tab stop: Tab leaves the group.
+    const hasNext = getTabbables(dialog).some(
+      (el) =>
+        el !== active &&
+        !isSameRadioGroup(el, active) &&
+        active.compareDocumentPosition(el) & ahead,
+    );
+    if (!hasNext) {
+      event.preventDefault();
+      focusEnd(dialog, event.shiftKey);
+      return;
+    }
+    // Engines differ on Tab stops (macOS WebKit stops only on text fields by
+    // default), so watch where this Tab lands and bring it back if it left.
+    tabFromInsideRef.current = event.shiftKey ? 'back' : 'forward';
+    setTimeout(() => (tabFromInsideRef.current = null));
+  };
+
+  const handleFocusIn = (event: FocusEvent) => {
+    const dialog = dialogRef.current;
+    const direction = tabFromInsideRef.current;
+    if (!dialog || !direction || dialog.contains(event.target as Node)) return;
+    tabFromInsideRef.current = null;
+    focusEnd(dialog, direction === 'back');
+  };
+
   const handleKeyDown = (event: KeyboardEvent | CustomEvent) => {
     // A nested confirmation owns dismissal until it closes.
     if (dialogRef.current?.querySelector('dialog[open]')) return false;
@@ -194,6 +275,8 @@ const Dialog: React.FC<DialogProps> = ({
     } else {
       if (event.key === 'Escape') {
         (onBackRef.current ?? onClose)();
+      } else if (event.key === 'Tab') {
+        keepTabInside(event);
       }
       event.stopPropagation();
     }
@@ -213,6 +296,7 @@ const Dialog: React.FC<DialogProps> = ({
 
     setIsFullHeightInMobile(!snapHeight && isMobile);
     window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('focusin', handleFocusIn);
     if (dialogRef.current) {
       dialogRef.current.addEventListener('keydown', handleKeyDown);
     }
@@ -233,6 +317,7 @@ const Dialog: React.FC<DialogProps> = ({
     return () => {
       clearTimeout(timer);
       window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('focusin', handleFocusIn);
       if (appService?.isAndroidApp) {
         releaseBackKeyInterception();
         eventDispatcher.offSync('native-key-down', handleKeyDown);
