@@ -4046,7 +4046,9 @@ dependencies = [
 name = "readest-lite"
 version = "0.1.0"
 dependencies = [
+ "log",
  "mimalloc",
+ "percent-encoding",
  "serde",
  "serde_json",
  "tauri",

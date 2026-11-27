@@ -116,6 +116,17 @@ fn url_parts(u: &Url) -> Vec<String> {
 /// `blob:` URLs (URL.createObjectURL in web.js) and their bytes.
 pub(crate) type Blobs = Arc<Mutex<HashMap<String, Vec<u8>>>>;
 
+/// The app's custom scheme for `url`: its own scheme, or `<scheme>` for
+/// `http://<scheme>.localhost/`, where Tauri serves custom schemes on Windows, Android and CEF
+/// (readest-app reads books on Linux through `http://rangefile.localhost/`).
+fn protocol_for<'a>(protocols: &'a Protocols, url: &Url) -> Option<&'a UriSchemeProtocolHandler> {
+    let scheme = match url.host_str().and_then(|h| h.strip_suffix(".localhost")) {
+        Some(scheme) if url.scheme() == "http" => scheme,
+        _ => url.scheme(),
+    };
+    protocols.get(scheme).map(|h| &**h)
+}
+
 /// Reads `file:`, `blob:` and `data:` URLs, or calls a custom-scheme handler and waits for its
 /// answer. Tauri's asset handler answers inline; one that answers from the main thread would
 /// deadlock here, hence the timeout.
@@ -129,7 +140,7 @@ fn get_sync(protocols: &Protocols, blobs: &Blobs, label: &str, url: &Url) -> Opt
         }
         _ => {}
     }
-    let handler = protocols.get(url.scheme())?;
+    let handler = protocol_for(protocols, url)?;
     let (tx, rx) = std::sync::mpsc::channel();
     let req = http::Request::builder()
         .uri(url.as_str())
@@ -1346,7 +1357,7 @@ fn install_ops<'js>(ctx: &Ctx<'js>, st: Rc<OpState>, page: &Url) {
             eline!("fetch #{id} {method} @{:.1} {url}", t_ms());
         }
         // The webview's custom schemes (Tauri's IPC and asset protocols), else the network.
-        let handler = s.protocols.get(parsed.scheme());
+        let handler = protocol_for(&s.protocols, &parsed);
         if handler.is_none() && !matches!(parsed.scheme(), "http" | "https") {
             return Some(format!("no handler for {}:", parsed.scheme()));
         }
@@ -1399,20 +1410,21 @@ mod tests {
 
     /// The page `script` runs on, whose runtime messages (fetch answers) go to `tx`.
     fn page_doc(script: &str, tx: Sender<Message>) -> QjsDocument {
-        page_doc_in(script, tx, None)
+        page_doc_in(script, tx, None, Protocols::default())
     }
 
-    /// `page_doc` for a webview whose data directory is `data_dir`.
+    /// `page_doc` for a webview whose data directory is `data_dir`, with the app's `protocols`.
     fn page_doc_in(
         script: &str,
         tx: Sender<Message>,
         data_dir: Option<&std::path::Path>,
+        protocols: Protocols,
     ) -> QjsDocument {
         let url = Url::parse("tauri://localhost/").unwrap();
         let st = Rc::new(OpState {
             id: 0,
             label: "test".into(),
-            protocols: Arc::new(HashMap::new()),
+            protocols,
             blobs: Blobs::default(),
             ipc: None,
             tx,
@@ -1475,11 +1487,38 @@ mod tests {
         );
     }
 
+    /// readest-app reads a book on Linux through `http://rangefile.localhost/?path=…`, where
+    /// Tauri serves a custom scheme on Windows, Android and CEF. The fetch goes to the app's
+    /// `rangefile` scheme, not to the network, where a web server on the machine's port 80
+    /// answered it with an empty book.
+    #[test]
+    fn a_custom_scheme_answers_at_its_localhost_host() {
+        let handler: Box<UriSchemeProtocolHandler> = Box::new(|_, req, respond| {
+            let query = req.uri().query().unwrap_or_default().to_owned();
+            respond(http::Response::new(query.into_bytes().into()));
+        });
+        let protocols = Arc::new(HashMap::from([("rangefile".to_owned(), handler)]));
+        assert_eq!(
+            page_fetching_from(
+                "fetch('http://rangefile.localhost/?path=%2Fb.epub&start=0&end=0')
+                   .then((r) => r.text())
+                   .then((t) => console.log('body ' + t), (e) => console.log('failed ' + e));",
+                protocols,
+            ),
+            ["body path=%2Fb.epub&start=0&end=0"]
+        );
+    }
+
     /// Runs `script`, hands its one fetch answer from the runtime back to it, and returns the
     /// console.log lines; with no answer, fails with what the page logged.
     fn page_fetching(script: &str) -> Vec<String> {
+        page_fetching_from(script, Protocols::default())
+    }
+
+    /// `page_fetching` for an app with the custom schemes `protocols`.
+    fn page_fetching_from(script: &str, protocols: Protocols) -> Vec<String> {
         let (tx, rx) = std::sync::mpsc::channel();
-        let mut doc = page_doc(script, tx);
+        let mut doc = page_doc_in(script, tx, None, protocols);
         match rx.recv_timeout(Duration::from_secs(10)) {
             Ok(Message::FetchDone { id, response, .. }) => answer_fetch(&mut doc, id, response),
             _ => panic!("no fetch answer; the page logged {:?}", logs(&mut doc)),
@@ -1500,6 +1539,7 @@ mod tests {
                 script,
                 std::sync::mpsc::channel().0,
                 data_dir,
+                Protocols::default(),
             ))
         };
         launch(

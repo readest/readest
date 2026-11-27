@@ -2,6 +2,10 @@
 //! startup reaches.
 
 mod picker;
+// readest-app's handler: on Linux it reads books through `http://rangefile.localhost/`, within
+// the asset scope.
+#[path = "../../../readest-app/src-tauri/src/range_file.rs"]
+mod range_file;
 mod transfer;
 
 use tauri::Manager;
@@ -70,6 +74,7 @@ static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 fn main() {
     plugins(tauri::Builder::<tauri_runtime_blitz::BlitzRuntime>::new())
+        .register_asynchronous_uri_scheme_protocol(range_file::SCHEME, range_file::handle)
         .invoke_handler(tauri::generate_handler![
             get_executable_dir,
             set_webview_info,
