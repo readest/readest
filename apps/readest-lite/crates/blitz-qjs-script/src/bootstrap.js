@@ -1173,6 +1173,15 @@
     getClientRects() {
       return rectList(n.rects(this._id));
     }
+    setPointerCapture(id) {
+      captures.set(id, this);
+    }
+    releasePointerCapture(id) {
+      if (captures.get(id) === this) captures.delete(id);
+    }
+    hasPointerCapture(id) {
+      return captures.get(id) === this;
+    }
     // CSSOM View's offset* are integers: positions rounded, sizes snapped against them (the
     // rounded far edge less the rounded near one), as in Chromium.
     get offsetParent() {
@@ -2824,6 +2833,31 @@
     const [h, offset] = n.caret(this._id, x, y);
     return h == null ? null : new CaretPosition(wrapIn(h, ownerOf(this)), offset);
   };
+  // ---- Pointer capture ----
+  // A captured pointer's moves and its release go to the capturing element wherever the pointer
+  // is, in the client coordinates of that element's document; lifting the pointer releases it.
+  // Readest's selection handles capture the finger that drags them.
+  const captures = new Map();
+  function captured(type, init) {
+    if (!/^pointer(move|up|cancel)$/.test(type)) return null;
+    const el = captures.get(init.pointerId || 1);
+    if (!el?.isConnected) return null;
+    // screenX/Y are the window's client coordinates; an iframe's document starts at its frame's
+    // content box.
+    let x = init.screenX;
+    let y = init.screenY;
+    for (let f = el.ownerDocument.defaultView?.frameElement; f; ) {
+      const r = f.getBoundingClientRect();
+      const s = getComputedStyle(f);
+      x -= r.left + parseFloat(s.borderLeftWidth) + parseFloat(s.paddingLeft);
+      y -= r.top + parseFloat(s.borderTopWidth) + parseFloat(s.paddingTop);
+      f = f.ownerDocument.defaultView?.frameElement;
+    }
+    const path = [];
+    for (let e = el; e; e = e.parentNode) path.push(e);
+    path.push(el.ownerDocument.defaultView ?? window);
+    return { path, init: { ...init, clientX: x, clientY: y } };
+  }
   // ---- <input type=range> ----
   // A press sets a range's value from where it lands, a drag moves it, and the release commits
   // it: `input` as the value changes, `change` when the finger or button lifts, as in a browser.
@@ -3729,12 +3763,17 @@
     HTMLParagraphElement,
     // `chain`: the target and its ancestors in the page or in an iframe's document.
     __blitzDispatch(chain, type, bubbles, cancelable, init) {
-      const path = chain.map(wrap);
+      let path = chain.map(wrap);
       const last = path[path.length - 1];
       const doc = last.nodeType === 9 ? last : (last.ownerDocument ?? document);
       if (last !== doc) path.push(doc);
-      const view = doc.defaultView ?? window;
+      let view = doc.defaultView ?? window;
       path.push(view);
+      const cap = init.kind === 'pointer' && captured(type, init);
+      if (cap) {
+        ({ path, init } = cap);
+        view = path[path.length - 1];
+      }
       // Blitz edits a text field natively: what was typed is its value when `input` runs. Not
       // through the `value` setter, which React's value tracker wraps: it would see no change.
       if (
@@ -3769,6 +3808,7 @@
       anyCalled = false;
       dispatch(path, ev);
       if (p) dragRange(type, init, path[0]);
+      if (type === 'pointerup' || type === 'pointercancel') captures.delete(ev.pointerId);
       return (ev.defaultPrevented ? 1 : 0) | (ev._stop ? 2 : 0) | (anyCalled ? 4 : 0);
     },
     // Runs due timers, then the rAF callbacks once a frame is due; returns 1 when they ran.
