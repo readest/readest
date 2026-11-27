@@ -353,6 +353,26 @@
     formatToParts(date) {
       return [{ type: 'literal', value: this.format(date) }];
     }
+    // As ICU writes English ranges: a named month's shared year (and month) once
+    // ("Nov 22 – 28, 2026"), thin spaces around the dash.
+    formatRange(start, end) {
+      const a = new Date(start),
+        b = new Date(end),
+        o = this._o;
+      const from = this.format(a),
+        to = this.format(b);
+      if (from === to) return from;
+      const dash = ' – ';
+      const named = ['long', 'short', 'narrow'].includes(o.month);
+      const plain = o.day !== undefined && o.weekday === undefined && o.hour === undefined;
+      if (!named || !plain || a.getFullYear() !== b.getFullYear()) return from + dash + to;
+      const year = o.year === undefined ? '' : `, ${a.getFullYear()}`;
+      const noYear = new DateTimeFormat(this._locale, { ...o, year: undefined });
+      const day = o.day === '2-digit' ? String(b.getDate()).padStart(2, '0') : `${b.getDate()}`;
+      return (
+        noYear.format(a) + dash + (a.getMonth() === b.getMonth() ? day : noYear.format(b)) + year
+      );
+    }
     resolvedOptions() {
       return {
         locale: this._locale,

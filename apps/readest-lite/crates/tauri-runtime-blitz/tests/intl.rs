@@ -196,3 +196,26 @@ fn display_names_in_english_and_a_language_s_own_name() {
         ]
     );
 }
+
+/// Reading Statistics titles its week of bars with `formatRange` (main's #7660), which ICU
+/// writes with what both dates share once and thin spaces around the dash. Lite had no
+/// `formatRange`, and opening Reading Statistics crashed the page to the error screen.
+#[test]
+fn a_date_range_writes_what_both_dates_share_once() {
+    let logs = run("
+        const f = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' });
+        const D = (y, m, d) => new Date(y, m, d);
+        for (const [a, b] of [[D(2026, 10, 22), D(2026, 10, 28)], [D(2026, 10, 29), D(2026, 11, 5)],
+                              [D(2026, 11, 27), D(2027, 0, 2)], [D(2026, 10, 22), D(2026, 10, 22)]])
+          console.log(f.formatRange(a, b));
+    ");
+    assert_eq!(
+        logs,
+        [
+            "Nov 22\u{2009}–\u{2009}28, 2026",
+            "Nov 29\u{2009}–\u{2009}Dec 5, 2026",
+            "Dec 27, 2026\u{2009}–\u{2009}Jan 2, 2027",
+            "Nov 22, 2026",
+        ]
+    );
+}
