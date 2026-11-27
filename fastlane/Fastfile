@@ -63,6 +63,16 @@ platform :android do
       skip_upload_changelogs: true
     )
   end
+
+  # Read by scripts/release-google-play.sh: Play refuses a versionCode it has
+  # already seen, on any track.
+  desc "Print the highest versionCode on any Google Play track"
+  lane :latest_version_code do
+    codes = %w[production beta alpha internal].flat_map do |track|
+      google_play_track_version_codes(track: track)
+    end
+    puts "LATEST_VERSION_CODE=#{codes.max || 0}"
+  end
 end
 
 # fastlane executes lanes from the ./fastlane folder, so paths are anchored to the
