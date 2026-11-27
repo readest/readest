@@ -314,10 +314,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     if (trianglePositionRef.current?.dir === 'up') {
       availableHeight = trianglePositionRef.current.point.y - safe.top - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'down') {
-      availableHeight = Math.max(
-        0,
-        safe.bottom - trianglePositionRef.current.point.y - popupPadding - popupAnchorGap,
-      );
+      availableHeight =
+        safe.bottom - trianglePositionRef.current.point.y - popupPadding - popupAnchorGap;
     }
     return availableHeight;
   }, [popupPadding]);
@@ -328,10 +326,8 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     if (trianglePositionRef.current?.dir === 'left') {
       availableWidth = trianglePositionRef.current.point.x - safe.left - popupPadding;
     } else if (trianglePositionRef.current?.dir === 'right') {
-      availableWidth = Math.max(
-        0,
-        safe.right - trianglePositionRef.current.point.x - popupPadding - popupAnchorGap,
-      );
+      availableWidth =
+        safe.right - trianglePositionRef.current.point.x - popupPadding - popupAnchorGap;
     }
     return availableWidth;
   }, [popupPadding]);
