@@ -482,10 +482,13 @@
       }
       return { 3: '#text', 8: '#comment', 9: '#document', 11: '#document-fragment' }[t] ?? '';
     }
-    // Negative handles below -1 are in an iframe's document (ops.rs); -1 is a fragment.
+    // Negative handles below -1 are in an iframe's document (ops.rs); -1 is a fragment. A node
+    // of a removed iframe's document has none left.
     get ownerDocument() {
       if (this.nodeType === 9) return null;
-      return this._id < -1 ? wrap(n.root(this._id)) : document;
+      if (this._id >= -1) return document;
+      const root = n.root(this._id);
+      return root == null ? null : wrap(root);
     }
     get parentNode() {
       const p = n.parent(this._id);

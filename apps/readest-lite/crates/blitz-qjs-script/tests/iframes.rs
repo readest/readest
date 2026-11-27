@@ -216,3 +216,18 @@ fn style_sheets_is_an_empty_list() {
     assert_eq!(logs, ["0 0 null", "0 0 null"]);
 }
 
+/// A node kept from a section that was unloaded (its iframe removed) has no document left in
+/// Lite: `ownerDocument` is null rather than a throw. Readest's position tracker keeps the
+/// previous position's range and reads its `startContainer.ownerDocument`; a search result in
+/// another section threw there and crashed the reader to its error page.
+#[test]
+fn a_node_of_a_removed_iframe_has_no_document() {
+    let (logs, errors) = run(&[
+        "globalThis.kept = document.querySelector('iframe').contentDocument.getElementById('x');
+         console.log(kept.ownerDocument === document.querySelector('iframe').contentDocument);
+         document.querySelector('iframe').remove();",
+        "console.log(String(kept.ownerDocument));",
+    ]);
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(logs, ["true", "null"]);
+}
