@@ -83,6 +83,20 @@ const popupBorder = 1;
 // content ends up 2px short of the room it asked for and scrolls for it.
 const popupSizeForContent = (contentSize: number) => contentSize + 2 * popupBorder;
 
+// Some EPUBs mark a noteref with an inline `<a><img></a>` (e.g. the 脂評
+// edition of 紅樓夢). In vertical writing the anchor's client rect includes an
+// inline-box pad, ~13px wider than the visible image here, so `getPosition`
+// aimed the triangle past the marker and into the popup; `Popup` then hid it
+// as `triangleHidden`. Select the image's own rect instead (#8031). Text-only
+// links keep their element rect so their existing placement is unchanged.
+const getNoterefTarget = (element: Element): Element | Range => {
+  const image = element.querySelector('img');
+  if (!image || (element.textContent ?? '').trim()) return element;
+  const range = element.ownerDocument.createRange();
+  range.selectNode(image);
+  return range;
+};
+
 const chromeButtonClassName = clsx(
   'btn btn-ghost btn-circle eink-bordered text-base-content bg-base-200/80 hover:bg-base-200',
   'h-8 min-h-8 w-8 p-0 shadow-xs',
@@ -747,7 +761,7 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
     const bounds = getPopupBounds(gridFrame.getBoundingClientRect(), gridInsetsRef.current);
     const viewSettings = getViewSettings(bookKey)!;
     const triangPos = offsetPosition(
-      getPosition(detail.a, bounds.rect, popupPadding, viewSettings.vertical),
+      getPosition(getNoterefTarget(detail.a), bounds.rect, popupPadding, viewSettings.vertical),
       bounds.origin,
     );
     stopTrackingPopupContentSize();
