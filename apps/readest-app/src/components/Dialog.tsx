@@ -221,6 +221,20 @@ const Dialog: React.FC<DialogProps> = ({
     const dialog = dialogRef.current;
     const active = document.activeElement;
     if (!dialog || !active || !dialog.contains(active)) return;
+    // A layer opened from inside the dialog (Add OPDS Catalog's ModalPortal)
+    // covers it without taking focus: Tab goes up into that layer. What's on
+    // top at the dialog's centre tells a layer above from one beneath it.
+    const rect = dialog.getBoundingClientRect();
+    const top = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+    const cover =
+      top && !dialog.contains(top)
+        ? top.closest<HTMLElement>('[data-capture-blocking-overlay]')
+        : null;
+    if (cover) {
+      event.preventDefault();
+      focusEnd(cover, event.shiftKey);
+      return;
+    }
     const ahead = event.shiftKey
       ? Node.DOCUMENT_POSITION_PRECEDING
       : Node.DOCUMENT_POSITION_FOLLOWING;
