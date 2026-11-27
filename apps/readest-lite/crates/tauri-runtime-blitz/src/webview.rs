@@ -15,7 +15,8 @@
 //! `wait:MS` holds the next one back MS ms more;
 //! `2x:` before a target taps it twice at once (a double tap) and `hold:` holds a finger on it for
 //! `HOLD_MS` (a long press, which selects a word in a book); `select:X,Y>X2,Y2` holds a finger at
-//! the first point, then drags it to the second (selecting the words between) and lifts it.
+//! the first point, then drags it to the second (selecting the words between) and lifts it;
+//! `drag:X,Y>X2,Y2` drags without the long press (a selection handle).
 //! With `BLITZ_TAURI_TAP_IDLE_MS=Q` the next one goes as soon as nothing has painted for Q ms and
 //! no JS timer is due within Q; those delays become its latest time.
 
@@ -719,7 +720,7 @@ impl BlitzWebview {
                 (t, 2)
             } else if let Some(t) = step.strip_prefix("hold:") {
                 (t, 0)
-            } else if let Some(t) = step.strip_prefix("select:") {
+            } else if let Some(t) = drag_of(&step) {
                 (t.split_once('>').map_or(t, |(a, _)| a), 0)
             } else {
                 (step.as_str(), 1)
@@ -752,7 +753,7 @@ impl BlitzWebview {
             }
             if n == 0 {
                 send_pointer(doc, &self.pointers, x, y, Touch::Down);
-                match step.strip_prefix("select:").and_then(|t| t.split_once('>')) {
+                match drag_of(&step).and_then(|t| t.split_once('>')) {
                     Some((_, to)) => {
                         self.taps.push_front(format!("release:{to}"));
                         self.taps.push_front(format!("move:{x},{y}>{to}"));
@@ -765,7 +766,13 @@ impl BlitzWebview {
                 unix0,
                 t_ms() - t0
             );
-            self.next_tap = (n == 0).then(|| Instant::now() + Duration::from_millis(HOLD_MS));
+            // A drag moves 100 ms after the press, before a long press would select a word.
+            let held = if step.starts_with("drag:") {
+                100
+            } else {
+                HOLD_MS
+            };
+            self.next_tap = (n == 0).then(|| Instant::now() + Duration::from_millis(held));
             self.dirty = true;
             cause(&mut self.causes, 'k');
             self.input = true;
@@ -1112,6 +1119,12 @@ enum Touch {
 
 /// How long a scripted `hold:` keeps its finger down: past Chromium's long-press time (500 ms).
 const HOLD_MS: u64 = 700;
+
+/// The `A>B` of a step that drags a finger: `select:` (after a long press) or `drag:`.
+fn drag_of(step: &str) -> Option<&str> {
+    step.strip_prefix("select:")
+        .or_else(|| step.strip_prefix("drag:"))
+}
 
 /// A scripted input's `x,y` point, in CSS px.
 fn point_of(s: &str) -> Option<(f32, f32)> {

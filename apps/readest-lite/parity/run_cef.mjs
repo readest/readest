@@ -234,9 +234,11 @@ for (const s of steps) {
   if (i === 0) await capture(0);
   i++;
   // `2x:` before a target: a double click (Lite: a double tap); `hold:`, a finger held on it
-  // 700 ms (a long press); `select:X,Y>X2,Y2`, a mouse drag from one point to the other (Lite: a
-  // long press dragged there, its way to select on a touch screen).
-  const t = s.replace(/^(2x|hold|select):/, '');
+  // 700 ms (a long press);
+  // `select:X,Y>X2,Y2`, a mouse drag from one point to the other (Lite: a long press dragged
+  // there, its way to select on a touch screen); `drag:X,Y>X2,Y2`, a finger dragged from one
+  // point to the other (a selection handle).
+  const t = s.replace(/^(2x|hold|select|drag):/, '');
   const hold = async (x, y) => {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
     await sleep(700);
@@ -246,6 +248,15 @@ for (const s of steps) {
     t === s ? page.mouse.click(x, y) : s.startsWith('hold:') ? hold(x, y) : page.mouse.dblclick(x, y);
   if (s.startsWith('key:')) await page.keyboard.press(s.slice(4));
   else if (s.startsWith('type:')) await page.keyboard.type(s.slice(5)); // a key press per character
+  else if (s.startsWith('drag:')) {
+    const [[ax, ay], [bx, by]] = t.split('>').map((p) => p.split(',').map(Number));
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: ax, y: ay }] });
+    for (let k = 1; k <= 8; k++) {
+      const [x, y] = [ax + ((bx - ax) * k) / 8, ay + ((by - ay) * k) / 8];
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] });
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  }
   else if (s.startsWith('select:')) {
     const [[ax, ay], [bx, by]] = t.split('>').map((p) => p.split(',').map(Number));
     await page.mouse.move(ax, ay);
