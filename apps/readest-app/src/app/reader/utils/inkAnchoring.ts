@@ -221,11 +221,11 @@ export const createInkAnchoring = (
     for (let i = 0; i <= PROBE_STEPS; i++) {
       const t = i / PROBE_STEPS;
       const range = contentAt(x + (tx - x) * t, y + (ty - y) * t);
-      const box = range && boxOf(range);
-      if (!range || !box) continue;
+      if (!range) continue;
       // Margin ink is measured in its content's line height. The space ending
-      // a vertical line has none, so ink there goes with the character before.
-      if (!box.height && isCharacter(range) && range.startOffset > 0) {
+      // a vertical line has none (no box at all in WebKit), so ink there goes
+      // with the character before it.
+      if (!boxOf(range)?.height && isCharacter(range) && range.startOffset > 0) {
         const { startContainer: text, startOffset: at } = range;
         range.setStart(text, at - 1);
         range.setEnd(text, at);
@@ -297,9 +297,10 @@ export const createInkAnchoring = (
         const covered = flat ? markedText(path) : (enclosedContent(ink) ?? markedText(path));
         const lines = covered ? linesOf(covered) : [];
         const box = columnBox(lines);
-        // The space ending a paragraph is laid out with no width, leaving
-        // nothing to fit the mark to: it goes on to the margin path below.
-        if (covered && box?.width) {
+        // The space ending a paragraph is laid out with no width (no height in
+        // vertical text), leaving nothing to fit the mark to: it goes on to
+        // the margin path below.
+        if (covered && box?.width && box.height) {
           const anchor = cfiOf(covered);
           return flat
             ? { anchor, shape: 'flow', points: toFlow(path, lines) }

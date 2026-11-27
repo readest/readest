@@ -8,7 +8,8 @@ import type { FoliateView } from '@/types/view';
 // (`…by her. </p>`). Chromium lays that space out with no size along the
 // line: 0 px wide in horizontal text, 0 px tall in vertical text. Ink just
 // after the paragraph lands on it, and fitting the stroke to its box divided
-// by zero: the NaN points crashed the pen renderer.
+// by zero: the NaN points crashed the pen renderer. WebKit gives the space in
+// vertical text no box at all, so it runs here too (vitest.browser.webkit).
 
 let frame: HTMLIFrameElement | null = null;
 
@@ -88,6 +89,12 @@ const squiggleBelow = (last: DOMRect) => {
 const lineBelow = (last: DOMRect) =>
   toPage(STEPS.map((d) => [last.left + last.width / 2 + 4, last.bottom + 6 + 2 * d]));
 
+/** A mouse zigzag, in whole pixels, through the top of the space below a vertical line. */
+const zigzagThrough = (last: DOMRect) => {
+  const [x, y] = [Math.round(last.left + last.width / 2), Math.round(last.bottom)];
+  return toPage([-4, 0, 4, 0, -4].map((dx, i) => [x + dx, y - 8 + 8 * i]));
+};
+
 const finite = (points: InkPoint[]) =>
   points.every(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
 
@@ -107,6 +114,7 @@ describe('ink after a paragraph that ends in a space (#8027)', () => {
     ['an underline just after it', HORIZONTAL, lineAfter, 'width'],
     ['a squiggle below it in vertical text', VERTICAL, squiggleBelow, 'height'],
     ['a line below it in vertical text', VERTICAL, lineBelow, 'height'],
+    ['a zigzag through the top of its space in vertical text', VERTICAL, zigzagThrough, 'height'],
   ] as const)('keeps %s with the paragraph', async (_, page, draw, axis) => {
     const { doc, view, text, anchoring } = await setup(page);
     const { space, last } = endOf(text);
