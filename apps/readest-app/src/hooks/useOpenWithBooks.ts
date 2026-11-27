@@ -149,7 +149,13 @@ export function useOpenWithBooks() {
       // resolve the book via getBookByHash (managed entries are already in
       // the store; ephemeral entries are after the setLibrary above).
       const reachable = bookIds.filter((h) => !!getBookByHash(h));
-      if (reachable.length > 0) {
+      if (reachable.length === 0) return;
+      // A mounted reader doesn't re-init on router.push, so switch its book in
+      // place, as a widget link does. Checked only now: on a cold start "open
+      // last books" can mount the reader while this file was loading (#8019).
+      if (window.location.pathname.startsWith('/reader')) {
+        eventDispatcher.dispatch('open-book-in-reader', { bookHash: reachable[0] });
+      } else {
         navigateToReader(router, reachable);
       }
     };
@@ -170,17 +176,6 @@ export function useOpenWithBooks() {
       // ingest path below so the file is copied into the managed library
       // and synced (the default on mobile).
       if (shouldOpenTransient(action, settings.autoImportBooksOnOpen)) {
-        // If a reader is already mounted, ignore the second tap rather
-        // than try to swap books underneath it. The in-place URL swap
-        // would otherwise leave ReaderContent's init effect (gated by
-        // an isInitiating ref + empty deps) stuck on the previous book
-        // and the user would see the spinner hang. The user can close
-        // the current book to return to the library, then re-open the
-        // new one — same UX as most OS image viewers.
-        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/reader')) {
-          console.log('Ignoring Open-with VIEW intent: reader already active');
-          return;
-        }
         await openTransient(filePaths);
         return;
       }

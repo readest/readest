@@ -19,19 +19,23 @@ const useBooksManager = () => {
   const { bookKeys } = useReaderStore();
   const { setBookKeys, initViewState } = useReaderStore();
   const { sideBarBookKey, setSideBarBookKey } = useSidebarStore();
-  const [shouldUpdateSearchParams, setShouldUpdateSearchParams] = useState(false);
+  // 'replace' when the open books were swapped out: Back must not return to them.
+  const [searchParamsUpdate, setSearchParamsUpdate] = useState<'push' | 'replace' | null>(null);
   const { setParallel } = useParallelViewStore();
 
   useEffect(() => {
-    if (shouldUpdateSearchParams) {
+    if (searchParamsUpdate) {
       const ids = bookKeys.map((key) => key.split('-')[0]!);
       if (ids.length > 0) {
-        navigateToReader(router, ids, searchParams?.toString() || '', { scroll: false });
+        navigateToReader(router, ids, searchParams?.toString() || '', {
+          scroll: false,
+          replace: searchParamsUpdate === 'replace',
+        });
       }
-      setShouldUpdateSearchParams(false);
+      setSearchParamsUpdate(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookKeys, shouldUpdateSearchParams]);
+  }, [bookKeys, searchParamsUpdate]);
 
   // initViewState is called fire-and-forget here; it rejects when the book is
   // missing (e.g. "Book not found" after a library reload dropped the in-memory
@@ -53,7 +57,7 @@ const useBooksManager = () => {
     }
     if (isParallel) setParallel([sideBarBookKey!, newKey]);
     setSideBarBookKey(newKey);
-    setShouldUpdateSearchParams(true);
+    setSearchParamsUpdate('push');
   };
 
   // Jump the switched-in book to a deep-link cfi (#4887) once its view has
@@ -133,7 +137,7 @@ const useBooksManager = () => {
     initViewState(envConfig, bookHash, newKey, true).catch(handleOpenError);
     setBookKeys([newKey]);
     setSideBarBookKey(newKey);
-    setShouldUpdateSearchParams(true);
+    setSearchParamsUpdate('replace');
     if (cfi) goToCfiWhenReady(newKey, cfi);
   };
 
@@ -164,7 +168,7 @@ const useBooksManager = () => {
   const dismissBook = (bookKey: string) => {
     const updatedKeys = bookKeys.filter((key) => key !== bookKey);
     setBookKeys(updatedKeys);
-    setShouldUpdateSearchParams(true);
+    setSearchParamsUpdate('push');
   };
 
   const getNextBookKey = (bookKey: string) => {

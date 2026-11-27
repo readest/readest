@@ -63,6 +63,7 @@ vi.mock('@/utils/nav', () => ({ navigateToReader: vi.fn() }));
 
 import useBooksManager from '@/app/reader/hooks/useBooksManager';
 import { setPendingTTSAutoplay } from '@/utils/ttsAutoplay';
+import { navigateToReader } from '@/utils/nav';
 
 describe('useBooksManager open-failure handling', () => {
   afterEach(() => {
@@ -114,6 +115,43 @@ describe('useBooksManager open-failure handling', () => {
 
     expect(dispatchSpy).toHaveBeenCalledWith('tts-speak', { bookKey: 'hash1-abc' });
     dispatchSpy.mockRestore();
+  });
+
+  // #8019: a link or "Open with" switches the open book in place. Pushing the
+  // new URL left the old book's URL behind it, so Back closed the book and
+  // landed on that URL, a reader with no book that spins forever.
+  it('replaces the reader URL when a link switches the open book', async () => {
+    h.bookKeys = ['hashA-abc'];
+    renderHook(() => useBooksManager());
+
+    await act(async () => {
+      eventDispatcher.dispatch('open-book-in-reader', { bookHash: 'hashB' });
+      await Promise.resolve();
+    });
+
+    expect(navigateToReader).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(Array),
+      '',
+      expect.objectContaining({ replace: true }),
+    );
+  });
+
+  it('pushes the reader URL when a book opens beside the current one', async () => {
+    h.bookKeys = ['hashA-abc'];
+    const { result } = renderHook(() => useBooksManager());
+
+    await act(async () => {
+      result.current.appendBook('hashB', true, false);
+      await Promise.resolve();
+    });
+
+    expect(navigateToReader).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(Array),
+      '',
+      expect.not.objectContaining({ replace: true }),
+    );
   });
 
   it('waits for the initial reading position before starting car autoplay', async () => {
