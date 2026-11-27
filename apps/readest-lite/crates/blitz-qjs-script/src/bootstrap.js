@@ -1385,8 +1385,10 @@
       this.setAttribute('tabindex', v);
     }
   }
-  // `on<event>` handler properties: libraries test `"onclick" in el` to pick event names.
-  for (const t of [
+  // `on<event>` handler properties, on elements and (below) the document: libraries test
+  // `"onclick" in el` to pick event names, and React uses `input` events only where
+  // `"oninput" in document`.
+  const HANDLER_EVENTS = [
     'click',
     'dblclick',
     'mousedown',
@@ -1425,17 +1427,20 @@
     'error',
     'animationend',
     'transitionend',
-  ]) {
-    Object.defineProperty(HTMLElement.prototype, 'on' + t, {
-      get() {
-        return (this._on && this._on[t]) || null;
-      },
-      set(f) {
-        (this._on || (this._on = Object.create(null)))[t] = typeof f === 'function' ? f : null;
-      },
-      configurable: true,
-    });
-  }
+  ];
+  const eventHandlers = (proto) => {
+    for (const t of HANDLER_EVENTS)
+      Object.defineProperty(proto, 'on' + t, {
+        get() {
+          return (this._on && this._on[t]) || null;
+        },
+        set(f) {
+          (this._on || (this._on = Object.create(null)))[t] = typeof f === 'function' ? f : null;
+        },
+        configurable: true,
+      });
+  };
+  eventHandlers(HTMLElement.prototype);
   const reflect = (cls, props) => {
     for (const p of props)
       Object.defineProperty(cls.prototype, p, {
@@ -1900,6 +1905,7 @@
       return null;
     }
   }
+  eventHandlers(Document.prototype);
 
   // The document of its own that node wrapper `w` is in, if any.
   const ownerOf = (w) => w._owner || (w._nodes ? w : undefined);
@@ -3668,6 +3674,13 @@
       if (last !== doc) path.push(doc);
       const view = doc.defaultView ?? window;
       path.push(view);
+      // Blitz edits a text field natively: what was typed is its value when `input` runs. Not
+      // through the `value` setter, which React's value tracker wraps: it would see no change.
+      if (
+        init.kind === 'input' &&
+        (path[0] instanceof HTMLInputElement || path[0] instanceof HTMLTextAreaElement)
+      )
+        path[0].setAttribute('value', init.value);
       const p = init.kind === 'pointer';
       if (p && pressClicked(type, init)) return 1;
       if (p && type.startsWith('pointer')) trackPress(type, init, path[0], doc);
