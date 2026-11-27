@@ -221,7 +221,16 @@ export const createInkAnchoring = (
     for (let i = 0; i <= PROBE_STEPS; i++) {
       const t = i / PROBE_STEPS;
       const range = contentAt(x + (tx - x) * t, y + (ty - y) * t);
-      if (range && boxOf(range)) return range;
+      const box = range && boxOf(range);
+      if (!range || !box) continue;
+      // Margin ink is measured in its content's line height. The space ending
+      // a vertical line has none, so ink there goes with the character before.
+      if (!box.height && isCharacter(range) && range.startOffset > 0) {
+        const { startContainer: text, startOffset: at } = range;
+        range.setStart(text, at - 1);
+        range.setEnd(text, at);
+      }
+      if (boxOf(range)?.height) return range;
     }
     return null;
   };
