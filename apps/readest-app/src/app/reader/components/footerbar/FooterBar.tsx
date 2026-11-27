@@ -337,7 +337,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         <DesktopFooterBar {...commonProps} />
       </div>
       {isVisible && needHorizontalScroll && (
-        <div className='bg-base-100 pointer-events-none absolute bottom-0 left-0 hidden h-3 w-full sm:block' />
+        <div className='bg-base-100 pointer-events-none absolute bottom-0 left-0 hidden h-[17px] w-full sm:block' />
       )}
 
       <TTSControl bookKey={bookKey} gridInsets={gridInsets} />

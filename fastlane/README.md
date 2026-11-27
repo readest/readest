@@ -66,6 +66,14 @@ Upload AAB to Google Play Internal Testing
 
 Upload AAB to Google Play Beta
 
+### android latest_version_code
+
+```sh
+[bundle exec] fastlane android latest_version_code
+```
+
+Print the highest versionCode on any Google Play track
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

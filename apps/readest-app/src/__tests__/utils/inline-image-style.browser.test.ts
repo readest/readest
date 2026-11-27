@@ -107,4 +107,41 @@ describe('images inline with text', () => {
     expect(img.classList.contains('has-text-siblings')).toBe(true);
     expect(img.getBoundingClientRect().height).toBeCloseTo(20, 0);
   });
+
+  // The paginator puts an inline object-fit on every image. A post's footer
+  // lays out an icon and its count in a div; since #7437 counted the count's
+  // span as text, the icon was taken for an image with a caption, made a block
+  // and pushed above its count.
+  test('an icon stays on the line of the count in a sibling span', async () => {
+    const icon = await render(
+      `.contain1 { display: flex; justify-content: space-between; align-items: center; }
+       .item { display: block; flex: 1; margin: 0 auto; text-align: center; }
+       .calibre7 { height: auto; width: 1em; max-width: 20px; margin: 0 0.5em -0.1em 0; }
+       .c6 { font-size: 0.8em; }`,
+      `<div class="contain1" style="font-size: 20px">${['1944', '945', '1022']
+        .map(
+          (n) =>
+            `<div class="item"><img style="object-fit: contain" class="calibre7" src="${SQUARE}"/><span class="c6">${n}</span></div>`,
+        )
+        .join('')}</div>`,
+    );
+    const count = icon.nextElementSibling!.getBoundingClientRect();
+    const box = icon.getBoundingClientRect();
+
+    expect(getComputedStyle(icon).display).toBe('inline');
+    expect(box.bottom).toBeGreaterThan(count.top);
+    expect(box.top).toBeLessThan(count.bottom);
+    expect(box.right).toBeLessThanOrEqual(count.left);
+  });
+
+  test('an image beside bare text in a div is still laid out as a block', async () => {
+    const img = await render(
+      '',
+      `<div style="font-size: 20px"><img style="object-fit: contain" src="${SQUARE}"/>说明</div>`,
+    );
+
+    expect(img.classList.contains('has-text-siblings')).toBe(true);
+    expect(getComputedStyle(img).display).toBe('block');
+    expect(img.getBoundingClientRect().height).toBeCloseTo(200, 0);
+  });
 });
