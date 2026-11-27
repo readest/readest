@@ -1442,6 +1442,39 @@ mod tests {
             .collect()
     }
 
+    /// `importNode` copies a node of another document into this one, the original left where it
+    /// is: readest-app puts the SVG filters it parses with DOMParser into each book page's head
+    /// (imageBackground.ts). Lite had no `importNode`, so the page's load handler threw before it
+    /// wired up taps, and taps on a book did nothing.
+    #[test]
+    fn import_node_copies_a_node_of_another_document() {
+        let mut doc = page_doc("", std::sync::mpsc::channel().0);
+        doc.eval(DOM_PARSER_JS, "dom-parser.js");
+        doc.eval(
+            r#"const svg = new DOMParser().parseFromString(
+                 '<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"><filter id="ink" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0"/><feComposite in="tinted" in2="ink" operator="in"/></filter></svg>',
+                 'image/svg+xml');
+               document.head.appendChild(document.importNode(svg.documentElement, true));
+               const f = document.getElementById('ink');
+               console.log([f.localName, f.namespaceURI, f.getAttribute('color-interpolation-filters'),
+                 f.firstElementChild.localName, f.lastElementChild.getAttribute('operator'),
+                 svg.documentElement.childNodes.length].join(' '));
+               const html = new DOMParser().parseFromString('<p id="q" class="c">a<b>b</b></p>', 'text/html');
+               const p = html.getElementById('q');
+               document.body.appendChild(document.importNode(p, true));
+               console.log([document.getElementById('q').outerHTML, p.parentNode.localName,
+                 document.importNode(p).childNodes.length].join(' '));"#,
+            "test",
+        );
+        assert_eq!(
+            logs(&mut doc),
+            [
+                "filter http://www.w3.org/2000/svg sRGB feColorMatrix in 1",
+                r#"<p id="q" class="c">a<b>b</b></p> body 0"#,
+            ]
+        );
+    }
+
     /// Runs `script`, hands its one fetch answer from the runtime back to it, and returns the
     /// console.log lines; with no answer, fails with what the page logged.
     fn page_fetching(script: &str) -> Vec<String> {

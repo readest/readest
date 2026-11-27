@@ -657,25 +657,8 @@
       const k = this.nodeType;
       if (k === 3 || k === 8) setData(this, String(v));
     }
-    // A copy in the same document, made through the shim's own API, so a host's shadow root and
-    // its marker attribute (hidden from childNodes and getAttributeNames) are not copied.
     cloneNode(deep = false) {
-      const t = this.nodeType;
-      const doc = docOf(this);
-      if (t === 3) return doc.createTextNode(this.data);
-      if (t === 8) return doc.createComment(this.data);
-      let copy;
-      if (t === 11) copy = doc.createDocumentFragment();
-      else if (t === 1) {
-        const ns = this.namespaceURI;
-        copy =
-          ns === HTML_NS
-            ? doc.createElement(this.localName)
-            : doc.createElementNS(ns, this.localName);
-        for (const k of this.getAttributeNames()) copy.setAttribute(k, this.getAttribute(k));
-      } else throw new Error(`cloneNode of a node of type ${t} is not implemented`);
-      if (deep) for (const c of this.childNodes) copy.appendChild(c.cloneNode(true));
-      return copy;
+      return docOf(this).importNode(this, deep);
     }
     isSameNode(o) {
       return o === this;
@@ -1790,6 +1773,11 @@
     get links() {
       return this.querySelectorAll('a[href], area[href]');
     }
+    // No CSSOM: Blitz parses the page's sheets natively and script can't read their rules, so
+    // code that walks them (readest-app's @media (orientation) rewrite) leaves them as written.
+    get styleSheets() {
+      return Object.assign([], { item: () => null });
+    }
     get defaultView() {
       if (this === document) return window;
       return this._nodes ? null : (this._view ??= frameWindow(this));
@@ -1850,6 +1838,27 @@
     }
     createElementNS(ns, q) {
       return wrap(n.createElement(this._id, ns || HTML_NS, String(q).replace(/^.*:/, '')));
+    }
+    // A copy of `node` in this document; `node` is of any document: this one, a frame's, or
+    // DOMParser's XML tree (dom-parser.js), so only the standard node API is read. Made through
+    // the shim's own API, so a host's shadow root and its marker attribute (hidden from
+    // childNodes and attributes) are not copied.
+    importNode(node, deep = false) {
+      const t = node.nodeType;
+      if (t === 3) return this.createTextNode(node.data);
+      if (t === 8) return this.createComment(node.data);
+      let copy;
+      if (t === 11) copy = this.createDocumentFragment();
+      else if (t === 1) {
+        const ns = node.namespaceURI;
+        copy =
+          ns === HTML_NS
+            ? this.createElement(node.localName)
+            : this.createElementNS(ns, node.localName);
+        for (const a of node.attributes) copy.setAttribute(a.name, a.value);
+      } else throw new Error(`importNode of a node of type ${t} is not implemented`);
+      if (deep) for (const c of node.childNodes) copy.appendChild(this.importNode(c, true));
+      return copy;
     }
     createTextNode(s) {
       return wrap(n.createText(this._id, String(s)));

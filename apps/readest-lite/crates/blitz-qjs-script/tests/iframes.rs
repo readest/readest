@@ -199,3 +199,20 @@ fn a_hidden_iframe_still_fires_load() {
     assert_eq!(doc.take_js_errors(), Vec::<String>::new());
     assert_eq!(doc.take_messages(), ["log: load two"]);
 }
+
+/// readest-app walks a section's `document.styleSheets` to resolve its `@media (orientation)`
+/// rules against the reading area (main's #7450). Lite has no CSSOM (Blitz parses the sheets
+/// natively), so the list is empty and the sheets stay as written; without one the walk threw in
+/// the section's load handler, before the reader wired up taps on the book.
+#[test]
+fn style_sheets_is_an_empty_list() {
+    let (logs, errors) = run(&[r#"
+        for (const d of [document, document.querySelector('iframe').contentDocument]) {
+          const sheets = d.styleSheets;
+          console.log([Array.from(sheets).length, sheets.length, String(sheets.item(0))].join(' '));
+        }
+    "#]);
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(logs, ["0 0 null", "0 0 null"]);
+}
+
