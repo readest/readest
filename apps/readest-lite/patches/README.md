@@ -291,6 +291,10 @@
   space the line collapsed (`dom_offset`, the inverse of `laid_out_offset`) and a floated
   `::first-letter`. Generated text (`::before`, `::after`) has no caret. Readest selects the word
   under a double tap with it.
+- `blitz-paint` render/mask: a CSS mask's layers are clipped to the border box plus a 2 px
+  margin, not to the box itself. Applied within the box's clip, the mask erased a pixel that a
+  rotated box's edge crosses only in part: Readest's e-ink spinner, turned 45° at a time,
+  drew a faint diamond around itself at every other step.
 
 ## stylo.diff (servo/stylo 2dca34592, 0.23.0)
 

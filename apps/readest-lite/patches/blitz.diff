@@ -6439,7 +6439,7 @@ diff -ruN blitz/packages/blitz-paint/src/render/form_controls.rs blitz/packages/
 diff -ruN blitz/packages/blitz-paint/src/render/mask.rs blitz/packages/blitz-paint/src/render/mask.rs
 --- blitz/packages/blitz-paint/src/render/mask.rs
 +++ blitz/packages/blitz-paint/src/render/mask.rs
-@@ -14,7 +14,7 @@
+@@ -14,12 +14,12 @@
  //! The mask image layers themselves are positioned/sized/repeated using the same
  //! code as `background-image` layers (see `background.rs`), as the `mask-*` and
  //! `background-*` properties share computed value types.
@@ -6448,6 +6448,12 @@ diff -ruN blitz/packages/blitz-paint/src/render/mask.rs blitz/packages/blitz-pai
  
  use super::background::ImageLayerStyles;
  use super::{ALMOST_OPAQUE, ElementCx};
+ use anyrender::PaintScene;
+-use peniko::{BlendMode, Compose, Fill, Mix};
++use peniko::{BlendMode, Compose, Fill, Mix, kurbo::Rect};
+ use style::properties::generated::longhands::mask_composite::single_value::computed_value::T as StyloMaskComposite;
+ use style::values::generics::image::GenericImage;
+ 
 @@ -37,6 +37,21 @@
              .any(|image| !matches!(image, GenericImage::None))
      }
@@ -6470,6 +6476,46 @@ diff -ruN blitz/packages/blitz-paint/src/render/mask.rs blitz/packages/blitz-pai
      /// If the element has a CSS mask, push an isolation layer for the masked content
      /// to be drawn into. Returns whether a layer was pushed, which should later be
      /// passed to [`maybe_pop_css_mask_layer`](Self::maybe_pop_css_mask_layer).
+@@ -46,19 +61,28 @@
+         }
+ 
+         // Content outside of the mask painting area (at largest the border box) has
+-        // a mask alpha of 0, so we can clip the isolation layer to the border box.
++        // a mask alpha of 0, so we can clip the isolation layer to the border box, with a
++        // margin (see `mask_area`).
+         scene.push_layer(
+             Fill::NonZero,
+             Mix::Normal,
+             ALMOST_OPAQUE,
+             self.transform,
+-            &self.frame.border_box_path(),
++            &self.mask_area(),
+             None,
+             None,
+         );
+         true
+     }
+ 
++    /// The border box and a margin, which the mask layers are clipped to. The mask is applied
++    /// within the isolation layer's clip: clipped to the border box itself, a pixel that the
++    /// box's edge crosses (a rotated box's) would be erased only in part, leaving a trace of the
++    /// edge. Outside the box the mask erases all.
++    fn mask_area(&self) -> Rect {
++        self.frame.border_box.inflate(2.0, 2.0)
++    }
++
+     /// Apply the CSS mask to the content drawn since the corresponding
+     /// [`maybe_push_css_mask_layer`](Self::maybe_push_css_mask_layer) by drawing the
+     /// mask image layers with `Compose::DestIn`, then pop the isolation layer.
+@@ -72,7 +96,7 @@
+             BlendMode::new(Mix::Normal, Compose::DestIn),
+             1.0,
+             self.transform,
+-            &self.frame.border_box_path(),
++            &self.mask_area(),
+             None,
+             None,
+         );
 diff -ruN blitz/packages/blitz-paint/src/render/scrollbars.rs blitz/packages/blitz-paint/src/render/scrollbars.rs
 --- blitz/packages/blitz-paint/src/render/scrollbars.rs
 +++ blitz/packages/blitz-paint/src/render/scrollbars.rs
