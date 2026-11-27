@@ -784,8 +784,9 @@ describe('FootnotePopup jump to location', () => {
       await block({ dir: 'down', size: 100 });
 
       expect(popup.dataset['anchorY']).toBe('110');
-      // 300 tall, anchored at 110 with 10px padding: 180px left, not 242.
-      expect(popup.dataset['height']).toBe('180');
+      // 300 tall, anchored at 110 with 10px padding and the 6px arrow gap:
+      // 174px left, not 242.
+      expect(popup.dataset['height']).toBe('174');
     });
 
     it('stays put when the toolbar goes away while it is open', async () => {

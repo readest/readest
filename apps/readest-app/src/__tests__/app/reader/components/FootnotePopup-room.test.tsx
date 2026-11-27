@@ -22,6 +22,7 @@ const hoisted = vi.hoisted(() => ({
   popupProps: {
     current: {} as { width?: number; position?: Position; trianglePosition?: Position },
   },
+  positionTarget: null as Element | Range | null,
 }));
 
 vi.mock('foliate-js/footnotes.js', () => {
@@ -82,7 +83,10 @@ vi.mock('@/styles/fonts', () => ({ mountAdditionalFonts: vi.fn(), mountCustomFon
 // placed by the real getPopupPosition.
 vi.mock('@/utils/sel', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/utils/sel')>()),
-  getPosition: () => hoisted.anchor,
+  getPosition: (target: Element | Range) => {
+    hoisted.positionTarget = target;
+    return hoisted.anchor;
+  },
 }));
 vi.mock('@/app/reader/utils/transientHighlight', () => ({ showTransientHighlight: vi.fn() }));
 vi.mock('@/app/reader/utils/annotatorUtil', () => ({ drawAnnotationOverlay: vi.fn() }));
@@ -110,7 +114,7 @@ const setWindowSize = (width: number, height: number) => {
 };
 
 /** Open the popup for a note whose content is `noteSize` along the reading axis. */
-const openNote = async (cell: DOMRect, noteSize: number) => {
+const openNote = async (cell: DOMRect, noteSize: number, customLink?: HTMLAnchorElement) => {
   const grid = document.createElement('div');
   grid.id = `gridcell-${BOOK_KEY}`;
   grid.getBoundingClientRect = () => cell;
@@ -119,7 +123,7 @@ const openNote = async (cell: DOMRect, noteSize: number) => {
   render(<FootnotePopup bookKey={BOOK_KEY} bookDoc={{} as BookDoc} />);
 
   const href = 'chapter1.xhtml#note1';
-  const link = document.createElement('a');
+  const link = customLink ?? document.createElement('a');
   document.body.appendChild(link);
   await act(async () => {
     hoisted.onLinkClick.current?.(
@@ -153,6 +157,7 @@ beforeEach(() => {
   hoisted.handlers.length = 0;
   hoisted.onLinkClick.current = null;
   hoisted.popupProps.current = {};
+  hoisted.positionTarget = null;
 });
 
 afterEach(() => setWindowSize(innerWidth, innerHeight));
@@ -184,5 +189,56 @@ describe('FootnotePopup room beside the noteref (#7637)', () => {
 
     expect(point.x).toBeGreaterThanOrEqual(PADDING);
     expect(point.x + width).toBeLessThanOrEqual(cell.width - PADDING);
+  });
+
+  it('uses the image rect, not the padded inline anchor, for an image noteref (#8031)', async () => {
+    hoisted.vertical = true;
+    hoisted.anchor = { point: { x: 600, y: 400 }, dir: 'right' };
+    setWindowSize(1280, 800);
+    const cell = new DOMRect(290, 0, 990, 800);
+    const link = document.createElement('a');
+    const img = document.createElement('img');
+    link.appendChild(img);
+
+    await openNote(cell, 5000, link);
+
+    expect(hoisted.positionTarget).toBeInstanceOf(Range);
+    expect((hoisted.positionTarget as Range).startContainer).toBe(link);
+  });
+
+  it('reserves the anchor gap on the right so the triangle is not covered (#8031)', async () => {
+    hoisted.vertical = true;
+    hoisted.anchor = { point: { x: 177.797, y: 360 }, dir: 'right' };
+    setWindowSize(667, 720);
+    const cell = new DOMRect(240, 0, 427, 720);
+
+    const { width, point, anchor } = await openNote(cell, 5000);
+
+    expect(point.x).toBeGreaterThanOrEqual(anchor.x + 6);
+    expect(point.x + width).toBeLessThanOrEqual(cell.width - PADDING);
+  });
+
+  it('reserves the anchor gap below so the triangle is not covered (#8031)', async () => {
+    hoisted.vertical = false;
+    hoisted.anchor = { point: { x: 300, y: 600 }, dir: 'down' };
+    setWindowSize(800, 700);
+    const cell = new DOMRect(0, 0, 800, 700);
+
+    const { point, anchor } = await openNote(cell, 5000);
+
+    expect(point.y).toBeGreaterThanOrEqual(anchor.y + 6);
+  });
+
+  it('keeps the element rect for a text noteref (#8031)', async () => {
+    hoisted.vertical = true;
+    hoisted.anchor = { point: { x: 600, y: 400 }, dir: 'right' };
+    setWindowSize(1280, 800);
+    const cell = new DOMRect(290, 0, 990, 800);
+    const link = document.createElement('a');
+    link.textContent = '1';
+
+    await openNote(cell, 5000, link);
+
+    expect(hoisted.positionTarget).toBe(link);
   });
 });
