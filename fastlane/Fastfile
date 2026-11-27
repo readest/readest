@@ -109,6 +109,30 @@ end
 PROMOTIONAL_TEXT = "Experience the Ultimate Ebook Reader Across All Your Devices for Avid Readers"
 PROMOTIONAL_TEXT_MACOS = "Every Book You Own, Open on Your Mac. Read, Annotate, Listen and Sync Across Devices"
 
+# A new in-app purchase goes to review with an app version, and adding it in App
+# Store Connect leaves it in a draft review submission for the platform. deliver
+# refuses a draft that already holds items ("A review submission already exists
+# with items not managed by fastlane"), so this adds the version to that draft
+# and submits them together. Without such a draft, deliver's own path runs.
+module SubmitWithDraftReviewItems
+  private
+
+  def create_review_submission(options, app, version, platform)
+    draft = app.get_ready_review_submission(platform: platform, includes: "items")
+    return super if draft.nil? || draft.items.empty?
+
+    FastlaneCore::UI.important("Adding #{version.version_string} to the draft review submission " \
+                               "that already holds #{draft.items.size} item(s), such as new in-app purchases")
+    draft.add_app_store_version_to_review_items(app_store_version_id: version.id)
+    10.times do
+      state = Spaceship::ConnectAPI::AppStoreVersion.get(app_store_version_id: version.id).app_version_state
+      break if state == Spaceship::ConnectAPI::AppStoreVersion::AppVersionState::READY_FOR_REVIEW
+      sleep(15)
+    end
+    draft.submit_for_review
+  end
+end
+
 # iOS and macOS are one App Store Connect app (com.bilingify.readest), built from
 # separate binaries and submitted independently. Each lane acts only on a build
 # already uploaded by altool (skip_binary_upload / distribute_only) — it never
@@ -118,6 +142,8 @@ PROMOTIONAL_TEXT_MACOS = "Every Book You Own, Open on Your Mac. Read, Annotate, 
 #   pnpm run submit-appstore-ios     # iOS
 #   pnpm run submit-appstore-macos   # macOS
 def submit_apple_build(deliver_opts, testflight_opts)
+  require "deliver"
+  Deliver::SubmitForReview.prepend(SubmitWithDraftReviewItems)
   api_key = asc_api_key
   upload_to_app_store({
     api_key: api_key,
