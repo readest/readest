@@ -287,11 +287,14 @@ export const createInkAnchoring = (
         // A short mark encloses nothing; it still marks the text it sits on.
         const covered = flat ? markedText(path) : (enclosedContent(ink) ?? markedText(path));
         const lines = covered ? linesOf(covered) : [];
-        if (covered && lines.length) {
+        const box = columnBox(lines);
+        // The space ending a paragraph is laid out with no width, leaving
+        // nothing to fit the mark to: it goes on to the margin path below.
+        if (covered && box?.width) {
           const anchor = cfiOf(covered);
           return flat
             ? { anchor, shape: 'flow', points: toFlow(path, lines) }
-            : { anchor, shape: 'box', points: fitToBox(ink, columnBox(lines)!) };
+            : { anchor, shape: 'box', points: fitToBox(ink, box) };
         }
       }
 
