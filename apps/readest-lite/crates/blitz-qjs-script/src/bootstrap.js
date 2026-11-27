@@ -2824,6 +2824,50 @@
     const [h, offset] = n.caret(this._id, x, y);
     return h == null ? null : new CaretPosition(wrapIn(h, ownerOf(this)), offset);
   };
+  // ---- <input type=range> ----
+  // A press sets a range's value from where it lands, a drag moves it, and the release commits
+  // it: `input` as the value changes, `change` when the finger or button lifts, as in a browser.
+  // Values snap to the step; a right-to-left range runs from the right. Blitz has no range
+  // control, and Readest draws each slider over an invisible one.
+  let range = null;
+  function dragRange(type, init, target) {
+    if (type === 'pointerdown')
+      range =
+        target instanceof HTMLInputElement &&
+        target.getAttribute('type') === 'range' &&
+        !target.hasAttribute('disabled')
+          ? { el: target, changed: false }
+          : null;
+    if (!range) return;
+    const { el } = range;
+    if (type === 'pointerup' || type === 'pointercancel') {
+      if (range.changed) el.dispatchEvent(new Event('change', { bubbles: true }));
+      range = null;
+      return;
+    }
+    if (type !== 'pointerdown' && type !== 'pointermove') return;
+    const r = el.getBoundingClientRect();
+    if (!r.width) return;
+    const num = (name, fallback) => {
+      const v = parseFloat(el.getAttribute(name));
+      return Number.isFinite(v) ? v : fallback;
+    };
+    const min = num('min', 0);
+    const max = Math.max(min, num('max', 100));
+    const step = el.getAttribute('step') === 'any' ? 0 : num('step', 1);
+    let f = Math.min(1, Math.max(0, (init.clientX - r.left) / r.width));
+    if (getComputedStyle(el).direction === 'rtl') f = 1 - f;
+    let v = min + f * (max - min);
+    if (step > 0) {
+      v = min + Math.round((v - min) / step) * step;
+      if (v > max) v -= step;
+    }
+    const value = String(Number(v.toFixed(10)));
+    if (value === el.value) return;
+    el.setAttribute('value', value);
+    range.changed = true;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
   // ---- Touch long press ----
   // A finger held still (within the touch slop) for Chromium's long-press time selects the word
   // under it, as the touch screens Readest runs on do natively (Readest opens its selection popup
@@ -3724,6 +3768,7 @@
       ev.isTrusted = true;
       anyCalled = false;
       dispatch(path, ev);
+      if (p) dragRange(type, init, path[0]);
       return (ev.defaultPrevented ? 1 : 0) | (ev._stop ? 2 : 0) | (anyCalled ? 4 : 0);
     },
     // Runs due timers, then the rAF callbacks once a frame is due; returns 1 when they ran.
