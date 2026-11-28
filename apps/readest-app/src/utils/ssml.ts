@@ -110,6 +110,7 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
 
   let plainText = '';
   const marks: TTSMark[] = [];
+  const rawTexts: string[] = [];
 
   let activeMark: string | null = null;
   let currentLang = defaultLang;
@@ -126,6 +127,7 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
         const offset = plainText.length;
         plainText += text;
         marks.push({ offset, name: activeMark, text, language: currentLang });
+        rawTexts.push(rawText);
       } else {
         plainText += cleanTextContent(rawText);
       }
@@ -156,10 +158,12 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
   // A tag cuts a sentence into fragments. The language comes from all of the
   // sentence's text in one language scope, so a fragment holding only a stray
   // ideograph (between two <break/>s, say) doesn't get a voice of its own.
+  // The text is untrimmed: the space a fragment starts with keeps the words on
+  // either side of the tag apart.
   const scopes = marks.map((mark) => `${mark.name}\u0000${mark.language}`);
   const scopeText = new Map<string, string>();
-  marks.forEach((mark, i) =>
-    scopeText.set(scopes[i]!, (scopeText.get(scopes[i]!) ?? '') + mark.text),
+  marks.forEach((_, i) =>
+    scopeText.set(scopes[i]!, (scopeText.get(scopes[i]!) ?? '') + rawTexts[i]),
   );
   marks.forEach((mark, i) => {
     mark.language = inferLangFromScript(scopeText.get(scopes[i]!)!, mark.language) || mark.language;

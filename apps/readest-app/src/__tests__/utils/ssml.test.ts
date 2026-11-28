@@ -117,9 +117,17 @@ describe('a stray ideograph in an English paragraph', () => {
   });
 
   it('should keep a word split by an inline tag whole', () => {
-    expect(
-      parseSSMLLang(ssmlWithLang('en', '<mark name="0"/>你好 i<emphasis>Phone</emphasis>')),
-    ).toBe('zh');
+    const ssml = ssmlWithLang('en', '<mark name="0"/>你好 i<emphasis>Phone</emphasis>');
+    expect(parseSSMLLang(ssml)).toBe('zh');
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['zh', 'zh']);
+  });
+
+  // Each fragment's leading space is trimmed for speech; the words it
+  // separated must still count apart.
+  it('should keep the words apart that a tag and a space separate', () => {
+    const ssml = ssmlWithLang('en', '<mark name="0"/>One<break/> two<break/> three 一二.');
+    expect(parseSSMLLang(ssml)).toBe('en');
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'en', 'en']);
   });
 
   it('should keep an explicit language inside the sentence', () => {
