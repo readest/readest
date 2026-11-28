@@ -37,6 +37,7 @@ import { getMarginalInlinePadding, getVerticalChromeBand } from '@/utils/insets'
 import { SIZE_PER_LOC, SIZE_PER_TIME_UNIT } from '@/services/constants';
 import { getChapterScreensVersion, subscribeChapterScreens } from '@/utils/chapterScreens';
 import { getScreenPageInfo, usesScreenPages } from '../utils/screenPages';
+import { usePageTurnPreview } from '../utils/pageTurnPreview';
 import { useMedianPageDurationSecs } from '@/hooks/useMedianPageDurationSecs';
 
 // Private-use characters standing in for the time and the page count in a
@@ -106,8 +107,11 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const bookData = getBookData(bookKey);
   const viewSettings = getViewSettings(bookKey)!;
   // Reactive: this is the on-screen footer that has to refresh on every
-  // page turn. Reads from readerProgressStore only.
-  const progress = useBookProgress(bookKey);
+  // page turn. Reads from readerProgressStore only (or the display-only
+  // preview override while an adjacent page is being captured under cover).
+  const liveProgress = useBookProgress(bookKey);
+  const preview = usePageTurnPreview(bookKey);
+  const progress = preview?.progress ?? liveProgress;
   const { section, pageinfo } = progress || {};
 
   const showDoubleBorder = viewSettings.vertical && viewSettings.doubleBorder;
@@ -135,7 +139,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   // same pages (screenPages.ts). Fixed layout keeps its real page pairs,
   // scrolled mode has no spreads, and formats without section sizes keep the
   // byte-grid pair.
-  const { page: current = 0, pages: total = 0 } = view?.renderer || {};
+  const { page: liveCurrent = 0, pages: liveTotal = 0 } = view?.renderer || {};
+  const current = preview ? preview.page : liveCurrent;
+  const total = preview ? preview.pages : liveTotal;
   const sectionFractions = view?.getSectionFractions() ?? [];
   const sectionIndex = section?.current ?? 0;
   const sections = bookData?.bookDoc?.sections;
@@ -143,7 +149,13 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   // re-renders the pair.
   useSyncExternalStore(subscribeChapterScreens, getChapterScreensVersion);
   const calibratedPair = usesScreenPages(viewSettings, bookData?.isFixedLayout, sections)
-    ? getScreenPageInfo(bookKey, view, sections!, progress)
+    ? getScreenPageInfo(
+        bookKey,
+        view,
+        sections!,
+        progress,
+        preview ? { page: preview.page, atEnd: preview.atEnd } : undefined,
+      )
     : null;
   const referenceInfo =
     readingProgressStyle === 'reference'

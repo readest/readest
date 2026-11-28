@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { FoliateView } from '@/types/view';
 import { ViewSettings } from '@/types/book';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { getBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useThemeStore } from '@/store/themeStore';
@@ -20,6 +21,11 @@ import { CapturedPageTurn, CapturedTurnStyle, type CapturedTurnHost } from '../u
 import { NativePageTurn, type NativePaperResult } from '../utils/nativePageTurn';
 import { RetainedPageTurn } from '../utils/retainedPageTurn';
 import { PageTurnBuffer } from '../utils/pageTurnBuffer';
+import {
+  clearPageTurnPreview,
+  computePageTurnPreview,
+  setPageTurnPreview,
+} from '../utils/pageTurnPreview';
 import {
   createTurnGestureIntent as createArenaIntent,
   NATIVE_CAPTURED_TURN_ATTRIBUTE,
@@ -405,6 +411,17 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // fixed layouts, which name their pages but cannot preview them.
       (view.renderer.columnCount ?? 1) <= 2 &&
       !!view.renderer.getPageTurnKey;
+    const beginPagePreview = (forward: boolean) => {
+      const snapshot = computePageTurnPreview({
+        forward,
+        progress: getBookProgress(bookKey),
+        view,
+        sections: getBookData(bookKey)?.bookDoc?.sections,
+        isFixedLayout: isFixedLayout(),
+      });
+      if (!snapshot) return () => {};
+      return setPageTurnPreview(bookKey, snapshot);
+    };
     const pageBuffer = new PageTurnBuffer({
       renderer: view.renderer,
       capture: async (rect) => {
@@ -420,6 +437,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         return () => uncoverWebviewRegion({ token });
       },
       allowed: () => !isPreparedSurfaceBlockedByOverlay(),
+      beginPagePreview,
     });
     const turnHost: CapturedTurnHost = {
       getHostElement: () => document.getElementById(`gridcell-${bookKey}`),
@@ -428,8 +446,9 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       // Apple Books), so the capture spans the full cell, not just the
       // text content box.
       getContentRect: () =>
-        // Buffered EPUB sheets exclude app chrome: page counters and controls
-        // stay live, rather than caching the current page's counter on a neighbour.
+        // Buffered EPUB sheets span the full renderer box (whose overlaid
+        // running header and footer paint inside it); beginPagePreview keeps
+        // their displayed counters synchronized with the previewed page.
         bufferedPagesEnabled()
           ? view.renderer.getBoundingClientRect()
           : (document.getElementById(`gridcell-${bookKey}`)?.getBoundingClientRect() ?? null),
@@ -475,6 +494,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
         if (transientVisible) await waitForPaint();
         return release;
       },
+      beginPagePreview,
       // A modal can open while the native snapshot promise is in flight. The
       // controller rechecks this gate before mounting or navigating so those
       // pixels can never be replayed by a later turn.
@@ -1028,6 +1048,7 @@ export const useCapturedTurn = (bookKey: string, viewRef: React.RefObject<Foliat
       view.next = originals.next;
       controller.dispose();
       pageBuffer.dispose();
+      clearPageTurnPreview(bookKey);
       cleanupLayeredTurn();
       programmaticTurnsInFlightRef.current.clear();
       view.renderer.removeAttribute(NATIVE_PROGRAMMATIC_TURN_ATTRIBUTE);

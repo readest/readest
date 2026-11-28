@@ -191,11 +191,19 @@ export class NativePageTurn extends CapturedPageTurn {
           if (abort.signal.aborted || !this.#allowed()) break;
           const adjacent = this.#key(forward ? 1 : -1);
           if (!adjacent || this.#keys.has(adjacent)) continue;
-          await this.native.renderer.previewPage!(
-            forward,
-            () => this.#capture(adjacent, rect, abort.signal),
-            abort.signal,
-          );
+          const releasePreview = this.host.beginPagePreview?.(forward);
+          try {
+            await this.native.renderer.previewPage!(
+              forward,
+              () => this.#capture(adjacent, rect, abort.signal),
+              abort.signal,
+            );
+          } finally {
+            // Release ONLY after previewPage() has restored containerPosition, so
+            // ProgressBar never re-renders with preview=null while renderer.page
+            // still points at the previewed neighbour.
+            releasePreview?.();
+          }
         }
       } finally {
         await Promise.allSettled([...this.#cancellations]);
@@ -298,7 +306,12 @@ export class NativePageTurn extends CapturedPageTurn {
         if (!this.#allowed()) return false;
         if (destination && !this.#keys.has(destination) && this.native.renderer.previewPage) {
           const target = destination;
-          await this.native.renderer.previewPage(forward, () => this.#capture(target, rect));
+          const releasePreview = this.host.beginPagePreview?.(forward);
+          try {
+            await this.native.renderer.previewPage(forward, () => this.#capture(target, rect));
+          } finally {
+            releasePreview?.();
+          }
         }
         if (!destination || !this.#keys.has(destination)) {
           // A not-yet-loaded section is prepared under the native current sheet.
