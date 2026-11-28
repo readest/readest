@@ -263,6 +263,10 @@
   groups and a bordered table's cells inherit it, as Chromium's does. Blitz's UA sheet, Firefox's,
   borders them with Gecko's `:-moz-table-border-nonzero`, which Stylo drops outside Gecko, so no
   `border="1"` table had lines.
+- `blitz-dom` document: a table row or row group has client rects, from its table's grid as in
+  Chromium (`table_track_box`): a row spans the columns over its track, a group its rows, and
+  with collapsed borders each reaches the middle of the borders around it. Blitz lays out only
+  the cells, so they were 0,0,0,0 (and a parity capture of any page showing a table differed).
 - `blitz-dom` document, mutator, net, node/element: an `<img>` records whether its image arrived
   or failed (`take_image_loads`, for its `load` and `error` events), reports whether it is still
   loading (`image_loading`) and its natural size (`ImageData::natural_size`). A failed fetch is

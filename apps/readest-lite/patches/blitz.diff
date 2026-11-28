@@ -864,7 +864,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2743,30 @@
+@@ -2447,17 +2743,93 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -874,22 +874,21 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 -        self.get_node(node_id)?;
 -        let (pos, layout) = self.physical_unrounded_geometry(node_id);
 -        let size = layout.size;
--
--        Some(BoundingRect {
--            x: snap_to_layout_unit(pos.x as f64 - self.viewport_scroll().x),
--            y: snap_to_layout_unit(pos.y as f64 - self.viewport_scroll().y),
--            width: snap_to_layout_unit(size.width as f64),
--            height: snap_to_layout_unit(size.height as f64),
--        })
 +    /// A node's border box relative to the viewport, as the fragments the root's columns break
 +    /// it into (one rect outside them).
 +    fn box_fragments(&self, node_id: NodeId) -> Option<Vec<BoundingRect>> {
 +        if !self.generates_box(node_id) {
 +            return None;
 +        }
-+        let size = self.get_node(node_id)?.unrounded_layout().size;
-+        let border_box = kurbo::Rect::new(0.0, 0.0, f64::from(size.width), f64::from(size.height));
-+        let flow = to_bounding_rect(self.border_box_to_document(node_id).transform_rect_bbox(border_box));
++        let (frame, border_box) = match self.table_track_box(node_id) {
++            Some(found) => found,
++            None => {
++                let size = self.get_node(node_id)?.unrounded_layout().size;
++                let size = (f64::from(size.width), f64::from(size.height));
++                (node_id, kurbo::Rect::new(0.0, 0.0, size.0, size.1))
++            }
++        };
++        let flow = to_bounding_rect(self.border_box_to_document(frame).transform_rect_bbox(border_box));
 +        let (sx, sy) = (self.viewport_scroll().x, self.viewport_scroll().y);
 +        Some(
 +            self.column_fragments(node_id, flow)
@@ -902,10 +901,73 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +                })
 +                .collect(),
 +        )
++    }
+ 
+-        Some(BoundingRect {
+-            x: snap_to_layout_unit(pos.x as f64 - self.viewport_scroll().x),
+-            y: snap_to_layout_unit(pos.y as f64 - self.viewport_scroll().y),
+-            width: snap_to_layout_unit(size.width as f64),
+-            height: snap_to_layout_unit(size.height as f64),
+-        })
++    /// A table row's or row group's border box, in its table's border-box space, and the table.
++    /// Blitz lays out only a table's cells, so it comes from the table's grid as Chromium has it:
++    /// a row spans the columns over its track, a row group its rows; with collapsed borders each
++    /// reaches the middle of the borders around it.
++    fn table_track_box(&self, node_id: NodeId) -> Option<(NodeId, kurbo::Rect)> {
++        use style::values::specified::box_::DisplayInside;
++        let node = self.get_node(node_id)?;
++        let is_row_or_group = node.display_style().is_some_and(|d| {
++            matches!(
++                d.inside(),
++                DisplayInside::TableRow
++                    | DisplayInside::TableRowGroup
++                    | DisplayInside::TableHeaderGroup
++                    | DisplayInside::TableFooterGroup
++            )
++        });
++        if !is_row_or_group {
++            return None;
++        }
++        let mut table_id = node.parent;
++        let table = loop {
++            let ancestor = self.get_node(table_id?)?;
++            match ancestor.element_data().map(|el| &el.special_data) {
++                Some(SpecialElementData::TableRoot(table)) => break table,
++                _ => table_id = ancestor.parent,
++            }
++        };
++        let grid = table.computed_grid_info.borrow();
++        let grid = grid.as_ref()?;
++        let first_row = grid.rows.negative_implicit_tracks as usize;
++        let rows = (table.rows.iter().enumerate())
++            .filter(|(_, row)| row.node_id == node_id || row.group == Some(node_id))
++            .filter_map(|(i, _)| grid.rows.positions.get(first_row + i));
++        // A track's start may follow its end, in a reversed axis.
++        let span = |tracks: &mut dyn Iterator<Item = &taffy::Line<f32>>| {
++            tracks.fold(None, |span: Option<(f32, f32)>, t| {
++                let (a, b) = (t.start.min(t.end), t.start.max(t.end));
++                Some(span.map_or((a, b), |(x, y)| (x.min(a), y.max(b))))
++            })
++        };
++        let (x0, x1) = span(&mut grid.columns.positions.iter())?;
++        let (y0, y1) = span(&mut rows.into_iter())?;
++        let half = if table.border_collapse == style::computed_values::border_collapse::T::Collapse
++        {
++            table.style.gap.map(|gap| gap.into_raw().value() / 2.0)
++        } else {
++            taffy::Size::ZERO
++        };
++        let rect = kurbo::Rect::new(
++            f64::from(x0 - half.width),
++            f64::from(y0 - half.height),
++            f64::from(x1 + half.width),
++            f64::from(y1 + half.height),
++        );
++        Some((table_id?, rect))
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2837,7 @@
+@@ -2528,7 +2900,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -914,7 +976,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2852,339 @@
+@@ -2543,20 +2915,339 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -1266,7 +1328,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2661,6 +3289,58 @@
+@@ -2661,6 +3352,58 @@
          Some((inline_root.id, byte_offset))
      }
  
@@ -1325,7 +1387,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Set the text selection range (creates a new selection from anchor to focus)
      pub fn set_text_selection(
          &mut self,
-@@ -2685,6 +3365,52 @@
+@@ -2685,6 +3428,52 @@
          }
      }
  
@@ -1378,7 +1440,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Get the parent ID and sibling index for a node if it's an anonymous block.
      /// Returns (None, None) for non-anonymous blocks.
      fn anonymous_block_location(&self, node_id: NodeId) -> (Option<NodeId>, Option<usize>) {
-@@ -2944,6 +3670,66 @@
+@@ -2944,6 +3733,66 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1445,7 +1507,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4294,58 @@
+@@ -3508,6 +4357,58 @@
  }
  
  #[cfg(test)]
@@ -1504,7 +1566,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4619,7 @@
+@@ -3781,3 +4682,7 @@
          );
      }
  }
