@@ -12,7 +12,6 @@ import {
   PiDownloadSimple,
   PiExport,
   PiFileCsv,
-  PiGlobe,
   PiSpeakerHigh,
 } from 'react-icons/pi';
 import type { IconType } from 'react-icons';
@@ -133,6 +132,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
         .map((code) => ({
           value: code,
           label: code === 'und' ? _('Unknown') : languageLabel(code),
+          count: all.filter((e) => !e.deletedAt && e.lang === code).length,
         }))
         .sort((a, b) => a.label.localeCompare(b.label)),
     [all, _],
@@ -371,6 +371,48 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
         </Dropdown>
       </div>
 
+      {/* Language comes first (#8022): each language's words are a list of their own. */}
+      {languages.length > 1 && (
+        <div
+          role='group'
+          aria-label={_('Language')}
+          // Arrows pick the next language. Capture phase: Dialog stops every
+          // keydown at its own node, so a bubbling handler never runs.
+          onKeyDownCapture={(e) => {
+            const rtl = getComputedStyle(e.currentTarget).direction === 'rtl';
+            const step = { ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1 }[e.key];
+            const tabs = [...e.currentTarget.querySelectorAll('button')];
+            const tab = step && tabs[tabs.indexOf(e.target as HTMLButtonElement) + step];
+            if (!tab) return;
+            e.preventDefault();
+            tab.focus();
+            tab.click();
+          }}
+          className='no-scrollbar -mx-4 flex scroll-px-4 items-center gap-1 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6'
+        >
+          {[
+            { value: '', label: _('All'), count: languages.reduce((n, l) => n + l.count, 0) },
+            ...languages,
+          ].map((l) => (
+            <button
+              key={l.value}
+              type='button'
+              aria-pressed={lang === l.value}
+              onClick={() => setLang(l.value)}
+              className={clsx(
+                'flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 font-medium whitespace-nowrap',
+                lang === l.value
+                  ? 'eink-bordered bg-base-200'
+                  : 'not-eink:text-base-content/60 not-eink:hover:text-base-content',
+              )}
+            >
+              <span>{l.label}</span>
+              <span className='not-eink:opacity-60 text-xs tabular-nums'>{l.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div
         role='group'
         aria-label={_('Filter')}
@@ -407,15 +449,6 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
             ...books.map((b) => ({ value: b.hash, label: b.title })),
           ]}
         />
-        {languages.length > 1 && (
-          <FilterChip
-            icon={PiGlobe}
-            label={_('Language')}
-            value={lang}
-            onChange={setLang}
-            options={[{ value: '', label: _('All Languages') }, ...languages]}
-          />
-        )}
         {profiles.length > 0 && (
           <FilterChip
             icon={PiCards}

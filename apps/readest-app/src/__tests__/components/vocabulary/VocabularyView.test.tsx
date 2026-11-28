@@ -259,37 +259,52 @@ describe('VocabularyView', () => {
     expect(scrollIntoView.mock.contexts[0]).toBe(select.parentElement);
   });
 
-  it('offers a language filter only when words span languages', () => {
+  const languageTab = (name: RegExp) =>
+    within(screen.getByRole('group', { name: 'Language' })).getByRole('button', { name });
+
+  it('puts language tabs with word counts above the filters only when words span languages', () => {
     render(<VocabularyView />);
-    expect(screen.queryByRole('combobox', { name: 'Language' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Language' })).toBeNull();
     cleanup();
     seed([
       entry('sandworm', {}),
-      entry('haus', { id: 'de:haus', lang: 'de' }),
+      entry('haus', { id: 'de:haus', lang: 'de', state: 'learning' }),
       entry('baum', { id: 'de:baum', lang: 'de' }),
     ]);
     render(<VocabularyView />);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), {
-      target: { value: 'de' },
-    });
+    const tabs = screen.getByRole('group', { name: 'Language' });
+    expect(
+      within(tabs)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['All3', 'English1', 'German2']);
+    const filters = screen.getByRole('group', { name: 'Filter' });
+    expect(tabs.compareDocumentPosition(filters) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(filters).queryByRole('combobox', { name: 'Language' })).toBeNull();
+
+    fireEvent.click(languageTab(/^German/));
+    expect(languageTab(/^German/).getAttribute('aria-pressed')).toBe('true');
     expect(listWords()).toEqual(['haus', 'baum']);
+    // The status chips count within the language; the tabs keep their totals.
+    expect(screen.getByRole('button', { name: /^Learning/ }).textContent).toBe('Learning1');
+    fireEvent.click(screen.getByRole('button', { name: /^Learning/ }));
+    expect(listWords()).toEqual(['haus']);
+    expect(languageTab(/^English/).textContent).toBe('English1');
+    fireEvent.click(languageTab(/^All/));
+    expect(listWords()).toEqual(['haus']);
   });
 
   it('drops the language filter when its last word is deleted', () => {
     seed([entry('sandworm', {}), entry('haus', { id: 'de:haus', lang: 'de' })]);
     render(<VocabularyView />);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), {
-      target: { value: 'de' },
-    });
+    fireEvent.click(languageTab(/^German/));
     expect(listWords()).toEqual(['haus']);
     act(() => useVocabularyStore.getState().remove('de:haus'));
-    expect(screen.queryByRole('combobox', { name: 'Language' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Language' })).toBeNull();
     expect(listWords()).toEqual(['sandworm']);
     // A German word coming back (a Sync pull) doesn't turn the filter back on.
     act(() => useVocabularyStore.getState().importWords([{ word: 'baum', lang: 'de' }]));
-    expect((screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).value).toBe(
-      '',
-    );
+    expect(languageTab(/^All/).getAttribute('aria-pressed')).toBe('true');
     expect(listWords()).toEqual(expect.arrayContaining(['sandworm', 'baum']));
   });
 

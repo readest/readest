@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { page, userEvent } from 'vitest/browser';
 import VocabularyDialog, {
   setVocabularyDialogVisible,
@@ -19,6 +19,7 @@ await import('@/styles/globals.css');
 afterEach(() => {
   cleanup();
   document.documentElement.removeAttribute('data-eink');
+  document.documentElement.removeAttribute('dir');
 });
 
 const openWindow = async (width: number, bookTitle?: string) => {
@@ -79,6 +80,46 @@ describe('vocabulary window layout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'spice' }));
     expect(list.getBoundingClientRect().width).toBeCloseTo(width, 0);
   });
+
+  for (const rtl of [false, true]) {
+    it(`moves through the language tabs with the arrow keys, RTL ${rtl}`, async () => {
+      if (rtl) document.documentElement.dir = 'rtl';
+      await page.viewport(390, 800);
+      const word = (lang: string, key: string) => ({
+        id: `${lang}:${key}`,
+        lang,
+        key,
+        word: key,
+        state: 'none' as const,
+        occurrences: [],
+        createdAt: 1,
+        modifiedAt: 1,
+        deletedAt: null,
+      });
+      useVocabularyStore.setState({
+        entries: { 'en:spice': word('en', 'spice'), 'de:haus': word('de', 'haus') },
+        loaded: true,
+      });
+      render(<VocabularyDialog />);
+      act(() => setVocabularyDialogVisible(true));
+      const group = await screen.findByRole('group', { name: 'Language' });
+      const tabs = within(group).getAllByRole('button');
+      expect(tabs.map((t) => t.textContent)).toEqual(['All2', 'English1', 'German1']);
+      const [next, back] = rtl ? ['{ArrowLeft}', '{ArrowRight}'] : ['{ArrowRight}', '{ArrowLeft}'];
+      tabs[0]!.focus();
+      await userEvent.keyboard(next);
+      expect(document.activeElement).toBe(tabs[1]);
+      expect(tabs[1]!.getAttribute('aria-pressed')).toBe('true');
+      await userEvent.keyboard(next);
+      await userEvent.keyboard(next);
+      // The last tab stays put.
+      expect(document.activeElement).toBe(tabs[2]);
+      expect(tabs[2]!.getAttribute('aria-pressed')).toBe('true');
+      await userEvent.keyboard(back);
+      expect(document.activeElement).toBe(tabs[1]);
+      expect(tabs[1]!.getAttribute('aria-pressed')).toBe('true');
+    });
+  }
 
   for (const eink of [false, true]) {
     it(`shows keyboard focus on the search field and book chip, e-ink ${eink}`, async () => {
