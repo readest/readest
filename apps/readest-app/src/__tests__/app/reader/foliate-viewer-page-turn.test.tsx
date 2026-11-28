@@ -11,6 +11,7 @@ import type { BookProgress } from '@/types/book';
 
 const counts = vi.hoisted(() => ({ followers: 0, paragraph: 0 }));
 const readerState = vi.hoisted(() => ({
+  viewStates: {},
   setProgress: vi.fn(),
   getViewState: () => ({}),
   getViewSettings: () => ({}),
@@ -124,7 +125,7 @@ vi.mock('@/app/reader/components/TableViewer', () => ({ default: () => null }));
 
 const props = {
   bookKey: 'test-book',
-  bookDoc: {},
+  bookDoc: { metadata: {} },
   config: {},
   gridInsets: { top: 0, right: 0, bottom: 0, left: 0 },
   contentInsets: { top: 0, right: 0, bottom: 0, left: 0 },

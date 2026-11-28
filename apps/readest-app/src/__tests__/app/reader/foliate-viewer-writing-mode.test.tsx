@@ -16,6 +16,7 @@ const { readerState, bookDataState, themeState, h } = vi.hoisted(() => {
     bookDataState: { bookData: { book: {} } as unknown },
     themeState: { isDarkMode: false },
     readerState: {
+      viewStates: {},
       setProgress: vi.fn(),
       getViewState: () => ({}),
       getViewSettings: () => h.settings,
@@ -44,6 +45,9 @@ vi.mock('@/store/themeStore', () => ({
 }));
 vi.mock('@/store/customFontStore', () => ({
   useCustomFontStore: () => ({ getLoadedFonts: () => [], getAvailableFonts: () => [] }),
+}));
+vi.mock('@/app/reader/hooks/useOcrSession', () => ({
+  useOcrSession: () => vi.fn().mockResolvedValue(null),
 }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({}) }));
 vi.mock('next/navigation', () => ({ useSearchParams: () => null }));

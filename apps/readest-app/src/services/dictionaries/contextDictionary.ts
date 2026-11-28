@@ -66,7 +66,8 @@ export interface ContextEntry {
   synonyms: { phrase: string; nuance: string }[];
 }
 
-const BLOCK_SELECTOR = 'p, li, blockquote, dd, dt, td, th, h1, h2, h3, h4, h5, h6, pre, figcaption';
+const BLOCK_SELECTOR =
+  'p, li, blockquote, dd, dt, td, th, h1, h2, h3, h4, h5, h6, pre, figcaption, [data-readest-ocr-block-id]';
 
 const blockOf = (node: Node): Element | null => {
   const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;

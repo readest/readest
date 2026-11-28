@@ -32,6 +32,7 @@ export class PluginRuntimeError extends Error {
 }
 
 export interface PluginCallOptions {
+  transfer?: Transferable[];
   signal?: AbortSignal;
   onProgress?: (progress: Omit<PluginProgress, 'kind' | 'protocolVersion' | 'requestId'>) => void;
 }
@@ -270,7 +271,8 @@ export const createPluginRuntime = ({
         });
         options.signal?.addEventListener('abort', onAbort, { once: true });
         try {
-          getWorker().postMessage(request);
+          if (options.transfer) getWorker().postMessage(request, options.transfer);
+          else getWorker().postMessage(request);
         } catch (error) {
           cleanupRequest(requestId);
           reject(error instanceof Error ? error : new Error(String(error)));

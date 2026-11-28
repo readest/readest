@@ -34,6 +34,7 @@ const { readerState, openGate, bookDataState, attrs, viewSettings } = vi.hoisted
     openGate: { pending: null as Promise<void> | null, started: false },
     viewSettings,
     readerState: {
+      viewStates: {},
       setProgress: vi.fn(),
       getViewState: () => ({}),
       getViewSettings: () => viewSettings,
@@ -62,6 +63,9 @@ vi.mock('@/store/themeStore', () => {
 });
 vi.mock('@/store/customFontStore', () => ({
   useCustomFontStore: () => ({ getLoadedFonts: () => [], getAvailableFonts: () => [] }),
+}));
+vi.mock('@/app/reader/hooks/useOcrSession', () => ({
+  useOcrSession: () => vi.fn().mockResolvedValue(null),
 }));
 vi.mock('@/context/EnvContext', () => ({ useEnv: () => ({}) }));
 vi.mock('next/navigation', () => ({ useSearchParams: () => null }));

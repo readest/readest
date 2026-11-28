@@ -77,6 +77,15 @@ describe('buildSelectionContext', () => {
     expect(context.after).toBe('until dusk. Then it rained.');
   });
 
+  it('takes whole recognized text blocks on a scanned page', () => {
+    document.body.innerHTML =
+      '<div data-readest-ocr-layer><span data-readest-ocr-block-id="a"><span>Wait </span><span>here.</span></span>' +
+      '<span data-readest-ocr-block-id="b"><span>We reached </span><span>the </span><span>bank </span><span>at </span><span>dusk.</span></span></div>';
+    const context = buildSelectionContext(selectWord(document, 'bank'));
+    expect(context.before).toBe('Wait here. We reached the');
+    expect(context.after).toBe('at dusk.');
+  });
+
   it('keeps the text nearest to the selection when the passage is too long', () => {
     const context = buildSelectionContext(selectWord(document, 'bank'), 12);
     expect(context.before).toBe('along the');

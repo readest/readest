@@ -55,13 +55,17 @@ import { placeToolbar, Point, Position, Rect, TextSelection } from '@/utils/sel'
 import {
   getPopupPosition,
   getPosition,
+  getOcrRangeLanguage,
   getRangeRectInWebview,
   getRangeTextStyleInWebview,
   getTextFromRange,
+  isOcrNode,
+  isOcrRange,
   getRenderedRunsFromRange,
 } from '@/utils/sel';
 import { getPopupBounds, offsetPosition } from '@/utils/insets';
 import { eventDispatcher } from '@/utils/event';
+import { getPrimaryLanguage } from '@/utils/book';
 import { findTocItemBS } from '@/services/nav';
 import { throttle } from '@/utils/throttle';
 import {
@@ -281,6 +285,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     },
     [],
   );
+  const selectionIsOcr = !!selection && isOcrRange(selection.range);
   const [contentEpoch, setContentEpoch] = useState(0);
   const [showAnnotPopup, setShowAnnotPopup] = useState(false);
   const [showDictionaryPopup, setShowDictionaryPopup] = useState(false);
@@ -409,6 +414,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     viewSettings.annotationToolbarItems,
     canShare,
     isSystemDictionarySupported(),
+  ).filter(
+    (type) =>
+      !selectionIsOcr || !['copylink', 'highlight', 'annotate', 'tts', 'proofread'].includes(type),
   );
   const highlightOptionsGap = toolbarToolTypes.length <= 4 ? 4 : 8;
   // Three 30px styles, a four- or five-color pill (100px or 122px), and three gaps;
@@ -420,7 +428,8 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       3 * highlightOptionsGap +
       (globalToggleAvailable ? 30 + highlightOptionsGap : 0),
   );
-  const highlightOptionsAvailable = shouldShowHighlightOptions(toolbarToolTypes, selection ?? null);
+  const highlightOptionsAvailable =
+    !selectionIsOcr && shouldShowHighlightOptions(toolbarToolTypes, selection ?? null);
   const annotPopupWidth =
     annotationNotes.length > 0 || noteEditorTarget
       ? annotPopupMaxWidth
@@ -594,6 +603,15 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     [],
   );
 
+  // Recognized text names its own language; a scanned book often has none.
+  const metadataLanguage = bookData.bookDoc?.metadata.language;
+  const dictionaryLanguage =
+    selection && selectionIsOcr
+      ? getOcrRangeLanguage(selection.range, getPrimaryLanguage(metadataLanguage))
+      : Array.isArray(metadataLanguage)
+        ? metadataLanguage[0]
+        : metadataLanguage;
+
   // The passage around the looked-up text, for the AI context dictionary (#5544).
   const getDictionarySelection = (): DictionarySelectionContext | undefined =>
     selection?.range
@@ -615,7 +633,9 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   const getDictionaryCapture = (): VocabularyCapture | undefined =>
     selection?.text
       ? {
-          lang: vocabularyLang(bookData.book?.primaryLanguage),
+          lang: vocabularyLang(
+            selectionIsOcr ? dictionaryLanguage : bookData.book?.primaryLanguage,
+          ),
           occurrence: {
             sentence: (selection.range && sentenceAt(selection.range)) || selection.text,
             bookHash: bookData.book?.hash,
@@ -712,6 +732,45 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     }
     isTextSelected.current = false;
   };
+
+  useEffect(() => {
+    if (!selectionIsOcr) return;
+    const docs = [document, ...(view?.renderer?.getContents() ?? []).map(({ doc }) => doc)];
+    let startedInOcr = false;
+    const handlePointerDown = (event: PointerEvent) => {
+      startedInOcr = isOcrNode(event.target as Node);
+    };
+    const handleOutsideClick = (event: MouseEvent) => {
+      const draggedFromOcr = startedInOcr;
+      startedInOcr = false;
+      const target = event.target as Node;
+      if (draggedFromOcr || isOcrNode(target) || containerRef.current?.contains(target)) return;
+      const hostControl =
+        event.currentTarget === document &&
+        target instanceof Element &&
+        target.closest(
+          '.header-bar, .footer-bar, button, a, input, select, textarea, [role="button"], [role="menuitem"], [role="slider"]',
+        );
+      if (!hostControl) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      isTextSelected.current = false;
+      handleDismissPopup();
+      view?.deselect();
+    };
+    // Page images live in iframes; their clicks never reach the reader margins.
+    for (const doc of docs) {
+      doc.addEventListener('pointerdown', handlePointerDown, true);
+      doc.addEventListener('click', handleOutsideClick, true);
+    }
+    return () => {
+      for (const doc of docs) {
+        doc.removeEventListener('pointerdown', handlePointerDown, true);
+        doc.removeEventListener('click', handleOutsideClick, true);
+      }
+    };
+  }, [selectionIsOcr, handleDismissPopup, view, isTextSelected]);
 
   // Whether the currently shown selection came from the footnote popup, for
   // event handlers that only know the incoming event, not the selection state.
@@ -1385,6 +1444,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           handleDismissPopupAndSelection();
           break;
         case 'highlight':
+          if (selectionIsOcr) {
+            handleShowAnnotPopup();
+            break;
+          }
           // In the book, instant annotating already applied the highlight. The
           // footnote popup has no instant annotating, so highlight its
           // selection here, as the toolbar's highlight button does.
@@ -1435,6 +1498,10 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           handleTranslation();
           break;
         case 'tts':
+          if (selectionIsOcr) {
+            handleShowAnnotPopup();
+            break;
+          }
           handleSpeakText(true);
           break;
         case 'share':
@@ -1645,7 +1712,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       handleDismissPopupAndSelection();
     }
 
-    if (!viewSettings?.copyToNotebook) return;
+    if (!viewSettings?.copyToNotebook || selectionIsOcr) return;
 
     // A popup-window range is not in a main view document; use the CFI the
     // popup mapped into the pristine section (absent for data-attribute
@@ -1701,7 +1768,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // A link to the selected passage, or null for a selection without a CFI
   // (synthesized footnote text).
   const getSelectionLink = (linkType: AnnotationLinkType): string | null => {
-    if (!selection) return null;
+    if (!selection || selectionIsOcr) return null;
     const cfi =
       selection.cfi || (selection.popup ? null : view?.getCFI(selection.index, selection.range));
     if (!cfi) return null;
@@ -1819,7 +1886,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     highlightStyle?: HighlightStyle,
     keepExisting = false,
   ): BookNote[] => {
-    if (!selection || !selection.text) return [];
+    if (!selection || !selection.text || selectionIsOcr) return [];
     setHighlightOptionsVisible(true);
     const { booknotes: annotations = [] } = config;
     const style = highlightStyle || settings.globalReadSettings.highlightStyle;
@@ -1999,7 +2066,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   };
 
   const handleAnnotate = () => {
-    if (!selection || !selection.text) return;
+    if (!selection || !selection.text || selectionIsOcr) return;
     // A popup selection without a CFI has nothing to anchor a note to (the
     // toolbar button is disabled, this guards the keyboard shortcut).
     if (selection.popup && !selection.cfi) return;
@@ -2185,7 +2252,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     const { isDocked, setLookup } = useDictionaryDockStore.getState();
     setLookup({
       word: selection.text,
-      lang: bookData.bookDoc?.metadata.language as string,
+      lang: dictionaryLanguage,
       selection: getDictionarySelection(),
       capture: getDictionaryCapture(),
       contextOnly,
@@ -2248,7 +2315,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   // entry point here means the former. Defaulting it silently turned Ctrl/Cmd+R
   // into "start the book from this paragraph" (#5011).
   const handleSpeakText = async (oneTime: boolean) => {
-    if (!selection || !selection.text) return;
+    if (!selection || !selection.text || selectionIsOcr) return;
     // TTS walks the main view's documents; a popup-window range can't seed it
     // (the toolbar button is disabled, this guards the keyboard shortcut).
     if (selection.popup) return;
@@ -2274,6 +2341,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
       setProofreadRulesVisibility(true);
       return;
     }
+    if (selectionIsOcr) return;
     // Proofread rules anchor to a CFI; a popup selection without one (data-
     // attribute footnotes) has nothing to attach to.
     if (selection.popup && !selection.cfi) return;
@@ -2299,17 +2367,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
   useShortcuts(
     {
       onHighlightSelection: () => {
-        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
+        if (!selection?.text || selectionIsOcr || (selection.popup && !selection.cfi)) return false;
         handleHighlight(false, 'highlight');
         return true;
       },
       onUnderlineSelection: () => {
-        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
+        if (!selection?.text || selectionIsOcr || (selection.popup && !selection.cfi)) return false;
         handleHighlight(false, 'underline');
         return true;
       },
       onAnnotateSelection: () => {
-        if (!selection?.text || (selection.popup && !selection.cfi)) return false;
+        if (!selection?.text || selectionIsOcr || (selection.popup && !selection.cfi)) return false;
         handleAnnotate();
         return true;
       },
@@ -2334,17 +2402,17 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
         return true;
       },
       onReadAloudSelection: () => {
-        if (!selection?.text || selection.popup) return false;
+        if (!selection?.text || selectionIsOcr || selection.popup) return false;
         handleSpeakText(true);
         return true;
       },
       onProofreadSelection: () => {
-        if (selection?.popup && !selection.cfi) return false;
+        if (selectionIsOcr || (selection?.popup && !selection.cfi)) return false;
         handleProofread();
         return true;
       },
     },
-    [selection?.text, selection?.cfi, selection?.popup],
+    [selection?.text, selection?.cfi, selection?.popup, selectionIsOcr],
   );
 
   const handleImportAnnotations = (event: CustomEvent) => {
@@ -3048,7 +3116,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
             return (
               <DictionarySheet
                 word={selection?.text as string}
-                lang={bookData.bookDoc?.metadata.language as string}
+                lang={dictionaryLanguage}
                 selection={dictionarySelection}
                 // A name looked up in the X-Ray is not vocabulary.
                 capture={dictionaryXRayOnly ? undefined : dictionaryCapture}
@@ -3066,7 +3134,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
           return (
             <DictionaryPopup
               word={selection?.text as string}
-              lang={bookData.bookDoc?.metadata.language as string}
+              lang={dictionaryLanguage}
               selection={dictionarySelection}
               capture={dictionaryXRayOnly ? undefined : dictionaryCapture}
               position={dictPopupPosition}
