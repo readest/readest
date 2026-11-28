@@ -463,3 +463,25 @@ fn documents_are_in_standards_mode() {
     assert_eq!(doc.take_js_errors(), Vec::<String>::new());
     assert_eq!(doc.take_messages(), ["log: CSS1Compat CSS1Compat"]);
 }
+
+#[test]
+fn node_constants_are_on_node_and_every_node() {
+    // Readest's dialogs keep Tab inside with `compareDocumentPosition(el) &
+    // Node.DOCUMENT_POSITION_FOLLOWING`; Lite had no such constant, so nothing was ever ahead and
+    // Tab went back to the dialog's first control.
+    let mut doc = QjsDocument::from_html("<!DOCTYPE html><body></body>", DocumentConfig::default());
+    doc.eval(
+        "console.log(['ELEMENT_NODE', 'ATTRIBUTE_NODE', 'TEXT_NODE', 'CDATA_SECTION_NODE', 'ENTITY_REFERENCE_NODE',
+          'ENTITY_NODE', 'PROCESSING_INSTRUCTION_NODE', 'COMMENT_NODE', 'DOCUMENT_NODE', 'DOCUMENT_TYPE_NODE',
+          'DOCUMENT_FRAGMENT_NODE', 'NOTATION_NODE', 'DOCUMENT_POSITION_DISCONNECTED', 'DOCUMENT_POSITION_PRECEDING',
+          'DOCUMENT_POSITION_FOLLOWING', 'DOCUMENT_POSITION_CONTAINS', 'DOCUMENT_POSITION_CONTAINED_BY',
+          'DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC'].map((k) => `${Node[k]}/${document.body[k]}`).join(' '));",
+        "test",
+    );
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    // Chromium's
+    assert_eq!(
+        doc.take_messages(),
+        ["log: 1/1 2/2 3/3 4/4 5/5 6/6 7/7 8/8 9/9 10/10 11/11 12/12 1/1 2/2 4/4 8/8 16/16 32/32"]
+    );
+}
