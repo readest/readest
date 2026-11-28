@@ -1310,16 +1310,25 @@
       }
     }
     // Blitz's focus: where key events go. A move fires blur and focusout on the element that had
-    // it, then focus and focusin on the one that gets it, as in a browser.
+    // it, then focus and focusin on the one that gets it, as in a browser. The page has one focus:
+    // each frame up from the element becomes its document's focused element, and the documents
+    // the old focus was in, off that way, have none.
     focus() {
       const doc = docOf(this);
-      const old = doc.activeElement;
+      const old = pageFocus(doc);
+      if (old === this) return;
       n.focus(this._id, true);
-      if (old !== this && doc.activeElement === this)
-        focusMoved(old === doc.body ? null : old, this);
+      if (focusedIn(doc) !== this) return;
+      const path = new Set([doc]);
+      for (let f = doc._frame; f; f = f.ownerDocument._frame) {
+        n.focus(f._id, true);
+        path.add(f.ownerDocument);
+      }
+      for (let e = old; e && !path.has(docOf(e)); e = docOf(e)._frame) n.focus(e._id, false);
+      focusMoved(old, this);
     }
     blur() {
-      if (docOf(this).activeElement !== this) return;
+      if (focusedIn(docOf(this)) !== this) return;
       n.focus(this._id, false);
       focusMoved(this, null);
     }
@@ -1705,14 +1714,35 @@
   function focusMoved(from, to) {
     const fire = (el, type, bubbles, relatedTarget) =>
       el.dispatchEvent(new FocusEvent(type, { bubbles, composed: true, relatedTarget }));
+    // across documents there is no related target
+    const same = from && to && docOf(from) === docOf(to);
     if (from) {
-      fire(from, 'blur', false, to);
-      fire(from, 'focusout', true, to);
+      fire(from, 'blur', false, same ? to : null);
+      fire(from, 'focusout', true, same ? to : null);
     }
     if (to) {
-      fire(to, 'focus', false, from);
-      fire(to, 'focusin', true, from);
+      fire(to, 'focus', false, same ? from : null);
+      fire(to, 'focusin', true, same ? from : null);
     }
+  }
+  // The focused element of `doc` itself (a frame that holds the page's focus included), or null.
+  function focusedIn(doc) {
+    const id = n.focused(doc._id);
+    return id == null ? null : wrap(id);
+  }
+  // The element with the page's focus: the top document's focused element or, while that is a
+  // frame whose document has one, the one in there.
+  function pageFocus(doc) {
+    while (doc._frame) doc = doc._frame.ownerDocument;
+    let el = focusedIn(doc);
+    for (let inner; el?.contentDocument && (inner = focusedIn(el.contentDocument)); ) el = inner;
+    return el;
+  }
+  // `el`, or the shadow host it is in that is in `root`'s tree (null if none is).
+  function retarget(el, root) {
+    for (let r; el && (r = el.getRootNode()) !== root; el = r.host ?? null)
+      if (!(r instanceof ShadowRoot)) return null;
+    return el;
   }
   class SVGElement extends Element {}
   Object.defineProperty(
@@ -1871,9 +1901,9 @@
     get implementation() {
       return domImplementation;
     }
+    // As seen from the document: an element in a shadow tree is its host.
     get activeElement() {
-      const id = n.focused(this._id);
-      return id == null ? this.body : wrap(id);
+      return retarget(focusedIn(this), this) ?? this.body;
     }
     get readyState() {
       return this._ready || 'loading';
@@ -3086,8 +3116,10 @@
     _parentTarget() {
       return this.host;
     }
+    // The focused element of the host's document if it is in this tree, or the host in this tree
+    // that holds it.
     get activeElement() {
-      return null;
+      return retarget(focusedIn(this.host.ownerDocument), this);
     }
     getElementById(id) {
       const r = n.query(this._id, `#${CSS.escape(String(id))}`);

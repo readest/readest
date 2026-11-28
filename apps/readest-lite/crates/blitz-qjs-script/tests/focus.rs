@@ -268,3 +268,55 @@ fn an_element_without_a_box_has_no_client_rects_and_is_no_tab_stop() {
         ]
     );
 }
+
+#[test]
+fn focus_in_a_frame_is_the_page_s_one_focus() {
+    // As in Chromium: script's focus() in a frame makes the frame its parent document's focused
+    // element (outside a shadow root, its host), and the element that had the page's focus, in
+    // whatever document, loses it. foliate-js focuses a link's destination in the book's frame and
+    // gives the book the focus only while the element it started from still has it; in Lite a
+    // button tapped to go back kept the focus, and its ring showed at the next key.
+    let page = "<!DOCTYPE html><body style='margin:0'><button id=b>b</button><div id=host></div>\
+        <iframe id=f2 srcdoc=\"<p id=q tabindex=-1>q</p>\"></iframe></body>";
+    let mut doc = QjsDocument::from_html(page, DocumentConfig::default());
+    let scripts = [
+        "{ const root = document.getElementById('host').attachShadow({ mode: 'open' });
+        const f = document.createElement('iframe'); f.id = 'f1'; f.srcdoc = '<p id=p tabindex=-1>p</p>'; root.append(f); }",
+        r#"{
+        const root = document.getElementById('host').shadowRoot;
+        const f = root.getElementById('f1');
+        const f2 = document.getElementById('f2');
+        const log = [];
+        const name = (t) => t?.id || t?.localName || String(t);
+        for (const ty of ['focus', 'blur', 'focusin', 'focusout'])
+          for (const [w, pre] of [[window, ''], [f.contentWindow, 'f1.'], [f2.contentWindow, 'f2.']])
+            w.addEventListener(ty, (e) => { if (e.target !== w) log.push(`${pre}${ty}:${name(e.target)}`); }, true);
+        const id = () => `${name(document.activeElement)}/${name(root.activeElement)}`;
+        document.getElementById('b').focus();
+        log.push('|', id());
+        f.contentDocument.getElementById('p').focus();
+        log.push('|', id(), name(f.contentDocument.activeElement));
+        f2.contentDocument.getElementById('q').focus();
+        log.push('|', id(), name(f.contentDocument.activeElement));
+        document.getElementById('b').focus();
+        log.push('|', id(), name(f2.contentDocument.activeElement));
+        console.log(log.join(' '));
+        }"#,
+    ];
+    for script in scripts {
+        doc.eval(script, "test");
+        doc.run_jobs();
+        doc.inner_mut().resolve(0.0);
+        doc.call_global("__blitzAfterLayout", ());
+    }
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    // Chromium's
+    assert_eq!(
+        doc.take_messages(),
+        [
+            "log: focus:b focusin:b | b/null blur:b focusout:b f1.focus:p f1.focusin:p | host/f1 p \
+             f1.blur:p f1.focusout:p f2.focus:q f2.focusin:q | f2/null body f2.blur:q f2.focusout:q \
+             focus:b focusin:b | b/null body"
+        ]
+    );
+}
