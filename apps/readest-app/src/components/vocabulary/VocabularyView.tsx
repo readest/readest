@@ -376,6 +376,18 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
         <div
           role='group'
           aria-label={_('Language')}
+          // Arrows pick the next language. Capture phase: Dialog stops every
+          // keydown at its own node, so a bubbling handler never runs.
+          onKeyDownCapture={(e) => {
+            const rtl = getComputedStyle(e.currentTarget).direction === 'rtl';
+            const step = { ArrowLeft: rtl ? 1 : -1, ArrowRight: rtl ? -1 : 1 }[e.key];
+            const tabs = [...e.currentTarget.querySelectorAll('button')];
+            const tab = step && tabs[tabs.indexOf(e.target as HTMLButtonElement) + step];
+            if (!tab) return;
+            e.preventDefault();
+            tab.focus();
+            tab.click();
+          }}
           className='no-scrollbar -mx-4 flex scroll-px-4 items-center gap-1 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6'
         >
           {[
