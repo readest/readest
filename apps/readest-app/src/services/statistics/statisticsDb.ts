@@ -290,11 +290,15 @@ export class StatisticsDb {
   /** Each book's speed in each language, most recently read first. */
   async getBookReadingSpeeds(): Promise<BookReadingSpeed[]> {
     return this.db.select<BookReadingSpeed>(
+      // KOReader keys book rows on (title, authors, md5): join the first row of
+      // each md5 only, so a book with two rows isn't counted twice.
       `SELECT r.book_md5 AS md5, COALESCE(b.title, r.book_md5) AS title,
               COALESCE(b.authors, '') AS authors, r.lang AS lang, r.unit AS unit,
               SUM(r.count) AS count, SUM(r.duration_ms) AS durationMs,
               MAX(r.start_time_ms + r.duration_ms) AS lastRead
-       FROM readest_reading_speed r LEFT JOIN book b ON b.md5 = r.book_md5
+       FROM readest_reading_speed r
+       LEFT JOIN (SELECT md5, MIN(id) AS id FROM book GROUP BY md5) f ON f.md5 = r.book_md5
+       LEFT JOIN book b ON b.id = f.id
        GROUP BY r.book_md5, r.lang, r.unit ORDER BY lastRead DESC`,
     );
   }

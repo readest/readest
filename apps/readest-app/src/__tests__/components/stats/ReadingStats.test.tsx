@@ -368,7 +368,7 @@ describe('Reading speed by language', () => {
     lastRead: 0,
   });
 
-  const openStats = async () => {
+  const openStats = async (quarters = speedQuarters) => {
     vi.useFakeTimers({ now: new Date('2026-11-07T12:00:00'), toFake: ['Date'] });
     db.open.mockResolvedValue({
       getQuarterHourDurations: async () => [],
@@ -376,7 +376,7 @@ describe('Reading speed by language', () => {
       getReadingTotals: async () => ({ seconds: 0, books: 0, pages: 0 }),
       getReadingSpeedSamples: async () => [],
       getReadingSpeedTotals: async () => [],
-      getReadingSpeedQuarters: async () => speedQuarters,
+      getReadingSpeedQuarters: async () => quarters,
       getBookReadingSpeeds: async () => [
         book('b1', 'Hobbit', 'en', 'words', 2800),
         book('b2', 'Hongloumeng', 'zh', 'characters', 4000),
@@ -430,5 +430,36 @@ describe('Reading speed by language', () => {
     });
     expect(await screen.findByText('Hongloumeng')).toBeTruthy();
     expect(screen.queryByText('Hobbit')).toBeNull();
+  });
+
+  it('spaces the trend by week, so a gap of weeks shows as one', async () => {
+    // The 12 weeks end with the one of Nov 1; read in its first, second and last.
+    await openStats([
+      quarter(new Date(2026, 7, 17, 21), 'en', 'words', 2000, 10),
+      quarter(new Date(2026, 7, 24, 21), 'en', 'words', 2200, 10),
+      quarter(new Date(2026, 10, 2, 21), 'en', 'words', 2500, 10),
+    ]);
+    const english = await screen.findByRole('button', { name: /Englisch/ });
+    const xs = english
+      .querySelector('polyline')!
+      .getAttribute('points')!
+      .split(' ')
+      .map((point) => Number(point.split(',')[0]));
+    expect(xs.map((x) => Math.round(x))).toEqual([0, 9, 100]);
+  });
+
+  it('tells apart languages that were not recorded, by their unit', async () => {
+    await openStats([
+      quarter(new Date(2026, 10, 2, 8), '', 'words', 2500, 10),
+      quarter(new Date(2026, 10, 3, 9), '', 'characters', 16_000, 40),
+    ]);
+    fireEvent.click((await screen.findAllByRole('button', { name: /Unknown/ }))[0]!);
+    const options = [
+      ...(screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).options,
+    ];
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Unknown · characters/min',
+      'Unknown · words/min',
+    ]);
   });
 });

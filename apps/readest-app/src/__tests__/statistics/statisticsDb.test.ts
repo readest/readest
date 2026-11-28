@@ -173,6 +173,25 @@ describe('StatisticsDb', () => {
     ]);
   });
 
+  it('counts a book’s speed once when the book has two metadata rows', async () => {
+    // KOReader keys book rows on (title, authors, md5), so one md5 can have two.
+    await stats.upsertBook({ bookMd5: 'm1', title: 'Title', authors: 'Author' });
+    const db = (stats as unknown as { db: DatabaseService }).db;
+    await db.execute(
+      `INSERT INTO book (title, authors, md5) VALUES ('Other Title', 'Author', 'm1')`,
+    );
+    await stats.insertReadingSpeed('m1', {
+      unit: 'words',
+      lang: 'en',
+      count: 60,
+      startTimeMs: 0,
+      durationMs: 20_000,
+    });
+    expect(await stats.getBookReadingSpeeds()).toEqual([
+      expect.objectContaining({ md5: 'm1', title: 'Title', count: 60, durationMs: 20_000 }),
+    ]);
+  });
+
   it('keeps a local speed write when an overlapping sync transaction rolls back', async () => {
     const db = await freshStatsDb();
     const shared = StatisticsDb.from(db);

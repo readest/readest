@@ -39,11 +39,17 @@ const formatChange = (change: number, locale: string) =>
     signDisplay: 'exceptZero',
   });
 
-const Sparkline: React.FC<{ paces: number[] }> = ({ paces }) => {
-  const low = Math.min(...paces);
-  const spread = Math.max(...paces) - low || 1;
+/** Each week keeps its place, so weeks without a speed show as a gap in time. */
+const Sparkline: React.FC<{ paces: (number | null)[] }> = ({ paces }) => {
+  const measured = paces.filter((pace) => pace !== null);
+  const low = Math.min(...measured);
+  const spread = Math.max(...measured) - low || 1;
   const points = paces
-    .map((pace, i) => `${(i / (paces.length - 1)) * 100},${90 - ((pace - low) / spread) * 80}`)
+    .flatMap((pace, i) =>
+      pace === null
+        ? []
+        : [`${(i / (paces.length - 1)) * 100},${90 - ((pace - low) / spread) * 80}`],
+    )
     .join(' ');
   return (
     <svg
@@ -91,7 +97,7 @@ export const ReadingSpeedSection: React.FC<ReadingSpeedSectionProps> = ({
         <button
           type='button'
           data-setting-id={dataSettingId}
-          className='text-base-content/70 hover:text-base-content flex items-center text-[0.8em] focus-visible:underline focus-visible:outline-hidden'
+          className='touch-target text-base-content/70 hover:text-base-content flex items-center text-[0.8em] focus-visible:underline focus-visible:outline-hidden'
           onClick={() => onOpen(languages[0]!.key)}
         >
           {_('Details')}
@@ -108,12 +114,12 @@ export const ReadingSpeedSection: React.FC<ReadingSpeedSectionProps> = ({
           const trend = Array.from({ length: TREND_WEEKS }, (_, i) => {
             const start = shiftPeriod('week', week, i - TREND_WEEKS + 1);
             return toPace(sumSpeeds(daily, start, shiftPeriod('week', start, 1)));
-          }).filter((pace) => pace !== null);
+          });
           return (
             <button
               key={key}
               type='button'
-              className='focus-visible:ring-base-content/15 flex w-full flex-wrap items-center justify-end gap-x-3 gap-y-1 py-3 pe-4 text-start focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset'
+              className='focus-visible:ring-base-content/15 flex min-h-14 w-full flex-wrap items-center justify-end gap-x-3 gap-y-1 py-1.5 pe-4 text-start focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset'
               onClick={() => onOpen(key)}
             >
               <span className='flex min-w-0 flex-1 flex-col'>
@@ -131,7 +137,7 @@ export const ReadingSpeedSection: React.FC<ReadingSpeedSectionProps> = ({
                   </span>{' '}
                   <span className='text-base-content/70 text-[0.8em]'>{formatUnit(unit, _)}</span>
                 </span>
-                {trend.length > 1 && <Sparkline paces={trend} />}
+                {trend.filter((pace) => pace !== null).length > 1 && <Sparkline paces={trend} />}
               </span>
             </button>
           );
@@ -182,7 +188,13 @@ export const ReadingSpeedPage: React.FC<ReadingSpeedPageProps> = ({
             value={key}
             ariaLabel={_('Language')}
             onChange={(e) => onSelect(e.target.value)}
-            options={languages.map((l) => ({ value: l.key, label: getLanguageName(l.lang, _) }))}
+            options={languages.map((l) => ({
+              value: l.key,
+              // Speeds recorded before languages were can be in either unit.
+              label: l.lang
+                ? getLanguageName(l.lang, _)
+                : `${_('Unknown')} · ${formatUnit(l.unit, _)}`,
+            }))}
           />
         </SettingsRow>
       </BoxedList>
