@@ -330,7 +330,9 @@ describe('TTSController lyrics', () => {
     expect(tts.from).not.toHaveBeenCalled();
   });
 
-  test('isBuffering covers the wait between handing over an utterance and hearing it', async () => {
+  test('isBuffering covers a wait of over a second between handing over an utterance and hearing it', async () => {
+    let now = 0;
+    const clock = vi.spyOn(Date, 'now').mockImplementation(() => now);
     await controller.ensureTimeline();
     expect(controller.isBuffering()).toBe(false);
 
@@ -350,11 +352,19 @@ describe('TTSController lyrics', () => {
       yield { code: 'boundary', message: 'first chunk', mark: '0' };
     });
 
+    const speak = controller.ttsClient.speak as ReturnType<typeof vi.fn>;
     await controller.seekToLyric(1);
-    await vi.waitFor(() => expect(controller.isBuffering()).toBe(true));
+    await vi.waitFor(() => expect(speak.mock.calls.some((call) => !call[2])).toBe(true));
+    // A system voice takes up to ~0.6 s to start any utterance: that is not
+    // buffering, and flashed the ring at paragraph starts (#8037).
+    now = 999;
+    expect(controller.isBuffering()).toBe(false);
+    now = 1000;
+    expect(controller.isBuffering()).toBe(true);
 
     release!();
     await vi.waitFor(() => expect(controller.isBuffering()).toBe(false));
+    clock.mockRestore();
   });
 
   test('isBuffering stays false while the session is not playing', async () => {
