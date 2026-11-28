@@ -252,6 +252,11 @@
   `outline: auto 1px #101010`, and `blitz-paint` render/border paints `auto` as Chromium's ring
   (at least 2px, centred on the border box's edge, corners rounded); render paints the outline
   over the element's own box (CSS 2 Appendix E), not under it.
+- `blitz-dom` document: an element without a box (`display: none` on it or an ancestor, or
+  `display: contents`) has no client rects (`getClientRects()` empty, `getBoundingClientRect()`
+  zero), and Tab and Shift+Tab skip it and a `visibility: hidden` one, as in Chromium
+  (`generates_box`; upstream's `has_boxes` was unused and missed ancestors). Readest counts a
+  dialog's controls by their client rects, and Tab went to the Settings dialog's hidden Close.
 - `blitz-dom` document, mutator, net, node/element: an `<img>` records whether its image arrived
   or failed (`take_image_loads`, for its `load` and `error` events), reports whether it is still
   loading (`image_loading`) and its natural size (`ImageData::natural_size`). A failed fetch is

@@ -214,3 +214,57 @@ fn script_focus_and_blur_fire_focus_events() {
         ]
     );
 }
+
+fn tab(doc: &mut QjsDocument) {
+    doc.handle_ui_event(UiEvent::KeyDown(BlitzKeyEvent {
+        key: "Tab".parse().unwrap(),
+        code: "Tab".parse().unwrap(),
+        modifiers: Default::default(),
+        location: Default::default(),
+        is_auto_repeating: false,
+        is_composing: false,
+        state: KeyState::Pressed,
+        text: None,
+    }));
+}
+
+#[test]
+fn an_element_without_a_box_has_no_client_rects_and_is_no_tab_stop() {
+    // As in Chromium: `display: none` on an element or an ancestor leaves it no box, so no client
+    // rect and no Tab stop; `visibility: hidden` keeps its box but not its Tab stop (Shift+Tab
+    // skips the same). Readest counts a dialog's controls by their client rects, and Tab went to
+    // a hidden Close button.
+    let page = "<!DOCTYPE html><body><button id=a>a</button><button id=b style='display:none'>b</button>\
+        <div style='display:none'><button id=c>c</button></div><button id=d style='visibility:hidden'>d</button>\
+        <span style='display:contents'><button id=e>e</button></span><button id=f>f</button><p id=v>z</p></body>";
+    let config = DocumentConfig {
+        viewport: Some(Viewport::new(400, 300, 1.0, ColorScheme::Light)),
+        ..DocumentConfig::default()
+    };
+    let mut doc = QjsDocument::from_html(page, config);
+    doc.inner_mut().resolve(0.0);
+    doc.eval(
+        "console.log(['a', 'b', 'c', 'd', 'e', 'v'].map((id) => {
+          const el = document.getElementById(id);
+          return `${id}=${el.getClientRects().length}/${el.getBoundingClientRect().width > 0}`;
+        }).join(' '));
+        document.getElementById('a').focus();",
+        "test",
+    );
+    let mut seen = Vec::new();
+    for _ in 0..2 {
+        tab(&mut doc);
+        doc.eval("console.log(document.activeElement.id)", "test");
+    }
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    seen.extend(doc.take_messages());
+    // Chromium's
+    assert_eq!(
+        seen,
+        [
+            "log: a=1/true b=0/false c=0/false d=1/true e=1/true v=1/true",
+            "log: e",
+            "log: f",
+        ]
+    );
+}

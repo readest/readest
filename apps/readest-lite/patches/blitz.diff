@@ -571,7 +571,61 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -1810,6 +1959,27 @@
+@@ -1780,7 +1929,7 @@
+ 
+     pub fn focus_next_node(&mut self) -> Option<NodeId> {
+         let focussed_node_id = self.get_focussed_node_id()?;
+-        let id = self.next_node(&self.nodes[focussed_node_id], |node| node.is_focussable())?;
++        let id = self.next_node(&self.nodes[focussed_node_id], |node| self.is_tab_stop(node))?;
+         self.set_focus_to(id);
+         Some(id)
+     }
+@@ -1788,11 +1937,43 @@
+     /// Move focus to the previous focussable node in the document
+     pub fn focus_prev_node(&mut self) -> Option<NodeId> {
+         let focussed_node_id = self.get_focussed_node_id()?;
+-        let id = self.prev_node(&self.nodes[focussed_node_id], |node| node.is_focussable())?;
++        let id = self.prev_node(&self.nodes[focussed_node_id], |node| self.is_tab_stop(node))?;
+         self.set_focus_to(id);
+         Some(id)
+     }
+ 
++    /// A focusable element that is shown: it has a box and is visible, as Chromium's sequential
++    /// focus navigation wants.
++    fn is_tab_stop(&self, node: &Node) -> bool {
++        node.is_focussable()
++            && self.generates_box(node.id)
++            && node.primary_styles().is_some_and(|s| {
++                s.clone_visibility() == style::computed_values::visibility::T::Visible
++            })
++    }
++
++    /// Whether the node has a box: it is in the document, is not `display: contents`, and
++    /// neither it nor an ancestor is `display: none`. One that hasn't has no client rects.
++    pub fn generates_box(&self, node_id: NodeId) -> bool {
++        let Some(node) = self.get_node(node_id) else {
++            return false;
++        };
++        if !node.has_boxes() {
++            return false;
++        }
++        let mut parent = node.parent;
++        while let Some(id) = parent {
++            let p = &self.nodes[id];
++            if p.display_style().is_some_and(|d| {
++                d.inside() == style::values::specified::box_::DisplayInside::None
++            }) {
++                return false;
++            }
++            parent = p.parent;
++        }
++        true
++    }
++
+     /// Clear the focussed node
+     pub fn clear_focus(&mut self) {
+         if let Some(id) = self.focus_node_id {
+@@ -1810,6 +1991,27 @@
          }
      }
  
@@ -599,7 +653,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn set_mousedown_node_id(&mut self, node_id: Option<NodeId>) {
          self.mousedown_node_id = node_id.and_then(|id| self.nearest_non_anonymous_ancestor(id));
      }
-@@ -1838,10 +2008,14 @@
+@@ -1838,10 +2040,14 @@
          }
  
          // Focus the new node
@@ -615,7 +669,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          );
  
          // Update :focus-within on the ancestor chains (shared prefix stays)
-@@ -2049,13 +2223,21 @@
+@@ -2049,13 +2255,21 @@
          }
  
          self.hover_node_id = hover_node_id;
@@ -640,7 +694,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn clear_hover(&mut self) -> bool {
          // The pointer is no longer over the document, so stop re-resolving
          // hover state against it.
-@@ -2073,9 +2255,7 @@
+@@ -2073,9 +2287,7 @@
  
          self.hover_node_id = None;
          self.hover_node_is_text = false;
@@ -651,7 +705,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          true
      }
-@@ -2333,6 +2513,56 @@
+@@ -2333,6 +2545,56 @@
          self.stylist.device()
      }
  
@@ -708,7 +762,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn get_cursor(&self) -> Option<CursorIcon> {
          // Prefer the precise hit node: `cursor` and `user-select` may be set on
          // a pseudo-element or resolved on an anonymous box, and text hits carry
-@@ -2440,6 +2670,40 @@
+@@ -2440,6 +2702,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -749,7 +803,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2711,27 @@
+@@ -2447,17 +2743,30 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -769,6 +823,9 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +    /// A node's border box relative to the viewport, as the fragments the root's columns break
 +    /// it into (one rect outside them).
 +    fn box_fragments(&self, node_id: NodeId) -> Option<Vec<BoundingRect>> {
++        if !self.generates_box(node_id) {
++            return None;
++        }
 +        let size = self.get_node(node_id)?.unrounded_layout().size;
 +        let border_box = kurbo::Rect::new(0.0, 0.0, f64::from(size.width), f64::from(size.height));
 +        let flow = to_bounding_rect(self.border_box_to_document(node_id).transform_rect_bbox(border_box));
@@ -787,7 +844,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2802,7 @@
+@@ -2528,7 +2837,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -796,7 +853,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2817,339 @@
+@@ -2543,20 +2852,339 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -1148,7 +1205,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2661,6 +3254,58 @@
+@@ -2661,6 +3289,58 @@
          Some((inline_root.id, byte_offset))
      }
  
@@ -1207,7 +1264,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Set the text selection range (creates a new selection from anchor to focus)
      pub fn set_text_selection(
          &mut self,
-@@ -2685,6 +3330,52 @@
+@@ -2685,6 +3365,52 @@
          }
      }
  
@@ -1260,7 +1317,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Get the parent ID and sibling index for a node if it's an anonymous block.
      /// Returns (None, None) for non-anonymous blocks.
      fn anonymous_block_location(&self, node_id: NodeId) -> (Option<NodeId>, Option<usize>) {
-@@ -2944,6 +3635,66 @@
+@@ -2944,6 +3670,66 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1327,7 +1384,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4259,58 @@
+@@ -3508,6 +4294,58 @@
  }
  
  #[cfg(test)]
@@ -1386,7 +1443,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4584,7 @@
+@@ -3781,3 +4619,7 @@
          );
      }
  }
