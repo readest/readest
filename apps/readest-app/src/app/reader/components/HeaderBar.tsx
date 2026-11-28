@@ -298,8 +298,14 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
               <VscLibrary size={iconSize18} className='fill-base-content' />
             </button>
             <BookmarkToggler bookKey={bookKey} />
-            <TranslationToggler bookKey={bookKey} />
             <DuoBookModeToggler bookKey={bookKey} />
+            {/* Last in the scroller, so it sits beside the Quick Action
+                button: the two instant tools stay together (#8044). */}
+            <Button
+              icon={<PiScribbleLoop size={iconSize18} />}
+              label={_('Instant {{action}}', { action: _('Draw') })}
+              onClick={() => eventDispatcher.dispatch('handwriting', { action: 'toggle', bookKey })}
+            />
           </div>
           {enableAnnotationQuickActions && (
             <Dropdown
@@ -361,11 +367,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
         </div>
 
         <div className='header-tools-end bg-base-100 z-20 ms-auto flex h-full min-w-max items-center gap-x-4 ps-2 max-[350px]:gap-x-2'>
-          <Button
-            icon={<PiScribbleLoop size={iconSize18} />}
-            label={_('Instant {{action}}', { action: _('Draw') })}
-            onClick={() => eventDispatcher.dispatch('handwriting', { action: 'toggle', bookKey })}
-          />
+          <TranslationToggler bookKey={bookKey} />
           <NotebookToggler bookKey={bookKey} />
           <Dropdown
             label={_('View Options')}

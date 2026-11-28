@@ -42,12 +42,13 @@ vi.mock('@/store/sidebarStore', () => ({
   useSidebarStore: () => ({ isSideBarVisible: false, getIsSideBarVisible: () => false }),
 }));
 const setHoveredBookKey = vi.hoisted(() => vi.fn());
+let enableAnnotationQuickActions = false;
 vi.mock('@/store/readerStore', () => ({
   useReaderStore: () => ({
     bookKeys: ['book-1'],
     hoveredBookKey: 'book-1',
     getView: () => null,
-    getViewSettings: () => ({ enableAnnotationQuickActions: false }),
+    getViewSettings: () => ({ enableAnnotationQuickActions }),
     setHoveredBookKey,
   }),
 }));
@@ -80,12 +81,18 @@ vi.mock('@/app/reader/components/SidebarToggler', () => ({
   default: () => <button type='button'>sidebar-toggler</button>,
 }));
 vi.mock('@/app/reader/components/BookmarkToggler', () => ({ default: () => null }));
-vi.mock('@/app/reader/components/NotebookToggler', () => ({ default: () => null }));
-vi.mock('@/app/reader/components/TranslationToggler', () => ({ default: () => null }));
+vi.mock('@/app/reader/components/NotebookToggler', () => ({
+  default: () => <button type='button'>notebook-toggler</button>,
+}));
+vi.mock('@/app/reader/components/TranslationToggler', () => ({
+  default: () => <button type='button'>translation-toggler</button>,
+}));
 vi.mock('@/app/reader/components/ViewMenu', () => ({ default: () => null }));
 vi.mock('@/app/reader/components/SyncInfoDialog', () => ({ default: () => null }));
 vi.mock('@/components/WindowButtons', () => ({ default: () => null }));
-vi.mock('@/components/Dropdown', () => ({ default: () => null }));
+vi.mock('@/components/Dropdown', () => ({
+  default: ({ label }: { label: string }) => <div data-dropdown={label} />,
+}));
 vi.mock('@/components/ModalPortal', () => ({ default: () => null }));
 
 const setViewport = (width: number, height: number) => {
@@ -121,6 +128,7 @@ afterEach(() => {
   setHoveredBookKey.mockReset();
   currentBookData = null;
   isIPhoneDuo = false;
+  enableAnnotationQuickActions = false;
 });
 
 it('starts Instant Draw directly from the toolbar when Quick Actions are disabled', () => {
@@ -133,6 +141,29 @@ it('starts Instant Draw directly from the toolbar when Quick Actions are disable
   } finally {
     dispatch.mockRestore();
   }
+});
+
+describe('HeaderBar button order (#8044)', () => {
+  const controls = (group: Element | null) =>
+    [...group!.querySelectorAll('button, [data-dropdown]')].map(
+      (el) => el.getAttribute('data-dropdown') ?? el.getAttribute('aria-label') ?? el.textContent,
+    );
+
+  it('puts Instant Draw next to the Quick Action button and Translate next to Notebook', () => {
+    enableAnnotationQuickActions = true;
+    setViewport(834, 1194);
+    const { container } = renderHeader();
+
+    expect(controls(container.querySelector('.header-tools-start')).slice(-2)).toEqual([
+      'Instant Draw',
+      'Enable Quick Action on Selection',
+    ]);
+    expect(controls(container.querySelector('.header-tools-end'))).toEqual([
+      'translation-toggler',
+      'notebook-toggler',
+      'View Options',
+    ]);
+  });
 });
 
 describe('HeaderBar sidebar toggle', () => {
@@ -177,7 +208,7 @@ describe('HeaderBar font button', () => {
 });
 
 describe('HeaderBar mobile toolbar stability', () => {
-  it('reserves room for the bookmark and translation touch halos inside the scroller', () => {
+  it('reserves room for the bookmark and Instant Draw touch halos inside the scroller', () => {
     setViewport(392, 872);
     const { container } = renderHeader();
     const scroller = container.querySelector('.header-tools-start > .no-scrollbar');

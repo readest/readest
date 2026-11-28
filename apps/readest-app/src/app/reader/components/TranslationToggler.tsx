@@ -41,6 +41,10 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
     );
   }, [bookData, viewSettings.translationEnabled, viewSettings.translateTargetLang]);
 
+  // A greyed-out button the reader can't use only crowds the header (#8044).
+  // It stays while translation is on, so it can still be turned off.
+  if (!translationAvailable && !translationEnabled) return null;
+
   return (
     <Button
       icon={
@@ -50,7 +54,6 @@ const TranslationToggler = ({ bookKey }: { bookKey: string }) => {
         />
       }
       aria-label={_('Toggle Translation')}
-      disabled={!translationAvailable && !translationEnabled}
       onClick={() => setTranslationEnabled(!translationEnabled)}
       label={
         translationAvailable
