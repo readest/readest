@@ -36,10 +36,14 @@ const forwardedHeaders = (request: Request, url: URL, env: Env) => {
   }
   // Supabase keeps the user agent on the session, and Manage Sync names the
   // account's devices from it. Supabase refuses a secret key on a request
-  // whose agent looks like a browser, so the reader's agent goes in base64;
-  // describeUserAgent (src/utils/syncDevices.ts) reads it back.
+  // whose agent looks like a browser, so the reader's agent goes in base64 of
+  // its UTF-8 bytes (Workers hands header values over as text, and btoa takes
+  // only Latin-1); describeUserAgent (src/utils/syncDevices.ts) reads it back.
   const agent = request.headers.get('user-agent');
-  if (agent) headers.set('user-agent', `ReadestAuthProxy/1 ${btoa(agent)}`);
+  if (agent) {
+    const bytes = new TextEncoder().encode(agent);
+    headers.set('user-agent', `ReadestAuthProxy/1 ${btoa(String.fromCharCode(...bytes))}`);
+  }
   if (isTokenGrant(url)) {
     // The secret key is what makes Supabase honor Sb-Forwarded-For. Without
     // it, Auth rate limits all readers as this Worker's one IP.

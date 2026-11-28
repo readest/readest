@@ -90,6 +90,27 @@ describe('auth proxy worker', () => {
       expect(describeUserAgent(agent)).toEqual({ client: 'Chrome', os: 'macOS' });
     });
 
+    // Workers hands header values over as UTF-8 text, so a device model can
+    // hold characters that btoa alone can't encode. Node's Headers can't, so
+    // the Worker's view of the request is stubbed.
+    it('passes on an agent whose device model is in any script', async () => {
+      const app =
+        'Mozilla/5.0 (Linux; Android 14; 阅读器 Build/X; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0.0.0 Mobile Safari/537.36';
+      const request = post(path);
+      const get = request.headers.get.bind(request.headers);
+      vi.spyOn(request.headers, 'get').mockImplementation((name) =>
+        name.toLowerCase() === 'user-agent' ? app : get(name),
+      );
+
+      const response = await worker.fetch(request, env);
+
+      expect(response.status).toBe(200);
+      expect(describeUserAgent(forwarded().headers.get('user-agent'))).toEqual({
+        client: 'Readest',
+        os: '阅读器',
+      });
+    });
+
     it('ignores a forwarded IP and Authorization sent by the client', async () => {
       await worker.fetch(post(path, { headers: { 'Sb-Forwarded-For': '198.51.100.1' } }), env);
 

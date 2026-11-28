@@ -68,7 +68,8 @@ export const describeUserAgent = (
   const proxied = ua.match(PROXIED_AGENT);
   if (proxied) {
     try {
-      return describeUserAgent(atob(proxied[1]!));
+      const bytes = Uint8Array.from(atob(proxied[1]!), (c) => c.charCodeAt(0));
+      return describeUserAgent(new TextDecoder().decode(bytes));
     } catch {
       return null;
     }
