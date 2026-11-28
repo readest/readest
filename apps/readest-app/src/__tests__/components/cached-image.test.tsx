@@ -129,6 +129,35 @@ describe('CachedImage cache versioning (issue #5492)', () => {
   });
 });
 
+describe('CachedImage referrer', () => {
+  beforeEach(() => {
+    cleanup();
+    clearImageCache();
+  });
+
+  it.each([false, true])('requests a cover without a Referer (fill=%s)', async (fill) => {
+    // Hotlink protection on a catalog's CDN (opds.wol.moe) answers 403 to a
+    // Referer from another site, and the Android/Windows webview would send
+    // `http://tauri.localhost/`. Native OPDS readers send no Referer.
+    render(
+      <CachedImage
+        src='https://opds.wol.moe/cover/934.jpg'
+        alt='Book cover'
+        fill={fill}
+        width={fill ? undefined : 28}
+        height={fill ? undefined : 41}
+        onGenerateCachedImageUrl={async (url) => url}
+      />,
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('img').getAttribute('src')).toBe(
+        'https://opds.wol.moe/cover/934.jpg',
+      ),
+    );
+    expect(screen.getByRole('img').getAttribute('referrerpolicy')).toBe('no-referrer');
+  });
+});
+
 describe('CachedImage on the web', () => {
   beforeEach(() => {
     cleanup();
