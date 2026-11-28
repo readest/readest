@@ -1397,13 +1397,33 @@
       if (v) this.setAttribute('hidden', '');
       else this.removeAttribute('hidden');
     }
+    // A valid tabindex, else 0 for the elements that take focus by default and -1 for the rest.
     get tabIndex() {
-      return Number(this.getAttribute('tabindex') || -1);
+      const v = this.getAttribute('tabindex');
+      if (v != null && /^[\t\n\f\r ]*[-+]?\d/.test(v)) return parseInt(v, 10);
+      return focusableByDefault(this) ? 0 : -1;
     }
     set tabIndex(v) {
       this.setAttribute('tabindex', v);
     }
   }
+  // As Chromium has it: every `a` (with an href or not) and a details element's first summary.
+  const TAB_STOPS = new Set([
+    'a',
+    'area',
+    'button',
+    'frame',
+    'iframe',
+    'input',
+    'object',
+    'select',
+    'textarea',
+  ]);
+  const focusableByDefault = (el) =>
+    TAB_STOPS.has(el.localName) ||
+    (el.localName === 'summary' &&
+      el.parentElement?.localName === 'details' &&
+      [...el.parentElement.children].find((c) => c.localName === 'summary') === el);
   // `on<event>` handler properties, on elements and (below) the document: libraries test
   // `"onclick" in el` to pick event names, and React uses `input` events only where
   // `"oninput" in document`.
@@ -1676,6 +1696,11 @@
   class HTMLSpanElement extends HTMLElement {}
   class HTMLParagraphElement extends HTMLElement {}
   class SVGElement extends Element {}
+  Object.defineProperty(
+    SVGElement.prototype,
+    'tabIndex',
+    Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'tabIndex'),
+  );
   const byTag = {
     input: HTMLInputElement,
     textarea: HTMLTextAreaElement,

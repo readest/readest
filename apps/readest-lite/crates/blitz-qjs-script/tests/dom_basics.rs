@@ -485,3 +485,29 @@ fn node_constants_are_on_node_and_every_node() {
         ["log: 1/1 2/2 3/3 4/4 5/5 6/6 7/7 8/8 9/9 10/10 11/11 12/12 1/1 2/2 4/4 8/8 16/16 32/32"]
     );
 }
+
+#[test]
+fn tab_index_is_zero_on_elements_that_take_focus_by_default() {
+    // Readest's dialogs count a control as a Tab stop when its tabIndex is 0 or more; Lite gave
+    // -1 to every element without a tabindex attribute, so a dialog's plain buttons weren't.
+    let html = "<!DOCTYPE html><body><button id=b1>x</button><button id=b2 tabindex=-1>x</button>\
+        <button id=b3 tabindex=abc>x</button><a id=a1 href=#>x</a><a id=a2>x</a><input id=i1>\
+        <select id=s1></select><textarea id=t1></textarea><iframe id=f1></iframe><details>\
+        <summary id=m1>x</summary><summary id=m2>y</summary></details><div id=d1>x</div>\
+        <div id=d2 tabindex=2>x</div><div id=c1 contenteditable>x</div><span id=p1>x</span>\
+        <area id=r1 href=#><svg><a id=sa href='#'></a></svg></body>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "console.log(['b1', 'b2', 'b3', 'a1', 'a2', 'i1', 's1', 't1', 'f1', 'm1', 'm2', 'd1', 'd2', 'c1', 'p1', 'r1', 'sa']
+          .map((id) => `${id}=${document.getElementById(id).tabIndex}`).join(' '));",
+        "test",
+    );
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    // Chromium's
+    assert_eq!(
+        doc.take_messages(),
+        [
+            "log: b1=0 b2=-1 b3=0 a1=0 a2=0 i1=0 s1=0 t1=0 f1=0 m1=0 m2=-1 d1=-1 d2=2 c1=-1 p1=-1 r1=0 sa=0"
+        ]
+    );
+}
