@@ -20,6 +20,7 @@ import {
   isChromeStyled,
 } from '../utils/headerFooterStyle';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { usePageTurnPreview } from '../utils/pageTurnPreview';
 
 interface SectionInfoProps {
   bookKey: string;
@@ -51,7 +52,9 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   const _ = useTranslation();
   const { appService } = useEnv();
   // Subscribed here, not in the cell: a turn into the next section re-renders the title alone.
-  const section = useBookProgressValue(bookKey, (p) => p.sectionLabel);
+  const liveSection = useBookProgressValue(bookKey, (p) => p.sectionLabel);
+  const preview = usePageTurnPreview(bookKey);
+  const section = preview ? preview.progress.sectionLabel : liveSection;
   const { hoveredBookKey, getView, getViewSettings, setHoveredBookKey } = useReaderStore();
   const { systemUIVisible, statusBarHeight, isIPhoneDuo } = useThemeStore();
   const getBookData = useBookDataStore((s) => s.getBookData);

@@ -564,4 +564,79 @@ describe('Android native page-turn pipeline', () => {
       f.controller.dispose();
     }
   });
+  it('activates beginPagePreview around neighbour preview captures and releases after previewPage restores', async () => {
+    let page = 1;
+    let activePreview: boolean | null = null;
+    const capturePreviews: Array<{ key?: string; preview: boolean | null }> = [];
+    const previewEvents: string[] = [];
+
+    const renderer = {
+      setAttribute: vi.fn(),
+      removeAttribute: vi.fn(),
+      getPageTurnKey: (delta = 0) => String(page + delta),
+      previewPage: async <T>(forward: boolean, read: () => Promise<T>) => {
+        previewEvents.push(`preview-start:${forward}:${activePreview}`);
+        const original = page;
+        page += forward ? 1 : -1;
+        try {
+          const value = await read();
+          previewEvents.push(`preview-after-read:${forward}:${activePreview}`);
+          return { key: String(page), value };
+        } finally {
+          page = original;
+          previewEvents.push(`preview-restored:${page}:${activePreview}`);
+        }
+      },
+    } as unknown as Renderer;
+
+    const call = vi.fn(async (args: NativePaperCommand): Promise<NativePaperResult> => {
+      if (args.op === 'capture') {
+        capturePreviews.push({ key: args.key, preview: activePreview });
+      }
+      return { touchTracked: true };
+    });
+
+    const controller = new NativePageTurn(
+      {
+        getHostElement: () => document.body,
+        getContentRect: () => new DOMRect(0, 0, 360, 780),
+        capture: vi.fn(),
+        navigate: vi.fn(async (forward: boolean) => {
+          page += forward ? 1 : -1;
+        }),
+        beginPagePreview: (forward: boolean) => {
+          activePreview = forward;
+          return () => {
+            previewEvents.push(`release-at-page:${page}`);
+            activePreview = null;
+          };
+        },
+      },
+      { renderer, enabled: () => true, call },
+    );
+
+    try {
+      expect(await controller.prepareCapture('curl')).toBe(true);
+      expect(capturePreviews).toEqual([
+        { key: '1', preview: null },
+        { key: '2', preview: true },
+        { key: '0', preview: false },
+      ]);
+      // Preview stays active until after previewPage restores containerPosition
+      // so live readouts never sample the previewed renderer.page on release.
+      expect(previewEvents).toEqual([
+        'preview-start:true:true',
+        'preview-after-read:true:true',
+        'preview-restored:1:true',
+        'release-at-page:1',
+        'preview-start:false:false',
+        'preview-after-read:false:false',
+        'preview-restored:1:false',
+        'release-at-page:1',
+      ]);
+      expect(activePreview).toBeNull();
+    } finally {
+      controller.dispose();
+    }
+  });
 });

@@ -18,6 +18,7 @@ export class PageTurnBuffer {
       capture: (rect: Rect) => Promise<Image>;
       cover: (rect: Rect) => Promise<() => Promise<void>>;
       allowed: () => boolean;
+      beginPagePreview?: (forward: boolean) => (() => void) | void;
     },
   ) {}
 
@@ -109,12 +110,17 @@ export class PageTurnBuffer {
             images[slot] = await this.#read(key, () => this.host.capture(rect), epoch);
             continue;
           }
-          const result = await this.host.renderer.previewPage(
-            forward,
-            () => this.#read(key, () => this.host.capture(rect), epoch, valid),
-            signal,
-          );
-          images[slot] = result?.value ?? null;
+          const releasePreview = this.host.beginPagePreview?.(forward);
+          try {
+            const result = await this.host.renderer.previewPage(
+              forward,
+              () => this.#read(key, () => this.host.capture(rect), epoch, valid),
+              signal,
+            );
+            images[slot] = result?.value ?? null;
+          } finally {
+            releasePreview?.();
+          }
         }
       } catch (error) {
         for (const image of images) image?.close();

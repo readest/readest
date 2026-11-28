@@ -122,7 +122,7 @@ export interface FoliateView extends HTMLElement {
   // The TOC entry and the book's printed page (page-list) a range is in.
   getProgressOf: (
     index: number,
-    range: Range,
+    range?: Range,
   ) => { tocItem?: TOCItem | null; pageItem?: TOCItem | null };
   getCFIProgress: (cfi: string) => Promise<{
     fraction: number;
