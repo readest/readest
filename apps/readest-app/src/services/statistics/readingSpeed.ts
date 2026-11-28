@@ -117,6 +117,11 @@ const getPassedRange = (previous: VisiblePosition, next: VisiblePosition): Range
   return hasReadableText(gap) ? null : passed;
 };
 
+const getBaseLanguage = (language: string) => {
+  const locale = getLocale(language);
+  return locale ? new Intl.Locale(locale).language : '';
+};
+
 /** Count the words or characters in `passed`, with the text around it for cut-off words. */
 const countPassedUnits = (passed: Range, language: string) => {
   const { startContainer, startOffset, endContainer, endOffset } = passed;
@@ -130,12 +135,11 @@ const countPassedUnits = (passed: Range, language: string) => {
     endContainer.nodeType === Node.TEXT_NODE
       ? endContainer.nodeValue?.slice(endOffset, endOffset + WORD_CONTEXT_LENGTH)
       : '';
-  return countReadingUnits(
-    getRenderedTextFromRange(passed),
-    root?.getAttribute('lang') || root?.getAttribute('xml:lang') || language,
-    before,
-    after,
-  );
+  const lang = root?.getAttribute('lang') || root?.getAttribute('xml:lang') || language;
+  return {
+    ...countReadingUnits(getRenderedTextFromRange(passed), lang, before, after),
+    lang: getBaseLanguage(lang),
+  };
 };
 
 /**
@@ -176,10 +180,10 @@ export class ReadingSpeedTracker {
       this.screen = null;
       return null;
     }
-    const { unit, count } = countPassedUnits(passed, language);
+    const { unit, count, lang } = countPassedUnits(passed, language);
 
     if (!scrolled) {
-      const sample = { unit, count, startTimeMs: old.timeMs, durationMs: nowMs - old.timeMs };
+      const sample = { unit, count, startTimeMs: old.timeMs, durationMs: nowMs - old.timeMs, lang };
       return isReadingPace(sample) ? sample : null;
     }
     // One scroll step says nothing about pace: the text passing the top edge
@@ -187,7 +191,7 @@ export class ReadingSpeedTracker {
     const screen =
       this.screen && (this.screen.sample.unit === unit || !count)
         ? this.screen
-        : { start: old, sample: { unit, count: 0, startTimeMs: old.timeMs, durationMs: 0 } };
+        : { start: old, sample: { unit, count: 0, startTimeMs: old.timeMs, durationMs: 0, lang } };
     screen.sample.count += count;
     screen.sample.durationMs = nowMs - screen.sample.startTimeMs;
     this.screen = hasLeftScreen(screen.start, next) ? null : screen;

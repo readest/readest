@@ -3153,5 +3153,17 @@
   "Highlight Current Paragraph": "Evidențiază paragraful curent",
   "Highlight Button": "Butonul de evidențiere",
   "Export to Anki puts this dictionary's entry on the back of each card": "Exportul în Anki pune intrarea din acest dicționar pe spatele fiecărui card",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Se caută intrările din dicționar ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Se caută intrările din dicționar ({{done}}/{{total}})…",
+  "characters/min": "caractere/min",
+  "words/min": "cuvinte/min",
+  "Average Speed": "Viteză medie",
+  "Change from Previous Period": "Schimbare față de perioada anterioară",
+  "No reading speed measured": "Nu s-a măsurat viteza de citire",
+  "Measured Reading Time": "Timp de citire măsurat",
+  "{{change}} this month": "{{change}} luna aceasta",
+  "This Week": "Săptămâna aceasta",
+  "This Month": "Luna aceasta",
+  "Highest Monthly Average": "Cea mai mare medie lunară",
+  "Reading Speed by Book": "Viteza de citire pe carte",
+  "How fast you read in each language, and how it changes over time": "Cât de repede citești în fiecare limbă și cum se schimbă în timp"
 }

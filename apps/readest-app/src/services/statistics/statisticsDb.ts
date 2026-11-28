@@ -9,6 +9,7 @@ import type {
   StatBook,
 } from '@/types/statistics';
 import type { BookQuarterHourDuration } from './readingStats';
+import type { BookReadingSpeed, ReadingSpeedQuarter } from './readingSpeedStats';
 
 interface BookRow extends DatabaseRow {
   id: number;
@@ -247,9 +248,16 @@ export class StatisticsDb {
   async insertReadingSpeed(bookMd5: string, sample: ReadingSpeedSample): Promise<void> {
     await this.exclusive(async () => {
       await this.db.execute(
-        `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms)
-         VALUES (?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
-        [sample.startTimeMs, bookMd5, sample.unit, sample.count, sample.durationMs],
+        `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms, lang)
+         VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+        [
+          sample.startTimeMs,
+          bookMd5,
+          sample.unit,
+          sample.count,
+          sample.durationMs,
+          sample.lang ?? '',
+        ],
       );
     });
   }
@@ -267,6 +275,31 @@ export class StatisticsDb {
     return this.db.select<ReadingSpeed>(
       `SELECT unit, SUM(count) AS count, SUM(duration_ms) AS durationMs
        FROM readest_reading_speed GROUP BY unit ORDER BY unit`,
+    );
+  }
+
+  /** Speed in each quarter hour (`start_time_ms / 900000`) and language, folded into local days in JS. */
+  async getReadingSpeedQuarters(): Promise<ReadingSpeedQuarter[]> {
+    return this.db.select<ReadingSpeedQuarter>(
+      `SELECT start_time_ms / 900000 AS quarter, lang, unit,
+              SUM(count) AS count, SUM(duration_ms) AS durationMs
+       FROM readest_reading_speed GROUP BY quarter, lang, unit ORDER BY quarter, lang, unit`,
+    );
+  }
+
+  /** Each book's speed in each language, most recently read first. */
+  async getBookReadingSpeeds(): Promise<BookReadingSpeed[]> {
+    return this.db.select<BookReadingSpeed>(
+      // KOReader keys book rows on (title, authors, md5): join the first row of
+      // each md5 only, so a book with two rows isn't counted twice.
+      `SELECT r.book_md5 AS md5, COALESCE(b.title, r.book_md5) AS title,
+              COALESCE(b.authors, '') AS authors, r.lang AS lang, r.unit AS unit,
+              SUM(r.count) AS count, SUM(r.duration_ms) AS durationMs,
+              MAX(r.start_time_ms + r.duration_ms) AS lastRead
+       FROM readest_reading_speed r
+       LEFT JOIN (SELECT md5, MIN(id) AS id FROM book GROUP BY md5) f ON f.md5 = r.book_md5
+       LEFT JOIN book b ON b.id = f.id
+       GROUP BY r.book_md5, r.lang, r.unit ORDER BY lastRead DESC`,
     );
   }
 
@@ -404,8 +437,8 @@ export class StatisticsDb {
         await this.recomputeBookTotals(id);
         // A sample both hold at the same moment stays once, like a page event.
         await this.db.execute(
-          `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms)
-           SELECT start_time_ms, ?, unit, count, duration_ms FROM readest_reading_speed
+          `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms, lang)
+           SELECT start_time_ms, ?, unit, count, duration_ms, lang FROM readest_reading_speed
            WHERE book_md5 = ? ON CONFLICT DO NOTHING`,
           [target.bookMd5, source],
         );

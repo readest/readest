@@ -2995,5 +2995,17 @@
   "Highlight Current Paragraph": "현재 단락 강조",
   "Highlight Button": "하이라이트 버튼",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki로 내보내면 이 사전의 항목을 각 카드 뒷면에 넣습니다",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "사전 항목 찾는 중 ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "사전 항목 찾는 중 ({{done}}/{{total}})…",
+  "characters/min": "자/분",
+  "words/min": "단어/분",
+  "Average Speed": "평균 속도",
+  "Change from Previous Period": "이전 기간 대비 변화",
+  "No reading speed measured": "측정된 독서 속도가 없습니다",
+  "Measured Reading Time": "측정된 독서 시간",
+  "{{change}} this month": "이번 달 {{change}}",
+  "This Week": "이번 주",
+  "This Month": "이번 달",
+  "Highest Monthly Average": "최고 월평균",
+  "Reading Speed by Book": "책별 독서 속도",
+  "How fast you read in each language, and how it changes over time": "언어별 독서 속도와 시간에 따른 변화"
 }

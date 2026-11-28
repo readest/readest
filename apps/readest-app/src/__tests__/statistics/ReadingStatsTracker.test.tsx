@@ -100,6 +100,7 @@ describe('ReadingStatsTracker while TTS plays', () => {
     mocks.db.recordEvents.mockResolvedValue(undefined);
     mocks.getBookData.mockReturnValue({
       book: { hash: 'md5-1', title: 'Book', author: 'Author' },
+      bookDoc: { metadata: { language: 'en-US' } },
     } as unknown as null);
     mocks.playbackState = null;
     setPage(0);
@@ -157,6 +158,7 @@ describe('ReadingStatsTracker while TTS plays', () => {
       count: words,
       startTimeMs,
       durationMs: ms,
+      lang: 'en',
     });
   });
 

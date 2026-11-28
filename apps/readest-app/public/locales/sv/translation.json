@@ -3074,5 +3074,17 @@
   "Highlight Current Paragraph": "Markera aktuellt stycke",
   "Highlight Button": "Markeringsknapp",
   "Export to Anki puts this dictionary's entry on the back of each card": "Export till Anki lägger den här ordbokens uppslag på baksidan av varje kort",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Slår upp ordboksuppslag ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Slår upp ordboksuppslag ({{done}}/{{total}})…",
+  "characters/min": "tecken/min",
+  "words/min": "ord/min",
+  "Average Speed": "Genomsnittlig hastighet",
+  "Change from Previous Period": "Förändring från föregående period",
+  "No reading speed measured": "Ingen läshastighet uppmätt",
+  "Measured Reading Time": "Uppmätt lästid",
+  "{{change}} this month": "{{change}} denna månad",
+  "This Week": "Denna vecka",
+  "This Month": "Denna månad",
+  "Highest Monthly Average": "Högsta månadsgenomsnitt",
+  "Reading Speed by Book": "Läshastighet per bok",
+  "How fast you read in each language, and how it changes over time": "Hur snabbt du läser på varje språk och hur det förändras över tid"
 }

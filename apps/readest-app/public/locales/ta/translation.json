@@ -3074,5 +3074,17 @@
   "Highlight Current Paragraph": "தற்போதைய பத்தியை தனிப்படுத்து",
   "Highlight Button": "முத்திரை பொத்தான்",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki-க்கு ஏற்றுமதி ஒவ்வொரு அட்டையின் பின்புறத்திலும் இந்த அகராதியின் பதிவைச் சேர்க்கிறது",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "அகராதிப் பதிவுகளைத் தேடுகிறது ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "அகராதிப் பதிவுகளைத் தேடுகிறது ({{done}}/{{total}})…",
+  "characters/min": "எழுத்துகள்/நிமிடம்",
+  "words/min": "சொற்கள்/நிமிடம்",
+  "Average Speed": "சராசரி வேகம்",
+  "Change from Previous Period": "முந்தைய காலத்திலிருந்து மாற்றம்",
+  "No reading speed measured": "வாசிப்பு வேகம் அளவிடப்படவில்லை",
+  "Measured Reading Time": "அளவிடப்பட்ட வாசிப்பு நேரம்",
+  "{{change}} this month": "இந்த மாதம் {{change}}",
+  "This Week": "இந்த வாரம்",
+  "This Month": "இந்த மாதம்",
+  "Highest Monthly Average": "அதிகபட்ச மாத சராசரி",
+  "Reading Speed by Book": "புத்தக வாரியாக வாசிப்பு வேகம்",
+  "How fast you read in each language, and how it changes over time": "ஒவ்வொரு மொழியிலும் நீங்கள் எவ்வளவு வேகமாக வாசிக்கிறீர்கள், அது காலப்போக்கில் எப்படி மாறுகிறது"
 }

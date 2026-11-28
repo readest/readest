@@ -3153,5 +3153,17 @@
   "Highlight Current Paragraph": "Resaltar el párrafo actual",
   "Highlight Button": "Botón de resaltar",
   "Export to Anki puts this dictionary's entry on the back of each card": "Exportar a Anki pone la entrada de este diccionario en el reverso de cada tarjeta",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Buscando entradas del diccionario ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Buscando entradas del diccionario ({{done}}/{{total}})…",
+  "characters/min": "caracteres/min",
+  "words/min": "palabras/min",
+  "Average Speed": "Velocidad media",
+  "Change from Previous Period": "Cambio respecto al periodo anterior",
+  "No reading speed measured": "No se ha medido la velocidad de lectura",
+  "Measured Reading Time": "Tiempo de lectura medido",
+  "{{change}} this month": "{{change}} este mes",
+  "This Week": "Esta semana",
+  "This Month": "Este mes",
+  "Highest Monthly Average": "Mejor media mensual",
+  "Reading Speed by Book": "Velocidad de lectura por libro",
+  "How fast you read in each language, and how it changes over time": "Qué tan rápido lees en cada idioma y cómo cambia con el tiempo"
 }

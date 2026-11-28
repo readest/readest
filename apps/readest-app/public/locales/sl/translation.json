@@ -3232,5 +3232,17 @@
   "Highlight Current Paragraph": "Označi trenutni odstavek",
   "Highlight Button": "Gumb za označevanje",
   "Export to Anki puts this dictionary's entry on the back of each card": "Izvoz v Anki doda geslo iz tega slovarja na hrbtno stran vsake kartice",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Iskanje slovarskih gesel ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Iskanje slovarskih gesel ({{done}}/{{total}})…",
+  "characters/min": "znakov/min",
+  "words/min": "besed/min",
+  "Average Speed": "Povprečna hitrost",
+  "Change from Previous Period": "Sprememba glede na prejšnje obdobje",
+  "No reading speed measured": "Hitrost branja ni izmerjena",
+  "Measured Reading Time": "Izmerjen čas branja",
+  "{{change}} this month": "{{change}} ta mesec",
+  "This Week": "Ta teden",
+  "This Month": "Ta mesec",
+  "Highest Monthly Average": "Najvišje mesečno povprečje",
+  "Reading Speed by Book": "Hitrost branja po knjigah",
+  "How fast you read in each language, and how it changes over time": "Kako hitro berete v posameznem jeziku in kako se to spreminja skozi čas"
 }

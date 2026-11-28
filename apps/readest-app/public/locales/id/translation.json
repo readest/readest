@@ -2995,5 +2995,17 @@
   "Highlight Current Paragraph": "Sorot paragraf saat ini",
   "Highlight Button": "Tombol sorot",
   "Export to Anki puts this dictionary's entry on the back of each card": "Ekspor ke Anki menaruh entri kamus ini di balik setiap kartu",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Mencari entri kamus ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Mencari entri kamus ({{done}}/{{total}})…",
+  "characters/min": "karakter/menit",
+  "words/min": "kata/menit",
+  "Average Speed": "Kecepatan Rata-rata",
+  "Change from Previous Period": "Perubahan dari Periode Sebelumnya",
+  "No reading speed measured": "Belum ada kecepatan membaca yang terukur",
+  "Measured Reading Time": "Waktu Membaca Terukur",
+  "{{change}} this month": "{{change}} bulan ini",
+  "This Week": "Minggu Ini",
+  "This Month": "Bulan Ini",
+  "Highest Monthly Average": "Rata-rata Bulanan Tertinggi",
+  "Reading Speed by Book": "Kecepatan Membaca per Buku",
+  "How fast you read in each language, and how it changes over time": "Seberapa cepat Anda membaca dalam setiap bahasa dan bagaimana perubahannya dari waktu ke waktu"
 }

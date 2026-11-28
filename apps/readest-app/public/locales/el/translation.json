@@ -3074,5 +3074,17 @@
   "Highlight Current Paragraph": "Επισήμανση τρέχουσας παραγράφου",
   "Highlight Button": "Κουμπί επισήμανσης",
   "Export to Anki puts this dictionary's entry on the back of each card": "Η εξαγωγή σε Anki βάζει το λήμμα αυτού του λεξικού στο πίσω μέρος κάθε κάρτας",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Αναζήτηση λημμάτων λεξικού ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Αναζήτηση λημμάτων λεξικού ({{done}}/{{total}})…",
+  "characters/min": "χαρακτήρες/λεπτό",
+  "words/min": "λέξεις/λεπτό",
+  "Average Speed": "Μέση ταχύτητα",
+  "Change from Previous Period": "Μεταβολή από την προηγούμενη περίοδο",
+  "No reading speed measured": "Δεν έχει μετρηθεί ταχύτητα ανάγνωσης",
+  "Measured Reading Time": "Μετρημένος χρόνος ανάγνωσης",
+  "{{change}} this month": "{{change}} αυτόν τον μήνα",
+  "This Week": "Αυτή την εβδομάδα",
+  "This Month": "Αυτόν τον μήνα",
+  "Highest Monthly Average": "Υψηλότερος μηνιαίος μέσος όρος",
+  "Reading Speed by Book": "Ταχύτητα ανάγνωσης ανά βιβλίο",
+  "How fast you read in each language, and how it changes over time": "Πόσο γρήγορα διαβάζετε σε κάθε γλώσσα και πώς αλλάζει με τον χρόνο"
 }

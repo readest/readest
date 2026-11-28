@@ -3074,5 +3074,17 @@
   "Highlight Current Paragraph": "Geçerli paragrafı vurgula",
   "Highlight Button": "Vurgulama düğmesi",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki’ye aktarma, bu sözlüğün maddesini her kartın arka yüzüne koyar",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Sözlük maddeleri aranıyor ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Sözlük maddeleri aranıyor ({{done}}/{{total}})…",
+  "characters/min": "karakter/dk",
+  "words/min": "kelime/dk",
+  "Average Speed": "Ortalama Hız",
+  "Change from Previous Period": "Önceki Döneme Göre Değişim",
+  "No reading speed measured": "Ölçülmüş okuma hızı yok",
+  "Measured Reading Time": "Ölçülen Okuma Süresi",
+  "{{change}} this month": "Bu ay {{change}}",
+  "This Week": "Bu Hafta",
+  "This Month": "Bu Ay",
+  "Highest Monthly Average": "En Yüksek Aylık Ortalama",
+  "Reading Speed by Book": "Kitaplara Göre Okuma Hızı",
+  "How fast you read in each language, and how it changes over time": "Her dilde ne kadar hızlı okuduğunuz ve bunun zamanla nasıl değiştiği"
 }

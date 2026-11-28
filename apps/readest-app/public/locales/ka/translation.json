@@ -3074,5 +3074,17 @@
   "Highlight Current Paragraph": "მიმდინარე აბზაცის მარკირება",
   "Highlight Button": "მარკირების ღილაკი",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki-ში ექსპორტი ამ ლექსიკონის სტატიას თითოეული ბარათის უკანა მხარეს ათავსებს",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "ლექსიკონის სტატიების ძიება ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "ლექსიკონის სტატიების ძიება ({{done}}/{{total}})…",
+  "characters/min": "სიმბოლო/წთ",
+  "words/min": "სიტყვა/წთ",
+  "Average Speed": "საშუალო სიჩქარე",
+  "Change from Previous Period": "ცვლილება წინა პერიოდთან შედარებით",
+  "No reading speed measured": "კითხვის სიჩქარე არ არის გაზომილი",
+  "Measured Reading Time": "გაზომილი კითხვის დრო",
+  "{{change}} this month": "{{change}} ამ თვეში",
+  "This Week": "ამ კვირაში",
+  "This Month": "ამ თვეში",
+  "Highest Monthly Average": "უმაღლესი თვიური საშუალო",
+  "Reading Speed by Book": "კითხვის სიჩქარე წიგნების მიხედვით",
+  "How fast you read in each language, and how it changes over time": "რამდენად სწრაფად კითხულობთ თითოეულ ენაზე და როგორ იცვლება ეს დროთა განმავლობაში"
 }

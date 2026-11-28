@@ -2995,5 +2995,17 @@
   "Highlight Current Paragraph": "Tô sáng đoạn hiện tại",
   "Highlight Button": "Nút đánh dấu",
   "Export to Anki puts this dictionary's entry on the back of each card": "Xuất sang Anki sẽ đặt mục từ của từ điển này ở mặt sau mỗi thẻ",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Đang tra mục từ trong từ điển ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Đang tra mục từ trong từ điển ({{done}}/{{total}})…",
+  "characters/min": "ký tự/phút",
+  "words/min": "từ/phút",
+  "Average Speed": "Tốc độ trung bình",
+  "Change from Previous Period": "Thay đổi so với kỳ trước",
+  "No reading speed measured": "Chưa đo được tốc độ đọc",
+  "Measured Reading Time": "Thời gian đọc đã đo",
+  "{{change}} this month": "{{change}} trong tháng này",
+  "This Week": "Tuần này",
+  "This Month": "Tháng này",
+  "Highest Monthly Average": "Trung bình tháng cao nhất",
+  "Reading Speed by Book": "Tốc độ đọc theo sách",
+  "How fast you read in each language, and how it changes over time": "Bạn đọc nhanh thế nào ở mỗi ngôn ngữ và tốc độ đó thay đổi ra sao theo thời gian"
 }

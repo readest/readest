@@ -2995,5 +2995,17 @@
   "Highlight Current Paragraph": "Serlahkan perenggan semasa",
   "Highlight Button": "Butang tonjolkan",
   "Export to Anki puts this dictionary's entry on the back of each card": "Eksport ke Anki meletakkan entri kamus ini di belakang setiap kad",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Mencari entri kamus ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Mencari entri kamus ({{done}}/{{total}})…",
+  "characters/min": "aksara/min",
+  "words/min": "perkataan/min",
+  "Average Speed": "Kelajuan Purata",
+  "Change from Previous Period": "Perubahan daripada Tempoh Sebelumnya",
+  "No reading speed measured": "Tiada kelajuan membaca diukur",
+  "Measured Reading Time": "Masa Membaca Diukur",
+  "{{change}} this month": "{{change}} bulan ini",
+  "This Week": "Minggu Ini",
+  "This Month": "Bulan Ini",
+  "Highest Monthly Average": "Purata Bulanan Tertinggi",
+  "Reading Speed by Book": "Kelajuan Membaca mengikut Buku",
+  "How fast you read in each language, and how it changes over time": "Sepantas mana anda membaca dalam setiap bahasa dan bagaimana ia berubah dari semasa ke semasa"
 }

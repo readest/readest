@@ -222,6 +222,10 @@ const migrations: Record<SchemaType, MigrationEntry[]> = {
         );
       `,
     },
+    {
+      name: '2026112801_statistics_reading_speed_lang',
+      sql: `ALTER TABLE readest_reading_speed ADD COLUMN lang text NOT NULL DEFAULT ''`,
+    },
   ],
   // Per-book search index/cache: one search.db in each book's directory
   // (beside cover.png), holding extracted section text so library full-text

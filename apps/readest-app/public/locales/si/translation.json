@@ -3074,5 +3074,17 @@
   "Highlight Current Paragraph": "වර්තමාන ඡේදය ඉස්මතු කරන්න",
   "Highlight Button": "ඉස්මතු කිරීමේ බොත්තම",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki වෙත නිර්යාතය එක් එක් කාඩ්පතේ පිටුපසට මෙම ශබ්දකෝෂයේ ඇතුළත් කිරීම එක් කරයි",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "ශබ්දකෝෂ ඇතුළත් කිරීම් සොයමින් ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "ශබ්දකෝෂ ඇතුළත් කිරීම් සොයමින් ({{done}}/{{total}})…",
+  "characters/min": "අකුරු/විනාඩිය",
+  "words/min": "වචන/විනාඩිය",
+  "Average Speed": "සාමාන්‍ය වේගය",
+  "Change from Previous Period": "පෙර කාලපරිච්ඡේදයට වඩා වෙනස",
+  "No reading speed measured": "කියවීමේ වේගයක් මැන නැත",
+  "Measured Reading Time": "මනින ලද කියවීමේ කාලය",
+  "{{change}} this month": "මෙම මාසයේ {{change}}",
+  "This Week": "මෙම සතිය",
+  "This Month": "මෙම මාසය",
+  "Highest Monthly Average": "ඉහළම මාසික සාමාන්‍යය",
+  "Reading Speed by Book": "පොත අනුව කියවීමේ වේගය",
+  "How fast you read in each language, and how it changes over time": "ඔබ එක් එක් භාෂාවෙන් කොතරම් වේගයෙන් කියවනවාද සහ එය කාලයත් සමඟ වෙනස් වන ආකාරය"
 }

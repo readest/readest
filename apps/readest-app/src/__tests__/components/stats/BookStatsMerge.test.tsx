@@ -58,6 +58,8 @@ const fakeDb = (books: BookStats[]) => {
     getBookQuarterHourDurations: async () => [],
     getReadingSpeedSamples: async () => [],
     getReadingSpeedTotals: async () => [],
+    getReadingSpeedQuarters: async () => [],
+    getBookReadingSpeeds: async () => [],
     getReadingTotals: async () => ({ seconds: 0, books: left.length, pages: 0 }),
     getBookStats: vi.fn(async (md5?: string) => left.filter((b) => !md5 || b.md5 === md5)),
   };

@@ -3390,5 +3390,17 @@
   "Highlight Current Paragraph": "تمييز الفقرة الحالية",
   "Highlight Button": "زر التمييز",
   "Export to Anki puts this dictionary's entry on the back of each card": "يضع التصدير إلى Anki مدخل هذا القاموس على ظهر كل بطاقة",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "جارٍ البحث عن مداخل القاموس ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "جارٍ البحث عن مداخل القاموس ({{done}}/{{total}})…",
+  "characters/min": "حرف/دقيقة",
+  "words/min": "كلمة/دقيقة",
+  "Average Speed": "متوسط السرعة",
+  "Change from Previous Period": "التغير عن الفترة السابقة",
+  "No reading speed measured": "لم تُقَس سرعة القراءة بعد",
+  "Measured Reading Time": "وقت القراءة المقيس",
+  "{{change}} this month": "{{change}} هذا الشهر",
+  "This Week": "هذا الأسبوع",
+  "This Month": "هذا الشهر",
+  "Highest Monthly Average": "أعلى متوسط شهري",
+  "Reading Speed by Book": "سرعة القراءة حسب الكتاب",
+  "How fast you read in each language, and how it changes over time": "مدى سرعة قراءتك بكل لغة وكيف تتغير مع الوقت"
 }

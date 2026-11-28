@@ -20,8 +20,9 @@ describe('countReadingUnits', () => {
   });
 });
 
-const section = (text: string, index = 0) => {
+const section = (text: string, index = 0, lang = '') => {
   const doc = new Window().document as unknown as Document;
+  if (lang) doc.documentElement.setAttribute('lang', lang);
   const node = doc.createTextNode(text);
   doc.body.append(node);
   return (start: number, end = node.length) => {
@@ -100,6 +101,7 @@ describe('ReadingSpeedTracker', () => {
       count: 36,
       startTimeMs: 0,
       durationMs: 12_000,
+      lang: '',
     });
   });
 
@@ -161,6 +163,22 @@ describe('ReadingSpeedTracker', () => {
     tracker.onPosition(position(0), 0, false, 'en');
     expect(tracker.onPosition(position(1), readingMs(20), false, 'en')).toMatchObject({
       count: 20,
+    });
+  });
+
+  it('records the language that chose the unit: the section’s, else the book’s', () => {
+    const turn = (position: ReturnType<typeof section>, end: number, language: string) => {
+      const tracker = new ReadingSpeedTracker();
+      tracker.onPosition(position(0, end), 0, false, language);
+      return tracker.onPosition(position(end), 20_000, false, language);
+    };
+    const english = `${words(80)} next`;
+    expect(turn(section(english), 400, 'en-US')).toMatchObject({ unit: 'words', lang: 'en' });
+    expect(turn(section(english), 400, '')).toMatchObject({ unit: 'words', lang: '' });
+    const chinese = `${'一二三四五六七八九十'.repeat(20)}下一页`;
+    expect(turn(section(chinese, 0, 'zh-Hant'), 200, 'en')).toMatchObject({
+      unit: 'characters',
+      lang: 'zh',
     });
   });
 

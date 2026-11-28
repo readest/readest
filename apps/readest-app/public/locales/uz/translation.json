@@ -3074,5 +3074,17 @@
   "Highlight Current Paragraph": "Joriy xatboshini ajratib ko'rsatish",
   "Highlight Button": "Belgilash tugmasi",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki’ga eksport har bir kartaning orqa tomoniga ushbu lug'at maqolasini qo'yadi",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Lug'at maqolalari qidirilmoqda ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Lug'at maqolalari qidirilmoqda ({{done}}/{{total}})…",
+  "characters/min": "belgi/daqiqa",
+  "words/min": "soʻz/daqiqa",
+  "Average Speed": "Oʻrtacha tezlik",
+  "Change from Previous Period": "Oldingi davrga nisbatan oʻzgarish",
+  "No reading speed measured": "Oʻqish tezligi oʻlchanmagan",
+  "Measured Reading Time": "Oʻlchangan oʻqish vaqti",
+  "{{change}} this month": "Bu oy {{change}}",
+  "This Week": "Bu hafta",
+  "This Month": "Bu oy",
+  "Highest Monthly Average": "Eng yuqori oylik oʻrtacha",
+  "Reading Speed by Book": "Kitoblar boʻyicha oʻqish tezligi",
+  "How fast you read in each language, and how it changes over time": "Har bir tilda qanchalik tez oʻqishingiz va bu vaqt oʻtishi bilan qanday oʻzgarishi"
 }

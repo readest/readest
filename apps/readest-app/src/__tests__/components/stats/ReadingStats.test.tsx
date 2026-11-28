@@ -198,6 +198,8 @@ describe('ReadingStatsDialog', () => {
   const emptySpeeds = {
     getReadingSpeedSamples: async () => [],
     getReadingSpeedTotals: async () => [],
+    getReadingSpeedQuarters: async () => [],
+    getBookReadingSpeeds: async () => [],
   };
   const openDialog = async () => {
     const { default: ReadingStatsDialog, setReadingStatsDialogVisible } = await import(
@@ -228,6 +230,8 @@ describe('ReadingStatsDialog', () => {
         { unit: 'characters', count: 300, durationMs: 60_000, startTimeMs: Date.now() - 60_000 },
       ],
       getReadingSpeedTotals: async () => [{ unit: 'characters', count: 480, durationMs: 120_000 }],
+      getReadingSpeedQuarters: async () => [],
+      getBookReadingSpeeds: async () => [],
     });
     await openDialog();
     expect(await screen.findByText('300 characters/min')).toBeTruthy();
@@ -244,6 +248,8 @@ describe('ReadingStatsDialog', () => {
         { unit: 'characters', count: 300, durationMs: 30_000, startTimeMs: Date.now() - 30_000 },
       ],
       getReadingSpeedTotals: async () => [{ unit: 'characters', count: 300, durationMs: 30_000 }],
+      getReadingSpeedQuarters: async () => [],
+      getBookReadingSpeeds: async () => [],
     });
     await openDialog();
     expect(await screen.findAllByText('600 characters/min')).toHaveLength(2);
@@ -333,5 +339,127 @@ describe('ReadingStatsDialog', () => {
     expect(dialog.hasAttribute('open')).toBe(true);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(dialog.hasAttribute('open')).toBe(false);
+  });
+});
+
+describe('Reading speed by language', () => {
+  const quarter = (date: Date, lang: string, unit: string, count: number, minutes: number) => ({
+    quarter: date.getTime() / 900_000,
+    lang,
+    unit,
+    count,
+    durationMs: minutes * 60_000,
+  });
+  // English at 200 words/min in October, then 250 and 300 in November.
+  const speedQuarters = [
+    quarter(new Date(2026, 9, 20, 21), 'en', 'words', 2000, 10),
+    quarter(new Date(2026, 10, 2, 8), 'en', 'words', 2500, 10),
+    quarter(new Date(2026, 10, 4, 9), 'en', 'words', 3000, 10),
+    quarter(new Date(2026, 10, 3, 9), 'zh', 'characters', 16_000, 40),
+  ];
+  const book = (md5: string, title: string, lang: string, unit: string, count: number) => ({
+    md5,
+    title,
+    authors: `${title} Author`,
+    lang,
+    unit,
+    count,
+    durationMs: 600_000,
+    lastRead: 0,
+  });
+
+  const openStats = async (quarters = speedQuarters) => {
+    vi.useFakeTimers({ now: new Date('2026-11-07T12:00:00'), toFake: ['Date'] });
+    db.open.mockResolvedValue({
+      getQuarterHourDurations: async () => [],
+      getBookQuarterHourDurations: async () => [],
+      getReadingTotals: async () => ({ seconds: 0, books: 0, pages: 0 }),
+      getReadingSpeedSamples: async () => [],
+      getReadingSpeedTotals: async () => [],
+      getReadingSpeedQuarters: async () => quarters,
+      getBookReadingSpeeds: async () => [
+        book('b1', 'Hobbit', 'en', 'words', 2800),
+        book('b2', 'Hongloumeng', 'zh', 'characters', 4000),
+      ],
+    });
+    const { default: ReadingStatsDialog, setReadingStatsDialogVisible } = await import(
+      '@/components/stats/ReadingStatsDialog'
+    );
+    render(<ReadingStatsDialog />);
+    await act(async () => setReadingStatsDialogVisible(true));
+  };
+
+  it('lists each language with its average speed and its change this month', async () => {
+    await openStats();
+    const english = await screen.findByRole('button', { name: /Englisch/ });
+    expect(english.textContent).toContain('250 words/min');
+    // November's 275 words/min against October's 200.
+    expect(english.textContent).toMatch(/\+37,5\s?% this month/);
+    const chinese = screen.getByRole('button', { name: /Chinesisch/ });
+    expect(chinese.textContent).toContain('400 characters/min');
+    expect(chinese.textContent).not.toContain('this month');
+  });
+
+  it('opens a language’s speed over time, its overview and its books', async () => {
+    await openStats();
+    fireEvent.click(await screen.findByRole('button', { name: /Englisch/ }));
+
+    expect(await screen.findByRole('group', { name: 'Reading Speed' })).toBeTruthy();
+    expect((screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).value).toBe(
+      'en:words',
+    );
+    // November so far, against October.
+    expect(screen.getAllByText('275 words/min').length).toBeGreaterThan(0);
+    expect(screen.getByText(/\+37,5\s?%/)).toBeTruthy();
+    const overview = (label: string) =>
+      screen.getByText(label).closest('[class*="min-h-14"]')!.textContent;
+    expect(overview('This Week')).toContain('275 words/min');
+    expect(overview('Highest Monthly Average')).toContain('275 words/min');
+    expect(screen.getByText('Hobbit')).toBeTruthy();
+    expect(screen.queryByText('Hongloumeng')).toBeNull();
+
+    // The latest measured day is shown; arrow keys step to the days measured before it.
+    const status = screen.getByRole('status');
+    expect(status.textContent).toContain('300 words/min');
+    expect(status.textContent).toContain('10m');
+    fireEvent.keyDown(screen.getByRole('group', { name: 'Reading Speed' }), { key: 'ArrowLeft' });
+    expect(screen.getByRole('status').textContent).toContain('250 words/min');
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Language' }), {
+      target: { value: 'zh:characters' },
+    });
+    expect(await screen.findByText('Hongloumeng')).toBeTruthy();
+    expect(screen.queryByText('Hobbit')).toBeNull();
+  });
+
+  it('spaces the trend by week, so a gap of weeks shows as one', async () => {
+    // The 12 weeks end with the one of Nov 1; read in its first, second and last.
+    await openStats([
+      quarter(new Date(2026, 7, 17, 21), 'en', 'words', 2000, 10),
+      quarter(new Date(2026, 7, 24, 21), 'en', 'words', 2200, 10),
+      quarter(new Date(2026, 10, 2, 21), 'en', 'words', 2500, 10),
+    ]);
+    const english = await screen.findByRole('button', { name: /Englisch/ });
+    const xs = english
+      .querySelector('polyline')!
+      .getAttribute('points')!
+      .split(' ')
+      .map((point) => Number(point.split(',')[0]));
+    expect(xs.map((x) => Math.round(x))).toEqual([0, 9, 100]);
+  });
+
+  it('tells apart languages that were not recorded, by their unit', async () => {
+    await openStats([
+      quarter(new Date(2026, 10, 2, 8), '', 'words', 2500, 10),
+      quarter(new Date(2026, 10, 3, 9), '', 'characters', 16_000, 40),
+    ]);
+    fireEvent.click((await screen.findAllByRole('button', { name: /Unknown/ }))[0]!);
+    const options = [
+      ...(screen.getByRole('combobox', { name: 'Language' }) as HTMLSelectElement).options,
+    ];
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Unknown · characters/min',
+      'Unknown · words/min',
+    ]);
   });
 });

@@ -3232,5 +3232,17 @@
   "Highlight Current Paragraph": "Виділяти поточний абзац",
   "Highlight Button": "Кнопка виділення",
   "Export to Anki puts this dictionary's entry on the back of each card": "Експорт в Anki додає статтю з цього словника на зворот кожної картки",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Пошук словникових статей ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Пошук словникових статей ({{done}}/{{total}})…",
+  "characters/min": "символів/хв",
+  "words/min": "слів/хв",
+  "Average Speed": "Середня швидкість",
+  "Change from Previous Period": "Зміна порівняно з попереднім періодом",
+  "No reading speed measured": "Швидкість читання ще не виміряно",
+  "Measured Reading Time": "Виміряний час читання",
+  "{{change}} this month": "{{change}} цього місяця",
+  "This Week": "Цього тижня",
+  "This Month": "Цього місяця",
+  "Highest Monthly Average": "Найвищий середньомісячний показник",
+  "Reading Speed by Book": "Швидкість читання за книгами",
+  "How fast you read in each language, and how it changes over time": "Як швидко ви читаєте кожною мовою і як це змінюється з часом"
 }

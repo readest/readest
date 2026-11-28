@@ -3153,5 +3153,17 @@
   "Highlight Current Paragraph": "הדגשת הפסקה הנוכחית",
   "Highlight Button": "כפתור הדגשה",
   "Export to Anki puts this dictionary's entry on the back of each card": "הייצוא ל-Anki מוסיף את הערך של המילון הזה לגב כל כרטיס",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "מחפש ערכים במילון ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "מחפש ערכים במילון ({{done}}/{{total}})…",
+  "characters/min": "תווים לדקה",
+  "words/min": "מילים לדקה",
+  "Average Speed": "מהירות ממוצעת",
+  "Change from Previous Period": "שינוי מהתקופה הקודמת",
+  "No reading speed measured": "לא נמדדה מהירות קריאה",
+  "Measured Reading Time": "זמן קריאה שנמדד",
+  "{{change}} this month": "{{change}} החודש",
+  "This Week": "השבוע",
+  "This Month": "החודש",
+  "Highest Monthly Average": "הממוצע החודשי הגבוה ביותר",
+  "Reading Speed by Book": "מהירות קריאה לפי ספר",
+  "How fast you read in each language, and how it changes over time": "כמה מהר אתם קוראים בכל שפה ואיך זה משתנה לאורך זמן"
 }

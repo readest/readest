@@ -11,6 +11,7 @@ import ka from '../../../../public/locales/ka/translation.json';
 import ta from '../../../../public/locales/ta/translation.json';
 
 const translations = vi.hoisted(() => ({ current: {} as Record<string, string> }));
+const speedQuarters = vi.hoisted(() => ({ current: [] as object[] }));
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => (key: string, params?: Record<string, string | number>) =>
     (translations.current[key] ?? key).replace(/\{\{(\w+)\}\}/g, (_, name: string) =>
@@ -54,6 +55,9 @@ vi.mock('@/services/statistics/statisticsDb', () => ({
         getQuarterHourDurations: async () => [{ quarter, seconds: 3600 }],
         getReadingTotals: async () => ({ seconds: 3600, books: 2, pages: 10 }),
         getReadingSpeedTotals: async () => speeds,
+        getReadingSpeedQuarters: async () => speedQuarters.current,
+        getBookReadingSpeeds: async () => [],
+        getBookStats: async () => [],
         getReadingSpeedSamples: async (startMs: number, endMs: number) =>
           speeds
             .filter(({ durationMs }) => startTimeMs < endMs && startTimeMs + durationMs > startMs)
@@ -83,6 +87,7 @@ await import('@/styles/globals.css');
 afterEach(() => {
   cleanup();
   translations.current = {};
+  speedQuarters.current = [];
   for (const attr of ['data-theme', 'data-eink', 'dir'])
     document.documentElement.removeAttribute(attr);
 });
@@ -134,6 +139,61 @@ describe('reading speed rows in the statistics dialog', () => {
       ] as const) {
         expect(linesOf(row, translations.current[unit]!.replace('{{speed}}', speed))).toBe(1);
       }
+    }
+  });
+});
+
+describe('sub-page breadcrumb in the statistics dialog', () => {
+  it.each([
+    ['en', {}],
+    ['de', de],
+    ['el', el],
+    ['ka', ka],
+    ['ta', ta],
+  ])('stays on one line and keeps the page name whole at 360px (%s)', async (_lang, strings) => {
+    translations.current = strings as Record<string, string>;
+    const t = (key: string) => translations.current[key] ?? key;
+    speedQuarters.current = [
+      {
+        quarter: Math.floor(Date.now() / 900_000),
+        lang: 'en',
+        unit: 'words',
+        count: 180,
+        durationMs: 60_000,
+      },
+    ];
+    await page.viewport(360, 900);
+    const { container } = render(<ReadingStatsDialog />);
+    act(() => setReadingStatsDialogVisible(true));
+    for (const [entry, current] of [
+      ['stats.readingCalendar', 'Reading Calendar'],
+      ['stats.readingSpeed', 'Reading Speed'],
+      ['stats.books', 'Statistics by Book'],
+    ] as const) {
+      await vi.waitFor(() =>
+        expect(container.ownerDocument.querySelector(`[data-setting-id="${entry}"]`)).toBeTruthy(),
+      );
+      fireEvent.click(container.ownerDocument.querySelector(`[data-setting-id="${entry}"]`)!);
+      const heading = await vi.waitFor(
+        () => container.ownerDocument.querySelector<HTMLElement>('[data-subpage-heading]')!,
+      );
+      const label = [...heading.querySelectorAll('span')].find(
+        (s) => s.textContent === t(current),
+      )!;
+      const parent = screen.getByRole('button', { name: t('Reading Statistics') });
+      expect(linesOf(heading, t('Reading Statistics'))).toBe(1);
+      // A tap a little outside the parent still reaches it (touch-target), even
+      // when it is down to its 1.5em stub (27px): the page's name is cut only then.
+      const box = parent.getBoundingClientRect();
+      const hits = (x: number, y: number) => parent.contains(document.elementFromPoint(x, y));
+      expect(hits(box.left + box.width / 2, box.bottom + 4)).toBe(true);
+      if (label.scrollWidth > label.clientWidth + 1) {
+        expect(parent.clientWidth).toBe(27);
+        expect(hits(box.left - 6, box.top + box.height / 2)).toBe(true);
+      }
+      expect(parent.clientWidth).toBeGreaterThanOrEqual(27);
+      expect(heading.scrollWidth).toBeLessThanOrEqual(heading.clientWidth + 1);
+      fireEvent.click(parent);
     }
   });
 });

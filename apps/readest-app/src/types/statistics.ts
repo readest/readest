@@ -40,7 +40,8 @@ export type ReadingSpeed = {
   durationMs: number;
 };
 
-export type ReadingSpeedSample = ReadingSpeed & { startTimeMs: number };
+/** `lang` is the base language the text was counted in ('en', 'zh'), or '' when unknown. */
+export type ReadingSpeedSample = ReadingSpeed & { startTimeMs: number; lang?: string };
 
 /** Tunables for the tracker's flush/idle behavior. KOReader-aligned defaults. */
 export interface StatsTrackingConfig {
