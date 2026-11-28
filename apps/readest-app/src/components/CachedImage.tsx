@@ -142,6 +142,9 @@ const CachedImageComponent = ({
   const crossOrigin =
     isWebAppPlatform() && /^https?:\/\//.test(cachedUrl) ? 'anonymous' : undefined;
 
+  // Catalog CDNs with hotlink protection (opds.wol.moe) answer 403 to a
+  // Referer from another site, such as the Android/Windows webview's
+  // `http://tauri.localhost/`. Native OPDS readers send none, so neither do we.
   if (fill) {
     return (
       <Image
@@ -151,6 +154,7 @@ const CachedImageComponent = ({
         className={className}
         sizes={sizes}
         crossOrigin={crossOrigin}
+        referrerPolicy='no-referrer'
       />
     );
   }
@@ -164,6 +168,7 @@ const CachedImageComponent = ({
       className={className}
       sizes={sizes}
       crossOrigin={crossOrigin}
+      referrerPolicy='no-referrer'
     />
   );
 };
