@@ -190,13 +190,17 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
   // first step pushed instead of pushing one per step, so Back returns to where
   // reading was, not to the previous step. The run goes on only while the
   // reader stays where its last step landed: a page turn or any other
-  // navigation starts a new one.
+  // navigation starts a new one. A step made while the last one still loads
+  // (a slider drag that pauses twice) goes on with that run too.
   let runCfi: string | undefined;
   let runFrom: string | undefined;
-  const stepTo = async (target: GoToTarget, focus?: boolean) => {
+  let loadingStep: Promise<unknown> | undefined;
+  const stepTo = async (target: GoToTarget, focus?: boolean, previous?: Promise<unknown>) => {
     try {
       const resolved = await originalView.resolveNavigation(target);
       await originalView.renderer.goTo(focus ? { ...resolved, focus } : resolved);
+      // The step this one cut short pushes the run's entry when it ends.
+      await previous?.catch(() => {});
       originalView.history.replaceState(target);
       return resolved;
     } catch (e) {
@@ -216,15 +220,16 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
     // its iframe load); surface start/end so the viewer can show a spinner.
     originalView.dispatchEvent(new CustomEvent('navigate-start'));
     const from = originalView.lastLocation;
-    const continues = options?.step && !!from?.cfi && from.cfi === runCfi;
-    return Promise.resolve(
-      continues ? stepTo(target, options.focus) : originalGoTo(target, options),
+    const previous = options?.step ? loadingStep : undefined;
+    const continues = options?.step && (!!previous || (!!from?.cfi && from.cfi === runCfi));
+    if (options?.step && !continues) runFrom = from?.tocItem?.label;
+    const navigation = Promise.resolve(
+      continues ? stepTo(target, options.focus, previous) : originalGoTo(target, options),
     )
       .then((resolved) => {
         const to = originalView.lastLocation;
         const asked = options?.focus || options?.step;
         if (asked && from?.cfi && to?.cfi && from.cfi !== to.cfi) {
-          if (options.step && !continues) runFrom = from.tocItem?.label;
           runCfi = options.step ? to.cfi : undefined;
           originalView.dispatchEvent(
             new CustomEvent('reader-jump', {
@@ -238,8 +243,11 @@ export const wrappedFoliateView = (originalView: FoliateView): FoliateView => {
         return resolved;
       })
       .finally(() => {
+        if (loadingStep === navigation) loadingStep = undefined;
         originalView.dispatchEvent(new CustomEvent('navigate-end'));
       });
+    loadingStep = options?.step ? navigation : undefined;
+    return navigation;
   };
 
   return originalView;

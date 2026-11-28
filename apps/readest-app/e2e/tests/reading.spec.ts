@@ -77,10 +77,12 @@ test.describe('Reading', () => {
 
     await reader.revealFooter();
     const slider = page.getByRole('slider', { name: 'Jump to Location' });
+    // The label previews the slider before the jump runs, so the second move
+    // can come while the first one's jump still loads: Back skips both.
     await slider.fill('50');
     await expect.poll(() => reader.readingProgress()).toBeGreaterThan(start);
     await slider.fill('70');
-    await expect.poll(() => reader.readingProgress()).toBeGreaterThan(60);
+    await expect.poll(() => reader.locationFraction()).toBeGreaterThan(0.6);
     await goBack.click();
     await expect.poll(() => reader.readingProgress()).toBe(start);
   });
