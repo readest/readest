@@ -85,7 +85,7 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   if (isDefaultEnglish && primaryLang && !isSameLang(lang, primaryLang)) {
     lang = primaryLang.split('-')[0]!.toLowerCase();
   }
-  const text = removeLanguageBlocks(ssml, () => false).replace(/<[^>]*>/g, ' ');
+  const text = removeLanguageBlocks(ssml, () => false).replace(/<[^>]*>/g, '');
   return inferLangFromScript(text, lang);
 };
 
@@ -121,12 +121,7 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
       if (text && activeMark && isValidMark(text)) {
         const offset = plainText.length;
         plainText += text;
-        marks.push({
-          offset,
-          name: activeMark,
-          text,
-          language: inferLangFromScript(text, currentLang) || currentLang,
-        });
+        marks.push({ offset, name: activeMark, text, language: currentLang });
       } else {
         plainText += cleanTextContent(rawText);
       }
@@ -153,6 +148,18 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
       }
     }
   }
+
+  // A tag cuts a sentence into fragments. The language comes from all of the
+  // sentence's text in one language scope, so a fragment holding only a stray
+  // ideograph (between two <break/>s, say) doesn't get a voice of its own.
+  const scopes = marks.map((mark) => `${mark.name}\u0000${mark.language}`);
+  const scopeText = new Map<string, string>();
+  marks.forEach((mark, i) =>
+    scopeText.set(scopes[i]!, (scopeText.get(scopes[i]!) ?? '') + mark.text),
+  );
+  marks.forEach((mark, i) => {
+    mark.language = inferLangFromScript(scopeText.get(scopes[i]!)!, mark.language) || mark.language;
+  });
 
   return { plainText, marks };
 };

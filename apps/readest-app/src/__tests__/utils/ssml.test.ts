@@ -105,6 +105,30 @@ describe('a stray ideograph in an English paragraph', () => {
     const { marks } = parseSSMLMarks(ssml, 'en');
     expect(marks.map((mark) => mark.language)).toEqual(['en', 'en', 'en']);
   });
+
+  // A tag splits a sentence into fragments; one holding only the ideograph
+  // must not take a voice of its own.
+  it('should keep a fragment holding only the ideograph in English', () => {
+    const { marks } = parseSSMLMarks(
+      ssmlWithLang('en', '<mark name="0"/>He paused<break/>一<break/>and went on.'),
+      'en',
+    );
+    expect(marks.map((mark) => mark.language)).toEqual(['en', 'en', 'en']);
+  });
+
+  it('should keep a word split by an inline tag whole', () => {
+    expect(
+      parseSSMLLang(ssmlWithLang('en', '<mark name="0"/>你好 i<emphasis>Phone</emphasis>')),
+    ).toBe('zh');
+  });
+
+  it('should keep an explicit language inside the sentence', () => {
+    const { marks } = parseSSMLMarks(
+      ssmlWithLang('en', '<mark name="0"/>She said <lang xml:lang="fr">bonjour</lang> and left.'),
+      'en',
+    );
+    expect(marks.map((mark) => mark.language)).toEqual(['en', 'fr', 'en']);
+  });
 });
 
 describe('parseSSMLMarks', () => {
