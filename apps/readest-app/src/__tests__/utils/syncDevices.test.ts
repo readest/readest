@@ -27,6 +27,8 @@ const UA = {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
   firefoxLinux: 'Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0',
   koreader: 'KOReader/v2025.08 (Kindle Paperwhite 5; Linux; arm) LuaSocket/3.0.0',
+  // The Readest plugin signs in and refreshes through KOReader's Spore client.
+  koreaderPlugin: 'lua-Spore',
 };
 
 describe('describeUserAgent', () => {
@@ -43,6 +45,10 @@ describe('describeUserAgent', () => {
     ['koreader', 'KOReader', 'Kindle Paperwhite 5'],
   ] as const)('names %s as %s on %s', (key, client, os) => {
     expect(describeUserAgent(UA[key])).toEqual({ client, os });
+  });
+
+  it("names the KOReader plugin's Spore agent KOReader, on no device it can name", () => {
+    expect(describeUserAgent(UA.koreaderPlugin)).toEqual({ client: 'KOReader', os: null });
   });
 
   it.each([null, '', 'node', 'Go-http-client/1.1'])('knows nothing of %j', (ua) => {
@@ -80,6 +86,18 @@ describe('groupSessionsByDevice', () => {
       lastActiveAt: '2026-03-05T00:00:00Z',
       current: false,
     });
+  });
+
+  it('lists the KOReader plugin once, however many sessions it holds', () => {
+    const devices = groupSessionsByDevice(
+      [
+        session('a', UA.koreaderPlugin, '2026-01-01T00:00:00Z'),
+        session('b', UA.koreaderPlugin, '2026-01-02T00:00:00Z'),
+      ],
+      null,
+    );
+    expect(devices).toHaveLength(1);
+    expect(devices[0]).toMatchObject({ client: 'KOReader', os: null, sessionIds: ['a', 'b'] });
   });
 
   it('keeps every session with an unknown agent as its own device', () => {

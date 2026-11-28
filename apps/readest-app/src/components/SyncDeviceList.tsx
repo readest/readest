@@ -21,7 +21,7 @@ export default function SyncDeviceList({ devices, busyId, onSignOut }: SyncDevic
         const name =
           device.client && device.os
             ? _('{{client}} on {{os}}', { client: device.client, os: device.os })
-            : _('Unknown device');
+            : (device.client ?? _('Unknown device'));
         const lastActive = new Date(device.lastActiveAt).toLocaleDateString(getLocale(), {
           dateStyle: 'medium',
         });
