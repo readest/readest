@@ -8,12 +8,13 @@ import Providers from '@/components/Providers';
 import '../styles/globals.css';
 
 const url = 'https://web.readest.com/';
-const title = 'Readest — Where You Read, Digest and Get Insight';
+// What search results show for web.readest.com, so it names what people search
+// for. The installed apps set their own window titles, and the reader replaces
+// this with the book's title.
+const title = 'Readest Web — Free Online EPUB Reader';
 const description =
-  'Discover Readest, the ultimate online ebook reader for immersive and organized reading. ' +
-  'Enjoy seamless access to your digital library, powerful tools for highlighting, bookmarking, ' +
-  'and note-taking, and support for multiple book views. ' +
-  'Perfect for deep reading, analysis, and understanding. Explore now!';
+  'Read EPUB, PDF and other ebooks in your browser with Readest: free, no install, ' +
+  'with highlights, notes and read aloud. Syncs with the Readest apps.';
 const previewImage = 'https://cdn.readest.com/images/open_graph_preview_read_now.png';
 
 export const metadata: Metadata = {
