@@ -136,6 +136,22 @@ describe('a stray ideograph in an English paragraph', () => {
     expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'en']);
   });
 
+  it('should infer an explicit language scope apart from the text around it', () => {
+    const ssml = ssmlWithLang(
+      'en',
+      '<mark name="0"/><lang xml:lang="en">Hello </lang>你好<mark name="1"/>one two three four.',
+    );
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'zh', 'en']);
+  });
+
+  it('should count a space after a language scope with the text it separates', () => {
+    const ssml = ssmlWithLang(
+      'en',
+      '<mark name="0"/>One<lang xml:lang="fr"> (bonjour)</lang> <emphasis>two 一二.</emphasis>',
+    );
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'fr', 'en']);
+  });
+
   it('should keep an explicit language inside the sentence', () => {
     const { marks } = parseSSMLMarks(
       ssmlWithLang('en', '<mark name="0"/>She said <lang xml:lang="fr">bonjour</lang> and left.'),

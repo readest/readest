@@ -110,11 +110,21 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
 
   let plainText = '';
   const marks: TTSMark[] = [];
-  const rawTexts: string[] = [];
 
   let activeMark: string | null = null;
   let currentLang = defaultLang;
   const langStack: string[] = [];
+
+  // A tag cuts a sentence into fragments. The language comes from all of the
+  // sentence's text in one language scope (the paragraph's own, or one <lang>
+  // block), so a fragment holding only a stray ideograph (between two
+  // <break/>s, say) doesn't get a voice of its own. The text is kept as
+  // written, spaces included, so the words on either side of a tag stay apart.
+  let scope = 0;
+  let scopeCount = 0;
+  const scopeStack: number[] = [];
+  const scopeText = new Map<string, string>();
+  const markScopes: string[] = [];
 
   const tagRegex = /<(\/?)(\w+)([^>]*)>|([^<]+)/g;
 
@@ -123,16 +133,15 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
     if (match[4]) {
       const rawText = match[4];
       const text = cleanTextContent(rawText);
+      const key = `${activeMark}\u0000${scope}`;
+      scopeText.set(key, (scopeText.get(key) ?? '') + rawText);
       if (text && activeMark && isValidMark(text)) {
         const offset = plainText.length;
         plainText += text;
         marks.push({ offset, name: activeMark, text, language: currentLang });
-        rawTexts.push(rawText);
+        markScopes.push(key);
       } else {
         plainText += cleanTextContent(rawText);
-        // Not a fragment (a space between two tags, say), but it still keeps
-        // the words around it apart.
-        if (rawTexts.length) rawTexts[rawTexts.length - 1] += rawText;
       }
     } else {
       const isEnd = match[1] === '/';
@@ -147,29 +156,23 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
       } else if (tagName === 'lang') {
         if (!isEnd) {
           langStack.push(currentLang);
+          scopeStack.push(scope);
+          scope = ++scopeCount;
           const langMatch = attr?.match(/xml:lang="([^"]+)"/);
           if (langMatch) {
             currentLang = langMatch[1]!;
           }
         } else {
           currentLang = langStack.pop() ?? defaultLang;
+          scope = scopeStack.pop() ?? 0;
         }
       }
     }
   }
 
-  // A tag cuts a sentence into fragments. The language comes from all of the
-  // sentence's text in one language scope, so a fragment holding only a stray
-  // ideograph (between two <break/>s, say) doesn't get a voice of its own.
-  // The text is untrimmed: the space a fragment starts with keeps the words on
-  // either side of the tag apart.
-  const scopes = marks.map((mark) => `${mark.name}\u0000${mark.language}`);
-  const scopeText = new Map<string, string>();
-  marks.forEach((_, i) =>
-    scopeText.set(scopes[i]!, (scopeText.get(scopes[i]!) ?? '') + rawTexts[i]),
-  );
   marks.forEach((mark, i) => {
-    mark.language = inferLangFromScript(scopeText.get(scopes[i]!)!, mark.language) || mark.language;
+    const text = scopeText.get(markScopes[i]!)!;
+    mark.language = inferLangFromScript(text, mark.language) || mark.language;
   });
 
   return { plainText, marks };
