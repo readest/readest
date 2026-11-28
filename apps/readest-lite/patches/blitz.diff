@@ -7276,7 +7276,7 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
          let transform = (self.transform * viewport).then_translate(Vec2 { x, y });
  
          self.with_replaced_content_clip(
-@@ -1377,7 +1648,8 @@
+@@ -1377,19 +1648,28 @@
          }
      }
  
@@ -7284,18 +7284,37 @@ diff -ruN blitz/packages/blitz-paint/src/render.rs blitz/packages/blitz-paint/sr
 +    /// `clip`: what the document's ancestors leave in view, in its painter's screen coordinates.
 +    fn draw_sub_document(&self, scene: &mut impl PaintScene, clip: Rect) {
          if let Some(sub_doc) = self.element.sub_doc_data().map(|doc| doc.inner()) {
-             let scale = self.scale;
-             let width = self.frame.content_box.width() as u32;
-@@ -1389,7 +1661,7 @@
-             let initial_y = translation.y + self.frame.content_box.origin().y;
-             // let transform = self.transform.then_translate(Vec2 { x, y });
+-            let scale = self.scale;
+-            let width = self.frame.content_box.width() as u32;
+-            let height = self.frame.content_box.height() as u32;
++            // A transform that scales evenly paints the document at that scale (foliate-js fits
++            // a fixed-layout page's iframe to the window with `transform: scale()`).
++            // TODO: Support arbitrary transforms of subdocuments: of others, only the
++            // translation is kept.
++            let [a, b, c, d, _, _] = self.transform.as_coeffs();
++            let zoom = if b == 0.0 && c == 0.0 && a == d && a > 0.0 {
++                a
++            } else {
++                1.0
++            };
++            let scale = self.scale * zoom;
++            let width = (self.frame.content_box.width() * zoom) as u32;
++            let height = (self.frame.content_box.height() * zoom) as u32;
+ 
+-            // TODO: Support arbitrary transforms of subdocuments
+             let translation = self.transform.translation();
+-            let initial_x = translation.x + self.frame.content_box.origin().x;
+-            let initial_y = translation.y + self.frame.content_box.origin().y;
+-            // let transform = self.transform.then_translate(Vec2 { x, y });
++            let initial_x = translation.x + self.frame.content_box.origin().x * zoom;
++            let initial_y = translation.y + self.frame.content_box.origin().y * zoom;
  
 -            let painter = BlitzDomPainter::new(
 +            let mut painter = BlitzDomPainter::new(
                  &sub_doc,
                  scale,
                  width,
-@@ -1398,6 +1670,15 @@
+@@ -1398,6 +1678,15 @@
                  initial_y,
                  self.custom_widget_scenes,
              );

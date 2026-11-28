@@ -191,6 +191,10 @@
   not its whole box, and the root of a document's columns is not culled by its flow box (its
   columns cull themselves). foliate-js makes a section's iframe as wide as all its pages and
   shows one, so every frame drew the whole section for the clip to discard.
+- `blitz-paint` render: an iframe whose transform scales evenly (`transform: scale()`) draws its
+  document at that scale; other transforms keep only their translation, as before. foliate-js
+  fits a fixed-layout page (a comic's, a pre-paginated EPUB's) to the window by scaling its
+  iframe, and Blitz drew every such page at its natural size.
 - `blitz-dom` resolve, document: `resolve` drops the cached images no node shows any more (the
   cache held every image a document ever loaded, by URL). The library's decoded covers stayed
   in memory while a book was read.
