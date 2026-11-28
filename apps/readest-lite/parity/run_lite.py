@@ -127,8 +127,13 @@ for i in range(len(input_steps) + 1):
     start = inputs[i - 1]['t_ms'] if i else 0.0
     end = inputs[i]['t_ms'] if i < len(inputs) else float('inf')
     seg = [fr for fr in frames if start <= fr['t_ms'] < end]
-    if seg:  # the frame on screen when the step settled
-        shutil.copy(f"{frames_dir}/main-{seg[-1]['n']:03}.pgm", f'{out}/step-{i:03}.pgm')
+    # The frame on screen when the step was captured, as run_cef.mjs's screenshot: at the first
+    # input for step 0, 'delay' ms after its input for the others. (The last frame before the next
+    # input showed what came later: a highlight Readest removes after 4 s was gone.)
+    at = start + delay if i else end
+    shown = [fr for fr in frames if fr['t_ms'] <= at]
+    if shown:
+        shutil.copy(f"{frames_dir}/main-{shown[-1]['n']:03}.pgm", f'{out}/step-{i:03}.pgm')
     if i:
         e = inputs[i - 1] if i - 1 < len(inputs) else {}
         timing.append(dict(step=i, input=input_steps[i - 1], handler_ms=e.get('handler_ms'),
