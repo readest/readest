@@ -1044,7 +1044,7 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     }
   }, [isSideBarVisible, handleDismissPopup]);
 
-  const lastRelocateCfiRef = useRef<string | null>(null);
+  const lastRelocateStartRef = useRef<string | null>(null);
   const onRelocate = (event: Event) => {
     // A page turn or scroll moves the anchor out from under any open popup
     // (including the note popup), so dismiss instead of leaving it floating
@@ -1052,10 +1052,14 @@ const Annotator: React.FC<{ bookKey: string; contentInsets: Insets; gridInsets?:
     // DPR snap adjustments after a tap) must not close a just-opened popup,
     // so only a real location change dismisses. Skip while a selection drag
     // is in flight so cross page auto turns keep their popup flow intact.
+    // The page is compared by where it starts: when the text reflows after
+    // the page is shown, the re-anchor that keeps the page moves only the
+    // end of its range (#8060).
     const detail = (event as CustomEvent).detail;
     const cfi: string | null = detail?.cfi ?? null;
-    const moved = lastRelocateCfiRef.current !== null && cfi !== lastRelocateCfiRef.current;
-    lastRelocateCfiRef.current = cfi;
+    const start = cfi ? CFI.collapse(cfi) : null;
+    const moved = lastRelocateStartRef.current !== null && start !== lastRelocateStartRef.current;
+    lastRelocateStartRef.current = start;
     if (!moved) return;
     if (isTextSelected.current || isInstantAnnotating.current) return;
     handleDismissPopup();

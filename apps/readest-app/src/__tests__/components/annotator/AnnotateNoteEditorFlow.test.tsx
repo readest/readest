@@ -74,6 +74,7 @@ const h = vi.hoisted(() => ({
   // On for a test that lays the book cell and the selection out itself.
   realPopupGeometry: false,
   popupPlacement: null as null | { top: number; triangleY: number },
+  foliateEvents: null as null | { onRelocate?: (event: Event) => void },
 }));
 
 const settings = {
@@ -198,7 +199,11 @@ vi.mock('@/app/reader/hooks/useReadwiseSync', () => ({ useReadwiseSync: () => {}
 vi.mock('@/app/reader/hooks/useHardcoverSync', () => ({ useHardcoverSync: () => {} }));
 vi.mock('@/app/reader/hooks/usePageboundSync', () => ({ usePageboundSync: () => {} }));
 vi.mock('@/app/reader/hooks/useNotionSync', () => ({ useNotionSync: () => {} }));
-vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({ useFoliateEvents: () => {} }));
+vi.mock('@/app/reader/hooks/useFoliateEvents', () => ({
+  useFoliateEvents: (_view: unknown, handlers: { onRelocate?: (event: Event) => void }) => {
+    h.foliateEvents = handlers;
+  },
+}));
 vi.mock('@/app/reader/hooks/useRendererInputListeners', () => ({
   useRendererInputListeners: () => {},
 }));
@@ -542,6 +547,28 @@ describe('Annotate opens the note editor at the selection', () => {
 
     expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
     expect(liveAnnotations()).toHaveLength(1);
+  });
+
+  // The text reflows after the page is shown, and the reader re-anchors: the
+  // page stays where it was and only the end of its range moves.
+  test('keeps the editor open when the page re-anchors after a reflow (#8060)', async () => {
+    const relocate = (cfi: string) =>
+      act(() => {
+        h.foliateEvents?.onRelocate?.(new CustomEvent('relocate', { detail: { cfi } }));
+      });
+    render(<Annotator bookKey='book-1' contentInsets={{ top: 0, right: 0, bottom: 0, left: 0 }} />);
+    relocate('epubcfi(/6/10!/4/2/2,/2,/4/22/1:699)');
+    await selectText();
+    act(() => {
+      h.actions?.['onAnnotateSelection']?.();
+    });
+
+    relocate('epubcfi(/6/10!/4/2/2,/2,/4/22/1:567)');
+    expect(screen.getByTestId('note-editor-popup')).toBeTruthy();
+
+    // Turning the page still closes it.
+    relocate('epubcfi(/6/10!/4/2/2,/4/22/1:567,/4/40/1:120)');
+    expect(screen.queryByTestId('note-editor-popup')).toBeNull();
   });
 
   test('drops the selection so the range handles cannot cover the editor (#5815)', async () => {
