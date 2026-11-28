@@ -85,8 +85,8 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   if (isDefaultEnglish && primaryLang && !isSameLang(lang, primaryLang)) {
     lang = primaryLang.split('-')[0]!.toLowerCase();
   }
-  const textWithoutLangTags = removeLanguageBlocks(ssml, () => false);
-  return inferLangFromScript(textWithoutLangTags, lang);
+  const text = removeLanguageBlocks(ssml, () => false).replace(/<[^>]*>/g, ' ');
+  return inferLangFromScript(text, lang);
 };
 
 const isValidMark = (mark: string) => {

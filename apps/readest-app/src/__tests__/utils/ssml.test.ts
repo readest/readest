@@ -83,6 +83,28 @@ describe('parseSSMLLang', () => {
     const ssml = ssmlNoLang('<mark name="0"/>안녕하세요');
     expect(parseSSMLLang(ssml)).toBe('ko');
   });
+
+  // The words in the SSML's own tags are not the text's.
+  it('should infer Chinese for a short heading despite the Latin in its tags', () => {
+    expect(parseSSMLLang(ssmlWithLang('en', '<mark name="0"/>第一章'))).toBe('zh');
+  });
+});
+
+describe('a stray ideograph in an English paragraph', () => {
+  const ssml = ssmlWithLang(
+    'en',
+    '<mark name="0"/>“What…?” <mark name="1"/>She unfolded it gingerly as Ranni looked on, ' +
+      'clearly trying 一 and failing 一 to stifle a smile. <mark name="2"/>Fíli laughed.',
+  );
+
+  it('should keep the paragraph in English', () => {
+    expect(parseSSMLLang(ssml, 'en')).toBe('en');
+  });
+
+  it('should read every sentence with the English voice', () => {
+    const { marks } = parseSSMLMarks(ssml, 'en');
+    expect(marks.map((mark) => mark.language)).toEqual(['en', 'en', 'en']);
+  });
 });
 
 describe('parseSSMLMarks', () => {
