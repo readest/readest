@@ -2894,6 +2894,12 @@
     const [h, offset] = n.caret(this._id, x, y);
     return h == null ? null : new CaretPosition(wrapIn(h, ownerOf(this)), offset);
   };
+  // The topmost element at a point of the viewport. (No elementsFromPoint: Blitz lists only the
+  // hit element's ancestors under it, not every box there.)
+  Document.prototype.elementFromPoint = function (x, y) {
+    const h = n.elementAt(this._id, x, y);
+    return h == null ? null : wrapIn(h, ownerOf(this));
+  };
   // ---- Pointer capture ----
   // A captured pointer's moves and its release go to the capturing element wherever the pointer
   // is, in the client coordinates of that element's document; lifting the pointer releases it.

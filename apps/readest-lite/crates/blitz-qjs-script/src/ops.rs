@@ -1008,6 +1008,17 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         .unwrap_or_default()
     });
     let d = docs.clone();
+    // CSSOM View's elementFromPoint in the document of `h`, at (x, y) in its viewport: the topmost
+    // element there (the iframe itself over a frame), or nothing outside the viewport.
+    op!("elementAt", move |h: f64, x: f64, y: f64| -> Option<f64> {
+        d.resolve(h, "elementAt");
+        d.with(h, |doc, _, tag| {
+            doc.element_from_point(x as f32, y as f32)
+                .map(|n| d.enc(tag, n))
+        })
+        .flatten()
+    });
+    let d = docs.clone();
     // An element's scroll offset: [scrollLeft, scrollTop].
     op!("scroll", move |h: f64| -> Vec<f64> {
         d.with(h, |doc, n, _| {
