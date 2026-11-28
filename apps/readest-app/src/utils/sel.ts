@@ -1,4 +1,5 @@
 import { getPdfCaretPosition, getPdfTextFromRange, getPdfTextLayer } from '@/utils/pdfText';
+import { findZhWord, isJiebaReady } from '@/utils/jieba';
 
 export interface Frame {
   top: number;
@@ -634,11 +635,36 @@ export const snapRangeToWords = (range: Range): void => {
   snapEndToWordBoundary();
 };
 
+// Android ships ICU without its Chinese dictionary, so Intl.Segmenter and the
+// WebView's own long-press split Chinese into single characters (#8018).
+export const splitsChineseByCharacter = (): boolean =>
+  typeof Intl !== 'undefined' &&
+  !!Intl.Segmenter &&
+  [...new Intl.Segmenter('zh', { granularity: 'word' }).segment('思考')].length > 1;
+
+// Widen a range on Chinese text to the word around it, where the platform
+// splits Chinese by character. Null when there is nothing to widen.
+export const widenToChineseWord = (range: Range, lang?: string): Range | null => {
+  if (!lang?.startsWith('zh') || !isJiebaReady() || !splitsChineseByCharacter()) return null;
+  const node = range.startContainer;
+  if (node !== range.endContainer || node.nodeType !== Node.TEXT_NODE) return null;
+  const text = node.textContent ?? '';
+  const { startOffset, endOffset } = range;
+  if (!/^\p{Script=Han}+$/u.test(text.slice(startOffset, endOffset))) return null;
+  const word = findZhWord(text, startOffset, endOffset);
+  if (!word || (word[0] === startOffset && word[1] === endOffset)) return null;
+  const widened = range.cloneRange();
+  widened.setStart(node, word[0]);
+  widened.setEnd(node, word[1]);
+  return widened;
+};
+
 // Expand a caret position (a text node + offset) to the word-like segment that
 // contains it — the same word a native double-click would select. Returns null
 // when the position isn't inside word-like text (whitespace, punctuation, a
-// non-text node). CJK is segmented via Intl.Segmenter, matching snapRangeToWords.
-export const getWordRangeAt = (node: Node, offset: number): Range | null => {
+// non-text node). CJK is segmented via Intl.Segmenter, matching snapRangeToWords,
+// and in a Chinese book (`lang`) widened where that splits it by character.
+export const getWordRangeAt = (node: Node, offset: number, lang?: string): Range | null => {
   if (node.nodeType !== Node.TEXT_NODE) return null;
   if (typeof Intl === 'undefined' || !Intl.Segmenter) return null;
   const text = node.textContent ?? '';
@@ -660,7 +686,8 @@ export const getWordRangeAt = (node: Node, offset: number): Range | null => {
       } catch {
         return null;
       }
-      return range.collapsed ? null : range;
+      if (range.collapsed) return null;
+      return widenToChineseWord(range, lang) ?? range;
     }
   }
   return null;
@@ -692,9 +719,14 @@ export const getCaretPointFromPoint = (
   return { node, offset };
 };
 
-export const getWordRangeFromPoint = (doc: Document, x: number, y: number): Range | null => {
+export const getWordRangeFromPoint = (
+  doc: Document,
+  x: number,
+  y: number,
+  lang?: string,
+): Range | null => {
   const point = getCaretPointFromPoint(doc, x, y);
-  return point ? getWordRangeAt(point.node, point.offset) : null;
+  return point ? getWordRangeAt(point.node, point.offset, lang) : null;
 };
 
 interface SelectedTextSlice {

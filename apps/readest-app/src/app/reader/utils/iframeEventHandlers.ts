@@ -805,9 +805,9 @@ export const handleClick = (
   };
   if (!doubleClickDisabled.current) {
     setTimeout(() => {
-      if (Date.now() - lastClickTime >= DOUBLE_CLICK_INTERVAL_THRESHOLD_MS) {
-        postSingleClick();
-      }
+      // No click came since this one. Timed from now instead, a timer the
+      // thread ran late (#8018) reads a double-click as a single one.
+      if (lastClickTime === now) postSingleClick();
     }, DOUBLE_CLICK_INTERVAL_THRESHOLD_MS);
   } else {
     // Mouse clicks remain synchronous. A touch-synthesized click waits one

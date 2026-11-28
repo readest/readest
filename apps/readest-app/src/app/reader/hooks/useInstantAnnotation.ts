@@ -339,12 +339,13 @@ export const useInstantAnnotation = ({
       if (!isInstantAnnotationEnabled()) return;
       const start = startPointRef.current;
       if (!start) return;
-      const wordRange = getWordRangeFromPoint(doc, start.x, start.y);
+      const lang = getBookData(bookKey)?.book?.primaryLanguage;
+      const wordRange = getWordRangeFromPoint(doc, start.x, start.y, lang);
       if (!wordRange) return;
       engageRangeRef.current = wordRange;
       drawPreview(doc, index, wordRange, start);
     },
-    [isInstantAnnotationEnabled, drawPreview],
+    [bookKey, getBookData, isInstantAnnotationEnabled, drawPreview],
   );
 
   const handleInstantAnnotationPointerMove = useCallback(

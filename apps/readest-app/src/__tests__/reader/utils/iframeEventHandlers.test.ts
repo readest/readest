@@ -133,6 +133,25 @@ describe('iframeEventHandlers click gestures', () => {
     expect(types).not.toContain('iframe-single-click');
   });
 
+  test('a double-click whose handling holds the thread posts no single click (#8018)', async () => {
+    const { handleClick, handleMousedown, handleMouseup } = await importHandlers();
+    const doubleClickDisabled = { current: false };
+
+    handleMousedown('book-1', mouseEvent());
+    handleMouseup('book-1', mouseEvent());
+    handleClick('book-1', doubleClickDisabled, false, false, mouseEvent());
+    vi.advanceTimersByTime(100);
+    handleMousedown('book-1', mouseEvent());
+    handleMouseup('book-1', mouseEvent());
+    handleClick('book-1', doubleClickDisabled, false, false, mouseEvent({ target: document.body }));
+    // Selecting the word blocks the thread for half a second (the first jieba
+    // lookup in a Chinese book on Android), so the first click's timer runs late.
+    vi.setSystemTime(Date.now() + 500);
+    vi.advanceTimersByTime(260);
+
+    expect(postedTypes(postSpy)).not.toContain('iframe-single-click');
+  });
+
   test('a double-click reports where it landed in the window, not just in its section (#6583)', async () => {
     const { handleClick, handleMousedown, handleMouseup } = await importHandlers();
     const doubleClickDisabled = { current: false };
