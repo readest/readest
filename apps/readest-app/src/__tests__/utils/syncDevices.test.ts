@@ -54,6 +54,13 @@ describe('describeUserAgent', () => {
   it.each([null, '', 'node', 'Go-http-client/1.1'])('knows nothing of %j', (ua) => {
     expect(describeUserAgent(ua)).toBeNull();
   });
+
+  it.each([
+    'ReadestAuthProxy/1 not-base64!',
+    `ReadestAuthProxy/1 ${btoa('node')}`,
+  ])('knows nothing of a proxied agent that names nothing: %j', (ua) => {
+    expect(describeUserAgent(ua)).toBeNull();
+  });
 });
 
 const session = (

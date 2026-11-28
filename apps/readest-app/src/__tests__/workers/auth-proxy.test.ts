@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import worker from '../../../workers/auth-proxy/src/index';
+import { describeUserAgent } from '@/utils/syncDevices';
 
 const SUPABASE_URL = 'https://project.supabase.co';
 const PROXY = 'https://auth-cf.readest.com';
@@ -76,11 +77,38 @@ describe('auth proxy worker', () => {
     });
 
     // Supabase stores the agent on the session, and the device list in
-    // Manage Sync names each device from it.
-    it("passes on the reader's user agent", async () => {
-      await worker.fetch(post(path, { headers: { 'User-Agent': 'KOReader/v2025.08' } }), env);
+    // Manage Sync names each device from it. Supabase also refuses a secret
+    // key on any request whose agent looks like a browser ("Forbidden use of
+    // secret API key in browser"), so the reader's agent goes in wrapped.
+    it("passes on the reader's user agent in a form that isn't a browser's", async () => {
+      const chrome =
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36';
+      await worker.fetch(post(path, { headers: { 'User-Agent': chrome } }), env);
 
-      expect(forwarded().headers.get('user-agent')).toBe('KOReader/v2025.08');
+      const agent = forwarded().headers.get('user-agent');
+      expect(agent).not.toMatch(/Mozilla|AppleWebKit|Chrome|Safari/);
+      expect(describeUserAgent(agent)).toEqual({ client: 'Chrome', os: 'macOS' });
+    });
+
+    // Workers hands header values over as UTF-8 text, so a device model can
+    // hold characters that btoa alone can't encode. Node's Headers can't, so
+    // the Worker's view of the request is stubbed.
+    it('passes on an agent whose device model is in any script', async () => {
+      const app =
+        'Mozilla/5.0 (Linux; Android 14; 阅读器 Build/X; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0.0.0 Mobile Safari/537.36';
+      const request = post(path);
+      const get = request.headers.get.bind(request.headers);
+      vi.spyOn(request.headers, 'get').mockImplementation((name) =>
+        name.toLowerCase() === 'user-agent' ? app : get(name),
+      );
+
+      const response = await worker.fetch(request, env);
+
+      expect(response.status).toBe(200);
+      expect(describeUserAgent(forwarded().headers.get('user-agent'))).toEqual({
+        client: 'Readest',
+        os: '阅读器',
+      });
     });
 
     it('ignores a forwarded IP and Authorization sent by the client', async () => {
