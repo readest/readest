@@ -130,6 +130,12 @@ describe('a stray ideograph in an English paragraph', () => {
     expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'en', 'en']);
   });
 
+  it('should keep the words apart that a space alone between two tags separates', () => {
+    const ssml = ssmlWithLang('en', '<mark name="0"/>One<break/> <break/>two 一二.');
+    expect(parseSSMLLang(ssml)).toBe('en');
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'en']);
+  });
+
   it('should keep an explicit language inside the sentence', () => {
     const { marks } = parseSSMLMarks(
       ssmlWithLang('en', '<mark name="0"/>She said <lang xml:lang="fr">bonjour</lang> and left.'),

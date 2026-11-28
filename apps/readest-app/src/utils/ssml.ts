@@ -130,6 +130,9 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
         rawTexts.push(rawText);
       } else {
         plainText += cleanTextContent(rawText);
+        // Not a fragment (a space between two tags, say), but it still keeps
+        // the words around it apart.
+        if (rawTexts.length) rawTexts[rawTexts.length - 1] += rawText;
       }
     } else {
       const isEnd = match[1] === '/';
