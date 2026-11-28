@@ -144,6 +144,13 @@ describe('a stray ideograph in an English paragraph', () => {
     expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'zh', 'en']);
   });
 
+  // XMLSerializer writes &, < and > in text as &amp;, &lt; and &gt;.
+  it('should not count an escaped symbol as an English word', () => {
+    const ssml = ssmlWithLang('en', '<mark name="0"/>&lt;中文&gt;');
+    expect(parseSSMLLang(ssml)).toBe('zh');
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['zh']);
+  });
+
   it('should count a space after a language scope with the text it separates', () => {
     const ssml = ssmlWithLang(
       'en',

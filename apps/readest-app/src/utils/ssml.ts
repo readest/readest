@@ -59,6 +59,12 @@ const removeLanguageBlocks = (ssml: string, keep: (lang: string) => boolean) => 
   return result + ssml.slice(from);
 };
 
+// XMLSerializer writes &, < and > in text as &amp;, &lt; and &gt;. Read for
+// counting, those are symbols, not the English words `amp`, `lt` and `gt`.
+const XML_ESCAPES: Record<string, string> = { amp: '&', lt: '<', gt: '>' };
+const unescapeXMLText = (text: string) =>
+  text.replace(/&(amp|lt|gt);/g, (_, name: string) => XML_ESCAPES[name]!);
+
 export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   let lang = 'en';
   const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);
@@ -90,7 +96,7 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   const text = removeLanguageBlocks(ssml, () => false)
     .split(/<[^>]*>/)
     .join('');
-  return inferLangFromScript(text, lang);
+  return inferLangFromScript(unescapeXMLText(text), lang);
 };
 
 const isValidMark = (mark: string) => {
@@ -134,7 +140,7 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
       const rawText = match[4];
       const text = cleanTextContent(rawText);
       const key = `${activeMark}\u0000${scope}`;
-      scopeText.set(key, (scopeText.get(key) ?? '') + rawText);
+      scopeText.set(key, (scopeText.get(key) ?? '') + unescapeXMLText(rawText));
       if (text && activeMark && isValidMark(text)) {
         const offset = plainText.length;
         plainText += text;
