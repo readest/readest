@@ -26,8 +26,14 @@ private let logger = Logger(
 /// Select All still work) via an editable-context probe: an editable
 /// selection reports `cut:` true, an editable caret with clipboard content
 /// reports `paste:` true, and non-editable web content reports both false.
+/// They also let it through while `suppressed` is lifted.
 enum ContextMenuSuppressor {
   private static var installed = false
+
+  /// Whether the menu stays off non-editable content. The app lifts it while
+  /// app text meant for copying is selected, such as a docked dictionary
+  /// definition, and sets it again for book text (#8045). Main thread only.
+  static var suppressed = true
 
   /// Installs the hooks once per process. Safe to call repeatedly.
   static func installIfNeeded() {
@@ -88,7 +94,7 @@ enum ContextMenuSuppressor {
         AnyObject, UIEditMenuInteraction, UIEditMenuConfiguration, [UIMenuElement]
       ) -> UIMenu? = { receiver, interaction, configuration, suggestedActions in
         let editable = (receiver as? UIResponder).map(isEditableContext) ?? false
-        if editable {
+        if editable || !suppressed {
           return originalIMP(receiver, selector, interaction, configuration, suggestedActions)
         }
         // Non-editable selection: an empty menu presents nothing. Text
@@ -120,7 +126,7 @@ enum ContextMenuSuppressor {
       receiver, configuration in
       let view = (receiver as? UIEditMenuInteraction)?.view
       let editable = view.map(isEditableContext) ?? false
-      if editable {
+      if editable || !suppressed {
         originalIMP(receiver, selector, configuration)
       }
       // Non-editable selection: skip presentation entirely.
@@ -149,7 +155,7 @@ enum ContextMenuSuppressor {
       let editable =
         originalIMP(receiver, selector, cutSelector, sender)
         || originalIMP(receiver, selector, pasteSelector, sender)
-      if editable {
+      if editable || !suppressed {
         return originalIMP(receiver, selector, action, sender)
       }
       // Non-editable selection: report false for every action so the system

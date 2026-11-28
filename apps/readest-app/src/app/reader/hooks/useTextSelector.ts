@@ -8,6 +8,7 @@ import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { setSelectionSuppressed } from '@/utils/bridge';
+import { suppressSystemSelectionMenu } from '@/hooks/useSystemSelectionMenu';
 import { LINK_TOUCH_HOLD_CLASS, TEXT_SELECTED_CLASS } from '@/utils/style';
 import {
   focusCaretWindowPos,
@@ -1329,6 +1330,10 @@ export const useTextSelector = (
     if (isValidSelection(sel) && pointerDragActive.current) selectionDragging.current = true;
 
     if (isAndroid) syncSelectionMenuSuppression(isValidSelection(sel));
+    // iOS (#8045): app text selected before may have let the system menu
+    // through; book text shows Readest's toolbar instead. Echoes of our own
+    // writes returned above: they never bring the menu up, so leave it be.
+    if (appService?.isIOSApp && isValidSelection(sel)) suppressSystemSelectionMenu(true);
 
     // First selection of an Android touch gesture: remember the anchor and
     // whether it is prone to the hyphen bounds bug (#1553), before any

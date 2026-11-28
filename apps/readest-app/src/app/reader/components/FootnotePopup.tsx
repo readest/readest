@@ -51,6 +51,7 @@ import { isCJKLang } from '@/utils/lang';
 import { getLocale } from '@/utils/misc';
 import { Overlay } from '@/components/Overlay';
 import Popup from '@/components/Popup';
+import { suppressSystemSelectionMenu } from '@/hooks/useSystemSelectionMenu';
 
 interface FootnotePopupProps {
   bookKey: string;
@@ -534,6 +535,10 @@ const FootnotePopup: React.FC<FootnotePopupProps> = ({
         };
         let selectionTimer: ReturnType<typeof setTimeout> | null = null;
         doc.addEventListener('selectionchange', () => {
+          // iOS (#8045): as in the book, the toolbar is Readest's, not the system's.
+          if (appService?.isIOSApp && !doc.getSelection()?.isCollapsed) {
+            suppressSystemSelectionMenu(true);
+          }
           if (selectionTimer) clearTimeout(selectionTimer);
           selectionTimer = setTimeout(() => report(false), 250);
         });
