@@ -90,4 +90,24 @@ describe('iOS system selection menu', () => {
       suppressed: true,
     });
   });
+
+  // The reader re-adds a book range itself (after a lookup, or to drop the
+  // native grabbers). That echo is not a new selection, so it must not take
+  // the menu off app text the user selected meanwhile.
+  test('an echo of the reader’s own selection write leaves the menu alone', () => {
+    const { result } = setup();
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    doc.body.innerHTML = '<p>The investigation is under way.</p>';
+    const range = doc.createRange();
+    range.selectNodeContents(doc.querySelector('p')!);
+
+    suppressSystemSelectionMenu(false);
+    h.setSelectionSuppressed.mockClear();
+    result.current.restoreSelectionRange(range);
+    result.current.handleSelectionchange(doc, 0);
+
+    expect(h.setSelectionSuppressed).not.toHaveBeenCalled();
+  });
 });

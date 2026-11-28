@@ -1308,9 +1308,6 @@ export const useTextSelector = (
   const handleSelectionchange = (doc: Document, index: number) => {
     const sel = doc.getSelection() as Selection;
     doc.documentElement.classList.toggle(TEXT_SELECTED_CLASS, sel?.isCollapsed === false);
-    // iOS (#8045): app text selected before may have let the system menu
-    // through; book text shows Readest's toolbar instead.
-    if (appService?.isIOSApp && isValidSelection(sel)) suppressSystemSelectionMenu(true);
 
     // Echo of our own programmatic selection writes (handle suppression or a
     // custom-handle drag) — not user input.
@@ -1333,6 +1330,10 @@ export const useTextSelector = (
     if (isValidSelection(sel) && pointerDragActive.current) selectionDragging.current = true;
 
     if (isAndroid) syncSelectionMenuSuppression(isValidSelection(sel));
+    // iOS (#8045): app text selected before may have let the system menu
+    // through; book text shows Readest's toolbar instead. Echoes of our own
+    // writes returned above: they never bring the menu up, so leave it be.
+    if (appService?.isIOSApp && isValidSelection(sel)) suppressSystemSelectionMenu(true);
 
     // First selection of an Android touch gesture: remember the anchor and
     // whether it is prone to the hyphen bounds bug (#1553), before any
