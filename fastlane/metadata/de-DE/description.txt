@@ -1,0 +1,41 @@
+Readest ist ein E-Book-Reader für Menschen, die viel lesen und ihre Bücher, Notizen und Leseposition auf dem Gerät haben möchten, das gerade am nächsten liegt.
+
+Öffnen Sie EPUB, PDF, MOBI, AZW3, FB2, CBZ, TXT und Markdown in einer Bibliothek. Holen Sie sich Bücher aus OPDS-Katalogen oder von Ihrem eigenen Calibre-Server. Lesen, markieren, zuhören, übersetzen.
+
+Gemacht für iPhone und iPad
+• CarPlay: unterwegs weiterhören, mit der Wiedergabesteuerung auf dem Display im Auto
+• Vorlesestimmen pro Buch herunterladen und ganz ohne Verbindung zuhören
+• Bücher aus Dateien, Mail oder jedem Teilen-Menü hinzufügen und direkt dort lesen, statt sie in eine zweite Bibliothek zu kopieren
+• Auf dem iPad bis zu vier Bücher gleichzeitig öffnen und beliebig anordnen
+
+Lesen
+• Seitenweise oder scrollend, mit eigenen Schriften, Themen, Abständen und Rändern
+• Vertikaler Text für CJK-Bücher
+• Kontrast und Bildaufbau für E-Ink-Displays abgestimmt
+• Volltextsuche im Buch
+
+Ihre Bibliothek
+• OPDS-Kataloge und öffentliche Bibliotheken durchsuchen und Bücher herunterladen
+• Mit Calibre oder Calibre-Web verbinden, samt Covern und Metadaten
+• Mit umbenennbaren Bücherregal-Gruppen ordnen
+
+Notizen
+• Markierungen, Lesezeichen und strukturierte Notizen
+• Eine Markierung samt Deep Link zurück zur Textstelle kopieren
+• Anmerkungen exportieren
+
+Zuhören und Sprachen
+• Sprachausgabe mit herunterladbaren Offline-Stimmen
+• Einen Satz, eine Seite oder ein ganzes Buch übersetzen
+• Wikipedia und Wörterbuch nachschlagen, ohne die Seite zu verlassen
+
+Synchronisierung
+• Readest Cloud oder Ihr eigener Speicher: iCloud, Google Drive, OneDrive, WebDAV, S3
+• KOReader-Sync hält Ihren Lesefortschritt mit Ihrem E-Reader auf demselben Stand
+• iPhone, iPad, Mac, alle anderen Plattformen und das Web
+
+Readest ist Open Source.
+
+Support: support@readest.com
+Datenschutzerklärung: https://readest.com/privacy-policy
+Nutzungsbedingungen: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

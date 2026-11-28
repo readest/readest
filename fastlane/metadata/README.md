@@ -41,6 +41,38 @@ next release run. See "Uploads are ENABLED" below for exactly which lanes.
       compositor/                     caption renderer (tracked)
       staging/                        gitignored scratch; nothing here is read by a lane
 
+### Localized listings
+
+Besides `en-US`, each store has a listing in seven languages whose name carries
+the category word people search for in that language: 电子书阅读器, 電子書閱讀器,
+電子書籍リーダー, EPUB & E-Book Reader, Lecteur EPUB, Lector EPUB, Leitor de EPUB.
+
+| Language | App Store folder | Play / F-Droid folder |
+| --- | --- | --- |
+| Simplified Chinese | `zh-Hans` | `zh-CN` |
+| Traditional Chinese (Taiwan usage) | `zh-Hant` | `zh-TW` |
+| Japanese | `ja` | `ja-JP` |
+| German | `de-DE` | `de-DE` |
+| French | `fr-FR` | `fr-FR` |
+| Spanish | `es-ES`, `es-MX` (symlinks to `es-ES`) | `es-ES`, `es-419` (symlinks to `es-ES`) |
+| Portuguese (Brazil) | `pt-BR` | `pt-BR` |
+
+- The descriptions are translations of the `en-US` text, not new copy: change
+  `en-US` first, then carry the change into every language.
+- Name and subtitle belong to the App Store app record, which iOS and macOS
+  share, so `metadata-macos/<lang>/{name,subtitle}.txt` link to the iOS files
+  instead of carrying a Mac-only subtitle that the other lane would overwrite.
+- The URL files link to `en-US`; readest.com picks the visitor's language itself.
+- Play's localized short and full descriptions live under `metadata/android/<lang>/`
+  and are linked from `metadata-play/android/<lang>/`, like `en-US`, so F-Droid
+  shows the same translations. Only `title.txt` is Play-specific.
+- Keywords: at most 100 characters (CJK characters count as one), no spaces,
+  and no words already in the name or subtitle.
+- What's New is sent as `release_notes: { "default" => ... }` in the Fastfile,
+  which deliver copies into every language, so each locale gets the English notes.
+- Screenshots stay English: a localization with none falls back to the primary
+  language's set.
+
 Play and F-Droid are deliberately split. F-Droid keeps the six plain unframed
 captures and the app name "Readest"; Play gets the captioned marketing
 composites and the keyword title. Upload Play with:

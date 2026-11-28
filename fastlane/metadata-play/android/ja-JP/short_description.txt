@@ -1,0 +1,1 @@
+../../../metadata/android/ja-JP/short_description.txt

@@ -1,0 +1,1 @@
+電子書,閱讀,小說,txt,mobi,azw3,fb2,cbz,漫畫,聽書,劃線,筆記,書架,書庫,字典,電子紙,直排,離線,calibre,opds,koreader,webdav,開源

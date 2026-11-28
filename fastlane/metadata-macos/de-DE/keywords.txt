@@ -1,0 +1,1 @@
+ebook,bücher,lesen,mobi,azw3,bibliothek,notizen,übersetzen,wörterbuch,mac,calibre,opds,koreader

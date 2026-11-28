@@ -1,0 +1,1 @@
+../../../metadata/android/fr-FR/full_description.txt

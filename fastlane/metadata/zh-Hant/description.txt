@@ -1,0 +1,41 @@
+Readest 是一款為愛讀書的人打造的電子書閱讀器：無論手邊是哪台裝置，你的書、筆記和閱讀進度都在那裡。
+
+在同一個書庫裡開啟 EPUB、PDF、MOBI、AZW3、FB2、CBZ、TXT 和 Markdown。從 OPDS 書目或你自己的 Calibre 伺服器取得書籍。閱讀、標註、朗讀、翻譯。
+
+為 iPhone 和 iPad 打造
+• 支援 CarPlay，開車時也能用儀表板上的播放控制繼續聽書
+• 依書下載朗讀語音，完全離線也能聽
+• 從「檔案」、「郵件」或任何分享選單加入書籍，就地閱讀，不必複製到第二個書庫
+• 在 iPad 上最多同時開啟四本書，自由排列
+
+閱讀
+• 分頁或捲動模式，可自訂字型、主題、間距和邊界
+• 支援中日韓書籍直排
+• 針對電子紙螢幕調校的對比度與刷新
+• 書內全文搜尋
+
+你的書庫
+• 瀏覽、搜尋並下載 OPDS 書目和公共圖書館中的書籍
+• 連接 Calibre 或 Calibre-Web，封面和中繼資料一併取得
+• 用可重新命名的書架群組整理書籍
+
+筆記
+• 劃線、書籤和結構化筆記
+• 複製劃線時附上可跳回原文位置的深層連結
+• 匯出你的筆記
+
+朗讀與語言
+• 文字轉語音，可下載離線語音
+• 翻譯一句話、一頁，或整本書
+• 不必離開頁面即可查詢維基百科和字典
+
+同步
+• 使用 Readest Cloud，或自選 iCloud、Google Drive、OneDrive、WebDAV、S3
+• KOReader 同步讓閱讀進度與你的電子閱讀器保持一致
+• iPhone、iPad、Mac、其他所有平台以及網頁版
+
+Readest 是開源軟體。
+
+支援：support@readest.com
+隱私權政策：https://readest.com/privacy-policy
+服務條款：https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

@@ -1,0 +1,42 @@
+Readest est un lecteur d'ebooks pour celles et ceux qui lisent beaucoup et veulent retrouver leurs livres, leurs notes et leur position de lecture sur l'appareil le plus proche.
+
+Sur Mac, vous avez de la place. Ouvrez plusieurs livres dans leurs propres fenêtres, gardez le texte et vos notes sous les yeux en même temps et pilotez le tout au clavier.
+
+Conçu pour Mac
+• Ouvrez des livres dans des fenêtres séparées et placez-les côte à côte
+• Tournez les pages, cherchez, annotez et parcourez votre bibliothèque sans toucher à la souris
+• Cherchez n'importe quel mot dans les dictionnaires macOS déjà installés
+• Ouvrez jusqu'à quatre livres à la fois avec des dispositions flexibles
+
+Lecture
+• Mode paginé ou défilement, avec polices, thèmes, espacements et marges personnalisés
+• Texte vertical pour les livres CJK
+• Contraste et rafraîchissement adaptés aux écrans e-ink
+• Recherche plein texte dans un livre
+
+Votre bibliothèque
+• Ouvrez EPUB, PDF, MOBI, AZW3, FB2, CBZ, TXT et Markdown
+• Parcourez, cherchez et téléchargez depuis des catalogues OPDS et des bibliothèques publiques
+• Connectez-vous à Calibre ou Calibre-Web, couvertures et métadonnées comprises
+• Rangez vos livres dans des groupes d'étagères renommables
+
+Notes
+• Surlignages, signets et notes structurées
+• Copiez un surlignage avec un lien direct vers le passage
+• Exportez vos annotations
+
+Écoute et langues
+• Synthèse vocale avec des voix hors ligne téléchargeables
+• Traduisez une phrase, une page ou un livre entier
+• Consultez Wikipédia et le dictionnaire sans quitter la page
+
+Synchronisation
+• Readest Cloud, ou votre propre stockage : iCloud, Google Drive, OneDrive, WebDAV, S3
+• La synchro KOReader garde votre progression alignée avec votre liseuse
+• Mac, iPhone, iPad, toutes les autres plateformes et le Web
+
+Readest est open source.
+
+Assistance : support@readest.com
+Politique de confidentialité : https://readest.com/privacy-policy
+Conditions d'utilisation : https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

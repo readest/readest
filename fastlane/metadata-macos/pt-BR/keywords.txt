@@ -1,0 +1,1 @@
+livros,ler,abrir,mobi,azw3,biblioteca,destacar,traduzir,dicionário,mac,calibre,opds,koreader

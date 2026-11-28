@@ -174,7 +174,12 @@ def submit_apple_build(deliver_opts, testflight_opts)
     # (Before fastlane/metadata/en-US existed this only sent the two inline
     # fields and left the rest of App Store Connect untouched.)
     skip_metadata: false,
-    release_notes: { "en-US" => release_notes_text },
+    # "default" fills every localization in the metadata folder, not just en-US.
+    # An update needs What's New in each language it is listed in, so without it
+    # the zh-Hans, ja, de-DE... folders would make the submission fail. The notes
+    # come from release-notes.json, which is English, so every language gets them
+    # in English until that file carries translations.
+    release_notes: { "default" => release_notes_text },
     promotional_text: { "en-US" => PROMOTIONAL_TEXT },
     precheck_include_in_app_purchases: false,
     submission_information: { add_id_info_uses_idfa: false },

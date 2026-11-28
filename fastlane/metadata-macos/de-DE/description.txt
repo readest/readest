@@ -1,0 +1,42 @@
+Readest ist ein E-Book-Reader für Menschen, die viel lesen und ihre Bücher, Notizen und Leseposition auf dem Gerät haben möchten, das gerade am nächsten liegt.
+
+Auf dem Mac haben Sie Platz, sich auszubreiten. Öffnen Sie mehrere Bücher in eigenen Fenstern, behalten Sie Text und Notizen gleichzeitig im Blick und steuern Sie alles über die Tastatur.
+
+Gemacht für den Mac
+• Bücher in eigenen Fenstern öffnen und nebeneinander anordnen
+• Blättern, suchen, markieren und durch die Bibliothek navigieren, ohne zur Maus zu greifen
+• Jedes Wort in den bereits installierten macOS-Wörterbüchern nachschlagen
+• Bis zu vier Bücher gleichzeitig öffnen, mit flexiblen Layouts
+
+Lesen
+• Seitenweise oder scrollend, mit eigenen Schriften, Themen, Abständen und Rändern
+• Vertikaler Text für CJK-Bücher
+• Kontrast und Bildaufbau für E-Ink-Displays abgestimmt
+• Volltextsuche im Buch
+
+Ihre Bibliothek
+• EPUB, PDF, MOBI, AZW3, FB2, CBZ, TXT und Markdown öffnen
+• OPDS-Kataloge und öffentliche Bibliotheken durchsuchen und Bücher herunterladen
+• Mit Calibre oder Calibre-Web verbinden, samt Covern und Metadaten
+• Mit umbenennbaren Bücherregal-Gruppen ordnen
+
+Notizen
+• Markierungen, Lesezeichen und strukturierte Notizen
+• Eine Markierung samt Deep Link zurück zur Textstelle kopieren
+• Anmerkungen exportieren
+
+Zuhören und Sprachen
+• Sprachausgabe mit herunterladbaren Offline-Stimmen
+• Einen Satz, eine Seite oder ein ganzes Buch übersetzen
+• Wikipedia und Wörterbuch nachschlagen, ohne die Seite zu verlassen
+
+Synchronisierung
+• Readest Cloud oder Ihr eigener Speicher: iCloud, Google Drive, OneDrive, WebDAV, S3
+• KOReader-Sync hält Ihren Lesefortschritt mit Ihrem E-Reader auf demselben Stand
+• Mac, iPhone, iPad, alle anderen Plattformen und das Web
+
+Readest ist Open Source.
+
+Support: support@readest.com
+Datenschutzerklärung: https://readest.com/privacy-policy
+Nutzungsbedingungen: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

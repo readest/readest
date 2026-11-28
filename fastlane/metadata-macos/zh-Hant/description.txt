@@ -1,0 +1,42 @@
+Readest 是一款為愛讀書的人打造的電子書閱讀器：無論手邊是哪台裝置，你的書、筆記和閱讀進度都在那裡。
+
+在 Mac 上，你有足夠的空間攤開來讀。在各自的視窗裡開啟多本書，讓內文和筆記同時留在眼前，全程用鍵盤操作。
+
+為 Mac 打造
+• 在獨立視窗中開啟書籍，並排擺放
+• 翻頁、搜尋、標註、瀏覽書庫，都不必伸手去拿滑鼠
+• 用你已安裝的 macOS 字典查任何單字
+• 最多同時開啟四本書，版面可彈性調整
+
+閱讀
+• 分頁或捲動模式，可自訂字型、主題、間距和邊界
+• 支援中日韓書籍直排
+• 針對電子紙螢幕調校的對比度與刷新
+• 書內全文搜尋
+
+你的書庫
+• 開啟 EPUB、PDF、MOBI、AZW3、FB2、CBZ、TXT 和 Markdown
+• 瀏覽、搜尋並下載 OPDS 書目和公共圖書館中的書籍
+• 連接 Calibre 或 Calibre-Web，封面和中繼資料一併取得
+• 用可重新命名的書架群組整理書籍
+
+筆記
+• 劃線、書籤和結構化筆記
+• 複製劃線時附上可跳回原文位置的深層連結
+• 匯出你的筆記
+
+朗讀與語言
+• 文字轉語音，可下載離線語音
+• 翻譯一句話、一頁，或整本書
+• 不必離開頁面即可查詢維基百科和字典
+
+同步
+• 使用 Readest Cloud，或自選 iCloud、Google Drive、OneDrive、WebDAV、S3
+• KOReader 同步讓閱讀進度與你的電子閱讀器保持一致
+• Mac、iPhone、iPad、其他所有平台以及網頁版
+
+Readest 是開源軟體。
+
+支援：support@readest.com
+隱私權政策：https://readest.com/privacy-policy
+服務條款：https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
