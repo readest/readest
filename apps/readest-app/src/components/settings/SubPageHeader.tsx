@@ -57,9 +57,10 @@ const SubPageHeader: React.FC<SubPageHeaderProps> = ({
           <button
             type='button'
             onClick={onBack}
-            className='hover:text-primary min-w-[1.5em] truncate transition-colors duration-150 focus-visible:underline focus-visible:outline-hidden'
+            className='hover:text-primary touch-target min-w-[1.5em] transition-colors duration-150 focus-visible:underline focus-visible:outline-hidden'
           >
-            {parentLabel}
+            {/* Cut inside the button: a clip on the button would cut its hit area too. */}
+            <span className='block truncate'>{parentLabel}</span>
           </button>
           <MdChevronRight aria-hidden='true' className='text-base-content/40 h-5 w-5 shrink-0' />
           <span className='text-base-content/70 max-w-[calc(100%-2.25rem-1.5em)] shrink-0 truncate'>

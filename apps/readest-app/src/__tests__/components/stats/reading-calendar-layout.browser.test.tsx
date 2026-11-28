@@ -182,8 +182,15 @@ describe('sub-page breadcrumb in the statistics dialog', () => {
       )!;
       const parent = screen.getByRole('button', { name: t('Reading Statistics') });
       expect(linesOf(heading, t('Reading Statistics'))).toBe(1);
-      // The page's name is cut only once the parent is down to its 1.5em stub (27px).
-      if (label.scrollWidth > label.clientWidth + 1) expect(parent.clientWidth).toBe(27);
+      // A tap a little outside the parent still reaches it (touch-target), even
+      // when it is down to its 1.5em stub (27px): the page's name is cut only then.
+      const box = parent.getBoundingClientRect();
+      const hits = (x: number, y: number) => parent.contains(document.elementFromPoint(x, y));
+      expect(hits(box.left + box.width / 2, box.bottom + 4)).toBe(true);
+      if (label.scrollWidth > label.clientWidth + 1) {
+        expect(parent.clientWidth).toBe(27);
+        expect(hits(box.left - 6, box.top + box.height / 2)).toBe(true);
+      }
       expect(parent.clientWidth).toBeGreaterThanOrEqual(27);
       expect(heading.scrollWidth).toBeLessThanOrEqual(heading.clientWidth + 1);
       fireEvent.click(parent);
