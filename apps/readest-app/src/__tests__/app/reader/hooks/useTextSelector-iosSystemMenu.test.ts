@@ -1,0 +1,93 @@
+import { bookDataStoreHooks } from '@/__tests__/helpers/book-data-store-mock';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { cleanup, renderHook } from '@testing-library/react';
+
+// #8045: on iOS, app text (a definition in the Notebook) lets the system menu
+// through while it is selected. Selecting book text leaves that app selection
+// in place and fires nothing in the app document, so the book's own selection
+// must take the menu back off, or it would cover Readest's toolbar.
+
+const h = vi.hoisted(() => ({
+  view: {
+    renderer: { containerPosition: 0, scrollLocked: false, getContents: () => [] },
+    getCFI: () => 'epubcfi(/6/2!/4/2/1:0)',
+  },
+  setSelectionSuppressed: vi.fn(async (_req: { target: string; suppressed: boolean }) => {}),
+}));
+
+vi.mock('@/context/EnvContext', () => ({
+  useEnv: () => ({ appService: { isIOSApp: true, isMobile: true } }),
+}));
+vi.mock('@/store/readerStore', () => ({
+  useReaderStore: () => ({
+    getView: () => h.view,
+    getViewSettings: () => ({ scrolled: false }),
+    getProgress: () => null,
+  }),
+}));
+vi.mock('@/store/bookDataStore', () => ({
+  ...bookDataStoreHooks(() => ({ getBookData: () => ({ isFixedLayout: false }) })),
+}));
+vi.mock('@/utils/event', () => ({
+  eventDispatcher: { onSync: vi.fn(), offSync: vi.fn(), on: vi.fn(), off: vi.fn() },
+}));
+vi.mock('@/utils/bridge', () => ({
+  setSelectionSuppressed: h.setSelectionSuppressed,
+}));
+vi.mock('@/app/reader/hooks/useInstantAnnotation', () => ({
+  useInstantAnnotation: () => ({
+    isInstantAnnotationEnabled: () => false,
+    handleInstantAnnotationPointerDown: vi.fn(),
+    handleInstantAnnotationPointerMove: vi.fn(),
+    handleInstantAnnotationPointerCancel: vi.fn(),
+    handleInstantAnnotationPointerUp: vi.fn(),
+    reapplyInstantAnnotation: vi.fn(),
+    cancelInstantAnnotation: vi.fn(),
+  }),
+}));
+vi.mock('@/utils/misc', async (importActual) => {
+  const actual = await importActual<typeof import('@/utils/misc')>();
+  return { ...actual, getOSPlatform: () => 'ios' };
+});
+
+import { useTextSelector } from '@/app/reader/hooks/useTextSelector';
+import { suppressSystemSelectionMenu } from '@/hooks/useSystemSelectionMenu';
+
+const setup = () => {
+  const noop = vi.fn();
+  return renderHook(() =>
+    useTextSelector(
+      'book-1',
+      { top: 0, right: 0, bottom: 0, left: 0 },
+      noop,
+      noop,
+      noop,
+      vi.fn(async (range: Range) => range.toString()),
+      noop,
+    ),
+  );
+};
+
+afterEach(() => {
+  cleanup();
+  document.body.innerHTML = '';
+});
+
+describe('iOS system selection menu', () => {
+  test('a book selection takes the menu back off after app text let it through', () => {
+    const { result } = setup();
+    const iframe = document.createElement('iframe');
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    doc.body.innerHTML = '<p>The investigation is under way.</p>';
+
+    suppressSystemSelectionMenu(false);
+    doc.getSelection()!.selectAllChildren(doc.querySelector('p')!);
+    result.current.handleSelectionchange(doc, 0);
+
+    expect(h.setSelectionSuppressed.mock.calls.at(-1)?.[0]).toEqual({
+      target: 'menu',
+      suppressed: true,
+    });
+  });
+});

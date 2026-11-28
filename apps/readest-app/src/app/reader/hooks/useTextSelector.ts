@@ -8,6 +8,7 @@ import { getOSPlatform } from '@/utils/misc';
 import { eventDispatcher } from '@/utils/event';
 import { LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { setSelectionSuppressed } from '@/utils/bridge';
+import { suppressSystemSelectionMenu } from '@/hooks/useSystemSelectionMenu';
 import { LINK_TOUCH_HOLD_CLASS, TEXT_SELECTED_CLASS } from '@/utils/style';
 import {
   focusCaretWindowPos,
@@ -1307,6 +1308,9 @@ export const useTextSelector = (
   const handleSelectionchange = (doc: Document, index: number) => {
     const sel = doc.getSelection() as Selection;
     doc.documentElement.classList.toggle(TEXT_SELECTED_CLASS, sel?.isCollapsed === false);
+    // iOS (#8045): app text selected before may have let the system menu
+    // through; book text shows Readest's toolbar instead.
+    if (appService?.isIOSApp && isValidSelection(sel)) suppressSystemSelectionMenu(true);
 
     // Echo of our own programmatic selection writes (handle suppression or a
     // custom-handle drag) — not user input.

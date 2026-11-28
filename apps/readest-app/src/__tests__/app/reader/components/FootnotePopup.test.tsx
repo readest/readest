@@ -33,6 +33,8 @@ const hoisted = vi.hoisted(() => ({
   wordLensEnabled: false,
   loadGlossIndex: vi.fn().mockResolvedValue(null),
   vocabulary: { learning: new Map([['spice', 'seasoning']]), mastered: new Set<string>() },
+  appService: { isMobile: false, isIOSApp: false },
+  setSelectionSuppressed: vi.fn(async (_req: { target: string; suppressed: boolean }) => {}),
 }));
 
 vi.mock('foliate-js/footnotes.js', () => {
@@ -61,7 +63,11 @@ vi.mock('@/hooks/useResponsiveSize', () => ({
 }));
 
 vi.mock('@/context/EnvContext', () => ({
-  useEnv: () => ({ appService: { isMobile: false } }),
+  useEnv: () => ({ appService: hoisted.appService }),
+}));
+
+vi.mock('@/utils/bridge', () => ({
+  setSelectionSuppressed: hoisted.setSelectionSuppressed,
 }));
 
 vi.mock('@/services/wordlens/glossPacks', () => ({
@@ -605,6 +611,28 @@ describe('FootnotePopup jump to location', () => {
       doc.dispatchEvent(new Event('pointerup'));
 
       expect(cleared()).toBe(1);
+    });
+
+    // #8045: app text the user selected before (a definition in the Notebook)
+    // lets the iOS system menu through. A footnote selection shows Readest's
+    // toolbar, so it takes the menu back off at once, not after the debounce.
+    it('takes the iOS system menu off a footnote selection', async () => {
+      hoisted.appService = { isMobile: true, isIOSApp: true };
+      try {
+        const { doc } = await loadPopupDoc();
+        const { suppressSystemSelectionMenu } = await import('@/hooks/useSystemSelectionMenu');
+        suppressSystemSelectionMenu(false);
+
+        doc.getSelection()!.selectAllChildren(doc.body.firstChild!);
+        doc.dispatchEvent(new Event('selectionchange'));
+
+        expect(hoisted.setSelectionSuppressed.mock.calls.at(-1)?.[0]).toEqual({
+          target: 'menu',
+          suppressed: true,
+        });
+      } finally {
+        hoisted.appService = { isMobile: false, isIOSApp: false };
+      }
     });
   });
 

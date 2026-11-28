@@ -190,6 +190,8 @@ export async function setMulticastLock(acquire: boolean): Promise<void> {
 //    toolbar. Chromium shows it through paths that never fire a cancelable
 //    `contextmenu` event, so DOM-level preventDefault can't stop it;
 //    MainActivity refuses floating action modes while this flag is set.
+//    On iOS (#8045) it gates the edit menu (Copy / Look Up / Share), which
+//    starts off; useSystemSelectionMenu lets it through for selected app text.
 export async function setSelectionSuppressed(
   request: SetSelectionSuppressedRequest,
 ): Promise<void> {

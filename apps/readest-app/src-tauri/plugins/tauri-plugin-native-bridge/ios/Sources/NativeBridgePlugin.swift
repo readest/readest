@@ -1058,14 +1058,16 @@ class NativeBridgePlugin: Plugin {
 
   // Suppress a piece of the OS selection UI. target "gesture": the long-press
   // text selection for non-editable content, while instant-highlight owns the
-  // hold (see TextSelectionSuppressor). target "menu" is a no-op here — the
-  // iOS selection menu is suppressed unconditionally by ContextMenuSuppressor,
-  // which probes editability natively at menu-build time.
+  // hold (see TextSelectionSuppressor). target "menu": the edit menu for
+  // non-editable content, which ContextMenuSuppressor keeps off until the app
+  // lifts it for selected app text (#8045).
   @objc public func set_selection_suppressed(_ invoke: Invoke) throws {
     let args = try invoke.parseArgs(SetSelectionSuppressedRequestArgs.self)
-    if args.target == "gesture" {
-      DispatchQueue.main.async {
+    DispatchQueue.main.async {
+      if args.target == "gesture" {
         TextSelectionSuppressor.setSuppressed(args.suppressed)
+      } else if args.target == "menu" {
+        ContextMenuSuppressor.suppressed = args.suppressed
       }
     }
     invoke.resolve()
