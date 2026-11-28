@@ -85,7 +85,11 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   if (isDefaultEnglish && primaryLang && !isSameLang(lang, primaryLang)) {
     lang = primaryLang.split('-')[0]!.toLowerCase();
   }
-  const text = removeLanguageBlocks(ssml, () => false).replace(/<[^>]*>/g, '');
+  // The text between the tags, for counting only (never rendered). Joined
+  // without a space so a word cut by an inline tag stays one word.
+  const text = removeLanguageBlocks(ssml, () => false)
+    .split(/<[^>]*>/)
+    .join('');
   return inferLangFromScript(text, lang);
 };
 
