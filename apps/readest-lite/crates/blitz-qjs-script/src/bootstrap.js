@@ -1309,12 +1309,19 @@
           p.scrollTo({ left: p.scrollLeft + x, top: p.scrollTop + y, behavior: o.behavior });
       }
     }
-    // Blitz's focus: where key events go.
+    // Blitz's focus: where key events go. A move fires blur and focusout on the element that had
+    // it, then focus and focusin on the one that gets it, as in a browser.
     focus() {
+      const doc = docOf(this);
+      const old = doc.activeElement;
       n.focus(this._id, true);
+      if (old !== this && doc.activeElement === this)
+        focusMoved(old === doc.body ? null : old, this);
     }
     blur() {
+      if (docOf(this).activeElement !== this) return;
       n.focus(this._id, false);
+      focusMoved(this, null);
     }
     click() {
       this.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
@@ -1695,6 +1702,18 @@
   class HTMLDivElement extends HTMLElement {}
   class HTMLSpanElement extends HTMLElement {}
   class HTMLParagraphElement extends HTMLElement {}
+  function focusMoved(from, to) {
+    const fire = (el, type, bubbles, relatedTarget) =>
+      el.dispatchEvent(new FocusEvent(type, { bubbles, composed: true, relatedTarget }));
+    if (from) {
+      fire(from, 'blur', false, to);
+      fire(from, 'focusout', true, to);
+    }
+    if (to) {
+      fire(to, 'focus', false, from);
+      fire(to, 'focusin', true, from);
+    }
+  }
   class SVGElement extends Element {}
   Object.defineProperty(
     SVGElement.prototype,

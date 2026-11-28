@@ -184,3 +184,33 @@ fn focus_shows_after_a_key_or_on_a_text_input_not_after_a_tap() {
         ]
     );
 }
+
+#[test]
+fn script_focus_and_blur_fire_focus_events() {
+    // As in Chromium: blur and focusout on the element losing focus, then focus and focusin on the
+    // one gaining it, each pair naming the other as relatedTarget; nothing when focus doesn't
+    // move. Readest's dialogs bring Tab back on a focusin outside them; Lite fired none for
+    // script's focus().
+    let page = "<!DOCTYPE html><body><button id=a>a</button><button id=b>b</button><div id=plain>p</div></body>";
+    let mut doc = QjsDocument::from_html(page, DocumentConfig::default());
+    doc.eval(
+        "const out = [];
+        for (const t of ['focus', 'blur', 'focusin', 'focusout'])
+          document.addEventListener(t, (e) => out.push(`${t} ${e.target.id} ${e.relatedTarget?.id ?? '-'} ${e.bubbles} ${e instanceof FocusEvent}`), true);
+        const $ = (id) => document.getElementById(id);
+        $('a').focus(); out.push('|'); $('b').focus(); out.push('|'); $('b').focus(); out.push('|');
+        $('plain').focus(); out.push('|'); $('b').blur(); out.push('|'); $('a').blur();
+        out.push(document.activeElement.localName);
+        console.log(out.join(', '));",
+        "test",
+    );
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    // Chromium's
+    assert_eq!(
+        doc.take_messages(),
+        [
+            "log: focus a - false true, focusin a - true true, |, blur a b false true, focusout a b true true, \
+          focus b a false true, focusin b a true true, |, |, |, blur b - false true, focusout b - true true, |, body"
+        ]
+    );
+}
