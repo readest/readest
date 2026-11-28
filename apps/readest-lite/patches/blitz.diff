@@ -1625,7 +1625,7 @@ diff -ruN blitz/packages/blitz-dom/src/events/pointer.rs blitz/packages/blitz-do
 diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-dom/src/layout/columns.rs
 --- blitz/packages/blitz-dom/src/layout/columns.rs
 +++ blitz/packages/blitz-dom/src/layout/columns.rs
-@@ -0,0 +1,382 @@
+@@ -0,0 +1,400 @@
 +//! Columns of the root element: CSS multi-column with `column-fill: auto` and a definite height,
 +//! as foliate-js's paginator styles an EPUB section (one column per page, the columns overflowing
 +//! to the right, the iframe as wide as all of them).
@@ -1759,29 +1759,37 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +    if tops[k] > start { tops[k] } else { tops[line.index] }
 +}
 +
-+/// Pages from boxes `(top, bottom, line)` of a flow `content_height` tall: a page ends at the top
-+/// of the first box that would not fit (moved up for orphans and widows when it is a line of
-+/// `paras`, the line tops of each paragraph), unless nothing is on the page yet; a box taller
++/// Pages from boxes `(top, bottom, shift, line)` of a flow `content_height` tall: a page ends at
++/// the top of the first box that would not fit (moved up for orphans and widows when it is a line
++/// of `paras`, the line tops of each paragraph), unless nothing is on the page yet; a box taller
 +/// than a page is sliced, except that a page holding only that box crops up to `SLACK` px of it
 +/// (the strut under a page-tall image). Margins after the last box make no page.
++///
++/// `top` and `bottom` are where the box is painted, `shift` how far that is below where it is laid
++/// out: layout rounds boxes to whole pixels. Pages are cut where boxes are painted, but whether a
++/// box fits is measured where it is laid out, as Chromium breaks: a line that ends a fraction of
++/// a pixel past the page goes on the next one, though rounding painted it inside.
 +pub(crate) fn paginate(
 +    content_height: f32,
-+    mut boxes: Vec<(f32, f32, Option<Line>)>,
++    mut boxes: Vec<(f32, f32, f32, Option<Line>)>,
 +    paras: &[Vec<f32>],
 +    page: f32,
 +) -> Vec<(f32, f32)> {
 +    const SLACK: f32 = 16.0;
 +    boxes.sort_by(|a, b| a.0.total_cmp(&b.0));
 +    let mut pages = Vec::new();
-+    let (mut start, mut filled, mut last, mut limit) = (0.0f32, false, 0.0f32, page);
-+    for (top, bottom, line) in boxes {
++    // `start_shift`: the shift of the box the page starts in.
++    let (mut start, mut start_shift, mut filled, mut last, mut limit) =
++        (0.0f32, 0.0f32, false, 0.0f32, page);
++    for (top, bottom, shift, line) in boxes {
 +        last = last.max(bottom);
-+        if bottom - start <= limit {
++        let height = (bottom - shift) - (start - start_shift);
++        if height <= limit {
 +            filled = true;
 +            continue;
 +        }
-+        if !filled && bottom - start - page <= SLACK {
-+            limit = bottom - start;
++        if !filled && height - page <= SLACK {
++            limit = height;
 +            filled = true;
 +            continue;
 +        }
@@ -1792,6 +1800,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +        };
 +        pages.push((start, end));
 +        start = end;
++        start_shift = shift;
 +        limit = page;
 +        while bottom - start > page {
 +            pages.push((start, start + page));
@@ -1843,6 +1852,9 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +        };
 +        let origin = root.absolute_position(0.0, 0.0);
 +        let top = origin.y + content_top;
++        // The same unrounded, as the root's content box is laid out.
++        let layout_y = |id| (self.border_box_to_document(id) * kurbo::Point::ORIGIN).y as f32;
++        let layout_top = layout_y(root.id) + content_top;
 +
 +        // Line boxes and replaced boxes of the flow, in content-box coordinates.
 +        let scale = self.viewport.scale();
@@ -1852,12 +1864,17 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +            if let Some(el) = node.element_data() {
 +                let l = node.final_layout();
 +                let y = node.absolute_position(0.0, 0.0).y - top;
++                // How far rounding moved the box down (see `paginate`).
++                let u = node.unrounded_layout();
++                let shift = y - (layout_y(node.id) - layout_top);
 +                if let Some(text) = el
 +                    .inline_layout_data
 +                    .as_ref()
 +                    .filter(|_| node.flags.is_inline_root())
 +                {
 +                    let lines_top = y + l.border.top + l.padding.top + text.block_offset;
++                    let shift =
++                        shift + (l.border.top + l.padding.top) - (u.border.top + u.padding.top);
 +                    let t = node.primary_styles().map(|s| {
 +                        let t = s.get_inherited_text();
 +                        (t.orphans.max(1) as usize, t.widows.max(1) as usize)
@@ -1869,11 +1886,12 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +                        let top = lines_top + m.block_min_coord / scale;
 +                        tops.push(top);
 +                        let line = Line { para: paras.len(), index, orphans, widows };
-+                        boxes.push((top, lines_top + m.block_max_coord / scale, Some(line)));
++                        let bottom = lines_top + m.block_max_coord / scale;
++                        boxes.push((top, bottom, shift, Some(line)));
 +                    }
 +                    paras.push(tops);
 +                } else if el.image_data().is_some() {
-+                    boxes.push((y, y + l.size.height, None));
++                    boxes.push((y, y + l.size.height, shift, None));
 +                }
 +            }
 +            stack.extend(node.children.iter().map(|&id| &self.nodes[id]));
@@ -1929,7 +1947,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +    #[test]
 +    fn lines_are_cut_at_the_first_line_that_does_not_fit() {
 +        let lines = (0..5)
-+            .map(|i| (i as f32 * 20.0, i as f32 * 20.0 + 20.0, None))
++            .map(|i| (i as f32 * 20.0, i as f32 * 20.0 + 20.0, 0.0, None))
 +            .collect();
 +        assert_eq!(
 +            paginate(100.0, lines, &[], 50.0),
@@ -1940,7 +1958,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +    #[test]
 +    fn a_page_tall_image_with_its_strut_is_one_page() {
 +        assert_eq!(
-+            paginate(615.0, vec![(8.0, 607.2, None), (8.0, 603.0, None)], &[], 595.0),
++            paginate(615.0, vec![(8.0, 607.2, 0.0, None), (8.0, 603.0, 0.0, None)], &[], 595.0),
 +            [(0.0, 615.0)]
 +        );
 +    }
@@ -2003,7 +2021,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/columns.rs blitz/packages/blitz-do
 +    #[test]
 +    fn a_box_taller_than_a_page_is_sliced() {
 +        assert_eq!(
-+            paginate(1300.0, vec![(10.0, 1300.0, None)], &[], 595.0),
++            paginate(1300.0, vec![(10.0, 1300.0, 0.0, None)], &[], 595.0),
 +            [(0.0, 595.0), (595.0, 1190.0), (1190.0, 1300.0)]
 +        );
 +    }

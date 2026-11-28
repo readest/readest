@@ -90,6 +90,28 @@ fn element_rects_are_in_their_column() {
 }
 
 #[test]
+fn a_line_a_fraction_past_the_column_bottom_goes_to_the_next_column() {
+    // As in Chromium: after a 3.45px block, four 11.65px lines end at 50.05, past the 50px
+    // column, so the last line goes on in the next column and `widows: 2` takes the third with
+    // it. At whole pixels the paragraph would start at 3 and end at 49.6, inside the column.
+    let lines = (0..4)
+        .map(|i| format!("<span id='s{i}'>•</span>"))
+        .collect::<Vec<_>>()
+        .join("<br>");
+    let mut doc = load(&format!(
+        "<!DOCTYPE html><html style='margin:0; width:100px; height:50px; padding:0 10px; \
+         column-width:100px; column-gap:20px; column-fill:auto; overflow:hidden'>\
+         <body style='margin:0; font: 8px/11.65px Bullet'><div style='height:3.45px'></div>\
+         <div>{lines}</div></body></html>"
+    ));
+    let logs = logs(
+        &mut doc,
+        "console.log([0, 1, 2, 3].map((i) => document.getElementById('s' + i).getBoundingClientRect().x).join(','));",
+    );
+    assert_eq!(logs, ["log: 10,10,130,130"]);
+}
+
+#[test]
 fn the_root_scrolls_sideways_only() {
     let mut doc = doc();
     let logs = logs(

@@ -30,7 +30,8 @@
   styles a section. The content is laid out once as one column; after layout it is cut into
   column slices at line boundaries, and paint, element rects, `scrollWidth`/`scrollHeight`
   and hit testing map between that flow and the columns. Turning a page lays out nothing.
-  break-* properties are not honoured (Stylo parses them only for Gecko).
+  Whether a line fits is measured at its unrounded position, as Chromium breaks; the cut is
+  where it is painted. break-* properties are not honoured (Stylo parses them only for Gecko).
 - `blitz-paint` render: clip rectangles (columns, lifted boxes) are in the painter's clip
   space, without its initial offset; in an iframe they were off by the iframe's position.
 - `blitz-dom` node: `clip-path` clips hit testing (`inset()`, `polygon()` and reference

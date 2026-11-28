@@ -188,7 +188,6 @@ while KOReader is open; close the owner's Lite only after 5 idle minutes and reo
 | Highlight toolbar | The style button's "A" is 16 px tall vs 11.64 | `text-box: trim-both cap alphabetic` not supported in Blitz | Open (select-*, reader-note, highlight-extend steps 1-2, 4-5) |
 | Dictionary popup | Superscript sense numbers | Blitz ignores `position: relative; top` on a non-atomic inline | Open |
 | Text | Lite keeps slight hinting | Owner's decision (cairo) | Accepted |
-| Search → result (reader-search step 7) | The next column starts 2 lines later in Readest | Lite keeps a line that ends 0.11 px below the column; Chromium moves it, and `widows: 2` then moves one more | Open: W1 |
 
 ## 7. Plan
 
@@ -203,8 +202,8 @@ separate commits.
   converter is at hand.
 
 **W1: daily reading on the Kindle (P1)**
-1. Column fragmentation: a line that ends a fraction of a pixel below the column (reader-search
-   step 7).
+1. Done: a line that ends a fraction of a pixel below the column now goes on in the next one, as
+   in Chromium (reader-search step 7).
 2. `document.compatMode`: KaTeX warns at every start that the page is in quirks mode.
 3. Tap-zone and swipe page turns at Kindle size in e-ink.
 4. Reading Progress: drag the slider, jump to a page.
