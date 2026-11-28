@@ -8,8 +8,9 @@ that differs, an outline only one app draws. Glyph edges, hinting and anti-alias
 that distance. Two known differences are not judged: elements inside an <svg> (Blitz paints inline
 SVG as one image, so they have no boxes of their own; the <svg> box itself is compared), and where
 an element empty in both (0x0) sits. The pixel diff (grayscale, |delta| > 32) is reported, not judged. A Tauri command Lite doesn't have (ipc.json of the runs) fails
-the run unless commands-missing.json lists it. Writes REPORT_DIR/report.html, REPORT_DIR/summary.json
-and REPORT_DIR/ipc.json.
+the run unless commands-missing.json lists it, and so does an uncaught script error in Lite's log
+(`js error`). Writes REPORT_DIR/report.html, REPORT_DIR/summary.json, REPORT_DIR/ipc.json and
+REPORT_DIR/js.json.
 """
 import html, json, os, re, sys
 import numpy as np
@@ -116,6 +117,14 @@ for x in ipc_lite:
 json.dump(dict(lite_calls=len(ipc_lite), readest_calls=len(ipc_cef), not_in_lite=absent, not_listed=unlisted,
                errors_only_in_lite=lite_errors), open(f'{rep}/ipc.json', 'w'), indent=1)
 
+# Lite's script errors: an uncaught one (`js error`) fails the run; errors the app caught and logged
+# that name a script exception (a web API Lite lacks, often) are reported.
+log = open(f'{lite_dir}/stderr.log', errors='replace').read().splitlines() if os.path.exists(f'{lite_dir}/stderr.log') else []
+js_errors = list(dict.fromkeys(l for l in log if l.startswith('js error')))
+logged_errors = list(dict.fromkeys(l for l in log if l.startswith('console') and 'PARITY' not in l
+                                   and re.search(r'TypeError|ReferenceError|RangeError|SyntaxError', l)))
+json.dump(dict(uncaught=js_errors, logged=logged_errors), open(f'{rep}/js.json', 'w'), indent=1)
+
 e = html.escape
 out = ['<!doctype html><meta charset=utf-8><title>Readest Lite parity</title><style>'
        'body{font:14px system-ui;margin:24px;max-width:1500px}table{border-collapse:collapse}'
@@ -146,6 +155,10 @@ out.append(f'<h2>Commands: <span class={"bad" if unlisted else "ok"}>{"FAIL" if 
 if lite_errors:
     out.append('<details><summary>Errors only Lite hit</summary><ul>'
                + ''.join(f'<li><code>{e(c)}</code>: {e(str(err))}</li>' for c, err in lite_errors.items()) + '</ul></details>')
+out.append(f'<h2>Script errors in Lite: <span class={"bad" if js_errors else "ok"}>{"FAIL" if js_errors else "pass"}</span></h2>'
+           '<p>An uncaught error fails the run; caught and logged ones that name a script exception are listed.</p><ul>'
+           + ''.join(f'<li class=bad><code>{e(l)}</code></li>' for l in js_errors)
+           + ''.join(f'<li><code>{e(l)}</code></li>' for l in logged_errors) + '</ul>')
 for i, a, b, ok, loc_ok, moved, only_lite, only_cef, ink, pix, img in rows:
     out.append(f"<h2 id=s{i}>Step {i}: <span class={'ok' if ok else 'bad'}>{'pass' if ok else 'FAIL'}</span></h2>")
     out.append(f"<p>Lite location <code>{e(json.dumps(a['loc']))}</code><br>Readest location <code>{e(json.dumps(b['loc']))}</code></p>")
@@ -177,4 +190,6 @@ for s in summary:
 print(f'commands: Lite lacks {len(absent)} it was asked for, {len(unlisted)} not in commands-missing.json'
       + ''.join(f'\n  not listed: {c}' for c in unlisted)
       + (f'; {len(lite_errors)} other errors only in Lite' if lite_errors else ''))
-sys.exit(1 if unlisted else 0)
+print(f'script errors in Lite: {len(js_errors)} uncaught, {len(logged_errors)} caught and logged'
+      + ''.join(f'\n  {l[:200]}' for l in js_errors + logged_errors))
+sys.exit(1 if unlisted or js_errors else 0)

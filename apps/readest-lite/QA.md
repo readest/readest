@@ -40,8 +40,9 @@ records), `capture_ms`, `step_ms`, `settle_ms`.
 
 A step passes when the book location matches, no element moved more than 2 CSS px and no ink is
 only in one app (`compare.py`). A scenario passes when every step passes or fails only for a known
-difference (section 6). Lite's `stderr.log` must also have no `js error` or `TypeError` lines:
-`compare.py` doesn't check this yet (H1).
+difference (section 6). An uncaught script error in Lite's log (`js error`) fails the run; errors
+the app caught and logged that name a script exception are listed in the report, often a web API
+Lite lacks.
 
 Run one scenario:
 
@@ -50,7 +51,6 @@ cd apps/readest-lite
 node parity/run_cef.mjs parity/scenarios/S.json OUT/S-cef READEST_BIN
 python3 parity/run_lite.py parity/scenarios/S.json OUT/S-lite LITE_BIN
 python3 parity/compare.py OUT/S-lite OUT/S-cef OUT/S-report   # report.html, summary.json
-grep -cE 'js error|TypeError' OUT/S-lite/stderr.log
 ```
 
 READEST_BIN is a release build of this branch's readest-app with its own `CARGO_TARGET_DIR`
@@ -194,7 +194,6 @@ test that fails without it, then the scenario) or a row in section 6. Fixes and 
 separate commits.
 
 **Harness**
-- H1: `compare.py` reports Lite's `js error`/`TypeError` lines and fails on them.
 - H2: scenario key `books` (several books in the library), for W2.
 - H3: a fixture EPUB built by a script in `parity/` (footnotes, internal links, an image, a
   table, a right-to-left chapter), plus small FB2, TXT and CBZ fixtures; MOBI from the EPUB if a
@@ -204,13 +203,14 @@ separate commits.
 **W1: daily reading on the Kindle (P1)**
 1. Column fragmentation: a line that ends a fraction of a pixel below the column (reader-search
    step 7).
-2. Tap-zone and swipe page turns at Kindle size in e-ink.
-3. Reading Progress: drag the slider, jump to a page.
-4. Re-open at the saved position.
-5. Font & Layout: each control.
-6. Highlight style and color, delete a highlight, Notebook list and jump, bookmark list and remove.
-7. Footnote popup, internal link and Jump Return, image viewer (H3).
-8. Format smoke tests: open and turn three pages in PDF, vertical-ja, FB2, TXT, CBZ, MOBI.
+2. `document.compatMode`: KaTeX warns at every start that the page is in quirks mode.
+3. Tap-zone and swipe page turns at Kindle size in e-ink.
+4. Reading Progress: drag the slider, jump to a page.
+5. Re-open at the saved position.
+6. Font & Layout: each control.
+7. Highlight style and color, delete a highlight, Notebook list and jump, bookmark list and remove.
+8. Footnote popup, internal link and Jump Return, image viewer (H3).
+9. Format smoke tests: open and turn three pages in PDF, vertical-ja, FB2, TXT, CBZ, MOBI.
 
 **W2: library and settings (P1/P2)**: several books (views, sort, search, a book's menu, select
 mode, groups, progress), scrolled mode, dark mode, Override Book Layout/Color, UI language, a
