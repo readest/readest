@@ -54,6 +54,7 @@ import {
   MediaOverlaySection,
   MediaOverlayTTS,
   MEDIA_OVERLAY_VOICE_ID,
+  paragraphRangeOf,
 } from './mediaOverlay';
 import {
   adjacentAudioChapter,
@@ -216,6 +217,9 @@ export class TTSController extends EventTarget {
   #currentSpeakPromise: Promise<void> | null = null;
 
   #ttsSectionIndex: number = -1;
+  // The section #tts reads. #ttsSectionIndex moves first, while the next
+  // section opens.
+  #ttsTextSectionIndex = -1;
 
   // Virtual section timeline for position/duration/seek (Edge client only).
   // Built lazily OFF the playback critical path: enumerating a 2000-sentence
@@ -564,6 +568,7 @@ export class TTSController extends EventTarget {
     }
     this.#tts = newTts;
     this.view.tts = newTts;
+    this.#ttsTextSectionIndex = sectionIndex;
     if (this.#ttsDoc !== doc) this.#ttsDocSheet++;
     this.#ttsDoc = doc;
     if (narration) {
@@ -968,6 +973,7 @@ export class TTSController extends EventTarget {
     if (existing && existing.doc === doc) {
       this.#tts = existing;
       this.view.tts = existing;
+      this.#ttsTextSectionIndex = sectionIndex;
       return true;
     }
 
@@ -979,6 +985,7 @@ export class TTSController extends EventTarget {
         this.#ttsGranularity = 'sentence';
         this.#tts = new MediaOverlayTTS(doc, narration, this.#getHighlighter());
         this.view.tts = this.#tts;
+        this.#ttsTextSectionIndex = sectionIndex;
         console.log(`[TTS] Initialized narration for section ${sectionIndex}`);
         return true;
       }
@@ -1008,6 +1015,7 @@ export class TTSController extends EventTarget {
       granularity,
     );
     this.view.tts = this.#tts;
+    this.#ttsTextSectionIndex = sectionIndex;
     console.log(`[TTS] Initialized TTS for section ${sectionIndex}`);
 
     return true;
@@ -2588,9 +2596,27 @@ export class TTSController extends EventTarget {
     this.ttsTargetLang = lang;
   }
 
+  // Whether the sentence being read is known: a paired audiobook knows only
+  // the chapter playing (#6060).
+  get supportsPassageHighlight(): boolean {
+    return this.ttsClient.getCapabilities().textHighlight !== false;
+  }
+
   getSpokenSentence(): { cfi: string; text: string } | null {
-    const range = this.#getTts()?.getLastRange();
-    if (!range || this.#ttsSectionIndex < 0) return null;
+    return this.#getSpokenText('sentence');
+  }
+
+  getSpokenParagraph(): { cfi: string; text: string } | null {
+    return this.#getSpokenText('paragraph');
+  }
+
+  #getSpokenText(unit: 'sentence' | 'paragraph'): { cfi: string; text: string } | null {
+    if (!this.supportsPassageHighlight || this.#ttsSectionIndex < 0) return null;
+    // While the next section opens, the range is still the outgoing one's.
+    if (this.#ttsTextSectionIndex !== this.#ttsSectionIndex) return null;
+    let range = this.#getTts()?.getLastRange();
+    if (range && unit === 'paragraph') range = paragraphRangeOf(range) ?? range;
+    if (!range) return null;
     try {
       const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
       const text = range.toString().trim();

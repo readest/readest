@@ -1,5 +1,5 @@
 import { stubTranslation as _ } from '@/utils/misc';
-import { filterPlatformKeys, normalizeShortcut } from '@/utils/shortcutKeys';
+import { filterPlatformKeys, MEDIA_HIGHLIGHT_KEY, normalizeShortcut } from '@/utils/shortcutKeys';
 
 export type ShortcutEntry = {
   keys: string[];
@@ -79,8 +79,13 @@ const DEFAULT_SHORTCUTS = {
     section: 'Text to Speech',
   },
   onTTSHighlightSentence: {
-    keys: ['shift+m'],
+    keys: ['shift+m', MEDIA_HIGHLIGHT_KEY],
     description: _('Highlight Current Sentence'),
+    section: 'Text to Speech',
+  },
+  onTTSHighlightParagraph: {
+    keys: [],
+    description: _('Highlight Current Paragraph'),
     section: 'Text to Speech',
   },
   onToggleParagraphMode: {

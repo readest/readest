@@ -4,6 +4,7 @@ export { parseSmil, parseSmilClock, type SmilPar } from './parseSmil';
 export {
   loadMediaOverlaySection,
   MediaOverlaySection,
+  paragraphRangeOf,
   type NarrationPar,
 } from './MediaOverlaySection';
 export { MediaOverlayTTS } from './MediaOverlayTTS';

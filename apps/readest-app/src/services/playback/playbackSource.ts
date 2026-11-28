@@ -56,6 +56,7 @@ export interface PlaybackSource extends EventTarget {
   readonly state: PlaybackState;
   readonly terminated: boolean;
   readonly isViewAttached: boolean;
+  readonly supportsPassageHighlight?: boolean;
   stopAtChapterEnd: boolean;
   start(): Promise<void>;
   pause(): Promise<void>;

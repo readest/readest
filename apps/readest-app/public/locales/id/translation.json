@@ -2992,5 +2992,7 @@
   "Show a QR code for the selected text": "Tampilkan kode QR untuk teks yang dipilih",
   "Select a shorter passage to share as a QR code.": "Pilih bagian yang lebih pendek untuk dibagikan sebagai kode QR.",
   "QR code for the selected text": "Kode QR untuk teks yang dipilih",
-  "Navigation History": "Riwayat navigasi"
+  "Navigation History": "Riwayat navigasi",
+  "Highlight Current Paragraph": "Sorot paragraf saat ini",
+  "Highlight Button": "Tombol sorot"
 }

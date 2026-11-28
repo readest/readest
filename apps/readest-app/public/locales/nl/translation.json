@@ -3071,5 +3071,7 @@
   "Show a QR code for the selected text": "Een QR-code van de geselecteerde tekst tonen",
   "Select a shorter passage to share as a QR code.": "Selecteer een kortere passage om als QR-code te delen.",
   "QR code for the selected text": "QR-code van de geselecteerde tekst",
-  "Navigation History": "Navigatiegeschiedenis"
+  "Navigation History": "Navigatiegeschiedenis",
+  "Highlight Current Paragraph": "Huidige alinea markeren",
+  "Highlight Button": "Markeerknop"
 }

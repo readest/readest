@@ -9,6 +9,7 @@ vi.mock('@/services/tts/ttsMediaBridge', () => ({
   ttsMediaBridge: {
     bind: (...args: unknown[]) => bridgeBind(...args),
     unbind: () => bridgeUnbind(),
+    refreshPlaybackState: vi.fn(),
   },
   releaseUnblockAudio: () => releaseKeepAlive(),
   unblockAudio: vi.fn(),

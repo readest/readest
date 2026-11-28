@@ -14,6 +14,8 @@ import { TTSMediaBridge, releaseUnblockAudio, unblockAudio } from '@/services/tt
 import { fetchImageAsBase64 } from '@/utils/image';
 import { TauriMediaSession, type MediaSessionState } from '@/libs/mediaSession';
 import type { TTSController } from '@/services/tts/TTSController';
+import { eventDispatcher } from '@/utils/event';
+import { MEDIA_HIGHLIGHT_KEY } from '@/utils/shortcutKeys';
 
 // A controller stand-in: EventTarget + the surface the bridge consumes.
 class FakeController extends EventTarget {
@@ -699,6 +701,65 @@ describe('TTSMediaBridge bind teardown race (READEST-1A)', () => {
       expect.objectContaining({ title: 'New book' }),
     );
     expect(bridge.isBound).toBe(true);
+  });
+
+  test('removes the native highlight action on detach during a skip', async () => {
+    const session = new TauriMediaSession();
+    session.setActive = vi.fn().mockResolvedValue(undefined);
+    session.updateMetadata = vi.fn().mockResolvedValue(undefined);
+    session.updatePlaybackState = vi.fn().mockResolvedValue(undefined);
+    session.setActionHandler = vi.fn();
+    const bridge = new TTSMediaBridge(() => session);
+    const controller = Object.assign(new FakeController(), {
+      state: 'paused',
+      isViewAttached: true,
+      supportsPassageHighlight: true,
+    });
+    try {
+      await bridge.bind(controller as unknown as TTSController, meta());
+      const skip = vi
+        .mocked(session.setActionHandler)
+        .mock.calls.find(([action]) => action === 'nexttrack')?.[1] as () => void;
+      skip();
+      controller.isViewAttached = false;
+      bridge.refreshPlaybackState(controller as unknown as TTSController);
+      expect(session.updatePlaybackState).toHaveBeenLastCalledWith({
+        playing: true,
+        canHighlightPassage: false,
+      });
+    } finally {
+      bridge.unbind();
+    }
+  });
+
+  test('the native highlight action presses the highlight button for its book', async () => {
+    const session = new TauriMediaSession();
+    session.setActive = vi.fn().mockResolvedValue(undefined);
+    session.updateMetadata = vi.fn().mockResolvedValue(undefined);
+    session.updatePlaybackState = vi.fn().mockResolvedValue(undefined);
+    session.setActionHandler = vi.fn();
+    const bridge = new TTSMediaBridge(() => session);
+    const controller = Object.assign(new FakeController(), {
+      isViewAttached: true,
+      supportsPassageHighlight: true,
+    });
+    const pressed = vi.fn();
+    eventDispatcher.on('shortcut-button', pressed);
+    try {
+      await bridge.bind(controller as unknown as TTSController, meta());
+      const highlight = vi
+        .mocked(session.setActionHandler)
+        .mock.calls.find(([action]) => action === 'highlightpassage')?.[1] as () => void;
+      highlight();
+      await vi.waitFor(() => expect(pressed).toHaveBeenCalledOnce());
+      expect(pressed.mock.calls[0]![0].detail).toEqual({
+        key: MEDIA_HIGHLIGHT_KEY,
+        bookKey: 'hash-abc',
+      });
+    } finally {
+      eventDispatcher.off('shortcut-button', pressed);
+      bridge.unbind();
+    }
   });
 
   test('reconciles playback that started while native activation was pending', async () => {

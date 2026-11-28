@@ -43,6 +43,23 @@ class MediaSessionActivationStateTest {
     }
 
     @Test
+    fun remembersHighlightCapabilityWithoutAServiceAndResetsForTheNextSession() {
+        MediaSessionActivationState.requestActivation("old-session")
+        MediaSessionActivationState.updateHighlightCapability("old-session", true)
+        assertTrue(MediaSessionActivationState.canHighlightCurrentPassage())
+
+        MediaSessionActivationState.requestActivation("new-session")
+        MediaSessionActivationState.updateHighlightCapability("old-session", true)
+        assertFalse(MediaSessionActivationState.canHighlightCurrentPassage())
+
+        MediaSessionActivationState.updateHighlightCapability("new-session", true)
+        assertTrue(MediaSessionActivationState.canHighlightCurrentPassage())
+        MediaSessionActivationState.requestDeactivation("new-session")
+        MediaSessionActivationState.updateHighlightCapability("new-session", true)
+        assertFalse(MediaSessionActivationState.canHighlightCurrentPassage())
+    }
+
+    @Test
     fun replacedSessionStaysRejectedAfterDeactivation() {
         MediaSessionActivationState.requestActivation("old-session")
         MediaSessionActivationState.requestActivation("new-session")

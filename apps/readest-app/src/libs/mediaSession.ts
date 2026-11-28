@@ -14,6 +14,7 @@ export interface PlaybackState {
   playing: boolean;
   position?: number; // in milliseconds
   duration?: number; // in milliseconds
+  canHighlightPassage?: boolean;
 }
 
 export interface MediaSessionState {
@@ -154,6 +155,13 @@ export class TauriMediaSession {
         },
       );
       listeners.push(seekListener);
+
+      const highlightListener = await addPluginListener(
+        'native-tts',
+        'media-session-highlight-passage',
+        () => (this.handlers['highlightpassage'] as (() => void) | undefined)?.(),
+      );
+      listeners.push(highlightListener);
     } catch (error) {
       // Registration failed partway. The listeners already registered are
       // unreachable from here on (eventListeners is only assigned on success),

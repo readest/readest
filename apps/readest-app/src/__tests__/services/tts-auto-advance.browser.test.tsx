@@ -468,7 +468,7 @@ describe('TTS from a saved sentence that opens with a dialogue quote', () => {
     }
   });
 
-  it('Read Aloud starts again on that sentence', async () => {
+  it('Read Aloud resumes on that sentence and highlights it or its paragraph without pausing', async () => {
     const viewSettings = dialogueSettings();
     const { view, range } = await openDialogueSentence(viewSettings);
     const cfi = view.getCFI(CH4_SECTION_INDEX, range);
@@ -493,6 +493,29 @@ describe('TTS from a saved sentence that opens with a dialogue quote', () => {
       expect(result.current.getController()?.getSpokenSentence()?.text).toBe(
         range.toString().trim(),
       );
+      const onHighlight = vi.fn();
+      eventDispatcher.on('create-tts-highlight', onHighlight);
+      try {
+        const state = result.current.getController()?.state;
+        await act(async () => {
+          await eventDispatcher.dispatch('tts-highlight', { bookKey: BOOK_KEY, unit: 'sentence' });
+          await eventDispatcher.dispatch('tts-highlight', { bookKey: BOOK_KEY, unit: 'paragraph' });
+        });
+        expect(onHighlight).toHaveBeenCalledTimes(2);
+        expect(onHighlight.mock.calls[0]?.[0].detail).toEqual({
+          bookKey: BOOK_KEY,
+          cfi,
+          text: range.toString().trim(),
+        });
+        const paragraph = range.startContainer.parentElement!.closest('p')!;
+        const { cfi: paragraphCfi, text } = onHighlight.mock.calls[1]![0].detail;
+        expect(text).toBe(paragraph.textContent!.trim());
+        const anchored = view.resolveCFI(paragraphCfi).anchor(paragraph.ownerDocument);
+        expect(anchored.toString()).toBe(text);
+        expect(result.current.getController()?.state).toBe(state);
+      } finally {
+        eventDispatcher.off('create-tts-highlight', onHighlight);
+      }
     } finally {
       speakDelayMs = 25;
       unmount();

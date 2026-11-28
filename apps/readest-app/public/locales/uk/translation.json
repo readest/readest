@@ -3229,5 +3229,7 @@
   "Show a QR code for the selected text": "Показати QR-код для виділеного тексту",
   "Select a shorter passage to share as a QR code.": "Виберіть коротший уривок, щоб поділитися ним як QR-кодом.",
   "QR code for the selected text": "QR-код для виділеного тексту",
-  "Navigation History": "Історія переходів"
+  "Navigation History": "Історія переходів",
+  "Highlight Current Paragraph": "Виділяти поточний абзац",
+  "Highlight Button": "Кнопка виділення"
 }

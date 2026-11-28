@@ -99,6 +99,8 @@ describe('No identical keybinding lists across actions (#3675)', () => {
     const shortcuts = await getDefaults();
     const keyListToActions = new Map<string, string[]>();
     for (const [name, entry] of Object.entries(shortcuts)) {
+      // Unbound actions share no key.
+      if (entry.keys.length === 0) continue;
       const id = [...entry.keys].sort().join(',').toLowerCase();
       const actions = keyListToActions.get(id) ?? [];
       actions.push(name);
@@ -302,6 +304,7 @@ describe('Default bindings that always fire', () => {
     'onTTSGoNextParagraph',
     'onTTSGoPreviousParagraph',
     'onTTSHighlightSentence',
+    'onTTSHighlightParagraph',
     'onReloadPage',
     'onGoLeft',
     'onGoRight',

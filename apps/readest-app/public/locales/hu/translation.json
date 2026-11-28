@@ -3071,5 +3071,7 @@
   "Show a QR code for the selected text": "QR-kód megjelenítése a kijelölt szöveghez",
   "Select a shorter passage to share as a QR code.": "Jelölj ki rövidebb szakaszt a QR-kódként való megosztáshoz.",
   "QR code for the selected text": "QR-kód a kijelölt szöveghez",
-  "Navigation History": "Navigációs előzmények"
+  "Navigation History": "Navigációs előzmények",
+  "Highlight Current Paragraph": "Aktuális bekezdés kiemelése",
+  "Highlight Button": "Kiemelés gomb"
 }

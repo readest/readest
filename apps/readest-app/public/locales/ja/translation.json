@@ -2992,5 +2992,7 @@
   "Show a QR code for the selected text": "選択したテキストのQRコードを表示",
   "Select a shorter passage to share as a QR code.": "QRコードで共有するには、もっと短い文章を選択してください。",
   "QR code for the selected text": "選択したテキストのQRコード",
-  "Navigation History": "移動履歴"
+  "Navigation History": "移動履歴",
+  "Highlight Current Paragraph": "現在の段落をハイライト",
+  "Highlight Button": "ハイライトボタン"
 }

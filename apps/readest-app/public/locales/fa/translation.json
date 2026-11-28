@@ -3071,5 +3071,7 @@
   "Show a QR code for the selected text": "نمایش کد QR برای متن انتخاب‌شده",
   "Select a shorter passage to share as a QR code.": "برای اشتراک‌گذاری به‌صورت کد QR، بخش کوتاه‌تری را انتخاب کنید.",
   "QR code for the selected text": "کد QR برای متن انتخاب‌شده",
-  "Navigation History": "تاریخچه پیمایش"
+  "Navigation History": "تاریخچه پیمایش",
+  "Highlight Current Paragraph": "برجسته‌سازی پاراگراف فعلی",
+  "Highlight Button": "دکمه هایلایت"
 }

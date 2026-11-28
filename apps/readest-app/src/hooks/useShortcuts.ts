@@ -179,6 +179,20 @@ const useShortcuts = (
     return processKeyEvent(eventLike, message);
   };
 
+  // A button standing in for a key (MEDIA_HIGHLIGHT_KEY), naming the book it
+  // acts on.
+  const handleShortcutButton = (customEvent: CustomEvent) => {
+    if (document.querySelector('[data-shortcut-recording="true"]')) return;
+    const { key, bookKey } = customEvent.detail as { key: string; bookKey?: string };
+    const message = new MessageEvent('shortcut-button', {
+      data: { type: 'shortcut-button', bookKey },
+    });
+    processKeyEvent(
+      { key, ctrlKey: false, altKey: false, metaKey: false, shiftKey: false },
+      message,
+    );
+  };
+
   const handleIframeKeyDown = (customEvent: CustomEvent) => {
     const detail = customEvent.detail as { bookKey?: string; event?: KeyboardEvent } | undefined;
     if (!detail?.event) return false;
@@ -220,6 +234,7 @@ const useShortcuts = (
     window.addEventListener('mouseup', handleMouseUp);
     eventDispatcher.onSync('iframe-shortcut-mouseup', handleIframeMouseUp);
     eventDispatcher.onSync('iframe-shortcut-keydown', handleIframeKeyDown);
+    eventDispatcher.on('shortcut-button', handleShortcutButton);
 
     return () => {
       window.removeEventListener('keydown', unifiedHandleKeyDown, options.capture);
@@ -227,6 +242,7 @@ const useShortcuts = (
       window.removeEventListener('mouseup', handleMouseUp);
       eventDispatcher.offSync('iframe-shortcut-mouseup', handleIframeMouseUp);
       eventDispatcher.offSync('iframe-shortcut-keydown', handleIframeKeyDown);
+      eventDispatcher.off('shortcut-button', handleShortcutButton);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

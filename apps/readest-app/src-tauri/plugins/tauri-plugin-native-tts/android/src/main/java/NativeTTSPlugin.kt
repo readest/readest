@@ -102,6 +102,7 @@ class UpdateMediaSessionStateArgs {
   var playing: Boolean? = null
   var position: Int? = null // in milliseconds
   var duration: Int? = null // in milliseconds
+  var canHighlightPassage: Boolean? = null
 }
 
 @InvokeArg
@@ -663,6 +664,7 @@ class NativeTTSPlugin(private val activity: Activity) : Plugin(activity) {
                 isPlaying,
                 args.position?.toLong(),
                 args.duration?.toLong(),
+                args.canHighlightPassage,
             )
             invoke.resolve()
         } catch (e: Exception) {

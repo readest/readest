@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import useShortcuts, { KeyActionHandlers } from '@/hooks/useShortcuts';
 import { eventDispatcher } from '@/utils/event';
+import { MEDIA_HIGHLIGHT_KEY } from '@/utils/shortcutKeys';
 
 interface ShortcutHarnessProps {
   actions: KeyActionHandlers;
@@ -160,6 +161,50 @@ describe('useShortcuts input handling', () => {
 
     expect(onHighlightSelection).toHaveBeenCalledOnce();
     expect(events.map((event) => event.defaultPrevented)).toEqual([false, true, false]);
+  });
+
+  // The highlight button in the Read Aloud player and the media notification
+  // (#6060) runs whichever highlight its binding names, for the book it plays.
+  it('runs the action the highlight button is bound to', async () => {
+    const onTTSHighlightSentence = vi.fn();
+    const onTTSHighlightParagraph = vi.fn();
+    const { unmount } = render(
+      <ShortcutHarness actions={{ onTTSHighlightSentence, onTTSHighlightParagraph }} />,
+    );
+
+    await eventDispatcher.dispatch('shortcut-button', {
+      key: MEDIA_HIGHLIGHT_KEY,
+      bookKey: 'book-1',
+    });
+    expect(onTTSHighlightSentence).toHaveBeenCalledOnce();
+    expect((onTTSHighlightSentence.mock.calls[0]![0] as MessageEvent).data.bookKey).toBe('book-1');
+    expect(onTTSHighlightParagraph).not.toHaveBeenCalled();
+    unmount();
+
+    localStorage.setItem(
+      'customShortcuts',
+      JSON.stringify({
+        onTTSHighlightSentence: ['shift+m'],
+        onTTSHighlightParagraph: [MEDIA_HIGHLIGHT_KEY],
+      }),
+    );
+    render(<ShortcutHarness actions={{ onTTSHighlightSentence, onTTSHighlightParagraph }} />);
+    await eventDispatcher.dispatch('shortcut-button', { key: MEDIA_HIGHLIGHT_KEY });
+    expect(onTTSHighlightSentence).toHaveBeenCalledOnce();
+    expect(onTTSHighlightParagraph).toHaveBeenCalledOnce();
+  });
+
+  it('leaves the highlight button to a binding being recorded', async () => {
+    const onTTSHighlightSentence = vi.fn();
+    render(<ShortcutHarness actions={{ onTTSHighlightSentence }} />);
+    const recorder = document.createElement('div');
+    recorder.dataset['shortcutRecording'] = 'true';
+    document.body.append(recorder);
+
+    await eventDispatcher.dispatch('shortcut-button', { key: MEDIA_HIGHLIGHT_KEY });
+
+    recorder.remove();
+    expect(onTTSHighlightSentence).not.toHaveBeenCalled();
   });
 
   it('requires a modifier for direct iframe shortcuts from inputs', () => {

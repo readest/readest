@@ -3150,5 +3150,7 @@
   "Show a QR code for the selected text": "Afișează un cod QR pentru textul selectat",
   "Select a shorter passage to share as a QR code.": "Selectează un pasaj mai scurt pentru a-l partaja ca cod QR.",
   "QR code for the selected text": "Cod QR pentru textul selectat",
-  "Navigation History": "Istoric navigare"
+  "Navigation History": "Istoric navigare",
+  "Highlight Current Paragraph": "Evidențiază paragraful curent",
+  "Highlight Button": "Butonul de evidențiere"
 }

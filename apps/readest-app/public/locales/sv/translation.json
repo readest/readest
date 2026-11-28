@@ -3071,5 +3071,7 @@
   "Show a QR code for the selected text": "Visa en QR-kod för den markerade texten",
   "Select a shorter passage to share as a QR code.": "Markera ett kortare stycke för att dela det som QR-kod.",
   "QR code for the selected text": "QR-kod för den markerade texten",
-  "Navigation History": "Navigeringshistorik"
+  "Navigation History": "Navigeringshistorik",
+  "Highlight Current Paragraph": "Markera aktuellt stycke",
+  "Highlight Button": "Markeringsknapp"
 }

@@ -23,6 +23,7 @@ import { DEFAULT_SENTENCE_GAP_SEC } from '@/services/tts/EdgeTTSClient';
 import { DEFAULT_PARAGRAPH_GAP_SEC, TTSLoopState } from '@/services/tts/TTSController';
 import { scaleGapForRate } from '@/services/tts/gap';
 import { eventDispatcher } from '@/utils/event';
+import { MEDIA_HIGHLIGHT_KEY } from '@/utils/shortcutKeys';
 import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
 import { isCfiInLocation, startInNextText } from '@/utils/cfi';
@@ -232,12 +233,22 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     }
   };
 
-  const handleTTSHighlightSentence = (event: CustomEvent) => {
-    const detail = event.detail as { bookKey: string } | undefined;
+  const handleTTSHighlight = (event: CustomEvent) => {
+    const detail = event.detail as { bookKey: string; unit: 'sentence' | 'paragraph' } | undefined;
     if (detail?.bookKey !== bookKey) return;
-    const sentence = ttsControllerRef.current?.getSpokenSentence();
-    if (!sentence) return;
-    eventDispatcher.dispatch('create-tts-highlight', { bookKey, ...sentence });
+    const controller = ttsControllerRef.current;
+    const passage =
+      detail.unit === 'paragraph'
+        ? controller?.getSpokenParagraph()
+        : controller?.getSpokenSentence();
+    if (!passage) return;
+    eventDispatcher.dispatch('create-tts-highlight', { bookKey, ...passage });
+  };
+
+  // The player's highlight button is the media notification's: it runs the
+  // action the button is bound to in Keyboard Shortcuts (#6060).
+  const handleHighlight = () => {
+    eventDispatcher.dispatch('shortcut-button', { key: MEDIA_HIGHLIGHT_KEY, bookKey });
   };
 
   // Set the TTS rate from the app bus. The RSVP overlay is full-screen, so its
@@ -286,7 +297,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     eventDispatcher.on('tts-backward', handleTTSBackward);
     eventDispatcher.on('tts-toggle-play', handleTTSTogglePlay);
     eventDispatcher.on('tts-set-rate', handleTTSSetRate);
-    eventDispatcher.on('tts-highlight-sentence', handleTTSHighlightSentence);
+    eventDispatcher.on('tts-highlight', handleTTSHighlight);
     eventDispatcher.on('tts-sync-request', handleTTSSyncRequest);
     return () => {
       eventDispatcher.off('tts-speak', handleTTSSpeak);
@@ -296,7 +307,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       eventDispatcher.off('tts-backward', handleTTSBackward);
       eventDispatcher.off('tts-toggle-play', handleTTSTogglePlay);
       eventDispatcher.off('tts-set-rate', handleTTSSetRate);
-      eventDispatcher.off('tts-highlight-sentence', handleTTSHighlightSentence);
+      eventDispatcher.off('tts-highlight', handleTTSHighlight);
       eventDispatcher.off('tts-sync-request', handleTTSSyncRequest);
       if (ttsControllerRef.current) {
         const controller = ttsControllerRef.current;
@@ -426,6 +437,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
           preprocessCallback: preprocessSSMLForTTS,
           onSectionChange: handleSectionChange,
         });
+        ttsMediaBridge.refreshPlaybackState(controller);
         const speakingLang = controller.getSpeakingLang();
         if (speakingLang) setTtsLang(speakingLang);
         syncClientCapabilities();
@@ -1487,6 +1499,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     bookRemainingSec: ttsTime.bookRemainingSec,
     finishAtTimestamp: ttsTime.finishAtTimestamp,
     handleTogglePlay,
+    handleHighlight,
     handleBackward,
     handleForward,
     handleToggleLoop,

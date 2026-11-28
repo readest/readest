@@ -3071,5 +3071,7 @@
   "Show a QR code for the selected text": "තෝරාගත් පාඨය සඳහා QR කේතයක් පෙන්වන්න",
   "Select a shorter passage to share as a QR code.": "QR කේතයක් ලෙස බෙදාගැනීමට කෙටි කොටසක් තෝරන්න.",
   "QR code for the selected text": "තෝරාගත් පාඨය සඳහා QR කේතය",
-  "Navigation History": "සංචාලන ඉතිහාසය"
+  "Navigation History": "සංචාලන ඉතිහාසය",
+  "Highlight Current Paragraph": "වර්තමාන ඡේදය ඉස්මතු කරන්න",
+  "Highlight Button": "ඉස්මතු කිරීමේ බොත්තම"
 }

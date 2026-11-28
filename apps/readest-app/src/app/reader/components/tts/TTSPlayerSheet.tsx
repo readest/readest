@@ -19,6 +19,7 @@ import {
   MdTextDecrease,
   MdTextIncrease,
 } from 'react-icons/md';
+import { PiHighlighterFill } from 'react-icons/pi';
 import { RiForward30Line, RiReplay15Line, RiVoiceAiFill } from 'react-icons/ri';
 import { TbArrowBarToRight } from 'react-icons/tb';
 import { useAppRouter } from '@/hooks/useAppRouter';
@@ -104,6 +105,7 @@ type TTSPlayerSheetProps = {
   onTogglePlay: () => void;
   onBackward: (byMark: boolean) => void;
   onForward: (byMark: boolean) => void;
+  onHighlight?: () => void;
   loopState: TTSLoopState;
   onToggleLoop: () => void;
   onGetLyricLoopRange: () => { start: number; end: number } | null;
@@ -155,6 +157,7 @@ const TTSPlayerSheet = ({
   onTogglePlay,
   onBackward,
   onForward,
+  onHighlight,
   loopState,
   onToggleLoop,
   onGetLyricLoopRange,
@@ -770,6 +773,19 @@ const TTSPlayerSheet = ({
                 {timerCaption}
               </span>
             </button>
+            {onHighlight && (
+              <button
+                type='button'
+                aria-label={_('Highlight')}
+                onClick={onHighlight}
+                className='not-eink:bg-base-200 eink-bordered flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl'
+              >
+                <PiHighlighterFill size={iconSize18} />
+                <span className='text-base-content/60 max-w-full truncate px-1 text-xs'>
+                  {_('Highlight')}
+                </span>
+              </button>
+            )}
           </div>
           {!isNarrating && downloads.supported && downloads.chapters.length > 0 && (
             <button

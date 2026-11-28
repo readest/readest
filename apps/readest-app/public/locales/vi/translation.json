@@ -2992,5 +2992,7 @@
   "Show a QR code for the selected text": "Hiển thị mã QR cho văn bản đã chọn",
   "Select a shorter passage to share as a QR code.": "Hãy chọn đoạn ngắn hơn để chia sẻ dưới dạng mã QR.",
   "QR code for the selected text": "Mã QR cho văn bản đã chọn",
-  "Navigation History": "Lịch sử điều hướng"
+  "Navigation History": "Lịch sử điều hướng",
+  "Highlight Current Paragraph": "Tô sáng đoạn hiện tại",
+  "Highlight Button": "Nút đánh dấu"
 }

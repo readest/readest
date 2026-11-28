@@ -3150,5 +3150,7 @@
   "Show a QR code for the selected text": "Mostra un codice QR del testo selezionato",
   "Select a shorter passage to share as a QR code.": "Seleziona un passaggio più breve per condividerlo come codice QR.",
   "QR code for the selected text": "Codice QR del testo selezionato",
-  "Navigation History": "Cronologia di navigazione"
+  "Navigation History": "Cronologia di navigazione",
+  "Highlight Current Paragraph": "Evidenzia il paragrafo corrente",
+  "Highlight Button": "Pulsante Evidenzia"
 }
