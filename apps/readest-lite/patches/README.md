@@ -112,6 +112,11 @@
   a tap anywhere on a table of contents entry, page-turn zones included, followed the link. The
   root keeps the box as a hoisted child (`TextLayout::span_hoisted`), so paint and hit testing
   find it where they did.
+- `blitz-dom` layout/inline/layout: a block-level absolutely positioned box in a line has its
+  static position at the line's top unless inline content comes before it on that line; then
+  below the line, as before (Chromium's rule). Readest prepends a 1x1 skip link to every
+  section's body, and in a fixed-layout page, whose body holds only an `<img>`, it went below
+  the image.
 - `blitz-dom` layout/construct, layout/inline/build, document, node, stylo, traversal, damage,
   resolve: `::first-letter` (CSS Pseudo-Elements 4 §2.3). A block container whose own inline
   content starts with text gets an anonymous box after `::before` holding the first letter with

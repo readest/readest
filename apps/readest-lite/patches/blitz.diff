@@ -2795,7 +2795,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
          #[cfg(feature = "floats")]
          {
              if is_bfc_root {
-@@ -1086,7 +1104,6 @@
+@@ -1086,18 +1104,18 @@
          // Store sizes and positions of inline boxes. Walking a line's items builds every
          // glyph run on it, so lines are only walked when there are boxes to find.
          let mut ibox_order: u32 = 0;
@@ -2803,7 +2803,12 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
          let has_inline_boxes = inline_layout.layout.inline_boxes().len() > 0;
          let lines = has_inline_boxes.then(|| inline_layout.layout.lines());
          for line in lines.into_iter().flatten() {
-@@ -1094,10 +1111,6 @@
++            // Whether inline-level content comes before the item on this line.
++            let mut after_content = false;
+             for item in line.items() {
++                if let parley::layout::PositionedLayoutItem::GlyphRun(run) = &item {
++                    after_content |= run.advance() > 0.0;
++                }
                  if let parley::layout::PositionedLayoutItem::InlineBox(ibox) = item {
                      let order = ibox_order;
                      ibox_order += 1;
@@ -2814,7 +2819,44 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
                      let node = &self.nodes[NodeId::from_u64(ibox.id)];
                      let style = self.child_layout_style(node);
                      let padding = style
-@@ -1283,8 +1296,82 @@
+@@ -1161,7 +1179,9 @@
+                         //   within the line (`ibox.y` is the baseline as out-of-flow boxes are
+                         //   zero-sized) and spans the line box in the block axis.
+                         // - A block-level box's rectangle spans the containing block's content
+-                        //   box in the inline axis and is zero-height below the line box.
++                        //   box in the inline axis and is zero-height below the line box, or at
++                        //   its top when no inline content comes before the box on the line (as
++                        //   in Chromium: the line would have broken before the box).
+                         let line_metrics = line.metrics();
+                         let line_top = (line_metrics.block_min_coord / scale) + line_box_top;
+                         let line_bottom = (line_metrics.block_max_coord / scale) + line_box_top;
+@@ -1175,15 +1195,13 @@
+                                 },
+                             )
+                         } else {
++                            let y = if after_content { line_bottom } else { line_top };
+                             (
+                                 taffy::Line {
+                                     start: container_pb.left,
+                                     end: final_size.width - container_pb.right,
+                                 },
+-                                taffy::Line {
+-                                    start: line_bottom,
+-                                    end: line_bottom,
+-                                },
++                                taffy::Line { start: y, end: y },
+                             )
+                         };
+ 
+@@ -1221,6 +1239,7 @@
+                         // Re-measure the box to get its border-box size (this hits the layout
+                         // cache). The size cannot be recovered from `ibox` dimensions as the
+                         // space reserved in the line is clamped to be non-negative.
++                        after_content = true;
+                         let mut output =
+                             self.compute_child_layout(taffy::NodeId::from(ibox.id), box_inputs);
+                         let size = output.size;
+@@ -1283,8 +1302,82 @@
              .flatten()
              .map(line_baseline);
  
@@ -2898,7 +2940,7 @@ diff -ruN blitz/packages/blitz-dom/src/layout/inline/layout.rs blitz/packages/bl
          }
  
          // Put layout back
-@@ -1325,6 +1412,9 @@
+@@ -1325,6 +1418,9 @@
                      rect.left = if is_rtl { rect.left } else { 0.0 };
                      rect.top = 0.0;
                  }
