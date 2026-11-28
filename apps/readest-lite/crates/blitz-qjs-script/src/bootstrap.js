@@ -3015,8 +3015,8 @@
   // styles, lays out and paints. The DOM keeps it apart: a host's children leave it out,
   // queries do not enter it (ops.rs), its parentNode is null, and events cross it to the host,
   // retargeted. Its <style>s set through innerHTML are scoped by rewriting their selectors.
-  // Not supported: <slot> (light children render after the shadow tree), adoptedStyleSheets;
-  // and the page's styles reach into shadow trees.
+  // Not supported: <slot> (light children render after the shadow tree); and the page's styles
+  // reach into shadow trees.
   const shadowIds = new Set();
   let shadowCount = 0;
   class ShadowRoot extends DocumentFragment {
@@ -3140,6 +3140,55 @@
     }
     return out;
   }
+
+  // ---- Constructed stylesheets ----
+  // `new CSSStyleSheet()` adopted by a shadow root or a document (foliate-js's fixed-layout
+  // renderer, for comics and fixed-layout books, styles its shadow root so). Each adopter shows the
+  // sheet in a <style> of its own at the end of its document, after the document's own sheets as
+  // adopted sheets come, scoped to a shadow root as the root's own <style>s are; so the shadow
+  // root's children can be replaced without it. No CSSOM: the rules can't be read.
+  class CSSStyleSheet {
+    constructor() {
+      this._text = '';
+      this._styles = new Map(); // adopter -> its <style>
+    }
+    replaceSync(text) {
+      this._text = String(text);
+      for (const [owner, style] of this._styles) style.textContent = adoptedCss(this, owner);
+    }
+    replace(text) {
+      this.replaceSync(text);
+      return Promise.resolve(this);
+    }
+  }
+  const adoptedCss = (sheet, owner) =>
+    owner instanceof ShadowRoot ? scopeCss(sheet._text, owner._key) : sheet._text;
+  const adopted = new WeakMap();
+  const adoptedStyleSheets = {
+    get() {
+      return adopted.get(this) ?? [];
+    },
+    set(sheets) {
+      sheets = [...sheets];
+      for (const s of adopted.get(this) ?? [])
+        if (!sheets.includes(s)) {
+          s._styles.get(this)?.remove();
+          s._styles.delete(this);
+        }
+      const doc = docOf(this);
+      for (const s of sheets)
+        if (!s._styles.has(this)) {
+          const style = doc.createElement('style');
+          style.textContent = adoptedCss(s, this);
+          doc.documentElement.append(style);
+          s._styles.set(this, style);
+        }
+      adopted.set(this, sheets);
+    },
+    configurable: true,
+  };
+  Object.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', adoptedStyleSheets);
+  Object.defineProperty(Document.prototype, 'adoptedStyleSheets', adoptedStyleSheets);
 
   // ---- Custom elements ----
   // Autonomous custom elements (no `extends`). An element is upgraded in place when its name is
@@ -3575,6 +3624,7 @@
     history,
     customElements,
     ShadowRoot,
+    CSSStyleSheet,
     Range,
     TreeWalker,
     DOMRect,

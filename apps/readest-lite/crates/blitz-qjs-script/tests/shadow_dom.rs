@@ -74,6 +74,30 @@ fn shadow_content_renders_with_scoped_styles() {
 }
 
 #[test]
+fn a_constructed_stylesheet_styles_the_shadow_tree_that_adopts_it() {
+    // foliate-js's fixed-layout renderer (comics, fixed-layout books) styles its shadow root with
+    // `new CSSStyleSheet()` and adoptedStyleSheets; Lite had neither, so the renderer's module
+    // threw on load and no such book opened.
+    let (logs, errors) = run(
+        "<div class='host'></div><div id='in' class='page'></div>",
+        "const host = document.querySelector('.host');
+        const root = host.attachShadow({ mode: 'open' });
+        root.innerHTML = '<div id=\"in\"></div>';
+        const sheet = new CSSStyleSheet();
+        root.adoptedStyleSheets = [sheet];
+        sheet.replaceSync(':host { height: 30px } #in { width: 40px; height: 10px }');
+        const size = (el) => { const r = el.getBoundingClientRect(); return `${r.width}x${r.height}`; };
+        const page = document.querySelector('.page');
+        console.log('adoptedStyleSheets' in document, root.adoptedStyleSheets[0] === sheet);
+        console.log(size(host), size(root.getElementById('in')), page.getBoundingClientRect().height);
+        root.innerHTML = '<div id=\"in\"></div>';
+        sheet.replace('#in { width: 60px; height: 10px }').then(() => console.log(size(host), size(root.getElementById('in'))));",
+    );
+    assert_eq!(errors, Vec::<String>::new());
+    assert_eq!(logs, ["true true", "200x30 40x10 0", "200x10 60x10"]);
+}
+
+#[test]
 fn events_are_retargeted_at_the_host() {
     let (logs, errors) = run(
         "<div class='host'></div>",
