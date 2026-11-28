@@ -257,6 +257,12 @@
   zero), and Tab and Shift+Tab skip it and a `visibility: hidden` one, as in Chromium
   (`generates_box`; upstream's `has_boxes` was unused and missed ancestors). Readest counts a
   dialog's controls by their client rects, and Tab went to the Settings dialog's hidden Close.
+- `blitz-dom` stylo, mutator, default.css: a table's `border` attribute gives it that many
+  pixels of outset border (1 for an empty or invalid value, none for 0) and its own cells 1px
+  inset, as presentational hints; the UA sheet makes tables' border color gray and has rows, row
+  groups and a bordered table's cells inherit it, as Chromium's does. Blitz's UA sheet, Firefox's,
+  borders them with Gecko's `:-moz-table-border-nonzero`, which Stylo drops outside Gecko, so no
+  `border="1"` table had lines.
 - `blitz-dom` document, mutator, net, node/element: an `<img>` records whether its image arrived
   or failed (`take_image_loads`, for its `load` and `error` events), reports whether it is still
   loading (`image_loading`) and its natural size (`ImageData::natural_size`). A failed fetch is
