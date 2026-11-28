@@ -1792,6 +1792,10 @@
     get nodeName() {
       return '#document';
     }
+    // Blitz styles every document without quirks.
+    get compatMode() {
+      return 'CSS1Compat';
+    }
     get documentElement() {
       return this.querySelector('html');
     }

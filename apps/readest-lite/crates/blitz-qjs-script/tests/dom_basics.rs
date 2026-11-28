@@ -449,3 +449,17 @@ fn nodes_go_before_after_or_in_place_of_a_child() {
         ]
     );
 }
+
+#[test]
+fn documents_are_in_standards_mode() {
+    // Blitz styles every document without quirks; KaTeX refuses to render (and warns at every
+    // start of Readest) on a page whose compatMode isn't CSS1Compat.
+    let html = "<!DOCTYPE html><html><body><iframe srcdoc='<p>x</p>'></iframe></body></html>";
+    let mut doc = QjsDocument::from_html(html, DocumentConfig::default());
+    doc.eval(
+        "console.log(document.compatMode, document.querySelector('iframe').contentDocument.compatMode);",
+        "test",
+    );
+    assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+    assert_eq!(doc.take_messages(), ["log: CSS1Compat CSS1Compat"]);
+}

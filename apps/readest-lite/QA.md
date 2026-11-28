@@ -204,7 +204,7 @@ separate commits.
 **W1: daily reading on the Kindle (P1)**
 1. Done: a line that ends a fraction of a pixel below the column now goes on in the next one, as
    in Chromium (reader-search step 7).
-2. `document.compatMode`: KaTeX warns at every start that the page is in quirks mode.
+2. Done: `document.compatMode` is `CSS1Compat` (KaTeX warned at every start of quirks mode).
 3. Tap-zone and swipe page turns at Kindle size in e-ink.
 4. Reading Progress: drag the slider, jump to a page.
 5. Re-open at the saved position.
