@@ -1,0 +1,15 @@
+{
+  "name": "dialog-tab",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "steps": [
+    "wait:6000",
+    "[aria-label=\"Settings Menu\"]",
+    "text:Settings",
+    "key:Tab",
+    "key:Tab",
+    "key:Tab"
+  ]
+}

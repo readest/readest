@@ -1,0 +1,17 @@
+{
+  "name": "reader-turns-eink",
+  "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/novel.epub",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "steps": [
+    "wait:15000",
+    "520,400",
+    "520,400",
+    "520,400",
+    "16,400",
+    "drag:420,400>120,400",
+    "drag:120,400>420,400"
+  ]
+}

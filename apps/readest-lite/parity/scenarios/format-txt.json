@@ -1,0 +1,9 @@
+{
+  "name": "format-txt",
+  "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/parity/book.txt",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "steps": ["wait:15000", "key:PageDown", "key:PageDown", "268,362"]
+}

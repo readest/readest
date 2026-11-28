@@ -36,7 +36,13 @@ at 2), e-ink or not, and steps:
 
 Scenario keys: `book`, `size`, `scale`, `eink`, `fonts`, `settings` (saved settings to start with),
 `online` (hosts that bypass the closed proxy), `probe` (a script whose result each capture
-records), `capture_ms`, `step_ms`, `settle_ms`.
+records), `capture_ms`, `step_ms`, `settle_ms`, and `after` (run_all.sh starts both apps on a copy
+of their homes from that scenario's run, as after a restart; by hand, set `PARITY_HOME`).
+
+Each step is captured `capture_ms` after its input: the elements, the location and the screen at
+that moment, in both apps. The next input comes `step_ms` after it. Keep captures away from the
+times Readest's UI changes on its own: the link-target highlight goes after 4 s, the image
+viewer's zoom badge 2 s after it opens, the Jump Return pill 15 s after the jump.
 
 A step passes when the book location matches, no element moved more than 2 CSS px and no ink is
 only in one app (`compare.py`). A scenario passes when every step passes or fails only for a known
@@ -89,24 +95,25 @@ device (no CEF reference), **–** out of scope (section 4).
 | Feature | P | Status | Scenario / note |
 | --- | --- | --- | --- |
 | Page turns by key | P1 | ✓ | novel-turns (1200x800) |
-| Page turns by tap zones, at Kindle size in e-ink | P1 | ○ | W1 |
-| Page turns by swipe | P1 | ○ | W1 (`drag:`); quick-swipe wheel presses are device-only |
+| Page turns by tap zones, at Kindle size in e-ink | P1 | ✓ | reader-turns-eink |
+| Page turns by swipe | P1 | ✓ | reader-turns-eink (`drag:`); quick-swipe wheel presses are device-only |
 | Header and footer bars, their panels | P1 | ✓ | kindle-reader |
-| Reading Progress panel: slider and page jump | P1 | ◐ | kindle-reader opens it; W1 for moving |
+| Reading Progress panel: slider and page jump | P1 | ✓ | reader-progress |
 | Table of Contents | P1 | ✓ | reader-toc |
 | Search in the book | P2 | ✓ | reader-search |
 | Add a bookmark | P2 | ✓ | reader-bookmark |
 | Bookmark list, jump, remove | P2 | ○ | W1 |
-| Re-open at the saved position | P1 | ○ | W1 (`PARITY_HOME` restart) |
-| Footnote popup | P1 | ○ | W1, needs a fixture book (H3) |
-| Internal links and Jump Return | P2 | ○ | W1, fixture book |
-| Image viewer | P2 | ○ | W1 |
-| Table viewer | P3 | ○ | W3, fixture book |
+| Re-open at the saved position | P1 | ✓ | reader-reopen |
+| Footnote popup | P1 | ✓ | reader-links |
+| Internal links and Jump Return | P2 | ✓ | reader-links |
+| Image viewer | P2 | ✓ | reader-links |
+| Table viewer | P3 | ○ | W3, features.epub |
 | Scrolled mode | P2 | ○ | W2 |
-| Vertical text (ja) | P2 | ○ | W1 smoke: vertical-ja.epub |
+| Vertical text (ja) | P2 | ✓ | format-vertical-ja (known difference) |
 | Right-to-left book | P3 | ○ | W3, fixture book |
-| PDF | P2 | ○ | W1 smoke: text.pdf |
-| MOBI/AZW3, FB2, CBZ, TXT | P2 | ○ | W1 smoke, fixture books |
+| PDF | P2 | ✓ | format-pdf (known difference) |
+| FB2, CBZ, TXT | P2 | ✓ | format-fb2, format-cbz, format-txt |
+| MOBI/AZW3 | P2 | ○ | W1 smoke, needs a fixture (no converter at hand) |
 | Speed Reading, Vocabulary, Reading Statistics panels | P3 | ✓ | kindle-reader-tools (open only) |
 | Auto-scroll, paragraph mode, parallel read | P3 | ○ | W3 |
 
@@ -119,8 +126,8 @@ device (no CEF reference), **–** out of scope (section 4).
 | Edit a highlight's range with its handles | P1 | ✓ | highlight-extend-eink |
 | A touch selection's own handles | P1 | L | Linux touch only (#7820); CEF can't make a touch selection |
 | Note on a selection | P1 | ✓ | reader-note |
-| Highlight style and color | P2 | ○ | W1 |
-| Delete a highlight | P1 | ○ | W1 |
+| Highlight style and color | P2 | ✓ | highlight-edit |
+| Delete a highlight | P1 | ✓ | highlight-edit |
 | Notebook: list, jump, edit a note | P2 | ◐ | kindle-reader opens it; W1 for the rest |
 | Dictionary (Wiktionary) | P1 | ◐ | dictionary-de (known difference); dictionary-de-eink is L |
 | Quick action on selection | P3 | ✓ | kindle-reader-tools (toggle) |
@@ -132,11 +139,13 @@ device (no CEF reference), **–** out of scope (section 4).
 | Feature | P | Status | Scenario / note |
 | --- | --- | --- | --- |
 | Font size | P1 | ✓ | reader-font-size |
-| Font face, weight, line and paragraph spacing, margins, justify, hyphenate | P1 | ○ | W1, one step per control |
+| Page margins, line spacing | P1 | ✓ | reader-layout |
+| Font face, weight, paragraph spacing, justify, hyphenate | P1 | ○ | W1, one step per control |
 | Color themes (non e-ink) | P2 | ✓ | reader-theme (Sepia) |
 | Dark mode | P2 | ○ | W2 |
 | Override Book Layout / Color | P2 | ○ | W2 |
 | Page-turn controls (tap zones, keys) | P3 | ○ | W3 |
+| Keyboard: Tab through a dialog | P3 | ✓ | dialog-tab |
 | UI language | P2 | ○ | W2 (CJK needs fonts in the scenario's `fonts`) |
 | Custom CSS | P3 | ○ | W3 |
 
@@ -188,6 +197,15 @@ while KOReader is open; close the owner's Lite only after 5 idle minutes and reo
 | Highlight toolbar | The style button's "A" is 16 px tall vs 11.64 | `text-box: trim-both cap alphabetic` not supported in Blitz | Open (select-*, reader-note, highlight-extend steps 1-2, 4-5) |
 | Dictionary popup | Superscript sense numbers | Blitz ignores `position: relative; top` on a non-atomic inline | Open |
 | Text | Lite keeps slight hinting | Owner's decision (cairo) | Accepted |
+| Steps after `select:` | Lite shows the touch selection's handles (5 elements and their ink) | The harness selects by long press in Lite, by mouse in CEF | Harness (steps 1-2 of select-*, reader-note, highlight-*) |
+| Go to Page input | Selected text is white on dark blue in Readest, black on light blue in Lite | Blitz's text input paints a fixed selection color and ignores `::selection` | Open (reader-progress step 5) |
+| PDF | Doesn't open: "DOMMatrix is not defined" | pdf.js needs DOMMatrix, Path2D and a 2D canvas; Lite's canvas has no context | Open: owner's decision (large) |
+| Vertical text (ja) | Laid out horizontally | Blitz has no vertical writing modes | Open: owner's decision (large) |
+| Ids that name a document or form property (`target`, `title`, `action`...) | Readest drops them from a section, Lite keeps most: a link to one lands at its element in Lite, at the section start in Readest, and Lite's CFIs carry the id | Readest's DOMPurify drops an `id` that is `in document` or `in` a form; Lite's document and form lack 193 and 222 of Chromium's property names | Open: matching would mean every name; Readest's own behavior is the owner's to decide |
+| Tables | A `<caption>` gets no layout and the table's box leaves it out (a table 51 px tall where Chromium's is 58 with a 7 px caption) | Blitz's table construction skips captions | Open: next, check whether its text shows at all |
+| Tables, collapsed borders | The outer border takes the cells' width when the table's own is wider (a 40x30 table where Chromium's is 44x34) | Blitz's border-collapse resolution | Open |
+| Steps after a tap | Readest's tapped element (or what replaced it there) keeps `:hover` | The harness clicks with a mouse that stays in CEF; Lite gets a finger | Harness: reader-links step 5's darker gray button passes the ink check |
+| Comic and fixed-layout pages | Boxes in hidden page frames: Readest gives a `display: none` frame's document no boxes and a frame with no `src` an empty `about:blank` document; Lite lays out the first and gives the second no document | Blitz | Open, nothing visible (format-cbz, every step) |
 
 ## 7. Plan
 
@@ -197,21 +215,39 @@ separate commits.
 
 **Harness**
 - H2: scenario key `books` (several books in the library), for W2.
-- H3: a fixture EPUB built by a script in `parity/` (footnotes, internal links, an image, a
-  table, a right-to-left chapter), plus small FB2, TXT and CBZ fixtures; MOBI from the EPUB if a
-  converter is at hand.
+- H3: Done: `python3 parity/fixtures.py <books>/parity` writes features.epub (a footnote, an
+  internal link, an image, a table), book.txt, book.fb2 and book.cbz, the same bytes on every run.
+  Still to add: a right-to-left chapter, and MOBI from the EPUB if a converter is at hand.
+- H4: steps that failed once in a full sweep and passed when rerun (2026-11-28), each something
+  Lite hadn't drawn yet at the capture: kindle-reader step 6 (rb16, the Table of Contents list);
+  reader-theme steps 3 and 5 (rb19 and rb20, the Color panel, load average ~17 from other
+  sessions); reader-search step 6 (one run in three on rb19 and rb20, the results); dialog-tab
+  step 2 (rb21, the Settings dialog); reader-links step 6 (a tap handled in 835 ms, so the image
+  viewer's zoom badge was still up). Find whether Lite renders late under load or the capture is
+  early.
+- H5: Done: Lite's step image is the frame at the capture moment, as CEF's screenshot is. It was
+  the last frame before the next input, so it could show what came later (reader-links step 3:
+  the link-target highlight already gone).
 
 **W1: daily reading on the Kindle (P1)**
 1. Done: a line that ends a fraction of a pixel below the column now goes on in the next one, as
    in Chromium (reader-search step 7).
 2. Done: `document.compatMode` is `CSS1Compat` (KaTeX warned at every start of quirks mode).
-3. Tap-zone and swipe page turns at Kindle size in e-ink.
-4. Reading Progress: drag the slider, jump to a page.
-5. Re-open at the saved position.
-6. Font & Layout: each control.
-7. Highlight style and color, delete a highlight, Notebook list and jump, bookmark list and remove.
-8. Footnote popup, internal link and Jump Return, image viewer (H3).
-9. Format smoke tests: open and turn three pages in PDF, vertical-ja, FB2, TXT, CBZ, MOBI.
+3. Done: tap-zone and swipe page turns at Kindle size in e-ink (reader-turns-eink).
+4. Done: Reading Progress, the slider and a page jump (reader-progress).
+5. Done: re-open at the saved position (reader-reopen, `after` reader-turns-eink).
+6. Font & Layout: margins and line spacing done (reader-layout; a box under 2 px across a column
+   cut now goes in the column that holds its middle, as in Chromium); the other controls.
+7. Done: highlight style and color, delete a highlight (highlight-edit). Notebook list and jump,
+   bookmark list and remove.
+8. Done: footnote popup, internal link and Jump Return, image viewer (reader-links on
+   features.epub): tables' `border` attribute, rows' rects, a link's hit area and the focus a
+   link's destination takes now as in Readest.
+9. Format smoke tests: TXT passes; FB2 now opens (XML documents); CBZ now opens and draws as in
+   Readest (constructed stylesheets, an iframe's `load` after its images, scaled iframes drawn
+   scaled, an absolute box before a lone image at the line's top), its remaining difference in
+   hidden frames only. PDF and vertical text are section 6 rows for the owner; MOBI needs a
+   fixture.
 
 **W2: library and settings (P1/P2)**: several books (views, sort, search, a book's menu, select
 mode, groups, progress), scrolled mode, dark mode, Override Book Layout/Color, UI language, a

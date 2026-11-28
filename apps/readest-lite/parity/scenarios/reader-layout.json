@@ -1,0 +1,20 @@
+{
+  "name": "reader-layout",
+  "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/novel.epub",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "capture_ms": 4000,
+  "step_ms": 5000,
+  "steps": [
+    "wait:15000",
+    "520,400",
+    "520,400",
+    "268,362",
+    "text:Font & Layout",
+    "input[aria-label=\"Page Margin\"]",
+    "input[aria-label=\"Line Spacing\"]",
+    "300,200"
+  ]
+}

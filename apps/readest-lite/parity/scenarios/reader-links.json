@@ -1,0 +1,21 @@
+{
+  "name": "reader-links",
+  "book": "/run/media/chrox/Backup/dev/kindle-cef/share/books/parity/features.epub",
+  "size": [536, 724],
+  "scale": 2,
+  "eink": true,
+  "fonts": "/run/media/chrox/Backup/dev/kindle-cef/share/fonts/latin",
+  "capture_ms": 3000,
+  "step_ms": 3500,
+  "steps": [
+    "wait:15000",
+    "180,180",
+    "key:Escape",
+    "108,279",
+    "[aria-label=\"Navigation History\"] button",
+    "key:PageDown",
+    "102,229",
+    "key:Escape",
+    "key:PageDown"
+  ]
+}
