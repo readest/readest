@@ -267,6 +267,11 @@
   Chromium (`table_track_box`): a row spans the columns over its track, a group its rows, and
   with collapsed borders each reaches the middle of the borders around it. Blitz lays out only
   the cells, so they were 0,0,0,0 (and a parity capture of any page showing a table differed).
+- `blitz-dom` node: an inline element's fragments leave out the box placed for an absolutely
+  positioned descendant unless the element has nothing else on that line (an empty positioned
+  link is still the containing block of its `::before`). That box sits before the collapsible
+  space ahead of the element, so Readest's link hit area (`a::before { position: absolute;
+  inset: -10px }`) put that space in the link's client rect and in its hit area.
 - `blitz-dom` document, mutator, net, node/element: an `<img>` records whether its image arrived
   or failed (`take_image_loads`, for its `load` and `error` events), reports whether it is still
   loading (`image_loading`) and its natural size (`ImageData::natural_size`). A failed fetch is

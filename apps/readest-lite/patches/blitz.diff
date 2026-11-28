@@ -4733,7 +4733,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
          if self.primary_styles().is_none() {
              return taffy::Size {
                  width: self.client_width() + layout.scroll_width(),
-@@ -2211,3 +2321,97 @@
+@@ -2211,3 +2321,105 @@
          );
      }
  }
@@ -4786,9 +4786,13 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
 +        });
 +    }
 +
-+    // One rect per line box: the union of all of the target's fragments on that line
++    // One rect per line box: the union of all of the target's fragments on that line. The box
++    // placed for an absolutely positioned descendant counts only on a line where the target has
++    // nothing else (an empty positioned link is the containing block of its `::before`): it sits
++    // before any collapsible space ahead of it, which isn't the target's.
 +    layout.lines().filter_map(move |line| {
 +        let mut line_rect: Option<taffy::Rect<f32>> = None;
++        let mut out_of_flow: Option<taffy::Rect<f32>> = None;
 +        let (lo, hi) = crate::util::line_extent(layout, &line);
 +
 +        for item in line.items() {
@@ -4812,8 +4816,12 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
 +                    }
 +                    let x0 = inline_box.x;
 +                    let y0 = inline_box.y;
++                    let rect = match inline_box.kind {
++                        parley::InlineBoxKind::OutOfFlow => &mut out_of_flow,
++                        _ => &mut line_rect,
++                    };
 +                    union(
-+                        &mut line_rect,
++                        rect,
 +                        x0,
 +                        y0,
 +                        x0 + inline_box.width,
@@ -4823,7 +4831,7 @@ diff -ruN blitz/packages/blitz-dom/src/node/node.rs blitz/packages/blitz-dom/src
 +            }
 +        }
 +
-+        line_rect.map(|rect| taffy::Rect {
++        line_rect.or(out_of_flow).map(|rect| taffy::Rect {
 +            left: origin.x + rect.left / scale,
 +            top: origin.y + rect.top / scale,
 +            right: origin.x + rect.right / scale,
