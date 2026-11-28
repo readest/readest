@@ -175,3 +175,37 @@ fn a_parsed_documents_nodes_are_found_and_named_without_asking_again() {
         ]
     );
 }
+
+#[test]
+fn an_xml_document_builds_elements_that_serialize_as_xml() {
+    // foliate-js's fb2.js builds a book's sections in `createDocument(XHTML, 'html')` and reads
+    // them back with outerHTML to load as XHTML: Lite had no createDocument, so no FB2 book
+    // opened. The values are Chromium's.
+    let mut doc = page();
+    let out = logs(
+        &mut doc,
+        "{
+            const d = document.implementation.createDocument('http://www.w3.org/1999/xhtml', 'html');
+            const s = d.createElement('section');
+            s.id = 'a';
+            s.classList.add('title');
+            const img = d.createElement('img');
+            img.alt = 'x';
+            s.append(img, d.createElement('br'), d.createTextNode('a < b'));
+            const e = d.documentElement;
+            console.log(e.localName, e.namespaceURI, s.namespaceURI, s.ownerDocument === d);
+            console.log(s.outerHTML);
+            console.log(s.innerHTML);
+            console.log(document.getElementById('x').outerHTML);
+        }",
+    );
+    assert_eq!(
+        out,
+        [
+            "html http://www.w3.org/1999/xhtml http://www.w3.org/1999/xhtml true",
+            "<section xmlns=\"http://www.w3.org/1999/xhtml\" id=\"a\" class=\"title\"><img alt=\"x\" /><br />a &lt; b</section>",
+            "<img xmlns=\"http://www.w3.org/1999/xhtml\" alt=\"x\" /><br xmlns=\"http://www.w3.org/1999/xhtml\" />a &lt; b",
+            "<p id=\"x\">page</p>",
+        ]
+    );
+}

@@ -1134,10 +1134,10 @@
       if (defs.size && this.isConnected) connectCustom(n.queryAllDeep(this._id, defSelector));
     }
     get innerHTML() {
-      return n.serialize(this._id, false, false);
+      return n.serialize(this._id, false, docOf(this)._xml === true);
     }
     get outerHTML() {
-      return n.serialize(this._id, true, false);
+      return n.serialize(this._id, true, docOf(this)._xml === true);
     }
     querySelector(s) {
       const r = n.query(this._id, s);
@@ -1995,11 +1995,12 @@
     ownedDocs.delete(tag);
     n.dropDoc(tag);
   });
-  function parseHTMLDocument(html) {
-    const h = n.parseHtml(String(html));
+  function parseHTMLDocument(html, xml = false) {
+    const h = xml ? n.parseXml(String(html)) : n.parseHtml(String(html));
     const d = Object.create(Document.prototype);
     d._id = h;
     d._kind = 9;
+    if (xml) d._xml = true;
     d._nodes = new Map([[h, d]]);
     d._ready = 'complete';
     const tag = n.ownedTag(h);
@@ -2016,6 +2017,11 @@
         d.head.append(t);
       }
       return d;
+    },
+    // An XML document (foliate-js's fb2.js builds a book's sections in one): its nodes serialize
+    // as XML.
+    createDocument(ns, qname) {
+      return parseHTMLDocument(qname ? `<${qname}${ns ? ` xmlns="${ns}"` : ''}/>` : '', true);
     },
     hasFeature: () => true,
   };

@@ -301,6 +301,30 @@ const RAW_TEXT: &[&str] = &[
     "plaintext",
 ];
 
+/// A document of its own parsed from `markup` as HTML, or with `xml` as XML. It is never laid out,
+/// so it gets no fonts: a scan of the system's took about a second on a Kindle, for each parse.
+fn parse_owned(markup: &str, xml: bool) -> BaseDocument {
+    use fontique::{Collection, CollectionOptions, SourceCache};
+    let font_ctx = blitz_dom::FontContext {
+        collection: Collection::new(CollectionOptions {
+            shared: false,
+            system_fonts: false,
+        }),
+        source_cache: SourceCache::default(),
+    };
+    let config = DocumentConfig {
+        font_ctx: Some(font_ctx),
+        ..DocumentConfig::default()
+    };
+    let mut doc = BaseDocument::new(crate::with_html_parser(config));
+    if xml {
+        blitz_html::DocumentHtmlParser::parse_xml_into_mutator(&mut doc.mutate(), markup);
+    } else {
+        blitz_html::DocumentHtmlParser::parse_html_into_mutator(&mut doc.mutate(), markup);
+    }
+    doc
+}
+
 /// Markup of `id` (with `outer`) or of its children: HTML's fragment serialization, or with `xml`
 /// XMLSerializer's (well-formed, namespaces declared where they change). Shadow trees are left
 /// out.
@@ -317,7 +341,11 @@ fn serialize(doc: &BaseDocument, id: NodeId, outer: bool, xml: bool) -> String {
             && node
                 .element_data()
                 .is_some_and(|e| RAW_TEXT.contains(&&*e.name.local));
-        let ns = node.element_data().map(|e| e.name.ns.to_string());
+        // As XML each child starts with no namespace in scope, as a node XMLSerializer starts from.
+        let ns = node
+            .element_data()
+            .filter(|_| !xml)
+            .map(|e| e.name.ns.to_string());
         for &c in &node.children {
             write_node(doc, c, xml, ns.as_deref(), raw, &mut out);
         }
@@ -1050,23 +1078,16 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
     });
     let d = docs.clone();
     // `html` parsed as HTML (never sniffed as XML) into a document of its own, which loads
-    // nothing and runs no script: its document node's handle. It is never laid out, so it gets
-    // no fonts: a scan of the system's took about a second on a Kindle, for each parse.
+    // nothing and runs no script: its document node's handle.
     op!("parseHtml", move |html: String| -> f64 {
-        use fontique::{Collection, CollectionOptions, SourceCache};
-        let font_ctx = blitz_dom::FontContext {
-            collection: Collection::new(CollectionOptions {
-                shared: false,
-                system_fonts: false,
-            }),
-            source_cache: SourceCache::default(),
-        };
-        let config = DocumentConfig {
-            font_ctx: Some(font_ctx),
-            ..DocumentConfig::default()
-        };
-        let mut doc = BaseDocument::new(crate::with_html_parser(config));
-        blitz_html::DocumentHtmlParser::parse_html_into_mutator(&mut doc.mutate(), &html);
+        let doc = parse_owned(&html, false);
+        let root = doc.root_node().id;
+        d.enc(d.own(doc), root)
+    });
+    let d = docs.clone();
+    // The same parsed as XML.
+    op!("parseXml", move |xml: String| -> f64 {
+        let doc = parse_owned(&xml, true);
         let root = doc.root_node().id;
         d.enc(d.own(doc), root)
     });
