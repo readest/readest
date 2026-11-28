@@ -53,6 +53,9 @@ python3 parity/run_lite.py parity/scenarios/S.json OUT/S-lite LITE_BIN
 python3 parity/compare.py OUT/S-lite OUT/S-cef OUT/S-report   # report.html, summary.json
 ```
 
+Run them all (or the ones named) and print one line per scenario, with each failing step:
+`parity/run_all.sh OUT READEST_BIN LITE_BIN [S...]`; `SKIP_CEF=1` reuses OUT's Readest runs.
+
 READEST_BIN is a release build of this branch's readest-app with its own `CARGO_TARGET_DIR`
 (restore the root `Cargo.lock` after it). Don't run a parity sweep while cargo builds: load makes
 sections arrive late and steps fail.
@@ -198,7 +201,6 @@ separate commits.
 - H3: a fixture EPUB built by a script in `parity/` (footnotes, internal links, an image, a
   table, a right-to-left chapter), plus small FB2, TXT and CBZ fixtures; MOBI from the EPUB if a
   converter is at hand.
-- H4: `parity/run_all.sh`: every scenario on both apps and one summary table.
 
 **W1: daily reading on the Kindle (P1)**
 1. Column fragmentation: a line that ends a fraction of a pixel below the column (reader-search
