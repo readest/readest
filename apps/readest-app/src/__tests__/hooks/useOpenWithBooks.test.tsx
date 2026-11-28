@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
@@ -7,8 +7,12 @@ const h = vi.hoisted(() => ({
     isIOSApp: true,
     hasWindow: false,
     loadSettings: vi.fn(async () => ({ autoImportBooksOnOpen: true })),
+    openFile: vi.fn(async () => ({})),
+    importBook: vi.fn(),
   },
   navigateToLibrary: vi.fn(),
+  navigateToReader: vi.fn(),
+  partialMD5: vi.fn(),
   setCheckOpenWithBooks: vi.fn(),
 }));
 
@@ -22,22 +26,32 @@ vi.mock('@/services/environment', () => ({ isTauriAppPlatform: () => true }));
 vi.mock('@/store/libraryStore', async () => {
   const { create } = await import('zustand');
   return {
-    useLibraryStore: create(() => ({
+    useLibraryStore: create<{
+      library: { hash: string }[];
+      libraryLoaded: boolean;
+      setLibrary: (library: { hash: string }[]) => void;
+      getBookByHash: (hash: string) => { hash: string } | undefined;
+      setCheckOpenWithBooks: typeof h.setCheckOpenWithBooks;
+    }>()((set, get) => ({
       library: [],
+      libraryLoaded: true,
+      setLibrary: (library) => set({ library }),
+      getBookByHash: (hash) => get().library.find((book) => book.hash === hash),
       setCheckOpenWithBooks: h.setCheckOpenWithBooks,
     })),
   };
 });
 vi.mock('@/utils/nav', () => ({
   navigateToLibrary: h.navigateToLibrary,
-  navigateToReader: vi.fn(),
+  navigateToReader: h.navigateToReader,
   showLibraryWindow: vi.fn(),
 }));
-vi.mock('@/utils/md5', () => ({ partialMD5: vi.fn() }));
+vi.mock('@/utils/md5', () => ({ partialMD5: h.partialMD5 }));
 
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { eventDispatcher } from '@/utils/event';
 import { useLibraryStore } from '@/store/libraryStore';
+import type { Book } from '@/types/book';
 
 afterEach(() => {
   cleanup();
@@ -80,6 +94,83 @@ describe('useOpenWithBooks non-iOS file URL ingress', () => {
     } finally {
       h.appService.isIOSApp = true;
     }
+  });
+});
+
+// #8019: Android "Open with Readest" with Auto Import off opens the file
+// without importing it. A reader that is already showing the last book (the
+// app was left on it, or "open last books" mounted it on a cold start) must
+// switch to the chosen file instead of keeping the old book on screen.
+describe('useOpenWithBooks Android "Open with" without import', () => {
+  const uri = 'content://com.android.providers.downloads.documents/document/msf%3A42';
+  const opened = vi.fn();
+  const onOpened = (event: CustomEvent) => opened(event.detail);
+
+  beforeEach(() => {
+    h.appService.isIOSApp = false;
+    h.appService.loadSettings.mockResolvedValue({ autoImportBooksOnOpen: false });
+    h.partialMD5.mockResolvedValue('pdfHash');
+    h.appService.importBook.mockImplementation(async (_file: string, books: { hash: string }[]) => {
+      const book = { hash: 'pdfHash' };
+      books.push(book);
+      return book;
+    });
+    const lastBook: Book = {
+      hash: 'lastBook',
+      format: 'EPUB',
+      title: 'Last Book',
+      author: '',
+      createdAt: 0,
+      updatedAt: 0,
+    };
+    useLibraryStore.setState({ library: [lastBook] });
+    eventDispatcher.on('open-book-in-reader', onOpened);
+  });
+
+  afterEach(() => {
+    eventDispatcher.off('open-book-in-reader', onOpened);
+    h.appService.isIOSApp = true;
+    h.appService.loadSettings.mockResolvedValue({ autoImportBooksOnOpen: true });
+    window.history.replaceState(null, '', '/');
+  });
+
+  test('switches an open reader to the chosen file', async () => {
+    window.history.replaceState(null, '', '/reader?ids=lastBook');
+    renderHook(() => useOpenWithBooks());
+    act(() => {
+      eventDispatcher.dispatch('app-incoming-url', { urls: [uri], action: 'VIEW' });
+    });
+    await waitFor(() => expect(opened).toHaveBeenCalledWith({ bookHash: 'pdfHash' }));
+    expect(h.appService.importBook).toHaveBeenCalledWith(uri, expect.any(Array), {
+      transient: true,
+    });
+    expect(h.navigateToReader).not.toHaveBeenCalled();
+  });
+
+  test('switches a reader that mounted while the file was loading', async () => {
+    // Cold start: the intent lands on the library, and "open last books"
+    // mounts the reader with the old book before the file has loaded.
+    window.history.replaceState(null, '', '/library');
+    h.partialMD5.mockImplementationOnce(async () => {
+      window.history.replaceState(null, '', '/reader?ids=lastBook');
+      return 'pdfHash';
+    });
+    renderHook(() => useOpenWithBooks());
+    act(() => {
+      eventDispatcher.dispatch('app-incoming-url', { urls: [uri], action: 'VIEW' });
+    });
+    await waitFor(() => expect(opened).toHaveBeenCalledWith({ bookHash: 'pdfHash' }));
+    expect(h.navigateToReader).not.toHaveBeenCalled();
+  });
+
+  test('navigates to the reader from the library', async () => {
+    window.history.replaceState(null, '', '/library');
+    renderHook(() => useOpenWithBooks());
+    act(() => {
+      eventDispatcher.dispatch('app-incoming-url', { urls: [uri], action: 'VIEW' });
+    });
+    await waitFor(() => expect(h.navigateToReader).toHaveBeenCalledWith({}, ['pdfHash']));
+    expect(opened).not.toHaveBeenCalled();
   });
 });
 

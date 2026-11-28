@@ -114,15 +114,17 @@ export const navigateToReader = (
   router: ReturnType<typeof useRouter>,
   bookIds: string[],
   queryParams?: string,
-  navOptions?: { scroll?: boolean },
+  navOptions?: { scroll?: boolean; replace?: boolean },
 ) => {
   const ids = bookIds.join(BOOK_IDS_SEPARATOR);
+  const navigate = (url: string) =>
+    navOptions?.replace ? router.replace(url, navOptions) : router.push(url, navOptions);
   if (isWebAppPlatform() && !isPWA()) {
-    router.push(`/reader/${ids}${queryParams ? `?${queryParams}` : ''}`, navOptions);
+    navigate(`/reader/${ids}${queryParams ? `?${queryParams}` : ''}`);
   } else {
     const params = new URLSearchParams(queryParams || '');
     params.set('ids', ids);
-    router.push(`/reader?${params.toString()}`, navOptions);
+    navigate(`/reader?${params.toString()}`);
   }
 };
 

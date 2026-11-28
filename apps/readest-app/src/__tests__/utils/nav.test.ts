@@ -112,6 +112,15 @@ describe('navigateToReader', () => {
     expect(url).toContain('ids=book1%2Bbook2');
   });
 
+  test('replaces the current entry when asked', () => {
+    const router = mockRouter();
+    navigateToReader(router, ['book1'], '', { scroll: false, replace: true });
+
+    expect(router.push).not.toHaveBeenCalled();
+    expect(router.replace).toHaveBeenCalledTimes(1);
+    expect(router.replace.mock.calls[0]![0]).toContain('ids=book1');
+  });
+
   test('navigates to /reader/id for web platform (non-PWA)', () => {
     vi.mocked(isWebAppPlatform).mockReturnValue(true);
     vi.mocked(isPWA).mockReturnValue(false);
