@@ -1062,16 +1062,20 @@ describe('customDictionaryStore — context dictionary (#5544)', () => {
       contextPromptId: 'custom',
       contextSystemPrompt: 'Explain historical context.',
       contextMaxOutputTokens: 4096,
+      xrayMaxOutputTokens: 8192,
     };
     seedPersisted({ providerOrder: [], providerEnabled: {}, ...options });
     await useCustomDictionaryStore.getState().loadCustomDictionaries(fakeEnv);
     expect(useCustomDictionaryStore.getState().settings).toMatchObject(options);
-    useCustomDictionaryStore
-      .getState()
-      .setContextOptions({ contextPromptId: 'default', contextMaxOutputTokens: 0 });
+    useCustomDictionaryStore.getState().setContextOptions({
+      contextPromptId: 'default',
+      contextMaxOutputTokens: 0,
+      xrayMaxOutputTokens: 0,
+    });
     expect(useCustomDictionaryStore.getState().settings).toMatchObject({
       contextPromptId: 'default',
       contextMaxOutputTokens: 0,
+      xrayMaxOutputTokens: 0,
       contextSystemPrompt: options.contextSystemPrompt,
     });
   });

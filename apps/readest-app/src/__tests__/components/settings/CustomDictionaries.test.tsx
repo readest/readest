@@ -529,6 +529,24 @@ describe('CustomDictionaries — context dictionary (#5544)', () => {
     expect(useCustomTranslatorStore.getState().translators[0]).toEqual(llm('a'));
   });
 
+  it('saves an X-Ray output limit of its own', async () => {
+    useCustomTranslatorStore.setState({ translators: [llm('a')], prompts: [], loaded: true });
+    seedSettings({ ...contextSettings, contextMaxOutputTokens: 512 });
+    const saveCustomDictionaries = vi.fn().mockResolvedValue(undefined);
+    useCustomDictionaryStore.setState({ saveCustomDictionaries });
+    render(<CustomDictionaries onBack={() => {}} />);
+
+    const tokens = screen.getByRole('spinbutton', { name: 'X-Ray: Maximum Output Tokens' });
+    expect((tokens as HTMLInputElement).value).toBe('');
+    fireEvent.change(tokens, { target: { value: '8192' } });
+
+    await waitFor(() => expect(saveCustomDictionaries).toHaveBeenCalled());
+    expect(useCustomDictionaryStore.getState().settings).toMatchObject({
+      contextMaxOutputTokens: 512,
+      xrayMaxOutputTokens: 8192,
+    });
+  });
+
   it.each(['instructions', 'tokens'])('persists %s when dismissed without blurring', (field) => {
     useCustomTranslatorStore.setState({ translators: [llm('a')], prompts: [], loaded: true });
     seedSettings({ ...contextSettings, contextPromptId: 'custom' });

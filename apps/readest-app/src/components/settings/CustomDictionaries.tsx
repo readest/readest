@@ -1009,6 +1009,23 @@ const CustomDictionaries: React.FC<CustomDictionariesProps> = ({ onBack }) => {
               void saveCustomDictionaries(envConfig);
             }}
           />
+          <SettingsRow label={_('Maximum Output Tokens')}>
+            <SettingsInput
+              type='number'
+              min={1}
+              step={1}
+              aria-label={`${_('X-Ray')}: ${_('Maximum Output Tokens')}`}
+              placeholder={_('Provider Default')}
+              value={settings.xrayMaxOutputTokens || ''}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!event.target.value || (Number.isSafeInteger(value) && value > 0)) {
+                  setContextOptions({ xrayMaxOutputTokens: value });
+                  void saveCustomDictionaries(envConfig);
+                }
+              }}
+            />
+          </SettingsRow>
         </BoxedList>
       )}
 

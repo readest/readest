@@ -261,6 +261,8 @@ export interface DictionarySettings {
   contextMaxOutputTokens?: number;
   /** Read on into the X-Ray while reading. Off by default: it spends the user's tokens. */
   xrayAutoUpdate?: boolean;
+  /** X-Ray's output cap, apart from the dictionary's. Zero means the provider's default. */
+  xrayMaxOutputTokens?: number;
 }
 
 /** Stable ids for the built-in providers. */
