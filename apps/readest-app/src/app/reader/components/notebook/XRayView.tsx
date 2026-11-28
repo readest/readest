@@ -164,7 +164,7 @@ const XRayView: React.FC<{ bookKey: string }> = ({ bookKey }) => {
           />
         </label>
         {!filter && (
-          <div className='flex gap-1 overflow-x-auto' role='group' aria-label={_('X-Ray')}>
+          <div className='flex flex-wrap gap-1' role='group' aria-label={_('X-Ray')}>
             {sections.map((id) => (
               <button
                 key={id}
