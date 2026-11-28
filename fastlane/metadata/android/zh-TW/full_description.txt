@@ -1,0 +1,34 @@
+<b>Readest</b> 是一款現代、開源的電子書閱讀器，為愛讀書的人打造，讓你的書、筆記和閱讀進度跟著你到任何地方。
+
+開啟 EPUB、PDF、MOBI、AZW3、FB2、CBZ、TXT 和 Markdown，並把閱讀體驗調整到每一個細節。
+
+<b>用你的方式閱讀</b>
+• 分頁或捲動模式，翻頁動畫流暢
+• 自訂字型、主題、間距、邊界和分欄
+• 支援中日韓書籍直排
+• 為電子紙打造，對比度針對慢速刷新的螢幕調校
+• 最多並排開啟四本書，方便研究和對照
+
+<b>完整的書庫</b>
+• 瀏覽並下載 OPDS 書目和公共圖書館中的書籍
+• 連接 Calibre 和 Calibre-Web，封面和中繼資料一併取得
+• 用自訂書架群組整理書籍
+• 書內全文搜尋
+
+<b>留得住的筆記</b>
+• 劃線、書籤和結構化筆記
+• 複製劃線時附上可跳回原文位置的深層連結
+• 匯出你的筆記
+
+<b>聽與理解</b>
+• 文字轉語音，可下載離線語音，支援 Android Auto
+• 翻譯一句話、一頁，或整本書
+• 不必離開頁面即可查詢維基百科和字典
+
+<b>處處同步</b>
+• 使用 Readest Cloud，或自選 Google Drive、OneDrive、WebDAV、S3
+• KOReader 同步讓閱讀進度與你的電子閱讀器保持一致
+• Android、iOS、macOS、Windows、Linux 和網頁版
+
+Readest 是開源軟體。問題或建議：support@readest.com
+隱私權政策：https://readest.com/privacy-policy

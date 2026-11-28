@@ -1,0 +1,41 @@
+Readest est un lecteur d'ebooks pour celles et ceux qui lisent beaucoup et veulent retrouver leurs livres, leurs notes et leur position de lecture sur l'appareil le plus proche.
+
+Ouvrez EPUB, PDF, MOBI, AZW3, FB2, CBZ, TXT et Markdown dans une seule bibliothèque. Récupérez des livres depuis des catalogues OPDS ou votre propre serveur Calibre. Lisez, annotez, écoutez, traduisez.
+
+Conçu pour iPhone et iPad
+• CarPlay, pour continuer l'écoute sur la route avec les commandes de lecture sur le tableau de bord
+• Téléchargez des voix de lecture par livre et écoutez sans aucune connexion
+• Ajoutez des livres depuis Fichiers, Mail ou n'importe quelle feuille de partage, et lisez-les sur place au lieu de les copier dans une seconde bibliothèque
+• Ouvrez jusqu'à quatre livres à la fois sur iPad et disposez-les comme vous le souhaitez
+
+Lecture
+• Mode paginé ou défilement, avec polices, thèmes, espacements et marges personnalisés
+• Texte vertical pour les livres CJK
+• Contraste et rafraîchissement adaptés aux écrans e-ink
+• Recherche plein texte dans un livre
+
+Votre bibliothèque
+• Parcourez, cherchez et téléchargez depuis des catalogues OPDS et des bibliothèques publiques
+• Connectez-vous à Calibre ou Calibre-Web, couvertures et métadonnées comprises
+• Rangez vos livres dans des groupes d'étagères renommables
+
+Notes
+• Surlignages, signets et notes structurées
+• Copiez un surlignage avec un lien direct vers le passage
+• Exportez vos annotations
+
+Écoute et langues
+• Synthèse vocale avec des voix hors ligne téléchargeables
+• Traduisez une phrase, une page ou un livre entier
+• Consultez Wikipédia et le dictionnaire sans quitter la page
+
+Synchronisation
+• Readest Cloud, ou votre propre stockage : iCloud, Google Drive, OneDrive, WebDAV, S3
+• La synchro KOReader garde votre progression alignée avec votre liseuse
+• iPhone, iPad, Mac, toutes les autres plateformes et le Web
+
+Readest est open source.
+
+Assistance : support@readest.com
+Politique de confidentialité : https://readest.com/privacy-policy
+Conditions d'utilisation : https://www.apple.com/legal/internet-services/itunes/dev/stdeula/

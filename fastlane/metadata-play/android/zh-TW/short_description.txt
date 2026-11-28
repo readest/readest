@@ -1,0 +1,1 @@
+../../../metadata/android/zh-TW/short_description.txt

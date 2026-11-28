@@ -1,0 +1,1 @@
+电子书,阅读,小说,txt,mobi,azw3,fb2,cbz,漫画,划线,笔记,书架,书库,词典,竖排,多窗口,mac,calibre,opds,koreader,webdav,开源
