@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "Κωδικός QR για το επιλεγμένο κείμενο",
   "Navigation History": "Ιστορικό πλοήγησης",
   "Highlight Current Paragraph": "Επισήμανση τρέχουσας παραγράφου",
-  "Highlight Button": "Κουμπί επισήμανσης"
+  "Highlight Button": "Κουμπί επισήμανσης",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Η εξαγωγή σε Anki βάζει το λήμμα αυτού του λεξικού στο πίσω μέρος κάθε κάρτας",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Αναζήτηση λημμάτων λεξικού ({{done}}/{{total}})…"
 }

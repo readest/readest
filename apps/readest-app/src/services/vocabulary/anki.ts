@@ -96,8 +96,11 @@ const isReadestNote = (tags: string) => tags.split(/\s+/).includes('readest');
 
 export const ankiHintOf = (fields: string[], tags = ''): string | undefined => {
   let back = fields[1] ?? '';
-  // A Readest card's back ends with the book line in <small>; it is never the hint.
-  if (isReadestNote(tags)) back = back.replace(/<small>[\s\S]*?<\/small>/gi, '');
+  // A Readest card's back ends with the book line in <small>, then in a file
+  // export the dictionary entry after an <hr>; neither is ever the hint.
+  if (isReadestNote(tags)) {
+    back = back.replace(/<hr[\s\S]*$/i, '').replace(/<small>[\s\S]*?<\/small>/gi, '');
+  }
   const line = cleanAnkiField(back)[0];
   return line ? line.slice(0, MAX_HINT_LEN) : undefined;
 };

@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "තෝරාගත් පාඨය සඳහා QR කේතය",
   "Navigation History": "සංචාලන ඉතිහාසය",
   "Highlight Current Paragraph": "වර්තමාන ඡේදය ඉස්මතු කරන්න",
-  "Highlight Button": "ඉස්මතු කිරීමේ බොත්තම"
+  "Highlight Button": "ඉස්මතු කිරීමේ බොත්තම",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Anki වෙත නිර්යාතය එක් එක් කාඩ්පතේ පිටුපසට මෙම ශබ්දකෝෂයේ ඇතුළත් කිරීම එක් කරයි",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "ශබ්දකෝෂ ඇතුළත් කිරීම් සොයමින් ({{done}}/{{total}})…"
 }

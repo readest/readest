@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "चयनित टेक्स्ट का QR कोड",
   "Navigation History": "नेविगेशन इतिहास",
   "Highlight Current Paragraph": "वर्तमान पैराग्राफ को हाइलाइट करें",
-  "Highlight Button": "हाइलाइट बटन"
+  "Highlight Button": "हाइलाइट बटन",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Anki में निर्यात हर कार्ड के पीछे इस शब्दकोश की प्रविष्टि जोड़ता है",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "शब्दकोश की प्रविष्टियाँ खोजी जा रही हैं ({{done}}/{{total}})…"
 }

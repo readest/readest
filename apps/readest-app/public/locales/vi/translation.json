@@ -2994,5 +2994,7 @@
   "QR code for the selected text": "Mã QR cho văn bản đã chọn",
   "Navigation History": "Lịch sử điều hướng",
   "Highlight Current Paragraph": "Tô sáng đoạn hiện tại",
-  "Highlight Button": "Nút đánh dấu"
+  "Highlight Button": "Nút đánh dấu",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Xuất sang Anki sẽ đặt mục từ của từ điển này ở mặt sau mỗi thẻ",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Đang tra mục từ trong từ điển ({{done}}/{{total}})…"
 }

@@ -3231,5 +3231,7 @@
   "QR code for the selected text": "Koda QR za izbrano besedilo",
   "Navigation History": "Zgodovina navigacije",
   "Highlight Current Paragraph": "Označi trenutni odstavek",
-  "Highlight Button": "Gumb za označevanje"
+  "Highlight Button": "Gumb za označevanje",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Izvoz v Anki doda geslo iz tega slovarja na hrbtno stran vsake kartice",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Iskanje slovarskih gesel ({{done}}/{{total}})…"
 }

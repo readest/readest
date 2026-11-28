@@ -3231,5 +3231,7 @@
   "QR code for the selected text": "QR-код для виділеного тексту",
   "Navigation History": "Історія переходів",
   "Highlight Current Paragraph": "Виділяти поточний абзац",
-  "Highlight Button": "Кнопка виділення"
+  "Highlight Button": "Кнопка виділення",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Експорт в Anki додає статтю з цього словника на зворот кожної картки",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Пошук словникових статей ({{done}}/{{total}})…"
 }

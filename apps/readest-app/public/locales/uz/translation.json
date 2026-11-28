@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "Tanlangan matn uchun QR kod",
   "Navigation History": "Navigatsiya tarixi",
   "Highlight Current Paragraph": "Joriy xatboshini ajratib ko'rsatish",
-  "Highlight Button": "Belgilash tugmasi"
+  "Highlight Button": "Belgilash tugmasi",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Anki’ga eksport har bir kartaning orqa tomoniga ushbu lug'at maqolasini qo'yadi",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Lug'at maqolalari qidirilmoqda ({{done}}/{{total}})…"
 }

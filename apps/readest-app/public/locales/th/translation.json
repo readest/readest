@@ -2994,5 +2994,7 @@
   "QR code for the selected text": "คิวอาร์โค้ดของข้อความที่เลือก",
   "Navigation History": "ประวัติการนำทาง",
   "Highlight Current Paragraph": "ไฮไลต์ย่อหน้าปัจจุบัน",
-  "Highlight Button": "ปุ่มไฮไลต์"
+  "Highlight Button": "ปุ่มไฮไลต์",
+  "Export to Anki puts this dictionary's entry on the back of each card": "การส่งออกไปยัง Anki จะใส่คำอธิบายจากพจนานุกรมนี้ไว้ด้านหลังการ์ดแต่ละใบ",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "กำลังค้นหาคำอธิบายในพจนานุกรม ({{done}}/{{total}})…"
 }

@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "QR-kód a kijelölt szöveghez",
   "Navigation History": "Navigációs előzmények",
   "Highlight Current Paragraph": "Aktuális bekezdés kiemelése",
-  "Highlight Button": "Kiemelés gomb"
+  "Highlight Button": "Kiemelés gomb",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Az Ankiba exportálás ennek a szótárnak a szócikkét teszi minden kártya hátoldalára",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Szótári szócikkek keresése ({{done}}/{{total}})…"
 }

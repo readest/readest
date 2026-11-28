@@ -2994,5 +2994,7 @@
   "QR code for the selected text": "선택한 텍스트의 QR 코드",
   "Navigation History": "이동 기록",
   "Highlight Current Paragraph": "현재 단락 강조",
-  "Highlight Button": "하이라이트 버튼"
+  "Highlight Button": "하이라이트 버튼",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Anki로 내보내면 이 사전의 항목을 각 카드 뒷면에 넣습니다",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "사전 항목 찾는 중 ({{done}}/{{total}})…"
 }

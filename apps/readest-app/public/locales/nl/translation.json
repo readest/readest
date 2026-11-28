@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "QR-code van de geselecteerde tekst",
   "Navigation History": "Navigatiegeschiedenis",
   "Highlight Current Paragraph": "Huidige alinea markeren",
-  "Highlight Button": "Markeerknop"
+  "Highlight Button": "Markeerknop",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Exporteren naar Anki zet het lemma uit dit woordenboek op de achterkant van elke kaart",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Woordenboeklemma's opzoeken ({{done}}/{{total}})…"
 }

@@ -4,14 +4,17 @@ import { useTranslation } from '@/hooks/useTranslation';
 import type { AnkiEntryPickerState } from './useAnkiLink';
 
 interface AnkiEntryPanelProps extends AnkiEntryPickerState {
+  /** Sync with Anki runs here (AnkiDroid), not only the file export. */
+  sync: boolean;
   onSave: (id: string) => Promise<void>;
   onCancel: () => void;
 }
 
-/** Pick the dictionary whose entry Sync puts on the back of Readest's Anki cards (#7728). */
+/** Pick the dictionary whose entry Sync and the file export put on the back of Readest's Anki cards (#7728). */
 const AnkiEntryPanel: React.FC<AnkiEntryPanelProps> = ({
   providers,
   selected,
+  sync,
   onSave,
   onCancel,
 }) => {
@@ -36,9 +39,11 @@ const AnkiEntryPanel: React.FC<AnkiEntryPanelProps> = ({
     >
       <h3 className='text-base font-medium'>{_('Dictionary for Anki Cards')}</h3>
       <p className='text-sm'>
-        {_(
-          "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync",
-        )}
+        {sync
+          ? _(
+              "Sync with Anki puts this dictionary's entry on the back of each card, for up to 30 cards per Sync",
+            )
+          : _("Export to Anki puts this dictionary's entry on the back of each card")}
       </p>
       <label className='flex flex-col gap-1.5 text-sm'>
         <span className='font-medium'>{_('Dictionary')}</span>

@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "QR-kod för den markerade texten",
   "Navigation History": "Navigeringshistorik",
   "Highlight Current Paragraph": "Markera aktuellt stycke",
-  "Highlight Button": "Markeringsknapp"
+  "Highlight Button": "Markeringsknapp",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Export till Anki lägger den här ordbokens uppslag på baksidan av varje kort",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Slår upp ordboksuppslag ({{done}}/{{total}})…"
 }

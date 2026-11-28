@@ -2994,5 +2994,7 @@
   "QR code for the selected text": "བདམས་པའི་ཡི་གེའི་QR ཨང་རྟགས།",
   "Navigation History": "འགྲུལ་བཞུད་ལོ་རྒྱུས།",
   "Highlight Current Paragraph": "ད་ལྟའི་དོན་ཚན་ལ་འོག་ཐིག་གཏོང་།",
-  "Highlight Button": "འོག་ཐིག་གི་མཐེབ་གནོན།"
+  "Highlight Button": "འོག་ཐིག་གི་མཐེབ་གནོན།",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Anki ལ་ཕྱིར་འདྲེན་གྱིས་ཤོག་བྱང་རེ་རེའི་རྒྱབ་ངོས་སུ་ཚིག་མཛོད་འདིའི་འགྲེལ་བཤད་འཇོག",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "ཚིག་མཛོད་ཀྱི་འགྲེལ་བཤད་འཚོལ་བཞིན་པ། ({{done}}/{{total}})…"
 }

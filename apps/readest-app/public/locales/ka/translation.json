@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "მონიშნული ტექსტის QR კოდი",
   "Navigation History": "ნავიგაციის ისტორია",
   "Highlight Current Paragraph": "მიმდინარე აბზაცის მარკირება",
-  "Highlight Button": "მარკირების ღილაკი"
+  "Highlight Button": "მარკირების ღილაკი",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Anki-ში ექსპორტი ამ ლექსიკონის სტატიას თითოეული ბარათის უკანა მხარეს ათავსებს",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "ლექსიკონის სტატიების ძიება ({{done}}/{{total}})…"
 }

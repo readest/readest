@@ -49,6 +49,17 @@ describe('toAnkiText', () => {
     expect(tags).toBe('readest The_Alchemist');
   });
 
+  it("puts a word's dictionary entry under the book line, on one line of the file", () => {
+    const lines = toAnkiText([entry(), entry({ id: 'en:other', key: 'other', hint: '' })], {
+      'en:serendipity': '<p>a happy\n\taccident</p>',
+    }).split('\n');
+    expect(lines[5]!.split('\t')[1]).toBe(
+      '意外发现<br><small>The Alchemist — Paulo Coelho</small>' +
+        '<hr><div style="text-align:start;font-size:0.85em"><p>a happy accident</p></div>',
+    );
+    expect(lines[6]!.split('\t')[1]).toBe('<small>The Alchemist — Paulo Coelho</small>');
+  });
+
   it('escapes HTML and strips tabs and newlines from fields', () => {
     const line = toAnkiText([
       entry({

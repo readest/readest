@@ -3152,5 +3152,7 @@
   "QR code for the selected text": "קוד QR עבור הטקסט שנבחר",
   "Navigation History": "היסטוריית ניווט",
   "Highlight Current Paragraph": "הדגשת הפסקה הנוכחית",
-  "Highlight Button": "כפתור הדגשה"
+  "Highlight Button": "כפתור הדגשה",
+  "Export to Anki puts this dictionary's entry on the back of each card": "הייצוא ל-Anki מוסיף את הערך של המילון הזה לגב כל כרטיס",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "מחפש ערכים במילון ({{done}}/{{total}})…"
 }

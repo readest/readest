@@ -3389,5 +3389,7 @@
   "QR code for the selected text": "رمز QR للنص المحدد",
   "Navigation History": "سجل التنقل",
   "Highlight Current Paragraph": "تمييز الفقرة الحالية",
-  "Highlight Button": "زر التمييز"
+  "Highlight Button": "زر التمييز",
+  "Export to Anki puts this dictionary's entry on the back of each card": "يضع التصدير إلى Anki مدخل هذا القاموس على ظهر كل بطاقة",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "جارٍ البحث عن مداخل القاموس ({{done}}/{{total}})…"
 }

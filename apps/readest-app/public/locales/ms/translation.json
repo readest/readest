@@ -2994,5 +2994,7 @@
   "QR code for the selected text": "Kod QR untuk teks yang dipilih",
   "Navigation History": "Sejarah navigasi",
   "Highlight Current Paragraph": "Serlahkan perenggan semasa",
-  "Highlight Button": "Butang tonjolkan"
+  "Highlight Button": "Butang tonjolkan",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Eksport ke Anki meletakkan entri kamus ini di belakang setiap kad",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Mencari entri kamus ({{done}}/{{total}})…"
 }

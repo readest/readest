@@ -57,7 +57,14 @@ export const ankiCardOf = (
   return { word, front, back, tags };
 };
 
-export const toAnkiText = (entries: VocabularyEntry[]): string => {
+/**
+ * The Anki import file. `entryOf` holds words' dictionary entries (#7728) by
+ * id; each goes under the back the way Sync's note type shows its Entry.
+ */
+export const toAnkiText = (
+  entries: VocabularyEntry[],
+  entryOf: Record<string, string> = {},
+): string => {
   const lines = [
     '#separator:tab',
     '#html:true',
@@ -67,7 +74,10 @@ export const toAnkiText = (entries: VocabularyEntry[]): string => {
   ];
   for (const e of entries) {
     const { front, back, tags } = ankiCardOf(e);
-    lines.push([front, back, tags.join(' ')].join('\t'));
+    const entry = entryOf[e.id]
+      ? `<hr><div style="text-align:start;font-size:0.85em">${oneLine(entryOf[e.id]!)}</div>`
+      : '';
+    lines.push([front, back + entry, tags.join(' ')].join('\t'));
   }
   return `${lines.join('\n')}\n`;
 };
