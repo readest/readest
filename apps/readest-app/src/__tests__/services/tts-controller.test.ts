@@ -1701,6 +1701,30 @@ describe('TTSController', () => {
       expect(forwardSpy).toHaveBeenCalledWith(false, true);
       vi.useRealTimers();
     });
+
+    test('a system voice starts the next paragraph without sleeping the gap first', async () => {
+      // The OS engine takes its own ~0.2-0.6 s to start every utterance. The
+      // gap slept on top of that made paragraph starts pause about twice as
+      // long as with any other engine (#8037).
+      vi.useFakeTimers();
+      await controller.init();
+      await controller.initViewTTS(0);
+      controller.setParagraphGap(0.3);
+      controller.ttsClient.getCapabilities = vi.fn().mockReturnValue({
+        wordBoundaries: false,
+        mediaClock: false,
+        gapControl: false,
+        liveRateChange: false,
+      });
+      const forwardSpy = vi.spyOn(controller, 'forward').mockResolvedValue();
+      speakingControllers.push(controller);
+
+      await controller.speak('<speak>hello</speak>');
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(forwardSpy).toHaveBeenCalledWith(false, true);
+      vi.useRealTimers();
+    });
   });
 
   // Stepping back from the opening of a section (a PDF page, an EPUB chapter)
