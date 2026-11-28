@@ -58,10 +58,21 @@ const BROWSER_NAMES: [RegExp, string][] = [
 // Chrome's reduced agent names every Android device "K".
 const ANDROID_MODEL = /Android [^;)]*; ([^;)]+?)(?: Build\/[^;)]*)?[;)]/;
 
+// The auth proxy (workers/auth-proxy) passes the reader's agent on in base64.
+const PROXIED_AGENT = /^ReadestAuthProxy\/1 ([A-Za-z0-9+/]+={0,2})$/;
+
 export const describeUserAgent = (
   ua: string | null | undefined,
 ): { client: string; os: string } | null => {
   if (!ua) return null;
+  const proxied = ua.match(PROXIED_AGENT);
+  if (proxied) {
+    try {
+      return describeUserAgent(atob(proxied[1]!));
+    } catch {
+      return null;
+    }
+  }
   // KOReader/v2025.08 (Kindle Paperwhite 5; Linux; arm) LuaSocket/3.0.0
   const koreader = ua.match(/^KOReader\/\S+ \(([^;)]+)/);
   if (koreader) return { client: 'KOReader', os: koreader[1]!.trim() };

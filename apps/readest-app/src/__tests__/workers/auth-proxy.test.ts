@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import worker from '../../../workers/auth-proxy/src/index';
+import { describeUserAgent } from '@/utils/syncDevices';
 
 const SUPABASE_URL = 'https://project.supabase.co';
 const PROXY = 'https://auth-cf.readest.com';
@@ -76,11 +77,17 @@ describe('auth proxy worker', () => {
     });
 
     // Supabase stores the agent on the session, and the device list in
-    // Manage Sync names each device from it.
-    it("passes on the reader's user agent", async () => {
-      await worker.fetch(post(path, { headers: { 'User-Agent': 'KOReader/v2025.08' } }), env);
+    // Manage Sync names each device from it. Supabase also refuses a secret
+    // key on any request whose agent looks like a browser ("Forbidden use of
+    // secret API key in browser"), so the reader's agent goes in wrapped.
+    it("passes on the reader's user agent in a form that isn't a browser's", async () => {
+      const chrome =
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36';
+      await worker.fetch(post(path, { headers: { 'User-Agent': chrome } }), env);
 
-      expect(forwarded().headers.get('user-agent')).toBe('KOReader/v2025.08');
+      const agent = forwarded().headers.get('user-agent');
+      expect(agent).not.toMatch(/Mozilla|AppleWebKit|Chrome|Safari/);
+      expect(describeUserAgent(agent)).toEqual({ client: 'Chrome', os: 'macOS' });
     });
 
     it('ignores a forwarded IP and Authorization sent by the client', async () => {
