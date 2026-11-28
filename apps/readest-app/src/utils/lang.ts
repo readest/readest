@@ -151,19 +151,26 @@ export const getLanguageName = (code: string): string => {
   return language ? language.name : lang;
 };
 
+const SCRIPT_LANG_CHARS =
+  /[\p{Script=Hebrew}\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u;
+const countMatches = (text: string, pattern: RegExp) => text.match(pattern)?.length ?? 0;
+
+// Untagged or `en` text switches to the language of its script only when that
+// script carries most of the words: an English novel that types 一 for a dash
+// must not have the paragraph read by a Chinese voice. A run of Latin or Hebrew
+// letters is one word, and so is each CJK character.
 export const inferLangFromScript = (text: string, lang: string): string => {
-  if (!lang || lang === 'en') {
-    if (/[\p{Script=Hebrew}]/u.test(text)) {
-      return 'he';
-    } else if (/[\p{Script=Hangul}]/u.test(text)) {
-      return 'ko';
-    } else if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) {
-      return 'ja';
-    } else if (/[\p{Script=Han}]/u.test(text)) {
-      return 'zh';
-    }
-  }
-  return lang;
+  if ((lang && lang !== 'en') || !SCRIPT_LANG_CHARS.test(text)) return lang;
+  const latinWords = countMatches(text, /\p{Script=Latin}+/gu);
+  if (countMatches(text, /\p{Script=Hebrew}+/gu) > latinWords) return 'he';
+  const cjkChars = countMatches(
+    text,
+    /[\p{Script=Hangul}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/gu,
+  );
+  if (cjkChars <= latinWords) return lang;
+  if (/\p{Script=Hangul}/u.test(text)) return 'ko';
+  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) return 'ja';
+  return 'zh';
 };
 
 // How much text detectLanguage reads before stripping noise. Callers may pass a

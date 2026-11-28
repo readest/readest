@@ -451,6 +451,30 @@ describe('inferLangFromScript', () => {
     expect(inferLangFromScript('Hello World', 'en')).toBe('en');
     expect(inferLangFromScript('Bonjour', 'en')).toBe('en');
   });
+
+  // An English novel that types 一 (U+4E00) for a dash had those paragraphs
+  // read by a Chinese voice.
+  it('should keep English text that uses a stray ideograph as a dash', () => {
+    const sentence =
+      '“What…?” She unfolded it gingerly as Ranni looked on, clearly trying 一 and failing 一 to stifle a smile.';
+    expect(inferLangFromScript(sentence, 'en')).toBe('en');
+    expect(inferLangFromScript(sentence, '')).toBe('');
+    expect(inferLangFromScript('He’s a good man一 er, dwarf.', 'en')).toBe('en');
+    expect(inferLangFromScript('“I didn’t一 I wasn’t一!”', 'en')).toBe('en');
+  });
+
+  it('should keep English text that quotes a short Hebrew or CJK word', () => {
+    expect(inferLangFromScript('The word שלום means peace.', 'en')).toBe('en');
+    expect(inferLangFromScript('In Japanese, a cat is a ねこ.', 'en')).toBe('en');
+  });
+
+  it('should switch when the script carries most of the words', () => {
+    // 10 Han characters against two English words, though more Latin letters
+    expect(inferLangFromScript('这是一个关于 TypeScript 和 React 的教程', 'en')).toBe('zh');
+    expect(inferLangFromScript('第一章', 'en')).toBe('zh');
+    expect(inferLangFromScript('iPhoneで写真を撮りました', 'en')).toBe('ja');
+    expect(inferLangFromScript('שלום עולם, hello', 'en')).toBe('he');
+  });
 });
 
 describe('getLanguageInfo', () => {

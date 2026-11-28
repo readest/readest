@@ -59,6 +59,12 @@ const removeLanguageBlocks = (ssml: string, keep: (lang: string) => boolean) => 
   return result + ssml.slice(from);
 };
 
+// XMLSerializer writes &, < and > in text as &amp;, &lt; and &gt;. Read for
+// counting, those are symbols, not the English words `amp`, `lt` and `gt`.
+const XML_ESCAPES: Record<string, string> = { amp: '&', lt: '<', gt: '>' };
+const unescapeXMLText = (text: string) =>
+  text.replace(/&(amp|lt|gt);/g, (_, name: string) => XML_ESCAPES[name]!);
+
 export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   let lang = 'en';
   const match = ssml.match(/xml:lang\s*=\s*"([^"]+)"/);
@@ -85,8 +91,12 @@ export const parseSSMLLang = (ssml: string, primaryLang?: string): string => {
   if (isDefaultEnglish && primaryLang && !isSameLang(lang, primaryLang)) {
     lang = primaryLang.split('-')[0]!.toLowerCase();
   }
-  const textWithoutLangTags = removeLanguageBlocks(ssml, () => false);
-  return inferLangFromScript(textWithoutLangTags, lang);
+  // The text between the tags, for counting only (never rendered). Joined
+  // without a space so a word cut by an inline tag stays one word.
+  const text = removeLanguageBlocks(ssml, () => false)
+    .split(/<[^>]*>/)
+    .join('');
+  return inferLangFromScript(unescapeXMLText(text), lang);
 };
 
 const isValidMark = (mark: string) => {
@@ -111,6 +121,17 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
   let currentLang = defaultLang;
   const langStack: string[] = [];
 
+  // A tag cuts a sentence into fragments. The language comes from all of the
+  // sentence's text in one language scope (the paragraph's own, or one <lang>
+  // block), so a fragment holding only a stray ideograph (between two
+  // <break/>s, say) doesn't get a voice of its own. The text is kept as
+  // written, spaces included, so the words on either side of a tag stay apart.
+  let scope = 0;
+  let scopeCount = 0;
+  const scopeStack: number[] = [];
+  const scopeText = new Map<string, string>();
+  const markScopes: string[] = [];
+
   const tagRegex = /<(\/?)(\w+)([^>]*)>|([^<]+)/g;
 
   let match: RegExpExecArray | null;
@@ -118,15 +139,13 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
     if (match[4]) {
       const rawText = match[4];
       const text = cleanTextContent(rawText);
+      const key = `${activeMark}\u0000${scope}`;
+      scopeText.set(key, (scopeText.get(key) ?? '') + unescapeXMLText(rawText));
       if (text && activeMark && isValidMark(text)) {
         const offset = plainText.length;
         plainText += text;
-        marks.push({
-          offset,
-          name: activeMark,
-          text,
-          language: inferLangFromScript(text, currentLang) || currentLang,
-        });
+        marks.push({ offset, name: activeMark, text, language: currentLang });
+        markScopes.push(key);
       } else {
         plainText += cleanTextContent(rawText);
       }
@@ -143,16 +162,24 @@ export const parseSSMLMarks = (ssml: string, primaryLang?: string) => {
       } else if (tagName === 'lang') {
         if (!isEnd) {
           langStack.push(currentLang);
+          scopeStack.push(scope);
+          scope = ++scopeCount;
           const langMatch = attr?.match(/xml:lang="([^"]+)"/);
           if (langMatch) {
             currentLang = langMatch[1]!;
           }
         } else {
           currentLang = langStack.pop() ?? defaultLang;
+          scope = scopeStack.pop() ?? 0;
         }
       }
     }
   }
+
+  marks.forEach((mark, i) => {
+    const text = scopeText.get(markScopes[i]!)!;
+    mark.language = inferLangFromScript(text, mark.language) || mark.language;
+  });
 
   return { plainText, marks };
 };

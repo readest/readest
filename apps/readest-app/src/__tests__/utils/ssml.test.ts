@@ -83,6 +83,89 @@ describe('parseSSMLLang', () => {
     const ssml = ssmlNoLang('<mark name="0"/>안녕하세요');
     expect(parseSSMLLang(ssml)).toBe('ko');
   });
+
+  // The words in the SSML's own tags are not the text's.
+  it('should infer Chinese for a short heading despite the Latin in its tags', () => {
+    expect(parseSSMLLang(ssmlWithLang('en', '<mark name="0"/>第一章'))).toBe('zh');
+  });
+});
+
+describe('a stray ideograph in an English paragraph', () => {
+  const ssml = ssmlWithLang(
+    'en',
+    '<mark name="0"/>“What…?” <mark name="1"/>She unfolded it gingerly as Ranni looked on, ' +
+      'clearly trying 一 and failing 一 to stifle a smile. <mark name="2"/>Fíli laughed.',
+  );
+
+  it('should keep the paragraph in English', () => {
+    expect(parseSSMLLang(ssml, 'en')).toBe('en');
+  });
+
+  it('should read every sentence with the English voice', () => {
+    const { marks } = parseSSMLMarks(ssml, 'en');
+    expect(marks.map((mark) => mark.language)).toEqual(['en', 'en', 'en']);
+  });
+
+  // A tag splits a sentence into fragments; one holding only the ideograph
+  // must not take a voice of its own.
+  it('should keep a fragment holding only the ideograph in English', () => {
+    const { marks } = parseSSMLMarks(
+      ssmlWithLang('en', '<mark name="0"/>He paused<break/>一<break/>and went on.'),
+      'en',
+    );
+    expect(marks.map((mark) => mark.language)).toEqual(['en', 'en', 'en']);
+  });
+
+  it('should keep a word split by an inline tag whole', () => {
+    const ssml = ssmlWithLang('en', '<mark name="0"/>你好 i<emphasis>Phone</emphasis>');
+    expect(parseSSMLLang(ssml)).toBe('zh');
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['zh', 'zh']);
+  });
+
+  // Each fragment's leading space is trimmed for speech; the words it
+  // separated must still count apart.
+  it('should keep the words apart that a tag and a space separate', () => {
+    const ssml = ssmlWithLang('en', '<mark name="0"/>One<break/> two<break/> three 一二.');
+    expect(parseSSMLLang(ssml)).toBe('en');
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'en', 'en']);
+  });
+
+  it('should keep the words apart that a space alone between two tags separates', () => {
+    const ssml = ssmlWithLang('en', '<mark name="0"/>One<break/> <break/>two 一二.');
+    expect(parseSSMLLang(ssml)).toBe('en');
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'en']);
+  });
+
+  it('should infer an explicit language scope apart from the text around it', () => {
+    const ssml = ssmlWithLang(
+      'en',
+      '<mark name="0"/><lang xml:lang="en">Hello </lang>你好<mark name="1"/>one two three four.',
+    );
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'zh', 'en']);
+  });
+
+  // XMLSerializer writes &, < and > in text as &amp;, &lt; and &gt;.
+  it('should not count an escaped symbol as an English word', () => {
+    const ssml = ssmlWithLang('en', '<mark name="0"/>&lt;中文&gt;');
+    expect(parseSSMLLang(ssml)).toBe('zh');
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['zh']);
+  });
+
+  it('should count a space after a language scope with the text it separates', () => {
+    const ssml = ssmlWithLang(
+      'en',
+      '<mark name="0"/>One<lang xml:lang="fr"> (bonjour)</lang> <emphasis>two 一二.</emphasis>',
+    );
+    expect(parseSSMLMarks(ssml).marks.map((mark) => mark.language)).toEqual(['en', 'fr', 'en']);
+  });
+
+  it('should keep an explicit language inside the sentence', () => {
+    const { marks } = parseSSMLMarks(
+      ssmlWithLang('en', '<mark name="0"/>She said <lang xml:lang="fr">bonjour</lang> and left.'),
+      'en',
+    );
+    expect(marks.map((mark) => mark.language)).toEqual(['en', 'fr', 'en']);
+  });
 });
 
 describe('parseSSMLMarks', () => {
