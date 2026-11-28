@@ -3152,5 +3152,7 @@
   "QR code for the selected text": "Cod QR pentru textul selectat",
   "Navigation History": "Istoric navigare",
   "Highlight Current Paragraph": "Evidențiază paragraful curent",
-  "Highlight Button": "Butonul de evidențiere"
+  "Highlight Button": "Butonul de evidențiere",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Exportul în Anki pune intrarea din acest dicționar pe spatele fiecărui card",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Se caută intrările din dicționar ({{done}}/{{total}})…"
 }

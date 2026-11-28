@@ -2994,5 +2994,7 @@
   "QR code for the selected text": "選択したテキストのQRコード",
   "Navigation History": "移動履歴",
   "Highlight Current Paragraph": "現在の段落をハイライト",
-  "Highlight Button": "ハイライトボタン"
+  "Highlight Button": "ハイライトボタン",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Anki へのエクスポートで、この辞書の項目を各カードの裏面に追加します",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "辞書の項目を検索中 ({{done}}/{{total}})…"
 }

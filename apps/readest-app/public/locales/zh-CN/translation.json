@@ -2994,5 +2994,7 @@
   "QR code for the selected text": "所选文本的二维码",
   "Navigation History": "导航历史",
   "Highlight Current Paragraph": "高亮当前段落",
-  "Highlight Button": "划线按钮"
+  "Highlight Button": "划线按钮",
+  "Export to Anki puts this dictionary's entry on the back of each card": "导出到 Anki 时，会把此词典的词条放到每张卡片的背面",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "正在查询词典词条 ({{done}}/{{total}})…"
 }

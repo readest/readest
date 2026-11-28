@@ -132,6 +132,12 @@ describe('ankiHintOf', () => {
       'a drug',
     );
   });
+
+  it('never takes the dictionary entry of a file-exported Readest note as the hint', () => {
+    const entry = '<hr><div style="text-align:start;font-size:0.85em"><p>spice n.</p></div>';
+    expect(ankiHintOf(['x', `<small>Dune</small>${entry}`], 'readest Dune')).toBeUndefined();
+    expect(ankiHintOf(['x', `a drug<br><small>Dune</small>${entry}`], 'readest')).toBe('a drug');
+  });
 });
 
 describe('language tag', () => {

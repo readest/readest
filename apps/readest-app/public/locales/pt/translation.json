@@ -3152,5 +3152,7 @@
   "QR code for the selected text": "Código QR do texto selecionado",
   "Navigation History": "Histórico de navegação",
   "Highlight Current Paragraph": "Destacar o parágrafo atual",
-  "Highlight Button": "Botão de destaque"
+  "Highlight Button": "Botão de destaque",
+  "Export to Anki puts this dictionary's entry on the back of each card": "A exportação para o Anki coloca a entrada deste dicionário no verso de cada cartão",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "A procurar entradas do dicionário ({{done}}/{{total}})…"
 }

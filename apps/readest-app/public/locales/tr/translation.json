@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "Seçili metnin QR kodu",
   "Navigation History": "Gezinme geçmişi",
   "Highlight Current Paragraph": "Geçerli paragrafı vurgula",
-  "Highlight Button": "Vurgulama düğmesi"
+  "Highlight Button": "Vurgulama düğmesi",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Anki’ye aktarma, bu sözlüğün maddesini her kartın arka yüzüne koyar",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Sözlük maddeleri aranıyor ({{done}}/{{total}})…"
 }

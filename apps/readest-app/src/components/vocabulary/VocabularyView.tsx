@@ -181,7 +181,8 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
 
   const exportAs = async (format: 'csv' | 'anki') => {
     if (format === 'anki' && !anki.guardFileExport()) return;
-    const content = format === 'csv' ? toCsv(shown) : toAnkiText(shown);
+    const content =
+      format === 'csv' ? toCsv(shown) : toAnkiText(shown, await anki.fileExportEntries(shown));
     const filename = format === 'csv' ? 'readest-vocabulary.csv' : 'readest-vocabulary-anki.txt';
     const saved = await appService?.saveFile(filename, content, {
       mimeType: format === 'csv' ? 'text/csv' : 'text/plain',
@@ -206,6 +207,7 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
   ) : anki.entryPicker ? (
     <AnkiEntryPanel
       {...anki.entryPicker}
+      sync={anki.available}
       onSave={anki.saveEntryPicker}
       onCancel={anki.closeEntryPicker}
     />
@@ -347,15 +349,14 @@ const VocabularyView: React.FC<VocabularyViewProps> = ({ onOpenBook }) => {
                 onClick={() => void anki.openProfiles()}
               />
             )}
-            {anki.available && (
-              <MenuItem
-                label={_('Dictionary for Anki Cards...')}
-                description={anki.premiumBadge}
-                Icon={PiBookOpenText}
-                transient
-                onClick={() => void anki.openEntryPicker()}
-              />
-            )}
+            {/* Everywhere: the file export puts the entries on its cards too. */}
+            <MenuItem
+              label={_('Dictionary for Anki Cards...')}
+              description={anki.premiumBadge}
+              Icon={PiBookOpenText}
+              transient
+              onClick={() => void anki.openEntryPicker()}
+            />
             {anki.available && anki.audioDeclined && (
               <MenuItem
                 label={_('Add Audio to Anki Cards')}

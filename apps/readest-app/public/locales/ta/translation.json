@@ -3073,5 +3073,7 @@
   "QR code for the selected text": "தேர்ந்தெடுத்த உரைக்கான QR குறியீடு",
   "Navigation History": "வழிசெலுத்தல் வரலாறு",
   "Highlight Current Paragraph": "தற்போதைய பத்தியை தனிப்படுத்து",
-  "Highlight Button": "முத்திரை பொத்தான்"
+  "Highlight Button": "முத்திரை பொத்தான்",
+  "Export to Anki puts this dictionary's entry on the back of each card": "Anki-க்கு ஏற்றுமதி ஒவ்வொரு அட்டையின் பின்புறத்திலும் இந்த அகராதியின் பதிவைச் சேர்க்கிறது",
+  "Looking up dictionary entries ({{done}}/{{total}})…": "அகராதிப் பதிவுகளைத் தேடுகிறது ({{done}}/{{total}})…"
 }

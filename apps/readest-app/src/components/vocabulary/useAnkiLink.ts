@@ -326,6 +326,30 @@ export const useAnkiLink = () => {
     return id ? entryProviders().find((p) => p.id === id) : undefined;
   };
 
+  /**
+   * The card dictionary's entries for the Anki file export, by word id. Unlike
+   * Sync there's no next time to fill the rest, so every word is looked up.
+   */
+  const fileExportEntries = async (words: VocabularyEntry[]) => {
+    const entryOf: Record<string, string> = {};
+    await loadDictionaries();
+    const provider = entryProvider();
+    if (!provider) return entryOf;
+    for (const [done, e] of words.entries()) {
+      // Each update restarts the toast's timer, which outlasts a lookup's timeout.
+      eventDispatcher.dispatch('toast', {
+        type: 'info',
+        message: _('Looking up dictionary entries ({{done}}/{{total}})…', {
+          done,
+          total: words.length,
+        }),
+        timeout: 20_000,
+      });
+      entryOf[e.id] = await lookupEntry(e.word, e.lang, provider);
+    }
+    return entryOf;
+  };
+
   /** Pull, then add Learning words the deck lacks, then bring mark tags in step. */
   const sync = async () => {
     if (!guard()) return;
@@ -547,6 +571,7 @@ export const useAnkiLink = () => {
     saveEntryPicker,
     closeEntryPicker: () => setEntryPicker(null),
     guardFileExport: guard,
+    fileExportEntries,
     audioPrompt: !!audioPrompt,
     answerAudioPrompt: (add: boolean) => audioPrompt?.(add),
     audioDeclined,

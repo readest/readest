@@ -757,6 +757,44 @@ describe('VocabularyView Anki link', () => {
       expect(screen.queryByRole('region', { name: 'Dictionary for Anki Cards' })).toBeNull();
       save.mockRestore();
     });
+
+    it("puts the chosen dictionary's entry on every card of the file export without AnkiDroid", async () => {
+      appService.isAndroidApp = false;
+      renderWithMenu();
+      openMenu('Export');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Dictionary for Anki Cards/ }));
+      const panel = await screen.findByRole('region', { name: 'Dictionary for Anki Cards' });
+      // There is no Sync here to describe.
+      expect(
+        within(panel).getByText(
+          "Export to Anki puts this dictionary's entry on the back of each card",
+        ),
+      ).toBeTruthy();
+      fireEvent.click(within(panel).getByRole('button', { name: 'Cancel' }));
+      // No dictionary chosen yet: the file is written without looking anything up.
+      openMenu('Export');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Export to Anki/ }));
+      await waitFor(() => expect(saveFile).toHaveBeenCalledTimes(1));
+      expect(lookups).toEqual([]);
+
+      choose('stardict:collins');
+      openMenu('Export');
+      fireEvent.click(screen.getByRole('menuitem', { name: /Export to Anki/ }));
+      await waitFor(() => expect(saveFile).toHaveBeenCalledTimes(2));
+      const [, content] = saveFile.mock.calls[1] as unknown as [string, string];
+      const backs = content
+        .split('\n')
+        .slice(5, -1)
+        .map((line) => line.split('\t')[1]);
+      expect(backs).toEqual(
+        ['spice', 'sandworm', 'ball'].map(
+          (word) =>
+            `${word === 'spice' ? '香料<br>' : ''}<small>Dune</small>` +
+            `<hr><div style="text-align:start;font-size:0.85em"><p>${word} def</p></div>`,
+        ),
+      );
+      expect(anki.ankiStatus).not.toHaveBeenCalled();
+    });
   });
 
   describe('card profiles (#7849)', () => {
