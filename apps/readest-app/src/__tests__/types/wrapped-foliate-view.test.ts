@@ -115,6 +115,68 @@ describe('wrappedFoliateView goTo events', () => {
     expect(showReturn.mock.lastCall?.[0].detail).toEqual({ from: 'F', to: 'H' });
   });
 
+  for (const cutShortEndsFirst of [true, false]) {
+    it(`keeps one entry for a step made before the last one landed (${cutShortEndsFirst ? 'cut-short step ends first' : 'later step lands first'})`, async () => {
+      // Mirrors foliate: goTo moves the page and pushes the target, and the
+      // renderer lets a later jump win: the jump it cut short ends without
+      // moving the page, before or after the later one lands.
+      const entries: unknown[] = ['A'];
+      let index = 0;
+      const view = makeFakeView(async (href) => {
+        await view.renderer.goTo(view.resolveNavigation(href));
+        entries.length = ++index;
+        entries[index] = href;
+      });
+      view.history = Object.assign(new EventTarget(), {
+        canGoBack: true,
+        canGoForward: false,
+        back: vi.fn(),
+        forward: vi.fn(),
+        clear: vi.fn(),
+        replaceState: (x: unknown) => {
+          entries[index] = x;
+        },
+      });
+      view.resolveNavigation = ((href: string | number) => ({
+        index: 0,
+        anchor: href,
+      })) as unknown as FoliateView['resolveNavigation'];
+      let jumps = 0;
+      const loads: (() => void)[] = [];
+      view.renderer = {
+        goTo: async ({ anchor }: { anchor?: unknown }) => {
+          const jump = ++jumps;
+          await new Promise<void>((resolve) => loads.push(resolve));
+          if (jump !== jumps) return;
+          const label = String(anchor).split('-')[0]!;
+          view.lastLocation = {
+            cfi: String(anchor),
+            tocItem: { label, href: label, id: 0, index: 0 },
+          };
+        },
+      } as unknown as FoliateView['renderer'];
+      view.lastLocation = { cfi: 'A', tocItem: { label: 'A', href: 'A', id: 0, index: 0 } };
+      const showReturn = vi.fn();
+      view.addEventListener('reader-jump', showReturn);
+      const wrapped = wrappedFoliateView(view);
+      const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+      const first = wrapped.goTo('B-1', { step: true });
+      const second = wrapped.goTo('C-1', { step: true });
+      await tick();
+      const [endFirst, landSecond] = loads;
+      for (const load of cutShortEndsFirst ? [endFirst, landSecond] : [landSecond, endFirst]) {
+        load!();
+        await tick();
+      }
+      await Promise.all([first, second]);
+
+      expect(entries).toEqual(['A', 'C-1']);
+      expect(view.lastLocation?.cfi).toBe('C-1');
+      expect(showReturn.mock.lastCall?.[0].detail).toEqual({ from: 'A', to: 'C' });
+    });
+  }
+
   it('dispatches navigate-end even when goTo rejects', async () => {
     const order: string[] = [];
     const view = makeFakeView(() => Promise.reject(new Error('nav failed')));

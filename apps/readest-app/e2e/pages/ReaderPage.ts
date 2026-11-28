@@ -124,6 +124,19 @@ export class ReaderPage extends BasePage {
     return match ? Number(match[1]) : Number.NaN;
   }
 
+  /**
+   * The fraction of the book the reader last relocated to. While the slider
+   * moves, the page label shows the page under it before the jump runs; this
+   * changes only once the jump lands.
+   */
+  async locationFraction(): Promise<number> {
+    return this.foliateView.evaluate(
+      (view) =>
+        (view as HTMLElement & { lastLocation?: { fraction?: number } }).lastLocation?.fraction ??
+        Number.NaN,
+    );
+  }
+
   /** Jump to a page by typing into the footer's page-jump input. */
   async goToPage(page: number): Promise<void> {
     await this.revealFooter();
