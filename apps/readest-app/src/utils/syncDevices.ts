@@ -60,11 +60,14 @@ const ANDROID_MODEL = /Android [^;)]*; ([^;)]+?)(?: Build\/[^;)]*)?[;)]/;
 
 export const describeUserAgent = (
   ua: string | null | undefined,
-): { client: string; os: string } | null => {
+): { client: string; os: string | null } | null => {
   if (!ua) return null;
   // KOReader/v2025.08 (Kindle Paperwhite 5; Linux; arm) LuaSocket/3.0.0
   const koreader = ua.match(/^KOReader\/\S+ \(([^;)]+)/);
   if (koreader) return { client: 'KOReader', os: koreader[1]!.trim() };
+  // The Readest plugin signs in through KOReader's Spore client, whose agent
+  // names no device.
+  if (ua.startsWith('lua-Spore')) return { client: 'KOReader', os: null };
   if (!ua.startsWith('Mozilla/')) return null;
 
   const os = OS_NAMES.find(([pattern]) => pattern.test(ua))?.[1];
