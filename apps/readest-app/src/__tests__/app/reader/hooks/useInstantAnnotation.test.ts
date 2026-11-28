@@ -31,12 +31,16 @@ const stores = vi.hoisted(() => ({
   updateBooknotes: vi.fn(() => ({})),
   booknotes: [] as BookNote[],
   isFixedLayout: true,
+  lang: undefined as string | undefined,
 }));
 
 vi.mock('@/store/bookDataStore', () => ({
   ...bookDataStoreHooks(() => ({
     getConfig: () => ({ booknotes: stores.booknotes }),
-    getBookData: () => ({ isFixedLayout: stores.isFixedLayout }),
+    getBookData: () => ({
+      isFixedLayout: stores.isFixedLayout,
+      book: { primaryLanguage: stores.lang },
+    }),
     saveConfig: stores.saveConfig,
     updateBooknotes: stores.updateBooknotes,
   })),
@@ -51,6 +55,10 @@ vi.mock('@/store/readerStore', () => ({
     }),
     getProgress: () => ({ page: 1 }),
   }),
+}));
+vi.mock('@/utils/jieba', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/utils/jieba')>()),
+  isJiebaReady: () => true,
 }));
 vi.mock('@/app/reader/utils/annotatorUtil', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/app/reader/utils/annotatorUtil')>()),
@@ -96,6 +104,7 @@ beforeEach(() => {
   settingsStore.state.settings = settingsStore.initial();
   stores.booknotes = [];
   stores.isFixedLayout = true;
+  stores.lang = undefined;
   scrolled = false;
   p1 = document.createElement('p');
   p1.textContent = 'first page text here';
@@ -120,6 +129,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   document.body.replaceChildren();
   cleanup();
 });
@@ -224,6 +234,33 @@ describe('useInstantAnnotation hold-a-word engage and commit', () => {
 
     expect(handled).toBe(true);
     expect(setSelection).toHaveBeenLastCalledWith(null);
+  });
+
+  // #8018: Android's Intl.Segmenter has no Chinese dictionary and splits
+  // Chinese into characters; in a Chinese book the held word is the jieba word.
+  test('a hold on Chinese in a Chinese book on Android commits the word', async () => {
+    stores.lang = 'zh';
+    vi.stubGlobal('Intl', {
+      ...Intl,
+      Segmenter: class {
+        segment(text: string) {
+          return [...text].map((segment, index) => ({ segment, index, isWordLike: true }));
+        }
+      },
+    });
+    p1.textContent = '独立思考是一种重要的能力。';
+    const zh = p1.firstChild as Text;
+    (document as unknown as { caretPositionFromPoint: unknown }).caretPositionFromPoint = () => ({
+      offsetNode: zh,
+      offset: 3, // after 思
+    });
+    const { result, captured } = setup();
+
+    result.current.handleInstantAnnotationPointerDown(document, 0, pointer(10, 10));
+    result.current.handleInstantAnnotationEngage(document, 0);
+    await result.current.handleInstantAnnotationPointerUp(document, 0, pointer(12, 11));
+
+    expect(captured.selection?.text).toBe('思考');
   });
 
   test('engage without a resolvable word leaves the release a tap', async () => {

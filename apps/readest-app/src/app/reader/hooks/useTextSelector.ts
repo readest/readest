@@ -9,6 +9,7 @@ import { eventDispatcher } from '@/utils/event';
 import { LONG_HOLD_THRESHOLD } from '@/services/constants';
 import { setSelectionSuppressed } from '@/utils/bridge';
 import { suppressSystemSelectionMenu } from '@/hooks/useSystemSelectionMenu';
+import { initJieba } from '@/utils/jieba';
 import { LINK_TOUCH_HOLD_CLASS, TEXT_SELECTED_CLASS } from '@/utils/style';
 import {
   focusCaretWindowPos,
@@ -19,9 +20,11 @@ import {
   Point,
   rangeFromAnchorToPoint,
   repairJumpedSelectionRange,
+  splitsChineseByCharacter,
   TextSelection,
   trimNoteMarkersFromWordRange,
   trimRangeWhitespaceAroundPoint,
+  widenToChineseWord,
 } from '@/utils/sel';
 import { Corner, useAutoPageTurn } from './useAutoPageTurn';
 import { useInstantAnnotation } from './useInstantAnnotation';
@@ -88,7 +91,14 @@ export const useTextSelector = (
   const { getView, getViewSettings, getProgress } = useReaderStore();
   const view = getView(bookKey);
   const bookData = useBookData(bookKey);
+  const bookLang = bookData?.book?.primaryLanguage;
   const osPlatform = getOSPlatform();
+
+  // A word selection in a Chinese book widens through jieba where the platform
+  // splits Chinese by character (#8018); load it before the first one.
+  useEffect(() => {
+    if (bookLang?.startsWith('zh') && splitsChineseByCharacter()) initJieba().catch(() => {});
+  }, [bookLang]);
 
   // Corner-dwell auto page-turn (#1354), now driven by every selection gesture
   // through a shared engagement point — see useAutoPageTurn.
@@ -179,6 +189,8 @@ export const useTextSelector = (
   const wordGestureRef = useRef<{
     range: Range;
     trimPoint?: { node: Node; offset: number } | null;
+    // A Chinese word widened from one character (#8018), on the app's handles.
+    widened?: boolean;
   } | null>(null);
 
   // Android hyphen selection-bounds bug (#1553): the selection anchor captured
@@ -554,11 +566,30 @@ export const useTextSelector = (
     const publication = ++selectionPublicationId.current;
     isTextSelected.current = true;
     const navigated = navigatedSelectionRef.current;
-    const liveRange = sel.getRangeAt(0);
+    let liveRange = sel.getRangeAt(0);
     const lastGesture = wordGestureRef.current;
+    const sameAsLast = !!lastGesture && isSameRange(liveRange, lastGesture.range);
+    // A long-press on Chinese in Android's WebView selects one character
+    // (#8018): publish its word. The page selection takes the word only once
+    // the finger lifts: set from script, it stops the press from dragging the
+    // selection on, and it has no WebView handles, so the app's own take over.
+    let word =
+      wordGesture && appService?.isAndroidApp ? widenToChineseWord(liveRange, bookLang) : null;
+    let widened = sameAsLast && !!lastGesture?.widened;
+    if (word && !isTouchStarted.current) {
+      guardProgrammaticSelection();
+      sel.removeAllRanges();
+      sel.addRange(word);
+      releaseProgrammaticSelection();
+      liveRange = sel.getRangeAt(0);
+      if (touchWordGestureRef.current) touchWordGestureRef.current.range = liveRange.cloneRange();
+      word = null;
+      widened = true;
+    }
+    if (widened) handlesSuppressed = true;
     if (wordGesture) {
-      wordGestureRef.current = { range: liveRange.cloneRange(), trimPoint };
-    } else if (lastGesture && isSameRange(liveRange, lastGesture.range)) {
+      wordGestureRef.current = { range: liveRange.cloneRange(), trimPoint, widened };
+    } else if (lastGesture && sameAsLast) {
       trimPoint = lastGesture.trimPoint;
       wordGesture = true;
     } else {
@@ -587,7 +618,7 @@ export const useTextSelector = (
     // Selection.getRangeAt() returns the live, associated Range by reference.
     // Clone only for double-click normalization so native touch paths retain
     // their established Range behavior and browser handles stay untouched.
-    const range = trimPoint || wordGesture ? liveRange.cloneRange() : liveRange;
+    const range = word ?? (trimPoint || wordGesture ? liveRange.cloneRange() : liveRange);
     if (trimPoint) trimRangeWhitespaceAroundPoint(range, trimPoint.node, trimPoint.offset);
     if (wordGesture) trimNoteMarkersFromWordRange(range);
     const text = await getAnnotationText(range);
@@ -1091,7 +1122,7 @@ export const useTextSelector = (
     if (isInstantAnnotating.current) return;
     const sel = doc.getSelection();
     if (!sel || isValidSelection(sel)) return;
-    const range = getWordRangeFromPoint(doc, x, y);
+    const range = getWordRangeFromPoint(doc, x, y, bookLang);
     if (!range) return;
     guardProgrammaticSelection();
     sel.removeAllRanges();
@@ -1215,6 +1246,16 @@ export const useTextSelector = (
     }
 
     if (osPlatform === 'android' && appService?.isAndroidApp) {
+      // The WebView keeps a long-press's release to itself (the page got a
+      // pointercancel), so a Chinese word published mid-press takes the
+      // selection here, at the native release (#8018).
+      if (
+        isValidSelection(sel) &&
+        isTouchWordSelection(sel) &&
+        widenToChineseWord(sel.getRangeAt(0), bookLang)
+      ) {
+        await makeSelection(sel, index, false, false, null, true);
+      }
       await sanitizeAndroidHyphenSelection(doc, index);
       await suppressNativeHandlesForPages();
 
