@@ -111,3 +111,45 @@ fn images_load_and_fail_as_in_a_browser() {
         ]
     );
 }
+
+#[test]
+fn a_frame_loads_once_its_images_have() {
+    // A document's load event waits for its images, and its iframe's `load` with it: foliate-js
+    // sizes a comic's page from its <img> on that event. Lite fired it before the image arrived,
+    // each page measured 0x0 (`scale(Infinity)`) and every comic showed blank pages.
+    let net = Arc::new(Net::default());
+    let config = DocumentConfig {
+        net_provider: Some(net.clone()),
+        ..DocumentConfig::default()
+    };
+    let mut doc = QjsDocument::from_html("<!DOCTYPE html><html><body></body></html>", config);
+    // As foliate-js makes a page's frame.
+    doc.eval(
+        "const f = document.createElement('iframe');
+        f.addEventListener('load', () => {
+          const img = f.contentDocument.querySelector('img');
+          console.log(`load ${img.complete} ${img.naturalWidth}x${img.naturalHeight}`);
+        });
+        f.srcdoc = \"<img src='http://x/2x3.png'>\";
+        document.body.append(f);",
+        "test",
+    );
+    let mut turns = |serve: bool| {
+        for _ in 0..3 {
+            if serve {
+                net.serve();
+            }
+            doc.inner_mut().resolve(0.0);
+            doc.call_global("__blitzAfterLayout", ());
+            doc.run_jobs();
+        }
+        assert_eq!(doc.take_js_errors(), Vec::<String>::new());
+        doc.take_messages()
+    };
+    assert_eq!(
+        turns(false),
+        Vec::<String>::new(),
+        "loaded before its image"
+    );
+    assert_eq!(turns(true), ["log: load true 2x3"]);
+}

@@ -1107,12 +1107,14 @@ pub(crate) fn install(ctx: &Ctx<'_>, shared: Rc<RefCell<Shared>>, base: Option<&
         std::mem::take(&mut d.handles.borrow_mut().gone)
     });
     let d = docs.clone();
-    // The id of an iframe's document once it is attached with its stylesheets loaded (its `load`).
+    // The id of an iframe's document once it is attached with its stylesheets and images loaded
+    // (its `load`).
     op!("subdocReady", move |iframe: f64| -> Option<f64> {
         d.with(iframe, |doc, n, _| {
             let sub = doc.get_node(n)?.element_data()?.sub_doc_data()?;
             let sd = sub.inner();
-            (!sd.has_pending_critical_resources()).then(|| sd.id() as f64)
+            (!sd.has_pending_critical_resources() && !sd.has_pending_images())
+                .then(|| sd.id() as f64)
         })
         .flatten()
     });

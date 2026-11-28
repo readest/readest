@@ -249,7 +249,9 @@
   reported (the image handler dropped errors, so the element waited forever), a broken image or an
   empty `src` shows no image, a new `src` replaces the request the element was waiting on, and an
   `<img>` out of the document loads its `src` (`new Image()`); inserting one that has or awaits its
-  image doesn't load it again.
+  image doesn't load it again. `has_pending_images` says whether any of a document's images is
+  still on its way: an iframe's `load` waits for them, as in a browser (foliate-js sizes a comic's
+  page from its image on that event).
 - `stylo_taffy` wrapper, `blitz-dom` layout, node; `blitz-paint` render: a block fieldset's first
   `<legend>` (not floated or out of flow) sits on the top border, as in Chromium: as wide as its
   content up to the fieldset's content box, at that box's inline start, centred on the border

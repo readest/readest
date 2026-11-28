@@ -458,7 +458,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
                  } else {
                      #[cfg(feature = "tracing")]
                      tracing::warn!(error = err.as_str(), "Resource load failed (no url)");
-@@ -1493,6 +1550,35 @@
+@@ -1493,6 +1550,41 @@
          }
      }
  
@@ -474,6 +474,12 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
 +            w.iter()
 +                .any(|&(id, t)| id == node_id && matches!(t, ImageType::Image))
 +        })
++    }
++
++    /// Whether an image of the document is still on its way. A document's load event waits for
++    /// its images (and an iframe's `load` with it), as in a browser.
++    pub fn has_pending_images(&self) -> bool {
++        self.pending_images.values().any(|w| !w.is_empty())
 +    }
 +
 +    /// `<img>` `node_id` has no image: its load failed or its `src` is empty.
@@ -494,7 +500,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Cache a loaded image and apply it to all nodes waiting on it
      /// (`<img>` elements, `background-image` layers and `mask-image` layers).
      fn apply_loaded_image(&mut self, url: &str, image: ImageData) {
-@@ -1526,6 +1612,7 @@
+@@ -1526,6 +1618,7 @@
                      // Clear layout cache
                      node.clear_layout_cache();
                      node.insert_damage(ALL_DAMAGE);
@@ -502,7 +508,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
                  }
                  ImageType::Background(idx) | ImageType::Mask(idx) => {
                      let layer_image = node.element_data_mut().and_then(|el| {
-@@ -1684,6 +1771,62 @@
+@@ -1684,6 +1777,62 @@
              self.snapshot_node_state_only(node_id);
          }
          cb(&mut self.nodes[node_id]);
@@ -565,7 +571,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      // Takes (x, y) co-ordinates (relative to the )
-@@ -1810,6 +1953,27 @@
+@@ -1810,6 +1959,27 @@
          }
      }
  
@@ -593,7 +599,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn set_mousedown_node_id(&mut self, node_id: Option<NodeId>) {
          self.mousedown_node_id = node_id.and_then(|id| self.nearest_non_anonymous_ancestor(id));
      }
-@@ -1838,10 +2002,14 @@
+@@ -1838,10 +2008,14 @@
          }
  
          // Focus the new node
@@ -609,7 +615,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          );
  
          // Update :focus-within on the ancestor chains (shared prefix stays)
-@@ -2049,13 +2217,21 @@
+@@ -2049,13 +2223,21 @@
          }
  
          self.hover_node_id = hover_node_id;
@@ -634,7 +640,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn clear_hover(&mut self) -> bool {
          // The pointer is no longer over the document, so stop re-resolving
          // hover state against it.
-@@ -2073,9 +2249,7 @@
+@@ -2073,9 +2255,7 @@
  
          self.hover_node_id = None;
          self.hover_node_is_text = false;
@@ -645,7 +651,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  
          true
      }
-@@ -2333,6 +2507,56 @@
+@@ -2333,6 +2513,56 @@
          self.stylist.device()
      }
  
@@ -702,7 +708,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      pub fn get_cursor(&self) -> Option<CursorIcon> {
          // Prefer the precise hit node: `cursor` and `user-select` may be set on
          // a pseudo-element or resolved on an anonymous box, and text hits carry
-@@ -2440,6 +2664,40 @@
+@@ -2440,6 +2670,40 @@
          (pos, *self.nodes[node_id].unrounded_layout())
      }
  
@@ -743,7 +749,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Computes the size and position of the `Node` relative to the viewport
      pub fn get_client_bounding_rect(&self, node_id: NodeId) -> Option<BoundingRect> {
          // Non-atomic inline elements have no layout box of their own: return
-@@ -2447,17 +2705,27 @@
+@@ -2447,17 +2711,27 @@
          if let Some(rects) = self.inline_fragment_rects(node_id) {
              return rects.reduce(BoundingRect::union);
          }
@@ -781,7 +787,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// CSSOM View's `offsetLeft`/`offsetTop`/`offsetWidth`/`offsetHeight` as a single rect:
-@@ -2528,7 +2796,7 @@
+@@ -2528,7 +2802,7 @@
      pub fn node_client_rects(&self, node_id: NodeId) -> Vec<BoundingRect> {
          match self.inline_fragment_rects(node_id) {
              Some(rects) => rects.collect(),
@@ -790,7 +796,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
          }
      }
  
-@@ -2543,20 +2811,339 @@
+@@ -2543,20 +2817,339 @@
  
          // Only non-atomic inline elements lack their own layout box: they are
          // flattened into the containing inline root's text layout as style spans.
@@ -1142,7 +1148,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      }
  
      /// The first element in tree order with the given tag name. The root element and
-@@ -2661,6 +3248,58 @@
+@@ -2661,6 +3254,58 @@
          Some((inline_root.id, byte_offset))
      }
  
@@ -1201,7 +1207,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Set the text selection range (creates a new selection from anchor to focus)
      pub fn set_text_selection(
          &mut self,
-@@ -2685,6 +3324,52 @@
+@@ -2685,6 +3330,52 @@
          }
      }
  
@@ -1254,7 +1260,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
      /// Get the parent ID and sibling index for a node if it's an anonymous block.
      /// Returns (None, None) for non-anonymous blocks.
      fn anonymous_block_location(&self, node_id: NodeId) -> (Option<NodeId>, Option<usize>) {
-@@ -2944,6 +3629,66 @@
+@@ -2944,6 +3635,66 @@
  /// Snap a CSSOM geometry value to a 1/64px grid (the precision of Blink's `LayoutUnit`).
  /// Layout values are accumulated in `f32`, so e.g. seven `55/7`-wide flex items would
  /// otherwise end at `55.0000005` and appear to overflow their 55px container.
@@ -1321,7 +1327,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  fn snap_to_layout_unit(value: f64) -> f64 {
      (value * 64.0).round() / 64.0
  }
-@@ -3508,6 +4253,58 @@
+@@ -3508,6 +4259,58 @@
  }
  
  #[cfg(test)]
@@ -1380,7 +1386,7 @@ diff -ruN blitz/packages/blitz-dom/src/document.rs blitz/packages/blitz-dom/src/
  mod inline_with_only_block_children_tests {
      use super::*;
      use crate::qual_name;
-@@ -3781,3 +4578,7 @@
+@@ -3781,3 +4584,7 @@
          );
      }
  }

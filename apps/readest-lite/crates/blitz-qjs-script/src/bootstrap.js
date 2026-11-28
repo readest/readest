@@ -1645,7 +1645,7 @@
     return fired;
   }
   // contentDocument is the document Blitz loaded from src or srcdoc; `load` fires once it is
-  // attached with its stylesheets loaded (checkFrames, after each layout).
+  // attached with its stylesheets and images loaded (checkFrames, after each layout).
   class HTMLIFrameElement extends HTMLElement {
     get contentDocument() {
       const h = n.subdoc(this._id);
