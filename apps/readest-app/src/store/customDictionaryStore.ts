@@ -136,7 +136,11 @@ interface DictionaryStoreState {
   setContextOptions(
     options: Pick<
       DictionarySettings,
-      'contextPromptId' | 'contextSystemPrompt' | 'contextMaxOutputTokens' | 'xrayAutoUpdate'
+      | 'contextPromptId'
+      | 'contextSystemPrompt'
+      | 'contextMaxOutputTokens'
+      | 'xrayAutoUpdate'
+      | 'xrayMaxOutputTokens'
     >,
   ): void;
 
@@ -695,6 +699,7 @@ export const useCustomDictionaryStore = create<DictionaryStoreState>((set, get) 
         contextSystemPrompt: persistedSettings.contextSystemPrompt,
         contextMaxOutputTokens: persistedSettings.contextMaxOutputTokens,
         xrayAutoUpdate: persistedSettings.xrayAutoUpdate,
+        xrayMaxOutputTokens: persistedSettings.xrayMaxOutputTokens,
       };
       set({ dictionaries, settings: settingsMerged });
       return true;

@@ -61,8 +61,14 @@ describe('settingsAdapter', () => {
         contextPromptId: 'custom',
         contextSystemPrompt: 'Explain the era.',
         contextMaxOutputTokens: 4096,
+        xrayMaxOutputTokens: 8192,
       },
-      { contextPromptId: 'default', contextSystemPrompt: '', contextMaxOutputTokens: 0 },
+      {
+        contextPromptId: 'default',
+        contextSystemPrompt: '',
+        contextMaxOutputTokens: 0,
+        xrayMaxOutputTokens: 0,
+      },
     ]) {
       const fields = settingsAdapter.pack({
         name: 'singleton',
@@ -75,6 +81,7 @@ describe('settingsAdapter', () => {
       expect(fields['dictionarySettings.contextMaxOutputTokens']).toBe(
         options.contextMaxOutputTokens,
       );
+      expect(fields['dictionarySettings.xrayMaxOutputTokens']).toBe(options.xrayMaxOutputTokens);
       expect(settingsAdapter.unpack(fields).patch.dictionarySettings).toMatchObject(options);
     }
   });

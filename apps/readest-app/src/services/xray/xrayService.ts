@@ -3,6 +3,7 @@ import { getContextTranslator } from '@/services/dictionaries/providers/contextP
 import environmentConfig from '@/services/environment';
 import { onDeviceInputChars, prepareOnDevice } from '@/services/translators/custom/onDevice';
 import { useBookDataStore } from '@/store/bookDataStore';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { getBookProgress } from '@/store/readerProgressStore';
 import { useReaderStore } from '@/store/readerStore';
 import { getSignedInToken, isCustomTranslatorAllowed } from '@/utils/access';
@@ -105,6 +106,9 @@ export const updateXRay = async (
 ): Promise<void> => {
   const bookHash = bookHashOf(bookKey);
   const translator = getContextTranslator();
+  // Zero, from a cleared field, leaves the limit to the provider.
+  const maxOutputTokens =
+    useCustomDictionaryStore.getState().settings.xrayMaxOutputTokens || undefined;
   const location = getBookProgress(bookKey)?.location;
   const { book, bookDoc } = useBookDataStore.getState().getBookData(bookKey) ?? {};
   if (!isXRayAvailable() || !translator || !location || !book || !bookDoc) return;
@@ -147,7 +151,7 @@ export const updateXRay = async (
       chars = 0;
       if (inFlight.length === (onDevice ? 1 : IN_FLIGHT)) await inFlight.shift();
       const recent = [...known].slice(-KNOWN_NAMES);
-      const extracted = extractXRay(translator, passages, recent, input, signal);
+      const extracted = extractXRay(translator, passages, recent, input, signal, maxOutputTokens);
       extracted.catch(() => {});
       // Saved in reading order, so that what is stored has no gaps; a failure
       // keeps the ones before it and stops the ones after.

@@ -49,6 +49,7 @@ import {
 } from '@/services/xray/xrayService';
 import type { XRayData } from '@/services/xray/types';
 import type { BookDoc } from '@/libs/document';
+import { useCustomDictionaryStore } from '@/store/customDictionaryStore';
 import { useCustomTranslatorStore } from '@/store/customTranslatorStore';
 
 const BOOK = 'hash-1';
@@ -331,6 +332,23 @@ describe('updateXRay', () => {
     await updateXRay(BOOK);
     const prompts = h.generateChatText.mock.calls.map(([, { prompt }]) => JSON.parse(prompt));
     expect(prompts.map(({ known }) => known)).toEqual([[], ['Anna']]);
+  });
+
+  it('asks for the output limit set for X-Ray, and the provider default without one', async () => {
+    const setLimit = (xrayMaxOutputTokens: number) =>
+      useCustomDictionaryStore.setState(({ settings }) => ({
+        settings: { ...settings, xrayMaxOutputTokens },
+      }));
+    h.generateChatText.mockResolvedValue(reply(entity('Anna', 'Anna met Boris in Kazan.')));
+    setLimit(0);
+    h.location = pageAt(1);
+    await updateXRay(BOOK);
+    setLimit(8192);
+    h.location = pageAt(2);
+    await updateXRay(BOOK);
+    setLimit(0);
+    const limits = h.generateChatText.mock.calls.map(([, options]) => options.maxOutputTokens);
+    expect(limits).toEqual([undefined, 8192]);
   });
 
   describe('with a long book', () => {
