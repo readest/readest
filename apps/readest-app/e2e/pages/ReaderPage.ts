@@ -141,10 +141,19 @@ export class ReaderPage extends BasePage {
     await this.sidebar.waitFor({ state: 'visible' });
   }
 
+  /**
+   * Open the sidebar on one of its tabs. On a phone, tapping the tab that is
+   * already shown closes the sidebar, so a shown tab is left alone.
+   */
+  private async openSidebarTab(name: 'TOC' | 'Annotate'): Promise<void> {
+    await this.openSidebar();
+    const tab = this.sidebar.locator(`[aria-label="${name}"]`);
+    if ((await tab.getAttribute('aria-pressed')) !== 'true') await tab.click();
+  }
+
   /** Open the sidebar and navigate to the TOC chapter at the given index. */
   async openTocChapter(index: number): Promise<void> {
-    await this.openSidebar();
-    await this.sidebar.locator('[aria-label="TOC"]').click();
+    await this.openSidebarTab('TOC');
     await this.tocItems.nth(index).click();
   }
 
@@ -581,8 +590,7 @@ export class ReaderPage extends BasePage {
   async openAnnotationsTab(): Promise<void> {
     await this.dismissPopup();
     await this.closeNotebook();
-    await this.openSidebar();
-    await this.sidebar.locator('[aria-label="Annotate"]').click();
+    await this.openSidebarTab('Annotate');
   }
 
   /** Delete the first annotation from the sidebar's "Annotate" tab. */
