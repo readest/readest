@@ -3075,5 +3075,17 @@
   "Highlight Current Paragraph": "বর্তমান অনুচ্ছেদ হাইলাইট করুন",
   "Highlight Button": "হাইলাইট বোতাম",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki-তে রপ্তানি প্রতিটি কার্ডের পেছনে এই অভিধানের ভুক্তি যোগ করে",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "অভিধানের ভুক্তি খোঁজা হচ্ছে ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "অভিধানের ভুক্তি খোঁজা হচ্ছে ({{done}}/{{total}})…",
+  "characters/min": "অক্ষর/মিনিট",
+  "words/min": "শব্দ/মিনিট",
+  "Average Speed": "গড় গতি",
+  "Change from Previous Period": "আগের সময়কাল থেকে পরিবর্তন",
+  "No reading speed measured": "পড়ার গতি মাপা হয়নি",
+  "Measured Reading Time": "মাপা পড়ার সময়",
+  "{{change}} this month": "এই মাসে {{change}}",
+  "This Week": "এই সপ্তাহ",
+  "This Month": "এই মাস",
+  "Highest Monthly Average": "সর্বোচ্চ মাসিক গড়",
+  "Reading Speed by Book": "বই অনুযায়ী পড়ার গতি",
+  "How fast you read in each language, and how it changes over time": "প্রতিটি ভাষায় আপনি কত দ্রুত পড়েন এবং সময়ের সাথে তা কীভাবে বদলায়"
 }

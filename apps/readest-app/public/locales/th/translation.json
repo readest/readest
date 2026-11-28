@@ -2996,5 +2996,17 @@
   "Highlight Current Paragraph": "ไฮไลต์ย่อหน้าปัจจุบัน",
   "Highlight Button": "ปุ่มไฮไลต์",
   "Export to Anki puts this dictionary's entry on the back of each card": "การส่งออกไปยัง Anki จะใส่คำอธิบายจากพจนานุกรมนี้ไว้ด้านหลังการ์ดแต่ละใบ",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "กำลังค้นหาคำอธิบายในพจนานุกรม ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "กำลังค้นหาคำอธิบายในพจนานุกรม ({{done}}/{{total}})…",
+  "characters/min": "ตัวอักษร/นาที",
+  "words/min": "คำ/นาที",
+  "Average Speed": "ความเร็วเฉลี่ย",
+  "Change from Previous Period": "การเปลี่ยนแปลงจากช่วงก่อนหน้า",
+  "No reading speed measured": "ยังไม่มีการวัดความเร็วในการอ่าน",
+  "Measured Reading Time": "เวลาอ่านที่วัดได้",
+  "{{change}} this month": "{{change}} ในเดือนนี้",
+  "This Week": "สัปดาห์นี้",
+  "This Month": "เดือนนี้",
+  "Highest Monthly Average": "ค่าเฉลี่ยรายเดือนสูงสุด",
+  "Reading Speed by Book": "ความเร็วในการอ่านตามหนังสือ",
+  "How fast you read in each language, and how it changes over time": "คุณอ่านเร็วแค่ไหนในแต่ละภาษา และเปลี่ยนแปลงอย่างไรเมื่อเวลาผ่านไป"
 }

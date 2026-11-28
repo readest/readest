@@ -54,6 +54,8 @@ vi.mock('@/services/statistics/statisticsDb', () => ({
         getQuarterHourDurations: async () => [{ quarter, seconds: 3600 }],
         getReadingTotals: async () => ({ seconds: 3600, books: 2, pages: 10 }),
         getReadingSpeedTotals: async () => speeds,
+        getReadingSpeedQuarters: async () => [],
+        getBookReadingSpeeds: async () => [],
         getReadingSpeedSamples: async (startMs: number, endMs: number) =>
           speeds
             .filter(({ durationMs }) => startTimeMs < endMs && startTimeMs + durationMs > startMs)

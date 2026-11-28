@@ -2996,5 +2996,17 @@
   "Highlight Current Paragraph": "ད་ལྟའི་དོན་ཚན་ལ་འོག་ཐིག་གཏོང་།",
   "Highlight Button": "འོག་ཐིག་གི་མཐེབ་གནོན།",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki ལ་ཕྱིར་འདྲེན་གྱིས་ཤོག་བྱང་རེ་རེའི་རྒྱབ་ངོས་སུ་ཚིག་མཛོད་འདིའི་འགྲེལ་བཤད་འཇོག",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "ཚིག་མཛོད་ཀྱི་འགྲེལ་བཤད་འཚོལ་བཞིན་པ། ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "ཚིག་མཛོད་ཀྱི་འགྲེལ་བཤད་འཚོལ་བཞིན་པ། ({{done}}/{{total}})…",
+  "characters/min": "ཡིག་འབྲུ་/སྐར་མ",
+  "words/min": "ཚིག་/སྐར་མ",
+  "Average Speed": "ཆ་སྙོམས་མྱུར་ཚད།",
+  "Change from Previous Period": "དུས་མཚམས་སྔ་མ་ལས་འགྱུར་བ།",
+  "No reading speed measured": "ཀློག་པའི་མྱུར་ཚད་ཚད་འཇལ་བྱས་མེད།",
+  "Measured Reading Time": "ཚད་འཇལ་བྱས་པའི་ཀློག་དུས།",
+  "{{change}} this month": "ཟླ་བ་འདིར་ {{change}}",
+  "This Week": "གཟའ་འཁོར་འདི།",
+  "This Month": "ཟླ་བ་འདི།",
+  "Highest Monthly Average": "ཟླ་རེའི་ཆ་སྙོམས་མཐོ་ཤོས།",
+  "Reading Speed by Book": "དཔེ་དེབ་ལྟར་ཀློག་པའི་མྱུར་ཚད།",
+  "How fast you read in each language, and how it changes over time": "སྐད་ཡིག་རེ་རེར་ཁྱེད་ཀྱིས་ཀློག་པའི་མྱུར་ཚད་དང་དུས་ཚོད་ལ་བསྟུན་ནས་འགྱུར་ལྡོག"
 }

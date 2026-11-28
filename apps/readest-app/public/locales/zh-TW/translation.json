@@ -2996,5 +2996,17 @@
   "Highlight Current Paragraph": "醒目標示目前段落",
   "Highlight Button": "劃線按鈕",
   "Export to Anki puts this dictionary's entry on the back of each card": "匯出到 Anki 時，會把此辭典的詞條放到每張卡片的背面",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "正在查詢辭典詞條 ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "正在查詢辭典詞條 ({{done}}/{{total}})…",
+  "characters/min": "字/分鐘",
+  "words/min": "詞/分鐘",
+  "Average Speed": "平均速度",
+  "Change from Previous Period": "與上一週期相比",
+  "No reading speed measured": "尚未測得閱讀速度",
+  "Measured Reading Time": "已測閱讀時長",
+  "{{change}} this month": "本月 {{change}}",
+  "This Week": "本週",
+  "This Month": "本月",
+  "Highest Monthly Average": "最高月平均",
+  "Reading Speed by Book": "各書閱讀速度",
+  "How fast you read in each language, and how it changes over time": "你在每種語言中的閱讀速度，以及它隨時間的變化"
 }

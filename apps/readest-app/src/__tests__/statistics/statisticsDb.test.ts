@@ -65,6 +65,23 @@ describe('statistics migration', () => {
     expect(await stats.getReadingSpeedTotals()).toEqual([]);
   });
 
+  it('keeps speed samples recorded before languages were, with no language', async () => {
+    const existing = await NodeDatabaseService.open(':memory:');
+    const migrations = getMigrations('statistics');
+    const speedTable = migrations.findIndex((m) => m.name.endsWith('_statistics_reading_speed'));
+    await migrate(existing, migrations.slice(0, speedTable + 1));
+    await existing.execute(
+      `INSERT INTO readest_reading_speed (start_time_ms, book_md5, unit, count, duration_ms)
+       VALUES (900000, 'old', 'words', 50, 20000)`,
+    );
+
+    await migrate(existing, migrations);
+
+    expect(await StatisticsDb.from(existing).getReadingSpeedQuarters()).toEqual([
+      { quarter: 1, lang: '', unit: 'words', count: 50, durationMs: 20_000 },
+    ]);
+  });
+
   it('seeds the numbers helper table 1..1000', async () => {
     const rows = await db.select<{ c: number }>(`SELECT COUNT(*) AS c FROM numbers`);
     expect(rows[0]!.c).toBe(1000);
@@ -109,6 +126,51 @@ describe('StatisticsDb', () => {
       { unit: 'words', count: 30, durationMs: 20_000 },
     ]);
     expect(await stats.getReadingTotals()).toEqual({ seconds: 0, books: 0, pages: 0 });
+  });
+
+  it('sums speed by quarter hour and language, and by book', async () => {
+    await stats.upsertBook({ bookMd5: 'm1', title: 'English Book', authors: 'Author' });
+    const at = (minute: number) => minute * 60_000;
+    const sample = (minute: number, lang: string, count: number) => ({
+      unit: lang === 'zh' ? ('characters' as const) : ('words' as const),
+      lang,
+      count,
+      startTimeMs: at(minute),
+      durationMs: 20_000,
+    });
+    await stats.insertReadingSpeed('m1', sample(1, 'en', 60));
+    await stats.insertReadingSpeed('m1', sample(2, 'en', 80));
+    await stats.insertReadingSpeed('m1', sample(16, 'en', 70));
+    await stats.insertReadingSpeed('m2', sample(2, 'zh', 200));
+
+    expect(await stats.getReadingSpeedQuarters()).toEqual([
+      { quarter: 0, lang: 'en', unit: 'words', count: 140, durationMs: 40_000 },
+      { quarter: 0, lang: 'zh', unit: 'characters', count: 200, durationMs: 20_000 },
+      { quarter: 1, lang: 'en', unit: 'words', count: 70, durationMs: 20_000 },
+    ]);
+    // Most recently read first; a book without statistics keeps its hash as the title.
+    expect(await stats.getBookReadingSpeeds()).toEqual([
+      {
+        md5: 'm1',
+        title: 'English Book',
+        authors: 'Author',
+        lang: 'en',
+        unit: 'words',
+        count: 210,
+        durationMs: 60_000,
+        lastRead: at(16) + 20_000,
+      },
+      {
+        md5: 'm2',
+        title: 'm2',
+        authors: '',
+        lang: 'zh',
+        unit: 'characters',
+        count: 200,
+        durationMs: 20_000,
+        lastRead: at(2) + 20_000,
+      },
+    ]);
   });
 
   it('keeps a local speed write when an overlapping sync transaction rolls back', async () => {

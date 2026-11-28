@@ -3233,5 +3233,17 @@
   "Highlight Current Paragraph": "Выделять текущий абзац",
   "Highlight Button": "Кнопка выделения",
   "Export to Anki puts this dictionary's entry on the back of each card": "Экспорт в Anki добавляет статью из этого словаря на обратную сторону каждой карточки",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Поиск словарных статей ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Поиск словарных статей ({{done}}/{{total}})…",
+  "characters/min": "знаков/мин",
+  "words/min": "слов/мин",
+  "Average Speed": "Средняя скорость",
+  "Change from Previous Period": "Изменение по сравнению с предыдущим периодом",
+  "No reading speed measured": "Скорость чтения ещё не измерена",
+  "Measured Reading Time": "Измеренное время чтения",
+  "{{change}} this month": "{{change}} в этом месяце",
+  "This Week": "На этой неделе",
+  "This Month": "В этом месяце",
+  "Highest Monthly Average": "Наивысшее среднее за месяц",
+  "Reading Speed by Book": "Скорость чтения по книгам",
+  "How fast you read in each language, and how it changes over time": "Как быстро вы читаете на каждом языке и как это меняется со временем"
 }

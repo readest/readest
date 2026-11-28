@@ -48,6 +48,8 @@ const fakeDb = (books: BookStats[]) => {
     getBookQuarterHourDurations: async () => [],
     getReadingSpeedSamples: async () => [],
     getReadingSpeedTotals: async () => [],
+    getReadingSpeedQuarters: async () => [],
+    getBookReadingSpeeds: async () => [],
     getReadingTotals: vi.fn(async () => ({
       seconds: left.reduce((s, b) => s + b.seconds, 0),
       books: left.length,

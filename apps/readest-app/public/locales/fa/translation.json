@@ -3075,5 +3075,17 @@
   "Highlight Current Paragraph": "برجسته‌سازی پاراگراف فعلی",
   "Highlight Button": "دکمه هایلایت",
   "Export to Anki puts this dictionary's entry on the back of each card": "خروجی برای Anki مدخل این فرهنگ لغت را پشت هر کارت می‌گذارد",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "در حال جستجوی مدخل‌های فرهنگ لغت ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "در حال جستجوی مدخل‌های فرهنگ لغت ({{done}}/{{total}})…",
+  "characters/min": "نویسه در دقیقه",
+  "words/min": "واژه در دقیقه",
+  "Average Speed": "سرعت میانگین",
+  "Change from Previous Period": "تغییر نسبت به دوره قبل",
+  "No reading speed measured": "سرعت مطالعه‌ای اندازه‌گیری نشده است",
+  "Measured Reading Time": "زمان مطالعه اندازه‌گیری‌شده",
+  "{{change}} this month": "{{change}} در این ماه",
+  "This Week": "این هفته",
+  "This Month": "این ماه",
+  "Highest Monthly Average": "بالاترین میانگین ماهانه",
+  "Reading Speed by Book": "سرعت مطالعه بر اساس کتاب",
+  "How fast you read in each language, and how it changes over time": "سرعت مطالعه شما در هر زبان و تغییر آن در طول زمان"
 }

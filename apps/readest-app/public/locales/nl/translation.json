@@ -3075,5 +3075,17 @@
   "Highlight Current Paragraph": "Huidige alinea markeren",
   "Highlight Button": "Markeerknop",
   "Export to Anki puts this dictionary's entry on the back of each card": "Exporteren naar Anki zet het lemma uit dit woordenboek op de achterkant van elke kaart",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Woordenboeklemma's opzoeken ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Woordenboeklemma's opzoeken ({{done}}/{{total}})…",
+  "characters/min": "tekens/min",
+  "words/min": "woorden/min",
+  "Average Speed": "Gemiddelde snelheid",
+  "Change from Previous Period": "Verandering t.o.v. vorige periode",
+  "No reading speed measured": "Geen leessnelheid gemeten",
+  "Measured Reading Time": "Gemeten leestijd",
+  "{{change}} this month": "{{change}} deze maand",
+  "This Week": "Deze week",
+  "This Month": "Deze maand",
+  "Highest Monthly Average": "Hoogste maandgemiddelde",
+  "Reading Speed by Book": "Leessnelheid per boek",
+  "How fast you read in each language, and how it changes over time": "Hoe snel je in elke taal leest en hoe dat in de loop van de tijd verandert"
 }

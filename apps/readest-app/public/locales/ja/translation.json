@@ -2996,5 +2996,17 @@
   "Highlight Current Paragraph": "現在の段落をハイライト",
   "Highlight Button": "ハイライトボタン",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki へのエクスポートで、この辞書の項目を各カードの裏面に追加します",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "辞書の項目を検索中 ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "辞書の項目を検索中 ({{done}}/{{total}})…",
+  "characters/min": "文字/分",
+  "words/min": "語/分",
+  "Average Speed": "平均速度",
+  "Change from Previous Period": "前の期間からの変化",
+  "No reading speed measured": "読書速度の記録はありません",
+  "Measured Reading Time": "計測した読書時間",
+  "{{change}} this month": "今月 {{change}}",
+  "This Week": "今週",
+  "This Month": "今月",
+  "Highest Monthly Average": "月平均の最高値",
+  "Reading Speed by Book": "本ごとの読書速度",
+  "How fast you read in each language, and how it changes over time": "言語ごとの読書速度と、その時間の経過による変化"
 }

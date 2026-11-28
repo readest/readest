@@ -3233,5 +3233,17 @@
   "Highlight Current Paragraph": "Podświetl bieżący akapit",
   "Highlight Button": "Przycisk zaznaczania",
   "Export to Anki puts this dictionary's entry on the back of each card": "Eksport do Anki umieszcza hasło z tego słownika na odwrocie każdej karty",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Wyszukiwanie haseł w słowniku ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Wyszukiwanie haseł w słowniku ({{done}}/{{total}})…",
+  "characters/min": "znaków/min",
+  "words/min": "słów/min",
+  "Average Speed": "Średnia szybkość",
+  "Change from Previous Period": "Zmiana względem poprzedniego okresu",
+  "No reading speed measured": "Nie zmierzono szybkości czytania",
+  "Measured Reading Time": "Zmierzony czas czytania",
+  "{{change}} this month": "{{change}} w tym miesiącu",
+  "This Week": "W tym tygodniu",
+  "This Month": "W tym miesiącu",
+  "Highest Monthly Average": "Najwyższa średnia miesięczna",
+  "Reading Speed by Book": "Szybkość czytania według książek",
+  "How fast you read in each language, and how it changes over time": "Jak szybko czytasz w każdym języku i jak to się zmienia w czasie"
 }

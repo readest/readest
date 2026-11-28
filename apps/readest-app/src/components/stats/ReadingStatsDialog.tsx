@@ -12,6 +12,11 @@ import {
   getStreaks,
   toDateKey,
 } from '@/services/statistics/readingStats';
+import {
+  getSpeedLanguages,
+  type BookReadingSpeed,
+  type ReadingSpeedQuarter,
+} from '@/services/statistics/readingSpeedStats';
 import type { ReadingSpeed } from '@/types/statistics';
 import { BoxedList, NavigationRow, SettingsRow } from '@/components/settings/primitives';
 import SubPageHeader from '@/components/settings/SubPageHeader';
@@ -22,6 +27,7 @@ import ReadingHeatmap from './ReadingHeatmap';
 import ReadingCalendar from './ReadingCalendar';
 import BookStatsList from './BookStatsList';
 import { formatReadingSpeed } from './formatReadingSpeed';
+import { ReadingSpeedPage, ReadingSpeedSection } from './ReadingSpeedStats';
 
 export const setReadingStatsDialogVisible = (visible: boolean) => {
   const dialog = document.getElementById('reading_stats_window');
@@ -40,28 +46,41 @@ interface ReadingStats {
   /** Speeds by date key, for the day the statistics were read. */
   dailySpeed: Map<string, ReadingSpeed[]>;
   totalSpeed: ReadingSpeed[];
+  speedQuarters: ReadingSpeedQuarter[];
+  bookSpeeds: BookReadingSpeed[];
 }
 
 const readStats = async (db: StatisticsDb): Promise<ReadingStats> => {
   const today = new Date();
   const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
   const dayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).getTime();
-  const [quarters, totals, samples, totalSpeed] = await Promise.all([
+  const [quarters, totals, samples, totalSpeed, speedQuarters, bookSpeeds] = await Promise.all([
     db.getQuarterHourDurations(),
     db.getReadingTotals(),
     db.getReadingSpeedSamples(dayStart, dayEnd),
     db.getReadingSpeedTotals(),
+    db.getReadingSpeedQuarters(),
+    db.getBookReadingSpeeds(),
   ]);
   const dailySpeed = getDailyReadingSpeeds(samples, dayStart, dayEnd);
-  return { db, daily: getDailySeconds(quarters), totals, dailySpeed, totalSpeed };
+  return {
+    db,
+    daily: getDailySeconds(quarters),
+    totals,
+    dailySpeed,
+    totalSpeed,
+    speedQuarters,
+    bookSpeeds,
+  };
 };
 
 /** A sub-page of the dialog, or null for the statistics themselves. */
-type StatsPage = 'calendar' | 'books' | null;
+type StatsPage = 'calendar' | 'books' | 'speed' | null;
 
 const PAGE_ENTRY: Record<NonNullable<StatsPage>, string> = {
   calendar: 'stats.readingCalendar',
   books: 'stats.books',
+  speed: 'stats.readingSpeed',
 };
 
 interface ReadingStatsContentProps {
@@ -77,6 +96,8 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
   const [failed, setFailed] = useState(false);
   // Statistics by Book is checking entries to merge or delete (#7812).
   const [selecting, setSelecting] = useState(false);
+  // The language the Reading Speed page shows.
+  const [speedKey, setSpeedKey] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
   const shownPage = useRef(page);
 
@@ -164,6 +185,30 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
     );
   }
 
+  const speedLanguages = getSpeedLanguages(stats.speedQuarters);
+
+  if (page === 'speed') {
+    return (
+      <div ref={contentRef} className='pb-6'>
+        <div tabIndex={-1} data-subpage-heading className='outline-hidden'>
+          <SubPageHeader
+            parentLabel={_('Reading Statistics')}
+            currentLabel={_('Reading Speed')}
+            description={_('How fast you read in each language, and how it changes over time')}
+            onBack={() => onPage(null)}
+          />
+        </div>
+        <ReadingSpeedPage
+          languages={speedLanguages}
+          quarters={stats.speedQuarters}
+          books={stats.bookSpeeds}
+          selected={speedKey}
+          onSelect={setSpeedKey}
+        />
+      </div>
+    );
+  }
+
   if (page === 'books') {
     return (
       <div ref={contentRef} className='pb-6'>
@@ -228,6 +273,17 @@ const ReadingStatsContent: React.FC<ReadingStatsContentProps> = ({ page, onPage 
           className='pe-0 text-start'
         />
       </BoxedList>
+      {speedLanguages.length > 0 && (
+        <ReadingSpeedSection
+          languages={speedLanguages}
+          quarters={stats.speedQuarters}
+          data-setting-id={PAGE_ENTRY.speed}
+          onOpen={(key) => {
+            setSpeedKey(key);
+            onPage('speed');
+          }}
+        />
+      )}
       <BoxedList title={_('Overview')}>
         <SettingsRow label={_('Today')}>
           <span className='tabular-nums'>{time(daily.get(toDateKey(new Date())) ?? 0)}</span>

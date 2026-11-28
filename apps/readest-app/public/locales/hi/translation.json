@@ -3075,5 +3075,17 @@
   "Highlight Current Paragraph": "वर्तमान पैराग्राफ को हाइलाइट करें",
   "Highlight Button": "हाइलाइट बटन",
   "Export to Anki puts this dictionary's entry on the back of each card": "Anki में निर्यात हर कार्ड के पीछे इस शब्दकोश की प्रविष्टि जोड़ता है",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "शब्दकोश की प्रविष्टियाँ खोजी जा रही हैं ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "शब्दकोश की प्रविष्टियाँ खोजी जा रही हैं ({{done}}/{{total}})…",
+  "characters/min": "अक्षर/मिनट",
+  "words/min": "शब्द/मिनट",
+  "Average Speed": "औसत गति",
+  "Change from Previous Period": "पिछली अवधि से बदलाव",
+  "No reading speed measured": "पढ़ने की कोई गति मापी नहीं गई",
+  "Measured Reading Time": "मापा गया पढ़ने का समय",
+  "{{change}} this month": "इस महीने {{change}}",
+  "This Week": "इस सप्ताह",
+  "This Month": "इस महीने",
+  "Highest Monthly Average": "सर्वाधिक मासिक औसत",
+  "Reading Speed by Book": "पुस्तक के अनुसार पढ़ने की गति",
+  "How fast you read in each language, and how it changes over time": "आप हर भाषा में कितनी तेज़ी से पढ़ते हैं और समय के साथ यह कैसे बदलता है"
 }

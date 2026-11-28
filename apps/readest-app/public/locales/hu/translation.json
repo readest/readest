@@ -3075,5 +3075,17 @@
   "Highlight Current Paragraph": "Aktuális bekezdés kiemelése",
   "Highlight Button": "Kiemelés gomb",
   "Export to Anki puts this dictionary's entry on the back of each card": "Az Ankiba exportálás ennek a szótárnak a szócikkét teszi minden kártya hátoldalára",
-  "Looking up dictionary entries ({{done}}/{{total}})…": "Szótári szócikkek keresése ({{done}}/{{total}})…"
+  "Looking up dictionary entries ({{done}}/{{total}})…": "Szótári szócikkek keresése ({{done}}/{{total}})…",
+  "characters/min": "karakter/perc",
+  "words/min": "szó/perc",
+  "Average Speed": "Átlagos sebesség",
+  "Change from Previous Period": "Változás az előző időszakhoz képest",
+  "No reading speed measured": "Nincs mért olvasási sebesség",
+  "Measured Reading Time": "Mért olvasási idő",
+  "{{change}} this month": "{{change}} ebben a hónapban",
+  "This Week": "Ezen a héten",
+  "This Month": "Ebben a hónapban",
+  "Highest Monthly Average": "Legmagasabb havi átlag",
+  "Reading Speed by Book": "Olvasási sebesség könyvenként",
+  "How fast you read in each language, and how it changes over time": "Milyen gyorsan olvasol az egyes nyelveken, és hogyan változik ez idővel"
 }
