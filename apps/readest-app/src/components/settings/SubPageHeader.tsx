@@ -49,16 +49,22 @@ const SubPageHeader: React.FC<SubPageHeaderProps> = ({
   return (
     <div className={clsx(description ? 'mb-6' : 'mb-4', 'px-4')}>
       <div className='mb-1.5 flex w-full items-center justify-between gap-2'>
-        <div className='flex min-w-0 items-center gap-2 text-lg font-semibold tracking-tight'>
+        {/* On a narrow row only the parent shrinks, on one line, so the page
+            you're on keeps its full name. That name is cut only when it would
+            leave the parent less than a 1.5em stub ("S…") beside the chevron and
+            its gaps (2.25rem); the row grows so that 100% is the room it has. */}
+        <div className='flex min-w-0 grow items-center gap-2 text-lg font-semibold tracking-tight'>
           <button
             type='button'
             onClick={onBack}
-            className='hover:text-primary transition-colors duration-150 focus-visible:underline focus-visible:outline-hidden'
+            className='hover:text-primary min-w-[1.5em] truncate transition-colors duration-150 focus-visible:underline focus-visible:outline-hidden'
           >
             {parentLabel}
           </button>
           <MdChevronRight aria-hidden='true' className='text-base-content/40 h-5 w-5 shrink-0' />
-          <span className='text-base-content/70 truncate'>{currentLabel}</span>
+          <span className='text-base-content/70 max-w-[calc(100%-2.25rem-1.5em)] shrink-0 truncate'>
+            {currentLabel}
+          </span>
         </div>
         {rightSlot}
       </div>
