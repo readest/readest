@@ -1,14 +1,50 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import type { Book } from '@/types/book';
+
+interface MockLibraryState {
+  library: Book[];
+  libraryLoaded: boolean;
+  setCheckOpenWithBooks: (check: boolean) => void;
+  setLibrary: (library: Book[]) => void;
+  getBookByHash: (hash: string) => Book | undefined;
+}
+
+const makeBook = (overrides: Partial<Book> & Pick<Book, 'hash'>): Book => ({
+  format: 'PDF',
+  title: 'Selected PDF',
+  author: '',
+  createdAt: 0,
+  updatedAt: 0,
+  deletedAt: null,
+  ...overrides,
+});
 
 const h = vi.hoisted(() => ({
   appService: {
     isIOSApp: true,
     hasWindow: false,
     loadSettings: vi.fn(async () => ({ autoImportBooksOnOpen: true })),
+    loadLibraryBooks: vi.fn(async () => []),
+    openFile: vi.fn(async () => new File(['%PDF-1.4'], 'selected.pdf')),
+    importBook: vi.fn(async (_file: string, library: Book[]) => {
+      const book: Book = {
+        hash: 'transient-pdf-hash',
+        format: 'PDF',
+        title: 'Selected PDF',
+        author: '',
+        createdAt: 0,
+        updatedAt: 0,
+        deletedAt: Date.now(),
+      };
+      library.push(book);
+      return book;
+    }),
   },
   navigateToLibrary: vi.fn(),
+  navigateToReader: vi.fn(),
+  partialMD5: vi.fn<() => Promise<string | undefined>>(),
   setCheckOpenWithBooks: vi.fn(),
 }));
 
@@ -22,18 +58,21 @@ vi.mock('@/services/environment', () => ({ isTauriAppPlatform: () => true }));
 vi.mock('@/store/libraryStore', async () => {
   const { create } = await import('zustand');
   return {
-    useLibraryStore: create(() => ({
+    useLibraryStore: create<MockLibraryState>((set, get) => ({
       library: [],
+      libraryLoaded: true,
       setCheckOpenWithBooks: h.setCheckOpenWithBooks,
+      setLibrary: (library) => set({ library, libraryLoaded: true }),
+      getBookByHash: (hash) => get().library.find((b) => b.hash === hash),
     })),
   };
 });
 vi.mock('@/utils/nav', () => ({
   navigateToLibrary: h.navigateToLibrary,
-  navigateToReader: vi.fn(),
+  navigateToReader: h.navigateToReader,
   showLibraryWindow: vi.fn(),
 }));
-vi.mock('@/utils/md5', () => ({ partialMD5: vi.fn() }));
+vi.mock('@/utils/md5', () => ({ partialMD5: h.partialMD5 }));
 
 import { useOpenWithBooks } from '@/hooks/useOpenWithBooks';
 import { eventDispatcher } from '@/utils/event';
@@ -42,6 +81,8 @@ import { useLibraryStore } from '@/store/libraryStore';
 afterEach(() => {
   cleanup();
   delete window.OPEN_WITH_FILES;
+  useLibraryStore.setState({ library: [], libraryLoaded: true });
+  window.history.replaceState({}, '', '/');
   vi.clearAllMocks();
 });
 
@@ -78,6 +119,69 @@ describe('useOpenWithBooks non-iOS file URL ingress', () => {
       expect(window.OPEN_WITH_FILES).toEqual(['/Users/x/Anne_Carson;.epub']);
       expect(h.setCheckOpenWithBooks).toHaveBeenCalledWith(true);
     } finally {
+      h.appService.isIOSApp = true;
+    }
+  });
+});
+
+describe('useOpenWithBooks Android transient VIEW intent while reader is active', () => {
+  test('switches the active reader to a newly imported transient file via open-book-in-reader (#8019)', async () => {
+    h.appService.isIOSApp = false;
+    h.appService.loadSettings.mockResolvedValueOnce({ autoImportBooksOnOpen: false });
+    window.history.replaceState({}, '', '/reader?ids=previous-book-hash');
+    const onOpenBookInReader = vi.fn();
+    eventDispatcher.on('open-book-in-reader', onOpenBookInReader);
+
+    try {
+      const uri = 'content://com.android.providers.downloads.documents/document/1234';
+      renderHook(() => useOpenWithBooks());
+      act(() => {
+        eventDispatcher.dispatch('app-incoming-url', { urls: [uri], action: 'VIEW' });
+      });
+
+      await waitFor(() => expect(onOpenBookInReader).toHaveBeenCalledTimes(1));
+      expect(h.appService.importBook).toHaveBeenCalledWith(uri, expect.any(Array), {
+        transient: true,
+      });
+      expect(onOpenBookInReader.mock.calls[0]?.[0]?.detail).toEqual({
+        bookHash: 'transient-pdf-hash',
+      });
+      expect(h.navigateToReader).not.toHaveBeenCalled();
+      expect(h.navigateToLibrary).not.toHaveBeenCalled();
+    } finally {
+      eventDispatcher.off('open-book-in-reader', onOpenBookInReader);
+      h.appService.isIOSApp = true;
+    }
+  });
+
+  test('switches the active reader to an existing library book without re-importing when pre-hash matches (#8019)', async () => {
+    h.appService.isIOSApp = false;
+    h.appService.loadSettings.mockResolvedValueOnce({ autoImportBooksOnOpen: false });
+    h.partialMD5.mockResolvedValueOnce('existing-pdf-hash');
+    useLibraryStore.setState({
+      library: [makeBook({ hash: 'existing-pdf-hash', title: 'Existing PDF' })],
+      libraryLoaded: true,
+    });
+    window.history.replaceState({}, '', '/reader?ids=previous-book-hash');
+    const onOpenBookInReader = vi.fn();
+    eventDispatcher.on('open-book-in-reader', onOpenBookInReader);
+
+    try {
+      const uri = 'content://com.android.providers.downloads.documents/document/5678';
+      renderHook(() => useOpenWithBooks());
+      act(() => {
+        eventDispatcher.dispatch('app-incoming-url', { urls: [uri], action: 'VIEW' });
+      });
+
+      await waitFor(() => expect(onOpenBookInReader).toHaveBeenCalledTimes(1));
+      expect(h.appService.importBook).not.toHaveBeenCalled();
+      expect(onOpenBookInReader.mock.calls[0]?.[0]?.detail).toEqual({
+        bookHash: 'existing-pdf-hash',
+      });
+      expect(h.navigateToReader).not.toHaveBeenCalled();
+      expect(h.navigateToLibrary).not.toHaveBeenCalled();
+    } finally {
+      eventDispatcher.off('open-book-in-reader', onOpenBookInReader);
       h.appService.isIOSApp = true;
     }
   });
